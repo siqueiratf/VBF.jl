@@ -29,6 +29,7 @@ include("types/spectrum.jl")
 # tier 2 — F₂ⁿ primitives (depends on tier 1)
 include("f2/arith.jl")
 include("f2/anf.jl")
+include("f2/walsh.jl")
 
 # tier 3..5 — added in later phases
 

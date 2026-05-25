@@ -12,5 +12,6 @@ export Spectrum, add!, sorted_pairs, total_mass
 export parity, f2_dot
 export gauss_jordan!, rank_f2, linear_basis, is_in_span, complete_basis
 export mobius!, mobius, anf
+export walsh_hadamard!, walsh_hadamard, walsh_transform
 
 # tier 3..5 — populated by later phases
