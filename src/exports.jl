@@ -28,5 +28,6 @@ export ddt_coeff_probability, expected_max_distribution
 export expected_differential_uniformity_distribution
 export lat_coeff_probability, expected_linearity_distribution
 export bct_coeff_probability, expected_boomerang_uniformity_distribution
+export table_anomaly, table_negative_anomaly
 
 # tier 3..5 — populated by later phases

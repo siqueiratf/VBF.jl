@@ -274,3 +274,130 @@ function expected_boomerang_uniformity_distribution(n::Integer;
     expected_max_distribution(n, n, bct_coeff_probability, n_coeffs;
                               vmin = vmin, vmax = vmax, precision = precision)
 end
+
+# ----------------------------------------------------------------------------
+# Aggregate anomaly scoring
+# ----------------------------------------------------------------------------
+
+"""
+    _max_and_occurrences(spec::Spectrum) -> (v_max::Int, occurrences::Int)
+
+The largest absolute value present in `spec` and how many times entries
+of that absolute value occur. Internal.
+"""
+function _max_and_occurrences(spec::Spectrum)
+    v_max = 0
+    occurrences = 0
+    for (k, count) in spec.counts
+        ak = abs(k)
+        if ak == v_max
+            occurrences += count
+        elseif ak > v_max
+            v_max = ak
+            occurrences = count
+        end
+    end
+    v_max, occurrences
+end
+
+"""
+    _proba_at_most_v_max(n, m, v_max, occurrences, pmf, precision) -> BigFloat
+
+Probability that, of the `(2^m - 1)(2^n - 1)` non-trivial cells, none
+exceed `v_max` and at most `occurrences` of them are exactly `v_max`.
+Internal.
+"""
+function _proba_at_most_v_max(n::Integer, m::Integer, v_max::Integer,
+                              occurrences::Integer, pmf, precision::Int)
+    setprecision(BigFloat, precision) do
+        p_strictly_smaller = sum(pmf(n, m, i; precision = precision) for i in 0:v_max - 1; init = BigFloat(0))
+        p_equal            = pmf(n, m, v_max; precision = precision)
+        n_trials           = BigInt(1 << n - 1) * BigInt(1 << m - 1)
+        result             = BigFloat(0)
+        for occ in 0:occurrences
+            term = BigFloat(binomial(n_trials, BigInt(occ))) *
+                   p_strictly_smaller^(n_trials - occ) *
+                   p_equal^occ
+            result += term
+        end
+        result
+    end
+end
+
+function _spec_and_pmf(s::SBox, table::Symbol)
+    if table === :DDT
+        return differential_spectrum(s), ddt_coeff_probability
+    elseif table === :LAT
+        perm = is_permutation(s)
+        pmf = (nn, mm, cc; precision = 120) ->
+            lat_coeff_probability(nn, mm, cc; permutation = perm, precision = precision)
+        return absolute_walsh_spectrum(s), pmf
+    elseif table === :BCT
+        is_permutation(s) ||
+            throw(ArgumentError("table_anomaly(:BCT, …) requires a permutation"))
+        return boomerang_spectrum(s), bct_coeff_probability
+    else
+        throw(ArgumentError("table_anomaly: unknown table $(repr(table)); use :DDT, :LAT, or :BCT"))
+    end
+end
+
+"""
+    table_anomaly(s::SBox, table::Symbol; precision = 120) -> BigFloat
+
+The **positive anomaly** of `s` against the random-permutation null
+hypothesis for the given `table` (`:DDT`, `:LAT`, or `:BCT`).
+
+Computed as `-log₂ P(observed max or smaller, with at most as many
+ties)` — large values mean the observed maximum is implausibly small
+under random, i.e., the S-box is *unusually good*.
+
+Returns a `BigFloat`. A value near zero means the S-box's table is
+consistent with a random permutation; large positive values indicate
+structure.
+
+# Examples
+```jldoctest
+julia> using BFA
+
+julia> Float64(table_anomaly(load_literature_sbox("AES"), :DDT)) > 1.0
+true
+```
+"""
+function table_anomaly(s::SBox, table::Symbol; precision::Int = 120)
+    spec, pmf = _spec_and_pmf(s, table)
+    n = inputbits(s)
+    v_max, occurrences = _max_and_occurrences(spec)
+    p = _proba_at_most_v_max(n, n, v_max, occurrences, pmf, precision)
+    setprecision(BigFloat, precision) do
+        return -log2(p)
+    end
+end
+
+"""
+    table_negative_anomaly(s::SBox, table::Symbol; precision = 120) -> BigFloat
+
+The **negative anomaly** of `s` against the random null hypothesis for
+the given `table`. Symmetric counterpart of [`table_anomaly`](@ref):
+large values mean the observed maximum is implausibly *large* (more
+ties than random would predict).
+
+A nontrivial negative anomaly is rare for cryptographic S-boxes — it
+flags structural over-concentration.
+"""
+function table_negative_anomaly(s::SBox, table::Symbol; precision::Int = 120)
+    spec, pmf = _spec_and_pmf(s, table)
+    n = inputbits(s)
+    v_max, occurrences = _max_and_occurrences(spec)
+    setprecision(BigFloat, precision) do
+        m = n
+        p_anomaly = _proba_at_most_v_max(n, m, v_max, occurrences, pmf, precision)
+        p_equal = pmf(n, m, v_max; precision = precision)
+        p_strictly_smaller =
+            sum(pmf(n, m, i; precision = precision) for i in 0:v_max - 1; init = BigFloat(0))
+        card = BigInt(1 << n - 1) * BigInt(1 << m - 1)
+        p_precise_equal = BigFloat(binomial(card, BigInt(occurrences))) *
+                          p_equal^occurrences *
+                          p_strictly_smaller^(card - occurrences)
+        return -log2(p_precise_equal - p_anomaly + 1)
+    end
+end
