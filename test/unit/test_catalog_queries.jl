@@ -4,16 +4,17 @@ using Test
 @testset "list_functions / count_functions: filters" begin
     db = load_catalog()
 
-    # No filter: everything
+    # No filter: everything (16 Literature + 1 APN)
+    total_expected = length(literature_sbox_names()) + length(apn_catalog_names())
     all_rows = list_functions(db)
     @test length(all_rows) == count_functions(db)
-    @test length(all_rows) == 16
+    @test length(all_rows) == total_expected
 
     # By family
     lits = list_functions(db; family = "Literature")
-    @test length(lits) == 16
-    @test count_functions(db; family = "Literature") == 16
-    @test count_functions(db; family = "APN") == 0
+    @test length(lits) == length(literature_sbox_names())
+    @test count_functions(db; family = "Literature") == length(literature_sbox_names())
+    @test count_functions(db; family = "APN") == length(apn_catalog_names())
 
     # By n
     eight = list_functions(db; n = 8)
@@ -22,14 +23,15 @@ using Test
     @test Set([r.canonical_name for r in eight]) == Set(["AES", "AES_inv"])
 
     four = list_functions(db; n = 4)
-    @test length(four) == 14   # 16 catalog - 2 AES variants
+    @test length(four) == 14 + length(apn_catalog_names())   # 4-bit lits + n4 APNs
 
     # By is_apn
-    @test count_functions(db; is_apn = false) == 16
-    @test count_functions(db; is_apn = true) == 0    # nothing in catalog is APN yet
+    @test count_functions(db; is_apn = true) == length(apn_catalog_names())
+    @test count_functions(db; is_apn = false) == length(literature_sbox_names())
 
-    # By is_permutation
-    @test count_functions(db; is_permutation = true) == 16
+    # By is_permutation (every Literature entry is a perm; n4_Gold_x3 is not)
+    @test count_functions(db; is_permutation = true) == length(literature_sbox_names())
+    @test count_functions(db; is_permutation = false) == length(apn_catalog_names())
 
     # By bib_key
     serpents = list_functions(db; bib_key = "AndersonBihamKnudsen1998Serpent")

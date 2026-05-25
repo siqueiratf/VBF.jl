@@ -17,19 +17,25 @@ end
     @test meta.schema_version == SCHEMA_VERSION
 end
 
-@testset "literature catalog: counts" begin
+@testset "catalog: counts" begin
     db = load_catalog()
     total = 0
     for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions")
         total = r.c
     end
-    @test total == length(literature_sbox_names())     # currently 16
+    @test total == length(literature_sbox_names()) + length(apn_catalog_names())
 
     lit_8bit = 0
     for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions WHERE family='Literature' AND n=8")
         lit_8bit = r.c
     end
     @test lit_8bit == 2     # AES + AES_inv
+
+    apn_count = 0
+    for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions WHERE family='APN'")
+        apn_count = r.c
+    end
+    @test apn_count == length(apn_catalog_names())
 end
 
 @testset "literature catalog: AES row matches load_literature_sbox" begin
@@ -68,17 +74,34 @@ end
     @test isempty(orphan_bib_keys)
 end
 
-@testset "BU is NULL only for non-permutations" begin
+@testset "BU is NULL exactly for non-permutations" begin
     db = load_catalog()
-    # For non-permutations, boomerang_uniformity must be NULL.
-    # All catalog entries are permutations (verified in literature tests),
-    # so BU should be NOT NULL across the board.
     rows = 0
     nonnull_bu = 0
-    for r in DBInterface.execute(db, "SELECT boomerang_uniformity FROM functions")
+    perms = 0
+    for r in DBInterface.execute(db, "SELECT boomerang_uniformity, is_permutation FROM functions")
         rows += 1
         r.boomerang_uniformity === missing || (nonnull_bu += 1)
+        r.is_permutation == 1 && (perms += 1)
     end
-    @test rows == length(literature_sbox_names())
-    @test nonnull_bu == rows    # all are permutations
+    @test rows == length(literature_sbox_names()) + length(apn_catalog_names())
+    @test nonnull_bu == perms     # BU populated iff is_permutation
+end
+
+@testset "n=4 APN: n4_Gold_x3 round-trip via catalog" begin
+    db = load_catalog()
+    r = find_function(db; canonical_name = "n4_Gold_x3")
+    @test r !== nothing
+    @test r.family == "APN"
+    @test r.is_apn
+    @test !r.is_permutation
+    @test r.is_quadratic
+    @test r.differential_uniformity == 2
+    @test r.algebraic_degree == 2
+    @test r.boomerang_uniformity === nothing
+    @test r.algebraic_form !== nothing
+    @test occursin("x^3", r.algebraic_form)
+
+    s = load_sbox(db, "n4_Gold_x3")
+    @test s == load_apn_function("n4_Gold_x3")
 end

@@ -19,6 +19,7 @@ export load_literature_sbox, literature_sbox_names, literature_sbox_metadata
 export catalog_path, is_catalog_built, load_catalog, create_catalog
 export canonical_lut_bytes, lut_sha256_hex, SCHEMA_VERSION
 export list_functions, count_functions, find_function, load_sbox
+export apn_catalog_names, apn_catalog_metadata, load_apn_function
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity

@@ -15,6 +15,7 @@ import Dates
 
 const CATALOG_FILE = BFA.catalog_path()
 const LITERATURE_PATH = normpath(joinpath(@__DIR__, "..", "data-raw", "literature_sboxes.toml"))
+const APN_CATALOG_DIR = normpath(joinpath(@__DIR__, "..", "data-raw", "apn_catalog"))
 
 function _git_sha()
     try
@@ -73,6 +74,12 @@ const BIBLIOGRAPHY = [
      doi       = "",
      url       = "https://www.cl.cam.ac.uk/~rja14/Papers/serpent.pdf",
      bibtex    = "@misc{AndersonBihamKnudsen1998Serpent, title={Serpent: A Proposal for the Advanced Encryption Standard}, year={1998}, note={NIST AES proposal}}"),
+    (bib_key   = "Nyberg1994",
+     year      = 1994,
+     authors   = "Nyberg",
+     doi       = "10.1007/BFb0053418",
+     url       = "https://link.springer.com/chapter/10.1007/BFb0053418",
+     bibtex    = "@inproceedings{Nyberg1994, title={Differentially Uniform Mappings for Cryptography}, author={Nyberg}, booktitle={EUROCRYPT}, year={1994}}"),
 ]
 
 function insert_bibliography!(db::SQLite.DB)
@@ -135,6 +142,51 @@ function insert_literature_sboxes!(db::SQLite.DB, contributor::AbstractString,
     end
 end
 
+function insert_apn_functions!(db::SQLite.DB, contributor::AbstractString,
+                                source_repo::AbstractString)
+    today = _today_utc()
+    for name in apn_catalog_names()
+        meta = apn_catalog_metadata(name)
+        s = load_apn_function(name)        # also verifies DU == 2
+        n = inputbits(s)
+        is_perm = is_permutation(s)
+
+        du = differential_uniformity(s)
+        lin = linearity(s)
+        algdeg = algebraic_degree(s)
+        bu = is_perm ? boomerang_uniformity(s) : nothing
+        is_quad = algdeg ≤ 2
+
+        bytes = BFA.canonical_lut_bytes(s)
+        sha = BFA.lut_sha256_hex(s)
+
+        blob_literal = "X'" * bytes2hex(bytes) * "'"
+        bu_literal = bu === nothing ? "NULL" : string(Int(bu))
+        algform_literal = haskey(meta, "algebraic_form") ?
+            BFA._sql_quote(meta["algebraic_form"]) : "NULL"
+
+        sql = string(
+            "INSERT INTO functions (",
+            "family, n, m, lut_sha256, lut_blob, algebraic_form, ",
+            "algebraic_degree, differential_uniformity, linearity, boomerang_uniformity, ",
+            "is_apn, is_permutation, is_quadratic, canonical_name, bib_key, ",
+            "source_repo, contributor, added_date, notes) VALUES (",
+            BFA._sql_quote("APN"), ", ", n, ", ", n, ", ",
+            BFA._sql_quote(sha), ", ", blob_literal, ", ", algform_literal, ", ",
+            algdeg, ", ", Int(du), ", ", Int(lin), ", ", bu_literal, ", ",
+            Int(du == 2), ", ",
+            Int(is_perm), ", ",
+            Int(is_quad), ", ",
+            BFA._sql_quote(name), ", ",
+            BFA._sql_quote(meta["bib_key"]), ", ",
+            BFA._sql_quote(source_repo), ", ",
+            BFA._sql_quote(contributor), ", ",
+            BFA._sql_quote(today), ", ",
+            BFA._sql_quote(meta["description"]), ")")
+        SQLite.execute(db, sql)
+    end
+end
+
 function main()
     sha = _git_sha()
     source_repo = "bfa@" * sha
@@ -144,6 +196,7 @@ function main()
                          git_sha = sha)
     insert_bibliography!(db)
     insert_literature_sboxes!(db, "BFA literature import (automated)", source_repo)
+    insert_apn_functions!(db, "BFA APN catalog import (automated)", source_repo)
     n_funcs = 0
     for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions")
         n_funcs = r.c
