@@ -23,5 +23,6 @@ export lat, absolute_walsh_spectrum, linearity
 export bct, boomerang_spectrum, boomerang_uniformity
 export fbct, fbct_spectrum, fbct_uniformity
 export algebraic_degree, degree_spectrum
+export linear_structures, has_linear_structure
 
 # tier 3..5 — populated by later phases
