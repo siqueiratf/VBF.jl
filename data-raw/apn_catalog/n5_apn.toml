@@ -1,0 +1,48 @@
+# n = 5 APN functions.
+#
+# For n odd, the Gold monomials x^(2^i + 1) with gcd(i, n) = 1 are APN
+# permutations. For n = 5 this gives x^3 (i=1), x^5 (i=2), x^9 (i=3 ≡ 2),
+# x^17 (i=4 ≡ 1) — only two distinct exponents up to inversion: 3 and 5
+# (since gcd with 31 = 2^5 - 1 is 1, the inverse exponents collapse).
+#
+# The Kasami-family x^(2^(2i) - 2^i + 1) with gcd(i, n) = 1 yields x^15
+# (i=2) and a few CCZ-equivalent variants. x^15 is APN for n = 5.
+#
+# All entries below are computed from the polynomial form using the
+# primitive irreducible polynomial x^5 + x^2 + 1; their APN property
+# is verified at load time by `load_apn_function`.
+
+schema_version = 1
+
+[[apn_functions]]
+name           = "n5_Gold_x3"
+description    = "Gold APN x^3 over GF(2^5), irreducible x^5 + x^2 + 1. Is a permutation (gcd(3, 31) = 1)."
+n              = 5
+m              = 5
+is_permutation = true
+algebraic_form = "x^3 in GF(2^5), modulus x^5 + x^2 + 1"
+bib_key        = "Gold1968"
+source         = "Gold, 'Maximal Recursive Sequences with 3-Valued Recursive Cross-Correlation Functions', IEEE Trans. Inf. Theory 1968; APN property per Nyberg EUROCRYPT 1994."
+lut            = [0, 1, 8, 15, 10, 31, 23, 4, 26, 25, 3, 6, 9, 30, 5, 20, 14, 18, 22, 12, 24, 16, 21, 27, 2, 28, 11, 19, 13, 7, 17, 29]
+
+[[apn_functions]]
+name           = "n5_Gold_x5"
+description    = "Gold APN x^5 over GF(2^5), irreducible x^5 + x^2 + 1. Permutation; CCZ-inequivalent to x^3 for n = 5."
+n              = 5
+m              = 5
+is_permutation = true
+algebraic_form = "x^5 in GF(2^5), modulus x^5 + x^2 + 1"
+bib_key        = "Gold1968"
+source         = "Gold, IEEE Trans. Inf. Theory 1968; APN property per Nyberg EUROCRYPT 1994."
+lut            = [0, 1, 5, 22, 17, 25, 4, 30, 31, 24, 18, 7, 20, 26, 9, 21, 12, 6, 23, 15, 16, 19, 27, 10, 14, 2, 29, 3, 8, 13, 11, 28]
+
+[[apn_functions]]
+name           = "n5_Kasami_x15"
+description    = "Kasami APN x^15 = x^(2^4 - 2^2 + 1) over GF(2^5), irreducible x^5 + x^2 + 1."
+n              = 5
+m              = 5
+is_permutation = true
+algebraic_form = "x^15 in GF(2^5), modulus x^5 + x^2 + 1"
+bib_key        = "Nyberg1994"
+source         = "Kasami exponents and APN property per Nyberg EUROCRYPT 1994."
+lut            = [0, 1, 31, 21, 18, 28, 10, 17, 29, 2, 22, 4, 24, 11, 25, 16, 9, 23, 27, 20, 14, 12, 19, 3, 5, 8, 7, 15, 26, 30, 6, 13]
