@@ -11,5 +11,6 @@ export Spectrum, add!, sorted_pairs, total_mass
 # tier 2 — F₂ⁿ primitives
 export parity, f2_dot
 export gauss_jordan!, rank_f2, linear_basis, is_in_span, complete_basis
+export mobius!, mobius, anf
 
 # tier 3..5 — populated by later phases
