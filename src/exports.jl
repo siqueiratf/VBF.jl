@@ -16,6 +16,8 @@ export walsh_hadamard!, walsh_hadamard, walsh_transform
 
 # tier 3 — data
 export load_literature_sbox, literature_sbox_names, literature_sbox_metadata
+export catalog_path, is_catalog_built, load_catalog, create_catalog
+export canonical_lut_bytes, lut_sha256_hex, SCHEMA_VERSION
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
