@@ -17,4 +17,7 @@ export walsh_hadamard!, walsh_hadamard, walsh_transform
 # tier 3 — data
 export load_literature_sbox, literature_sbox_names, literature_sbox_metadata
 
+# tier 4 — statistics
+export ddt, differential_spectrum, differential_uniformity
+
 # tier 3..5 — populated by later phases

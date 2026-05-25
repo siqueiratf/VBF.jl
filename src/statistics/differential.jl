@@ -1,0 +1,95 @@
+"""
+Differential cryptanalysis primitives.
+
+For an S-box `F : F₂ᴺ → F₂ᴺ`, the **Differential Distribution Table**
+(DDT) records, for each input difference `a` and output difference `b`,
+how many inputs `x` map a `⊕ a` shift to a `⊕ b` shift:
+
+``DDT[a, b] = \\#\\{ x : F(x ⊕ a) ⊕ F(x) = b \\}``.
+
+The **differential uniformity** is the largest entry of the DDT outside
+row/column `a = b = 0` and bounds the success probability of any
+single-round differential attack.
+
+# Public surface
+- [`ddt`](@ref) — the table.
+- [`differential_spectrum`](@ref) — histogram of DDT entries (excluding
+  the trivial row `a = 0`).
+- [`differential_uniformity`](@ref) — the maximum entry of the DDT
+  outside `(0, 0)`.
+"""
+
+"""
+    ddt(s::SBox{N, T}) -> Matrix{Int}
+
+Differential Distribution Table of `s`, sized `2^N × 2^N`.
+`ddt(s)[a + 1, b + 1] = #{ x : F(x ⊕ a) ⊕ F(x) = b }` for
+`a, b ∈ 0:2^N - 1`.
+
+Invariants (checked in the property tests):
+- Each row sums to `2^N`.
+- Every entry is even for `N ≥ 2`.
+- Row `0` is `[2^N, 0, 0, …, 0]` (the trivial difference).
+- `ddt(s)[1, 1] = 2^N` because `a = b = 0`.
+"""
+function ddt(s::SBox{N, T}) where {N, T}
+    n = 1 << N
+    d = zeros(Int, n, n)
+    lut = s.lut
+    @inbounds for x in 0:n - 1
+        Fx = lut[x + 1]
+        for a in 0:n - 1
+            Fxa = lut[(x ⊻ a) + 1]
+            d[a + 1, Int(Fx ⊻ Fxa) + 1] += 1
+        end
+    end
+    d
+end
+
+"""
+    differential_spectrum(s::SBox) -> Spectrum
+
+Multiset of DDT entries excluding the trivial row `a = 0`. The most
+common entry in the spectrum is `0`; the highest is the differential
+uniformity.
+"""
+function differential_spectrum(s::SBox)
+    d = ddt(s)
+    n = size(d, 1)
+    sp = Spectrum()
+    @inbounds for a in 2:n, b in 1:n      # skip row a=0
+        add!(sp, d[a, b])
+    end
+    sp
+end
+
+"""
+    differential_uniformity(s::SBox) -> Int
+
+Largest entry of `ddt(s)` outside row `0`. Equivalently, the smallest
+`δ` such that for all non-zero `a`, the differential
+`(a, ·)` holds for at most `δ` inputs.
+
+# Examples
+```jldoctest
+julia> using BFA
+
+julia> differential_uniformity(load_literature_sbox("AES"))
+4
+
+julia> differential_uniformity(load_literature_sbox("PRESENT"))
+4
+
+julia> differential_uniformity(load_literature_sbox("GIFT"))
+6
+```
+"""
+function differential_uniformity(s::SBox)
+    d = ddt(s)
+    n = size(d, 1)
+    u = 0
+    @inbounds for a in 2:n, b in 1:n
+        d[a, b] > u && (u = d[a, b])
+    end
+    u
+end
