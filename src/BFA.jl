@@ -21,7 +21,7 @@ See `papers/` for per-paper reproduction notebooks.
 module BFA
 
 # tier 1 — types (no dependencies within BFA)
-# (added in subsequent commits)
+include("types/sbox.jl")
 
 # tier 2 — F₂ⁿ primitives (depends on tier 1)
 # (added in subsequent commits)

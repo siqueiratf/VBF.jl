@@ -3,7 +3,7 @@
 # Aqua.test_undefined_exports verifies every name below resolves.
 
 # tier 1 — types
-# (populated as types are added)
+export SBox, inputbits, storage_type
 
 # tier 2 — F₂ⁿ primitives
 # (populated as primitives are added)
