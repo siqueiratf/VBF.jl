@@ -22,8 +22,13 @@ using Test
     @test all(r.n == 8 for r in eight)
     @test Set([r.canonical_name for r in eight]) == Set(["AES", "AES_inv"])
 
+    # All 4-bit Literature S-boxes plus every n=4 APN catalog entry
+    four_bit_lit_count = count(n -> begin
+        meta = literature_sbox_metadata(n)
+        meta["n"] == 4
+    end, literature_sbox_names())
     four = list_functions(db; n = 4)
-    @test length(four) == 14 + length(apn_catalog_names())   # 4-bit lits + n4 APNs
+    @test length(four) == four_bit_lit_count + length(apn_catalog_names())
 
     # By is_apn
     @test count_functions(db; is_apn = true) == length(apn_catalog_names())

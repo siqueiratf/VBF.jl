@@ -4,16 +4,16 @@ using Test
 # Expected catalog at v0.1: 1 AES + 1 AES_inv + 6 + 8 four-bit S-boxes.
 const EXPECTED_NAMES = [
     "AES", "AES_inv",
-    "GIFT", "Midori_Sb0", "Midori_Sb1", "PRESENT", "Piccolo",
+    "GIFT", "KLEIN", "Midori_Sb0", "Midori_Sb1", "PRESENT", "Piccolo",
     "SERPENT_S0", "SERPENT_S1", "SERPENT_S2", "SERPENT_S3",
     "SERPENT_S4", "SERPENT_S5", "SERPENT_S6", "SERPENT_S7",
-    "SKINNY_4",
+    "SKINNY_4", "TWINE",
 ]
 
 @testset "catalog enumeration" begin
     names = literature_sbox_names()
     @test names == EXPECTED_NAMES
-    @test length(names) == 16
+    @test length(names) == length(EXPECTED_NAMES)
 end
 
 @testset "metadata schema" begin
@@ -94,6 +94,20 @@ end
 @testset "SERPENT: all 8 distinct" begin
     serpents = [load_literature_sbox("SERPENT_S$i") for i in 0:7]
     @test length(Set(serpents)) == 8
+end
+
+@testset "TWINE / KLEIN sanity" begin
+    twine = load_literature_sbox("TWINE")
+    @test inputbits(twine) == 4
+    @test is_permutation(twine)
+    @test twine(0x0) == 0xc
+    @test twine(0xf) == 0x4
+
+    klein = load_literature_sbox("KLEIN")
+    @test inputbits(klein) == 4
+    @test is_permutation(klein)
+    # KLEIN is an involution by design: S(S(x)) == x for every x
+    @test klein == inv(klein)
 end
 
 # --- error paths -------------------------------------------------------------

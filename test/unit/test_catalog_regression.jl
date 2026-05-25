@@ -32,6 +32,8 @@ const FINGERPRINTS = [
     ("SERPENT_S5",         4,   8,   3,  10),
     ("SERPENT_S6",         4,   8,   3,  16),
     ("SERPENT_S7",         4,   8,   3,  10),
+    ("TWINE",              4,   8,   3,   6),
+    ("KLEIN",              4,   8,   3,  10),
 ]
 
 @testset "catalog fingerprint locked: $name" for (name, du, lin, deg, bu) in FINGERPRINTS
