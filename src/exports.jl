@@ -19,5 +19,6 @@ export load_literature_sbox, literature_sbox_names, literature_sbox_metadata
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
+export lat, absolute_walsh_spectrum, linearity
 
 # tier 3..5 — populated by later phases
