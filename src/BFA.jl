@@ -34,6 +34,7 @@ include("f2/walsh.jl")
 # tier 3 — data layer (depends on tier 1 only; never calls tier 2+)
 include("data/literature.jl")
 include("data/catalog.jl")
+include("data/queries.jl")
 
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")
