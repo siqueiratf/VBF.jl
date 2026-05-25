@@ -116,6 +116,45 @@ Base.hash(s::SBox{N, T}, h::UInt) where {N, T} =
 
 Base.copy(s::SBox{N, T}) where {N, T} = SBox{N, T}(copy(s.lut))
 
+"""
+    is_permutation(s::SBox) -> Bool
+
+`true` iff the underlying LUT is a bijection of `F₂ᴺ`.
+"""
+function is_permutation(s::SBox{N, T}) where {N, T}
+    n = 1 << N
+    seen = falses(n)
+    @inbounds for v in s.lut
+        i = Int(v) + 1
+        (i < 1 || i > n) && return false
+        seen[i] && return false
+        seen[i] = true
+    end
+    true
+end
+
+"""
+    inv(s::SBox) -> SBox
+
+Functional inverse of `s`. Throws `ArgumentError` if `s` is not a
+permutation.
+"""
+function Base.inv(s::SBox{N, T}) where {N, T}
+    n = 1 << N
+    inv_lut = zeros(T, n)
+    seen = falses(n)
+    @inbounds for x in 0:n - 1
+        y = Int(s.lut[x + 1])
+        seen[y + 1] &&
+            throw(ArgumentError("inv(s::SBox): s is not a permutation"))
+        inv_lut[y + 1] = T(x)
+        seen[y + 1] = true
+    end
+    all(seen) ||
+        throw(ArgumentError("inv(s::SBox): s is not a permutation"))
+    SBox{N, T}(inv_lut)
+end
+
 function Base.show(io::IO, s::SBox{N, T}) where {N, T}
     print(io, "SBox{", N, ", ", T, "} (", 1 << N, "-element LUT)")
 end

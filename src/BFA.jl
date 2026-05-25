@@ -37,6 +37,7 @@ include("data/literature.jl")
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")
 include("statistics/linear.jl")
+include("statistics/boomerang.jl")
 
 # tier 3..5 — added in later phases
 
