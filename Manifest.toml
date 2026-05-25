@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "3c1a5a490350a8f3484c475b32525eb1ac539809"
+project_hash = "08bb2d4d92e6225bc24308bcc231714ac32b3af3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -25,7 +25,7 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.11.0"
 
 [[deps.BFA]]
-deps = ["Arrow", "DBInterface", "Dates", "JSON3", "LazyArtifacts", "PrecompileTools", "Preferences", "Printf", "Random", "SHA", "SQLite", "Scratch", "StructTypes", "TOML", "Tar"]
+deps = ["Arrow", "Artifacts", "DBInterface", "Dates", "JSON3", "LazyArtifacts", "PrecompileTools", "Preferences", "Printf", "Random", "SHA", "SQLite", "Scratch", "StructTypes", "TOML", "Tar"]
 path = "."
 uuid = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
 version = "0.1.0-DEV"

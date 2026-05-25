@@ -40,6 +40,7 @@ include("data/queries.jl")
 # (literature/catalog/queries do not depend on statistics; APN loader does
 # because it verifies the APN property at load time)
 include("data/apn_catalog.jl")
+include("data/artifacts.jl")
 
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")
