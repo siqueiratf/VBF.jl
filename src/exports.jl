@@ -9,6 +9,7 @@ export F2AffineMap, is_linear
 export Spectrum, add!, sorted_pairs, total_mass
 
 # tier 2 — F₂ⁿ primitives
-# (populated as primitives are added)
+export parity, f2_dot
+export gauss_jordan!, rank_f2, linear_basis, is_in_span, complete_basis
 
 # tier 3..5 — populated by later phases

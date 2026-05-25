@@ -27,7 +27,7 @@ include("types/f2_affine_map.jl")
 include("types/spectrum.jl")
 
 # tier 2 — F₂ⁿ primitives (depends on tier 1)
-# (added in subsequent commits)
+include("f2/arith.jl")
 
 # tier 3..5 — added in later phases
 
