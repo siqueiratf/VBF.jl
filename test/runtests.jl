@@ -1,6 +1,8 @@
 using BFA
 using Test
 
+include("helpers.jl")    # shared random_function_sbox / random_permutation_sbox
+
 const UNIT_DIR = joinpath(@__DIR__, "unit")
 const PROPERTY_DIR = joinpath(@__DIR__, "property")
 
