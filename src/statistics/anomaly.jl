@@ -199,3 +199,78 @@ function expected_linearity_distribution(n::Integer;
     expected_max_distribution(n, n, pmf, n_coeffs;
                               vmin = vmin, vmax = vmax, precision = precision)
 end
+
+# ----------------------------------------------------------------------------
+# BCT coefficient PMF (Bonnetain-Perrin-Tian ASIACRYPT 2019)
+# ----------------------------------------------------------------------------
+
+"""
+    bct_coeff_probability(n, m, c; precision = 120) -> BigFloat
+
+Probability that any fixed non-trivial BCT entry of a uniformly random
+permutation of `F₂ⁿ` equals `c` (`m` must equal `n`). Odd `c` yield `0`.
+
+Bonnetain-Perrin-Tian ASIACRYPT 2019:
+
+  Let B = 2^(n-1), A = 2^(2n-2) - 2^(n-1).
+  P(BCT = c) = Σ_{(j₁, j₂) : 2j₁ + 4j₂ = c}
+                C(B, j₁) · (2^n - 2)^(B - j₁) ·
+                C(A, j₂) · (2^(2n) - 2^(n+1))^(A - j₂)
+              ────────────────────────────────────────
+                              (2^n - 1)^(B + 2A)
+
+The double sum is sparse: for each `c`, only `j₁` values with
+`c - 2j₁ ≥ 0` and divisible by 4 contribute, and only one `j₂` follows.
+"""
+function bct_coeff_probability(n::Integer, m::Integer, c::Integer;
+                                precision::Int = 120)
+    n == m ||
+        throw(ArgumentError("bct_coeff_probability: m=$m must equal n=$n"))
+    isodd(c) && return BigFloat(0)
+    c < 0 && return BigFloat(0)
+    setprecision(BigFloat, precision) do
+        B = BigInt(1) << (n - 1)
+        A = (BigInt(1) << (2n - 2)) - B
+        two_n      = BigInt(1) << n
+        x_b        = two_n - 2                       # (2^n - 2)
+        x_a        = (BigInt(1) << (2n)) - (two_n << 1)   # (2^(2n) - 2^(n+1))
+        denom_base = two_n - 1                       # (2^n - 1)
+        denom_exp  = B + 2A                          # (2^n - 1)^(B + 2A)
+        denom      = BigFloat(denom_base)^denom_exp
+        result     = BigFloat(0)
+        # iterate j1 from 0 to min(B, c÷2); j2 = (c - 2j1)/4 must be a
+        # non-negative integer no greater than A.
+        j1_max = min(B, BigInt(c) ÷ 2)
+        for j1 in BigInt(0):j1_max
+            rem = BigInt(c) - 2 * j1
+            rem % 4 == 0 || continue
+            j2 = rem ÷ 4
+            j2 > A && continue
+            term =
+                BigFloat(binomial(B, j1)) *
+                BigFloat(x_b)^(B - j1) *
+                BigFloat(binomial(A, j2)) *
+                BigFloat(x_a)^(A - j2)
+            result += term / denom
+        end
+        result
+    end
+end
+
+"""
+    expected_boomerang_uniformity_distribution(n;
+                                                vmin = 2, vmax = 128,
+                                                precision = 120)
+        -> Dict{Int, BigFloat}
+
+PMF of the boomerang uniformity of a uniformly random permutation of
+`F₂ⁿ`. Wires `(2^n - 1)²` trials to [`expected_max_distribution`](@ref).
+"""
+function expected_boomerang_uniformity_distribution(n::Integer;
+                                                     vmin::Integer = 2,
+                                                     vmax::Integer = 128,
+                                                     precision::Int = 120)
+    n_coeffs = (1 << n - 1) * (1 << n - 1)
+    expected_max_distribution(n, n, bct_coeff_probability, n_coeffs;
+                              vmin = vmin, vmax = vmax, precision = precision)
+end
