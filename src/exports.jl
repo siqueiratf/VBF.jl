@@ -22,5 +22,6 @@ export ddt, differential_spectrum, differential_uniformity
 export lat, absolute_walsh_spectrum, linearity
 export bct, boomerang_spectrum, boomerang_uniformity
 export fbct, fbct_spectrum, fbct_uniformity
+export algebraic_degree, degree_spectrum
 
 # tier 3..5 — populated by later phases

@@ -38,6 +38,7 @@ include("data/literature.jl")
 include("statistics/differential.jl")
 include("statistics/linear.jl")
 include("statistics/boomerang.jl")
+include("statistics/algebraic.jl")
 
 # tier 3..5 — added in later phases
 
