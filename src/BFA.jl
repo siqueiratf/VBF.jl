@@ -41,6 +41,7 @@ include("data/queries.jl")
 # because it verifies the APN property at load time)
 include("data/apn_catalog.jl")
 include("data/artifacts.jl")
+include("data/bibliography.jl")
 
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")

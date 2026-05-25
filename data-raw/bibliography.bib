@@ -1,0 +1,189 @@
+% Bibliography for BFA.jl
+%
+% Every `bib_key` in `data-raw/{literature_sboxes.toml, apn_catalog/*.toml}`
+% must resolve to an entry below; the build script verifies this.
+%
+% Parsed by `src/data/bibliography.jl`'s minimal BibTeX parser:
+%   - one `@type{key, field = {value}, ...}` block per entry
+%   - field values must be either braced `{...}` or quoted `"..."`
+%     (nested braces inside `{...}` are tracked correctly)
+%   - line-leading `%` comments are skipped
+%   - field concatenation with `#` is NOT supported
+
+% --- Symmetric primitives: AES, PRESENT, GIFT, Midori, SKINNY, Piccolo, Serpent ---
+
+@techreport{FIPS197,
+    title       = {Advanced Encryption Standard (AES)},
+    institution = {National Institute of Standards and Technology},
+    year        = {2001},
+    number      = {FIPS 197},
+    url         = {https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197.pdf}
+}
+
+@inproceedings{BogdanovEtAl2007,
+    author    = {Bogdanov, Andrey and Knudsen, Lars R. and Leander, Gregor and Paar, Christof and Poschmann, Axel and Robshaw, Matthew J. B. and Seurin, Yannick and Vikkelsoe, C.},
+    title     = {{PRESENT}: An Ultra-Lightweight Block Cipher},
+    booktitle = {Cryptographic Hardware and Embedded Systems -- {CHES} 2007},
+    series    = {Lecture Notes in Computer Science},
+    volume    = {4727},
+    pages     = {450--466},
+    year      = {2007},
+    publisher = {Springer},
+    doi       = {10.1007/978-3-540-74735-2_31}
+}
+
+@inproceedings{BanikEtAl2017GIFT,
+    author    = {Banik, Subhadeep and Pandey, Sumit Kumar and Peyrin, Thomas and Sasaki, Yu and Sim, Siang Meng and Todo, Yosuke},
+    title     = {{GIFT}: A Small {PRESENT}},
+    booktitle = {Cryptographic Hardware and Embedded Systems -- {CHES} 2017},
+    series    = {Lecture Notes in Computer Science},
+    volume    = {10529},
+    pages     = {321--345},
+    year      = {2017},
+    publisher = {Springer},
+    doi       = {10.1007/978-3-319-66787-4_16}
+}
+
+@inproceedings{BanikEtAl2015Midori,
+    author    = {Banik, Subhadeep and Bogdanov, Andrey and Isobe, Takanori and Shibutani, Kyoji and Hiwatari, Harunaga and Akishita, Toru and Regazzoni, Francesco},
+    title     = {{Midori}: A Block Cipher for Low Energy},
+    booktitle = {Advances in Cryptology -- {ASIACRYPT} 2015},
+    series    = {Lecture Notes in Computer Science},
+    volume    = {9453},
+    pages     = {411--436},
+    year      = {2015},
+    publisher = {Springer},
+    doi       = {10.1007/978-3-662-48800-3_17}
+}
+
+@inproceedings{BeierleEtAl2016SKINNY,
+    author    = {Beierle, Christof and Jean, J{\'e}r{\'e}my and K{\"o}lbl, Stefan and Leander, Gregor and Moradi, Amir and Peyrin, Thomas and Sasaki, Yu and Sasdrich, Pascal and Sim, Siang Meng},
+    title     = {The {SKINNY} Family of Block Ciphers and Its Low-Latency Variant {MANTIS}},
+    booktitle = {Advances in Cryptology -- {CRYPTO} 2016},
+    series    = {Lecture Notes in Computer Science},
+    volume    = {9815},
+    pages     = {123--153},
+    year      = {2016},
+    publisher = {Springer},
+    doi       = {10.1007/978-3-662-53008-5_5}
+}
+
+@inproceedings{ShibutaniEtAl2011Piccolo,
+    author    = {Shibutani, Kyoji and Isobe, Takanori and Hiwatari, Harunaga and Mitsuda, Atsushi and Akishita, Toru and Shirai, Taizo},
+    title     = {{Piccolo}: An Ultra-Lightweight Blockcipher},
+    booktitle = {Cryptographic Hardware and Embedded Systems -- {CHES} 2011},
+    series    = {Lecture Notes in Computer Science},
+    volume    = {6917},
+    pages     = {342--357},
+    year      = {2011},
+    publisher = {Springer},
+    doi       = {10.1007/978-3-642-23951-9_23}
+}
+
+@misc{AndersonBihamKnudsen1998Serpent,
+    author       = {Anderson, Ross and Biham, Eli and Knudsen, Lars},
+    title        = {Serpent: A Proposal for the Advanced Encryption Standard},
+    year         = {1998},
+    howpublished = {{NIST} {AES} Proposal},
+    url          = {https://www.cl.cam.ac.uk/~rja14/Papers/serpent.pdf}
+}
+
+% --- New: TWINE, KLEIN, PRINCE, LBlock ---
+
+@inproceedings{SuzakiEtAl2012TWINE,
+    author    = {Suzaki, Tomoyasu and Minematsu, Kazuhiko and Morioka, Sumio and Kobayashi, Eita},
+    title     = {{TWINE}: A Lightweight Block Cipher for Multiple Platforms},
+    booktitle = {Selected Areas in Cryptography -- {SAC} 2012},
+    series    = {Lecture Notes in Computer Science},
+    volume    = {7707},
+    pages     = {339--354},
+    year      = {2012},
+    publisher = {Springer},
+    doi       = {10.1007/978-3-642-35999-6_22}
+}
+
+@inproceedings{GongNikovaLaw2011KLEIN,
+    author    = {Gong, Zheng and Nikova, Svetla and Law, Yee Wei},
+    title     = {{KLEIN}: A New Family of Lightweight Block Ciphers},
+    booktitle = {{RFIDSec} 2011},
+    series    = {Lecture Notes in Computer Science},
+    volume    = {7055},
+    pages     = {1--18},
+    year      = {2011},
+    publisher = {Springer},
+    doi       = {10.1007/978-3-642-25286-0_1}
+}
+
+@inproceedings{WuZhang2011LBlock,
+    author    = {Wu, Wenling and Zhang, Lei},
+    title     = {{LBlock}: A Lightweight Block Cipher},
+    booktitle = {Applied Cryptography and Network Security -- {ACNS} 2011},
+    series    = {Lecture Notes in Computer Science},
+    volume    = {6715},
+    pages     = {327--344},
+    year      = {2011},
+    publisher = {Springer},
+    doi       = {10.1007/978-3-642-21554-4_19}
+}
+
+% --- APN families & cryptanalytic foundations ---
+
+@inproceedings{Nyberg1994,
+    author    = {Nyberg, Kaisa},
+    title     = {Differentially Uniform Mappings for Cryptography},
+    booktitle = {Advances in Cryptology -- {EUROCRYPT} '93},
+    series    = {Lecture Notes in Computer Science},
+    volume    = {765},
+    pages     = {55--64},
+    year      = {1994},
+    publisher = {Springer},
+    doi       = {10.1007/3-540-48285-7_6}
+}
+
+@article{Gold1968,
+    author  = {Gold, Robert},
+    title   = {Maximal Recursive Sequences with 3-Valued Recursive Cross-Correlation Functions},
+    journal = {{IEEE} Transactions on Information Theory},
+    volume  = {14},
+    number  = {1},
+    pages   = {154--156},
+    year    = {1968},
+    doi     = {10.1109/TIT.1968.1054106}
+}
+
+% --- Cryptanalysis tools cited in BFA's docstrings ---
+
+@inproceedings{CidEtAl2018BCT,
+    author    = {Cid, Carlos and Huang, Tao and Peyrin, Thomas and Sasaki, Yu and Song, Ling},
+    title     = {Boomerang Connectivity Table: {A} New Cryptanalysis Tool},
+    booktitle = {Advances in Cryptology -- {EUROCRYPT} 2018},
+    series    = {Lecture Notes in Computer Science},
+    volume    = {10821},
+    pages     = {683--714},
+    year      = {2018},
+    publisher = {Springer},
+    doi       = {10.1007/978-3-319-78375-8_22}
+}
+
+@inproceedings{BonnetainPerrinTian2019Anomaly,
+    author    = {Bonnetain, Xavier and Perrin, L{\'e}o and Tian, Shizhu},
+    title     = {Anomalies and Vector Space Search: Tools for {S}-Box Analysis},
+    booktitle = {Advances in Cryptology -- {ASIACRYPT} 2019},
+    series    = {Lecture Notes in Computer Science},
+    volume    = {11923},
+    pages     = {196--223},
+    year      = {2019},
+    publisher = {Springer},
+    doi       = {10.1007/978-3-030-34618-8_7}
+}
+
+@article{DaemenRijmen2007Probability,
+    author  = {Daemen, Joan and Rijmen, Vincent},
+    title   = {Probability Distributions of Correlation and Differentials in Block Ciphers},
+    journal = {Journal of Mathematical Cryptology},
+    volume  = {1},
+    number  = {3},
+    pages   = {221--242},
+    year    = {2007},
+    doi     = {10.1515/JMC.2007.011}
+}

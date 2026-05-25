@@ -29,69 +29,34 @@ function _today_utc()
     string(Dates.now(Dates.UTC)) * "Z"
 end
 
-# Hard-coded bibliography for now; will be promoted to data-raw/bibliography.bib
-# in a follow-up commit.
-const BIBLIOGRAPHY = [
-    (bib_key   = "FIPS197",
-     year      = 2001,
-     authors   = "NIST",
-     doi       = "",
-     url       = "https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197.pdf",
-     bibtex    = "@techreport{FIPS197, title={Advanced Encryption Standard (AES)}, institution={NIST}, year={2001}, number={FIPS 197}}"),
-    (bib_key   = "BogdanovEtAl2007",
-     year      = 2007,
-     authors   = "Bogdanov; Knudsen; Leander; Paar; Poschmann; Robshaw; Seurin; Vikkelsoe",
-     doi       = "10.1007/978-3-540-74735-2_31",
-     url       = "https://link.springer.com/chapter/10.1007/978-3-540-74735-2_31",
-     bibtex    = "@inproceedings{BogdanovEtAl2007, title={PRESENT: An Ultra-Lightweight Block Cipher}, booktitle={CHES}, year={2007}}"),
-    (bib_key   = "BanikEtAl2017GIFT",
-     year      = 2017,
-     authors   = "Banik; Pandey; Peyrin; Sasaki; Sim; Todo",
-     doi       = "10.1007/978-3-319-66787-4_16",
-     url       = "https://link.springer.com/chapter/10.1007/978-3-319-66787-4_16",
-     bibtex    = "@inproceedings{BanikEtAl2017GIFT, title={GIFT: A Small Present}, booktitle={CHES}, year={2017}}"),
-    (bib_key   = "BanikEtAl2015Midori",
-     year      = 2015,
-     authors   = "Banik; Bogdanov; Isobe; Shibutani; Hiwatari; Akishita; Regazzoni",
-     doi       = "10.1007/978-3-662-48800-3_17",
-     url       = "https://link.springer.com/chapter/10.1007/978-3-662-48800-3_17",
-     bibtex    = "@inproceedings{BanikEtAl2015Midori, title={Midori: A Block Cipher for Low Energy}, booktitle={ASIACRYPT}, year={2015}}"),
-    (bib_key   = "BeierleEtAl2016SKINNY",
-     year      = 2016,
-     authors   = "Beierle; Jean; Kölbl; Leander; Moradi; Peyrin; Sasaki; Sasdrich; Sim",
-     doi       = "10.1007/978-3-662-53008-5_5",
-     url       = "https://link.springer.com/chapter/10.1007/978-3-662-53008-5_5",
-     bibtex    = "@inproceedings{BeierleEtAl2016SKINNY, title={The SKINNY Family of Block Ciphers}, booktitle={CRYPTO}, year={2016}}"),
-    (bib_key   = "ShibutaniEtAl2011Piccolo",
-     year      = 2011,
-     authors   = "Shibutani; Isobe; Hiwatari; Mitsuda; Akishita; Shirai",
-     doi       = "10.1007/978-3-642-23951-9_23",
-     url       = "https://link.springer.com/chapter/10.1007/978-3-642-23951-9_23",
-     bibtex    = "@inproceedings{ShibutaniEtAl2011Piccolo, title={Piccolo: An Ultra-Lightweight Blockcipher}, booktitle={CHES}, year={2011}}"),
-    (bib_key   = "AndersonBihamKnudsen1998Serpent",
-     year      = 1998,
-     authors   = "Anderson; Biham; Knudsen",
-     doi       = "",
-     url       = "https://www.cl.cam.ac.uk/~rja14/Papers/serpent.pdf",
-     bibtex    = "@misc{AndersonBihamKnudsen1998Serpent, title={Serpent: A Proposal for the Advanced Encryption Standard}, year={1998}, note={NIST AES proposal}}"),
-    (bib_key   = "Nyberg1994",
-     year      = 1994,
-     authors   = "Nyberg",
-     doi       = "10.1007/BFb0053418",
-     url       = "https://link.springer.com/chapter/10.1007/BFb0053418",
-     bibtex    = "@inproceedings{Nyberg1994, title={Differentially Uniform Mappings for Cryptography}, author={Nyberg}, booktitle={EUROCRYPT}, year={1994}}"),
-]
+function _reconstruct_bibtex(entry::BibEntry)
+    # round-trip the parsed entry back into a canonical BibTeX block,
+    # so the catalog's `bibtex` column is human-readable and
+    # tool-consumable (Mendeley/Zotero import, etc.)
+    io = IOBuffer()
+    print(io, "@", entry.entry_type, "{", entry.bib_key)
+    for (k, v) in sort(collect(entry.fields); by = first)
+        print(io, ",\n    ", k, " = {", v, "}")
+    end
+    print(io, "\n}")
+    String(take!(io))
+end
 
 function insert_bibliography!(db::SQLite.DB)
-    for entry in BIBLIOGRAPHY
+    bib = load_bibliography()
+    for entry in bib
+        year = parse(Int, strip(get(entry, "year", "0")))
+        authors = get(entry, "author", "")
+        doi = get(entry, "doi", "")
+        url = get(entry, "url", "")
         sql = string(
             "INSERT INTO bibliography (bib_key, bibtex, doi, url, year, authors) VALUES (",
             BFA._sql_quote(entry.bib_key), ", ",
-            BFA._sql_quote(entry.bibtex), ", ",
-            BFA._sql_quote(entry.doi), ", ",
-            BFA._sql_quote(entry.url), ", ",
-            entry.year, ", ",
-            BFA._sql_quote(entry.authors), ")")
+            BFA._sql_quote(_reconstruct_bibtex(entry)), ", ",
+            BFA._sql_quote(doi), ", ",
+            BFA._sql_quote(url), ", ",
+            year, ", ",
+            BFA._sql_quote(authors), ")")
         SQLite.execute(db, sql)
     end
 end
