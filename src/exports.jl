@@ -26,5 +26,6 @@ export algebraic_degree, degree_spectrum
 export linear_structures, has_linear_structure
 export ddt_coeff_probability, expected_max_distribution
 export expected_differential_uniformity_distribution
+export lat_coeff_probability, expected_linearity_distribution
 
 # tier 3..5 — populated by later phases
