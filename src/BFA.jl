@@ -22,6 +22,9 @@ module BFA
 
 # tier 1 — types (no dependencies within BFA)
 include("types/sbox.jl")
+include("types/f2_linear_map.jl")
+include("types/f2_affine_map.jl")
+include("types/spectrum.jl")
 
 # tier 2 — F₂ⁿ primitives (depends on tier 1)
 # (added in subsequent commits)
