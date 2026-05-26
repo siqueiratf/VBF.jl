@@ -21,6 +21,8 @@ export load_literature_sbox, literature_sbox_names, literature_sbox_metadata
 export catalog_path, is_catalog_built, load_catalog, create_catalog
 export canonical_lut_bytes, lut_sha256_hex, SCHEMA_VERSION
 export list_functions, count_functions, find_function, load_sbox
+export list_reconciliation_disagreements, count_reconciliation_disagreements
+export reconciliation_summary, record_disagreement!, merge_source_repo!
 export apn_catalog_names, apn_catalog_metadata, load_apn_function
 export artifact_path, have_artifact, list_artifacts
 export BibEntry, load_bibliography, parse_bibtex, bibliography_path

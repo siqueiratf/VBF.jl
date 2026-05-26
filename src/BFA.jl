@@ -36,6 +36,7 @@ include("f2/polynomial.jl")
 include("data/literature.jl")
 include("data/catalog.jl")
 include("data/queries.jl")
+include("data/reconciliation.jl")
 
 # tier 4 — statistics (depends on tiers 1 + 2)
 # (literature/catalog/queries do not depend on statistics; APN loader does
