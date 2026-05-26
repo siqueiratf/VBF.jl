@@ -48,6 +48,9 @@ include("data/bibliography.jl")
 # tier 5 — algorithms (depends on tier 1 + 2; used by equivalence)
 include("algorithms/linear_system.jl")
 
+# tier 6 — equivalence
+include("equivalence/linear/lpp_backtracking.jl")
+
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")
 include("statistics/linear.jl")
