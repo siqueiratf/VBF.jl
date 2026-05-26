@@ -17,12 +17,26 @@ function _fresh_recon_db()
     db, path
 end
 
-@testset "reconciliation_disagreements: empty at v0.1" begin
+@testset "committed reconciliation table reflects sboxU import" begin
+    # After the Phase-4 import, the committed catalog carries thousands
+    # of reconciliation rows: every n=8 APN in sboxU that does NOT share
+    # a LUT-SHA with BFA (which is all of them, because sboxU uses a
+    # different primitive polynomial / field representation).
     db = load_catalog()
-    @test count_reconciliation_disagreements(db) == 0
-    @test list_reconciliation_disagreements(db) == NamedTuple[]
-    @test reconciliation_summary(db) == NamedTuple{(:n, :kind, :count),
-                                                    Tuple{Int, String, Int}}[]
+    total = count_reconciliation_disagreements(db)
+    @test total > 1000
+
+    # Every row should be "only_in_some" and tagged with an sboxu source.
+    @test count_reconciliation_disagreements(db; kind = "only_in_some") == total
+    @test count_reconciliation_disagreements(db; present_in = "sboxu") == total
+    @test count_reconciliation_disagreements(db; absent_from = "bfa") == total
+
+    # Summary should expose a single (n=8, "only_in_some") row totalling everything.
+    summary = reconciliation_summary(db)
+    @test length(summary) == 1
+    @test summary[1].n == 8
+    @test summary[1].kind == "only_in_some"
+    @test summary[1].count == total
 end
 
 @testset "record_disagreement!: round-trip" begin

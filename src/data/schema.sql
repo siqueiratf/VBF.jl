@@ -70,10 +70,14 @@ CREATE TABLE IF NOT EXISTS reconciliation_disagreements (
     id              INTEGER PRIMARY KEY,
     n               INTEGER NOT NULL,
     function_id     INTEGER REFERENCES functions(id),
+    lut_sha256      TEXT,                          -- content address of the LUT in question
     present_in      TEXT NOT NULL,                 -- pipe-list of source repos
     absent_from     TEXT NOT NULL,                 -- pipe-list of source repos
-    kind            TEXT NOT NULL,                 -- "missing_in_some" | …
+    kind            TEXT NOT NULL,                 -- "only_in_some" | …
     resolution      TEXT,
     resolver        TEXT,
     resolved_date   TEXT
 );
+
+CREATE INDEX IF NOT EXISTS idx_recon_n_kind ON reconciliation_disagreements(n, kind);
+CREATE INDEX IF NOT EXISTS idx_recon_lut_sha ON reconciliation_disagreements(lut_sha256);

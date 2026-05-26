@@ -29,11 +29,12 @@ import DBInterface
 # Read API
 # ----------------------------------------------------------------------------
 
-const _RECON_COLUMNS = (:id, :n, :function_id, :present_in, :absent_from,
-                        :kind, :resolution, :resolver, :resolved_date)
+const _RECON_COLUMNS = (:id, :n, :function_id, :lut_sha256,
+                        :present_in, :absent_from, :kind,
+                        :resolution, :resolver, :resolved_date)
 
 const _RECON_SELECT =
-    "id, n, function_id, present_in, absent_from, kind, " *
+    "id, n, function_id, lut_sha256, present_in, absent_from, kind, " *
     "resolution, resolver, resolved_date"
 
 function _row_to_disagreement(r)
@@ -41,6 +42,7 @@ function _row_to_disagreement(r)
         Int(r.id),
         Int(r.n),
         r.function_id === missing ? nothing : Int(r.function_id),
+        r.lut_sha256  === missing ? nothing : String(r.lut_sha256),
         String(r.present_in),
         String(r.absent_from),
         String(r.kind),
@@ -159,26 +161,28 @@ function record_disagreement!(db::SQLite.DB;
                               absent_from::AbstractString,
                               kind::AbstractString,
                               function_id::Union{Nothing, Integer} = nothing,
+                              lut_sha256::Union{Nothing, AbstractString} = nothing,
                               resolution::Union{Nothing, AbstractString} = nothing,
                               resolver::Union{Nothing, AbstractString} = nothing,
                               resolved_date::Union{Nothing, AbstractString} = nothing)
     fid = function_id === nothing ? "NULL" : string(Int(function_id))
+    sha = lut_sha256 === nothing ? "NULL" : _sql_quote(String(lut_sha256))
     res = resolution === nothing ? "NULL" : _sql_quote(String(resolution))
     rsr = resolver === nothing ? "NULL" : _sql_quote(String(resolver))
     rdt = resolved_date === nothing ? "NULL" : _sql_quote(String(resolved_date))
     SQLite.execute(db, string(
         "INSERT INTO reconciliation_disagreements ",
-        "(n, function_id, present_in, absent_from, kind, resolution, resolver, resolved_date) ",
-        "VALUES (",
+        "(n, function_id, lut_sha256, present_in, absent_from, kind, ",
+        " resolution, resolver, resolved_date) VALUES (",
         Int(n), ", ",
         fid, ", ",
+        sha, ", ",
         _sql_quote(String(present_in)), ", ",
         _sql_quote(String(absent_from)), ", ",
         _sql_quote(String(kind)), ", ",
         res, ", ",
         rsr, ", ",
         rdt, ")"))
-    # last_insert_rowid via a separate query
     id = 0
     for r in DBInterface.execute(db, "SELECT last_insert_rowid() AS id")
         id = Int(r.id)
