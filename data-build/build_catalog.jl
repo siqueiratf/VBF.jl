@@ -188,6 +188,13 @@ _maybe_chain_xanadu_import() =
         "Xanadu";
         check = p -> isfile(joinpath(p, "list_of_APN_functions_for_different_n")))
 
+_maybe_chain_apn_repo_import() =
+    _maybe_chain_import("import_apn_repository.jl", "BFA_APN_REPO_PATH",
+        (joinpath(homedir(), "sboxU", "APN-Repository"),
+         "/home/zambonin/sboxU/APN-Repository"),
+        "APN-Repository";
+        check = p -> isdir(joinpath(p, "database", "apn")))
+
 function main()
     sha = _git_sha()
     source_repo = "bfa@" * sha
@@ -206,6 +213,7 @@ function main()
     close(db)
     _maybe_chain_sboxu_import()
     _maybe_chain_xanadu_import()
+    _maybe_chain_apn_repo_import()
     final_size = filesize(CATALOG_FILE)
     if final_size > 0
         @info "Final catalog size" file_size_bytes=final_size

@@ -29,13 +29,18 @@ end
     # All rows are tagged 'only_in_some' (no other kinds populated yet).
     @test count_reconciliation_disagreements(db; kind = "only_in_some") == total
 
-    # sboxU still accounts for the bulk; Xanadu rows are an order of
-    # magnitude smaller; the catalog has at least one of each.
-    sboxu_rows  = count_reconciliation_disagreements(db; present_in = "sboxu")
-    xanadu_rows = count_reconciliation_disagreements(db; present_in = "xanadu")
-    @test sboxu_rows > 10_000
+    # All three importers contribute: sboxU dominates by sheer volume,
+    # Xanadu adds a small handful, APN-Repository adds the polynomial-form
+    # n=8 corpus. Each source is present in at least one row.
+    sboxu_rows   = count_reconciliation_disagreements(db; present_in = "sboxu")
+    xanadu_rows  = count_reconciliation_disagreements(db; present_in = "xanadu")
+    apnrepo_rows = count_reconciliation_disagreements(db; present_in = "apnrepo")
+    @test sboxu_rows  > 10_000
     @test xanadu_rows ≥ 1
-    @test sboxu_rows + xanadu_rows ≥ total   # might double-count a cross-source row
+    @test apnrepo_rows ≥ 1
+    # Every row must mention at least one upstream — none should be entirely
+    # untagged (that would indicate a bug in record_disagreement! / merge).
+    @test sboxu_rows + xanadu_rows + apnrepo_rows ≥ total   # may double-count cross-source rows
 
     # All rows should be missing from BFA (since BFA's evaluation uses a
     # different primitive polynomial / no polynomial-form support yet
