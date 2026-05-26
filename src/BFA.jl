@@ -50,6 +50,7 @@ include("algorithms/linear_system.jl")
 
 # tier 6 — equivalence
 include("equivalence/linear/lpp_backtracking.jl")
+include("equivalence/linear/api.jl")
 
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")

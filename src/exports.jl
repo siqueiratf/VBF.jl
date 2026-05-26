@@ -33,6 +33,9 @@ export BibEntry, load_bibliography, parse_bibtex, bibliography_path
 # tier 5 — algorithms
 export is_invertible, compose, solve_f2, kernel_f2
 
+# tier 6 — equivalence
+export are_linear_equivalent
+
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
 export lat, absolute_walsh_spectrum, linearity
