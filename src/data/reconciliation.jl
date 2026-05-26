@@ -141,6 +141,121 @@ function reconciliation_summary(db::SQLite.DB)
 end
 
 # ----------------------------------------------------------------------------
+# Multi-source views: who agrees with whom
+# ----------------------------------------------------------------------------
+
+"""
+    KNOWN_SOURCES :: NTuple{4, String}
+
+Source-repo prefixes the catalog can carry: `"bfa"`, `"sboxu"`,
+`"xanadu"`, `"apnrepo"`. Used by [`reconciliation_by_source`](@ref)
+and [`functions_by_source`](@ref) for tally queries.
+"""
+const KNOWN_SOURCES = ("bfa", "sboxu", "xanadu", "apnrepo")
+
+"""
+    reconciliation_by_source(db) -> Vector{NamedTuple{(:source, :count), Tuple{String, Int}}}
+
+How many reconciliation rows mention each upstream in their
+`present_in` pipe-list. A single row contributes to *each* source it
+mentions, so the counts can sum to more than the total row count
+when cross-source matches exist.
+"""
+function reconciliation_by_source(db::SQLite.DB)
+    out = NamedTuple{(:source, :count), Tuple{String, Int}}[]
+    for source in KNOWN_SOURCES
+        c = count_reconciliation_disagreements(db; present_in = source)
+        push!(out, (source = source, count = c))
+    end
+    out
+end
+
+"""
+    functions_by_source(db) -> Vector{NamedTuple{(:source, :count), Tuple{String, Int}}}
+
+Same shape as [`reconciliation_by_source`](@ref), but counts rows in
+the *functions* table (i.e., LUTs the catalog stores in full). A
+function row with `source_repo = "bfa@…|xanadu@…"` contributes to
+both `bfa` and `xanadu`.
+"""
+function functions_by_source(db::SQLite.DB)
+    out = NamedTuple{(:source, :count), Tuple{String, Int}}[]
+    for source in KNOWN_SOURCES
+        sql = "SELECT COUNT(*) AS c FROM functions WHERE source_repo LIKE " *
+              _sql_quote("%" * source * "%")
+        c = 0
+        for r in DBInterface.execute(db, sql)
+            c = Int(r.c)
+        end
+        push!(out, (source = source, count = c))
+    end
+    out
+end
+
+"""
+    cross_source_matches(db; min_sources = 2) -> Vector{NamedTuple}
+
+Reconciliation rows whose `present_in` pipe-list mentions at least
+`min_sources` distinct upstream sources. Returns
+`(id, n, lut_sha256, present_in, sources_count)` tuples sorted by
+`sources_count` descending, then `id` ascending — i.e., the strongest
+cross-source agreements come first. Useful for picking high-confidence
+APN representatives across databases.
+"""
+function cross_source_matches(db::SQLite.DB; min_sources::Integer = 2)
+    rows = NamedTuple{(:id, :n, :lut_sha256, :present_in, :sources_count),
+                      Tuple{Int, Int, String, String, Int}}[]
+    sql = "SELECT id, n, lut_sha256, present_in FROM reconciliation_disagreements " *
+          "WHERE present_in LIKE '%|%'"     # quick filter: must contain a pipe
+    for r in DBInterface.execute(db, sql)
+        present = String(r.present_in)
+        sources = unique([split(p, '@')[1] for p in split(present, '|')])
+        if length(sources) ≥ Int(min_sources)
+            push!(rows, (
+                id = Int(r.id),
+                n = Int(r.n),
+                lut_sha256 = r.lut_sha256 === missing ? "" : String(r.lut_sha256),
+                present_in = present,
+                sources_count = length(sources),
+            ))
+        end
+    end
+    sort!(rows; by = r -> (-r.sources_count, r.id))
+    rows
+end
+
+"""
+    multi_source_functions(db; min_sources = 2) -> Vector{NamedTuple}
+
+Function rows whose `source_repo` pipe-list mentions at least
+`min_sources` upstream sources. Returns
+`(id, n, canonical_name, source_repo, sources_count)`. These are the
+"in-catalog" cross-source matches — LUTs we hold in full *and* know
+exist in at least one upstream.
+"""
+function multi_source_functions(db::SQLite.DB; min_sources::Integer = 2)
+    rows = NamedTuple{(:id, :n, :canonical_name, :source_repo, :sources_count),
+                      Tuple{Int, Int, Union{String, Nothing}, String, Int}}[]
+    sql = "SELECT id, n, canonical_name, source_repo FROM functions " *
+          "WHERE source_repo LIKE '%|%'"
+    for r in DBInterface.execute(db, sql)
+        repo = String(r.source_repo)
+        sources = unique([split(p, '@')[1] for p in split(repo, '|')])
+        if length(sources) ≥ Int(min_sources)
+            push!(rows, (
+                id = Int(r.id),
+                n = Int(r.n),
+                canonical_name = r.canonical_name === missing ? nothing : String(r.canonical_name),
+                source_repo = repo,
+                sources_count = length(sources),
+            ))
+        end
+    end
+    sort!(rows; by = r -> (-r.sources_count, r.id))
+    rows
+end
+
+# ----------------------------------------------------------------------------
 # Write API
 # ----------------------------------------------------------------------------
 

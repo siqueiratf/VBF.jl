@@ -164,3 +164,48 @@ end
         close(db); rm(path; force = true)
     end
 end
+
+@testset "reconciliation_by_source / functions_by_source totals" begin
+    db = load_catalog()
+    rs = reconciliation_by_source(db)
+    @test Set(r.source for r in rs) == Set(["bfa", "sboxu", "xanadu", "apnrepo"])
+
+    by = Dict(r.source => r.count for r in rs)
+    @test by["sboxu"]   > 10_000
+    @test by["apnrepo"] > 10_000
+    @test by["xanadu"]  ≥ 1
+    # no reconciliation row should be tagged 'bfa' in present_in (those
+    # land in functions.source_repo instead).
+    @test by["bfa"] == 0
+
+    fs = Dict(r.source => r.count for r in functions_by_source(db))
+    @test fs["bfa"] > 0                # every catalog row is tagged bfa
+    @test fs["xanadu"]  ≥ 1            # at least the 10 xanadu cross-matches
+    @test fs["apnrepo"] ≥ 1            # at least the 12 apnrepo cross-matches
+end
+
+@testset "cross_source_matches reflects upstream agreements" begin
+    db = load_catalog()
+    pairs = cross_source_matches(db; min_sources = 2)
+    @test !isempty(pairs)
+    # Strongest matches first: sources_count is monotone-decreasing.
+    @test issorted([-p.sources_count for p in pairs])
+
+    # Every row really does mention ≥ 2 distinct sources.
+    for p in pairs
+        sources = unique([split(s, '@')[1] for s in split(p.present_in, '|')])
+        @test length(sources) ≥ 2
+        @test p.sources_count == length(sources)
+    end
+end
+
+@testset "multi_source_functions reflects in-catalog cross-matches" begin
+    db = load_catalog()
+    ms = multi_source_functions(db; min_sources = 2)
+    @test !isempty(ms)
+    for row in ms
+        sources = unique([split(s, '@')[1] for s in split(row.source_repo, '|')])
+        @test "bfa" in sources    # in-catalog matches always include BFA
+        @test row.sources_count == length(sources)
+    end
+end

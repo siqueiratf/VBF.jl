@@ -24,6 +24,8 @@ export canonical_lut_bytes, lut_sha256_hex, SCHEMA_VERSION
 export list_functions, count_functions, find_function, load_sbox
 export list_reconciliation_disagreements, count_reconciliation_disagreements
 export reconciliation_summary, record_disagreement!, merge_source_repo!
+export KNOWN_SOURCES, reconciliation_by_source, functions_by_source
+export cross_source_matches, multi_source_functions
 export apn_catalog_names, apn_catalog_metadata, load_apn_function
 export artifact_path, have_artifact, list_artifacts
 export BibEntry, load_bibliography, parse_bibtex, bibliography_path
