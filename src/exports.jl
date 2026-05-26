@@ -30,6 +30,9 @@ export apn_catalog_names, apn_catalog_metadata, load_apn_function
 export artifact_path, have_artifact, list_artifacts
 export BibEntry, load_bibliography, parse_bibtex, bibliography_path
 
+# tier 5 — algorithms
+export is_invertible, compose, solve_f2, kernel_f2
+
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
 export lat, absolute_walsh_spectrum, linearity
