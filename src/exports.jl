@@ -14,6 +14,7 @@ export gauss_jordan!, rank_f2, linear_basis, is_in_span, complete_basis
 export mobius!, mobius, anf
 export walsh_hadamard!, walsh_hadamard, walsh_transform
 export PRIMITIVE_POLYNOMIALS, primitive_polynomial
+export CONWAY_POLYNOMIALS, conway_polynomial
 export gf_mul, gf_pow, gf_inv, gf_monomial_lut
 
 # tier 3 — data

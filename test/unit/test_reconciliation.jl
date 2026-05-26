@@ -17,26 +17,36 @@ function _fresh_recon_db()
     db, path
 end
 
-@testset "committed reconciliation table reflects sboxU import" begin
-    # After the Phase-4 import, the committed catalog carries thousands
-    # of reconciliation rows: every n=8 APN in sboxU that does NOT share
-    # a LUT-SHA with BFA (which is all of them, because sboxU uses a
-    # different primitive polynomial / field representation).
+@testset "committed reconciliation table reflects upstream imports" begin
     db = load_catalog()
     total = count_reconciliation_disagreements(db)
+
+    # The sboxU import (Phase 4 part 2) dominates the table with its
+    # ~21k n=8 APN LUTs; the Xanadu import adds dozens more across
+    # n ∈ {6, 7, 8, 9, 10}.
     @test total > 1000
 
-    # Every row should be "only_in_some" and tagged with an sboxu source.
+    # All rows are tagged 'only_in_some' (no other kinds populated yet).
     @test count_reconciliation_disagreements(db; kind = "only_in_some") == total
-    @test count_reconciliation_disagreements(db; present_in = "sboxu") == total
+
+    # sboxU still accounts for the bulk; Xanadu rows are an order of
+    # magnitude smaller; the catalog has at least one of each.
+    sboxu_rows  = count_reconciliation_disagreements(db; present_in = "sboxu")
+    xanadu_rows = count_reconciliation_disagreements(db; present_in = "xanadu")
+    @test sboxu_rows > 10_000
+    @test xanadu_rows ≥ 1
+    @test sboxu_rows + xanadu_rows ≥ total   # might double-count a cross-source row
+
+    # All rows should be missing from BFA (since BFA's evaluation uses a
+    # different primitive polynomial / no polynomial-form support yet
+    # for the matched cases — those land in functions.source_repo).
     @test count_reconciliation_disagreements(db; absent_from = "bfa") == total
 
-    # Summary should expose a single (n=8, "only_in_some") row totalling everything.
+    # Summary now contains entries for several n.
     summary = reconciliation_summary(db)
-    @test length(summary) == 1
-    @test summary[1].n == 8
-    @test summary[1].kind == "only_in_some"
-    @test summary[1].count == total
+    n_values = Set(s.n for s in summary)
+    @test 8 in n_values
+    @test all(s -> s.kind == "only_in_some", summary)
 end
 
 @testset "record_disagreement!: round-trip" begin

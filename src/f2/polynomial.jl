@@ -73,6 +73,40 @@ const PRIMITIVE_POLYNOMIALS = Dict{Int, Int}(
 )
 
 """
+    CONWAY_POLYNOMIALS :: Dict{Int, Int}
+
+Conway polynomials for `GF(2ⁿ)`, `n ∈ 2:10`. These are the irreducible
+polynomials that SageMath uses by default for `GF(2^n)`, so any
+polynomial-form APN list authored against Sage (e.g., the Xanadu
+`apn-ccz-graph-framework` corpus) evaluates correctly under this
+modulus. For `n ∈ {2, 3, 4, 5, 7, 9}` the Conway polynomial coincides
+with the entry in [`PRIMITIVE_POLYNOMIALS`](@ref); the two tables
+differ for `n ∈ {6, 8, 10}`.
+"""
+const CONWAY_POLYNOMIALS = Dict{Int, Int}(
+    2  => 0b111,                       # x² + x + 1
+    3  => 0b1011,                      # x³ + x + 1
+    4  => 0b10011,                     # x⁴ + x + 1
+    5  => 0b100101,                    # x⁵ + x² + 1
+    6  => 0b1011011,                   # x⁶ + x⁴ + x³ + x + 1
+    7  => 0b10000011,                  # x⁷ + x + 1
+    8  => 0b100011101,                 # x⁸ + x⁴ + x³ + x² + 1
+    9  => 0b1000010001,                # x⁹ + x⁴ + 1
+    10 => 0b10001101111,               # x¹⁰ + x⁶ + x⁵ + x³ + x² + x + 1
+)
+
+"""
+    conway_polynomial(n::Integer) -> Int
+
+Conway polynomial for `GF(2ⁿ)`. See [`CONWAY_POLYNOMIALS`](@ref).
+"""
+function conway_polynomial(n::Integer)
+    haskey(CONWAY_POLYNOMIALS, Int(n)) ||
+        throw(ArgumentError("conway_polynomial: no Conway polynomial for n=$n"))
+    CONWAY_POLYNOMIALS[Int(n)]
+end
+
+"""
     primitive_polynomial(n::Integer) -> Int
 
 Canonical modulus for `GF(2ⁿ)`. Throws `ArgumentError` for `n` outside

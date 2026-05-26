@@ -160,25 +160,33 @@ and sboxU is checked out at one of the well-known locations, run its
 `main()` to populate `reconciliation_disagreements`. Failures are
 warnings, not errors: the catalog is still usable without the import.
 """
-function _maybe_chain_sboxu_import()
-    importer = joinpath(@__DIR__, "import_sboxu_apn.jl")
+function _maybe_chain_import(script_name::AbstractString, env_var::AbstractString,
+                              default_paths::Tuple, label::AbstractString;
+                              check::Function = isdir)
+    importer = joinpath(@__DIR__, script_name)
     isfile(importer) || return
-    # Sniff for an accessible sboxU checkout before running.
-    candidates = (
-        get(ENV, "BFA_SBOXU_PATH", ""),
-        joinpath(homedir(), "sboxU"),
-        "/home/zambonin/sboxU",
-    )
-    any(c -> !isempty(c) && isdir(c), candidates) ||
-        (@warn "skipping sboxU import (no checkout found); set BFA_SBOXU_PATH to enable"; return)
+    candidates = (get(ENV, env_var, ""), default_paths...)
+    any(c -> !isempty(c) && check(c), candidates) ||
+        (@warn "skipping $label import (no checkout found); set $env_var to enable"; return)
     try
-        @info "Chaining into sboxU APN import" importer
+        @info "Chaining into $label import" importer
         include(importer)
-        # `include` triggers the script's `isinteractive() || main()` guard.
     catch err
-        @warn "sboxU import failed; the catalog is still usable" exception=(err, catch_backtrace())
+        @warn "$label import failed; the catalog is still usable" exception=(err, catch_backtrace())
     end
 end
+
+_maybe_chain_sboxu_import() =
+    _maybe_chain_import("import_sboxu_apn.jl", "BFA_SBOXU_PATH",
+        (joinpath(homedir(), "sboxU"), "/home/zambonin/sboxU"),
+        "sboxU")
+
+_maybe_chain_xanadu_import() =
+    _maybe_chain_import("import_xanadu_apn.jl", "BFA_XANADU_PATH",
+        (joinpath(homedir(), "sboxU", "apn-ccz-graph-framework"),
+         "/home/zambonin/sboxU/apn-ccz-graph-framework"),
+        "Xanadu";
+        check = p -> isfile(joinpath(p, "list_of_APN_functions_for_different_n")))
 
 function main()
     sha = _git_sha()
@@ -197,6 +205,7 @@ function main()
     @info "Catalog populated (BFA-only step)" functions=n_funcs file_size_bytes=filesize(CATALOG_FILE)
     close(db)
     _maybe_chain_sboxu_import()
+    _maybe_chain_xanadu_import()
     final_size = filesize(CATALOG_FILE)
     if final_size > 0
         @info "Final catalog size" file_size_bytes=final_size
