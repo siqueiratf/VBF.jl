@@ -1,0 +1,56 @@
+# n = 10 APN functions (monomial entries).
+#
+# n = 10 is even and 2^10 - 1 = 1023 = 3 · 11 · 31. Like n=6 and n=8,
+# every monomial APN exponent shares a factor with 1023, so none of
+# these are permutations.
+#
+# This dimension is also where the Dobbertin exponent family kicks in
+# (n = 5i with i = 2 gives n = 10 and the Dobbertin x^339).
+#
+# Modulus: x^10 + x^3 + 1 (primitive_polynomial(10) = 1033).
+
+schema_version = 1
+
+[[apn_functions]]
+name              = "n10_Gold_x3"
+description       = "Gold APN x^3 over GF(2^10). Not a permutation (gcd(3, 1023) = 3)."
+n                 = 10
+m                 = 10
+is_permutation    = false
+algebraic_form    = "x^3 in GF(2^10), modulus x^10 + x^3 + 1"
+bib_key           = "Gold1968"
+source            = "Gold, IEEE Trans. Inf. Theory 1968."
+monomial_exponent = 3
+
+[[apn_functions]]
+name              = "n10_Gold_x9"
+description       = "Gold APN x^9 over GF(2^10) (i = 3). Not a permutation."
+n                 = 10
+m                 = 10
+is_permutation    = false
+algebraic_form    = "x^9 in GF(2^10), modulus x^10 + x^3 + 1"
+bib_key           = "Gold1968"
+source            = "Gold, IEEE Trans. Inf. Theory 1968."
+monomial_exponent = 9
+
+[[apn_functions]]
+name              = "n10_Kasami_x57"
+description       = "Kasami APN x^57 over GF(2^10) (i = 3). Not a permutation."
+n                 = 10
+m                 = 10
+is_permutation    = false
+algebraic_form    = "x^57 in GF(2^10), modulus x^10 + x^3 + 1"
+bib_key           = "Nyberg1994"
+source            = "Nyberg, EUROCRYPT 1994; Kasami exponent family."
+monomial_exponent = 57
+
+[[apn_functions]]
+name              = "n10_Dobbertin_x339"
+description       = "Dobbertin APN x^339 = x^(2^8 + 2^6 + 2^4 + 2^2 - 1) over GF(2^10). For n = 5i with i = 2."
+n                 = 10
+m                 = 10
+is_permutation    = false
+algebraic_form    = "x^339 in GF(2^10), modulus x^10 + x^3 + 1"
+bib_key           = "Nyberg1994"
+source            = "Dobbertin's APN power function (Dobbertin 1999, IEEE Trans. Inf. Theory); listed by Nyberg EUROCRYPT 1994."
+monomial_exponent = 339

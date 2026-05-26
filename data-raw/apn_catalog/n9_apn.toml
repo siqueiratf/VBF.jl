@@ -1,0 +1,96 @@
+# n = 9 APN functions (monomial entries).
+#
+# n = 9 is odd and 2^9 - 1 = 511 = 7 · 73. Most monomial APN exponents
+# are coprime with 511 and therefore induce permutations.
+#
+# Welch and Niho coincide for n=9 (both yield x^19) so a single entry
+# covers both family attributions.
+#
+# Modulus: x^9 + x^4 + 1 (primitive_polynomial(9) = 529).
+
+schema_version = 1
+
+# --- Gold (i = 1, 2, 4 up to CCZ) -------------------------------------------
+
+[[apn_functions]]
+name              = "n9_Gold_x3"
+description       = "Gold APN x^3 over GF(2^9), modulus x^9+x^4+1. i=1."
+n                 = 9
+m                 = 9
+is_permutation    = true
+algebraic_form    = "x^3 in GF(2^9), modulus x^9 + x^4 + 1"
+bib_key           = "Gold1968"
+source            = "Gold, IEEE Trans. Inf. Theory 1968."
+monomial_exponent = 3
+
+[[apn_functions]]
+name              = "n9_Gold_x5"
+description       = "Gold APN x^5 over GF(2^9). i=2."
+n                 = 9
+m                 = 9
+is_permutation    = true
+algebraic_form    = "x^5 in GF(2^9), modulus x^9 + x^4 + 1"
+bib_key           = "Gold1968"
+source            = "Gold, IEEE Trans. Inf. Theory 1968."
+monomial_exponent = 5
+
+[[apn_functions]]
+name              = "n9_Gold_x17"
+description       = "Gold APN x^17 = x^(2^4 + 1) over GF(2^9). i=4."
+n                 = 9
+m                 = 9
+is_permutation    = true
+algebraic_form    = "x^17 in GF(2^9), modulus x^9 + x^4 + 1"
+bib_key           = "Gold1968"
+source            = "Gold, IEEE Trans. Inf. Theory 1968."
+monomial_exponent = 17
+
+# --- Kasami (i = 2, 4) ------------------------------------------------------
+
+[[apn_functions]]
+name              = "n9_Kasami_x13"
+description       = "Kasami APN x^13 over GF(2^9). i=2."
+n                 = 9
+m                 = 9
+is_permutation    = true
+algebraic_form    = "x^13 in GF(2^9), modulus x^9 + x^4 + 1"
+bib_key           = "Nyberg1994"
+source            = "Nyberg, EUROCRYPT 1994; Kasami exponent family."
+monomial_exponent = 13
+
+[[apn_functions]]
+name              = "n9_Kasami_x241"
+description       = "Kasami APN x^241 = x^(2^8 - 2^4 + 1) over GF(2^9). i=4."
+n                 = 9
+m                 = 9
+is_permutation    = true
+algebraic_form    = "x^241 in GF(2^9), modulus x^9 + x^4 + 1"
+bib_key           = "Nyberg1994"
+source            = "Nyberg, EUROCRYPT 1994."
+monomial_exponent = 241
+
+# --- Welch / Niho (coincide at n=9) -----------------------------------------
+
+[[apn_functions]]
+name              = "n9_Welch_Niho_x19"
+description       = "Welch and Niho APN both yield x^19 = x^(2^4 + 3) for n=9 (t=4 even). The two families coincide here."
+n                 = 9
+m                 = 9
+is_permutation    = true
+algebraic_form    = "x^19 in GF(2^9), modulus x^9 + x^4 + 1"
+bib_key           = "Nyberg1994"
+source            = "Welch x^(2^t + 3); Niho x^(2^t + 2^(t/2) - 1) for t even; equal for n=9. APN-ness per Canteaut-Charpin-Dobbertin and Hollmann-Xiang."
+monomial_exponent = 19
+
+# --- Inverse ----------------------------------------------------------------
+
+[[apn_functions]]
+name              = "n9_Inverse_x510"
+description       = "Inverse function x^510 = x^(2^9 - 2) over GF(2^9). APN because n is odd."
+n                 = 9
+m                 = 9
+is_permutation    = true
+algebraic_form    = "x^510 in GF(2^9), modulus x^9 + x^4 + 1"
+bib_key           = "Nyberg1994"
+source            = "Nyberg, EUROCRYPT 1994 — inverse function is APN for odd n."
+monomial_exponent = 510

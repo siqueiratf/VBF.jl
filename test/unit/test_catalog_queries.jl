@@ -16,11 +16,13 @@ using Test
     @test count_functions(db; family = "Literature") == length(literature_sbox_names())
     @test count_functions(db; family = "APN") == length(apn_catalog_names())
 
-    # By n
+    # By n=8: 2 literature (AES, AES_inv) + every n=8 APN catalog entry.
+    n8_lit = count(name -> literature_sbox_metadata(name)["n"] == 8, literature_sbox_names())
+    n8_apn = count(name -> apn_catalog_metadata(name)["n"] == 8, apn_catalog_names())
     eight = list_functions(db; n = 8)
-    @test length(eight) == 2
+    @test length(eight) == n8_lit + n8_apn
     @test all(r.n == 8 for r in eight)
-    @test Set([r.canonical_name for r in eight]) == Set(["AES", "AES_inv"])
+    @test Set(["AES", "AES_inv"]) ⊆ Set([r.canonical_name for r in eight])
 
     # Functions are derived per dimension from the loader caches so the
     # counts don't desync when entries are added to either catalog.

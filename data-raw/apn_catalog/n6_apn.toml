@@ -1,0 +1,38 @@
+# n = 6 APN functions (monomial entries only).
+#
+# For even n, no monomial APN over GF(2^n) is a permutation (gcd of
+# every known APN exponent with 2^n - 1 = 63 = 9·7 is > 1 for n=6).
+# Both entries here are functions, not bijections — useful for
+# exercising the is_permutation = false catalog codepath at n > 4.
+#
+# The well-known APN permutation on F₂⁶ (the "Dillon" function) is
+# *not* a monomial and will land here once polynomial-form support
+# is added to the loader.
+#
+# Modulus for all entries: x^6 + x + 1  (= primitive_polynomial(6) = 67).
+# LUTs are computed by load_apn_function via gf_monomial_lut; the
+# load-time differential_uniformity == 2 check is the verification.
+
+schema_version = 1
+
+[[apn_functions]]
+name              = "n6_Gold_x3"
+description       = "Gold APN x^3 over GF(2^6), modulus x^6+x+1. Not a permutation (gcd(3, 63) = 3)."
+n                 = 6
+m                 = 6
+is_permutation    = false
+algebraic_form    = "x^3 in GF(2^6), modulus x^6 + x + 1"
+bib_key           = "Gold1968"
+source            = "Gold, IEEE Trans. Inf. Theory 1968; APN property per Nyberg EUROCRYPT 1994."
+monomial_exponent = 3
+
+[[apn_functions]]
+name              = "n6_Kasami_x48"
+description       = "Kasami APN x^48 over GF(2^6) (corresponds to i=5 via 2^(2i) - 2^i + 1 ≡ 48 mod 63). Not a permutation."
+n                 = 6
+m                 = 6
+is_permutation    = false
+algebraic_form    = "x^48 in GF(2^6), modulus x^6 + x + 1"
+bib_key           = "Nyberg1994"
+source            = "Nyberg, EUROCRYPT 1994 (general APN treatment); Kasami exponent family."
+monomial_exponent = 48

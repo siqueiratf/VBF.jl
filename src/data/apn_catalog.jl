@@ -32,11 +32,42 @@ function _load_apn_raw()
             name = entry["name"]::String
             haskey(by_name, name) &&
                 error("BFA: duplicate APN catalog name $(repr(name)) (in $fname)")
+            # Materialise the LUT for monomial-form entries so downstream
+            # consumers see a uniform `entry["lut"]` regardless of how the
+            # author wrote the TOML.
+            _materialise_monomial_lut!(entry, fname)
             by_name[name] = entry
         end
     end
     _APN_CACHE[] = by_name
     by_name
+end
+
+"""
+    _materialise_monomial_lut!(entry::Dict, fname::AbstractString)
+
+If `entry` declares a `monomial_exponent` and no explicit `lut`, compute
+`x ↦ x^d` over `GF(2^n)` using either the explicit `modulus` field or
+[`primitive_polynomial`](@ref BFA.primitive_polynomial), and inject the
+resulting LUT in place. Internal. Throws if `n` is outside the table
+and no modulus is specified.
+"""
+function _materialise_monomial_lut!(entry::Dict, fname::AbstractString)
+    haskey(entry, "lut") && return entry
+    haskey(entry, "monomial_exponent") || return entry
+    n = entry["n"]::Int
+    d = Int(entry["monomial_exponent"])
+    modulus = if haskey(entry, "modulus")
+        Int(entry["modulus"])
+    else
+        try
+            primitive_polynomial(n)
+        catch
+            error("BFA: monomial-form entry $(repr(entry["name"])) in $fname needs an explicit `modulus`: no canonical primitive polynomial is shipped for n=$n")
+        end
+    end
+    entry["lut"] = gf_monomial_lut(n, d; modulus = modulus)
+    entry
 end
 
 """
