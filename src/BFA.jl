@@ -30,6 +30,7 @@ include("types/spectrum.jl")
 include("f2/arith.jl")
 include("f2/anf.jl")
 include("f2/walsh.jl")
+include("f2/polynomial.jl")
 
 # tier 3 — data layer (depends on tier 1 only; never calls tier 2+)
 include("data/literature.jl")
