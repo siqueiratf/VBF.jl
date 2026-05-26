@@ -152,6 +152,34 @@ function insert_apn_functions!(db::SQLite.DB, contributor::AbstractString,
     end
 end
 
+"""
+    _maybe_chain_sboxu_import()
+
+Best-effort post-step. If `data-build/import_sboxu_apn.jl` is present
+and sboxU is checked out at one of the well-known locations, run its
+`main()` to populate `reconciliation_disagreements`. Failures are
+warnings, not errors: the catalog is still usable without the import.
+"""
+function _maybe_chain_sboxu_import()
+    importer = joinpath(@__DIR__, "import_sboxu_apn.jl")
+    isfile(importer) || return
+    # Sniff for an accessible sboxU checkout before running.
+    candidates = (
+        get(ENV, "BFA_SBOXU_PATH", ""),
+        joinpath(homedir(), "sboxU"),
+        "/home/zambonin/sboxU",
+    )
+    any(c -> !isempty(c) && isdir(c), candidates) ||
+        (@warn "skipping sboxU import (no checkout found); set BFA_SBOXU_PATH to enable"; return)
+    try
+        @info "Chaining into sboxU APN import" importer
+        include(importer)
+        # `include` triggers the script's `isinteractive() || main()` guard.
+    catch err
+        @warn "sboxU import failed; the catalog is still usable" exception=(err, catch_backtrace())
+    end
+end
+
 function main()
     sha = _git_sha()
     source_repo = "bfa@" * sha
@@ -166,8 +194,13 @@ function main()
     for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions")
         n_funcs = r.c
     end
-    @info "Catalog populated" functions=n_funcs file_size_bytes=filesize(CATALOG_FILE)
+    @info "Catalog populated (BFA-only step)" functions=n_funcs file_size_bytes=filesize(CATALOG_FILE)
     close(db)
+    _maybe_chain_sboxu_import()
+    final_size = filesize(CATALOG_FILE)
+    if final_size > 0
+        @info "Final catalog size" file_size_bytes=final_size
+    end
 end
 
 isinteractive() || main()
