@@ -35,6 +35,7 @@ export is_invertible, compose, solve_f2, kernel_f2
 
 # tier 6 — equivalence
 export are_linear_equivalent
+export linear_representative
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
