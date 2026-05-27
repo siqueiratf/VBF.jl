@@ -41,6 +41,7 @@ export affine_representative
 export affine_class_signature
 export EAPartition, nbuckets
 export ea_multiplicities, ea_partition, ea_partition_signature
+export enumerate_bucket_maps, outer_permutations, outer_permutations_all
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
