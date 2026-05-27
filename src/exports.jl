@@ -36,6 +36,9 @@ export is_invertible, compose, solve_f2, kernel_f2
 # tier 6 — equivalence
 export are_linear_equivalent
 export linear_representative
+export are_affine_equivalent
+export affine_representative
+export affine_class_signature
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity

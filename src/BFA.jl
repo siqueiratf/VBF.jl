@@ -53,6 +53,8 @@ include("algorithms/dyadic_bitset.jl")
 include("equivalence/linear/lpp_backtracking.jl")
 include("equivalence/linear/stennes.jl")
 include("equivalence/linear/api.jl")
+include("equivalence/affine/stennes_shift.jl")
+include("equivalence/affine/api.jl")
 
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")
