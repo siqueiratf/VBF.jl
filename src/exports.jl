@@ -45,6 +45,7 @@ export enumerate_bucket_maps, outer_permutations, outer_permutations_all
 export inner_permutation
 export are_ea_equivalent, ea_equivalence_certificate
 export FunctionGraph, ccz_equivalent_function
+export walsh_zeroes, walsh_zeroes_size
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity

@@ -60,6 +60,7 @@ include("equivalence/ea/outer_permutation.jl")
 include("equivalence/ea/inner_permutation.jl")
 include("equivalence/ea/api.jl")
 include("equivalence/ccz/function_graph.jl")
+include("equivalence/ccz/walsh_zeroes.jl")
 
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")
