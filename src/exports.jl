@@ -47,6 +47,8 @@ export inner_permutation
 export are_ea_equivalent, ea_equivalence_certificate
 export FunctionGraph, ccz_equivalent_function
 export walsh_zeroes, walsh_zeroes_size
+export thickness, thickness_spectrum, enumerate_ccz_class
+export are_ccz_equivalent
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity

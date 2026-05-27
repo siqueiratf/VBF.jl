@@ -108,6 +108,25 @@ function _inv_wide(L::F2LinearMap{N, T}) where {N, T}
 end
 
 """
+    Base.transpose(L::F2LinearMap{N, T}) -> F2LinearMap{N, T}
+
+Transpose of an F₂-linear map. If `L` is the matrix with columns
+`L.cols`, then `(transpose(L)).cols[i + 1]` has bit `j` set iff
+`L.cols[j + 1]` has bit `i` set.
+"""
+function Base.transpose(L::F2LinearMap{N, T}) where {N, T}
+    new_cols = zeros(T, N)
+    @inbounds for i in 0:(N - 1)
+        for k in 0:(N - 1)
+            if ((L.cols[k + 1] >> i) & T(1)) == T(1)
+                new_cols[i + 1] |= T(1) << k
+            end
+        end
+    end
+    return F2LinearMap{N, T}(new_cols)
+end
+
+"""
     compose(L1::F2LinearMap, L2::F2LinearMap) -> F2LinearMap
 
 `L1 ∘ L2`: the F₂-linear map `x ↦ L1(L2(x))`. Both maps must have the
