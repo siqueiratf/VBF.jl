@@ -1,0 +1,196 @@
+"""
+Public API for EA-equivalence testing.
+
+Two SBoxes `F, G : F₂ⁿ → F₂ⁿ` are **EA-equivalent** (Extended-Affine
+equivalent) iff there exist invertible F₂-affine maps `A₁, A₂` and an
+arbitrary F₂-affine map `A_drift` such that
+
+    G(x) = A₁(F(A₂(x))) ⊕ A_drift(x).
+
+This relation strictly contains affine equivalence (`A_drift = 0`)
+and is itself strictly contained in CCZ-equivalence.
+
+# Functions
+- [`are_ea_equivalent`](@ref) — `Bool` decision procedure.
+- [`ea_equivalence_certificate`](@ref) — returns the witnesses
+  `(L₁, A₂, A_drift)` if EA-equivalent, `nothing` otherwise.
+
+# Strategy
+
+The single available strategy at v0.1 is `:heggebakk`, a Julia port of
+heggebakk's algorithm in `sboxU/ea-equivalence/src/`:
+
+  1. Compute the k-multiplicity partition of `F` and `G`
+     ([`ea_partition`](@ref)). If their bucket-size multisets differ,
+     return `false` (fast necessary EA-rejection).
+  2. Enumerate every size-preserving bucket map
+     `σ : F-buckets → G-buckets` ([`enumerate_bucket_maps`](@ref)).
+  3. For each `σ`, DFS-enumerate every linear `L₁` mapping F's
+     partition onto G's partition consistently with `σ`
+     ([`outer_permutations`](@ref)).
+  4. For each `L₁`: build `currentG = L₁⁻¹ ∘ G`, then for each
+     constant shift `s ∈ F₂ⁿ` (covers affine drift), run
+     [`inner_permutation`](@ref) on `(F, currentG ⊕ s)`. Return `true`
+     at the first success.
+
+# Limitations
+
+- **Permutations only.** Non-permutations get `false` without throwing.
+- **Degenerate partitions.** For functions where the `k = 4` partition
+  signature is `[2ⁿ-1, 1]` (e.g., monomial APN), the outer-permutation
+  set is the full `GL(n, F₂)` and step 3 enumerates millions of
+  candidates. The `max_outer_per_sigma` kwarg short-circuits this; on
+  monomial APN at `n ≥ 5` the decision will return `false` even if
+  EA-equivalent. Phase 10 CCZ-invariants will provide the necessary
+  additional filtering for these cases. For now,
+  [`are_affine_equivalent`](@ref) is the recommended fallback when
+  affine drift is not relevant.
+"""
+
+# ---------------------------------------------------------------------------
+
+"""
+    are_ea_equivalent(F::SBox, G::SBox; strategy = :auto, k = 4,
+                       max_outer_per_sigma = 10^6) -> Bool
+
+Decide EA-equivalence of `F` and `G`.
+
+SBoxes of different `N` or storage `T` return `false` without throwing.
+Non-permutations return `false`.
+
+`k` controls the partition level (default `4`, must be even and `≥ 4`).
+
+`max_outer_per_sigma` is a safety bound on the outer-permutation search
+size per bucket map; a bucket map yielding more than this many `L₁`
+candidates is skipped (returning `false` overall if no other bucket
+map succeeds — see *Limitations* in the module docstring).
+"""
+function are_ea_equivalent(
+    F::SBox, G::SBox;
+    strategy::Symbol = :auto,
+    k::Int = 4,
+    max_outer_per_sigma::Int = 10^6,
+)
+    inputbits(F) == inputbits(G) || return false
+    storage_type(F) == storage_type(G) || return false
+    (is_permutation(F) && is_permutation(G)) || return false
+
+    s = strategy == :auto ? :heggebakk : strategy
+    if s === :heggebakk
+        cert = _ea_search(F, G; k = k, max_outer = max_outer_per_sigma,
+                          want_certificate = false)
+        return cert !== nothing
+    end
+    throw(ArgumentError("are_ea_equivalent: unknown strategy $(repr(strategy))"))
+end
+
+"""
+    ea_equivalence_certificate(F::SBox{N,T}, G::SBox{N,T};
+                                strategy = :auto, k = 4,
+                                max_outer_per_sigma = 10^6)
+        -> NamedTuple{(:L1, :A2, :A_drift), ...} | Nothing
+
+Return an EA-equivalence certificate on success or `nothing` on
+failure. The certificate is a named tuple
+
+  - `L1::F2LinearMap{N,T}` — outer linear bijection.
+  - `A2::F2LinearMap{N,T}` — inner linear bijection.
+  - `A_drift::SBox{N,T}`   — affine drift function.
+
+satisfying `G(x) == L1(F(A2(x))) ⊕ A_drift(x)` for every `x ∈ F₂ⁿ`.
+
+Same `strategy`, `k`, and `max_outer_per_sigma` semantics as
+[`are_ea_equivalent`](@ref).
+"""
+function ea_equivalence_certificate(
+    F::SBox{N,T}, G::SBox{N,T};
+    strategy::Symbol = :auto,
+    k::Int = 4,
+    max_outer_per_sigma::Int = 10^6,
+) where {N,T}
+    inputbits(F) == inputbits(G) || return nothing
+    storage_type(F) == storage_type(G) || return nothing
+    (is_permutation(F) && is_permutation(G)) || return nothing
+
+    s = strategy == :auto ? :heggebakk : strategy
+    if s === :heggebakk
+        return _ea_search(F, G; k = k, max_outer = max_outer_per_sigma,
+                          want_certificate = true)
+    end
+    throw(ArgumentError("ea_equivalence_certificate: unknown strategy $(repr(strategy))"))
+end
+
+# ---------------------------------------------------------------------------
+# Core search loop. Returns the certificate on success, nothing on failure.
+# Called by both decision and certificate APIs.
+# ---------------------------------------------------------------------------
+
+function _ea_search(
+    F::SBox{N,T}, G::SBox{N,T};
+    k::Int = 4,
+    max_outer::Int = 10^6,
+    want_certificate::Bool = false,
+) where {N,T}
+    n_size = 1 << N
+
+    # Signature mismatch ⇒ definitively NOT EA-equivalent
+    partF = ea_partition(F, k)
+    partG = ea_partition(G, k)
+    sort(partF.bucket_sizes) == sort(partG.bucket_sizes) || return nothing
+
+    sigmas = enumerate_bucket_maps(partF, partG)
+    isempty(sigmas) && return nothing
+
+    for sigma in sigmas
+        outers = outer_permutations(partF, partG, sigma, T)
+        # If the outer count exceeds the cap, skip this σ — see docstring
+        # caveats. With max_outer = 10^6 and degenerate partitions, this
+        # protects against hour-long monomial-APN searches.
+        length(outers) > max_outer && continue
+
+        for L1_lut in outers
+            L1_cols = T[L1_lut[(1 << i) + 1] for i in 0:(N - 1)]
+            L1_map = F2LinearMap{N,T}(L1_cols)
+            # Bijectivity is implied by the outer-perm DFS, but be safe.
+            is_invertible(L1_map) || continue
+            L1_inv = inv(L1_map)
+
+            # currentG = L₁⁻¹ ∘ G
+            currentG_lut = T[L1_inv(G.lut[x + 1]) for x in 0:(n_size - 1)]
+
+            # Enumerate constant shifts ∈ F₂ⁿ to cover affine drift.
+            # The k=4 partition is constant-shift-invariant, so partitions
+            # already match; only the inner search depends on the shift.
+            for shift_val in 0:(n_size - 1)
+                shift = T(shift_val)
+                shifted_lut = T[currentG_lut[x + 1] ⊻ shift for x in 0:(n_size - 1)]
+                shifted_G = SBox{N,T}(shifted_lut)
+                res = inner_permutation(F, shifted_G)
+                res === nothing && continue
+                # res.A_drift here is the drift between F and (L₁⁻¹ ∘ G ⊕ shift);
+                # apply L₁ back to recover the original-G drift.
+                if !want_certificate
+                    return (found = true,)
+                end
+                # Reconstruct A_drift in G's original space:
+                #   G(x) = L₁((F ∘ A₂)(x)) ⊕ L₁((F ∘ A₂ ⊕ currentG ⊕ shift)(x)) ⊕ L₁(shift)
+                #        = L₁((F ∘ A₂)(x) ⊕ res.A_drift(x)) ⊕ L₁(shift)
+                # Wait — we need to be careful. Let's re-derive cleanly:
+                #   F(A₂(x)) ⊕ shifted_G(x) = res.A_drift(x)
+                #   shifted_G(x) = currentG(x) ⊕ shift
+                #   currentG(x) = L₁⁻¹(G(x))
+                # So  F(A₂(x)) ⊕ L₁⁻¹(G(x)) ⊕ shift = res.A_drift(x)
+                #   ⇒  L₁⁻¹(G(x)) = F(A₂(x)) ⊕ shift ⊕ res.A_drift(x)
+                #   ⇒  G(x) = L₁(F(A₂(x))) ⊕ L₁(shift ⊕ res.A_drift(x))
+                # So the drift in G's coordinate system is
+                #   D(x) := L₁(shift ⊕ res.A_drift(x)).
+                A2_map = F2LinearMap{N,T}(T[res.A2[(1 << i) + 1] for i in 0:(N - 1)])
+                A_drift_lut = T[L1_map(shift ⊻ res.A_drift[x + 1])
+                                 for x in 0:(n_size - 1)]
+                A_drift_sbox = SBox{N,T}(A_drift_lut)
+                return (L1 = L1_map, A2 = A2_map, A_drift = A_drift_sbox)
+            end
+        end
+    end
+    return nothing
+end

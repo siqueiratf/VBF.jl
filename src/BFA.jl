@@ -58,6 +58,7 @@ include("equivalence/affine/api.jl")
 include("equivalence/ea/partition.jl")
 include("equivalence/ea/outer_permutation.jl")
 include("equivalence/ea/inner_permutation.jl")
+include("equivalence/ea/api.jl")
 
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")
