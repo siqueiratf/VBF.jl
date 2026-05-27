@@ -14,11 +14,38 @@ end
     @test_throws ArgumentError are_linear_equivalent(s, s; strategy = :nonexistent)
 end
 
-@testset "are_linear_equivalent: :auto delegates to backtracking" begin
-    s = load_literature_sbox("PRESENT")
-    @test are_linear_equivalent(s, s)
-    @test are_linear_equivalent(s, s; strategy = :auto) ==
-          are_linear_equivalent(s, s; strategy = :lpp_backtracking)
+@testset "are_linear_equivalent: :auto routes by (N, permutation)" begin
+    # n=4 permutation: :auto picks :lpp_backtracking
+    s4 = load_literature_sbox("PRESENT")
+    @test are_linear_equivalent(s4, s4; strategy = :auto) ==
+          are_linear_equivalent(s4, s4; strategy = :lpp_backtracking)
+    # n=5 permutation: :auto picks :stennes
+    s5 = load_apn_function("n5_Gold_x3")
+    @test are_linear_equivalent(s5, s5; strategy = :auto) ==
+          are_linear_equivalent(s5, s5; strategy = :stennes)
+end
+
+@testset "are_linear_equivalent: :stennes ↔ :lpp_backtracking parity (n=4)" begin
+    # On every 4-bit catalog pair, the two strategies must agree.
+    names = filter(literature_sbox_names()) do n
+        s = load_literature_sbox(n)
+        is_permutation(s) && inputbits(s) == 4
+    end
+    sboxes = [load_literature_sbox(n) for n in names]
+    for i in eachindex(sboxes), j in i:lastindex(sboxes)
+        F, G = sboxes[i], sboxes[j]
+        @test are_linear_equivalent(F, G; strategy = :stennes) ==
+              are_linear_equivalent(F, G; strategy = :lpp_backtracking)
+    end
+end
+
+@testset "are_linear_equivalent: :stennes rejects non-permutations gracefully" begin
+    F = load_literature_sbox("PRESENT")
+    c = SBox(UInt8[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])
+    # Both directions return false (no throw).
+    @test !are_linear_equivalent(F, c; strategy = :stennes)
+    @test !are_linear_equivalent(c, F; strategy = :stennes)
+    @test !are_linear_equivalent(c, c; strategy = :stennes)
 end
 
 # ---------------------------------------------------------------------------
