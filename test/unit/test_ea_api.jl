@@ -135,13 +135,14 @@ end
     @test t < 1.0
 end
 
-@testset "are_ea_equivalent: max_outer_per_sigma short-circuits monomial APN" begin
-    # n=5 monomial APN: the partition is degenerate ([31, 1]) and the
-    # outer-permutation count is |GL(5, F₂)| = 9,999,360 >> default max_outer
-    # of 10^6. The search should skip this σ and return false (even though
-    # F ~_EA F is technically true).
+@testset "are_ea_equivalent: monomial APN is now decided via :auto routing" begin
+    # n=5 monomial APN: the heggebakk k=4 partition is degenerate ([31, 1])
+    # so :heggebakk alone short-circuits. Phase 10's :ortho_derivative
+    # strategy (auto-routed for quadratic-APN permutations) decides
+    # correctly without needing the outer-permutation enumeration.
     F = load_apn_function("n5_Gold_x3")
-    @test !are_ea_equivalent(F, F)
-    # With a sufficiently large bound, we can verify the algorithm proper
-    # but at huge cost; not testing here.
+    @test are_ea_equivalent(F, F)   # reflexive — :auto picks :ortho_derivative
+    @test are_ea_equivalent(F, F; strategy = :ortho_derivative)
+    # :heggebakk explicitly still short-circuits.
+    @test !are_ea_equivalent(F, F; strategy = :heggebakk)
 end

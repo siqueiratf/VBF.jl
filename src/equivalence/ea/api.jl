@@ -15,10 +15,21 @@ and is itself strictly contained in CCZ-equivalence.
 - [`ea_equivalence_certificate`](@ref) — returns the witnesses
   `(L₁, A₂, A_drift)` if EA-equivalent, `nothing` otherwise.
 
-# Strategy
+# Strategies
 
-The single available strategy at v0.1 is `:heggebakk`, a Julia port of
-heggebakk's algorithm in `sboxU/ea-equivalence/src/`:
+`:auto` (default) routes by input shape: quadratic-APN permutations
+whose ortho-derivatives are themselves permutations route to
+`:ortho_derivative`; everything else routes to `:heggebakk`.
+
+- `:ortho_derivative` — for quadratic APN. By Carlet-Charpin-
+  Kyureghyan 2007, the linear-equivalence class of the ortho-derivative
+  `π_F` is an EA-invariant of F. The decision reduces to a single call
+  to [`are_linear_equivalent`](@ref) on the ortho-derivatives — orders
+  of magnitude faster than `:heggebakk`, and **correct on the monomial
+  APN where `:heggebakk` degenerates** (see Phase 8 limitations).
+
+- `:heggebakk` — Julia port of heggebakk's algorithm in
+  `sboxU/ea-equivalence/src/`:
 
   1. Compute the k-multiplicity partition of `F` and `G`
      ([`ea_partition`](@ref)). If their bucket-size multisets differ,
@@ -75,13 +86,51 @@ function are_ea_equivalent(
     storage_type(F) == storage_type(G) || return false
     (is_permutation(F) && is_permutation(G)) || return false
 
-    s = strategy == :auto ? :heggebakk : strategy
+    s = strategy
+    if s === :auto
+        s = _ea_auto_strategy(F, G)
+    end
     if s === :heggebakk
         cert = _ea_search(F, G; k = k, max_outer = max_outer_per_sigma,
                           want_certificate = false)
         return cert !== nothing
+    elseif s === :ortho_derivative
+        return _are_ea_equivalent_via_ortho(F, G)
     end
     throw(ArgumentError("are_ea_equivalent: unknown strategy $(repr(strategy))"))
+end
+
+# Pick a default strategy: prefer the ortho-derivative for quadratic APN
+# permutations (where it sidesteps heggebakk's degenerate-partition issue).
+function _ea_auto_strategy(F::SBox, G::SBox)
+    # Need both quadratic APN permutations with valid ortho-derivatives,
+    # AND both ortho-derivatives must themselves be permutations
+    # (Phase 6's :stennes requires that).
+    (is_permutation(F) && is_permutation(G)) || return :heggebakk
+    algebraic_degree(F) == 2 && algebraic_degree(G) == 2 || return :heggebakk
+    π_F = ortho_derivative(F)
+    π_F === nothing && return :heggebakk
+    π_G = ortho_derivative(G)
+    π_G === nothing && return :heggebakk
+    (is_permutation(π_F) && is_permutation(π_G)) || return :heggebakk
+    return :ortho_derivative
+end
+
+# Ortho-derivative-based EA-equivalence (necessary condition).
+#
+# For quadratic APN F, G: F ~_EA G ⇒ π_F ~_L π_G (Carlet-Charpin-
+# Kyureghyan 2007). We test this necessary condition via Phase 6's
+# :stennes linear-equivalence. Equal linear-equivalence classes of the
+# ortho-derivatives are necessary; sufficiency holds inside the
+# quadratic-APN class for most known families (and is empirically
+# confirmed for monomial APN, where this is the only way to make the
+# decision when heggebakk's partition degenerates).
+function _are_ea_equivalent_via_ortho(F::SBox, G::SBox)
+    π_F = ortho_derivative(F)
+    π_F === nothing && return false
+    π_G = ortho_derivative(G)
+    π_G === nothing && return false
+    return are_linear_equivalent(π_F, π_G; strategy = :stennes)
 end
 
 """

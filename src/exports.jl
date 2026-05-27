@@ -53,6 +53,7 @@ export are_ccz_equivalent
 # tier 7 — APN-specific invariants
 export ortho_derivative, is_quadratic_apn
 export sigma_multiplicities
+export APNEAMugshot, apn_ea_mugshot
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
