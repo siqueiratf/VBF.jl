@@ -65,6 +65,9 @@ include("equivalence/ccz/walsh_zeroes.jl")
 include("equivalence/ccz/thickness.jl")
 include("equivalence/ccz/api.jl")
 
+# tier 7 — APN-specific invariants
+include("apn/ortho_derivative.jl")
+
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")
 include("statistics/linear.jl")

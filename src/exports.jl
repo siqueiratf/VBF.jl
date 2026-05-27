@@ -50,6 +50,9 @@ export walsh_zeroes, walsh_zeroes_size
 export thickness, thickness_spectrum, enumerate_ccz_class
 export are_ccz_equivalent
 
+# tier 7 — APN-specific invariants
+export ortho_derivative, is_quadratic_apn
+
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
 export lat, absolute_walsh_spectrum, linearity
