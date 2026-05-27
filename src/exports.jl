@@ -44,6 +44,7 @@ export ea_multiplicities, ea_partition, ea_partition_signature
 export enumerate_bucket_maps, outer_permutations, outer_permutations_all
 export inner_permutation
 export are_ea_equivalent, ea_equivalence_certificate
+export FunctionGraph, ccz_equivalent_function
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
