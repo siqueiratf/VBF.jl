@@ -55,6 +55,7 @@ include("equivalence/linear/stennes.jl")
 include("equivalence/linear/api.jl")
 include("equivalence/affine/stennes_shift.jl")
 include("equivalence/affine/api.jl")
+include("equivalence/ea/partition.jl")
 
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")

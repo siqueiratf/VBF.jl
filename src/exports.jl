@@ -39,6 +39,8 @@ export linear_representative
 export are_affine_equivalent
 export affine_representative
 export affine_class_signature
+export EAPartition, nbuckets
+export ea_multiplicities, ea_partition, ea_partition_signature
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
