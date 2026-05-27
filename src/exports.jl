@@ -32,6 +32,7 @@ export BibEntry, load_bibliography, parse_bibtex, bibliography_path
 
 # tier 5 — algorithms
 export is_invertible, compose, solve_f2, kernel_f2
+export extract_linear_subspaces, span_from_basis
 
 # tier 6 — equivalence
 export are_linear_equivalent

@@ -48,6 +48,7 @@ include("data/bibliography.jl")
 # tier 5 — algorithms (depends on tier 1 + 2; used by equivalence)
 include("algorithms/linear_system.jl")
 include("algorithms/dyadic_bitset.jl")
+include("algorithms/subspace_search.jl")
 
 # tier 6 — equivalence
 include("equivalence/linear/lpp_backtracking.jl")
