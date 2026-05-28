@@ -181,6 +181,16 @@ _maybe_chain_sboxu_import() =
         (joinpath(homedir(), "sboxU"), "/home/zambonin/sboxU"),
         "sboxU")
 
+# Curated quadratic-APN CCZ-class representatives → first-class function
+# rows. Runs BEFORE the reconciliation chains so the bulk tables merge
+# their source tag into a matching rep row instead of recording a
+# spurious reconciliation disagreement.
+_maybe_chain_reps_import() =
+    _maybe_chain_import("import_apn_reps.jl", "BFA_SBOXU_PATH",
+        (joinpath(homedir(), "sboxU"), "/home/zambonin/sboxU"),
+        "APN reps";
+        check = p -> isdir(joinpath(p, "sboxU", "scripts", "apnDB")))
+
 _maybe_chain_xanadu_import() =
     _maybe_chain_import("import_xanadu_apn.jl", "BFA_XANADU_PATH",
         (joinpath(homedir(), "sboxU", "apn-ccz-graph-framework"),
@@ -211,6 +221,7 @@ function main()
     end
     @info "Catalog populated (BFA-only step)" functions=n_funcs file_size_bytes=filesize(CATALOG_FILE)
     close(db)
+    _maybe_chain_reps_import()
     _maybe_chain_sboxu_import()
     _maybe_chain_xanadu_import()
     _maybe_chain_apn_repo_import()

@@ -4,8 +4,18 @@ using Test
 @testset "list_functions / count_functions: filters" begin
     db = load_catalog()
 
-    # No filter: everything (16 Literature + 1 APN)
-    total_expected = length(literature_sbox_names()) + length(apn_catalog_names())
+    # The catalog holds three function families: Literature, the declarative
+    # APN catalog, and the imported sboxU quadratic-APN reps (APN-rep).
+    # Rep contributions are read back from the catalog so these assertions
+    # verify the filters partition consistently as the rep lists evolve.
+    reps        = list_functions(db; family = "APN-rep")
+    n_reps      = length(reps)
+    reps_n8     = count(r -> r.n == 8, reps)
+    reps_n4     = count(r -> r.n == 4, reps)
+    reps_perm   = count(r -> r.is_permutation == 1, reps)
+
+    # No filter: Literature + declarative APN + sboxU reps
+    total_expected = length(literature_sbox_names()) + length(apn_catalog_names()) + n_reps
     all_rows = list_functions(db)
     @test length(all_rows) == count_functions(db)
     @test length(all_rows) == total_expected
@@ -15,12 +25,13 @@ using Test
     @test length(lits) == length(literature_sbox_names())
     @test count_functions(db; family = "Literature") == length(literature_sbox_names())
     @test count_functions(db; family = "APN") == length(apn_catalog_names())
+    @test count_functions(db; family = "APN-rep") == n_reps
 
-    # By n=8: 2 literature (AES, AES_inv) + every n=8 APN catalog entry.
+    # By n=8: 2 literature (AES, AES_inv) + every n=8 APN catalog entry + n=8 reps.
     n8_lit = count(name -> literature_sbox_metadata(name)["n"] == 8, literature_sbox_names())
     n8_apn = count(name -> apn_catalog_metadata(name)["n"] == 8, apn_catalog_names())
     eight = list_functions(db; n = 8)
-    @test length(eight) == n8_lit + n8_apn
+    @test length(eight) == n8_lit + n8_apn + reps_n8
     @test all(r.n == 8 for r in eight)
     @test Set(["AES", "AES_inv"]) ⊆ Set([r.canonical_name for r in eight])
 
@@ -29,19 +40,19 @@ using Test
     n4_lit = count(n -> literature_sbox_metadata(n)["n"] == 4, literature_sbox_names())
     n4_apn = count(n -> apn_catalog_metadata(n)["n"] == 4, apn_catalog_names())
     four = list_functions(db; n = 4)
-    @test length(four) == n4_lit + n4_apn
+    @test length(four) == n4_lit + n4_apn + reps_n4
 
-    # By is_apn
-    @test count_functions(db; is_apn = true) == length(apn_catalog_names())
+    # By is_apn: all reps are APN (and all literature is non-APN)
+    @test count_functions(db; is_apn = true) == length(apn_catalog_names()) + n_reps
     @test count_functions(db; is_apn = false) == length(literature_sbox_names())
 
     # By is_permutation
     perm_apn = count(n -> apn_catalog_metadata(n)["is_permutation"], apn_catalog_names())
     perm_lit = count(n -> literature_sbox_metadata(n)["is_permutation"], literature_sbox_names())
-    @test count_functions(db; is_permutation = true) == perm_lit + perm_apn
+    @test count_functions(db; is_permutation = true) == perm_lit + perm_apn + reps_perm
     @test count_functions(db; is_permutation = false) == length(literature_sbox_names()) +
-                                                          length(apn_catalog_names()) -
-                                                          (perm_lit + perm_apn)
+                                                          length(apn_catalog_names()) + n_reps -
+                                                          (perm_lit + perm_apn + reps_perm)
 
     # By bib_key
     serpents = list_functions(db; bib_key = "AndersonBihamKnudsen1998Serpent")

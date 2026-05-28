@@ -5,6 +5,12 @@ import DBInterface
 # Tests against the committed BFA_catalog.sqlite. Regenerate with:
 #     julia --project=. data-build/build_catalog.jl
 
+# Number of imported sboxU quadratic-APN CCZ-class representatives
+# (family "APN-rep": reprs6=14 + reprs7=485 + reprs8=30 + eightBitAPN=1,
+# distinct). Pinned to catch importer regressions or data loss; bump if
+# the upstream rep lists change.
+const N_APN_REPS = 530
+
 @testset "committed catalog is present" begin
     @test is_catalog_built()
 end
@@ -23,7 +29,13 @@ end
     for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions")
         total = r.c
     end
-    @test total == length(literature_sbox_names()) + length(apn_catalog_names())
+    @test total == length(literature_sbox_names()) + length(apn_catalog_names()) + N_APN_REPS
+
+    rep_count = 0
+    for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions WHERE family='APN-rep'")
+        rep_count = r.c
+    end
+    @test rep_count == N_APN_REPS
 
     lit_8bit = 0
     for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions WHERE family='Literature' AND n=8")
@@ -84,7 +96,7 @@ end
         r.boomerang_uniformity === missing || (nonnull_bu += 1)
         r.is_permutation == 1 && (perms += 1)
     end
-    @test rows == length(literature_sbox_names()) + length(apn_catalog_names())
+    @test rows == length(literature_sbox_names()) + length(apn_catalog_names()) + N_APN_REPS
     @test nonnull_bu == perms     # BU populated iff is_permutation
 end
 

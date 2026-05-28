@@ -50,6 +50,9 @@ function _tokenize_polynomial(s::AbstractString)
             push!(out, "X"); i = nextind(s, i)
         elseif (c == 'k' || c == 'K') && i + 2 ≤ n && lowercase(s[i:i + 2]) == "ksi"
             push!(out, "ksi"); i += 3
+        elseif c == 'g'
+            # SageMath's `g = field.gen()` is the same primitive element as `ksi`
+            push!(out, "ksi"); i = nextind(s, i)
         elseif isdigit(c)
             j = i
             while j ≤ n && isdigit(s[j]); j = nextind(s, j); end

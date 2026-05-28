@@ -1,6 +1,7 @@
 # Imports sboxU's APN function database into the BFA catalog.
 #
-# Reads the Python literals in `sboxU/sboxU/scripts/apnDB/{BeierleLeander, firstQAM}.py`,
+# Reads the Python LUT literals in
+# `sboxU/sboxU/scripts/apnDB/{BeierleLeander, firstQAM, secondQAM, apn_8bit_BLP22}.py`,
 # extracts each LUT, computes its SHA-256, and:
 #
 #   - if the SHA already exists in the BFA `functions` table:
@@ -193,7 +194,7 @@ function main(; max_luts_per_file::Union{Nothing, Integer} = nothing)
     @info "sboxU import" sboxu_dir sha bfa_sha
     db = load_catalog()
     try
-        for fname in ("BeierleLeander.py", "firstQAM.py")
+        for fname in ("BeierleLeander.py", "firstQAM.py", "secondQAM.py", "apn_8bit_BLP22.py")
             full = joinpath(sboxu_dir, "sboxU", "scripts", "apnDB", fname)
             if !isfile(full)
                 @warn "skipping (file missing)" path=full
