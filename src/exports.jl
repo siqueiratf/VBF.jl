@@ -37,6 +37,7 @@ export extract_linear_subspaces, span_from_basis
 # tier 6 — equivalence
 export are_linear_equivalent
 export linear_representative
+export linear_equivalences, self_linear_equivalences, self_affine_equivalences
 export are_affine_equivalent
 export affine_representative
 export affine_class_signature
