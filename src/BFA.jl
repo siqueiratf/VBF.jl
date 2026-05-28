@@ -70,6 +70,7 @@ include("equivalence/ccz/api.jl")
 
 # tier 7 — APN-specific invariants
 include("apn/ortho_derivative.jl")
+include("apn/ortho_integral.jl")
 include("apn/sigma_multiplicities.jl")
 include("apn/mugshot.jl")
 
