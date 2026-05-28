@@ -57,6 +57,7 @@ export ortho_derivative, is_quadratic_apn
 export ortho_integral
 export sigma_multiplicities
 export APNEAMugshot, apn_ea_mugshot
+export ccz_equivalent_quadratic_function
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
