@@ -47,6 +47,7 @@ include("data/bibliography.jl")
 
 # tier 5 — algorithms (depends on tier 1 + 2; used by equivalence)
 include("algorithms/linear_system.jl")
+include("algorithms/affine_system.jl")
 include("algorithms/dyadic_bitset.jl")
 include("algorithms/subspace_search.jl")
 
@@ -68,6 +69,7 @@ include("equivalence/ccz/block_decomposition.jl")
 include("equivalence/ccz/code_matrices.jl")
 include("equivalence/ccz/walsh_zeroes.jl")
 include("equivalence/ccz/thickness.jl")
+include("equivalence/ccz/tu.jl")
 include("equivalence/ccz/api.jl")
 
 # tier 7 — APN-specific invariants

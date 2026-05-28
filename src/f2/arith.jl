@@ -156,3 +156,36 @@ function complete_basis(partial::AbstractVector{T}, nbits::Integer) where {T<:Un
     @assert length(out) == nbits "complete_basis: produced $(length(out)) vectors for nbits=$nbits"
     out
 end
+
+"""
+    complete_basis_reversed(partial::AbstractVector{T}, nbits::Integer) -> Vector{T} where {T<:Unsigned}
+
+Extend `partial` (an independent F₂ set) to a basis of F₂^{nbits}, with
+the completion vectors **prepended**: the returned vector's *last*
+`length(partial)` rows are the original input, the first rows are
+greedily-chosen standard-basis vectors `2^c`.
+
+This is the reversed counterpart of [`complete_basis`](@ref); it ports
+sboxU's `complete_basis_reversed` and underlies
+[`generating_affine_map_r`](@ref). Throws if `partial` was not already
+linearly independent.
+"""
+function complete_basis_reversed(partial::AbstractVector{T}, nbits::Integer) where {T<:Unsigned}
+    1 ≤ nbits ≤ 8 * sizeof(T) ||
+        throw(ArgumentError("complete_basis_reversed: nbits=$nbits out of range for $T"))
+    work = collect(partial)
+    r = gauss_jordan!(work; nbits)
+    r == length(partial) ||
+        throw(ArgumentError("complete_basis_reversed: input is not linearly independent (rank $r of $(length(partial)) rows)"))
+    prefix = T[]
+    for c in 0:nbits-1
+        length(prefix) + length(partial) == nbits && break
+        e = T(1) << c
+        is_in_span(e, work; nbits) && continue
+        pushfirst!(prefix, e)
+        push!(work, e)
+        gauss_jordan!(work; nbits)
+    end
+    @assert length(prefix) + length(partial) == nbits "complete_basis_reversed: produced $(length(prefix) + length(partial)) vectors for nbits=$nbits"
+    return vcat(prefix, collect(partial))
+end

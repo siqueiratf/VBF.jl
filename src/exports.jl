@@ -10,7 +10,7 @@ export Spectrum, add!, sorted_pairs, total_mass
 
 # tier 2 — F₂ⁿ primitives
 export parity, f2_dot
-export gauss_jordan!, rank_f2, linear_basis, is_in_span, complete_basis
+export gauss_jordan!, rank_f2, linear_basis, is_in_span, complete_basis, complete_basis_reversed
 export mobius!, mobius, anf
 export walsh_hadamard!, walsh_hadamard, walsh_transform
 export PRIMITIVE_POLYNOMIALS, primitive_polynomial
@@ -33,6 +33,10 @@ export BibEntry, load_bibliography, parse_bibtex, bibliography_path
 # tier 5 — algorithms
 export is_invertible, compose, solve_f2, kernel_f2
 export extract_linear_subspaces, span_from_basis
+export identity_affine_map, zero_affine_map
+export block_diagonal_affine_map, swap_affine_map
+export generating_affine_map, generating_affine_map_r
+export affine_map_from_masks, affine_map_from_range_and_image
 
 # tier 6 — equivalence
 export are_linear_equivalent
@@ -53,6 +57,8 @@ export ccz_block_decomposition, ea_mapping
 export ccz_matrix, ea_matrix
 export walsh_zeroes, walsh_zeroes_size
 export thickness, thickness_spectrum, enumerate_ccz_class
+export TUDecomposition, tu_decomposition_from_space_basis, get_tu_decompositions
+export apply_tu, core, twist
 export are_ccz_equivalent
 
 # tier 7 — APN-specific invariants
