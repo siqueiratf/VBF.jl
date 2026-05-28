@@ -133,3 +133,49 @@ function ccz_equivalent_function(
     end
     return SBox{N, T}(T.(lut))
 end
+
+# ---------------------------------------------------------------------------
+# Graph transformation + translate-equivalence.
+# ---------------------------------------------------------------------------
+
+"""
+    graph_image_by(g::FunctionGraph{N}, L::F2LinearMap{M,S}) -> FunctionGraph{N}
+
+Apply the `2n`-bit linear map `L` (M = 2N) to every packed entry of the
+graph, returning the new (re-sorted) graph. Unlike
+[`ccz_equivalent_function`](@ref) this keeps the result as a graph
+without insisting it be a function — used by the ortho-derivative
+automorphism search. Ports `cpp_FunctionGraph::image_by`.
+"""
+function graph_image_by(g::FunctionGraph{N}, L::F2LinearMap{M,S}) where {N,M,S}
+    M == 2 * N ||
+        throw(ArgumentError("graph_image_by: L must operate on F₂^{2N} = F₂^$(2N)"))
+    new_packed = UInt32[UInt32(L(S(entry))) for entry in g.packed]
+    return FunctionGraph{N}(new_packed)
+end
+
+"""
+    graph_xor_equivalence(g1::FunctionGraph{N}, g2::FunctionGraph{N}) -> Vector{UInt32}
+
+Every constant offset `o ∈ F₂²ⁿ` with `{p ⊕ o : p ∈ g1} == g2` (as
+sets). Empty when the graphs are not translates of one another. Ports
+`cpp_FunctionGraph::xor_equivalence`.
+"""
+function graph_xor_equivalence(g1::FunctionGraph{N}, g2::FunctionGraph{N}) where {N}
+    length(g1) == length(g2) || return UInt32[]
+    set2 = Set(g2.packed)
+    g2_first = @inbounds g2.packed[1]
+    result = UInt32[]
+    @inbounds for p0 in g1.packed
+        offset = p0 ⊻ g2_first
+        ok = true
+        for p in g1.packed
+            if !((p ⊻ offset) in set2)
+                ok = false
+                break
+            end
+        end
+        ok && push!(result, offset)
+    end
+    return result
+end

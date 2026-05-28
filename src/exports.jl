@@ -48,6 +48,9 @@ export inner_permutation
 export are_ea_equivalent, ea_equivalence_certificate
 export ea_equivalences, partition_automorphisms, permutation_order
 export FunctionGraph, ccz_equivalent_function
+export graph_image_by, graph_xor_equivalence
+export ccz_block_decomposition, ea_mapping
+export ccz_matrix, ea_matrix
 export walsh_zeroes, walsh_zeroes_size
 export thickness, thickness_spectrum, enumerate_ccz_class
 export are_ccz_equivalent
