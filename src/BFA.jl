@@ -92,7 +92,8 @@ include("statistics/algebraic.jl")
 include("statistics/linear_structures.jl")
 include("statistics/anomaly.jl")
 
-# tier 3..5 — added in later phases
+# tier 8 — presentation
+include("display.jl")
 
 include("exports.jl")
 

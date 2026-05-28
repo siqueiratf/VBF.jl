@@ -87,4 +87,7 @@ export lat_coeff_probability, expected_linearity_distribution
 export bct_coeff_probability, expected_boomerang_uniformity_distribution
 export table_anomaly, table_negative_anomaly
 
+# tier 8 — presentation
+export to_markdown, to_latex, table_to_markdown, table_to_latex
+
 # tier 3..5 — populated by later phases
