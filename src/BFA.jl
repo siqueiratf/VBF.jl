@@ -76,6 +76,7 @@ include("apn/ortho_integral.jl")
 include("apn/sigma_multiplicities.jl")
 include("apn/mugshot.jl")
 include("apn/quadratic_helpers.jl")
+include("apn/quadratic_helpers_graph.jl")
 
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")

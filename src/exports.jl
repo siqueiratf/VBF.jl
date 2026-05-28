@@ -61,6 +61,8 @@ export ortho_integral
 export sigma_multiplicities
 export APNEAMugshot, apn_ea_mugshot
 export ccz_equivalent_quadratic_function
+export automorphisms_from_ortho_derivative, ea_mappings_from_ortho_derivative
+export enumerate_ea_classes_apn_quadratic
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
