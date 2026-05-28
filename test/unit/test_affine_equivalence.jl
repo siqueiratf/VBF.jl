@@ -57,25 +57,11 @@ end
         mask = T((T(1) << N) - T(1))
         for _ in 1:5
             # Random permutation F
-            lut = collect(T, 0:((1 << N) - 1))
-            shuffle!(rng, lut)
-            F = SBox{N, T}(lut)
+            F = random_permutation_sbox(rng, Val(N), T)
 
             # Random invertible L₁ and L₂, random constants a, b
-            function _random_invertible(rng, N, T, mask)
-                cols = T[]
-                bs = T[]
-                while length(cols) < N
-                    v = rand(rng, T) & mask
-                    v == 0 && continue
-                    is_in_span(v, bs; nbits = N) && continue
-                    push!(cols, v); push!(bs, v)
-                    bs = linear_basis(bs; nbits = N)
-                end
-                return F2LinearMap{N, T}(cols)
-            end
-            L1 = _random_invertible(rng, N, T, mask)
-            L2 = _random_invertible(rng, N, T, mask)
+            L1 = random_invertible_linear_map(rng, Val(N), T)
+            L2 = random_invertible_linear_map(rng, Val(N), T)
             a  = T(rand(rng, 0:Int(mask)))
             b  = T(rand(rng, 0:Int(mask)))
 

@@ -3,20 +3,7 @@ using Test
 using Random
 
 # Helper: build a random invertible F₂-linear map (4-bit) from an RNG.
-function _rand_invertible_4(rng)
-    N, T = 4, UInt8
-    mask = T(0x0F)
-    local cols = T[]
-    local bs = T[]
-    while length(cols) < N
-        v = rand(rng, T) & mask
-        v == 0 && continue
-        is_in_span(v, bs; nbits = N) && continue
-        push!(cols, v); push!(bs, v)
-        bs = linear_basis(bs; nbits = N)
-    end
-    return F2LinearMap{N, T}(cols)
-end
+_rand_invertible_4(rng) = random_invertible_linear_map(rng, Val(4), UInt8)
 
 # Helper: build a constructed EA-equivalent permutation
 #   G(x) = L₁(F(A₂(x))) ⊕ L_drift(x)

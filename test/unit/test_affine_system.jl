@@ -2,20 +2,8 @@ using BFA
 using Test
 using Random
 
-# A random invertible F2LinearMap{N,T}, drawn from rng.
-function _rand_invertible_linear(rng::AbstractRNG, ::Val{N}, ::Type{T}) where {N, T}
-    mask = T((UInt(1) << N) - 1)
-    cols = T[]
-    bs = T[]
-    while length(cols) < N
-        v = rand(rng, T) & mask
-        v == 0 && continue
-        is_in_span(v, bs; nbits = N) && continue
-        push!(cols, v)
-        bs = linear_basis(vcat(bs, v); nbits = N)
-    end
-    F2LinearMap{N, T}(cols)
-end
+_rand_invertible_linear(rng, ::Val{N}, ::Type{T}) where {N, T} =
+    random_invertible_linear_map(rng, Val(N), T)
 
 @testset "identity / zero affine maps" begin
     id = identity_affine_map(5, UInt8)

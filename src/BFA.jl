@@ -32,6 +32,9 @@ include("f2/anf.jl")
 include("f2/walsh.jl")
 include("f2/polynomial.jl")
 
+# tier 2.5 — random object generators (depends on tier 1 + arith)
+include("random_objects.jl")
+
 # tier 3 — data layer (depends on tier 1 only; never calls tier 2+)
 include("data/literature.jl")
 include("data/catalog.jl")
