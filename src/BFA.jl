@@ -79,6 +79,7 @@ include("apn/sigma_multiplicities.jl")
 include("apn/mugshot.jl")
 include("apn/quadratic_helpers.jl")
 include("apn/quadratic_helpers_graph.jl")
+include("apn/switching_neighbors.jl")
 
 # tier 4 — statistics (depends on tiers 1 + 2)
 include("statistics/differential.jl")
