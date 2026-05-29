@@ -1,6 +1,7 @@
 @testitem "three_to_one_equivalence" begin
 using VBF
 using Test
+using Random
 
 N = 4
 mono(e) = SBox{N}(gf_monomial_lut(N, e))
@@ -34,5 +35,22 @@ end
     @test any(L1.cols == idcols && L2.cols == idcols for (L1, L2) in sols)  # identity present
     # the found pairs are distinct
     @test length(unique((L1.cols, L2.cols) for (L1, L2) in sols)) == length(sols)
+end
+
+@testset "canonical representative of a 3-to-1 function (alg2)" begin
+    rng = MersenneTwister(0xA12)
+    Lin = random_invertible_linear_map(rng, Val(N))
+    T = SBox{N}([gf_pow(Lin(x), 3, N) for x in 0:(1 << N) - 1])   # x³∘L: zero-sum 3-to-1, non-canonical
+    @test is_3_to_1(T)
+    @test canonical_triplicate(T) === nothing                    # not canonical as given
+    r = canonical_3to1_representative(T)
+    @test r !== nothing
+    C, L2 = r
+    @test all(C(x) == T(L2(x)) for x in 0:(1 << N) - 1)          # C = T ∘ L2
+    @test canonical_triplicate(C) !== nothing                    # C is canonical
+    @test is_3_to_1(C)
+    # an already-canonical input still canonicalizes consistently
+    C0, L0 = canonical_3to1_representative(mono(3))
+    @test canonical_triplicate(C0) !== nothing && all(C0(x) == mono(3)(L0(x)) for x in 0:(1 << N) - 1)
 end
 end

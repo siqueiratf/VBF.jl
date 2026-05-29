@@ -339,3 +339,194 @@ function self_3to1_linear_equivalences(C::SBox{N, T}) where {N, T}
     r = _run_3to1_equivalence(C, C, true)
     r === nothing ? Tuple{F2LinearMap, F2LinearMap}[] : r
 end
+
+# ----- alg2: canonical representative of a (zero-sum) 3-to-1 function --------
+
+# Looser triplicate detector: each fibre is *any* zero-sum triple `{i, k, k⊕i}`
+# with equal output (β-coset first, else search) — accepts non-canonical 3-to-1.
+function _zero_sum_triplicate(F::SBox{N, T}) where {N, T}
+    n = 1 << N
+    (iseven(N) && (n - 1) % 3 == 0) || return nothing
+    F.lut[1] == 0 || return nothing
+    β = gf_pow(2, (n - 1) ÷ 3, N)
+    tN = (n - 1) ÷ 3
+    t = zeros(Int, 4, tN); ol = zeros(Int, n); seen = falses(n); seen[1] = true; j = 0
+    @inbounds for i in 1:n - 1
+        seen[i + 1] && continue
+        y = Int(F.lut[i + 1])
+        (y == 0 || ol[y + 1] != 0) && return nothing
+        k = gf_mul(i, β, N)
+        if !(Int(F.lut[k + 1]) == y && Int(F.lut[(k ⊻ i) + 1]) == y)
+            k = 0
+            for kk in i + 1:n - 1
+                if Int(F.lut[kk + 1]) == y && Int(F.lut[(kk ⊻ i) + 1]) == y
+                    k = kk; break
+                end
+            end
+            k == 0 && return nothing
+        end
+        ki = k ⊻ i
+        j += 1; ol[y + 1] = j; t[1, j] = y; t[2, j] = i; t[3, j] = k; t[4, j] = ki
+        seen[i + 1] = true; seen[k + 1] = true; seen[ki + 1] = true
+    end
+    j == tN || return nothing
+    _Triplicate(tN, t, ol)
+end
+
+# Build the canonical (β-coset) triple structure and the canonical x-guess
+# sequence `xgs` enumerating every preimage in the order the search fills it.
+function _empty_canonical(N::Int)
+    n = 1 << N; β = gf_pow(2, (n - 1) ÷ 3, N); tN = (n - 1) ÷ 3
+    t = zeros(Int, 4, tN); seen = falses(n); seen[1] = true; j = 0
+    @inbounds for i in 1:n - 1
+        seen[i + 1] && continue
+        k = gf_mul(i, β, N); ki = k ⊻ i
+        j += 1; t[2, j] = i; t[3, j] = k; t[4, j] = ki
+        seen[i + 1] = true; seen[k + 1] = true; seen[ki + 1] = true
+    end
+    xgs = zeros(Int, 16n + 16)
+    used = falses(tN)
+    @inbounds for kk in 0:N ÷ 2 - 1
+        a = (1 << (2kk)) - 1; b = a + 3
+        jj = 0; while jj < tN && used[jj + 1]; jj += 1; end
+        used[jj + 1] = true
+        xgs[a + 1] = t[2, jj + 1]; xgs[a + 2] = t[3, jj + 1]; xgs[a + 3] = t[4, jj + 1]
+        for i in 0:3:a - 1
+            xgs[b + 3i + 1] = xgs[a + 1] ⊻ xgs[i + 1]
+            xgs[b + 3i + 2] = xgs[a + 2] ⊻ xgs[i + 2]
+            xgs[b + 3i + 3] = xgs[a + 3] ⊻ xgs[i + 3]
+            xgs[b + 3i + 4] = xgs[a + 1] ⊻ xgs[i + 2]
+            xgs[b + 3i + 5] = xgs[a + 2] ⊻ xgs[i + 3]
+            xgs[b + 3i + 6] = xgs[a + 3] ⊻ xgs[i + 1]
+            xgs[b + 3i + 7] = xgs[a + 1] ⊻ xgs[i + 3]
+            xgs[b + 3i + 8] = xgs[a + 2] ⊻ xgs[i + 1]
+            xgs[b + 3i + 9] = xgs[a + 3] ⊻ xgs[i + 2]
+        end
+        a2 = (1 << (2kk)) + 2; b2 = (1 << (2 * (kk + 1))) - 1
+        for i in a2:3:b2 - 1
+            jx = 0; while t[2, jx + 1] != xgs[i + 1]; jx += 1; end
+            while jx >= tN; jx -= tN; end
+            used[jx + 1] = true
+        end
+    end
+    xgs
+end
+
+mutable struct _CanonCtx
+    Tlut::Vector{Int}
+    Tt::_Triplicate
+    NE::Int
+    N::Int
+    xgs::Vector{Int}
+    found::Bool
+    Cy::Vector{Int}      # result: canonical C's LUT
+    L2y::Vector{Int}     # result: L2's LUT  (C = T ∘ L2)
+end
+
+function _canon_configure!(ctx::_CanonCtx, ygs::Vector{Int}, f::Int, xymc::Int, px::Int)
+    a = (1 << (2px)) - 1
+    p1 = ctx.Tt.t[2, f + 1]; p2 = ctx.Tt.t[3, f + 1]; p3 = ctx.Tt.t[4, f + 1]
+    o = xymc == 0 ? (p1, p2, p3) : xymc == 1 ? (p2, p3, p1) : xymc == 2 ? (p3, p1, p2) :
+        xymc == 3 ? (p2, p1, p3) : xymc == 4 ? (p3, p2, p1) : (p1, p3, p2)
+    @inbounds ygs[a + 1] = o[1]; ygs[a + 2] = o[2]; ygs[a + 3] = o[3]
+end
+
+function _canon_combine!(ygs::Vector{Int}, px::Int)
+    a = (1 << (2px)) - 1; b = a + 3
+    @inbounds for i in 0:3:a - 1
+        ygs[b + 3i + 1] = ygs[a + 1] ⊻ ygs[i + 1]
+        ygs[b + 3i + 2] = ygs[a + 2] ⊻ ygs[i + 2]
+        ygs[b + 3i + 3] = ygs[a + 3] ⊻ ygs[i + 3]
+        ygs[b + 3i + 4] = ygs[a + 1] ⊻ ygs[i + 2]
+        ygs[b + 3i + 5] = ygs[a + 2] ⊻ ygs[i + 3]
+        ygs[b + 3i + 6] = ygs[a + 3] ⊻ ygs[i + 1]
+        ygs[b + 3i + 7] = ygs[a + 1] ⊻ ygs[i + 3]
+        ygs[b + 3i + 8] = ygs[a + 2] ⊻ ygs[i + 1]
+        ygs[b + 3i + 9] = ygs[a + 3] ⊻ ygs[i + 2]
+    end
+end
+
+# Every newly-combined y-triple must be a genuine, not-yet-used T-triple.
+function _canon_check!(ctx::_CanonCtx, tgs::Vector{Int}, ygs::Vector{Int}, px::Int)
+    a = (1 << (2px)) + 2; b = (1 << (2 * (px + 1))) - 1
+    Tl = ctx.Tlut; ol = ctx.Tt.ol
+    @inbounds for i in a:3:b - 1
+        (ygs[i + 1] ⊻ ygs[i + 2] ⊻ ygs[i + 3]) != 0 && return false
+        v = Tl[ygs[i + 1] + 1]
+        (Tl[ygs[i + 2] + 1] != v || Tl[ygs[i + 3] + 1] != v) && return false
+        k = ol[v + 1] - 1
+        tgs[k + 1] == 1 && return false
+        tgs[k + 1] = 1
+    end
+    return true
+end
+
+function _canon_retrieve!(ctx::_CanonCtx, ygs::Vector{Int})
+    Cy = zeros(Int, ctx.NE); L2y = zeros(Int, ctx.NE)
+    @inbounds for i in 0:ctx.NE - 1
+        L2y[ctx.xgs[i + 1] + 1] = ygs[i + 1]
+        Cy[ctx.xgs[i + 1] + 1] = ctx.Tlut[ygs[i + 1] + 1]
+    end
+    ctx.Cy = Cy; ctx.L2y = L2y; ctx.found = true
+end
+
+function _canon_guess!(ctx::_CanonCtx, tgs::Vector{Int}, ygs::Vector{Int}, px::Int)
+    ctx.found && return
+    tN = ctx.Tt.tN
+    t = 0
+    @inbounds while t < tN && tgs[t + 1] != 0; t += 1; end
+    if t == tN
+        _canon_retrieve!(ctx, ygs)
+        return
+    end
+    while t < tN
+        ctx.found && return
+        tgs[t + 1] = 1
+        _canon_assign!(ctx, t, tgs, ygs, 0, px)
+        ctx.found && return
+        tgs[t + 1] = 0
+        t += 1
+        @inbounds while t < tN && tgs[t + 1] != 0; t += 1; end
+    end
+end
+
+function _canon_assign!(ctx::_CanonCtx, t::Int, tgs::Vector{Int}, ygs::Vector{Int}, xymc::Int, px::Int)
+    while xymc < 6
+        ctx.found && return
+        _canon_configure!(ctx, ygs, t, xymc, px)
+        tgss = copy(tgs)
+        _canon_combine!(ygs, px)
+        if _canon_check!(ctx, tgss, ygs, px)
+            _canon_guess!(ctx, tgss, ygs, px + 1)
+        end
+        xymc += 1
+    end
+end
+
+"""
+    canonical_3to1_representative(T) -> Union{Tuple{SBox, F2LinearMap}, Nothing}
+
+For a zero-sum 3-to-1 function `T`, find a **canonical** triplicate `C` and an
+invertible F₂-linear `L` with `C = T ∘ L` (so `C` is the canonical
+representative of `T`'s linear-equivalence class), or `nothing` if `T` is not a
+zero-sum 3-to-1 function. (Ports Ivković–Kaleyski's `alg2`.)
+"""
+function canonical_3to1_representative(T::SBox{N, S}) where {N, S}
+    Tt = _zero_sum_triplicate(T); Tt === nothing && return nothing
+    NE = 1 << N
+    xgs = _empty_canonical(N)
+    ctx = _CanonCtx(Int.(T.lut), Tt, NE, N, xgs, false, Int[], Int[])
+    tgs = zeros(Int, Tt.tN)
+    ygs = zeros(Int, 16NE + 16)
+    t = 0
+    @inbounds while t < Tt.tN
+        ctx.found && break
+        tgs[t + 1] = 1
+        _canon_assign!(ctx, t, tgs, ygs, 0, 0)
+        ctx.found && break
+        tgs[t + 1] = 0
+        t += 1
+    end
+    ctx.found || return nothing
+    (SBox{N}(ctx.Cy), _lin_to_map(ctx.L2y, N))
+end
