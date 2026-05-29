@@ -73,6 +73,7 @@ export automorphisms_from_ortho_derivative, ea_mappings_from_ortho_derivative
 export enumerate_ea_classes_apn_quadratic
 export switching_neighbors
 export search_quadratic_apn
+export trims, apn_trims, trim_spectrum
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
