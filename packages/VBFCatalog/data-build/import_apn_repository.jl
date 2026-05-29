@@ -28,7 +28,6 @@ import JSON3
 import Parquet2
 import Tables
 
-include(joinpath(@__DIR__, "_polynomial_parser.jl"))
 
 const _DEFAULT_APN_REPO_PATHS = (
     get(ENV, "BFA_APN_REPO_PATH", ""),

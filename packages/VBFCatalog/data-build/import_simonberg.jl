@@ -32,7 +32,6 @@ import SQLite
 import DBInterface
 import Dates
 
-include(joinpath(@__DIR__, "_polynomial_parser.jl"))
 
 const _THESIS_PATHS = (
     get(ENV, "BFA_THESIS_PATH", ""),

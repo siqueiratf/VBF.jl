@@ -16,6 +16,8 @@ export walsh_hadamard!, walsh_hadamard, walsh_transform
 export PRIMITIVE_POLYNOMIALS, primitive_polynomial
 export CONWAY_POLYNOMIALS, conway_polynomial
 export gf_mul, gf_pow, gf_inv, gf_monomial_lut
+export evaluate_polynomial, polynomial_to_lut
+export polynomial_terms, terms_to_lut, monomial_power_table
 export random_function_sbox, random_permutation_sbox
 export random_linear_function, random_invertible_linear_map
 export random_linear_permutation, random_affine_permutation

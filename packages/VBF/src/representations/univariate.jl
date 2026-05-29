@@ -1,29 +1,27 @@
-# Developer-only helper: a tiny parser for the polynomial expressions
-# used by upstream APN catalogs (Xanadu's `apn-ccz-graph-framework`,
-# `APN-Repository`'s `poly` column, …). Included by the data-build
-# importers; NOT part of the runtime BFA package.
-#
-# Grammar (small enough to recurse-and-descend without an explicit AST):
-#
-#     polynomial = sum  ('+' sum)*
-#     sum        = product  ('+' product)*
-#     product    = factor  ('*' factor)*
-#     factor     = X | x        (the variable; one occurrence)
-#                | ksi          (the primitive root)
-#                | INTEGER      (constant in F₂: 0 or 1, used to drop terms)
-#                | ksi POW INTEGER
-#                | X   POW INTEGER
-#                | x   POW INTEGER
-#     POW        = '**'  |  '^'
-#
-# Whitespace between tokens is ignored. There is no subtraction (F₂ ⇒ same
-# as addition); the parser doesn't try to be clever about it.
-#
-# `evaluate_polynomial(expr, x, n, modulus; ksi)` returns the value of the
-# polynomial expression at the given x ∈ GF(2ⁿ).
+"""
+Univariate-polynomial representation of a vectorial Boolean function.
 
-using VBF
-using VBFCatalog
+A function `F: GF(2ⁿ) → GF(2ⁿ)` has a unique univariate polynomial form
+`F(X) = Σ cₑ Xᵉ` with `cₑ ∈ GF(2ⁿ)`. This module parses such polynomials from
+the string syntax used by the upstream catalogs (SageMath / Magma:
+`X` / `x` the variable, `ksi` / `g` / `a` the field generator, `**` or `^` for
+powers, `+`/`*`, parentheses) and evaluates them to a lookup table over
+`GF(2ⁿ)` modulo a given irreducible.
+
+Grammar (recursive descent, no explicit AST):
+
+    polynomial = sum  ('+' sum)*
+    sum        = product  ('+' product)*
+    product    = factor  ('*' factor)*
+    factor     = X | ksi | INTEGER | ksi POW INTEGER | X POW INTEGER
+    POW        = '**' | '^'
+
+There is no subtraction (over F₂ it equals addition). Integer literals are
+interpreted in F₂ (even ⇒ 0, odd ⇒ 1). For the common *flat* case (a sum of
+monomials with no parentheses), [`polynomial_terms`] + [`terms_to_lut`] parse
+once and evaluate at all 2ⁿ points sharing a [`monomial_power_table`], which is
+far faster than re-parsing per point.
+"""
 
 # ----- tokenizer ------------------------------------------------------------
 
@@ -187,10 +185,9 @@ end
 #
 # The recursive-descent `polynomial_to_lut` re-tokenizes and re-parses the
 # expression at every `x`, which is fine for a few hundred polynomials but
-# far too slow for the ~205k Simon-Berg members. For *flat* polynomials (a
-# sum of monomials `c · Xᵉ`, no parenthesised sub-expressions — which is the
-# Simon-Berg / monomial-list shape) we parse once into `(coef, exp)` terms
-# and share a per-`x` table of powers across every polynomial.
+# far too slow for hundreds of thousands. For *flat* polynomials (a sum of
+# monomials `c · Xᵉ`, no parenthesised sub-expressions) we parse once into
+# `(coef, exp)` terms and share a per-`x` table of powers across polynomials.
 
 """
     polynomial_terms(expr_str, n, modulus; ksi=2) -> Vector{Tuple{Int,Int}}

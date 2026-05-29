@@ -39,6 +39,7 @@ include("representations/f2_affine_map.jl")
 include("representations/spectrum.jl")
 include("representations/anf.jl")
 include("representations/finite_field.jl")
+include("representations/univariate.jl")
 
 # 2. linalg — F₂ bit-linear-algebra substrate
 include("linalg/f2_arith.jl")

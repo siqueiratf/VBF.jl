@@ -22,7 +22,6 @@ using VBFCatalog
 import SQLite
 import DBInterface
 
-include(joinpath(@__DIR__, "_polynomial_parser.jl"))
 
 const _DEFAULT_XANADU_PATHS = (
     get(ENV, "BFA_XANADU_PATH", ""),
