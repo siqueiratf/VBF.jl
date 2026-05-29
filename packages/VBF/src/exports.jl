@@ -18,6 +18,7 @@ export CONWAY_POLYNOMIALS, conway_polynomial
 export gf_mul, gf_pow, gf_inv, gf_monomial_lut
 export evaluate_polynomial, polynomial_to_lut
 export polynomial_terms, terms_to_lut, monomial_power_table
+export quadratic_exponents, encode_quadratic, decode_quadratic_lut
 export random_function_sbox, random_permutation_sbox
 export random_linear_function, random_invertible_linear_map
 export random_linear_permutation, random_affine_permutation

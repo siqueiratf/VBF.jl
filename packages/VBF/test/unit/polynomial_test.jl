@@ -133,4 +133,23 @@ end
     @test gf_mul(0x53, 0xca, 8; modulus = rijndael) == gf_mul(0x53, 0xca, 8)
 end
 
+@testset "quadratic coefficient encoding round-trips" begin
+    n = 8; mod = conway_polynomial(n)
+    # n=8 quadratic support: 1 constant + 8 linear + 28 quadratic = 37 exponents
+    @test length(quadratic_exponents(8)) == 37
+    @test all(count_ones(e) ≤ 2 for e in quadratic_exponents(8))
+    # a degree-2 polynomial (Simon-Berg shape): encode → 37 bytes → decode == LUT
+    expr = "a^85*X^160 + a^170*X^132 + X^130 + X^3"
+    terms = polynomial_terms(expr, n, mod)
+    bytes = encode_quadratic(terms, n)
+    @test length(bytes) == 37                       # cld(8,8)=1 byte per coeff
+    @test decode_quadratic_lut(bytes, n, mod) == polynomial_to_lut(expr, n, mod)
+    # a power table speeds decode and gives the same answer
+    powtab = monomial_power_table(n, mod)
+    @test decode_quadratic_lut(bytes, n, mod; powtab = powtab) ==
+          polynomial_to_lut(expr, n, mod)
+    # non-quadratic exponent (weight 3 = 7 = 1+2+4) is rejected
+    @test_throws ErrorException encode_quadratic([(1, 7)], n)
+end
+
 end

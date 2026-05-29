@@ -287,3 +287,71 @@ function terms_to_lut(terms::Vector{Tuple{Int, Int}}, n::Integer, modulus::Integ
     end
     out
 end
+
+# ----- compact quadratic encoding -------------------------------------------
+#
+# A degree-≤2 ("quadratic") function over GF(2ⁿ) is determined by its
+# coefficients on the univariate exponents of 2-adic weight ≤ 2. Storing just
+# those coefficients gives a fixed, lossless, fixed-width encoding — the
+# substrate for VBFCatalog's bulk-corpus *description* store. For n=8 that is
+# 37 GF(2⁸) coefficients = 37 bytes (vs a 256-byte LUT).
+
+"""
+    quadratic_exponents(n) -> Vector{Int}
+
+The univariate exponents of Hamming (2-adic) weight ≤ 2 in `0:2ⁿ-1`, ascending:
+the constant (weight 0), the `n` linearised terms `X^(2ⁱ)` (weight 1), and the
+`C(n,2)` quadratic terms `X^(2ⁱ+2ʲ)` (weight 2). For `n=8`: `1+8+28 = 37`.
+"""
+quadratic_exponents(n::Integer) = [e for e in 0:(1 << Int(n)) - 1 if count_ones(e) ≤ 2]
+
+"""
+    encode_quadratic(terms, n) -> Vector{UInt8}
+
+Pack the coefficients of a degree-≤2 univariate polynomial (as `(coef, exp)`
+`terms`, e.g. from [`polynomial_terms`](@ref)) into a compact byte vector
+aligned to [`quadratic_exponents`](@ref): `cld(n,8)` little-endian bytes per
+`GF(2ⁿ)` coefficient (37 bytes at `n=8`). Lossless; [`decode_quadratic_lut`](@ref)
+rebuilds the exact LUT. Throws if any term's exponent has weight > 2.
+"""
+function encode_quadratic(terms::Vector{Tuple{Int, Int}}, n::Integer)
+    nn = Int(n)
+    exps = quadratic_exponents(nn)
+    slot = Dict(e => i for (i, e) in enumerate(exps))
+    coeffs = zeros(Int, length(exps))
+    for (c, e) in terms
+        haskey(slot, e) ||
+            error("encode_quadratic: exponent $e has weight > 2 (not a quadratic term)")
+        coeffs[slot[e]] ⊻= c               # field addition of like terms
+    end
+    nb = cld(nn, 8)
+    out = Vector{UInt8}(undef, length(coeffs) * nb)
+    for (i, c) in enumerate(coeffs), b in 0:nb - 1
+        out[(i - 1) * nb + b + 1] = UInt8((c >> (8b)) & 0xff)
+    end
+    out
+end
+
+"""
+    decode_quadratic_lut(bytes, n, modulus; powtab=nothing) -> Vector{Int}
+
+Inverse of [`encode_quadratic`](@ref): rebuild the length-`2ⁿ` LUT from a packed
+quadratic-coefficient byte vector over `GF(2ⁿ)` modulo `modulus`.
+"""
+function decode_quadratic_lut(bytes::AbstractVector{UInt8}, n::Integer, modulus::Integer;
+                               powtab::Union{Nothing, Vector{Vector{Int}}} = nothing)
+    nn = Int(n)
+    exps = quadratic_exponents(nn)
+    nb = cld(nn, 8)
+    length(bytes) == length(exps) * nb ||
+        error("decode_quadratic_lut: expected $(length(exps) * nb) bytes, got $(length(bytes))")
+    terms = Tuple{Int, Int}[]
+    for (i, e) in enumerate(exps)
+        c = 0
+        for b in 0:nb - 1
+            c |= Int(bytes[(i - 1) * nb + b + 1]) << (8b)
+        end
+        c != 0 && push!(terms, (c, e))
+    end
+    terms_to_lut(terms, nn, Int(modulus); powtab = powtab)
+end
