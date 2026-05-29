@@ -36,8 +36,16 @@ jobs:
       - name: Cache Julia depot
         uses: julia-actions/cache@v2
 
+      # The repo root is a `[workspace]` (no package); the testable member is
+      # `packages/VBF`. `Pkg.test()` there builds the test environment from
+      # `packages/VBF/test/Project.toml`, resolved against the shared workspace
+      # manifest (regenerated fresh each run — manifests are not committed).
       - name: Build package
         uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: packages/VBF
 
       - name: Run tests
         uses: julia-actions/julia-runtest@v1
+        with:
+          project: packages/VBF

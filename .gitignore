@@ -8,7 +8,13 @@
 *.a
 docs/build/
 docs/site/
-docs/Manifest.toml
+# Resolved environments are not tracked: the package is tested across Julia
+# versions (CI matrix: 1.10 LTS / stable / nightly) and a Manifest pinned to one
+# version cannot instantiate on the others — each environment resolves fresh from
+# the Project.toml compat bounds. (A Manifest resolved under 1.12 was breaking
+# julia-buildpkg on the 1.10/nightly runners.)
+Manifest.toml
+**/Manifest.toml
 .DS_Store
 .vscode/
 .idea/
