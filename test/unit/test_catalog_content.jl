@@ -11,6 +11,11 @@ import DBInterface
 # the upstream rep lists change.
 const N_APN_REPS = 530
 
+# Simon-Berg thesis CCZ-class representatives (family "CCZ-rep-GF4"): one per
+# file rep1.txt..rep27.txt = 27 distinct CCZ classes of GF(2²)-coefficient
+# quadratic APN functions over GF(2⁸). Pinned to catch importer regressions.
+const N_CCZ_REP_GF4 = 27
+
 @testset "committed catalog is present" begin
     @test is_catalog_built()
 end
@@ -29,13 +34,20 @@ end
     for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions")
         total = r.c
     end
-    @test total == length(literature_sbox_names()) + length(apn_catalog_names()) + N_APN_REPS
+    @test total == length(literature_sbox_names()) + length(apn_catalog_names()) +
+                   N_APN_REPS + N_CCZ_REP_GF4
 
     rep_count = 0
     for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions WHERE family='APN-rep'")
         rep_count = r.c
     end
     @test rep_count == N_APN_REPS
+
+    gf4_count = 0
+    for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions WHERE family='CCZ-rep-GF4'")
+        gf4_count = r.c
+    end
+    @test gf4_count == N_CCZ_REP_GF4
 
     lit_8bit = 0
     for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions WHERE family='Literature' AND n=8")
@@ -96,7 +108,8 @@ end
         r.boomerang_uniformity === missing || (nonnull_bu += 1)
         r.is_permutation == 1 && (perms += 1)
     end
-    @test rows == length(literature_sbox_names()) + length(apn_catalog_names()) + N_APN_REPS
+    @test rows == length(literature_sbox_names()) + length(apn_catalog_names()) +
+                  N_APN_REPS + N_CCZ_REP_GF4
     @test nonnull_bu == perms     # BU populated iff is_permutation
 end
 
