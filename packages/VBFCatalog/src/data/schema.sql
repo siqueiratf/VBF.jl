@@ -81,3 +81,29 @@ CREATE TABLE IF NOT EXISTS reconciliation_disagreements (
 
 CREATE INDEX IF NOT EXISTS idx_recon_n_kind ON reconciliation_disagreements(n, kind);
 CREATE INDEX IF NOT EXISTS idx_recon_lut_sha ON reconciliation_disagreements(lut_sha256);
+
+-- Bulk corpora: large families of functions kept OUT of the `functions` table
+-- (which would bloat by gigabytes). One descriptor row per corpus; the members
+-- themselves live in a compact, content-addressed side store under `corpora/`
+-- (a packed encoding — e.g. `quadratic-coeffs-v1`, the weight-≤2 univariate
+-- coefficients) from which each member's LUT is reconstructed on demand. Full
+-- 2ⁿ-byte LUTs are materialised lazily, never committed.
+CREATE TABLE IF NOT EXISTS bulk_corpora (
+    id               INTEGER PRIMARY KEY,
+    name             TEXT    NOT NULL UNIQUE,
+    n                INTEGER NOT NULL,
+    m                INTEGER NOT NULL,
+    member_count     INTEGER NOT NULL,
+    degree           INTEGER,                       -- algebraic degree (2 = quadratic)
+    modulus          INTEGER NOT NULL,              -- GF(2ⁿ) modulus for encode/decode
+    encoding         TEXT    NOT NULL,              -- e.g. "quadratic-coeffs-v1"
+    bytes_per_member INTEGER NOT NULL,
+    store_file       TEXT    NOT NULL,              -- path under corpora/ (the side store)
+    store_sha256     TEXT    NOT NULL,              -- content hash of the side store
+    family           TEXT,
+    bib_key          TEXT REFERENCES bibliography(bib_key),
+    source_repo      TEXT    NOT NULL,
+    contributor      TEXT    NOT NULL,
+    added_date       TEXT    NOT NULL,
+    notes            TEXT
+);

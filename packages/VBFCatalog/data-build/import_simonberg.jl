@@ -8,16 +8,17 @@
 # distinct ortho-derivative differential+Walsh fingerprints across files); the
 # 27 files are 27 distinct CCZ classes, with 2k–12k members each (~205k total).
 #
-# Ingestion policy (user decision, 2026-05-28): "representatives as rows +
-# membership matches only".
+# Ingestion policy (Stage C, 2026-05-29): "representatives as rows + full
+# membership as a bulk corpus".
 #   - The first polynomial of each class is materialised as a first-class
-#     `functions` row (family `CCZ-rep-GF4`), or, if its LUT already names a
-#     row, its source tag is merged in.
-#   - Every member's LUT SHA-256 is computed; a member that coincides with a
-#     *pre-existing* catalog function (from any other source) has the Simon-Berg
-#     source tag merged into that row. Non-matching members are counted (the
-#     per-class member count is recorded in the representative row's notes) but
-#     NOT stored as individual reconciliation rows.
+#     `functions` row (family `CCZ-rep-GF4`), or, if its LUT already names a row,
+#     its source tag is merged in.
+#   - ALL ~196k members are stored compactly in the bulk-corpus side store
+#     `corpora/simonberg_gf4_n8.sqlite` as `quadratic-coeffs-v1` encodings
+#     (37 bytes each), with one descriptor row in `bulk_corpora`. The full LUTs
+#     are reconstructed on demand (`corpus_function`) — they never enter the
+#     `functions` table. (This supersedes Phase 15's "matches only", which found
+#     no coincidences with the existing catalog.)
 #
 # Polynomials are evaluated over GF(2⁸) with the Conway polynomial (matching
 # Sage's `GF(2**8)`, so `a`/`ksi` ↦ the element 2). One-off developer step;
@@ -121,21 +122,16 @@ struct ClassStats
     class::Int
     members::Int          # polynomials in the file
     rep_inserted::Bool    # representative added as a new row (vs merged)
-    matched::Int          # members coinciding with a PRE-EXISTING catalog row
 end
 
 function _human(io::IO, st::ClassStats)
     println(io, "[simonberg:class $(st.class)] members=$(st.members) ",
-                "rep=$(st.rep_inserted ? "inserted" : "merged") ",
-                "matched_preexisting=$(st.matched)")
+                "rep=$(st.rep_inserted ? "inserted" : "merged")")
 end
 
-# Evaluate one polynomial string to an SBox{n}.
-function _poly_sbox(expr::AbstractString, powtab::Vector{Vector{Int}}, n::Int, modulus::Int)
-    terms = polynomial_terms(expr, n, modulus)
-    SBox{n}(terms_to_lut(terms, n, modulus; powtab = powtab))
-end
-
+# Process one class file: insert/merge its representative (first member) as a
+# first-class row, and return that class' compact `quadratic-coeffs-v1`
+# encodings for ALL members (for the bulk-corpus side store).
 function import_one_class!(db::SQLite.DB, path::AbstractString, class::Int;
                            source_tag::AbstractString, bfa_repo::AbstractString,
                            contributor::AbstractString, added_date::AbstractString,
@@ -143,42 +139,35 @@ function import_one_class!(db::SQLite.DB, path::AbstractString, class::Int;
                            n::Int, modulus::Int)
     polys = _class_polynomials(path)
     isempty(polys) && error("simonberg: class $class has no polynomials")
-    matched = 0
-    merge_ids = Set{Int}()      # pre-existing rows to tag (dedup per id)
+
+    encodings = Vector{Vector{UInt8}}(undef, length(polys))
+    rep_terms = nothing
+    for (k, p) in enumerate(polys)
+        terms = polynomial_terms(p, n, modulus)
+        encodings[k] = encode_quadratic(terms, n)
+        k == 1 && (rep_terms = terms)
+    end
 
     # representative = first member; assert it is APN (a cheap validation that
     # the parser + Conway field reproduce a genuine quadratic-APN function).
-    rep = _poly_sbox(polys[1], powtab, n, modulus)
+    rep = SBox{n}(terms_to_lut(rep_terms, n, modulus; powtab = powtab))
     differential_uniformity(rep) == 2 || error("simonberg: class $class representative not APN")
     rep_sha = lut_sha256_hex(rep)
     rep_inserted = false
     if haskey(existing, rep_sha)
-        push!(merge_ids, existing[rep_sha])      # rep already in catalog → tag it
+        merge_source_repo!(db, existing[rep_sha], source_tag)   # rep already present → tag it
     else
         _insert_ccz_rep_row!(db, rep;
             canonical_name = "SimonBerg_GF4_n8_class_$(class)",
             source_repo = bfa_repo * "|" * source_tag,
             contributor = contributor, added_date = added_date,
             notes = "Simon-Berg thesis: representative of CCZ class $(class) of " *
-                    "GF(2²)-coefficient quadratic APN over GF(2⁸); $(length(polys)) members")
+                    "GF(2²)-coefficient quadratic APN over GF(2⁸); $(length(polys)) members " *
+                    "(full membership in bulk corpus simonberg_gf4_n8)")
         rep_inserted = true
     end
 
-    # every member: tag a PRE-EXISTING catalog row if its LUT coincides (the
-    # "membership matches only" policy — non-matching members are counted, not
-    # stored). Only the SHA is needed, so we skip a per-member APN check.
-    for (k, p) in enumerate(polys)
-        sha = k == 1 ? rep_sha : lut_sha256_hex(_poly_sbox(p, powtab, n, modulus))
-        if haskey(existing, sha)
-            push!(merge_ids, existing[sha])
-            matched += 1
-        end
-    end
-
-    for id in merge_ids
-        merge_source_repo!(db, id, source_tag)
-    end
-    ClassStats(class, length(polys), rep_inserted, matched)
+    (ClassStats(class, length(polys), rep_inserted), encodings)
 end
 
 function main()
@@ -201,21 +190,36 @@ function main()
     db = load_catalog()
     try
         existing = _existing_function_shas(db)
-        total_members = total_matched = total_inserted = 0
+        all_encodings = Vector{UInt8}[]
+        total_members = total_inserted = 0
         for class in 1:27
             path = joinpath(dir, "rep$(class).txt")
             isfile(path) || (@warn "skipping (missing)" path; continue)
-            st = import_one_class!(db, path, class;
+            st, encodings = import_one_class!(db, path, class;
                 source_tag = tag, bfa_repo = bfa_repo,
                 contributor = contributor, added_date = added,
                 existing = existing, powtab = powtab, n = n, modulus = modulus)
             _human(stdout, st)
+            append!(all_encodings, encodings)
             total_members += st.members
-            total_matched += st.matched
             total_inserted += st.rep_inserted ? 1 : 0
         end
+
+        # bulk-corpus side store: all members as quadratic-coeffs-v1 encodings
+        corpus = "simonberg_gf4_n8"
+        store = build_corpus_store!(corpus, all_encodings)
+        register_corpus!(db;
+            name = corpus, n = n, m = n, member_count = store.count, degree = 2,
+            modulus = modulus, encoding = "quadratic-coeffs-v1",
+            bytes_per_member = store.bytes_per_member,
+            store_file = "corpora/" * corpus * ".sqlite", store_sha256 = store.sha256,
+            family = "CCZ-rep-GF4", bib_key = nothing,
+            source_repo = bfa_repo * "|" * tag, contributor = contributor,
+            added_date = added,
+            notes = "Simon Berg thesis: all CCZ classes of GF(2²)-coefficient quadratic " *
+                    "APN over GF(2⁸); 27 class representatives are first-class CCZ-rep-GF4 rows")
         println("[simonberg] TOTAL members=$(total_members) rep_rows_inserted=$(total_inserted) ",
-                "member_matches_into_preexisting=$(total_matched)")
+                "corpus=$(corpus) stored=$(store.count) bytes/member=$(store.bytes_per_member)")
     finally
         close(db)
     end

@@ -28,6 +28,7 @@ include("data/reconciliation.jl")
 include("data/apn_catalog.jl")
 include("data/artifacts.jl")
 include("data/bibliography.jl")
+include("data/corpus.jl")
 
 include("exports.jl")
 

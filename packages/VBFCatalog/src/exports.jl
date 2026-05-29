@@ -25,3 +25,8 @@ export artifact_path, have_artifact, list_artifacts
 
 # bibliography
 export BibEntry, load_bibliography, parse_bibtex, bibliography_path
+
+# bulk corpora
+export list_corpora, corpus_info, corpus_length, corpus_function
+export corpus_coefficients, corpus_store_path, materialize_corpus_luts
+export build_corpus_store!, register_corpus!
