@@ -113,6 +113,65 @@ function independent_conjugate_elements(n::Integer, m::Integer)
 end
 
 """
+    cyclic_qam_subset_representatives(n, m) -> Vector{Int}
+
+Theorem 3 of Ivković–Nikova: one representative bitmask per orbit of the nonempty
+subsets of `{1,…,n}` under the cyclic shift `i ↦ (i mod n) + ` (by `m`). For a
+cyclic (`GF(2ᵐ)`-coefficient) derivative matrix the QAM condition on a row-subset
+`S` and on its `m`-shift are Frobenius images of each other (equal rank), so the
+QAM test need only check these representatives — the basis of the accelerated
+test [`is_qam`](@ref)`(M; shift=m)`.
+"""
+function cyclic_qam_subset_representatives(n::Integer, m::Integer)
+    nn = Int(n)
+    shift(mask) = ((mask << m) | (mask >> (nn - m))) & ((1 << nn) - 1)   # rotate left by m
+    seen = falses(1 << nn)
+    reps = Int[]
+    for mask in 1:(1 << nn) - 1
+        seen[mask + 1] && continue
+        push!(reps, mask)
+        s = mask
+        while !seen[s + 1]
+            seen[s + 1] = true
+            s = shift(s)
+        end
+    end
+    reps
+end
+
+# Rank of the n field elements ⊕_{j∈S} M[i,j] (rows i), over GF(2).
+@inline function _qam_subset_rank(M, n::Int, mask::Int, vec::Vector{UInt})
+    @inbounds for i in 1:n
+        acc = 0
+        s = mask
+        while s != 0
+            acc ⊻= M[i, trailing_zeros(s) + 1]
+            s &= s - 1
+        end
+        vec[i] = UInt(acc)
+    end
+    rank_f2(vec; nbits = n)
+end
+
+"""
+    is_cyclic_qam(M, m) -> Bool
+
+The Theorem-3-accelerated QAM test for a cyclic (`GF(2ᵐ)`-coefficient) derivative
+matrix `M`: check the QAM rank condition only on the shift-orbit representatives
+([`cyclic_qam_subset_representatives`](@ref)) rather than all `2ⁿ-1` row-subsets.
+Equal to [`is_qam`](@ref)`(M)` when `M` has the cyclic structure.
+"""
+function is_cyclic_qam(M::AbstractMatrix{<:Integer}, m::Integer)
+    n = size(M, 1)
+    size(M, 2) == n || throw(ArgumentError("is_cyclic_qam: matrix must be square"))
+    vec = Vector{UInt}(undef, n)
+    for mask in cyclic_qam_subset_representatives(n, m)
+        _qam_subset_rank(M, n, mask, vec) < n - 1 && return false
+    end
+    true
+end
+
+"""
     search_qam(n, m; limit=typemax(Int), max_evaluations=1<<22) -> Vector{SBox{n}}
 
 Search for quadratic APN functions over `GF(2ⁿ)` with `GF(2ᵐ)` coefficients by
@@ -148,7 +207,7 @@ function search_qam(n::Integer, m::Integer; limit::Integer = typemax(Int),
             vals[vi] = subfields[vi][counter[vi] + 1]
         end
         M = qam_from_cyclic(nn, m, vals)
-        if is_qam(M)
+        if is_cyclic_qam(M, m)                       # Theorem-3-accelerated test
             S = qam_to_sbox(M)
             mug = apn_ea_mugshot(S)
             if !(mug in seen)

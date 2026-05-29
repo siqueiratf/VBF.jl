@@ -1,6 +1,7 @@
 @testitem "qam_search" begin
 using VBF
 using Test
+using Random
 
 @testset "cyclic position orbits reproduce the reference structure" begin
     orbs = qam_cyclic_orbits(10, 2)
@@ -46,6 +47,20 @@ end
             @test rank_f2(conj; nbits = n) == r
         end
     end
+end
+
+@testset "Theorem 3: accelerated cyclic QAM test agrees with the full test" begin
+    rng = MersenneTwister(99)
+    for _ in 1:60
+        n, m = rand(rng, [(8, 4), (10, 2), (6, 3), (6, 2)])
+        orbs = qam_cyclic_orbits(n, m)
+        vals = [rand(rng, 0:(1 << n) - 1) for _ in 1:length(orbs)]
+        M = qam_from_cyclic(n, m, vals)
+        @test is_cyclic_qam(M, m) == is_qam(M)
+    end
+    # the subset representatives are strictly fewer and partition all subsets
+    reps = cyclic_qam_subset_representatives(10, 2)
+    @test 0 < length(reps) < (1 << 10) - 1
 end
 
 @testset "QAM search finds quadratic APN (n=4, m=2)" begin

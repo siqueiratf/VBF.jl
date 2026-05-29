@@ -76,7 +76,8 @@ export search_quadratic_apn
 export trims, apn_trims, trim_spectrum
 export extend_quadratic_apn
 export quadratic_apn_matrix, is_qam, qam_to_sbox
-export qam_cyclic_orbits, qam_from_cyclic, independent_conjugate_elements, search_qam
+export qam_cyclic_orbits, qam_from_cyclic, independent_conjugate_elements
+export cyclic_qam_subset_representatives, is_cyclic_qam, search_qam
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
