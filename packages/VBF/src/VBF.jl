@@ -98,6 +98,7 @@ include("constructions/quadratic_apn_graph.jl")
 include("constructions/quadratic_apn_search.jl")
 include("constructions/trims.jl")
 include("constructions/extensions.jl")
+include("constructions/qam.jl")
 
 # 7. random object generators
 include("random/random_objects.jl")
