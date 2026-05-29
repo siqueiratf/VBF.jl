@@ -27,6 +27,7 @@
 #     julia --project=. data-build/import_simonberg.jl
 
 using VBF
+using VBFCatalog
 import SQLite
 import DBInterface
 import Dates
@@ -95,7 +96,7 @@ function _insert_ccz_rep_row!(db::SQLite.DB, s::SBox{N, T};
     lin = linearity(s)
     algdeg = algebraic_degree(s)
     bu = is_perm ? boomerang_uniformity(s) : nothing
-    blob_literal = "X'" * bytes2hex(VBF.canonical_lut_bytes(s)) * "'"
+    blob_literal = "X'" * bytes2hex(VBFCatalog.canonical_lut_bytes(s)) * "'"
     bu_literal = bu === nothing ? "NULL" : string(Int(bu))
     sql = string(
         "INSERT INTO functions (",
@@ -103,15 +104,15 @@ function _insert_ccz_rep_row!(db::SQLite.DB, s::SBox{N, T};
         "algebraic_degree, differential_uniformity, linearity, boomerang_uniformity, ",
         "is_apn, is_permutation, is_quadratic, canonical_name, bib_key, ",
         "source_repo, contributor, added_date, notes) VALUES (",
-        VBF._sql_quote("CCZ-rep-GF4"), ", ", N, ", ", N, ", ",
-        VBF._sql_quote(lut_sha256_hex(s)), ", ", blob_literal, ", NULL, ",
+        VBFCatalog._sql_quote("CCZ-rep-GF4"), ", ", N, ", ", N, ", ",
+        VBFCatalog._sql_quote(lut_sha256_hex(s)), ", ", blob_literal, ", NULL, ",
         algdeg, ", ", Int(du), ", ", Int(lin), ", ", bu_literal, ", ",
         Int(du == 2), ", ", Int(is_perm), ", ", Int(algdeg ≤ 2), ", ",
-        VBF._sql_quote(canonical_name), ", NULL, ",
-        VBF._sql_quote(source_repo), ", ",
-        VBF._sql_quote(contributor), ", ",
-        VBF._sql_quote(added_date), ", ",
-        VBF._sql_quote(notes), ")")
+        VBFCatalog._sql_quote(canonical_name), ", NULL, ",
+        VBFCatalog._sql_quote(source_repo), ", ",
+        VBFCatalog._sql_quote(contributor), ", ",
+        VBFCatalog._sql_quote(added_date), ", ",
+        VBFCatalog._sql_quote(notes), ")")
     SQLite.execute(db, sql)
 end
 

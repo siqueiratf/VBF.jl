@@ -44,7 +44,7 @@ end
     data = TOML.parse(s)
     entry = data["apn_functions"][1]
     @test !haskey(entry, "lut")
-    VBF._materialise_monomial_lut!(entry, "ntest_apn.toml")
+    VBFCatalog._materialise_monomial_lut!(entry, "ntest_apn.toml")
     @test haskey(entry, "lut")
     @test entry["lut"] == gf_monomial_lut(4, 3)
 end
@@ -63,7 +63,7 @@ end
     """
     data = TOML.parse(s)
     entry = data["apn_functions"][1]
-    VBF._materialise_monomial_lut!(entry, "x")
+    VBFCatalog._materialise_monomial_lut!(entry, "x")
     @test entry["lut"] == gf_monomial_lut(4, 3; modulus = 19)
 end
 
@@ -84,7 +84,7 @@ end
     """
     data = TOML.parse(s)
     entry = data["apn_functions"][1]
-    VBF._materialise_monomial_lut!(entry, "x")
+    VBFCatalog._materialise_monomial_lut!(entry, "x")
     @test entry["lut"] == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 end
 
@@ -101,7 +101,7 @@ end
     """
     data = TOML.parse(s)
     entry = data["apn_functions"][1]
-    VBF._materialise_monomial_lut!(entry, "x")
+    VBFCatalog._materialise_monomial_lut!(entry, "x")
     @test entry["lut"] == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     @test !haskey(entry, "monomial_exponent")
 end

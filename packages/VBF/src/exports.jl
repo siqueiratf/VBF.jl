@@ -20,18 +20,7 @@ export random_function_sbox, random_permutation_sbox
 export random_linear_function, random_invertible_linear_map
 export random_linear_permutation, random_affine_permutation
 
-# tier 3 — data
-export load_literature_sbox, literature_sbox_names, literature_sbox_metadata
-export catalog_path, is_catalog_built, load_catalog, create_catalog
-export canonical_lut_bytes, lut_sha256_hex, SCHEMA_VERSION
-export list_functions, count_functions, find_function, load_sbox
-export list_reconciliation_disagreements, count_reconciliation_disagreements
-export reconciliation_summary, record_disagreement!, merge_source_repo!
-export KNOWN_SOURCES, reconciliation_by_source, functions_by_source
-export cross_source_matches, multi_source_functions
-export apn_catalog_names, apn_catalog_metadata, load_apn_function
-export artifact_path, have_artifact, list_artifacts
-export BibEntry, load_bibliography, parse_bibtex, bibliography_path
+# (the data/catalog layer's exports moved to the VBFCatalog package)
 
 # tier 5 — algorithms
 export is_invertible, compose, solve_f2, kernel_f2

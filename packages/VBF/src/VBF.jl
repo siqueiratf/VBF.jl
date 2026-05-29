@@ -36,18 +36,8 @@ include("f2/polynomial.jl")
 # tier 2.5 — random object generators (depends on tier 1 + arith)
 include("random_objects.jl")
 
-# tier 3 — data layer (depends on tier 1 only; never calls tier 2+)
-include("data/literature.jl")
-include("data/catalog.jl")
-include("data/queries.jl")
-include("data/reconciliation.jl")
-
-# tier 4 — statistics (depends on tiers 1 + 2)
-# (literature/catalog/queries do not depend on statistics; APN loader does
-# because it verifies the APN property at load time)
-include("data/apn_catalog.jl")
-include("data/artifacts.jl")
-include("data/bibliography.jl")
+# NOTE: the data/catalog layer was extracted into the companion `VBFCatalog`
+# package (it depends on VBF, never the reverse). See packages/VBFCatalog.
 
 # tier 5 — algorithms (depends on tier 1 + 2; used by equivalence)
 include("algorithms/linear_system.jl")

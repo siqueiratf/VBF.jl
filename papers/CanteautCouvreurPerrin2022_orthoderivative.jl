@@ -10,6 +10,7 @@
 # Run standalone:  julia --project=. papers/CanteautCouvreurPerrin2022_orthoderivative.jl
 
 using VBF
+using VBFCatalog
 
 function reproduce()
     F3 = load_apn_function("n5_Gold_x3")

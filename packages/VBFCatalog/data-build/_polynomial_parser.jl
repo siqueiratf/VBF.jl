@@ -23,6 +23,7 @@
 # polynomial expression at the given x ∈ GF(2ⁿ).
 
 using VBF
+using VBFCatalog
 
 # ----- tokenizer ------------------------------------------------------------
 

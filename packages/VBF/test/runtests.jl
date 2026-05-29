@@ -1,4 +1,5 @@
 using VBF
+using VBFCatalog          # most tests use the catalog as a fixture source
 using Test
 
 include("helpers.jl")    # shared random_function_sbox / random_permutation_sbox

@@ -18,6 +18,7 @@
 #     julia --project=. data-build/import_xanadu_apn.jl --max 50
 
 using VBF
+using VBFCatalog
 import SQLite
 import DBInterface
 
@@ -98,7 +99,7 @@ end
 
 function _fid_by_sha(db::SQLite.DB, sha::AbstractString)
     sql = "SELECT id FROM functions WHERE lut_sha256 = " *
-          VBF._sql_quote(String(sha)) * " LIMIT 1"
+          VBFCatalog._sql_quote(String(sha)) * " LIMIT 1"
     for r in DBInterface.execute(db, sql)
         return Int(r.id)
     end
@@ -109,7 +110,7 @@ function _merge_recon_source!(db::SQLite.DB, sha::AbstractString, source_tag::Ab
     cur = ""
     rid = 0
     sql = "SELECT id, present_in FROM reconciliation_disagreements WHERE lut_sha256 = " *
-          VBF._sql_quote(String(sha)) * " LIMIT 1"
+          VBFCatalog._sql_quote(String(sha)) * " LIMIT 1"
     for r in DBInterface.execute(db, sql)
         rid = Int(r.id)
         cur = String(r.present_in)
@@ -119,7 +120,7 @@ function _merge_recon_source!(db::SQLite.DB, sha::AbstractString, source_tag::Ab
     String(source_tag) in parts && return true
     new_val = cur * "|" * String(source_tag)
     SQLite.execute(db, "UPDATE reconciliation_disagreements SET present_in = " *
-                       VBF._sql_quote(new_val) *
+                       VBFCatalog._sql_quote(new_val) *
                        " WHERE id = $rid")
     true
 end

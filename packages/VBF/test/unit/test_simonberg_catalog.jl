@@ -67,7 +67,7 @@ end
 # Guard so `include` doesn't trigger any importer autorun (defensive — the
 # parser file itself has no autorun, but keep the convention).
 ENV["BFA_SIMONBERG_NO_AUTORUN"] = "1"
-include(joinpath(pkgdir(VBF), "data-build", "_polynomial_parser.jl"))
+include(joinpath(pkgdir(VBFCatalog), "data-build", "_polynomial_parser.jl"))
 
 @testset "parser: `a` is an alias for the field generator" begin
     n = 8; mod = conway_polynomial(n)

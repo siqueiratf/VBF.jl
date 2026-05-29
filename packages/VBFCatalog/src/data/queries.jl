@@ -61,11 +61,11 @@ end
 function _where_clause(; family = nothing, n = nothing, is_apn = nothing,
                         is_permutation = nothing, bib_key = nothing)
     clauses = String[]
-    family !== nothing         && push!(clauses, "family = " * VBF._sql_quote(String(family)))
+    family !== nothing         && push!(clauses, "family = " * _sql_quote(String(family)))
     n !== nothing              && push!(clauses, "n = " * string(Int(n)))
     is_apn !== nothing         && push!(clauses, "is_apn = " * string(Int(is_apn ? 1 : 0)))
     is_permutation !== nothing && push!(clauses, "is_permutation = " * string(Int(is_permutation ? 1 : 0)))
-    bib_key !== nothing        && push!(clauses, "bib_key = " * VBF._sql_quote(String(bib_key)))
+    bib_key !== nothing        && push!(clauses, "bib_key = " * _sql_quote(String(bib_key)))
     isempty(clauses) ? "" : " WHERE " * join(clauses, " AND ")
 end
 
@@ -136,9 +136,9 @@ function find_function(db::SQLite.DB;
     where = if id !== nothing
         "id = " * string(Int(id))
     elseif canonical_name !== nothing
-        "canonical_name = " * VBF._sql_quote(String(canonical_name))
+        "canonical_name = " * _sql_quote(String(canonical_name))
     else
-        "lut_sha256 = " * VBF._sql_quote(String(lut_sha256))
+        "lut_sha256 = " * _sql_quote(String(lut_sha256))
     end
     sql = "SELECT " * _FUNCTIONS_SELECT * " FROM functions WHERE " * where * " LIMIT 1"
     for r in DBInterface.execute(db, sql)
@@ -164,7 +164,7 @@ end
 
 function load_sbox(db::SQLite.DB, canonical_name::AbstractString)
     sql = "SELECT n, m, lut_blob FROM functions WHERE canonical_name = " *
-          VBF._sql_quote(String(canonical_name)) * " LIMIT 1"
+          _sql_quote(String(canonical_name)) * " LIMIT 1"
     return _materialise_sbox(db, sql, "canonical_name = $(repr(canonical_name))")
 end
 

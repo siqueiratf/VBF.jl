@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "b2b3a243158fee7cea1a994d70e78e18aba51e7d"
+project_hash = "a8a0d5d987e43eb3a88e7720481783fad877527c"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "2d9c9a55f9c93e8887ad391fbae72f8ef55e1177"
@@ -778,7 +778,7 @@ uuid = "c4a57d5a-5b31-53a6-b365-19f8c011fbd6"
 version = "1.0.9"
 
 [[deps.VBF]]
-deps = ["Arrow", "Artifacts", "DBInterface", "Dates", "JSON3", "LazyArtifacts", "Parquet2", "PrecompileTools", "Preferences", "Printf", "Random", "SHA", "SQLite", "Scratch", "StructTypes", "TOML", "Tables", "Tar"]
+deps = ["Random"]
 path = "packages/VBF"
 uuid = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
 version = "0.1.0-DEV"
@@ -794,6 +794,12 @@ version = "0.1.0-DEV"
     NautyTraces = "a48a9a93-bb12-4eb3-a4c5-c3c4cd9a8a87"
     Nemo = "2edaba10-b0f1-5616-af89-8c11ac63239a"
     Oscar = "f1435218-dba5-11e9-1e4d-f1a5fab5fc13"
+
+[[deps.VBFCatalog]]
+deps = ["Arrow", "Artifacts", "DBInterface", "Dates", "JSON3", "LazyArtifacts", "Parquet2", "PrecompileTools", "Preferences", "Printf", "SHA", "SQLite", "Scratch", "StructTypes", "TOML", "Tables", "Tar", "VBF"]
+path = "packages/VBFCatalog"
+uuid = "806e9246-bd0c-40c6-b7ea-7b2eabc2fba0"
+version = "0.1.0-DEV"
 
 [[deps.WeakRefStrings]]
 deps = ["DataAPI", "InlineStrings", "Parsers"]

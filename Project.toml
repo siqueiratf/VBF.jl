@@ -1,2 +1,2 @@
 [workspace]
-projects = ["packages/VBF"]
+projects = ["packages/VBF", "packages/VBFCatalog"]

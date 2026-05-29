@@ -9,11 +9,12 @@
 # is internally consistent with what `ddt(s)` etc. would yield.
 
 using VBF
+using VBFCatalog
 import SQLite
 import DBInterface
 import Dates
 
-const CATALOG_FILE = VBF.catalog_path()
+const CATALOG_FILE = VBFCatalog.catalog_path()
 const LITERATURE_PATH = normpath(joinpath(@__DIR__, "..", "data-raw", "literature_sboxes.toml"))
 const APN_CATALOG_DIR = normpath(joinpath(@__DIR__, "..", "data-raw", "apn_catalog"))
 
@@ -51,12 +52,12 @@ function insert_bibliography!(db::SQLite.DB)
         url = get(entry, "url", "")
         sql = string(
             "INSERT INTO bibliography (bib_key, bibtex, doi, url, year, authors) VALUES (",
-            VBF._sql_quote(entry.bib_key), ", ",
-            VBF._sql_quote(_reconstruct_bibtex(entry)), ", ",
-            VBF._sql_quote(doi), ", ",
-            VBF._sql_quote(url), ", ",
+            VBFCatalog._sql_quote(entry.bib_key), ", ",
+            VBFCatalog._sql_quote(_reconstruct_bibtex(entry)), ", ",
+            VBFCatalog._sql_quote(doi), ", ",
+            VBFCatalog._sql_quote(url), ", ",
             year, ", ",
-            VBF._sql_quote(authors), ")")
+            VBFCatalog._sql_quote(authors), ")")
         SQLite.execute(db, sql)
     end
 end
@@ -78,8 +79,8 @@ function insert_literature_sboxes!(db::SQLite.DB, contributor::AbstractString,
         is_quad = algdeg ≤ 2
 
         # BLOB serialisation + content hash
-        bytes = VBF.canonical_lut_bytes(s)
-        sha = VBF.lut_sha256_hex(s)
+        bytes = VBFCatalog.canonical_lut_bytes(s)
+        sha = VBFCatalog.lut_sha256_hex(s)
 
         # SQLite BLOB literal: X'...'  (uppercase hex preferred but we use lowercase)
         blob_literal = "X'" * bytes2hex(bytes) * "'"
@@ -91,18 +92,18 @@ function insert_literature_sboxes!(db::SQLite.DB, contributor::AbstractString,
             "algebraic_degree, differential_uniformity, linearity, boomerang_uniformity, ",
             "is_apn, is_permutation, is_quadratic, canonical_name, bib_key, ",
             "source_repo, contributor, added_date, notes) VALUES (",
-            VBF._sql_quote("Literature"), ", ", n, ", ", n, ", ",
-            VBF._sql_quote(sha), ", ", blob_literal, ", NULL, ",
+            VBFCatalog._sql_quote("Literature"), ", ", n, ", ", n, ", ",
+            VBFCatalog._sql_quote(sha), ", ", blob_literal, ", NULL, ",
             algdeg, ", ", Int(du), ", ", Int(lin), ", ", bu_literal, ", ",
             Int(du == 2), ", ",
             Int(is_perm), ", ",
             Int(is_quad), ", ",
-            VBF._sql_quote(name), ", ",
-            VBF._sql_quote(meta["bib_key"]), ", ",
-            VBF._sql_quote(source_repo), ", ",
-            VBF._sql_quote(contributor), ", ",
-            VBF._sql_quote(today), ", ",
-            VBF._sql_quote(meta["description"]), ")")
+            VBFCatalog._sql_quote(name), ", ",
+            VBFCatalog._sql_quote(meta["bib_key"]), ", ",
+            VBFCatalog._sql_quote(source_repo), ", ",
+            VBFCatalog._sql_quote(contributor), ", ",
+            VBFCatalog._sql_quote(today), ", ",
+            VBFCatalog._sql_quote(meta["description"]), ")")
         SQLite.execute(db, sql)
     end
 end
@@ -122,13 +123,13 @@ function insert_apn_functions!(db::SQLite.DB, contributor::AbstractString,
         bu = is_perm ? boomerang_uniformity(s) : nothing
         is_quad = algdeg ≤ 2
 
-        bytes = VBF.canonical_lut_bytes(s)
-        sha = VBF.lut_sha256_hex(s)
+        bytes = VBFCatalog.canonical_lut_bytes(s)
+        sha = VBFCatalog.lut_sha256_hex(s)
 
         blob_literal = "X'" * bytes2hex(bytes) * "'"
         bu_literal = bu === nothing ? "NULL" : string(Int(bu))
         algform_literal = haskey(meta, "algebraic_form") ?
-            VBF._sql_quote(meta["algebraic_form"]) : "NULL"
+            VBFCatalog._sql_quote(meta["algebraic_form"]) : "NULL"
 
         sql = string(
             "INSERT INTO functions (",
@@ -136,18 +137,18 @@ function insert_apn_functions!(db::SQLite.DB, contributor::AbstractString,
             "algebraic_degree, differential_uniformity, linearity, boomerang_uniformity, ",
             "is_apn, is_permutation, is_quadratic, canonical_name, bib_key, ",
             "source_repo, contributor, added_date, notes) VALUES (",
-            VBF._sql_quote("APN"), ", ", n, ", ", n, ", ",
-            VBF._sql_quote(sha), ", ", blob_literal, ", ", algform_literal, ", ",
+            VBFCatalog._sql_quote("APN"), ", ", n, ", ", n, ", ",
+            VBFCatalog._sql_quote(sha), ", ", blob_literal, ", ", algform_literal, ", ",
             algdeg, ", ", Int(du), ", ", Int(lin), ", ", bu_literal, ", ",
             Int(du == 2), ", ",
             Int(is_perm), ", ",
             Int(is_quad), ", ",
-            VBF._sql_quote(name), ", ",
-            VBF._sql_quote(meta["bib_key"]), ", ",
-            VBF._sql_quote(source_repo), ", ",
-            VBF._sql_quote(contributor), ", ",
-            VBF._sql_quote(today), ", ",
-            VBF._sql_quote(meta["description"]), ")")
+            VBFCatalog._sql_quote(name), ", ",
+            VBFCatalog._sql_quote(meta["bib_key"]), ", ",
+            VBFCatalog._sql_quote(source_repo), ", ",
+            VBFCatalog._sql_quote(contributor), ", ",
+            VBFCatalog._sql_quote(today), ", ",
+            VBFCatalog._sql_quote(meta["description"]), ")")
         SQLite.execute(db, sql)
     end
 end

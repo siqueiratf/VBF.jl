@@ -20,6 +20,7 @@
 #     julia --project=. data-build/import_sboxu_apn.jl --max 200
 
 using VBF
+using VBFCatalog
 import SQLite
 import DBInterface
 
@@ -103,7 +104,7 @@ end
 """
 function bfa_function_id_by_sha(db::SQLite.DB, sha::AbstractString)
     sql = "SELECT id FROM functions WHERE lut_sha256 = " *
-          VBF._sql_quote(String(sha)) * " LIMIT 1"
+          VBFCatalog._sql_quote(String(sha)) * " LIMIT 1"
     for r in DBInterface.execute(db, sql)
         return Int(r.id)
     end
@@ -118,7 +119,7 @@ end
 """
 function seen_recon_sha(db::SQLite.DB, sha::AbstractString)
     sql = "SELECT 1 FROM reconciliation_disagreements WHERE lut_sha256 = " *
-          VBF._sql_quote(String(sha)) * " LIMIT 1"
+          VBFCatalog._sql_quote(String(sha)) * " LIMIT 1"
     for _ in DBInterface.execute(db, sql); return true; end
     false
 end
