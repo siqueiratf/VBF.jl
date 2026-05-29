@@ -98,3 +98,25 @@ function linearity(s::SBox)
     end
     u
 end
+
+"""
+    walsh_power_moment(s, k; shift_a=0, shift_b=0) -> Int
+
+The (shifted) `k`-th Walsh power moment
+`Σ_{a,b} (-1)^{a·shift_a ⊕ b·shift_b} · W_F(a,b)^k`, where `W_F(a,b)` is the LAT
+entry. With `shift_a = shift_b = 0` this is the classical power moment;
+`sigma_multiplicities` aggregates a related shifted family. (After
+`vbf_wt_power_moment` in Kaleyski's VBF library.)
+"""
+function walsh_power_moment(s::SBox{N, T}, k::Integer;
+                            shift_a::Integer = 0, shift_b::Integer = 0) where {N, T}
+    L = lat(s)
+    n = 1 << N
+    sa = Int(shift_a); sb = Int(shift_b); kk = Int(k)
+    total = 0
+    @inbounds for a in 0:n - 1, b in 0:n - 1
+        sgn = isodd(count_ones(a & sa) + count_ones(b & sb)) ? -1 : 1
+        total += sgn * Int(L[a + 1, b + 1])^kk
+    end
+    total
+end

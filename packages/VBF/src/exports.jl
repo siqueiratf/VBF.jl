@@ -28,6 +28,7 @@ export random_linear_permutation, random_affine_permutation
 # tier 5 — algorithms
 export is_invertible, compose, solve_f2, kernel_f2
 export extract_linear_subspaces, span_from_basis
+export smallest_basis, find_2d_subspaces, expand_subspaces, subspace_count_signature
 export identity_affine_map, zero_affine_map
 export block_diagonal_affine_map, swap_affine_map
 export generating_affine_map, generating_affine_map_r
@@ -61,6 +62,8 @@ export ortho_derivative, is_quadratic_apn
 export ortho_integral
 export sigma_multiplicities
 export APNEAMugshot, apn_ea_mugshot
+export bent_components, nonbent_components, nonbent_signature
+export image_set, image_subspaces, pi_multiset
 export ccz_equivalent_quadratic_function
 export automorphisms_from_ortho_derivative, ea_mappings_from_ortho_derivative
 export enumerate_ea_classes_apn_quadratic
@@ -68,7 +71,7 @@ export switching_neighbors
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
-export lat, absolute_walsh_spectrum, linearity
+export lat, absolute_walsh_spectrum, linearity, walsh_power_moment
 export bct, boomerang_spectrum, boomerang_uniformity
 export fbct, fbct_spectrum, fbct_uniformity
 export algebraic_degree, degree_spectrum

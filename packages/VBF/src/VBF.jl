@@ -47,6 +47,7 @@ include("linalg/linear_system.jl")
 include("linalg/affine_system.jl")
 include("linalg/dyadic_bitset.jl")
 include("linalg/subspace_search.jl")
+include("linalg/subspace_in_set.jl")
 
 # 3. spectra — transforms + distribution tables + anomaly models
 include("spectra/walsh.jl")
@@ -62,6 +63,9 @@ include("invariants/ortho_derivative.jl")
 include("invariants/ortho_integral.jl")
 include("invariants/sigma_multiplicities.jl")
 include("invariants/mugshot.jl")
+include("invariants/bent.jl")
+include("invariants/image.jl")
+include("invariants/pi_multiset.jl")
 
 # 5. equivalence — the relation hierarchy
 include("equivalence/linear/backtracking.jl")
