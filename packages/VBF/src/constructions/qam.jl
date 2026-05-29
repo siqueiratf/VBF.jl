@@ -78,3 +78,29 @@ Whether the quadratic homogeneous function `F` is APN, via its
 [`quadratic_apn_matrix`](@ref) and the QAM test.
 """
 is_qam(F::SBox) = is_qam(quadratic_apn_matrix(F))
+
+"""
+    qam_to_sbox(M::AbstractMatrix{<:Integer}) -> SBox
+
+Recover the quadratic homogeneous function whose derivative matrix is the
+symmetric, zero-diagonal `n×n` matrix `M` over `GF(2ⁿ)`:
+`F(x) = ⊕_{i<j, xᵢ=xⱼ=1} M[i,j]` (`xᵢ` the bits of `x`). This is the inverse of
+[`quadratic_apn_matrix`](@ref) on the homogeneous representative (`F(bᵢ)=0`), and
+`F` is APN iff `M` is a QAM. No field multiplication is needed.
+"""
+function qam_to_sbox(M::AbstractMatrix{<:Integer})
+    n = size(M, 1)
+    size(M, 2) == n || throw(ArgumentError("qam_to_sbox: matrix must be square"))
+    lut = zeros(Int, 1 << n)
+    @inbounds for x in 1:(1 << n) - 1
+        acc = 0
+        for i in 1:n
+            ((x >> (i - 1)) & 1) == 1 || continue
+            for j in i + 1:n
+                ((x >> (j - 1)) & 1) == 1 && (acc ⊻= M[i, j])
+            end
+        end
+        lut[x + 1] = acc
+    end
+    SBox{n}(lut)
+end
