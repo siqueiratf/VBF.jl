@@ -53,6 +53,10 @@ function _tokenize_polynomial(s::AbstractString)
         elseif c == 'g'
             # SageMath's `g = field.gen()` is the same primitive element as `ksi`
             push!(out, "ksi"); i = nextind(s, i)
+        elseif c == 'a'
+            # Magma / Simon-Berg convention: `a = field.gen()`, same primitive
+            # element as `ksi`. (No identifier in these grammars contains 'a'.)
+            push!(out, "ksi"); i = nextind(s, i)
         elseif isdigit(c)
             j = i
             while j ≤ n && isdigit(s[j]); j = nextind(s, j); end
@@ -174,6 +178,114 @@ function polynomial_to_lut(expr_str::AbstractString, n::Integer, modulus::Intege
     out = Vector{Int}(undef, len)
     for x in 0:len - 1
         out[x + 1] = evaluate_polynomial(expr_str, x, n, modulus; ksi = ksi)
+    end
+    out
+end
+
+# ----- bulk evaluation (parse-once, then evaluate at all 2ⁿ points) ---------
+#
+# The recursive-descent `polynomial_to_lut` re-tokenizes and re-parses the
+# expression at every `x`, which is fine for a few hundred polynomials but
+# far too slow for the ~205k Simon-Berg members. For *flat* polynomials (a
+# sum of monomials `c · Xᵉ`, no parenthesised sub-expressions — which is the
+# Simon-Berg / monomial-list shape) we parse once into `(coef, exp)` terms
+# and share a per-`x` table of powers across every polynomial.
+
+"""
+    polynomial_terms(expr_str, n, modulus; ksi=2) -> Vector{Tuple{Int,Int}}
+
+Parse a *flat* polynomial (sum of monomials `c · Xᵉ`; no parentheses) into
+`(coefficient, exponent)` pairs — the coefficient an element of `GF(2ⁿ)`, the
+exponent the power of `X`. Terms with a zero coefficient (an even integer
+literal in F₂) are dropped. Throws on parenthesised sub-expressions; use
+[`evaluate_polynomial`](@ref) for those.
+"""
+function polynomial_terms(expr_str::AbstractString, n::Integer, modulus::Integer;
+                           ksi::Integer = 2)
+    toks = _tokenize_polynomial(expr_str)
+    ("(" in toks || ")" in toks) &&
+        error("polynomial_terms: parenthesised sub-expressions unsupported in $(repr(expr_str))")
+    terms = Tuple{Int, Int}[]
+    nn = Int(n); mod = Int(modulus); k = Int(ksi)
+    i = 1; L = length(toks)
+    while i ≤ L
+        coef = 1; vexp = 0; saw = false
+        while i ≤ L && toks[i] != "+"
+            t = toks[i]
+            if t == "*"
+                i += 1
+            elseif t == "X"
+                saw = true; i += 1
+                if i ≤ L && toks[i] == "**"
+                    vexp += parse(Int, toks[i + 1]); i += 2
+                else
+                    vexp += 1
+                end
+            elseif t == "ksi"
+                saw = true; i += 1
+                e = 1
+                if i ≤ L && toks[i] == "**"
+                    e = parse(Int, toks[i + 1]); i += 2
+                end
+                coef = gf_mul(coef, gf_pow(k, e, nn; modulus = mod), nn; modulus = mod)
+            elseif occursin(r"^\d+$", t)
+                saw = true; i += 1
+                iseven(parse(Int, t)) && (coef = 0)
+            else
+                error("polynomial_terms: unexpected token $(repr(t)) in $(repr(expr_str))")
+            end
+        end
+        i ≤ L && toks[i] == "+" && (i += 1)
+        (saw && coef != 0) && push!(terms, (coef, vexp))
+    end
+    terms
+end
+
+"""
+    monomial_power_table(n, modulus) -> Vector{Vector{Int}}
+
+`tab[x+1][e+1] = xᵉ` in `GF(2ⁿ)` for `x, e ∈ 0:2ⁿ-1` (with `0⁰ = 1`).
+Built once and shared across all polynomials so that [`terms_to_lut`](@ref)
+is a table lookup plus one `gf_mul` per term.
+"""
+function monomial_power_table(n::Integer, modulus::Integer)
+    len = 1 << Int(n); nn = Int(n); mod = Int(modulus)
+    tab = Vector{Vector{Int}}(undef, len)
+    for x in 0:len - 1
+        row = Vector{Int}(undef, len)
+        row[1] = 1
+        for e in 1:len - 1
+            row[e + 1] = gf_mul(row[e], x, nn; modulus = mod)
+        end
+        tab[x + 1] = row
+    end
+    tab
+end
+
+"""
+    terms_to_lut(terms, n, modulus; powtab=nothing) -> Vector{Int}
+
+Length-`2ⁿ` LUT of `x ↦ Σ cᵢ·x^eᵢ` from `(coef, exp)` `terms`. Pass a shared
+[`monomial_power_table`](@ref) as `powtab` to amortise the power computation
+across many polynomials; without it, falls back to `gf_pow` per term.
+"""
+function terms_to_lut(terms::Vector{Tuple{Int, Int}}, n::Integer, modulus::Integer;
+                       powtab::Union{Nothing, Vector{Vector{Int}}} = nothing)
+    len = 1 << Int(n); nn = Int(n); mod = Int(modulus)
+    out = zeros(Int, len)
+    for x in 0:len - 1
+        acc = 0
+        if powtab === nothing
+            for (c, e) in terms
+                acc ⊻= gf_mul(c, gf_pow(x, e, nn; modulus = mod), nn; modulus = mod)
+            end
+        else
+            row = powtab[x + 1]
+            for (c, e) in terms
+                acc ⊻= gf_mul(c, row[e + 1], nn; modulus = mod)
+            end
+        end
+        out[x + 1] = acc
     end
     out
 end

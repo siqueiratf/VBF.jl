@@ -178,8 +178,11 @@ end
 
 _maybe_chain_sboxu_import() =
     _maybe_chain_import("import_sboxu_apn.jl", "BFA_SBOXU_PATH",
-        (joinpath(homedir(), "sboxU"), "/home/zambonin/sboxU"),
-        "sboxU")
+        ("/home/zambonin/APN.jl/lpp-crypto@sboxU",
+         joinpath(homedir(), "APN.jl", "lpp-crypto@sboxU"),
+         joinpath(homedir(), "sboxU"), "/home/zambonin/sboxU"),
+        "sboxU";
+        check = p -> isdir(joinpath(p, "sboxU", "scripts", "apnDB")))
 
 # Curated quadratic-APN CCZ-class representatives → first-class function
 # rows. Runs BEFORE the reconciliation chains so the bulk tables merge
@@ -187,20 +190,36 @@ _maybe_chain_sboxu_import() =
 # spurious reconciliation disagreement.
 _maybe_chain_reps_import() =
     _maybe_chain_import("import_apn_reps.jl", "BFA_SBOXU_PATH",
-        (joinpath(homedir(), "sboxU"), "/home/zambonin/sboxU"),
+        ("/home/zambonin/APN.jl/lpp-crypto@sboxU",
+         joinpath(homedir(), "APN.jl", "lpp-crypto@sboxU"),
+         joinpath(homedir(), "sboxU"), "/home/zambonin/sboxU"),
         "APN reps";
         check = p -> isdir(joinpath(p, "sboxU", "scripts", "apnDB")))
 
+# Simon-Berg thesis: 27 CCZ classes of GF(2²)-coefficient quadratic APN over
+# GF(2⁸). 27 class representatives → first-class rows; membership SHAs merged
+# into matching rows only. Runs alongside the other rep/reconciliation chains.
+_maybe_chain_simonberg_import() =
+    _maybe_chain_import("import_simonberg.jl", "BFA_THESIS_PATH",
+        ("/home/zambonin/APN.jl/Simon-Berg@thesis",
+         joinpath(homedir(), "APN.jl", "Simon-Berg@thesis")),
+        "Simon-Berg thesis";
+        check = p -> isfile(joinpath(p, "rep1.txt")))
+
 _maybe_chain_xanadu_import() =
     _maybe_chain_import("import_xanadu_apn.jl", "BFA_XANADU_PATH",
-        (joinpath(homedir(), "sboxU", "apn-ccz-graph-framework"),
+        ("/home/zambonin/APN.jl/Xanadu-ins@apn-ccz-graph-framework",
+         joinpath(homedir(), "APN.jl", "Xanadu-ins@apn-ccz-graph-framework"),
+         joinpath(homedir(), "sboxU", "apn-ccz-graph-framework"),
          "/home/zambonin/sboxU/apn-ccz-graph-framework"),
         "Xanadu";
         check = p -> isfile(joinpath(p, "list_of_APN_functions_for_different_n")))
 
 _maybe_chain_apn_repo_import() =
     _maybe_chain_import("import_apn_repository.jl", "BFA_APN_REPO_PATH",
-        (joinpath(homedir(), "sboxU", "APN-Repository"),
+        ("/home/zambonin/APN.jl/cma029@APN-Repository",
+         joinpath(homedir(), "APN.jl", "cma029@APN-Repository"),
+         joinpath(homedir(), "sboxU", "APN-Repository"),
          "/home/zambonin/sboxU/APN-Repository"),
         "APN-Repository";
         check = p -> isdir(joinpath(p, "database", "apn")))
@@ -222,6 +241,7 @@ function main()
     @info "Catalog populated (BFA-only step)" functions=n_funcs file_size_bytes=filesize(CATALOG_FILE)
     close(db)
     _maybe_chain_reps_import()
+    _maybe_chain_simonberg_import()
     _maybe_chain_sboxu_import()
     _maybe_chain_xanadu_import()
     _maybe_chain_apn_repo_import()
