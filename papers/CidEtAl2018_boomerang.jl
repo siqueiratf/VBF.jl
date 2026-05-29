@@ -8,7 +8,7 @@
 #
 # Run standalone:  julia --project=. papers/CidEtAl2018_boomerang.jl
 
-using BFA
+using VBF
 
 "Published boomerang uniformities (Cid et al. 2018, Table 1 / follow-ups)."
 const EXPECTED = (AES = 6, PRESENT = 16, GIFT = 16)

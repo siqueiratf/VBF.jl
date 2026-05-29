@@ -9,7 +9,7 @@
 #
 # Run standalone:  julia --project=. papers/CanteautCouvreurPerrin2022_orthoderivative.jl
 
-using BFA
+using VBF
 
 function reproduce()
     F3 = load_apn_function("n5_Gold_x3")

@@ -8,7 +8,7 @@
 #
 # Run standalone:  julia --project=. papers/BonnetainPerrinTian2019_anomaly.jl
 
-using BFA
+using VBF
 
 "AES DDT positive anomaly, in bits."
 reproduce() = Float64(table_anomaly(load_literature_sbox("AES"), :DDT))

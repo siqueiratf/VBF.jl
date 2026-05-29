@@ -1,0 +1,21 @@
+# Content-addressed bulk data for VBF.jl.
+#
+# Anything too large to commit (Parquet APN bulk tables for n=7..8,
+# commuting-matrix lookup tables, large precomputed equivalence
+# fingerprints) lives in a separate `BFA-data` repository whose
+# GitHub releases are the source-of-truth. Each release adds an
+# immutable URL; this file pins the SHA-256 so older paper-repro
+# notebooks keep working with their declared artifact version
+# forever.
+#
+# Schema (per artifact stanza):
+#   [<name>]
+#   git-tree-sha1 = "<40-char hex>"   # tree hash of unpacked content
+#   lazy          = true              # download on first use, not on `Pkg.add`
+#
+#       [[<name>.download]]
+#       url    = "https://github.com/<user>/BFA-data/releases/download/<tag>/<file>.tar.gz"
+#       sha256 = "<64-char hex>"
+#
+# Empty until the first bulk artifact lands (planned in Phase 9 with
+# the APN n=7..8 lists).

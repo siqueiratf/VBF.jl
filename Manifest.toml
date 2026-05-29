@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "158f7608c8783660e9eb8b66e2f93f9fef8cbeab"
+project_hash = "b2b3a243158fee7cea1a994d70e78e18aba51e7d"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "2d9c9a55f9c93e8887ad391fbae72f8ef55e1177"
@@ -67,24 +67,6 @@ version = "2.3.0"
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.11.0"
-
-[[deps.BFA]]
-deps = ["Arrow", "Artifacts", "DBInterface", "Dates", "JSON3", "LazyArtifacts", "Parquet2", "PrecompileTools", "Preferences", "Printf", "Random", "SHA", "SQLite", "Scratch", "StructTypes", "TOML", "Tar"]
-path = "."
-uuid = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
-version = "0.1.0-DEV"
-
-    [deps.BFA.extensions]
-    BFAMakieExt = "Makie"
-    BFANautyExt = "NautyTraces"
-    BFANemoExt = "Nemo"
-    BFAOscarExt = "Oscar"
-
-    [deps.BFA.weakdeps]
-    Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
-    NautyTraces = "a48a9a93-bb12-4eb3-a4c5-c3c4cd9a8a87"
-    Nemo = "2edaba10-b0f1-5616-af89-8c11ac63239a"
-    Oscar = "f1435218-dba5-11e9-1e4d-f1a5fab5fc13"
 
 [[deps.BangBang]]
 deps = ["Accessors", "ConstructionBase", "InitialValues", "LinearAlgebra"]
@@ -794,6 +776,24 @@ version = "1.11.0"
 git-tree-sha1 = "c63023bd84f46f9df786c90180d4f79dbfdafa2a"
 uuid = "c4a57d5a-5b31-53a6-b365-19f8c011fbd6"
 version = "1.0.9"
+
+[[deps.VBF]]
+deps = ["Arrow", "Artifacts", "DBInterface", "Dates", "JSON3", "LazyArtifacts", "Parquet2", "PrecompileTools", "Preferences", "Printf", "Random", "SHA", "SQLite", "Scratch", "StructTypes", "TOML", "Tables", "Tar"]
+path = "packages/VBF"
+uuid = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
+version = "0.1.0-DEV"
+
+    [deps.VBF.extensions]
+    VBFMakieExt = "Makie"
+    VBFNautyExt = "NautyTraces"
+    VBFNemoExt = "Nemo"
+    VBFOscarExt = "Oscar"
+
+    [deps.VBF.weakdeps]
+    Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+    NautyTraces = "a48a9a93-bb12-4eb3-a4c5-c3c4cd9a8a87"
+    Nemo = "2edaba10-b0f1-5616-af89-8c11ac63239a"
+    Oscar = "f1435218-dba5-11e9-1e4d-f1a5fab5fc13"
 
 [[deps.WeakRefStrings]]
 deps = ["DataAPI", "InlineStrings", "Parsers"]
