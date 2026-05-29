@@ -6,51 +6,68 @@ differential/linear/boomerang spectra, the linear/affine/EA/CCZ equivalence
 hierarchy, and APN-specific invariants and constructions. Paper-reproduction
 scripts live under `papers/`.
 
-(Reorganization in progress: the data/catalog layer is being extracted into a
-companion `VBFCatalog` package, and the algorithm modules regrouped by concept.)
+Source is grouped by concept (each directory is a chapter of the algorithm
+catalog); files load in dependency order:
 
-Loaded in tiers (later tiers depend on earlier):
+1. `representations/` — the ways to present a VBF and convert between them:
+   `SBox` (truth table), `F2LinearMap`/`F2AffineMap`, `Spectrum`, the ANF
+   (Möbius) transform, and GF(2ⁿ) finite-field arithmetic.
+2. `linalg/`          — F₂ (GF(2)) bit-packed linear algebra: Gauss–Jordan,
+   rank/basis/kernel, linear & affine systems, the dyadic-bitset substrate,
+   and F₂-subspace search.
+3. `spectra/`         — distribution tables and transforms: the Walsh–Hadamard
+   transform, DDT / LAT / BCT / FBCT, algebraic degree, linear structures, and
+   the Bonnetain–Perrin–Tian anomaly models.
+4. `invariants/`      — EA/CCZ invariants: ortho-derivative & ortho-integral,
+   σ-multiplicities, the APN/EA mugshot.
+5. `equivalence/`     — the equivalence hierarchy: `linear/`, `affine/`, `ea/`,
+   `ccz/` (incl. TU-decomposition and the Edel–Pott linear-code matrices).
+6. `constructions/`   — building/searching for functions: switching neighbours,
+   CCZ-quadratic representatives, the quadratic-APN graph machinery.
+7. `random/`          — seeded random S-box / linear / affine generators.
+8. `io/`              — Markdown/LaTeX rendering.
 
-1. Types       — `SBox`, `F2LinearMap`, `F2AffineMap`, `Spectrum`
-2. F₂ⁿ         — bit arithmetic, ANF (Möbius), Walsh transform
-3. Statistics  — DDT, LAT, BCT, FBCT, anomaly probability models
-4. Equivalence — linear / affine / EA / CCZ / self-equivalence
-5. APN tools   — ortho-derivative, ortho-integral, σ-multiplicities, mugshot
-
-(A deeper conceptual reorganization of these modules is in progress.)
+The data/catalog layer lives in the companion `VBFCatalog` package (it depends
+on `VBF`, never the reverse). See `ALGORITHMS.md` for the catalog index.
 """
 module VBF
 
-# tier 1 — types (no dependencies within BFA)
-include("types/sbox.jl")
-include("types/f2_linear_map.jl")
-include("types/f2_affine_map.jl")
-include("types/spectrum.jl")
+# 1. representations — types first (used in later signatures), then transforms
+include("representations/sbox.jl")
+include("representations/f2_linear_map.jl")
+include("representations/f2_affine_map.jl")
+include("representations/spectrum.jl")
+include("representations/anf.jl")
+include("representations/finite_field.jl")
 
-# tier 2 — F₂ⁿ primitives (depends on tier 1)
-include("f2/arith.jl")
-include("f2/anf.jl")
-include("f2/walsh.jl")
-include("f2/polynomial.jl")
+# 2. linalg — F₂ bit-linear-algebra substrate
+include("linalg/f2_arith.jl")
+include("linalg/linear_system.jl")
+include("linalg/affine_system.jl")
+include("linalg/dyadic_bitset.jl")
+include("linalg/subspace_search.jl")
 
-# tier 2.5 — random object generators (depends on tier 1 + arith)
-include("random_objects.jl")
+# 3. spectra — transforms + distribution tables + anomaly models
+include("spectra/walsh.jl")
+include("spectra/differential.jl")
+include("spectra/linear.jl")
+include("spectra/boomerang.jl")
+include("spectra/algebraic.jl")
+include("spectra/linear_structures.jl")
+include("spectra/anomaly.jl")
 
-# NOTE: the data/catalog layer was extracted into the companion `VBFCatalog`
-# package (it depends on VBF, never the reverse). See packages/VBFCatalog.
+# 4. invariants — EA/CCZ invariants
+include("invariants/ortho_derivative.jl")
+include("invariants/ortho_integral.jl")
+include("invariants/sigma_multiplicities.jl")
+include("invariants/mugshot.jl")
 
-# tier 5 — algorithms (depends on tier 1 + 2; used by equivalence)
-include("algorithms/linear_system.jl")
-include("algorithms/affine_system.jl")
-include("algorithms/dyadic_bitset.jl")
-include("algorithms/subspace_search.jl")
-
-# tier 6 — equivalence
-include("equivalence/linear/lpp_backtracking.jl")
-include("equivalence/linear/stennes.jl")
+# 5. equivalence — the relation hierarchy
+include("equivalence/linear/backtracking.jl")
+include("equivalence/linear/canonical_representative.jl")
 include("equivalence/linear/api.jl")
 include("equivalence/linear/self_equivalences.jl")
-include("equivalence/affine/stennes_shift.jl")
+include("equivalence/affine/shift.jl")
 include("equivalence/affine/api.jl")
 include("equivalence/ea/partition.jl")
 include("equivalence/ea/outer_permutation.jl")
@@ -60,31 +77,22 @@ include("equivalence/ea/ea_full.jl")
 include("equivalence/ea/partition_automorphisms.jl")
 include("equivalence/ccz/function_graph.jl")
 include("equivalence/ccz/block_decomposition.jl")
-include("equivalence/ccz/code_matrices.jl")
+include("equivalence/ccz/linear_code.jl")
 include("equivalence/ccz/walsh_zeroes.jl")
 include("equivalence/ccz/thickness.jl")
-include("equivalence/ccz/tu.jl")
+include("equivalence/ccz/tu_decomposition.jl")
 include("equivalence/ccz/api.jl")
 
-# tier 7 — APN-specific invariants
-include("apn/ortho_derivative.jl")
-include("apn/ortho_integral.jl")
-include("apn/sigma_multiplicities.jl")
-include("apn/mugshot.jl")
-include("apn/quadratic_helpers.jl")
-include("apn/quadratic_helpers_graph.jl")
-include("apn/switching_neighbors.jl")
+# 6. constructions — building / searching for functions
+include("constructions/switching_neighbors.jl")
+include("constructions/ccz_quadratic.jl")
+include("constructions/quadratic_apn_graph.jl")
 
-# tier 4 — statistics (depends on tiers 1 + 2)
-include("statistics/differential.jl")
-include("statistics/linear.jl")
-include("statistics/boomerang.jl")
-include("statistics/algebraic.jl")
-include("statistics/linear_structures.jl")
-include("statistics/anomaly.jl")
+# 7. random object generators
+include("random/random_objects.jl")
 
-# tier 8 — presentation
-include("display.jl")
+# 8. presentation
+include("io/display.jl")
 
 include("exports.jl")
 
