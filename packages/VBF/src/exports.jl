@@ -74,6 +74,7 @@ export enumerate_ea_classes_apn_quadratic
 export switching_neighbors
 export search_quadratic_apn
 export trims, apn_trims, trim_spectrum
+export extend_quadratic_apn
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
