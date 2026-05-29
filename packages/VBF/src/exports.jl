@@ -39,6 +39,7 @@ export are_linear_equivalent
 export linear_representative
 export linear_equivalences, self_linear_equivalences, self_affine_equivalences
 export are_sets_linear_equivalent
+export is_3_to_1, triplicate_adjoint, is_equivalent_to_triplicate, triplicate_adjoints
 export are_affine_equivalent
 export affine_representative
 export affine_class_signature
