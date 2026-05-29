@@ -3,12 +3,10 @@ Full enumeration of EA-equivalences.
 
 [`ea_equivalence_certificate`](@ref) returns the *first* witnessing
 triple `(L₁, A₂, A_drift)`; this file's [`ea_equivalences`](@ref)
-returns *all* of them found by the heggebakk search. Mirrors the
-`eaFull` executable in `sboxU/ea-equivalence/src/eaFull.c`, which
-documents itself as "finds all outer L₁ first, then for each tries to
-find an inner permutation": the enumeration ranges over every outer
-`L₁` (across every bucket map) and every constant shift, recording one
-inner `A₂` per `(L₁, shift)` that admits one.
+returns *all* of them found by the Heggebakk search. Following Heggebakk's
+"find all outer L₁ first, then for each try to find an inner permutation": the
+enumeration ranges over every outer `L₁` (across every bucket map) and every
+constant shift, recording one inner `A₂` per `(L₁, shift)` that admits one.
 """
 
 """

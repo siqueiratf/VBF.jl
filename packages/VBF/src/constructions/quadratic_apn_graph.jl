@@ -4,12 +4,11 @@ Ortho-derivative-based CCZ automorphisms and EA mappings (quadratic APN).
 For a quadratic APN `F`, the linear-equivalence class of its
 ortho-derivative `π_F` is an EA-invariant, and — more strongly — the
 linear self-equivalences of `π_F` lift to CCZ-automorphisms of `F`'s
-graph. This file ports `cpp_automorphisms_from_ortho_derivative`,
-`cpp_ea_mappings_from_ortho_derivative`,
-`cpp_enumerate_ea_classes_quadratic_apn`, and
-`get_WalshZeroesSpaces_quadratic_apn`, using Phase 11's
-`self_linear_equivalences` / `linear_equivalences` in place of sboxU's
-`equivalences_from_lat`, and the Phase 12 graph primitives
+graph. This file provides `automorphisms_from_ortho_derivative`,
+`ea_mappings_from_ortho_derivative`, and
+`enumerate_ea_classes_apn_quadratic`, built from
+`self_linear_equivalences` / `linear_equivalences` (applied to the
+ortho-derivative) and the CCZ graph primitives
 (`ccz_block_decomposition`, `ea_mapping`, `graph_image_by`,
 `graph_xor_equivalence`).
 
@@ -24,8 +23,8 @@ relate) the graph survive.
     permutations-only. When the ortho-derivative is **not** a
     permutation (e.g. non-bijective quadratic APN such as `x³` over
     `GF(2⁴)`, whose ortho-derivative is many-to-one) the search yields
-    an empty result. sboxU's LAT-based `equivalences_from_lat` handles
-    that case; porting it (a separate algorithm) would lift this
+    an empty result. A LAT-based equivalence search would handle that
+    case; implementing it (a separate algorithm) would lift this
     restriction.
 """
 
@@ -71,7 +70,7 @@ end
 
 The CCZ-automorphisms of `F`'s graph derived from the linear
 self-equivalences of `π_F = ortho_derivative(F)`. Empty if `F` is not a
-quadratic APN. Ports `cpp_automorphisms_from_ortho_derivative`.
+quadratic APN.
 """
 function automorphisms_from_ortho_derivative(F::SBox{N,T}) where {N,T}
     o = ortho_derivative(F)
@@ -86,7 +85,7 @@ end
 Every CCZ-map `L` with `graph(F) = L(graph(F_prime)) ⊕ c` (constant `c`
 not returned), derived from the linear equivalences of the
 ortho-derivatives. Non-empty iff `F` and `F_prime` are EA-equivalent
-(for quadratic APN). Ports `cpp_ea_mappings_from_ortho_derivative`.
+(for quadratic APN).
 """
 function ea_mappings_from_ortho_derivative(F::SBox{N,T}, F_prime::SBox{N,T}) where {N,T}
     o = ortho_derivative(F)
@@ -105,10 +104,10 @@ deduplicates them with the fast ortho-derivative EA test
 ([`ea_mappings_from_ortho_derivative`](@ref) — two quadratic APN are
 EA-equivalent iff it returns a non-empty set).
 
-Ports `cpp_enumerate_ea_classes_quadratic_apn`. (sboxU prunes redundant
-spaces up-front via the ortho-derivative automorphisms; this performs
-the equivalent deduplication after enumeration, trading some extra work
-for a simpler, convention-robust implementation.)
+(Redundant Walsh-zero spaces could be pruned up-front via the
+ortho-derivative automorphisms; this instead deduplicates after
+enumeration, trading some extra work for a simpler, convention-robust
+implementation.)
 """
 function enumerate_ea_classes_apn_quadratic(F::SBox{N,T}) where {N,T}
     classes = SBox{N,T}[]

@@ -2,11 +2,10 @@
 F₂-affine map algebra: the operations on [`F2AffineMap`](@ref) needed by
 the CCZ / TU-decomposition layer.
 
-Mirrors sboxU's `cpp_F2AffineMap` (`cpp/core/f2affinemap.cpp`) and its
-factory functions (`identity_F2AffineMap`, `zero_F2AffineMap`,
-`block_diagonal_F2AffineMap`, the `generating_F2AffineMap` family,
-`F2AffineMap_from_masks`, `F2AffineMap_from_range_and_image`,
-`swap_F2AffineMap`).
+Provides the `F2AffineMap` factory functions used there:
+`identity_affine_map`, `zero_affine_map`, `block_diagonal_affine_map`, the
+`generating_affine_map` family, `affine_map_from_masks`,
+`affine_map_from_range_and_image`, `swap_affine_map`.
 
 For `A(x) = L(x) ⊕ c`:
 
@@ -83,8 +82,8 @@ end
 
 The block-diagonal map acting as `B` on the low `inputbits(B)` bits and
 `A` on the high `inputbits(A)` bits (`x ∥ y ↦ B(x) ∥ A(y)` with `B`'s
-output in the low bits). Matches `cpp_block_diagonal_F2AffineMap(A, B)`,
-where the first argument occupies the high coordinates.
+output in the low bits). Note the first argument `A` occupies the *high*
+coordinates.
 """
 function block_diagonal_affine_map(A::F2AffineMap{Na, Ta},
                                    B::F2AffineMap{Nb, Tb}) where {Na, Ta, Nb, Tb}

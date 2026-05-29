@@ -4,13 +4,10 @@ the integer statistic tables (DDT / LAT / BCT / …). A pure-Julia
 presentation layer returning `String`s, so it composes with paper
 notebooks and is easy to snapshot-test.
 
-!!! note "Not ported"
-    sboxU's `display/output.py` is a Rich-based experiment-logging
-    framework (`Experiment` / `Chronograph` / `section` / `pprint` with
-    terminal markup) — terminal-UI infrastructure coupled to the `rich`
-    library, not algorithmic content — and is intentionally left out.
-    The matplotlib "Pollock" plot (`display/pollock.py`) is likewise
-    deferred to a future plotting extension.
+!!! note "Out of scope"
+    Rich-terminal experiment-logging UI is out of scope (terminal
+    infrastructure, not algorithmic content). The matplotlib "Pollock" plot
+    is deferred to a future plotting extension.
 """
 
 # --- S-box LUTs ---------------------------------------------------------------

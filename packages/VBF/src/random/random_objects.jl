@@ -1,5 +1,5 @@
 """
-Random S-box and F₂-map generators (ports sboxU's `random_objects.py`).
+Random S-box and F₂-map generators.
 
 All take an explicit `AbstractRNG` first (so tests reproduce with a
 seeded generator) and dispatch on `Val{N}` for type stability; the

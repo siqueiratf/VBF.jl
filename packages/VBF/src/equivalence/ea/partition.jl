@@ -107,8 +107,7 @@ end
     ea_partition(F::SBox{N,T}, k::Int = 4) -> EAPartition
 
 Construct the EA-multiplicity partition of `F` at level `k`. `k` must be
-even and `≥ 4`; the default `k = 4` matches heggebakk's reference C
-implementation in `sboxU/ea-equivalence/src/structures.c`.
+even and `≥ 4`; the default `k = 4` matches Heggebakk's algorithm.
 
 # Complexity
 

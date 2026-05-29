@@ -2,7 +2,7 @@
 F₂ⁿ-indexed bitsets with fast *dyadic translation* (`{x ⊕ s : x ∈ B}`).
 
 This module is the bitset substrate used by the Stennes linear-representative
-algorithm (`equivalence/linear/stennes.jl`), which spends most of its time
+algorithm (`equivalence/linear/canonical_representative.jl`), which spends most of its time
 maintaining "the set of inputs whose image under the partially-built linear
 map is known" and pushing those forward through `S` and `S⁻¹`. The single
 non-trivial primitive is the XOR-translation: for an unknown linear map `A`

@@ -8,8 +8,7 @@ A CCZ-mapping `L : F₂²ⁿ → F₂²ⁿ` can be written in `n × n` blocks
 
 acting on `(input ‖ output)` coordinates. `ccz_block_decomposition`
 recovers `(A, B, C, D)`; `ea_mapping` builds the CCZ-map corresponding
-to an extended-affine triple. Ports `cpp_ccz_block_decomposition` and
-`cpp_EA_mapping` from `sboxU/cpp/ccz/graph.cpp`.
+to an extended-affine triple.
 """
 
 """

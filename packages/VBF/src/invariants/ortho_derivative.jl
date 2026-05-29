@@ -15,10 +15,7 @@ linear-equivalence class of `π_F` is an **EA-equivalence invariant**
 of quadratic APN `F` (Carlet-Charpin-Kyureghyan 2007; refined in
 Canteaut-Charpin-Kyureghyan 2022, TIT). This makes `π_F` an extremely
 fast CCZ/EA-distinguisher for quadratic APN, including the monomial
-APN where the heggebakk k=4 partition is degenerate.
-
-The implementation here ports `cpp_ortho_derivative` from
-`sboxU/cpp/apn/ortho_derivative.cpp`.
+APN where the k=4 multiplicity partition is degenerate.
 """
 
 """

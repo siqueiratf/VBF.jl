@@ -12,8 +12,6 @@ For non-quadratic APN (where the ortho-derivative is undefined), the
 mugshot falls back to F's own spectra: absolute Walsh, degree, sigma
 multiplicities, and thickness (when F is a permutation).
 
-Port of `cpp_apn_ea_mugshot` in `sboxU/cpp/apn/invariants.cpp`.
-
 # Use cases
 
 - **Fast EA-rejection**: `apn_ea_mugshot(F) ≠ apn_ea_mugshot(G)` ⇒

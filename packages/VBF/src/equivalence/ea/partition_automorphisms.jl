@@ -1,13 +1,11 @@
 """
 Partition-preserving linear automorphisms.
 
-Ports the `automorphism` and `order` executables in
-`sboxU/ea-equivalence/src/{automorphism,order}.c`, which compute the
-set of invertible F₂-linear maps that fix a function's k-multiplicity
-partition (and the size of that set). Both are thin wrappers over the
-Phase 8 machinery: `automorphism.c` calls `partitionFunction` then
-`outerPermutation` with the identity bucket map, which is exactly
-[`ea_partition`](@ref) + [`outer_permutations`](@ref) here.
+The set of invertible F₂-linear maps that fix a function's k-multiplicity
+partition (and the size of that set) — a thin wrapper over the EA machinery:
+the k-multiplicity partition then partition-preserving outer permutations with
+the identity bucket map, i.e. [`ea_partition`](@ref) +
+[`outer_permutations`](@ref).
 """
 
 """

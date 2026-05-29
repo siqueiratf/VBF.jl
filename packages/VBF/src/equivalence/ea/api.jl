@@ -28,8 +28,7 @@ whose ortho-derivatives are themselves permutations route to
   of magnitude faster than `:heggebakk`, and **correct on the monomial
   APN where `:heggebakk` degenerates** (see Phase 8 limitations).
 
-- `:heggebakk` — Julia port of heggebakk's algorithm in
-  `sboxU/ea-equivalence/src/`:
+- `:heggebakk` — Heggebakk's partition-respecting algorithm:
 
   1. Compute the k-multiplicity partition of `F` and `G`
      ([`ea_partition`](@ref)). If their bucket-size multisets differ,

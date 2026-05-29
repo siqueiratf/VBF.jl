@@ -80,8 +80,7 @@ end
 # CCZ-class EA representatives.
 # ---------------------------------------------------------------------------
 
-# Build the CCZ mapping L : F₂²ⁿ → F₂²ⁿ from a single n-dim subspace basis.
-# Mirrors sboxU's `init_mappings()` in cpp/ccz/zeroes.cpp:
+# Build the CCZ mapping L : F₂²ⁿ → F₂²ⁿ from a single n-dim subspace basis:
 #   img = complete_basis(basis, 2n); reverse; build F2LinearMap; transpose.
 function _ccz_mapping_from_basis(basis::Vector{UInt32}, N::Int)
     M = 2N

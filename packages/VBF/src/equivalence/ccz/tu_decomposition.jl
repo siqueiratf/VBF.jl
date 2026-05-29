@@ -9,10 +9,9 @@ ciphers: a family of `t`-bit **keyed permutations** `T` and a family of
     s(x) = B( (T[x₂](x₁) ∥ U[x₁](x₂)) ⊕ C(y) ).
 
 The integer `t` is the [`thickness`](@ref) of the Walsh-zero subspace
-the decomposition is read off from. This file ports
-`sboxU/ccz/tu_decompositions.py` (`TUdecomposition`,
-`tu_decomposition_from_space_basis`, `get_tu_decompositions`) on top of
-the affine algebra in `algorithms/affine_system.jl` and the Walsh-zero
+the decomposition is read off from. This file provides `TUDecomposition`,
+`tu_decomposition_from_space_basis`, and `get_tu_decompositions` on top of
+the affine algebra in `linalg/affine_system.jl` and the Walsh-zero
 machinery (`walsh_zeroes`, `extract_linear_subspaces`, `thickness`).
 
 !!! note "Square functions only"
@@ -21,15 +20,14 @@ machinery (`walsh_zeroes`, `extract_linear_subspaces`, `thickness`).
     `m = n = N`.
 
 !!! note "Omitted: `insert_before/after_T/U`"
-    The four `insert_*` linear-manipulation helpers from the upstream
-    `TUdecomposition` are **not** ported. They build their adjusted outer
-    map with `block_diagonal_F2AffineMap`, whose branch ordering (the
-    first argument lands in the *high* coordinates, per
-    `cpp_block_diagonal_F2AffineMap`) does not line up with the `t`-bit
-    branch being the *low* coordinates in `get_S_box`; the upstream
-    intent there is ambiguous. They are auxiliary (unused by
+    Four `insert_*` linear-manipulation helpers of the TU-decomposition are
+    **not** implemented. They build an adjusted outer map via
+    [`block_diagonal_affine_map`](@ref), whose branch ordering (the first
+    argument lands in the *high* coordinates) does not line up with the `t`-bit
+    branch being the *low* coordinates in the reconstruction; the intended
+    convention is ambiguous. They are auxiliary (unused by
     [`get_tu_decompositions`](@ref)), so they are left out rather than
-    ported incorrectly.
+    implemented incorrectly.
 """
 
 # Raw-LUT helpers for the t-bit / (n-t)-bit mini-blocks (whose bit-widths

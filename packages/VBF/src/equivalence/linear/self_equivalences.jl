@@ -6,11 +6,8 @@ Phase 6's [`are_linear_equivalent`](@ref) answers the yes/no question
 downstream tools (automorphism groups, ortho-derivative-based EA
 mappings) need the *full set* of witnessing pairs `(L₁, L₂)`, not just
 existence. This file provides that via a collect-all variant of the
-propagation-pruned backtracking in `lpp_backtracking.jl`.
-
-Ports `sboxU/ccz/self_equivalences.py`:
-- `self_linear_equivalent_mappings(f)` → [`self_linear_equivalences`](@ref)
-- `self_affine_equivalent_mappings(f)` → [`self_affine_equivalences`](@ref)
+propagation-pruned backtracking in `backtracking.jl`. It exposes
+[`self_linear_equivalences`](@ref) and [`self_affine_equivalences`](@ref).
 """
 
 # Reconstruct the (L₁, L₂) pair from a complete set of L₂ basis images.
@@ -35,7 +32,7 @@ Every pair `(L1, L2)` of invertible F₂-linear maps with
 `G = L1 ∘ F ∘ L2`. Returns an empty vector if `F` and `G` are not
 linearly equivalent (or either is not a permutation).
 
-Collect-all variant of the `lpp_backtracking` search: identical
+Collect-all variant of the backtracking search: identical
 propagation/pruning, but instead of stopping at the first complete
 `L₂` it records the reconstructed `(L1, L2)` pair and continues.
 """

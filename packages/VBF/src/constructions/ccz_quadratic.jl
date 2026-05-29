@@ -19,8 +19,7 @@ A quadratic (algebraic-degree-2) function in the CCZ-class of `F`, or
 Many APN functions of higher algebraic degree are CCZ-equivalent to a
 quadratic one; this finds such a representative so that the fast
 quadratic-only invariants (ortho-derivative, etc.) become applicable.
-Ports `cpp_ccz_equivalent_quadratic_function`: scan
-[`enumerate_ccz_class`](@ref) for the first degree-2 member.
+Scans [`enumerate_ccz_class`](@ref) for the first degree-2 member.
 """
 function ccz_equivalent_quadratic_function(F::SBox{N,T}) where {N,T}
     for f in enumerate_ccz_class(F)

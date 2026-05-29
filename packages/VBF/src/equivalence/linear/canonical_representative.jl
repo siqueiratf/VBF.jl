@@ -13,9 +13,8 @@ equivalence reduces to two representative computations plus a vector
 comparison — the asymptotically faster route compared to backtracking
 once `n ≥ 6`.
 
-Port of the C++ implementation in
-`sboxU/cpp/ccz/linear_representative.cpp` by Lukas Stennes
-(see references in `data-raw/bibliography.bib`).
+Implements Lukas Stennes' canonical-representative algorithm for linear
+equivalence (see the bibliography).
 
 The algorithm progressively defines `A` and `B` one input at a time,
 propagating each newly-fixed value via F₂-linearity (`A(x ⊕ y) =

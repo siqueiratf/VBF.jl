@@ -8,8 +8,6 @@ an F₂-linear function (which leaves the associated bilinear form — and
 hence the ortho-derivative — unchanged), so the recovered `Q` is *a*
 preimage, not *the* preimage.
 
-Port of `cpp_ortho_integral` in `sboxU/cpp/apn/ortho_derivative.cpp`.
-
 # Algorithm
 
 Unknowns are the `n·2ⁿ` output bits of `Q`: variable `i + n·x` is bit

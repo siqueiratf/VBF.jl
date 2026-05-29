@@ -5,18 +5,13 @@ For a function `F : F₂ⁿ → F₂ⁿ`, the **CCZ-code** and **EA-code** are
 binary linear codes whose permutation-equivalence captures CCZ- and
 EA-equivalence of the underlying functions (Edel-Pott, "On the
 equivalence of nonlinear functions", 2009, Theorems 9 and 10). This
-file builds their generator matrices.
-
-Port of `ccz_matrix` / `ea_matrix` from
-`sboxU/ccz/equivalences_from_code.py`.
+file builds their generator matrices (`ccz_matrix` / `ea_matrix`).
 
 !!! note "Out of scope: the code-equivalence test"
-    sboxU's `are_ccz_equivalent_from_code` / `are_ea_equivalent_from_code`
-    decide equivalence by calling SAGE's
-    `LinearCode.is_permutation_equivalent`, which runs a non-trivial
-    group-theoretic backend (J. Leon's algorithm). BFA ships the
-    generator matrices as invariant building blocks but does **not**
-    port the permutation-equivalence kernel — that would require a
+    Deciding equivalence from these codes requires testing binary linear-code
+    *permutation-equivalence* (J. Leon's algorithm / group-theoretic backends).
+    VBF ships the generator matrices as invariant building blocks but does
+    **not** implement the permutation-equivalence kernel — that would require a
     native binary-code-equivalence implementation, a project in its
     own right. Use these matrices for downstream tooling or external
     code-equivalence software.

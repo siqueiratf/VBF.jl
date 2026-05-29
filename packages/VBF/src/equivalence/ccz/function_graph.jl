@@ -15,8 +15,7 @@ the subgroup of CCZ-mappings of "block-triangular" form).
 
 A graph entry `(x, y)` with `x, y ∈ F₂ⁿ` is packed into a single
 `2n`-bit integer as `(x << n) | y` — the high `n` bits hold the input,
-the low `n` bits hold the output. This matches the sboxU C++
-representation in `cpp/ccz/graph.cpp`.
+the low `n` bits hold the output.
 
 Functions exposed:
 - [`FunctionGraph`](@ref) — the graph type.
@@ -94,8 +93,6 @@ of `F` and reconstruct the resulting function. Returns:
   unique image).
 - `nothing` — if `L(Γ_F)` is not a function graph (some input collides).
 
-This mirrors `cpp_ccz_equivalent_function` in `sboxU/cpp/ccz/graph.cpp`.
-
 # Examples
 
 ```jldoctest
@@ -145,7 +142,7 @@ Apply the `2n`-bit linear map `L` (M = 2N) to every packed entry of the
 graph, returning the new (re-sorted) graph. Unlike
 [`ccz_equivalent_function`](@ref) this keeps the result as a graph
 without insisting it be a function — used by the ortho-derivative
-automorphism search. Ports `cpp_FunctionGraph::image_by`.
+automorphism search.
 """
 function graph_image_by(g::FunctionGraph{N}, L::F2LinearMap{M,S}) where {N,M,S}
     M == 2 * N ||

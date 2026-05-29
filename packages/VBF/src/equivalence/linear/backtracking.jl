@@ -17,10 +17,9 @@ Backtrack over the basis `L₂(e₀), L₂(e₁), …, L₂(e_{N-1})`. At step `
 after a tentative assignment of `L₂(e_i)`, propagate the `2^i` new
 `(F(L₂(x)), G(x))` pairs through a running reduced basis of `φ` (kept
 in Gauss-Jordan form on the *domain* coordinate). Any pair that
-reduces to `(0, nonzero)` is a contradiction → backtrack. The classical
-`LEguess` construction from sboxU's C++ source, written cursorily as
-"try a basis image, derive constraints, fail loudly on collision";
-this is the same idea in idiomatic Julia.
+reduces to `(0, nonzero)` is a contradiction → backtrack. This is the
+classical linear-equivalence guessing construction: try a basis image,
+derive constraints, fail on collision.
 
 # Scope
 Permutations only at v0.1; non-bijective inputs return `false` for

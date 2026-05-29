@@ -8,11 +8,11 @@ choices (`s` constant, linear, or one of `F`'s own `u`-coordinates).
 [`switching_neighbors`](@ref) returns, for every nonzero `u`, the APN
 functions in the `u`-switching space of `F`.
 
-Ports `cpp_non_trivial_sn` (`sboxU/cpp/apn/sn.cpp`). The upstream code
+Switching-neighbour construction (Edel–Pott). The classical formulation
 *samples* the constraint equations at random and retries when a kernel
-element turns out non-APN; this port instead assembles the **complete**
-system of necessary linear constraints (so the result is deterministic
-and reproducible) and then filters the candidate neighbours by an
+element turns out non-APN; this implementation instead assembles the
+**complete** system of necessary linear constraints (so the result is
+deterministic and reproducible) and then filters the candidate neighbours by an
 explicit APN check. The complete enumeration is `O(2^{3n})`, practical
 for `n ≤ 7`.
 
@@ -20,13 +20,12 @@ The constraint for a fixed `u` lives over the `2ⁿ` unknowns `s(0..2ⁿ-1)`.
 For each direction `a ≠ 0` and pair `x₁ ≠ x₂` (with `x₁ ≠ x₂ ⊕ a`) such
 that `D_aF(x₁) ⊕ D_aF(x₂) = u`, the quadruple `{x₁⊕a, x₁, x₂⊕a, x₂}` of
 `s`-values must sum to zero. The trivial neighbours (constant / linear /
-the `n-1` non-`u` coordinates of `F`) are removed from the solution
-space, exactly as upstream.
+the `n-1` non-`u` coordinates of `F`) are removed from the solution space.
 """
 
 # A small homogeneous F₂ system over `nvars` Boolean unknowns supporting
 # incremental equation insertion, solution exclusion, and kernel-basis
-# extraction. Mirrors the subset of `cpp_F2LinearSystem` used by sn.cpp.
+# extraction.
 mutable struct _SNSystem
     nvars::Int
     pivot_rows::Vector{BitVector}
@@ -174,8 +173,8 @@ element: entry `u` (for `u = 1 … 2ⁿ-1`) is the vector of APN functions
 `G = F ⊕ u·s` with `s` a non-trivial Boolean function in `F`'s
 `u`-switching space. The returned vector has length `2ⁿ-1`.
 
-Throws `ArgumentError` if `F` is not APN. Ports `cpp_non_trivial_sn`;
-see the module docstring for the deterministic-vs-sampled difference.
+Throws `ArgumentError` if `F` is not APN. See the module docstring for the
+deterministic-vs-sampled difference.
 """
 function switching_neighbors(F::SBox{N,T}) where {N,T}
     differential_uniformity(F) ≤ 2 ||

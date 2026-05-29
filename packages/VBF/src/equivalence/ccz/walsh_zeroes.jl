@@ -21,9 +21,9 @@ distinct EA-class in F's CCZ-class is reached by at least one such `V`.
 # Packing convention
 
 Entries of `Z(F)` are packed as `2n`-bit integers `(a << N) | b` — `a`
-in the high `N` bits, `b` in the low `N` bits. This matches sboxU's
-`cpp/ccz/zeroes.cpp` and is *reversed* from the function-graph
-packing (`(x << N) | y` with `x` = input, `y` = output).
+in the high `N` bits, `b` in the low `N` bits. Note this is *reversed*
+from the function-graph packing (`(x << N) | y` with `x` = input,
+`y` = output).
 """
 
 """

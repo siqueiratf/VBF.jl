@@ -11,10 +11,8 @@ The multiset of values `{σ_F^k(s) : s ∈ F₂ⁿ}` is a **CCZ-invariant**
 (more discriminating than the LAT spectrum alone, and particularly
 useful as a coarse filter between APN classes).
 
-Port of `cpp_sigma_multiplicities` in
-`sboxU/cpp/apn/invariants.cpp`. The double sum is reorganised so that
-`∑_a W_F(a, b)^k` is precomputed once per `b`, dropping the cost from
-`O(2³ⁿ)` to `O(2²ⁿ)`.
+The double sum is reorganised so that `∑_a W_F(a, b)^k` is precomputed once per
+`b`, dropping the cost from `O(2³ⁿ)` to `O(2²ⁿ)`.
 """
 
 """
