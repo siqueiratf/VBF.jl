@@ -1,5 +1,20 @@
 using VBF
 using Test
+import GaloisFields
+
+@testset "CONWAY_POLYNOMIALS match the authoritative GaloisFields database" begin
+    # Our hand-maintained Conway table is validated against GaloisFields.jl's
+    # Conway-polynomial database (the canonical source, matching SageMath's
+    # GF(2^n)). `conwaypolynomial(2, n)` returns coefficients low→high; we
+    # encode them into our integer bit-convention (incl. the leading x^n bit).
+    encode(coeffs) = foldl((acc, ic) -> acc | ((Int(ic[2]) & 1) << (ic[1] - 1)),
+                           enumerate(coeffs); init = 0)
+    for (n, modulus) in CONWAY_POLYNOMIALS
+        @test encode(GaloisFields.conwaypolynomial(2, n)) == modulus
+    end
+    # also exercise the accessor
+    @test conway_polynomial(8) == CONWAY_POLYNOMIALS[8]
+end
 
 @testset "primitive_polynomial: lookup + range check" begin
     @test primitive_polynomial(4) == 0b10011         # x^4 + x + 1
