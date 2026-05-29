@@ -72,4 +72,29 @@ end
         @test canon(lin_equiv(rng, F)) == base
     end
 end
+
+@testset "is_linear (SBox) + random_linear_subspace" begin
+    rng = MersenneTwister(0x5EED)
+    L = random_invertible_linear_map(rng, Val(4))
+    linbox = SBox{4}([L(x) for x in 0:15])
+    @test is_linear(linbox)
+    @test !is_linear(gold(4))                      # x³ is quadratic, not linear
+    V = random_linear_subspace(rng, 4, 2)
+    @test length(V) == 4 && 0 in V
+    @test all((V[i] ⊻ V[j]) in V for i in 1:4, j in 1:4)   # closed under XOR
+end
+
+@testset "are_sets_linear_equivalent" begin
+    rng = MersenneTwister(0xAB1E)
+    A = random_linear_subspace(rng, 4, 2)
+    L = random_invertible_linear_map(rng, Val(4))
+    B = sort([L(a) for a in A])
+    M = are_sets_linear_equivalent(A, B, 4)
+    @test M !== nothing
+    @test sort([M(a) for a in A]) == B             # M maps A onto B
+    # a 2-dim subspace cannot be sent onto a non-subspace 4-set
+    @test are_sets_linear_equivalent([0, 1, 2, 3], [0, 1, 2, 5], 4) === nothing
+    # size mismatch → nothing
+    @test are_sets_linear_equivalent([0, 1], [0, 1, 2, 3], 4) === nothing
+end
 end

@@ -21,7 +21,7 @@ export polynomial_terms, terms_to_lut, monomial_power_table
 export quadratic_exponents, encode_quadratic, decode_quadratic_lut
 export random_function_sbox, random_permutation_sbox
 export random_linear_function, random_invertible_linear_map
-export random_linear_permutation, random_affine_permutation
+export random_linear_permutation, random_affine_permutation, random_linear_subspace
 
 # (the data/catalog layer's exports moved to the VBFCatalog package)
 
@@ -38,6 +38,7 @@ export affine_map_from_masks, affine_map_from_range_and_image
 export are_linear_equivalent
 export linear_representative
 export linear_equivalences, self_linear_equivalences, self_affine_equivalences
+export are_sets_linear_equivalent
 export are_affine_equivalent
 export affine_representative
 export affine_class_signature

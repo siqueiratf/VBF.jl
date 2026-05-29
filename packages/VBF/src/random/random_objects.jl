@@ -93,3 +93,27 @@ function random_affine_permutation(rng::AbstractRNG, ::Val{N},
     L = random_invertible_linear_map(rng, Val(N), T)
     F2AffineMap{N, T}(L, rand(rng, T) & _nbit_mask(Val(N), T))
 end
+
+"""
+    random_linear_subspace(rng, n, k) -> Vector{Int}
+
+A uniformly-ish random `k`-dimensional F₂ subspace of `GF(2ⁿ)`, returned as the
+sorted vector of its `2ᵏ` elements (including `0`). Built by drawing `k` images
+not yet spanned and closing under XOR (after `random_linear_subspace` in
+Kaleyski's VBF library).
+"""
+function random_linear_subspace(rng::AbstractRNG, n::Integer, k::Integer)
+    nn = Int(n); kk = Int(k)
+    0 ≤ kk ≤ nn || throw(ArgumentError("random_linear_subspace: need 0 ≤ k ≤ n"))
+    elems = Set{Int}((0,))
+    for _ in 1:kk
+        r = rand(rng, 0:(1 << nn) - 1)
+        while r in elems
+            r = rand(rng, 0:(1 << nn) - 1)
+        end
+        for e in collect(elems)
+            push!(elems, e ⊻ r)
+        end
+    end
+    sort!(collect(elems))
+end

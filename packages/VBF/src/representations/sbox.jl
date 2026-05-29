@@ -134,6 +134,24 @@ function is_permutation(s::SBox{N, T}) where {N, T}
 end
 
 """
+    is_linear(s::SBox) -> Bool
+
+`true` iff `s` is an F₂-linear function: `s(0) = 0` and
+`s(x) ⊕ s(y) = s(x ⊕ y)` for all `x, y`.
+"""
+function is_linear(s::SBox{N, T}) where {N, T}
+    s.lut[1] == 0 || return false
+    n = 1 << N
+    @inbounds for x in 0:n - 1
+        sx = Int(s.lut[x + 1])
+        for y in 0:n - 1
+            (sx ⊻ Int(s.lut[y + 1])) == Int(s.lut[(x ⊻ y) + 1]) || return false
+        end
+    end
+    true
+end
+
+"""
     inv(s::SBox) -> SBox
 
 Functional inverse of `s`. Throws `ArgumentError` if `s` is not a
