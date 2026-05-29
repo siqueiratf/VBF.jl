@@ -95,6 +95,7 @@ include("equivalence/ccz/api.jl")
 include("constructions/switching_neighbors.jl")
 include("constructions/ccz_quadratic.jl")
 include("constructions/quadratic_apn_graph.jl")
+include("constructions/quadratic_apn_search.jl")
 
 # 7. random object generators
 include("random/random_objects.jl")
