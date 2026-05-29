@@ -30,7 +30,9 @@ include(joinpath(@__DIR__, "_polynomial_parser.jl"))
 
 const _REPS_SBOXU_PATHS = (
     get(ENV, "BFA_SBOXU_PATH", ""),
-    joinpath(homedir(), "sboxU"),
+    "/home/zambonin/APN.jl/lpp-crypto@sboxU",   # current layout (2026-05-28)
+    joinpath(homedir(), "APN.jl", "lpp-crypto@sboxU"),
+    joinpath(homedir(), "sboxU"),               # legacy fallbacks
     "/home/zambonin/sboxU",
 )
 

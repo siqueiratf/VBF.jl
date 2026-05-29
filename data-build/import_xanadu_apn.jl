@@ -25,7 +25,9 @@ include(joinpath(@__DIR__, "_polynomial_parser.jl"))
 
 const _DEFAULT_XANADU_PATHS = (
     get(ENV, "BFA_XANADU_PATH", ""),
-    joinpath(homedir(), "sboxU", "apn-ccz-graph-framework"),
+    "/home/zambonin/APN.jl/Xanadu-ins@apn-ccz-graph-framework",   # current layout (2026-05-28)
+    joinpath(homedir(), "APN.jl", "Xanadu-ins@apn-ccz-graph-framework"),
+    joinpath(homedir(), "sboxU", "apn-ccz-graph-framework"),       # legacy fallbacks
     "/home/zambonin/sboxU/apn-ccz-graph-framework",
 )
 

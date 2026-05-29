@@ -31,7 +31,9 @@ include(joinpath(@__DIR__, "_polynomial_parser.jl"))
 
 const _DEFAULT_APN_REPO_PATHS = (
     get(ENV, "BFA_APN_REPO_PATH", ""),
-    joinpath(homedir(), "sboxU", "APN-Repository"),
+    "/home/zambonin/APN.jl/cma029@APN-Repository",   # current layout (2026-05-28)
+    joinpath(homedir(), "APN.jl", "cma029@APN-Repository"),
+    joinpath(homedir(), "sboxU", "APN-Repository"),   # legacy fallbacks
     "/home/zambonin/sboxU/APN-Repository",
 )
 
