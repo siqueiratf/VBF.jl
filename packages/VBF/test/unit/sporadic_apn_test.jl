@@ -17,4 +17,15 @@ end
     @test algebraic_degree(K) == 2               # quadratic (unlike the degree-4 permutation)
     @test !is_permutation(K)                      # 3-to-1, like every quadratic APN here
 end
+
+@testset "is_ccz_equivalent_to_permutation (complementary Walsh-zero pair)" begin
+    # the Kim function is the canonical positive case: a non-permutation quadratic
+    # APN that IS CCZ-equivalent to a permutation (the Dillon one)
+    @test is_ccz_equivalent_to_permutation(kim_apn())
+    @test is_ccz_equivalent_to_permutation(dillon_apn_permutation())
+    @test is_ccz_equivalent_to_permutation(gold_apn(5, 1))   # x³ is a permutation on n=5
+    # ... but not in even dimension
+    @test !is_ccz_equivalent_to_permutation(gold_apn(4, 1))  # no n=4 APN permutation
+    @test !is_ccz_equivalent_to_permutation(gold_apn(6, 1))  # x³ is not the Dillon class
+end
 end

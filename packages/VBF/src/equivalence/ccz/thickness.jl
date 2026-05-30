@@ -76,14 +76,29 @@ function thickness_spectrum(F::SBox{N,T}) where {N,T}
     return thicks
 end
 
-# NOTE (Phase 25): a CCZ-equivalent-to-permutation test was attempted here as
-# `N ∈ thickness_spectrum(F)` (the Canteaut–Perrin thickness-N criterion). It is
-# UNRELIABLE because `extract_linear_subspaces` does not enumerate *all* n-dim
-# Walsh-zero subspaces — it found the thickness-N subspace for an actual
-# permutation (the Dillon LUT) but NOT for the Kim function (a quadratic APN
-# known to be CCZ-equivalent to the Dillon permutation), giving a false negative.
-# A correct test needs a complete search for an n-dim Walsh-zero subspace with
-# full low-bit projection; left for when the subspace enumeration is completed.
+"""
+    is_ccz_equivalent_to_permutation(F::SBox{N}) -> Bool
+
+True iff the APN function `F` is CCZ-equivalent to a permutation. By
+Canteaut–Perrin (FFA 2019) this holds iff the Walsh-zero set `Z(F)` contains two
+**complementary** `n`-dimensional subspaces `V₁, V₂` (i.e. `V₁ ⊕ V₂ = F₂^{2n}`).
+
+This complementary-*pair* condition is CCZ-invariant — unlike the thickness of a
+single subspace, which a CCZ-map does not preserve (an earlier attempt using the
+thickness-N of one subspace gave a false negative on the Kim function, which IS
+CCZ-equivalent to the Dillon permutation). The only known even-dimension example
+is the Dillon permutation and the [`kim_apn`](@ref) it comes from (`N = 6`); Gold
+`x³` in even dimension returns `false` (the "big APN problem"). Cost is that of
+enumerating the n-dim Walsh-zero subspaces (tractable for `n ≤ 6`).
+"""
+function is_ccz_equivalent_to_permutation(F::SBox{N}) where {N}
+    M = 2N
+    bases = extract_linear_subspaces(walsh_zeroes(F), N; max_bits = M)
+    @inbounds for i in eachindex(bases), j in (i + 1):length(bases)
+        rank_f2(UInt32[bases[i]; bases[j]]; nbits = M) == M && return true
+    end
+    false
+end
 
 # ---------------------------------------------------------------------------
 # CCZ-class EA representatives.

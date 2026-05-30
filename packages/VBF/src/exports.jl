@@ -57,6 +57,7 @@ export ccz_block_decomposition, ea_mapping
 export ccz_matrix, ea_matrix
 export walsh_zeroes, walsh_zeroes_size
 export thickness, thickness_spectrum, enumerate_ccz_class
+export is_ccz_equivalent_to_permutation
 export TUDecomposition, tu_decomposition_from_space_basis, get_tu_decompositions
 export apply_tu, core, twist
 export are_ccz_equivalent
