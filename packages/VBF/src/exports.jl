@@ -84,6 +84,7 @@ export taniguchi_apn, taniguchi_apn_representatives
 export search_quadratic_apn_le
 export gold_apn, kasami_apn, welch_apn, niho_apn, inverse_apn, dobbertin_apn
 export known_apn_monomials
+export bcp_apn, bcl_apn
 export dillon_apn_permutation, kim_apn
 
 # tier 4 — statistics
