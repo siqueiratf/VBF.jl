@@ -45,7 +45,10 @@ whose ortho-derivatives are themselves permutations route to
 
 # Limitations
 
-- **Permutations only.** Non-permutations get `false` without throwing.
+- **Heggebakk is permutations-only**, but quadratic APN (the usual non-permutation
+  case — almost all APN are 3-to-1) is handled by `:ortho_derivative`, which now
+  uses the general, non-permutation-capable [`are_linearly_equivalent_general`](@ref).
+  Functions that are neither permutations nor quadratic APN still return `false`.
 - **Degenerate partitions.** For functions where the `k = 4` partition
   signature is `[2ⁿ-1, 1]` (e.g., monomial APN), the outer-permutation
   set is the full `GL(n, F₂)` and step 3 enumerates millions of
@@ -66,7 +69,8 @@ whose ortho-derivatives are themselves permutations route to
 Decide EA-equivalence of `F` and `G`.
 
 SBoxes of different `N` or storage `T` return `false` without throwing.
-Non-permutations return `false`.
+Non-permutation quadratic APN are handled via the ortho-derivative test;
+other non-permutations return `false`.
 
 `k` controls the partition level (default `4`, must be even and `≥ 4`).
 
@@ -83,13 +87,14 @@ function are_ea_equivalent(
 )
     inputbits(F) == inputbits(G) || return false
     storage_type(F) == storage_type(G) || return false
-    (is_permutation(F) && is_permutation(G)) || return false
 
     s = strategy
     if s === :auto
         s = _ea_auto_strategy(F, G)
     end
     if s === :heggebakk
+        # Heggebakk's partition search is permutation-only.
+        (is_permutation(F) && is_permutation(G)) || return false
         cert = _ea_search(F, G; k = k, max_outer = max_outer_per_sigma,
                           want_certificate = false)
         return cert !== nothing
@@ -102,16 +107,13 @@ end
 # Pick a default strategy: prefer the ortho-derivative for quadratic APN
 # permutations (where it sidesteps heggebakk's degenerate-partition issue).
 function _ea_auto_strategy(F::SBox, G::SBox)
-    # Need both quadratic APN permutations with valid ortho-derivatives,
-    # AND both ortho-derivatives must themselves be permutations
-    # (Phase 6's :stennes requires that).
-    (is_permutation(F) && is_permutation(G)) || return :heggebakk
+    # Quadratic APN (permutation OR not — almost all APN are 3-to-1) routes to
+    # the ortho-derivative test, which now uses the general, non-permutation-
+    # capable linear-equivalence. Everything else falls back to the
+    # permutation-only Heggebakk search.
     algebraic_degree(F) == 2 && algebraic_degree(G) == 2 || return :heggebakk
-    π_F = ortho_derivative(F)
-    π_F === nothing && return :heggebakk
-    π_G = ortho_derivative(G)
-    π_G === nothing && return :heggebakk
-    (is_permutation(π_F) && is_permutation(π_G)) || return :heggebakk
+    ortho_derivative(F) === nothing && return :heggebakk
+    ortho_derivative(G) === nothing && return :heggebakk
     return :ortho_derivative
 end
 
@@ -129,7 +131,15 @@ function _are_ea_equivalent_via_ortho(F::SBox, G::SBox)
     π_F === nothing && return false
     π_G = ortho_derivative(G)
     π_G === nothing && return false
-    return are_linear_equivalent(π_F, π_G; strategy = :stennes)
+    # Fast necessary reject: the ortho-derivative fingerprint (its differential
+    # and Walsh spectra are linear-equivalence invariants of π). Different
+    # fingerprints ⇒ not linear-equivalent ⇒ not EA-equivalent — instant, and it
+    # spares the exact backtracking the costly job of *exhausting* an inequivalent
+    # pair at n=8. Only same-fingerprint candidates pay for the exact test.
+    apn_ea_mugshot(F) == apn_ea_mugshot(G) || return false
+    # `:auto` linear-equivalence routes non-permutation ortho-derivatives (the
+    # common case for 3-to-1 APN) through the general backtracking.
+    return are_linear_equivalent(π_F, π_G)
 end
 
 """

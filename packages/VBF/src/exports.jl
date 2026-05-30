@@ -35,7 +35,7 @@ export generating_affine_map, generating_affine_map_r
 export affine_map_from_masks, affine_map_from_range_and_image
 
 # tier 6 — equivalence
-export are_linear_equivalent
+export are_linear_equivalent, are_linearly_equivalent_general
 export linear_representative
 export linear_equivalences, self_linear_equivalences, self_affine_equivalences
 export are_sets_linear_equivalent

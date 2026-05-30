@@ -62,11 +62,16 @@ function are_linear_equivalent(F::SBox, G::SBox; strategy::Symbol = :auto)
 
     s = strategy
     if s === :auto
-        s = (is_permutation(F) && is_permutation(G) && inputbits(F) ≥ 5) ?
-            :stennes : :lpp_backtracking
+        if is_permutation(F) && is_permutation(G)
+            s = inputbits(F) ≥ 5 ? :stennes : :lpp_backtracking
+        else
+            s = :general          # non-permutations (e.g. ortho-derivatives of APN)
+        end
     end
     if s === :lpp_backtracking
         return are_linearly_equivalent_perm(F, G)
+    elseif s === :general
+        return are_linearly_equivalent_general(F, G)
     elseif s === :stennes
         # Stennes works on permutations only; non-permutations are never
         # linearly equivalent to a permutation, and two non-permutations

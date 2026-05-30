@@ -70,6 +70,7 @@ include("invariants/pi_multiset.jl")
 # 5. equivalence — the relation hierarchy
 include("equivalence/linear/backtracking.jl")
 include("equivalence/linear/canonical_representative.jl")
+include("equivalence/linear/general_equivalence.jl")
 include("equivalence/linear/api.jl")
 include("equivalence/linear/self_equivalences.jl")
 include("equivalence/linear/set_equivalence.jl")

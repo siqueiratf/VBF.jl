@@ -57,7 +57,16 @@ function are_ccz_equivalent(
 )
     inputbits(F) == inputbits(G) || return false
     storage_type(F) == storage_type(G) || return false
-    (is_permutation(F) && is_permutation(G)) || return false
+    if !(is_permutation(F) && is_permutation(G))
+        # CCZ = EA on the quadratic-APN class (Yoshiara), and EA now handles
+        # non-permutations; route there. Otherwise the permutation-only
+        # Canteaut–Perrin enumeration does not apply.
+        if algebraic_degree(F) == 2 && algebraic_degree(G) == 2 &&
+           ortho_derivative(F) !== nothing && ortho_derivative(G) !== nothing
+            return are_ea_equivalent(F, G)
+        end
+        return false
+    end
 
     s = strategy == :auto ? :canteaut_perrin : strategy
     if s === :canteaut_perrin
