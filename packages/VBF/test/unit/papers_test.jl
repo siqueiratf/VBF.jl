@@ -39,4 +39,56 @@ end
     @test r.x3_ea_equiv_x5 == false    # distinct Frobenius orbits
 end
 
+@testset "Taniguchi2019: family on F2^8 — three CCZ-classes, two new" begin
+    r = _run_paper("Taniguchi2019_construction.jl")
+    @test r.n_classes == 3
+    @test r.n_new == 2
+    @test r.all_quadratic_apn
+    @test r.distinct_mugshots == 3
+    @test r.corpus_matches             # the two new classes == the re-housed corpus
+end
+
+@testset "EdelPott2009: switching construction + re-housed Table 9" begin
+    r = _run_paper("EdelPott2009_switching.jl")
+    @test r.corpus == 22
+    @test r.apn_neighbors > 0          # switching a small APN yields APN neighbours
+    @test r.quad_apn
+end
+
+@testset "WengTanGong2013: APN-algebra (derivative matrix is a QAM)" begin
+    r = _run_paper("WengTanGong2013_apn_algebra.jl")
+    @test r.corpus == 10
+    @test r.all_quadratic_apn
+    @test r.all_qam
+end
+
+@testset "YuWangLi2014: QAM↔F correspondence + n=4 search" begin
+    r = _run_paper("YuWangLi2014_qam.jl")
+    @test r.corpus == 8179
+    @test r.search_finds_gold
+    @test r.qam_correspondence
+end
+
+@testset "YuPerrin2022: ortho-derivative CCZ bucketing on secondQAM" begin
+    r = _run_paper("YuPerrin2022_qam_orthoderivative.jl")
+    @test r.corpus == 5412
+    @test r.all_qam
+    @test r.distinct_buckets > 1
+end
+
+@testset "BeierleLeander2022: tree search + re-housed corpus" begin
+    r = _run_paper("BeierleLeander2022_tree_search.jl")
+    @test r.corpus == 12923
+    @test r.search_finds_quadratic_apn
+    @test r.quad_apn
+end
+
+@testset "BeierleLeanderPerrin2022: trims/extensions" begin
+    r = _run_paper("BeierleLeanderPerrin2022_trims.jl")
+    @test r.corpus == 6368
+    @test r.extension_is_apn
+    @test r.trim_spectrum_nonempty
+    @test r.quad_apn
+end
+
 end
