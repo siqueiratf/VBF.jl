@@ -81,6 +81,8 @@ export qam_cyclic_orbits, qam_from_cyclic, independent_conjugate_elements
 export cyclic_qam_subset_representatives, is_cyclic_qam, search_qam, search_qam_full
 export taniguchi_apn, taniguchi_apn_representatives
 export search_quadratic_apn_le
+export gold_apn, kasami_apn, welch_apn, niho_apn, inverse_apn, dobbertin_apn
+export known_apn_monomials
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
