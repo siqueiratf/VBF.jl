@@ -100,6 +100,18 @@ end
     end
 end
 
+@testset "load_bibliography: the 8-bit quadratic-APN construction papers" begin
+    bib = load_bibliography()
+    keys_seen = Set([e.bib_key for e in bib])
+    # the seven sources of the 32,892 known quadratic APN functions in 8 vars
+    # (re-housed as bulk corpora; their `bib_key`s must resolve here)
+    for required in ("EdelPott2009", "YuWangLi2014QAM", "WengTanGong2013",
+                     "Taniguchi2019", "BeierleLeander2022", "YuPerrin2022QAM",
+                     "BeierleLeanderPerrin2022Trims")
+        @test required in keys_seen
+    end
+end
+
 @testset "BibEntry getindex / get / haskey accept case-insensitive field names" begin
     bib = load_bibliography()
     aes = first(e for e in bib if e.bib_key == "FIPS197")
