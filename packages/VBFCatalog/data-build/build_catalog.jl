@@ -1,7 +1,7 @@
 # Builds `BFA_catalog.sqlite` from human-editable sources under `data-raw/`.
 #
 # Run:
-#     julia --project=. data-build/build_catalog.jl
+#     julia --project=data-build data-build/build_catalog.jl
 #
 # The script is idempotent: running it overwrites the existing catalog file.
 # Statistics (DU, Lin, AlgDeg, BU, …) for every entry are computed via

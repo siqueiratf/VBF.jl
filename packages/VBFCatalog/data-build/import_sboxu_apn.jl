@@ -16,8 +16,8 @@
 #
 # Usage:
 #     # uses BFA_SBOXU_PATH env var or default ~/sboxU
-#     julia --project=. data-build/import_sboxu_apn.jl
-#     julia --project=. data-build/import_sboxu_apn.jl --max 200
+#     julia --project=data-build data-build/import_sboxu_apn.jl
+#     julia --project=data-build data-build/import_sboxu_apn.jl --max 200
 
 using VBF
 using VBFCatalog

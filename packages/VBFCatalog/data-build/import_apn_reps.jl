@@ -19,7 +19,7 @@
 # source tag into that row instead of inserting a duplicate.
 #
 # Usage (uses BFA_SBOXU_PATH or default ~/sboxU):
-#     julia --project=. data-build/import_apn_reps.jl
+#     julia --project=data-build data-build/import_apn_reps.jl
 
 using VBF
 using VBFCatalog

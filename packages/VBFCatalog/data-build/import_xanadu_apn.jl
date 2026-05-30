@@ -14,8 +14,8 @@
 #
 # Usage:
 #     # uses BFA_XANADU_PATH env var or default ~/sboxU/apn-ccz-graph-framework
-#     julia --project=. data-build/import_xanadu_apn.jl
-#     julia --project=. data-build/import_xanadu_apn.jl --max 50
+#     julia --project=data-build data-build/import_xanadu_apn.jl
+#     julia --project=data-build data-build/import_xanadu_apn.jl --max 50
 
 using VBF
 using VBFCatalog

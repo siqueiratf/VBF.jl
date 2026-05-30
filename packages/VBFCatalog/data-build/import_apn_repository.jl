@@ -17,8 +17,8 @@
 #
 # Usage:
 #     # uses BFA_APN_REPO_PATH env var or default ~/sboxU/APN-Repository
-#     julia --project=. data-build/import_apn_repository.jl
-#     julia --project=. data-build/import_apn_repository.jl --max 5
+#     julia --project=data-build data-build/import_apn_repository.jl
+#     julia --project=data-build data-build/import_apn_repository.jl --max 5
 
 using VBF
 using VBFCatalog

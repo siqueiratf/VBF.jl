@@ -25,7 +25,7 @@
 # BFA never depends on the thesis checkout at runtime.
 #
 # Usage (uses BFA_THESIS_PATH or the default APN.jl layout):
-#     julia --project=. data-build/import_simonberg.jl
+#     julia --project=data-build data-build/import_simonberg.jl
 
 using VBF
 using VBFCatalog
