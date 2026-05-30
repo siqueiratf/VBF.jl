@@ -101,6 +101,7 @@ include("constructions/extensions.jl")
 include("constructions/qam.jl")
 include("constructions/qam_search.jl")
 include("constructions/taniguchi.jl")
+include("constructions/le_automorphism_search.jl")
 
 # 7. random object generators
 include("random/random_objects.jl")
