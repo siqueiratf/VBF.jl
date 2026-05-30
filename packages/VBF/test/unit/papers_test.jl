@@ -64,10 +64,11 @@ end
     @test r.all_qam
 end
 
-@testset "YuWangLi2014: QAM↔F correspondence + n=4 search" begin
+@testset "YuWangLi2014: QAM↔F correspondence + guess-and-determine search" begin
     r = _run_paper("YuWangLi2014_qam.jl")
     @test r.corpus == 8179
-    @test r.search_finds_gold
+    @test r.gd_search_n4_gold           # Algorithm 1 (search_qam_full) recovers Gold
+    @test r.cyclic_gold
     @test r.qam_correspondence
 end
 
@@ -78,10 +79,11 @@ end
     @test r.distinct_buckets > 1
 end
 
-@testset "BeierleLeander2022: tree search + re-housed corpus" begin
+@testset "BeierleLeander2022: tree search (incl. n=7 LE-automorphism) + corpus" begin
     r = _run_paper("BeierleLeander2022_tree_search.jl")
     @test r.corpus == 12923
     @test r.search_finds_quadratic_apn
+    @test r.le_search_n7_apn            # the real BL22 method at n=7 (class 1)
     @test r.quad_apn
 end
 
