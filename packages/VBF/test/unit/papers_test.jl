@@ -91,4 +91,13 @@ end
     @test r.quad_apn
 end
 
+@testset "8-bit quadratic-APN landscape: 7 corpora, raw total 32,916" begin
+    # The fast totals; the full ortho-derivative dedup (→ the literature's 32,892)
+    # runs standalone (`distinct_up_to_ea()`), too slow for the suite.
+    r = _run_paper("quadratic_apn_8bit_landscape.jl")
+    @test r.n_corpora == 7
+    @test r.raw == 32916
+    @test sum(c for (_, c) in r.per_family) == 32916
+end
+
 end
