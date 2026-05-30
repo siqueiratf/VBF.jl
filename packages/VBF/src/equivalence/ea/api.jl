@@ -90,6 +90,12 @@ function are_ea_equivalent(
 
     s = strategy
     if s === :auto
+        # Reflexivity holds for every function (via identity maps), including
+        # the non-quadratic non-permutations that no strategy below can decide.
+        # Scoped to :auto so an explicitly requested strategy keeps its exact
+        # semantics (e.g. :heggebakk legitimately short-circuits on a
+        # degenerate partition, even for F vs F).
+        F.lut == G.lut && return true
         s = _ea_auto_strategy(F, G)
     end
     if s === :heggebakk

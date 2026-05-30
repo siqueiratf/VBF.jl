@@ -16,12 +16,40 @@ end
     @test_throws ArgumentError are_affine_equivalent(s, s; strategy = :nonexistent)
 end
 
-@testset "are_affine_equivalent: rejects non-permutations" begin
+@testset "are_affine_equivalent: handles non-permutations" begin
+    # A permutation and a constant function differ in their (CCZ-/affine-
+    # invariant) differential spectra, so they are not affine-equivalent —
+    # but a non-permutation IS affine-equivalent to itself (reflexivity).
+    # The general (non-permutation) path must respect this; an earlier
+    # version routed every non-permutation to a hard `false`, breaking
+    # reflexivity for the 3-to-1 quadratic APN that are the common case.
     c = SBox(UInt8[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])
     F = load_literature_sbox("PRESENT")
     @test !are_affine_equivalent(F, c)
     @test !are_affine_equivalent(c, F)
-    @test !are_affine_equivalent(c, c)
+    @test are_affine_equivalent(c, c)         # reflexivity (general path)
+    @test are_ea_equivalent(c, c)             # reflexivity through the EA dispatcher
+end
+
+@testset "are_affine_equivalent: non-permutation quadratic APN" begin
+    # kim_apn is a 3-to-1 (non-permutation) quadratic APN on n=6. Affine
+    # equivalence must hold reflexively, be symmetric, recover a constructed
+    # affine copy, and separate it from a genuinely inequivalent APN.
+    rng = MersenneTwister(0xAFF14E)
+    F = kim_apn()
+    N = inputbits(F)
+    n = 1 << N
+    @test !is_permutation(F)
+    @test are_affine_equivalent(F, F)                       # reflexivity
+    # Constructed affine copy  G(x) = L₁(F(L₂(x) ⊕ c₂)) ⊕ c₁.
+    L1 = random_invertible_linear_map(rng, Val(N))
+    L2 = random_invertible_linear_map(rng, Val(N))
+    c1 = UInt8(rand(rng, 0:(n - 1)))
+    c2 = UInt8(rand(rng, 0:(n - 1)))
+    G = SBox(UInt8[L1(F.lut[(L2(UInt8(x)) ⊻ c2) + 1]) ⊻ c1 for x in 0:(n - 1)])
+    @test are_affine_equivalent(F, G)                       # recovers the copy
+    @test are_affine_equivalent(G, F)                       # symmetric
+    @test !are_affine_equivalent(F, gold_apn(6, 1))         # distinct APN class
 end
 
 @testset "reflexivity on every 4-bit catalog permutation" begin

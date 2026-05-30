@@ -50,6 +50,23 @@ function _are_affine_equivalent_shift(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
     return false
 end
 
+# General (possibly non-permutation) affine equivalence via the same shift
+# reduction: `F ~_A G  iff  ∃ a : F̃_0 ~_L G̃_a`. The canonical-form comparison
+# above needs `linear_representative` (Stennes, permutation-only), so for
+# non-permutations we test each anchor with the general non-permutation linear-
+# equivalence procedure instead. Cheap spectral necessary conditions reject most
+# inequivalent pairs (and the F == G reflexive case short-circuits at a = 0).
+function _are_affine_equivalent_general(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
+    differential_spectrum(F) == differential_spectrum(G) || return false
+    absolute_walsh_spectrum(F) == absolute_walsh_spectrum(G) || return false
+    F_0 = _shift_anchor(F, 0)
+    n = 1 << N
+    for a in 0:(n - 1)
+        are_linear_equivalent(F_0, _shift_anchor(G, a)) && return true
+    end
+    return false
+end
+
 """
     affine_class_signature(F::SBox{N,T}) -> Vector{SBox{N,T}}
 

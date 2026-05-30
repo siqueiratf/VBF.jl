@@ -26,11 +26,16 @@ return `false` without throwing.
 
 # Strategies
 
-- `:auto`           — at v0.1 delegates to `:stennes_shift`.
+- `:auto`           — `:stennes_shift` for permutations, `:general` for
+  non-permutations (e.g. 3-to-1 quadratic APN).
 - `:stennes_shift`  — 2ⁿ-fold reduction to linear equivalence via the
   zero-anchored shift `F̃_a(x) = F(x ⊕ a) ⊕ F(a)`. Calls
-  `linear_representative` up to `2ⁿ + 1` times. Permutations only;
-  non-permutations return `false`.
+  `linear_representative` (Stennes' canonical form) up to `2ⁿ + 1` times.
+  Permutations only; non-permutations return `false`.
+- `:general`        — the same shift reduction, but each anchor is tested
+  with the general non-permutation linear-equivalence procedure
+  (`are_linear_equivalent`) instead of the permutation-only canonical form.
+  Works for non-permutations; slower than `:stennes_shift`.
 
 # Examples
 
@@ -50,9 +55,14 @@ function are_affine_equivalent(F::SBox, G::SBox; strategy::Symbol = :auto)
     inputbits(F) == inputbits(G) || return false
     storage_type(F) == storage_type(G) || return false
 
-    s = strategy == :auto ? :stennes_shift : strategy
+    s = strategy
+    if s === :auto
+        s = (is_permutation(F) && is_permutation(G)) ? :stennes_shift : :general
+    end
     if s === :stennes_shift
         return _are_affine_equivalent_shift(F, G)
+    elseif s === :general
+        return _are_affine_equivalent_general(F, G)
     end
     throw(ArgumentError("are_affine_equivalent: unknown strategy $(repr(strategy))"))
 end
