@@ -152,4 +152,27 @@ end
     @test_throws ErrorException encode_quadratic([(1, 7)], n)
 end
 
+@testset "quadratic coefficient encoding from a LUT (interpolation)" begin
+    n = 8; mod = conway_polynomial(n)
+    # Gold x³ over this field is quadratic APN; recover its coefficients from the LUT
+    gold = SBox{n}(gf_monomial_lut(n, 3; modulus = mod))
+    bytes = encode_quadratic(gold; modulus = mod)
+    @test length(bytes) == 37
+    @test decode_quadratic_lut(bytes, n, mod) == Int.(gold.lut)
+    # LUT-interpolation agrees with the term-based encoding of the same polynomial,
+    # and recovers exactly X³ (only the weight-2 exponent 3 is set)
+    @test bytes == encode_quadratic(polynomial_terms("X^3", n, mod), n)
+    @test decode_quadratic_lut(bytes, n, mod) == terms_to_lut([(1, 3)], n, mod)
+    # a higher-degree map (inverse x^(2ⁿ-2), degree n-1) is rejected, not truncated
+    apninv = SBox{n}(gf_monomial_lut(n, (1 << n) - 2; modulus = mod))
+    @test_throws ErrorException encode_quadratic(apninv; modulus = mod)
+    # a shared power table yields the identical encoding
+    powtab = monomial_power_table(n, mod)
+    @test encode_quadratic(gold; modulus = mod, powtab = powtab) == bytes
+    # a smaller field round-trips too (n=6 Gold x³)
+    m6 = conway_polynomial(6)
+    g6 = SBox{6}(gf_monomial_lut(6, 3; modulus = m6))
+    @test decode_quadratic_lut(encode_quadratic(g6; modulus = m6), 6, m6) == Int.(g6.lut)
+end
+
 end

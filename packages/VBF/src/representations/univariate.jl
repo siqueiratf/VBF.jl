@@ -355,3 +355,56 @@ function decode_quadratic_lut(bytes::AbstractVector{UInt8}, n::Integer, modulus:
     end
     terms_to_lut(terms, nn, Int(modulus); powtab = powtab)
 end
+
+"""
+    encode_quadratic(F::SBox{N,T}; modulus=conway_polynomial(N),
+                     verify=true, powtab=nothing) -> Vector{UInt8}
+
+Pack a degree-≤2 vectorial function given by its **LUT** into the compact
+`quadratic-coeffs-v1` byte vector (the substrate for VBFCatalog's bulk-corpus
+description store) by recovering the weight-≤2 univariate coefficients of `F`
+over `GF(2ᴺ)` modulo `modulus`.
+
+The interpolation is the Mattson–Solomon identity: writing `F(X) = Σₑ cₑ Xᵉ`
+over `GF(q)`, `q = 2ᴺ`, one has `c₀ = F(0)` and `cₑ = Σ_{a≠0} F(a)·a^{q-1-e}`
+for `1 ≤ e ≤ q-2`. Only the `1 + N + C(N,2)` exponents of 2-adic weight ≤ 2 are
+retained; for a genuinely quadratic `F` every higher-weight coefficient is zero
+(the univariate 2-adic-weight degree equals the Boolean algebraic degree, a
+field-independent invariant). With `verify=true` the packed bytes are decoded
+back and required to reproduce `F` exactly — so a function of degree > 2 is
+rejected rather than silently truncated. Pass a shared
+[`monomial_power_table`](@ref) as `powtab` to amortise the interpolation across
+many functions (e.g. a whole bulk corpus).
+"""
+function encode_quadratic(F::SBox{N, T}; modulus::Integer = conway_polynomial(N),
+                          verify::Bool = true,
+                          powtab::Union{Nothing, Vector{Vector{Int}}} = nothing) where {N, T}
+    nn = Int(N); q = 1 << nn; mod = Int(modulus)
+    tab = powtab === nothing ? monomial_power_table(nn, mod) : powtab
+    exps = quadratic_exponents(nn)
+    nb = cld(nn, 8)
+    lut = F.lut
+    out = zeros(UInt8, length(exps) * nb)
+    for (i, e) in enumerate(exps)
+        c = 0
+        if e == 0
+            c = Int(lut[1])                        # c₀ = F(0)
+        else
+            j = q - 1 - e                          # paired exponent, in 1:q-2
+            for a in 1:q - 1
+                fa = Int(lut[a + 1])
+                fa == 0 && continue
+                c ⊻= gf_mul(fa, tab[a + 1][j + 1], nn; modulus = mod)
+            end
+        end
+        for b in 0:nb - 1
+            out[(i - 1) * nb + b + 1] = UInt8((c >> (8b)) & 0xff)
+        end
+    end
+    if verify
+        decode_quadratic_lut(out, nn, mod; powtab = tab) == Int.(lut) ||
+            error("encode_quadratic(::SBox): F is not degree ≤ 2 over GF(2^$nn) " *
+                  "(round-trip mismatch); algebraic_degree = $(algebraic_degree(F))")
+    end
+    out
+end
