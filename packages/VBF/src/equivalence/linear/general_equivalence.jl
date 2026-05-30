@@ -71,7 +71,13 @@ function are_linearly_equivalent_general(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
     end
 
     rec = function (i::Int, bin::Vector{Int}, bout::Vector{Int})
-        i == N && return length(bin) == N         # L₁ determined on all of F₂ᴺ ⇒ invertible
+        # L₂ complete and consistent. L₁ is pinned on span(image F) by the
+        # constraints (bin ↦ bout); it extends to an invertible map iff that
+        # determined part is injective, i.e. the outputs are as independent as
+        # the inputs. (`length(bin) == N` alone would both reject non-spanning F
+        # — e.g. constant functions, breaking reflexivity — and risk accepting a
+        # non-invertible L₁ when the outputs are dependent.)
+        i == N && return rank_f2(UInt32.(bout); nbits = N) == length(bin)
         b = 1 << i
         @inbounds for img in 1:NN - 1
             indep(img) || continue

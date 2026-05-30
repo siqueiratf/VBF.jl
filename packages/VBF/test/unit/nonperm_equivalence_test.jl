@@ -25,6 +25,20 @@ reps = [r.sbox for r in taniguchi_apn_representatives(4)]
                                            ortho_derivative(reps[2]))
 end
 
+@testset "are_linearly_equivalent_general: degenerate (non-spanning) images" begin
+    # When F's image does not span F₂ⁿ, L₁ is only partially determined but
+    # still extends to an invertible map — the success test must be "the pinned
+    # part of L₁ is injective", not "L₁ is fully determined (length == N)".
+    # The earlier `length(bin) == N` test broke reflexivity here and risked
+    # accepting a non-invertible L₁ when the outputs were dependent.
+    z  = SBox(UInt8[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])  # zero
+    c3 = SBox(UInt8[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])  # constant 3
+    c5 = SBox(UInt8[5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5])  # constant 5
+    @test are_linearly_equivalent_general(z, z)      # reflexivity (L₁ free)
+    @test are_linearly_equivalent_general(c3, c3)
+    @test are_linearly_equivalent_general(c3, c5)    # ∃ invertible L₁ with L₁(3)=5
+end
+
 @testset "are_ea_equivalent / are_ccz_equivalent work on non-permutation APN" begin
     F = SBox{6}(gf_monomial_lut(6, 3))
     @test !is_permutation(F)
