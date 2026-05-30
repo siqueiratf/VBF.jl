@@ -99,6 +99,27 @@ end
         # DDT entry multisets must match.
         @test sort(vec(ddt(F_eq))) == ref_ddt_sorted
     end
+
+    # Random F₂^{2N} maps are usually inadmissible (the transformed graph is not
+    # a function), so for some seeds the loop above asserts nothing. Guarantee
+    # coverage with a block-diagonal map diag(L₁, L₂): block-diagonal over the
+    # contiguous input/output halves is always admissible — its graph image is
+    # the EA-equivalent L₂∘F∘L₁⁻¹ — so the construction always returns a function.
+    invertible_cols(k) = begin
+        cols = T[]; bs = T[]
+        while length(cols) < k
+            v = rand(rng, T) & T((T(1) << k) - T(1))
+            (v == 0 || is_in_span(v, bs; nbits = k)) && continue
+            push!(cols, v); push!(bs, v)
+            bs = linear_basis(bs; nbits = k)
+        end
+        cols
+    end
+    bd_cols = vcat(invertible_cols(N), T[c << N for c in invertible_cols(N)])
+    A_bd = F2AffineMap(F2LinearMap{2N, T}(bd_cols), T(0))
+    F_bd = ccz_equivalent_function(F, A_bd)
+    @test F_bd !== nothing
+    @test sort(vec(ddt(F_bd))) == ref_ddt_sorted
 end
 
 end
