@@ -104,14 +104,25 @@ end
 # CCZ-class EA representatives.
 # ---------------------------------------------------------------------------
 
-# Build the CCZ mapping L : F₂²ⁿ → F₂²ⁿ from a single n-dim subspace basis:
-#   img = complete_basis(basis, 2n); reverse; build F2LinearMap; transpose.
+# Build the CCZ mapping L : F₂²ⁿ → F₂²ⁿ that sends the graph of F to a function
+# graph, given the `2n`-bit basis of an n-dim Walsh-zero subspace `V₁` and a
+# completing basis `comp` (so `[V₁; comp]` spans F₂²ⁿ):
+#   L := transpose( F2LinearMap([V₁; comp]) ).
+# When `comp` is the basis of a *complementary Walsh-zero subspace* `V₂`
+# (`V₁ ⊕ V₂ = F₂²ⁿ`), the resulting representative is a permutation
+# (Canteaut–Perrin, FFA 2019); an arbitrary completion is used only as a
+# fallback when `V₁` has no Walsh-zero complement.
+function _ccz_mapping_from_bases(b1::Vector{UInt32}, comp::Vector{UInt32}, N::Int)
+    M = 2N
+    return transpose(F2LinearMap{M, UInt32}(UInt32[b1; comp]))
+end
+
+# Backwards-compatible single-subspace mapping (arbitrary completion).
 function _ccz_mapping_from_basis(basis::Vector{UInt32}, N::Int)
     M = 2N
     img = complete_basis(basis, M)
     reverse!(img)
-    L_lin = F2LinearMap{M, UInt32}(img)
-    return transpose(L_lin)
+    return transpose(F2LinearMap{M, UInt32}(img))
 end
 
 """
@@ -120,10 +131,23 @@ end
 Enumerate CCZ-equivalent representatives of `F` — at least one per
 EA-class in F's CCZ-class.
 
-For each `N`-dim subspace of `Z(F)`, builds the corresponding CCZ
-mapping `L` (per Canteaut-Perrin 2019) and applies it to the graph of
-`F` via [`ccz_equivalent_function`](@ref). Non-admissible `L`'s (whose
-image graph is not a function graph) are skipped.
+For each `N`-dim subspace `V₁` of `Z(F)`, builds a CCZ mapping `L`
+(per Canteaut–Perrin 2019) and applies it to the graph of `F` via
+[`ccz_equivalent_function`](@ref). `V₁` is completed to a basis of
+`F₂²ⁿ` by a **complementary Walsh-zero subspace** `V₂ ⊆ Z(F)` whenever
+one exists — the completion that keeps `L` admissible *and* recovers the
+permutation-bearing EA-classes of the class (a complementary pair
+`V₁ ⊕ V₂ = F₂²ⁿ` of Walsh-zero subspaces is exactly the Canteaut–Perrin
+condition for a permutation). An arbitrary completion is used only as a
+fallback when `V₁` has no Walsh-zero complement. Non-admissible `L`'s
+(whose image graph is not a function graph) are skipped.
+
+Using a Walsh-zero complement (rather than arbitrary vectors) makes the
+enumeration **symmetric across the class**: e.g. `enumerate_ccz_class`
+of the [`kim_apn`](@ref) function and of the [`dillon_apn_permutation`](@ref)
+it is CCZ-equivalent to yield the same set of EA-classes (an earlier
+arbitrary-completion version missed the permutation classes when started
+from `kim_apn`).
 
 # Caveats
 
@@ -148,10 +172,23 @@ function enumerate_ccz_class(F::SBox{N,T}) where {N,T}
     Z = walsh_zeroes(F)
     bases = extract_linear_subspaces(Z, N; max_bits = M)
     results = SBox{N,T}[]
-    for basis in bases
-        L = _ccz_mapping_from_basis(basis, N)
-        A = F2AffineMap(L, UInt32(0))
-        F_eq = ccz_equivalent_function(F, A)
+    for (i, b1) in pairs(bases)
+        admitted = false
+        # Prefer a complementary Walsh-zero subspace V₂ (recovers permutations).
+        for (j, b2) in pairs(bases)
+            i == j && continue
+            rank_f2(UInt32[b1; b2]; nbits = M) == M || continue
+            L = _ccz_mapping_from_bases(b1, b2, N)
+            F_eq = ccz_equivalent_function(F, F2AffineMap(L, UInt32(0)))
+            F_eq === nothing && continue
+            push!(results, F_eq)
+            admitted = true
+            break
+        end
+        admitted && continue
+        # Fallback: arbitrary completion (V₁ has no Walsh-zero complement).
+        L = _ccz_mapping_from_basis(b1, N)
+        F_eq = ccz_equivalent_function(F, F2AffineMap(L, UInt32(0)))
         F_eq === nothing && continue
         push!(results, F_eq)
     end
