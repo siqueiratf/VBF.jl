@@ -231,7 +231,9 @@ function _cli_args()
     (max,)
 end
 
-if !isinteractive()
+# Auto-run on `include` (non-interactive). The BFA_SBOXU_NO_AUTORUN guard lets
+# other importers reuse `parse_apn_lut_file` without touching the catalog.
+if !isinteractive() && get(ENV, "BFA_SBOXU_NO_AUTORUN", "0") != "1"
     max, = _cli_args()
     main(; max_luts_per_file = max)
 end
