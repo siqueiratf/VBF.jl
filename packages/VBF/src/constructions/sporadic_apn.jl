@@ -26,3 +26,20 @@ even-dimension APN permutations exist for `n ≠ 6` is open). It has algebraic
 degree 4 and is CCZ-equivalent to a quadratic APN function.
 """
 dillon_apn_permutation() = SBox{6}(copy(_DILLON_N6_PERMUTATION))
+
+"""
+    kim_apn() -> SBox{6}
+
+The **Kim function** `κ(x) = x³ + x¹⁰ + u·x²⁴` over `GF(2⁶)` (Browning–Dillon–
+McQuistan–Wolfe 2010), with `u` the generator under the Conway polynomial
+`x⁶+x⁴+x³+x+1` (MAGMA's default primitive element). It is a **quadratic** APN
+function that is CCZ-equivalent to [`dillon_apn_permutation`](@ref) — i.e. the
+quadratic source from which the only known even-dimension APN permutation was
+obtained. (APN-ness depends on this specific field: under a different `GF(2⁶)`
+representation the same coefficients are not APN.)
+"""
+function kim_apn()
+    mod = conway_polynomial(6)                     # x⁶+x⁴+x³+x+1
+    SBox{6}([gf_pow(x, 3, 6; modulus = mod) ⊻ gf_pow(x, 10, 6; modulus = mod) ⊻
+             gf_mul(2, gf_pow(x, 24, 6; modulus = mod), 6; modulus = mod) for x in 0:63])
+end
