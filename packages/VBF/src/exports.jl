@@ -66,6 +66,7 @@ export ortho_derivative, is_quadratic_apn
 export ortho_integral
 export sigma_multiplicities
 export APNEAMugshot, apn_ea_mugshot
+export gamma_rank, delta_rank
 export bent_components, nonbent_components, nonbent_signature
 export image_set, image_subspaces, pi_multiset
 export ccz_equivalent_quadratic_function
