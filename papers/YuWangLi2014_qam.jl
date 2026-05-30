@@ -9,6 +9,12 @@
 # re-housed firstQAM corpus and reproduces the n=4 search (the single quadratic
 # APN class, Gold x³).
 #
+# Reproduction mode: VERIFIES PUBLISHED SEARCH OUTPUT + DEMONSTRATES THE METHOD.
+#   The 8179 n=8 functions have no closed formula (they are the output of a
+#   cluster-scale QAM search), so they are loaded from the re-housed corpus and
+#   re-verified; the QAM method itself is run from scratch at n=4
+#   (search_qam(4,2) → Gold x³). Re-running it at n=8 is Phase 21f.
+#
 # Run standalone:  julia --project=. papers/YuWangLi2014_qam.jl
 
 using VBF

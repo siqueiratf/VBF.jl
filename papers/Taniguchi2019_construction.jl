@@ -11,6 +11,10 @@
 # checks the class structure; `apn_ea_mugshot` (the ortho-derivative invariant)
 # separates the three classes.
 #
+# Reproduction mode: RECOMPUTES FROM THE CONSTRUCTION.
+#   The family is generated from Theorem 3 at n=8 (no published data loaded to
+#   obtain the functions) and cross-checked against the re-housed corpus.
+#
 # Run standalone:  julia --project=. papers/Taniguchi2019_construction.jl
 
 using VBF

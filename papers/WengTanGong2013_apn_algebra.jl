@@ -8,6 +8,11 @@
 # is APN (Yu–Wang–Li). This script checks that characterisation on the paper's
 # 10 new quadratic 8-bit APN functions, re-housed as the WengTanGong2013 corpus.
 #
+# Reproduction mode: VERIFIES PUBLISHED OUTPUT + CHARACTERISATION.
+#   The 10 functions are the published result of an APN-algebra computer search;
+#   they are loaded from the re-housed corpus and re-verified, and the
+#   APN-algebra ⇔ QAM characterisation is checked on each.
+#
 # Run standalone:  julia --project=. papers/WengTanGong2013_apn_algebra.jl
 
 using VBF

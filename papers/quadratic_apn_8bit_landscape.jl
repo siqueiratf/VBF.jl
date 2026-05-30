@@ -14,6 +14,10 @@
 # suite). `distinct_up_to_ea()` performs the full ~33k-fingerprint deduplication
 # (minutes) and is run by `report()` / standalone.
 #
+# Reproduction mode: DERIVES the result from the re-housed corpora — the
+#   literature's 32,892 distinct-up-to-EA count is computed by ortho-derivative
+#   deduplication of all 32,916 members, not assumed.
+#
 # Run standalone:  julia --project=. papers/quadratic_apn_8bit_landscape.jl
 
 using VBF

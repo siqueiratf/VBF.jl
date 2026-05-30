@@ -9,6 +9,11 @@
 # quadratic APN is again quadratic APN, that the trim spectrum is non-trivial,
 # and that the paper's 6,368 new 8-bit functions (re-housed) are quadratic APN.
 #
+# Reproduction mode: VERIFIES PUBLISHED SEARCH OUTPUT + DEMONSTRATES THE METHOD.
+#   The 6368 n=8 functions are the output of a cluster-scale extension search, so
+#   they are loaded from the re-housed corpus and re-verified; trims and the
+#   extension search itself are run from scratch at low dimension.
+#
 # Run standalone:  julia --project=. papers/BeierleLeanderPerrin2022_trims.jl
 
 using VBF

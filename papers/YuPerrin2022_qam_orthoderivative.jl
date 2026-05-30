@@ -8,6 +8,11 @@
 # fingerprint. This script reproduces the bucketing on a sample of the re-housed
 # secondQAM corpus (5412 functions) and confirms the corpus members are QAMs.
 #
+# Reproduction mode: VERIFIES PUBLISHED SEARCH OUTPUT + DEMONSTRATES THE METHOD.
+#   The 5412 n=8 functions (cluster-scale QAM search) are loaded from the
+#   re-housed corpus and re-verified; the ortho-derivative CCZ-classification
+#   method is run from scratch on a sample.
+#
 # Run standalone:  julia --project=. papers/YuPerrin2022_qam_orthoderivative.jl
 
 using VBF

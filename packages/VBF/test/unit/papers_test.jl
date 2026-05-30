@@ -48,11 +48,13 @@ end
     @test r.corpus_matches             # the two new classes == the re-housed corpus
 end
 
-@testset "EdelPott2009: switching construction + re-housed Table 9" begin
+@testset "EdelPott2009: Table 9 recomputed from formulas + switching" begin
     r = _run_paper("EdelPott2009_switching.jl")
+    @test r.n_polynomials == 22
+    @test r.all_quadratic_apn
+    @test r.matches_corpus             # formulas → functions == re-housed corpus
     @test r.corpus == 22
     @test r.apn_neighbors > 0          # switching a small APN yields APN neighbours
-    @test r.quad_apn
 end
 
 @testset "WengTanGong2013: APN-algebra (derivative matrix is a QAM)" begin

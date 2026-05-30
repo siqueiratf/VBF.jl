@@ -8,6 +8,12 @@
 # 12,921 new 8-bit functions, re-housed as the BeierleLeander2022 corpus, are all
 # quadratic APN.
 #
+# Reproduction mode: VERIFIES PUBLISHED SEARCH OUTPUT + DEMONSTRATES THE METHOD.
+#   The 12923 n=8 functions have no closed formula (cluster-scale tree search),
+#   so they are loaded from the re-housed corpus and re-verified; the tree search
+#   itself is run from scratch at n=5. Re-running it at n=8 (the LE-automorphism
+#   constrained search) is Phase 21f.
+#
 # Run standalone:  julia --project=. papers/BeierleLeander2022_tree_search.jl
 
 using VBF
