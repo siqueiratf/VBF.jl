@@ -230,3 +230,88 @@ function search_qam(n::Integer, m::Integer; limit::Integer = typemax(Int),
     end
     found
 end
+
+"""
+    search_qam_full(n; limit=typemax(Int), max_evaluations=1<<24,
+                    modulus=conway_polynomial(n)) -> Vector{SBox{n}}
+
+Construct quadratic APN functions on `F₂ⁿ` by Yu–Wang–Li's "guess and determine"
+search over the **full** symmetric QAM space (Algorithm 1, DCC 2014) — distinct
+from [`search_qam`](@ref), which only sweeps the much narrower cyclic subspace.
+The strictly upper-triangular entries of the symmetric, zero-diagonal matrix are
+filled column by column over `GF(2ⁿ)`; a partial branch is pruned the moment a
+leading submatrix fails to be **proper** (every nonzero `GF(2)`-combination of
+its `c` rows has rank `≥ c-1`, Cor. 2 — the necessary condition for any submatrix
+of a QAM). Each completed matrix passing [`is_qam`](@ref) yields an APN function
+([`qam_to_sbox`](@ref)); results are deduplicated by [`apn_ea_mugshot`](@ref) into
+distinct CCZ-classes.
+
+`limit` stops after that many distinct classes; `max_evaluations` caps the number
+of completed matrices examined (the space is large, so a budget keeps it
+bounded). Reproduces the complete small classifications: `n=5` → the single
+Gold-`x³` class, `n=6` → the 13 CCZ-inequivalent quadratic APN classes.
+"""
+function search_qam_full(n::Integer; limit::Integer = typemax(Int),
+                         max_evaluations::Integer = 1 << 24,
+                         modulus::Integer = conway_polynomial(n))
+    nn = Int(n)
+    M = [zeros(Int, nn) for _ in 1:nn]            # symmetric, zero diagonal
+    seen = Set{APNEAMugshot}()
+    reps = SBox{nn}[]
+    evals = Ref(0)
+    vecbuf = zeros(UInt, nn)
+    done() = length(reps) >= limit || evals[] >= max_evaluations
+
+    # Is the c×c leading submatrix proper (every nonzero row-combination has
+    # GF(2)-rank ≥ c-1)? The guess-and-determine prune (Yu–Wang–Li Cor. 2).
+    proper = function (c::Int)
+        @inbounds for mask in 1:(1 << c) - 1
+            for i in 1:c
+                v = UInt(0); s = mask
+                while s != 0
+                    r = trailing_zeros(s) + 1
+                    v ⊻= UInt(M[r][i])
+                    s &= s - 1
+                end
+                vecbuf[i] = v
+            end
+            rank_f2(view(vecbuf, 1:c); nbits = nn) < c - 1 && return false
+        end
+        true
+    end
+
+    local fill_col
+    fill_entry = function (c::Int, r::Int)
+        done() && return
+        if r == c
+            proper(c) && fill_col(c + 1)
+            return
+        end
+        @inbounds for v in 0:(1 << nn) - 1
+            M[r][c] = v; M[c][r] = v
+            fill_entry(c, r + 1)
+            done() && return
+        end
+    end
+    fill_col = function (c::Int)
+        done() && return
+        if c > nn
+            evals[] += 1
+            Mat = Matrix{Int}(undef, nn, nn)
+            @inbounds for i in 1:nn, j in 1:nn
+                Mat[i, j] = M[i][j]
+            end
+            if is_qam(Mat)
+                F = qam_to_sbox(Mat)
+                mg = apn_ea_mugshot(F)
+                if !(mg in seen)
+                    push!(seen, mg); push!(reps, F)
+                end
+            end
+            return
+        end
+        fill_entry(c, 1)
+    end
+    fill_col(2)
+    reps
+end
