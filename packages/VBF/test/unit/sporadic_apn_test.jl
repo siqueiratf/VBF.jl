@@ -28,4 +28,20 @@ end
     @test !is_ccz_equivalent_to_permutation(gold_apn(4, 1))  # no n=4 APN permutation
     @test !is_ccz_equivalent_to_permutation(gold_apn(6, 1))  # x³ is not the Dillon class
 end
+
+@testset "are_ccz_equivalent decides the cross-degree Kim ↔ Dillon case" begin
+    # The Kim function (quadratic) and the Dillon permutation (degree 4) are
+    # CCZ-equivalent but not EA-equivalent (CCZ does not preserve degree). The
+    # decision routes through the quadratic side's ortho-derivative EA test on
+    # the degree-2 representatives of the other's CCZ-class — reliable where the
+    # Heggebakk EA test on the degree-4 permutation reps is not.
+    kim = kim_apn()
+    dil = dillon_apn_permutation()
+    @test are_ccz_equivalent(kim, dil)
+    @test are_ccz_equivalent(dil, kim)          # symmetric
+    @test !are_ea_equivalent(kim, dil)          # different degrees ⇒ not EA
+    # Distinct CCZ-classes stay separated.
+    @test !are_ccz_equivalent(kim, gold_apn(6, 1))
+    @test !are_ccz_equivalent(dil, gold_apn(6, 1))
+end
 end
