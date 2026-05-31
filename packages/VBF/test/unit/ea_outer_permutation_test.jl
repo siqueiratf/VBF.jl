@@ -2,6 +2,7 @@
 using VBFCatalog
 using VBF
 using Test
+using Random
 
 @testset "enumerate_bucket_maps: signature mismatch → empty" begin
     F = load_literature_sbox("PRESENT")
@@ -30,6 +31,29 @@ end
     F = load_apn_function("n5_Gold_x3")
     p = ea_partition(F)
     @test length(enumerate_bucket_maps(p, p)) == 1
+end
+
+@testset "enumerate_bucket_maps: bounded by max_maps (no OOM blow-up)" begin
+    # The map count is ∏ₛ mₛ! over equal-size bucket groups; for unstructured
+    # partitions this is astronomically large (factorial(21) already overflows
+    # Int64). The enumeration must bail to empty rather than exhaust memory.
+    F = load_literature_sbox("PRESENT")
+    p = ea_partition(F, 4)
+    full = enumerate_bucket_maps(p, p)                  # default cap 10^6
+    @test !isempty(full)
+    if length(full) > 1
+        @test isempty(enumerate_bucket_maps(p, p; max_maps = 1))   # graceful bail
+    end
+end
+
+@testset "are_ea_equivalent / are_ccz_equivalent: no OOM on generic permutation" begin
+    # A generic permutation has many equal-size k=4 buckets, so the bucket-map
+    # space is enormous; previously are_ea/are_ccz_equivalent(F, F) tried to
+    # materialize it and ran out of memory. Reflexivity must hold quickly.
+    rng = MersenneTwister(0xEA0011)
+    F = random_permutation_sbox(rng, Val(5))
+    @test are_ea_equivalent(F, F)
+    @test are_ccz_equivalent(F, F)
 end
 
 @testset "outer_permutations: identity is found (full GL when partition is trivial)" begin

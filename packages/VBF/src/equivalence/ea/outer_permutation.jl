@@ -39,7 +39,7 @@ function _all_permutations(v::Vector{Int})
     n == 0 && return [Int[]]
     n == 1 && return [v]
     out = Vector{Vector{Int}}()
-    sizehint!(out, factorial(n))
+    n ≤ 20 && sizehint!(out, factorial(n))   # factorial(21) overflows Int64
     for i in 1:n
         rest = vcat(@view(v[1:(i - 1)]), @view(v[(i + 1):n]))
         for p in _all_permutations(rest)
@@ -50,7 +50,8 @@ function _all_permutations(v::Vector{Int})
 end
 
 """
-    enumerate_bucket_maps(partF::EAPartition, partG::EAPartition) -> Vector{Vector{Int}}
+    enumerate_bucket_maps(partF::EAPartition, partG::EAPartition;
+                          max_maps = 10^6) -> Vector{Vector{Int}}
 
 Every size-preserving bijection `σ : F-buckets → G-buckets`, returned as
 a vector of `sigma` mappings each of length `nbuckets(partF)`. Entry
@@ -58,8 +59,18 @@ a vector of `sigma` mappings each of length `nbuckets(partF)`. Entry
 
 If the bucket-size multisets of `partF` and `partG` differ, returns an
 empty vector (a fast necessary EA-equivalence rejection).
+
+The number of maps is `∏ₛ mₛ!` where `mₛ` is the count of buckets of each
+size `s`; for functions with many equal-size buckets (e.g. a generic
+non-APN permutation) this explodes super-exponentially. To avoid
+exhausting memory the enumeration **bails to an empty vector** when the
+count would exceed `max_maps` — the caller then reports "not decided"
+(`false`), consistent with Heggebakk's documented degeneration on
+unstructured partitions. Quadratic APN do not hit this path (they route
+through the ortho-derivative test).
 """
-function enumerate_bucket_maps(partF::EAPartition, partG::EAPartition)
+function enumerate_bucket_maps(partF::EAPartition, partG::EAPartition;
+                               max_maps::Integer = 10^6)
     nF = nbuckets(partF)
     nbuckets(partG) == nF || return Vector{Vector{Int}}()
     # Group F-buckets and G-buckets by size
@@ -78,6 +89,14 @@ function enumerate_bucket_maps(partF::EAPartition, partG::EAPartition)
     end
 
     sorted_sizes = sort!(collect(keys(f_by_size)))
+    # Bail before materializing if the map count ∏ₛ mₛ! would blow up. Uses
+    # big-int arithmetic (factorial(21) already overflows Int64) and stops as
+    # soon as the running product crosses the cap.
+    total = big(1)
+    for sz in sorted_sizes
+        total *= factorial(big(length(g_by_size[sz])))
+        total > max_maps && return Vector{Vector{Int}}()
+    end
     # For each size, list of permutations of the G-buckets of that size
     perm_choices = [_all_permutations(g_by_size[sz]) for sz in sorted_sizes]
 

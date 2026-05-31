@@ -202,7 +202,7 @@ function _ea_search(
     partG = ea_partition(G, k)
     sort(partF.bucket_sizes) == sort(partG.bucket_sizes) || return nothing
 
-    sigmas = enumerate_bucket_maps(partF, partG)
+    sigmas = enumerate_bucket_maps(partF, partG; max_maps = max_outer)
     isempty(sigmas) && return nothing
 
     for sigma in sigmas

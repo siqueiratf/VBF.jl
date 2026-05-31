@@ -28,11 +28,22 @@ of Canteaut & Perrin (FFA 2019):
 
 # Limitations inherited
 
-Phase 8's `are_ea_equivalent` short-circuits on degenerate `k=4`
-partitions (signature `[2ⁿ-1, 1]`, characteristic of monomial APN).
-Phase 9 inherits this: for inputs whose CCZ-class contains only such
-partitions, the decision returns `false` even if CCZ-equivalent.
-Phase 10 invariants (orthoderivative, Δ-rank, …) address this case.
+`are_ea_equivalent` short-circuits on degenerate `k=4` partitions
+(signature `[2ⁿ-1, 1]`, characteristic of monomial APN). For inputs whose
+CCZ-class contains only such partitions, the decision returns `false` even
+if CCZ-equivalent; the ortho-derivative and Δ-rank invariants address this
+case for quadratic APN.
+
+**Cross-degree CCZ-equivalence is not decided.** When `F` and `G` are not
+both permutations and not both quadratic APN — e.g. a quadratic
+non-permutation and the higher-degree *permutation* in the same CCZ-class
+(the Kim function and the Dillon permutation are the canonical example) —
+this returns `false`. Deciding it reduces to EA-equivalence of
+non-quadratic permutations, which the (Heggebakk) EA backend does not
+reliably decide: enumerating `F`'s CCZ-class does surface a representative
+of `G`'s EA-class, but `are_ea_equivalent` returns `false` on the
+degree-4 permutation reps. (`is_ccz_equivalent_to_permutation` and the
+symmetric `enumerate_ccz_class` *do* capture the Kim/Dillon relationship.)
 """
 
 """
@@ -57,6 +68,10 @@ function are_ccz_equivalent(
 )
     inputbits(F) == inputbits(G) || return false
     storage_type(F) == storage_type(G) || return false
+    # Reflexivity (identity CCZ-map) — also avoids enumerating the whole
+    # CCZ-class and running EA on each rep for the F == G case. Scoped to :auto
+    # so an explicitly requested (or invalid) strategy still reaches dispatch.
+    strategy === :auto && F.lut == G.lut && return true
     if !(is_permutation(F) && is_permutation(G))
         # CCZ = EA on the quadratic-APN class (Yoshiara), and EA now handles
         # non-permutations; route there. Otherwise the permutation-only
