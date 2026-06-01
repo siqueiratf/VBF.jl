@@ -1,18 +1,3 @@
-# n = 6 APN functions (monomial entries only).
-#
-# For even n, no monomial APN over GF(2^n) is a permutation (gcd of
-# every known APN exponent with 2^n - 1 = 63 = 9·7 is > 1 for n=6).
-# Both entries here are functions, not bijections — useful for
-# exercising the is_permutation = false catalog codepath at n > 4.
-#
-# The well-known APN permutation on F₂⁶ (the "Dillon" function) is
-# *not* a monomial and will land here once polynomial-form support
-# is added to the loader.
-#
-# Modulus for all entries: x^6 + x + 1  (= primitive_polynomial(6) = 67).
-# LUTs are computed by load_apn_function via gf_monomial_lut; the
-# load-time differential_uniformity == 2 check is the verification.
-
 schema_version = 1
 
 [[apn_functions]]

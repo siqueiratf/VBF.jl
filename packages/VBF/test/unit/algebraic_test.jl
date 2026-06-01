@@ -26,9 +26,7 @@ end
     @test algebraic_degree(load_literature_sbox("AES"))     == 7
     @test algebraic_degree(load_literature_sbox("AES_inv")) == 7
 
-    # All "good" 4-bit S-boxes are degree-3 by design (no degree-1 or 2
-    # would be enough to resist higher-order attacks; degree-3 is the
-    # standard choice).
+    # All "good" 4-bit S-boxes are degree-3 by design (no degree-1 or 2 would be enough to resist higher-order attacks; degree-3 is the standard choice).
     @test algebraic_degree(load_literature_sbox("PRESENT"))    == 3
     @test algebraic_degree(load_literature_sbox("GIFT"))       == 3
     @test algebraic_degree(load_literature_sbox("Midori_Sb0")) == 3

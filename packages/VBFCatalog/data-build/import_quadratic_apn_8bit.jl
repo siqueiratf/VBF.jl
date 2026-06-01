@@ -1,25 +1,3 @@
-# Re-houses the seven literature families of quadratic APN functions on F2^8 —
-# the 32,892 functions known before the 3.4 GB enumeration — as bulk corpora.
-#
-#   EdelPott2009           22   eightBitAPN.all_quadratic_polynomials (SAGE polys)
-#   WengTanGong2013        10   eightBitAPN.all_WenTanGon            (raw LUTs)
-#   YuWangLi2014QAM      8180   firstQAM.py                         (raw LUTs)
-#   Taniguchi2019           2   generated via taniguchi_apn (Theorem 3, a≠0)
-#   BeierleLeander2022  12923   BeierleLeander.py                   (raw LUTs)
-#   YuPerrin2022QAM      5412   secondQAM.py                        (raw LUTs)
-#   ...2022Trims          6368   apn_8bit_BLP22.py                  (raw LUTs)
-#
-# Each member is verified quadratic APN in 8 variables, encoded with
-# `encode_quadratic` (the 37-byte `quadratic-coeffs-v1` form over Conway GF(2^8)),
-# and written to a per-family side store `corpora/<name>.sqlite`; the committed
-# catalog gains only seven `bulk_corpora` descriptor rows (one per `bib_key`).
-# The full LUTs reconstruct on demand via `corpus_function`.
-#
-# One-off developer step; BFA depends on no upstream at runtime. Usage:
-#     julia --project=data-build data-build/import_quadratic_apn_8bit.jl
-#
-# Reuses `parse_apn_lut_file` from import_sboxu_apn.jl (guarded against auto-run).
-
 ENV["BFA_SBOXU_NO_AUTORUN"] = "1"
 
 using VBF
@@ -50,8 +28,7 @@ function _poly_to_lut_args(body::AbstractString)
     out
 end
 
-# Expand `sum(X**(K*2**i) for i in range(0, N))` to `(X**K + X**2K + … + X**128K)`,
-# normalise the `**` powers + a stray `+  +` typo to VBF polynomial syntax.
+# Expand `sum(X**(K*2**i) for i in range(0, N))` to `(X**K + X**2K + … + X**128K)`, normalise the `**` powers + a stray `+  +` typo to VBF polynomial syntax.
 function _normalise_sage_poly(e::AbstractString)
     while (m = match(r"sum\(X\*\*\((\d+)\*2\*\*i\) for i in range\(0, ?N\)\)", e)) !== nothing
         K = parse(Int, m.captures[1])

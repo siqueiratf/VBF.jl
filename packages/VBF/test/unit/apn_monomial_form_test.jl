@@ -3,9 +3,7 @@ using VBFCatalog
 using VBF
 using Test
 
-# --- Direct loader tests for the monomial-form pathway ----------------------
-# These exercise _materialise_monomial_lut! by writing tiny TOML files
-# in a tempdir and bypassing the bundled apn_catalog directory.
+# --- Direct loader tests for the monomial-form pathway ---------------------- These exercise _materialise_monomial_lut! by writing tiny TOML files in a tempdir and bypassing the bundled apn_catalog directory.
 
 import TOML
 
@@ -29,8 +27,7 @@ function _write_tmp_apn_catalog(tmp::AbstractString, entries)
 end
 
 @testset "monomial_exponent → LUT is computed and matches gf_monomial_lut" begin
-    # Use a TOML structure parallel to the one the loader expects;
-    # parse it via TOML.jl directly, then call BFA's internal helper.
+    # Use a TOML structure parallel to the one the loader expects; parse it via TOML.jl directly, then call BFA's internal helper.
     s = """
     schema_version = 1
     [[apn_functions]]
@@ -70,9 +67,7 @@ end
 end
 
 @testset "explicit lut takes precedence over monomial_exponent" begin
-    # If both are given, the explicit LUT wins. Useful when an author wants
-    # to override the computed values (e.g., to pin a specific modulus
-    # choice not in the primitive table).
+    # If both are given, the explicit LUT wins. Useful when an author wants to override the computed values (e.g., to pin a specific modulus choice not in the primitive table).
     s = """
     [[apn_functions]]
     name = "test_explicit_wins"
@@ -109,8 +104,7 @@ end
 end
 
 @testset "existing n=4 and n=5 APN entries remain functional" begin
-    # The committed entries use explicit `lut`. They must continue to load
-    # bit-identically after the loader change.
+    # The committed entries use explicit `lut`. They must continue to load bit-identically after the loader change.
     s4 = load_apn_function("n4_Gold_x3")
     @test s4.lut == UInt8[0, 1, 8, 15, 12, 10, 1, 1, 10, 15, 15, 12, 8, 10, 8, 12]
 

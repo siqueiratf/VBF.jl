@@ -61,8 +61,7 @@ end
 end
 
 @testset "expected_linearity_distribution: AES linearity (32) is in the tail" begin
-    # For random permutations of F₂⁸ the linearity peaks at 64+; AES's 32
-    # is in the *left* tail (it's much better than random).
+    # For random permutations of F₂⁸ the linearity peaks at 64+; AES's 32 is in the *left* tail (it's much better than random).
     pmf = expected_linearity_distribution(8; permutation = true, vmax = 128)
     p_below_32 = sum(p for (k, p) in pmf if k ≤ 32; init = BigFloat(0))
     @test p_below_32 < BigFloat("0.01")    # extremely unlikely under random

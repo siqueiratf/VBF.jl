@@ -1,11 +1,3 @@
-# n = 4 APN functions.
-#
-# Up to CCZ-equivalence there is exactly one APN class on F₂⁴: the Gold
-# function x³ over GF(2⁴) (Carlet, "Vectorial Boolean Functions for
-# Cryptography", 2010). It is NOT a permutation
-# (gcd(3, 2⁴ - 1) = 3 ≠ 1) — useful for testing the catalog's
-# is_permutation = false codepath.
-
 schema_version = 1
 
 [[apn_functions]]

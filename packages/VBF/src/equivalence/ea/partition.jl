@@ -64,30 +64,46 @@ partitions have the same bucket-size multiset.
 nbuckets(p::EAPartition) = length(p.buckets)
 
 function Base.show(io::IO, p::EAPartition)
-    print(io, "EAPartition(n=", p.n, ", k=", p.k,
-          ", nbuckets=", nbuckets(p),
-          ", sizes=", sort(p.bucket_sizes; rev = true), ")")
+    print(
+        io,
+        "EAPartition(n=",
+        p.n,
+        ", k=",
+        p.k,
+        ", nbuckets=",
+        nbuckets(p),
+        ", sizes=",
+        sort(p.bucket_sizes; rev = true),
+        ")",
+    )
 end
 
-# ---------------------------------------------------------------------------
 # Multiplicity computation.
-# ---------------------------------------------------------------------------
 
-# Recursive enumeration of (y₁, …, y_{k-1}) ∈ (F₂ⁿ)^{k-1} accumulating
-# the running XOR `x = y₁ ⊕ … ⊕ y_i` of inputs and `v = F(y₁) ⊕ … ⊕ F(y_i)`
-# of outputs. At depth k-1 we tabulate `v ⊕ F(x)`.
+# Recurse over (y₁,…,y_{k-1}), accumulating XORs x and v; tabulate v ⊕ F(x).
 function _ea_mult_recurse!(
     multiplicities::Vector{Int},
     lut::Vector{T},
-    n::Int, k::Int, i::Int, x::Int, v::Int,
+    n::Int,
+    k::Int,
+    i::Int,
+    x::Int,
+    v::Int,
 ) where {T}
     if i == k - 1
-        @inbounds multiplicities[(v ⊻ Int(lut[x + 1])) + 1] += 1
+        @inbounds multiplicities[(v⊻Int(lut[x+1]))+1] += 1
         return
     end
-    @inbounds for y in 0:(n - 1)
-        _ea_mult_recurse!(multiplicities, lut, n, k,
-                          i + 1, x ⊻ y, v ⊻ Int(lut[y + 1]))
+    @inbounds for y = 0:(n-1)
+        _ea_mult_recurse!(
+            multiplicities,
+            lut,
+            n,
+            k,
+            i + 1,
+            x ⊻ y,
+            v ⊻ Int(lut[y+1]),
+        )
     end
 end
 
@@ -100,17 +116,16 @@ Compute `μ_F^k(v)` for every `v ∈ 0:2ⁿ-1`. Length `2ⁿ`; entry `v+1` is
 Internal-but-exported (useful as a CCZ/EA invariant check).
 """
 function ea_multiplicities(F::SBox{N,T}, k::Int = 4) where {N,T}
-    (iseven(k) && k ≥ 4) ||
-        throw(ArgumentError("ea_multiplicities: k must be even and ≥ 4, got k = $k"))
+    (iseven(k) && k ≥ 4) || throw(
+        ArgumentError("ea_multiplicities: k must be even and ≥ 4, got k = $k"),
+    )
     n = 1 << N
     multiplicities = zeros(Int, n)
     _ea_mult_recurse!(multiplicities, Vector{T}(F.lut), n, k, 0, 0, 0)
     return multiplicities
 end
 
-# ---------------------------------------------------------------------------
 # Partition construction.
-# ---------------------------------------------------------------------------
 
 """
     ea_partition(F::SBox{N,T}, k::Int = 4) -> EAPartition
@@ -142,13 +157,13 @@ function ea_partition(F::SBox{N,T}, k::Int = 4) where {N,T}
     n = 1 << N
     multiplicities = ea_multiplicities(F, k)
 
-    bucket_of_mult = Dict{Int, Int}()
+    bucket_of_mult = Dict{Int,Int}()
     buckets = Vector{Vector{Int}}()
     bucket_multiplicities = Int[]
     position_of_value = Vector{Int}(undef, n)
 
-    @inbounds for v in 0:(n - 1)
-        m = multiplicities[v + 1]
+    @inbounds for v = 0:(n-1)
+        m = multiplicities[v+1]
         idx = get(bucket_of_mult, m, 0)
         if idx == 0
             push!(buckets, Int[])
@@ -157,11 +172,18 @@ function ea_partition(F::SBox{N,T}, k::Int = 4) where {N,T}
             bucket_of_mult[m] = idx
         end
         push!(buckets[idx], v)
-        position_of_value[v + 1] = idx
+        position_of_value[v+1] = idx
     end
 
     bucket_sizes = [length(b) for b in buckets]
-    return EAPartition(N, k, buckets, bucket_sizes, bucket_multiplicities, position_of_value)
+    return EAPartition(
+        N,
+        k,
+        buckets,
+        bucket_sizes,
+        bucket_multiplicities,
+        position_of_value,
+    )
 end
 
 """

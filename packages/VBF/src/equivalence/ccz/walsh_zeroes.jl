@@ -50,9 +50,9 @@ function walsh_zeroes(F::SBox{N,T}) where {N,T}
     L = lat(F)
     zeroes = UInt32[]
     sizehint!(zeroes, n_size * 2)
-    @inbounds for a in 0:(n_size - 1)
-        for b in 0:(n_size - 1)
-            if L[a + 1, b + 1] == 0
+    @inbounds for a = 0:(n_size-1)
+        for b = 0:(n_size-1)
+            if L[a+1, b+1] == 0
                 push!(zeroes, (UInt32(a) << N) | UInt32(b))
             end
         end

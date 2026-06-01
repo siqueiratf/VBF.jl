@@ -4,13 +4,6 @@ using VBF
 using Test
 import DBInterface
 
-# Simon-Berg thesis data — "All CCZ classes of functions with coefficients in
-# GF(2²) over GF(2⁸)" — is imported as 27 first-class representative rows
-# (family "CCZ-rep-GF4"), one per CCZ class. The full ~197k membership is
-# ingested as "matches only" provenance, not as rows. These tests are written
-# relationally so they don't desync; the absolute count (27) is pinned in
-# test_catalog_content.jl.
-
 @testset "CCZ-rep-GF4 family: present and well-formed" begin
     db = load_catalog()
     gf4 = list_functions(db; family = "CCZ-rep-GF4")
@@ -48,9 +41,7 @@ end
 @testset "CCZ-rep-GF4: 27 distinct CCZ classes (ortho-derivative fingerprints)" begin
     db = load_catalog()
     gf4 = list_functions(db; family = "CCZ-rep-GF4")
-    # The ortho-derivative's differential + (absolute) Walsh spectra are an
-    # EA/CCZ invariant of quadratic APN functions. 27 distinct fingerprints
-    # confirm 27 distinct CCZ classes (the thesis' claim).
+    # The ortho-derivative's differential + (absolute) Walsh spectra are an EA/CCZ invariant of quadratic APN functions. 27 distinct fingerprints confirm 27 distinct CCZ classes (the thesis' claim).
     fps = Set{UInt64}()
     for r in gf4
         s = load_sbox(db, r.id)
@@ -95,8 +86,7 @@ end
     @test tab[2 + 1][200 + 1] == gf_pow(2, 200, n; modulus = mod)
 end
 
-# Optional: if the thesis checkout is present, re-derive class 1's
-# representative from the source file and confirm it matches the catalog row.
+# Optional: if the thesis checkout is present, re-derive class 1's representative from the source file and confirm it matches the catalog row.
 @testset "CCZ-rep-GF4: class-1 representative re-derives from the thesis source" begin
     candidates = [get(ENV, "BFA_THESIS_PATH", ""),
                   "/home/zambonin/APN.jl/Simon-Berg@thesis",

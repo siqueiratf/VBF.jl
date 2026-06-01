@@ -30,11 +30,23 @@ packed into an `SBox{2·half}`. Requires `gcd(m, half) = 1` and `b ≠ 0`. The
 result is APN iff `P(x) = x^{2^m+1} + a·x + b` has no root in `GF(2^half)`
 ([`taniguchi_apn_representatives`](@ref) enumerates the admissible, APN members).
 """
-function taniguchi_apn(half::Integer, m::Integer, a::Integer, b::Integer;
-                       modulus::Integer = primitive_polynomial(half))
-    n = Int(half); mod = Int(modulus); mm = Int(m); A = Int(a); B = Int(b)
-    n ≥ 1 || throw(ArgumentError("taniguchi_apn: half-dimension must be ≥ 1, got $half"))
-    gcd(mm, n) == 1 || throw(ArgumentError("taniguchi_apn: need gcd(m, $n) = 1, got m = $m"))
+function taniguchi_apn(
+    half::Integer,
+    m::Integer,
+    a::Integer,
+    b::Integer;
+    modulus::Integer = primitive_polynomial(half),
+)
+    n = Int(half)
+    mod = Int(modulus)
+    mm = Int(m)
+    A = Int(a)
+    B = Int(b)
+    n ≥ 1 || throw(
+        ArgumentError("taniguchi_apn: half-dimension must be ≥ 1, got $half"),
+    )
+    gcd(mm, n) == 1 ||
+        throw(ArgumentError("taniguchi_apn: need gcd(m, $n) = 1, got m = $m"))
     B != 0 || throw(ArgumentError("taniguchi_apn: b must be nonzero"))
     E1 = (1 << (2mm)) + (1 << (3mm))       # exponent of the y-free term
     E2 = 1 << (2mm)                        # x-exponent of the mixed term
@@ -42,26 +54,37 @@ function taniguchi_apn(half::Integer, m::Integer, a::Integer, b::Integer;
     E3 = (1 << mm) + 1                      # exponent of the y^(2^m+1) term
     len = 1 << n
     lut = Vector{Int}(undef, 1 << (2n))
-    for x in 0:len - 1, y in 0:len - 1
+    for x = 0:(len-1), y = 0:(len-1)
         u = gf_mul(x, y, n; modulus = mod)
-        v = gf_pow(x, E1, n; modulus = mod) ⊻
-            gf_mul(gf_mul(A, gf_pow(x, E2, n; modulus = mod), n; modulus = mod),
-                   gf_pow(y, Ey, n; modulus = mod), n; modulus = mod) ⊻
-            gf_mul(B, gf_pow(y, E3, n; modulus = mod), n; modulus = mod)
-        lut[(x | (y << n)) + 1] = u | (v << n)
+        v =
+            gf_pow(x, E1, n; modulus = mod) ⊻ gf_mul(
+                gf_mul(A, gf_pow(x, E2, n; modulus = mod), n; modulus = mod),
+                gf_pow(y, Ey, n; modulus = mod),
+                n;
+                modulus = mod,
+            ) ⊻ gf_mul(B, gf_pow(y, E3, n; modulus = mod), n; modulus = mod)
+        lut[(x|(y<<n))+1] = u | (v << n)
     end
     SBox{2n}(lut)
 end
 
-# P(x) = x^(2^m+1) + a·x + b has no root in GF(2^half) — the APN admissibility
-# condition of Theorem 3 (and b ≠ 0).
-function _taniguchi_admissible(half::Integer, m::Integer, a::Integer, b::Integer;
-                               modulus::Integer = primitive_polynomial(half))
-    n = Int(half); mod = Int(modulus); A = Int(a); B = Int(b)
+# P(x)=x^(2^m+1)+a·x+b has no root in GF(2^half): Thm 3 APN condition (b≠0).
+function _taniguchi_admissible(
+    half::Integer,
+    m::Integer,
+    a::Integer,
+    b::Integer;
+    modulus::Integer = primitive_polynomial(half),
+)
+    n = Int(half)
+    mod = Int(modulus)
+    A = Int(a)
+    B = Int(b)
     B == 0 && return false
     e = (1 << Int(m)) + 1
-    for x in 0:(1 << n) - 1
-        gf_pow(x, e, n; modulus = mod) ⊻ gf_mul(A, x, n; modulus = mod) ⊻ B == 0 && return false
+    for x = 0:((1<<n)-1)
+        gf_pow(x, e, n; modulus = mod) ⊻ gf_mul(A, x, n; modulus = mod) ⊻ B ==
+        0 && return false
     end
     true
 end
@@ -85,17 +108,21 @@ julia> length(taniguchi_apn_representatives(4))
 3
 ```
 """
-function taniguchi_apn_representatives(half::Integer;
-                                       modulus::Integer = primitive_polynomial(half))
-    n = Int(half); mod = Int(modulus)
+function taniguchi_apn_representatives(
+    half::Integer;
+    modulus::Integer = primitive_polynomial(half),
+)
+    n = Int(half)
+    mod = Int(modulus)
     reps = NamedTuple[]
     seen = Set{APNEAMugshot}()
-    for m in 1:n - 1
+    for m = 1:(n-1)
         gcd(m, n) == 1 || continue
-        for a in 0:(1 << n) - 1, b in 1:(1 << n) - 1
+        for a = 0:((1<<n)-1), b = 1:((1<<n)-1)
             _taniguchi_admissible(n, m, a, b; modulus = mod) || continue
             F = taniguchi_apn(n, m, a, b; modulus = mod)
-            (differential_uniformity(F) == 2 && algebraic_degree(F) == 2) || continue
+            (differential_uniformity(F) == 2 && algebraic_degree(F) == 2) ||
+                continue
             mg = apn_ea_mugshot(F)
             mg in seen && continue
             push!(seen, mg)

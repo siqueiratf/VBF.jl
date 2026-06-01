@@ -1,32 +1,8 @@
-# Imports the curated quadratic-APN CCZ-class representatives shipped in
-# sboxU's `scripts/apnDB/{reprs6,reprs7,reprs8,eightBitAPN}.py` as
-# first-class BFA `functions` rows (not reconciliation rows — these are
-# canonical representatives worth materialising).
-#
-# The files are heterogeneous (the upstream is disorganised):
-#   - reprs6.py  : `ccz_class_representatives = [get_sbox(POLY|[LUT]), ...]`, n=6
-#   - reprs7.py  : `[get_sbox(x) for x in [ [LUT], ... ]]`,                  n=7
-#   - reprs8.py  : `... return [get_sbox(POLY), ...]`,                       n=8
-#   - eightBitAPN: `... return [poly_to_lut(POLY), ...]`,                    n=8
-#
-# Polynomials are evaluated over GF(2ⁿ) with the Conway polynomial (what
-# Sage's `GF(2**n)` uses, so `g`/`ksi` ↦ the element 2). Two n=8 entries
-# written as Python generator expressions (`X**3 + sum(X**(9*2**i) ...)`)
-# are skipped — the recursive-descent parser handles polynomials, not
-# Python comprehensions. Every imported LUT is asserted APN.
-#
-# Dedup: a LUT whose (sha, n) already names a `functions` row merges the
-# source tag into that row instead of inserting a duplicate.
-#
-# Usage (uses BFA_SBOXU_PATH or default ~/sboxU):
-#     julia --project=data-build data-build/import_apn_reps.jl
-
 using VBF
 using VBFCatalog
 import SQLite
 import DBInterface
 import Dates
-
 
 const _REPS_SBOXU_PATHS = (
     get(ENV, "BFA_SBOXU_PATH", ""),
@@ -55,9 +31,7 @@ end
 
 # --- extraction -------------------------------------------------------------
 
-# Substring inside the parentheses opened at `text[open]=='('`, tracking
-# nesting so polynomial sub-expressions like `g**16*(X**18 + X**33)` and
-# bracketed LUTs are returned whole.
+# Substring inside the parentheses opened at `text[open]=='('`, tracking nesting so polynomial sub-expressions like `g**16*(X**18 + X**33)` and bracketed LUTs are returned whole.
 function _balanced_paren_arg(text::AbstractString, open::Int)
     depth = 0
     i = open
@@ -115,10 +89,6 @@ _is_unparseable_poly(arg::AbstractString) = occursin("sum(", arg) || occursin(" 
 # Parsed representative: (n, lut, label, kind) where kind ∈ {:poly, :lut}.
 const RepEntry = NamedTuple{(:n, :lut, :label), Tuple{Int, Vector{Int}, String}}
 
-# Turn a polynomial-or-LUT argument into a LUT, or `nothing` if it should
-# be skipped: a raw `[LUT]`, a polynomial in `X`, or `nothing` for a
-# generator expression / a spurious match (e.g. the `p` parameter of the
-# `def poly_to_lut(p):` definition, which contains no `X`).
 function _arg_to_lut(arg::AbstractString, n::Int)
     a = strip(arg)
     if _is_lut_arg(a)
@@ -233,9 +203,7 @@ function import_reps!(db::SQLite.DB, entries::Vector{RepEntry}, source_tag::Abst
             merge_source_repo!(db, fid, source_tag)
             merged += 1
         else
-            # First-class BFA catalog row originating from sboxU: tag both
-            # so the "in-catalog rows include bfa" invariant holds and the
-            # upstream provenance is preserved.
+            # First-class BFA catalog row originating from sboxU: tag both so the "in-catalog rows include bfa" invariant holds and the upstream provenance is preserved.
             _insert_function_row!(db, s;
                 canonical_name = e.label,
                 source_repo = bfa_repo * "|" * source_tag,
@@ -290,9 +258,7 @@ function main()
     return nothing
 end
 
-# Auto-run when included by build_catalog.jl (non-interactive). The
-# BFA_REPS_NO_AUTORUN guard lets tests `include` this file for its
-# extraction helpers without touching the catalog.
+# Auto-run when included by build_catalog.jl (non-interactive). The BFA_REPS_NO_AUTORUN guard lets tests `include` this file for its extraction helpers without touching the catalog.
 if !isinteractive() && get(ENV, "BFA_REPS_NO_AUTORUN", "0") != "1"
     main()
 end

@@ -27,21 +27,20 @@ wrappers because `linear_representative` requires invertibility.
 function _shift_anchor(F::SBox{N,T}, a::Integer) where {N,T}
     n = 1 << N
     a_T = T(a)
-    F_a = @inbounds F.lut[a_T + 1]
+    F_a = @inbounds F.lut[a_T+1]
     out = Vector{T}(undef, n)
-    @inbounds for x in 0:(n - 1)
-        out[x + 1] = F.lut[(T(x) ⊻ a_T) + 1] ⊻ F_a
+    @inbounds for x = 0:(n-1)
+        out[x+1] = F.lut[(T(x)⊻a_T)+1] ⊻ F_a
     end
     return SBox{N,T}(out)
 end
 
-# Decide affine equivalence by enumeration: fix F's anchor at 0, vary G's.
-# Short-circuits as soon as a matching anchor is found.
+# Affine equivalence by enumeration: fix F's anchor at 0, vary G's.
 function _are_affine_equivalent_shift(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
     (is_permutation(F) && is_permutation(G)) || return false
     R_F = linear_representative(_shift_anchor(F, 0)).representative
     n = 1 << N
-    @inbounds for a in 0:(n - 1)
+    @inbounds for a = 0:(n-1)
         G_a = _shift_anchor(G, a)
         if linear_representative(G_a).representative == R_F
             return true
@@ -50,18 +49,12 @@ function _are_affine_equivalent_shift(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
     return false
 end
 
-# General (possibly non-permutation) affine equivalence via the same shift
-# reduction: `F ~_A G  iff  ∃ a : F̃_0 ~_L G̃_a`. The canonical-form comparison
-# above needs `linear_representative` (Stennes, permutation-only), so for
-# non-permutations we test each anchor with the general non-permutation linear-
-# equivalence procedure instead. Cheap spectral necessary conditions reject most
-# inequivalent pairs (and the F == G reflexive case short-circuits at a = 0).
 function _are_affine_equivalent_general(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
     differential_spectrum(F) == differential_spectrum(G) || return false
     absolute_walsh_spectrum(F) == absolute_walsh_spectrum(G) || return false
     F_0 = _shift_anchor(F, 0)
     n = 1 << N
-    for a in 0:(n - 1)
+    for a = 0:(n-1)
         are_linear_equivalent(F_0, _shift_anchor(G, a)) && return true
     end
     return false
@@ -90,8 +83,8 @@ function affine_class_signature(F::SBox{N,T}) where {N,T}
         throw(ArgumentError("affine_class_signature: F must be a permutation"))
     n = 1 << N
     reps = Vector{SBox{N,T}}(undef, n)
-    @inbounds for a in 0:(n - 1)
-        reps[a + 1] = linear_representative(_shift_anchor(F, a)).representative
+    @inbounds for a = 0:(n-1)
+        reps[a+1] = linear_representative(_shift_anchor(F, a)).representative
     end
     sort!(reps; by = r -> r.lut)
     unique!(r -> r.lut, reps)

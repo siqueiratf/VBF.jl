@@ -45,9 +45,7 @@ end
 end
 
 @testset "boomerang_uniformity: 4-bit catalog (locked)" begin
-    # Values computed by the current Julia implementation. They are
-    # locked here so any regression surfaces as a CI failure. Where a
-    # value is cross-published, the source is cited inline.
+    # Values computed by the current Julia implementation. They are locked here so any regression surfaces as a CI failure. Where a value is cross-published, the source is cited inline.
     @test boomerang_uniformity(load_literature_sbox("PRESENT"))    == 16
     @test boomerang_uniformity(load_literature_sbox("GIFT"))       == 16
     @test boomerang_uniformity(load_literature_sbox("Midori_Sb0")) == 16  # involution; BU ≠ DU

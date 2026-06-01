@@ -8,8 +8,7 @@ using Test
     md = to_markdown(s)
     @test occursin("| x | 0 | 1 | 2 | 3 |", md)
     @test occursin("| F(x) | 0 | 1 | 2 | 3 |", md)
-    # wrapping: an 8-bit identity wraps into 2^8/16 = 16 blocks, each with
-    # its own header row (distinct column indices); the first is 0..15.
+    # wrapping: an 8-bit identity wraps into 2^8/16 = 16 blocks, each with its own header row (distinct column indices); the first is 0..15.
     big = SBox{8}(collect(0:255))
     lines = split(to_markdown(big), '\n')
     @test count(l -> startswith(l, "| x | "), lines) == 16

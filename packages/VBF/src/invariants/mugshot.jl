@@ -44,7 +44,14 @@ Base.hash(m::APNEAMugshot, h::UInt) =
     hash(m.fields, hash(m.kind, hash(:APNEAMugshot, h)))
 
 function Base.show(io::IO, m::APNEAMugshot)
-    print(io, "APNEAMugshot{kind=", m.kind, ", ", length(m.fields), " components}")
+    print(
+        io,
+        "APNEAMugshot{kind=",
+        m.kind,
+        ", ",
+        length(m.fields),
+        " components}",
+    )
 end
 
 """
@@ -64,8 +71,11 @@ function apn_ea_mugshot(F::SBox{N,T}) where {N,T}
     deg = algebraic_degree(F)
     if deg == 2
         π = ortho_derivative(F)
-        π === nothing && throw(ArgumentError(
-            "apn_ea_mugshot: F has algebraic_degree 2 but is not a quadratic APN"))
+        π === nothing && throw(
+            ArgumentError(
+                "apn_ea_mugshot: F has algebraic_degree 2 but is not a quadratic APN",
+            ),
+        )
         walsh_spec = Spectrum()
         for w in vec(lat(π))
             add!(walsh_spec, w)
@@ -77,14 +87,17 @@ function apn_ea_mugshot(F::SBox{N,T}) where {N,T}
         return APNEAMugshot(:quadratic, (walsh = walsh_spec, ddt = ddt_spec))
     else
         abs_walsh = absolute_walsh_spectrum(F)
-        deg_spec  = degree_spectrum(F)
-        sig       = sigma_multiplicities(F)
+        deg_spec = degree_spectrum(F)
+        sig = sigma_multiplicities(F)
         thk = is_permutation(F) ? thickness_spectrum(F) : Int[]
-        return APNEAMugshot(:non_quadratic, (
-            abs_walsh = abs_walsh,
-            degree    = deg_spec,
-            sigma     = sig,
-            thickness = thk,
-        ))
+        return APNEAMugshot(
+            :non_quadratic,
+            (
+                abs_walsh = abs_walsh,
+                degree = deg_spec,
+                sigma = sig,
+                thickness = thk,
+            ),
+        )
     end
 end

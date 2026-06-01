@@ -26,13 +26,20 @@ read/write API over that table; the actual import scripts live under
 import SQLite
 import DBInterface
 
-# ----------------------------------------------------------------------------
 # Read API
-# ----------------------------------------------------------------------------
 
-const _RECON_COLUMNS = (:id, :n, :function_id, :lut_sha256,
-                        :present_in, :absent_from, :kind,
-                        :resolution, :resolver, :resolved_date)
+const _RECON_COLUMNS = (
+    :id,
+    :n,
+    :function_id,
+    :lut_sha256,
+    :present_in,
+    :absent_from,
+    :kind,
+    :resolution,
+    :resolver,
+    :resolved_date,
+)
 
 const _RECON_SELECT =
     "id, n, function_id, lut_sha256, present_in, absent_from, kind, " *
@@ -43,7 +50,7 @@ function _row_to_disagreement(r)
         Int(r.id),
         Int(r.n),
         r.function_id === missing ? nothing : Int(r.function_id),
-        r.lut_sha256  === missing ? nothing : String(r.lut_sha256),
+        r.lut_sha256 === missing ? nothing : String(r.lut_sha256),
         String(r.present_in),
         String(r.absent_from),
         String(r.kind),
@@ -53,19 +60,28 @@ function _row_to_disagreement(r)
     ))
 end
 
-function _disagreement_where(; n = nothing, kind = nothing, resolved = nothing,
-                              present_in = nothing, absent_from = nothing)
+function _disagreement_where(;
+    n = nothing,
+    kind = nothing,
+    resolved = nothing,
+    present_in = nothing,
+    absent_from = nothing,
+)
     clauses = String[]
     n !== nothing && push!(clauses, "n = $(Int(n))")
     kind !== nothing && push!(clauses, "kind = " * _sql_quote(String(kind)))
     if resolved !== nothing
         resolved ? push!(clauses, "resolution IS NOT NULL") :
-                   push!(clauses, "resolution IS NULL")
+        push!(clauses, "resolution IS NULL")
     end
-    present_in !== nothing &&
-        push!(clauses, "present_in LIKE " * _sql_quote("%" * String(present_in) * "%"))
-    absent_from !== nothing &&
-        push!(clauses, "absent_from LIKE " * _sql_quote("%" * String(absent_from) * "%"))
+    present_in !== nothing && push!(
+        clauses,
+        "present_in LIKE " * _sql_quote("%" * String(present_in) * "%"),
+    )
+    absent_from !== nothing && push!(
+        clauses,
+        "absent_from LIKE " * _sql_quote("%" * String(absent_from) * "%"),
+    )
     isempty(clauses) ? "" : " WHERE " * join(clauses, " AND ")
 end
 
@@ -85,17 +101,24 @@ list_reconciliation_disagreements(db; n = 8, kind = "only_in_some")
 list_reconciliation_disagreements(db; absent_from = "bfa", resolved = false)
 ```
 """
-function list_reconciliation_disagreements(db::SQLite.DB;
-                                           n = nothing,
-                                           kind = nothing,
-                                           resolved = nothing,
-                                           present_in = nothing,
-                                           absent_from = nothing,
-                                           limit::Union{Nothing, Integer} = nothing)
+function list_reconciliation_disagreements(
+    db::SQLite.DB;
+    n = nothing,
+    kind = nothing,
+    resolved = nothing,
+    present_in = nothing,
+    absent_from = nothing,
+    limit::Union{Nothing,Integer} = nothing,
+)
     where = _disagreement_where(; n, kind, resolved, present_in, absent_from)
-    tail  = " ORDER BY id"
+    tail = " ORDER BY id"
     limit !== nothing && (tail *= " LIMIT $(Int(limit))")
-    sql = "SELECT " * _RECON_SELECT * " FROM reconciliation_disagreements" * where * tail
+    sql =
+        "SELECT " *
+        _RECON_SELECT *
+        " FROM reconciliation_disagreements" *
+        where *
+        tail
     out = NamedTuple[]
     for r in DBInterface.execute(db, sql)
         push!(out, _row_to_disagreement(r))
@@ -131,19 +154,18 @@ end
 ```
 """
 function reconciliation_summary(db::SQLite.DB)
-    sql = "SELECT n, kind, COUNT(*) AS c " *
-          "FROM reconciliation_disagreements " *
-          "GROUP BY n, kind ORDER BY n, kind"
-    out = NamedTuple{(:n, :kind, :count), Tuple{Int, String, Int}}[]
+    sql =
+        "SELECT n, kind, COUNT(*) AS c " *
+        "FROM reconciliation_disagreements " *
+        "GROUP BY n, kind ORDER BY n, kind"
+    out = NamedTuple{(:n, :kind, :count),Tuple{Int,String,Int}}[]
     for r in DBInterface.execute(db, sql)
         push!(out, (n = Int(r.n), kind = String(r.kind), count = Int(r.c)))
     end
     out
 end
 
-# ----------------------------------------------------------------------------
 # Multi-source views: who agrees with whom
-# ----------------------------------------------------------------------------
 
 """
     KNOWN_SOURCES :: NTuple{4, String}
@@ -163,7 +185,7 @@ mentions, so the counts can sum to more than the total row count
 when cross-source matches exist.
 """
 function reconciliation_by_source(db::SQLite.DB)
-    out = NamedTuple{(:source, :count), Tuple{String, Int}}[]
+    out = NamedTuple{(:source, :count),Tuple{String,Int}}[]
     for source in KNOWN_SOURCES
         c = count_reconciliation_disagreements(db; present_in = source)
         push!(out, (source = source, count = c))
@@ -180,10 +202,11 @@ function row with `source_repo = "bfa@…|xanadu@…"` contributes to
 both `bfa` and `xanadu`.
 """
 function functions_by_source(db::SQLite.DB)
-    out = NamedTuple{(:source, :count), Tuple{String, Int}}[]
+    out = NamedTuple{(:source, :count),Tuple{String,Int}}[]
     for source in KNOWN_SOURCES
-        sql = "SELECT COUNT(*) AS c FROM functions WHERE source_repo LIKE " *
-              _sql_quote("%" * source * "%")
+        sql =
+            "SELECT COUNT(*) AS c FROM functions WHERE source_repo LIKE " *
+            _sql_quote("%" * source * "%")
         c = 0
         for r in DBInterface.execute(db, sql)
             c = Int(r.c)
@@ -204,21 +227,28 @@ cross-source agreements come first. Useful for picking high-confidence
 APN representatives across databases.
 """
 function cross_source_matches(db::SQLite.DB; min_sources::Integer = 2)
-    rows = NamedTuple{(:id, :n, :lut_sha256, :present_in, :sources_count),
-                      Tuple{Int, Int, String, String, Int}}[]
-    sql = "SELECT id, n, lut_sha256, present_in FROM reconciliation_disagreements " *
-          "WHERE present_in LIKE '%|%'"     # quick filter: must contain a pipe
+    rows = NamedTuple{
+        (:id, :n, :lut_sha256, :present_in, :sources_count),
+        Tuple{Int,Int,String,String,Int},
+    }[]
+    sql =
+        "SELECT id, n, lut_sha256, present_in FROM reconciliation_disagreements " *
+        "WHERE present_in LIKE '%|%'"     # quick filter: must contain a pipe
     for r in DBInterface.execute(db, sql)
         present = String(r.present_in)
         sources = unique([split(p, '@')[1] for p in split(present, '|')])
         if length(sources) ≥ Int(min_sources)
-            push!(rows, (
-                id = Int(r.id),
-                n = Int(r.n),
-                lut_sha256 = r.lut_sha256 === missing ? "" : String(r.lut_sha256),
-                present_in = present,
-                sources_count = length(sources),
-            ))
+            push!(
+                rows,
+                (
+                    id = Int(r.id),
+                    n = Int(r.n),
+                    lut_sha256 = r.lut_sha256 === missing ? "" :
+                                 String(r.lut_sha256),
+                    present_in = present,
+                    sources_count = length(sources),
+                ),
+            )
         end
     end
     sort!(rows; by = r -> (-r.sources_count, r.id))
@@ -235,30 +265,35 @@ Function rows whose `source_repo` pipe-list mentions at least
 exist in at least one upstream.
 """
 function multi_source_functions(db::SQLite.DB; min_sources::Integer = 2)
-    rows = NamedTuple{(:id, :n, :canonical_name, :source_repo, :sources_count),
-                      Tuple{Int, Int, Union{String, Nothing}, String, Int}}[]
-    sql = "SELECT id, n, canonical_name, source_repo FROM functions " *
-          "WHERE source_repo LIKE '%|%'"
+    rows = NamedTuple{
+        (:id, :n, :canonical_name, :source_repo, :sources_count),
+        Tuple{Int,Int,Union{String,Nothing},String,Int},
+    }[]
+    sql =
+        "SELECT id, n, canonical_name, source_repo FROM functions " *
+        "WHERE source_repo LIKE '%|%'"
     for r in DBInterface.execute(db, sql)
         repo = String(r.source_repo)
         sources = unique([split(p, '@')[1] for p in split(repo, '|')])
         if length(sources) ≥ Int(min_sources)
-            push!(rows, (
-                id = Int(r.id),
-                n = Int(r.n),
-                canonical_name = r.canonical_name === missing ? nothing : String(r.canonical_name),
-                source_repo = repo,
-                sources_count = length(sources),
-            ))
+            push!(
+                rows,
+                (
+                    id = Int(r.id),
+                    n = Int(r.n),
+                    canonical_name = r.canonical_name === missing ? nothing :
+                                     String(r.canonical_name),
+                    source_repo = repo,
+                    sources_count = length(sources),
+                ),
+            )
         end
     end
     sort!(rows; by = r -> (-r.sources_count, r.id))
     rows
 end
 
-# ----------------------------------------------------------------------------
 # Write API
-# ----------------------------------------------------------------------------
 
 """
     record_disagreement!(db; n, present_in, absent_from, kind,
@@ -271,34 +306,49 @@ Insert a reconciliation row. Returns the new `id`. `present_in` and
 `absent_from` are pipe-separated source-repo lists (e.g.,
 `"sboxu@828b8ba|xanadu@xxxxxxx"`).
 """
-function record_disagreement!(db::SQLite.DB;
-                              n::Integer,
-                              present_in::AbstractString,
-                              absent_from::AbstractString,
-                              kind::AbstractString,
-                              function_id::Union{Nothing, Integer} = nothing,
-                              lut_sha256::Union{Nothing, AbstractString} = nothing,
-                              resolution::Union{Nothing, AbstractString} = nothing,
-                              resolver::Union{Nothing, AbstractString} = nothing,
-                              resolved_date::Union{Nothing, AbstractString} = nothing)
+function record_disagreement!(
+    db::SQLite.DB;
+    n::Integer,
+    present_in::AbstractString,
+    absent_from::AbstractString,
+    kind::AbstractString,
+    function_id::Union{Nothing,Integer} = nothing,
+    lut_sha256::Union{Nothing,AbstractString} = nothing,
+    resolution::Union{Nothing,AbstractString} = nothing,
+    resolver::Union{Nothing,AbstractString} = nothing,
+    resolved_date::Union{Nothing,AbstractString} = nothing,
+)
     fid = function_id === nothing ? "NULL" : string(Int(function_id))
     sha = lut_sha256 === nothing ? "NULL" : _sql_quote(String(lut_sha256))
     res = resolution === nothing ? "NULL" : _sql_quote(String(resolution))
     rsr = resolver === nothing ? "NULL" : _sql_quote(String(resolver))
     rdt = resolved_date === nothing ? "NULL" : _sql_quote(String(resolved_date))
-    SQLite.execute(db, string(
-        "INSERT INTO reconciliation_disagreements ",
-        "(n, function_id, lut_sha256, present_in, absent_from, kind, ",
-        " resolution, resolver, resolved_date) VALUES (",
-        Int(n), ", ",
-        fid, ", ",
-        sha, ", ",
-        _sql_quote(String(present_in)), ", ",
-        _sql_quote(String(absent_from)), ", ",
-        _sql_quote(String(kind)), ", ",
-        res, ", ",
-        rsr, ", ",
-        rdt, ")"))
+    SQLite.execute(
+        db,
+        string(
+            "INSERT INTO reconciliation_disagreements ",
+            "(n, function_id, lut_sha256, present_in, absent_from, kind, ",
+            " resolution, resolver, resolved_date) VALUES (",
+            Int(n),
+            ", ",
+            fid,
+            ", ",
+            sha,
+            ", ",
+            _sql_quote(String(present_in)),
+            ", ",
+            _sql_quote(String(absent_from)),
+            ", ",
+            _sql_quote(String(kind)),
+            ", ",
+            res,
+            ", ",
+            rsr,
+            ", ",
+            rdt,
+            ")",
+        ),
+    )
     id = 0
     for r in DBInterface.execute(db, "SELECT last_insert_rowid() AS id")
         id = Int(r.id)
@@ -314,18 +364,27 @@ Append `added_source` to the `functions.source_repo` pipe-list for
 value. Used by the importers to mark "this LUT was also found in
 sboxU at SHA X".
 """
-function merge_source_repo!(db::SQLite.DB, function_id::Integer, added_source::AbstractString)
+function merge_source_repo!(
+    db::SQLite.DB,
+    function_id::Integer,
+    added_source::AbstractString,
+)
     cur = ""
-    for r in DBInterface.execute(db,
-            "SELECT source_repo FROM functions WHERE id = $(Int(function_id)) LIMIT 1")
+    for r in DBInterface.execute(
+        db,
+        "SELECT source_repo FROM functions WHERE id = $(Int(function_id)) LIMIT 1",
+    )
         cur = String(r.source_repo)
     end
     parts = split(cur, '|')
     added = String(added_source)
     added in parts && return cur
     new_val = isempty(cur) ? added : cur * "|" * added
-    SQLite.execute(db, "UPDATE functions SET source_repo = " *
-                       _sql_quote(new_val) *
-                       " WHERE id = $(Int(function_id))")
+    SQLite.execute(
+        db,
+        "UPDATE functions SET source_repo = " *
+        _sql_quote(new_val) *
+        " WHERE id = $(Int(function_id))",
+    )
     new_val
 end

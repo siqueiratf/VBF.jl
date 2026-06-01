@@ -18,9 +18,7 @@ module VBFCatalog
 
 using VBF
 
-# Data layer (load order: literature/catalog/queries/reconciliation, then the
-# APN catalog + artifacts + bibliography). Each file imports the storage deps
-# (SQLite, DBInterface, TOML, …) it needs.
+# Data layer; each file imports the storage deps it needs.
 include("data/literature.jl")
 include("data/catalog.jl")
 include("data/queries.jl")

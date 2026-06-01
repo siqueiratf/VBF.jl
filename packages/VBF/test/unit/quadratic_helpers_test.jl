@@ -4,9 +4,7 @@ using VBF
 using Test
 
 @testset "ccz_equivalent_quadratic_function: returns a degree-2 CCZ member" begin
-    # For quadratic APN, the function itself is degree 2, so the first
-    # member of enumerate_ccz_class with degree 2 is returned. It must
-    # share F's DDT multiset (a CCZ-invariant).
+    # For quadratic APN, the function itself is degree 2, so the first member of enumerate_ccz_class with degree 2 is returned. It must share F's DDT multiset (a CCZ-invariant).
     for name in ("n4_Gold_x3", "n5_Gold_x3", "n5_Gold_x5")
         F = load_apn_function(name)
         q = ccz_equivalent_quadratic_function(F)

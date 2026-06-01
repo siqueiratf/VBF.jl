@@ -1,6 +1,4 @@
-# Explicit export list. Anything callable from a paper notebook lives here;
-# anything not exported is internal and may break between versions.
-# Aqua.test_undefined_exports verifies every name below resolves.
+# Explicit export list; anything not exported is internal.
 
 # tier 1 — types
 export SBox, inputbits, storage_type, is_permutation
@@ -10,7 +8,8 @@ export Spectrum, add!, sorted_pairs, total_mass
 
 # tier 2 — F₂ⁿ primitives
 export parity, f2_dot
-export gauss_jordan!, rank_f2, linear_basis, is_in_span, complete_basis, complete_basis_reversed
+export gauss_jordan!,
+    rank_f2, linear_basis, is_in_span, complete_basis, complete_basis_reversed
 export mobius!, mobius, anf
 export walsh_hadamard!, walsh_hadamard, walsh_transform
 export PRIMITIVE_POLYNOMIALS, primitive_polynomial
@@ -21,14 +20,16 @@ export polynomial_terms, terms_to_lut, monomial_power_table
 export quadratic_exponents, encode_quadratic, decode_quadratic_lut
 export random_function_sbox, random_permutation_sbox
 export random_linear_function, random_invertible_linear_map
-export random_linear_permutation, random_affine_permutation, random_linear_subspace
+export random_linear_permutation,
+    random_affine_permutation, random_linear_subspace
 
 # (the data/catalog layer's exports moved to the VBFCatalog package)
 
 # tier 5 — algorithms
 export is_invertible, compose, solve_f2, kernel_f2
 export extract_linear_subspaces, span_from_basis
-export smallest_basis, find_2d_subspaces, expand_subspaces, subspace_count_signature
+export smallest_basis,
+    find_2d_subspaces, expand_subspaces, subspace_count_signature
 export identity_affine_map, zero_affine_map
 export block_diagonal_affine_map, swap_affine_map
 export generating_affine_map, generating_affine_map_r
@@ -39,8 +40,10 @@ export are_linear_equivalent, are_linearly_equivalent_general
 export linear_representative
 export linear_equivalences, self_linear_equivalences, self_affine_equivalences
 export are_sets_linear_equivalent
-export is_3_to_1, triplicate_adjoint, is_equivalent_to_triplicate, triplicate_adjoints
-export canonical_triplicate, are_3to1_linear_equivalent, self_3to1_linear_equivalences
+export is_3_to_1,
+    triplicate_adjoint, is_equivalent_to_triplicate, triplicate_adjoints
+export canonical_triplicate,
+    are_3to1_linear_equivalent, self_3to1_linear_equivalences
 export canonical_3to1_representative
 export are_affine_equivalent
 export affine_representative
@@ -79,7 +82,8 @@ export trims, apn_trims, trim_spectrum
 export extend_quadratic_apn
 export quadratic_apn_matrix, is_qam, qam_to_sbox
 export qam_cyclic_orbits, qam_from_cyclic, independent_conjugate_elements
-export cyclic_qam_subset_representatives, is_cyclic_qam, search_qam, search_qam_full
+export cyclic_qam_subset_representatives,
+    is_cyclic_qam, search_qam, search_qam_full
 export taniguchi_apn, taniguchi_apn_representatives
 export search_quadratic_apn_le
 export gold_apn, kasami_apn, welch_apn, niho_apn, inverse_apn, dobbertin_apn
@@ -102,4 +106,3 @@ export table_anomaly, table_negative_anomaly
 
 # tier 8 — presentation
 export to_markdown, to_latex, table_to_markdown, table_to_latex
-

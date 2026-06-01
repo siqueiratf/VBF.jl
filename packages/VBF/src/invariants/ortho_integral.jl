@@ -29,11 +29,12 @@ incremental row-reduction keeps at most `n·2ⁿ` pivot rows, so memory is
 `O(n²·4ⁿ / 64)` words. Practical for `n ≤ 8`.
 """
 
-# Reduce `row` against the running pivot set (REF); install as a new
-# pivot if it does not vanish. Pivots stored as parallel vectors.
-function _oi_reduce_and_install!(pivot_rows::Vector{BitVector},
-                                 pivot_cols::Vector{Int},
-                                 row::BitVector)
+# Reduce `row` against the running pivots (REF); install if it does not vanish.
+function _oi_reduce_and_install!(
+    pivot_rows::Vector{BitVector},
+    pivot_cols::Vector{Int},
+    row::BitVector,
+)
     @inbounds for t in eachindex(pivot_rows)
         if row[pivot_cols[t]]
             row .⊻= pivot_rows[t]
@@ -47,12 +48,11 @@ function _oi_reduce_and_install!(pivot_rows::Vector{BitVector},
     return nothing
 end
 
-# Build a BitVector equation from a list of (0-based) variable positions,
-# XOR-toggling so repeated positions cancel (the F₂-correct semantics).
+# BitVector equation from 0-based positions, XOR-toggling so repeats cancel.
 function _oi_row(nvars::Int, positions::Vector{Int})
     row = falses(nvars)
     @inbounds for p in positions
-        row[p + 1] = !row[p + 1]
+        row[p+1] = !row[p+1]
     end
     return row
 end
@@ -84,19 +84,19 @@ function ortho_integral(s::SBox{N,T}) where {N,T}
     pivot_cols = Int[]
 
     # (1) Q(0) = 0  →  var(i, 0) = 0 for i in 0:n-1.
-    for i in 0:(n - 1)
+    for i = 0:(n-1)
         _oi_reduce_and_install!(pivot_rows, pivot_cols, _oi_row(nvars, [i]))
     end
 
     # (2) Main constraints.
     positions = Int[]
-    @inbounds for a in 1:(n_size - 1)
-        for x in 0:(n_size - 1)
+    @inbounds for a = 1:(n_size-1)
+        for x = 0:(n_size-1)
             x == a && continue
             empty!(positions)
-            sx = Int(s_lut[x + 1])
+            sx = Int(s_lut[x+1])
             xa = x ⊻ a
-            for i in 0:(n - 1)
+            for i = 0:(n-1)
                 if (sx >> i) & 1 == 1
                     push!(positions, i + n * xa)
                     push!(positions, i + n * x)
@@ -104,7 +104,11 @@ function ortho_integral(s::SBox{N,T}) where {N,T}
                 end
             end
             isempty(positions) && continue
-            _oi_reduce_and_install!(pivot_rows, pivot_cols, _oi_row(nvars, positions))
+            _oi_reduce_and_install!(
+                pivot_rows,
+                pivot_cols,
+                _oi_row(nvars, positions),
+            )
         end
     end
 
@@ -122,7 +126,7 @@ function ortho_integral(s::SBox{N,T}) where {N,T}
     # Nullspace basis: one vector per free column.
     pivot_set = Set(pivot_cols)
     kernel = BitVector[]
-    @inbounds for f in 1:nvars
+    @inbounds for f = 1:nvars
         f in pivot_set && continue
         v = falses(nvars)
         v[f] = true
@@ -135,17 +139,16 @@ function ortho_integral(s::SBox{N,T}) where {N,T}
     # Quotient out the linear functions L_{ij}.
     qpiv_rows = BitVector[]
     qpiv_cols = Int[]
-    @inbounds for i in 0:(n - 1)
-        for j in 0:(n - 1)
+    @inbounds for i = 0:(n-1)
+        for j = 0:(n-1)
             row = falses(nvars)
-            for x in 0:(n_size - 1)
-                ((x >> i) & 1) == 1 && (row[j + n * x + 1] = true)
+            for x = 0:(n_size-1)
+                ((x >> i) & 1) == 1 && (row[j+n*x+1] = true)
             end
             _oi_reduce_and_install!(qpiv_rows, qpiv_cols, row)
         end
     end
-    # Append kernel vectors that are independent of span(L_{ij}); the first
-    # such vector is the ortho-integral representative.
+    # Append kernel vectors outside span(L_{ij}); first is the ortho-integral.
     rep = nothing
     @inbounds for k in kernel
         row = copy(k)
@@ -168,14 +171,14 @@ end
 function _oi_sbox_from_bits(v::BitVector, n::Int, ::Type{T}) where {T}
     n_size = 1 << n
     lut = zeros(T, n_size)
-    @inbounds for x in 0:(n_size - 1)
+    @inbounds for x = 0:(n_size-1)
         val = zero(T)
-        for i in 0:(n - 1)
-            if v[i + n * x + 1]
+        for i = 0:(n-1)
+            if v[i+n*x+1]
                 val |= (one(T) << i)
             end
         end
-        lut[x + 1] = val
+        lut[x+1] = val
     end
-    return SBox{n, T}(lut)
+    return SBox{n,T}(lut)
 end

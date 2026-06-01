@@ -37,29 +37,29 @@ function sigma_multiplicities(F::SBox{N,T}; k::Int = 4) where {N,T}
         throw(ArgumentError("sigma_multiplicities: k must be ≥ 2, got k = $k"))
     n_size = 1 << N
     L = lat(F)
-    # Precompute `∑_a W_F(a, b)^k` per output mask b.
-    # Int128 covers n ≤ 16 and k ≤ 4 comfortably; up to n=8 a plain Int suffices
-    # but we use Int128 defensively for k=4 to remain correct across n.
+    # Precompute ∑_a W_F(a, b)^k per output mask b (Int128 for k = 4).
     rowsum = zeros(Int128, n_size)
-    @inbounds for b in 0:(n_size - 1)
+    @inbounds for b = 0:(n_size-1)
         s_total = Int128(0)
-        for a in 0:(n_size - 1)
-            w = Int128(L[a + 1, b + 1])
+        for a = 0:(n_size-1)
+            w = Int128(L[a+1, b+1])
             pw = w
-            for _ in 1:(k - 1)
+            for _ = 1:(k-1)
                 pw *= w
             end
             s_total += pw
         end
-        rowsum[b + 1] = s_total
+        rowsum[b+1] = s_total
     end
 
     result = Spectrum()
-    @inbounds for s in 0:(n_size - 1)
+    @inbounds for s = 0:(n_size-1)
         σ = Int128(0)
-        for b in 0:(n_size - 1)
-            sign = ((count_ones(UInt(b) & UInt(s)) & 1) == 0) ? Int128(1) : Int128(-1)
-            σ += sign * rowsum[b + 1]
+        for b = 0:(n_size-1)
+            sign =
+                ((count_ones(UInt(b) & UInt(s)) & 1) == 0) ? Int128(1) :
+                Int128(-1)
+            σ += sign * rowsum[b+1]
         end
         # Normalize by 2^(2N); the shift is exact for k ≥ 2.
         σ_norm = σ >> (2 * N)

@@ -1,22 +1,3 @@
-# Reproduction: Taniguchi's quadratic APN family
-# Hiroaki Taniguchi — Designs, Codes and Cryptography 2019  [Taniguchi2019]
-#
-# Taniguchi's Theorem 3 builds APN functions on F2^{2n} from Carlet's
-# B(x,y)=x·y construction with
-#     G(x,y) = x^{2^{2m}+2^{3m}} + a·x^{2^{2m}}·y^{2^m} + b·y^{2^m+1},
-# APN iff x^{2^m+1}+a·x+b has no root in F2^n. On F2^8 the family has three
-# CCZ-classes (the paper's Γ-ranks 13642 / 13700 / 13798): the a=0 Zhou–Pott
-# member and the two NEW (a≠0) ones that "do not appear in the list by Edel and
-# Pott". This script regenerates them with `taniguchi_apn_representatives` and
-# checks the class structure; `apn_ea_mugshot` (the ortho-derivative invariant)
-# separates the three classes.
-#
-# Reproduction mode: RECOMPUTES FROM THE CONSTRUCTION.
-#   The family is generated from Theorem 3 at n=8 (no published data loaded to
-#   obtain the functions) and cross-checked against the re-housed corpus.
-#
-# Run standalone:  julia --project=. papers/Taniguchi2019_construction.jl
-
 using VBF
 using VBFCatalog
 

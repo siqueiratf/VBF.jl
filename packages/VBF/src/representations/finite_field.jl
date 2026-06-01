@@ -53,9 +53,7 @@ julia> gf_monomial_lut(4, 3)       # the n=4 Gold x³ APN LUT
 ```
 """
 
-# ---------------------------------------------------------------------------
 # Primitive-polynomial lookup
-# ---------------------------------------------------------------------------
 
 """
     PRIMITIVE_POLYNOMIALS :: Dict{Int, Int}
@@ -68,15 +66,15 @@ These match standard references (Lidl-Niederreiter, FIPS 197 for
 n=8) and the moduli already used by the catalog's hand-computed LUTs
 (`x⁴+x+1` for `n=4`, `x⁵+x²+1` for `n=5`).
 """
-const PRIMITIVE_POLYNOMIALS = Dict{Int, Int}(
-    2  => 0b111,                       # x² + x + 1
-    3  => 0b1011,                      # x³ + x + 1
-    4  => 0b10011,                     # x⁴ + x + 1
-    5  => 0b100101,                    # x⁵ + x² + 1
-    6  => 0b1000011,                   # x⁶ + x + 1
-    7  => 0b10000011,                  # x⁷ + x + 1
-    8  => 0b100011011,                 # x⁸ + x⁴ + x³ + x + 1   (Rijndael / FIPS 197)
-    9  => 0b1000010001,                # x⁹ + x⁴ + 1
+const PRIMITIVE_POLYNOMIALS = Dict{Int,Int}(
+    2 => 0b111,                       # x² + x + 1
+    3 => 0b1011,                      # x³ + x + 1
+    4 => 0b10011,                     # x⁴ + x + 1
+    5 => 0b100101,                    # x⁵ + x² + 1
+    6 => 0b1000011,                   # x⁶ + x + 1
+    7 => 0b10000011,                  # x⁷ + x + 1
+    8 => 0b100011011,                 # x⁸ + x⁴ + x³ + x + 1   (AES)
+    9 => 0b1000010001,                # x⁹ + x⁴ + 1
     10 => 0b10000001001,               # x¹⁰ + x³ + 1
     11 => 0b100000000101,              # x¹¹ + x² + 1
     12 => 0b1000001010011,             # x¹² + x⁶ + x⁴ + x + 1
@@ -97,15 +95,15 @@ modulus. For `n ∈ {2, 3, 4, 5, 7, 9}` the Conway polynomial coincides
 with the entry in [`PRIMITIVE_POLYNOMIALS`](@ref); the two tables
 differ for `n ∈ {6, 8, 10}`.
 """
-const CONWAY_POLYNOMIALS = Dict{Int, Int}(
-    2  => 0b111,                       # x² + x + 1
-    3  => 0b1011,                      # x³ + x + 1
-    4  => 0b10011,                     # x⁴ + x + 1
-    5  => 0b100101,                    # x⁵ + x² + 1
-    6  => 0b1011011,                   # x⁶ + x⁴ + x³ + x + 1
-    7  => 0b10000011,                  # x⁷ + x + 1
-    8  => 0b100011101,                 # x⁸ + x⁴ + x³ + x² + 1
-    9  => 0b1000010001,                # x⁹ + x⁴ + 1
+const CONWAY_POLYNOMIALS = Dict{Int,Int}(
+    2 => 0b111,                       # x² + x + 1
+    3 => 0b1011,                      # x³ + x + 1
+    4 => 0b10011,                     # x⁴ + x + 1
+    5 => 0b100101,                    # x⁵ + x² + 1
+    6 => 0b1011011,                   # x⁶ + x⁴ + x³ + x + 1
+    7 => 0b10000011,                  # x⁷ + x + 1
+    8 => 0b100011101,                 # x⁸ + x⁴ + x³ + x² + 1
+    9 => 0b1000010001,                # x⁹ + x⁴ + 1
     10 => 0b10001101111,               # x¹⁰ + x⁶ + x⁵ + x³ + x² + x + 1
 )
 
@@ -128,15 +126,15 @@ the table; pass an explicit modulus to [`gf_mul`](@ref) for the
 unsupported case.
 """
 function primitive_polynomial(n::Integer)
-    haskey(PRIMITIVE_POLYNOMIALS, Int(n)) ||
-        throw(ArgumentError(
-            "primitive_polynomial: no canonical modulus for n=$n; pass one explicitly to gf_mul"))
+    haskey(PRIMITIVE_POLYNOMIALS, Int(n)) || throw(
+        ArgumentError(
+            "primitive_polynomial: no canonical modulus for n=$n; pass one explicitly to gf_mul",
+        ),
+    )
     PRIMITIVE_POLYNOMIALS[Int(n)]
 end
 
-# ---------------------------------------------------------------------------
 # Multiplication, exponentiation, inversion
-# ---------------------------------------------------------------------------
 
 """
     gf_mul(a::Integer, b::Integer, n::Integer; modulus = primitive_polynomial(n)) -> Int
@@ -144,12 +142,17 @@ end
 Multiply `a` and `b` in `GF(2ⁿ)` modulo `modulus`. Inputs and outputs
 fit in the low `n` bits. Time is `O(n)`.
 """
-function gf_mul(a::Integer, b::Integer, n::Integer; modulus::Integer = primitive_polynomial(n))
+function gf_mul(
+    a::Integer,
+    b::Integer,
+    n::Integer;
+    modulus::Integer = primitive_polynomial(n),
+)
     n ≥ 1 || throw(ArgumentError("gf_mul: n must be ≥ 1, got $n"))
     aI = Int(a)
     bI = Int(b)
     p = 0
-    @inbounds for i in 0:n-1
+    @inbounds for i = 0:(n-1)
         ((bI >> i) & 1) == 1 && (p ⊻= aI << i)
     end
     # reduce: as long as p has bits at position ≥ n, XOR shifted modulus
@@ -169,8 +172,17 @@ end
 `xᵏ` in `GF(2ⁿ)`. Square-and-multiply; `O(n · log k)`. By convention
 `gf_pow(0, 0, n) = 1`.
 """
-function gf_pow(x::Integer, k::Integer, n::Integer; modulus::Integer = primitive_polynomial(n))
-    k ≥ 0 || throw(ArgumentError("gf_pow: k must be ≥ 0, got $k (use gf_inv for negative exponents)"))
+function gf_pow(
+    x::Integer,
+    k::Integer,
+    n::Integer;
+    modulus::Integer = primitive_polynomial(n),
+)
+    k ≥ 0 || throw(
+        ArgumentError(
+            "gf_pow: k must be ≥ 0, got $k (use gf_inv for negative exponents)",
+        ),
+    )
     if k == 0
         return 1
     end
@@ -194,14 +206,16 @@ end
 Multiplicative inverse `a⁻¹` in `GF(2ⁿ)`, via Fermat's little theorem
 (`a^(2ⁿ - 2)`). Throws `ArgumentError` if `a == 0`.
 """
-function gf_inv(a::Integer, n::Integer; modulus::Integer = primitive_polynomial(n))
+function gf_inv(
+    a::Integer,
+    n::Integer;
+    modulus::Integer = primitive_polynomial(n),
+)
     Int(a) == 0 && throw(ArgumentError("gf_inv: 0 is not invertible"))
     gf_pow(a, (1 << n) - 2, n; modulus = modulus)
 end
 
-# ---------------------------------------------------------------------------
 # Monomial lookup table
-# ---------------------------------------------------------------------------
 
 """
     gf_monomial_lut(n::Integer, d::Integer; modulus = primitive_polynomial(n)) -> Vector{Int}
@@ -220,13 +234,18 @@ julia> lut == [0, 1, 8, 15, 12, 10, 1, 1, 10, 15, 15, 12, 8, 10, 8, 12]
 true
 ```
 """
-function gf_monomial_lut(n::Integer, d::Integer; modulus::Integer = primitive_polynomial(n))
+function gf_monomial_lut(
+    n::Integer,
+    d::Integer;
+    modulus::Integer = primitive_polynomial(n),
+)
     n ≥ 1 || throw(ArgumentError("gf_monomial_lut: n must be ≥ 1, got $n"))
-    d ≥ 0 || throw(ArgumentError("gf_monomial_lut: exponent d must be ≥ 0, got $d"))
+    d ≥ 0 ||
+        throw(ArgumentError("gf_monomial_lut: exponent d must be ≥ 0, got $d"))
     len = 1 << n
     out = Vector{Int}(undef, len)
-    @inbounds for x in 0:len-1
-        out[x + 1] = gf_pow(x, d, n; modulus = modulus)
+    @inbounds for x = 0:(len-1)
+        out[x+1] = gf_pow(x, d, n; modulus = modulus)
     end
     out
 end

@@ -10,9 +10,7 @@ using Random
 end
 
 @testset "automorphisms_from_ortho_derivative: empty when ortho-deriv non-permutation" begin
-    # x³ over GF(2⁴) is a quadratic APN but non-bijective; its
-    # ortho-derivative is many-to-one, so the permutation-only
-    # linear-equivalence search yields nothing (documented limitation).
+    # x³ over GF(2⁴) is a quadratic APN but non-bijective; its ortho-derivative is many-to-one, so the permutation-only linear-equivalence search yields nothing (documented limitation).
     F = load_apn_function("n4_Gold_x3")
     @test !is_permutation(ortho_derivative(F))
     @test isempty(automorphisms_from_ortho_derivative(F))
@@ -42,8 +40,7 @@ end
     F = load_apn_function("n5_Gold_x3")
     N, T = 5, UInt8
     mask = T(0x1F)
-    # Conjugate by a random invertible linear map: linearly (hence EA)
-    # equivalent, and still a quadratic APN.
+    # Conjugate by a random invertible linear map: linearly (hence EA) equivalent, and still a quadratic APN.
     gen = let
         local cols = T[]; local bs = T[]
         while length(cols) < N
@@ -65,8 +62,7 @@ end
 end
 
 @testset "ea_mappings_from_ortho_derivative: rejects EA-inequivalent" begin
-    # Gold x³ and x⁵ at n=5 are in distinct Frobenius orbits → NOT
-    # EA-equivalent → no ortho-derivative EA mappings.
+    # Gold x³ and x⁵ at n=5 are in distinct Frobenius orbits → NOT EA-equivalent → no ortho-derivative EA mappings.
     F3 = load_apn_function("n5_Gold_x3")
     F5 = load_apn_function("n5_Gold_x5")
     @test isempty(ea_mappings_from_ortho_derivative(F3, F5))

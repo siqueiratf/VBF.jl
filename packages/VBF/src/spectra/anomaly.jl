@@ -22,9 +22,7 @@ locally; the default `120` is enough for `n ≤ 8` corpora.
   differential uniformity of a random function.
 """
 
-# ----------------------------------------------------------------------------
 # DDT coefficient PMF (Daemen-Rijmen 2007)
-# ----------------------------------------------------------------------------
 
 """
     ddt_coeff_probability(n, m, c; precision::Int = 120) -> BigFloat
@@ -39,8 +37,12 @@ Theorem 1, asymptotic regime). Otherwise the exact binomial
 
 The two cases agree to floating-point precision in their overlap.
 """
-function ddt_coeff_probability(n::Integer, m::Integer, c::Integer;
-                                precision::Int = 120)
+function ddt_coeff_probability(
+    n::Integer,
+    m::Integer,
+    c::Integer;
+    precision::Int = 120,
+)
     isodd(c) && return BigFloat(0)
     c < 0 && return BigFloat(0)
     d = Int(c >> 1)
@@ -58,9 +60,7 @@ function ddt_coeff_probability(n::Integer, m::Integer, c::Integer;
     end
 end
 
-# ----------------------------------------------------------------------------
 # Maximum-of-iid PMF (generic; works for DDT / LAT / BCT alike)
-# ----------------------------------------------------------------------------
 
 """
     expected_max_distribution(n, m, pmf, n_coeffs;
@@ -73,28 +73,36 @@ PMF of the maximum of `n_coeffs` i.i.d. samples whose marginal PMF is
 
 This is the workhorse behind every `expected_*_distribution_*` function.
 """
-function expected_max_distribution(n::Integer, m::Integer, pmf, n_coeffs::Integer;
-                                    vmin::Integer = 2,
-                                    vmax::Integer = 128,
-                                    precision::Int = 120)
+function expected_max_distribution(
+    n::Integer,
+    m::Integer,
+    pmf,
+    n_coeffs::Integer;
+    vmin::Integer = 2,
+    vmax::Integer = 128,
+    precision::Int = 120,
+)
     setprecision(BigFloat, precision) do
         power = BigFloat(n_coeffs)
-        cumul = Dict{Int, BigFloat}()
+        cumul = Dict{Int,BigFloat}()
         prev_cdf = BigFloat(0)
-        for k in vmin:vmax + 1
-            cdf_below_k = sum(pmf(n, m, z; precision = precision) for z in 0:k; init = BigFloat(0))
+        for k = vmin:(vmax+1)
+            cdf_below_k = sum(
+                pmf(n, m, z; precision = precision) for z = 0:k;
+                init = BigFloat(0),
+            )
             cdf_pow = cdf_below_k^power
             if cdf_pow > 0
                 cumul[k] = cdf_pow
             elseif haskey(cumul, k - 1)
-                cumul[k] = cumul[k - 1]
+                cumul[k] = cumul[k-1]
             end
         end
         # PMF = consecutive differences of CDF
-        result = Dict{Int, BigFloat}()
+        result = Dict{Int,BigFloat}()
         ks = sort(collect(keys(cumul)))
-        for i in 2:length(ks)
-            result[ks[i]] = cumul[ks[i]] - cumul[ks[i - 1]]
+        for i = 2:length(ks)
+            result[ks[i]] = cumul[ks[i]] - cumul[ks[i-1]]
         end
         result
     end
@@ -110,19 +118,26 @@ PMF of the differential uniformity of a uniformly random function
 `F : F₂ⁿ → F₂ᵐ`. Uses the
 ``(2^n - 1)(2^m - 1)`` non-trivial cells of the DDT as the trial count.
 """
-function expected_differential_uniformity_distribution(n::Integer;
-                                                       m::Integer = n,
-                                                       vmin::Integer = 2,
-                                                       vmax::Integer = 128,
-                                                       precision::Int = 120)
+function expected_differential_uniformity_distribution(
+    n::Integer;
+    m::Integer = n,
+    vmin::Integer = 2,
+    vmax::Integer = 128,
+    precision::Int = 120,
+)
     n_coeffs = (1 << n - 1) * (1 << m - 1)
-    expected_max_distribution(n, m, ddt_coeff_probability, n_coeffs;
-                              vmin = vmin, vmax = vmax, precision = precision)
+    expected_max_distribution(
+        n,
+        m,
+        ddt_coeff_probability,
+        n_coeffs;
+        vmin = vmin,
+        vmax = vmax,
+        precision = precision,
+    )
 end
 
-# ----------------------------------------------------------------------------
 # LAT coefficient PMF (Daemen-Rijmen 2007)
-# ----------------------------------------------------------------------------
 
 """
     lat_coeff_probability(n, m, c; permutation = true, precision = 120) -> BigFloat
@@ -142,18 +157,22 @@ Function case (`permutation = false`):
 - `c = 0`     → `2^(-2^n) · C(2^n, 2^(n-1))`
 - `c > 0`     → `2 · 2^(-2^n) · C(2^n, 2^(n-1) + c/2)`
 """
-function lat_coeff_probability(n::Integer, m::Integer, c::Integer;
-                                permutation::Bool = true,
-                                precision::Int = 120)
+function lat_coeff_probability(
+    n::Integer,
+    m::Integer,
+    c::Integer;
+    permutation::Bool = true,
+    precision::Int = 120,
+)
     n == m ||
         throw(ArgumentError("lat_coeff_probability: m=$m must equal n=$n"))
     c < 0 && return BigFloat(0)
     setprecision(BigFloat, precision) do
         if permutation
             c % 4 == 0 || return BigFloat(0)
-            half     = BigInt(1) << (n - 1)        # 2^(n-1)
-            quarter  = BigInt(1) << (n - 2)        # 2^(n-2)
-            denom    = BigFloat(binomial(BigInt(1) << n, half))
+            half = BigInt(1) << (n - 1)        # 2^(n-1)
+            quarter = BigInt(1) << (n - 2)        # 2^(n-2)
+            denom = BigFloat(binomial(BigInt(1) << n, half))
             if c == 0
                 return BigFloat(binomial(half, quarter))^2 / denom
             else
@@ -163,9 +182,9 @@ function lat_coeff_probability(n::Integer, m::Integer, c::Integer;
             end
         else
             iseven(c) || return BigFloat(0)
-            two_n    = BigInt(1) << n              # 2^n
-            half     = two_n >> 1                  # 2^(n-1)
-            scale    = BigFloat(2)^(-two_n)
+            two_n = BigInt(1) << n              # 2^n
+            half = two_n >> 1                  # 2^(n-1)
+            scale = BigFloat(2)^(-two_n)
             if c == 0
                 return scale * BigFloat(binomial(two_n, half))
             else
@@ -186,23 +205,35 @@ PMF of the linearity of a uniformly random function `F : F₂ⁿ → F₂ⁿ`.
 Wires `(2^n - 1)²` (permutation) or `(2^n - 1) · 2^n` (function) trials
 to [`expected_max_distribution`](@ref).
 """
-function expected_linearity_distribution(n::Integer;
-                                          permutation::Bool = true,
-                                          vmin::Integer = 8,
-                                          vmax::Integer = 128,
-                                          precision::Int = 120)
-    pmf = (nn, mm, cc; precision = 120) ->
-        lat_coeff_probability(nn, mm, cc; permutation = permutation, precision = precision)
-    n_coeffs = permutation ?
-        (1 << n - 1) * (1 << n - 1) :
-        (1 << n - 1) * (1 << n)
-    expected_max_distribution(n, n, pmf, n_coeffs;
-                              vmin = vmin, vmax = vmax, precision = precision)
+function expected_linearity_distribution(
+    n::Integer;
+    permutation::Bool = true,
+    vmin::Integer = 8,
+    vmax::Integer = 128,
+    precision::Int = 120,
+)
+    pmf =
+        (nn, mm, cc; precision = 120) -> lat_coeff_probability(
+            nn,
+            mm,
+            cc;
+            permutation = permutation,
+            precision = precision,
+        )
+    n_coeffs =
+        permutation ? (1 << n - 1) * (1 << n - 1) : (1 << n - 1) * (1 << n)
+    expected_max_distribution(
+        n,
+        n,
+        pmf,
+        n_coeffs;
+        vmin = vmin,
+        vmax = vmax,
+        precision = precision,
+    )
 end
 
-# ----------------------------------------------------------------------------
 # BCT coefficient PMF (Bonnetain-Perrin-Tian ASIACRYPT 2019)
-# ----------------------------------------------------------------------------
 
 """
     bct_coeff_probability(n, m, c; precision = 120) -> BigFloat
@@ -222,8 +253,12 @@ Bonnetain-Perrin-Tian ASIACRYPT 2019:
 The double sum is sparse: for each `c`, only `j₁` values with
 `c - 2j₁ ≥ 0` and divisible by 4 contribute, and only one `j₂` follows.
 """
-function bct_coeff_probability(n::Integer, m::Integer, c::Integer;
-                                precision::Int = 120)
+function bct_coeff_probability(
+    n::Integer,
+    m::Integer,
+    c::Integer;
+    precision::Int = 120,
+)
     n == m ||
         throw(ArgumentError("bct_coeff_probability: m=$m must equal n=$n"))
     isodd(c) && return BigFloat(0)
@@ -231,17 +266,17 @@ function bct_coeff_probability(n::Integer, m::Integer, c::Integer;
     setprecision(BigFloat, precision) do
         B = BigInt(1) << (n - 1)
         A = (BigInt(1) << (2n - 2)) - B
-        two_n      = BigInt(1) << n
-        x_b        = two_n - 2                       # (2^n - 2)
-        x_a        = (BigInt(1) << (2n)) - (two_n << 1)   # (2^(2n) - 2^(n+1))
+        two_n = BigInt(1) << n
+        x_b = two_n - 2                       # (2^n - 2)
+        x_a = (BigInt(1) << (2n)) - (two_n << 1)   # (2^(2n) - 2^(n+1))
         denom_base = two_n - 1                       # (2^n - 1)
-        denom_exp  = B + 2A                          # (2^n - 1)^(B + 2A)
-        denom      = BigFloat(denom_base)^denom_exp
-        result     = BigFloat(0)
-        # iterate j1 from 0 to min(B, c÷2); j2 = (c - 2j1)/4 must be a
-        # non-negative integer no greater than A.
+        denom_exp = B + 2A                          # (2^n - 1)^(B + 2A)
+        denom = BigFloat(denom_base)^denom_exp
+        result = BigFloat(0)
+        # Iterate j1 in 0..min(B, c÷2); j2 = (c - 2j1)/4 must be an integer in
+        # 0..A.
         j1_max = min(B, BigInt(c) ÷ 2)
-        for j1 in BigInt(0):j1_max
+        for j1 = BigInt(0):j1_max
             rem = BigInt(c) - 2 * j1
             rem % 4 == 0 || continue
             j2 = rem ÷ 4
@@ -266,18 +301,25 @@ end
 PMF of the boomerang uniformity of a uniformly random permutation of
 `F₂ⁿ`. Wires `(2^n - 1)²` trials to [`expected_max_distribution`](@ref).
 """
-function expected_boomerang_uniformity_distribution(n::Integer;
-                                                     vmin::Integer = 2,
-                                                     vmax::Integer = 128,
-                                                     precision::Int = 120)
+function expected_boomerang_uniformity_distribution(
+    n::Integer;
+    vmin::Integer = 2,
+    vmax::Integer = 128,
+    precision::Int = 120,
+)
     n_coeffs = (1 << n - 1) * (1 << n - 1)
-    expected_max_distribution(n, n, bct_coeff_probability, n_coeffs;
-                              vmin = vmin, vmax = vmax, precision = precision)
+    expected_max_distribution(
+        n,
+        n,
+        bct_coeff_probability,
+        n_coeffs;
+        vmin = vmin,
+        vmax = vmax,
+        precision = precision,
+    )
 end
 
-# ----------------------------------------------------------------------------
 # Aggregate anomaly scoring
-# ----------------------------------------------------------------------------
 
 """
     _max_and_occurrences(spec::Spectrum) -> (v_max::Int, occurrences::Int)
@@ -307,17 +349,27 @@ Probability that, of the `(2^m - 1)(2^n - 1)` non-trivial cells, none
 exceed `v_max` and at most `occurrences` of them are exactly `v_max`.
 Internal.
 """
-function _proba_at_most_v_max(n::Integer, m::Integer, v_max::Integer,
-                              occurrences::Integer, pmf, precision::Int)
+function _proba_at_most_v_max(
+    n::Integer,
+    m::Integer,
+    v_max::Integer,
+    occurrences::Integer,
+    pmf,
+    precision::Int,
+)
     setprecision(BigFloat, precision) do
-        p_strictly_smaller = sum(pmf(n, m, i; precision = precision) for i in 0:v_max - 1; init = BigFloat(0))
-        p_equal            = pmf(n, m, v_max; precision = precision)
-        n_trials           = BigInt(1 << n - 1) * BigInt(1 << m - 1)
-        result             = BigFloat(0)
-        for occ in 0:occurrences
-            term = BigFloat(binomial(n_trials, BigInt(occ))) *
-                   p_strictly_smaller^(n_trials - occ) *
-                   p_equal^occ
+        p_strictly_smaller = sum(
+            pmf(n, m, i; precision = precision) for i = 0:(v_max-1);
+            init = BigFloat(0),
+        )
+        p_equal = pmf(n, m, v_max; precision = precision)
+        n_trials = BigInt(1 << n - 1) * BigInt(1 << m - 1)
+        result = BigFloat(0)
+        for occ = 0:occurrences
+            term =
+                BigFloat(binomial(n_trials, BigInt(occ))) *
+                p_strictly_smaller^(n_trials - occ) *
+                p_equal^occ
             result += term
         end
         result
@@ -329,15 +381,26 @@ function _spec_and_pmf(s::SBox, table::Symbol)
         return differential_spectrum(s), ddt_coeff_probability
     elseif table === :LAT
         perm = is_permutation(s)
-        pmf = (nn, mm, cc; precision = 120) ->
-            lat_coeff_probability(nn, mm, cc; permutation = perm, precision = precision)
+        pmf =
+            (nn, mm, cc; precision = 120) -> lat_coeff_probability(
+                nn,
+                mm,
+                cc;
+                permutation = perm,
+                precision = precision,
+            )
         return absolute_walsh_spectrum(s), pmf
     elseif table === :BCT
-        is_permutation(s) ||
-            throw(ArgumentError("table_anomaly(:BCT, …) requires a permutation"))
+        is_permutation(s) || throw(
+            ArgumentError("table_anomaly(:BCT, …) requires a permutation"),
+        )
         return boomerang_spectrum(s), bct_coeff_probability
     else
-        throw(ArgumentError("table_anomaly: unknown table $(repr(table)); use :DDT, :LAT, or :BCT"))
+        throw(
+            ArgumentError(
+                "table_anomaly: unknown table $(repr(table)); use :DDT, :LAT, or :BCT",
+            ),
+        )
     end
 end
 
@@ -390,14 +453,18 @@ function table_negative_anomaly(s::SBox, table::Symbol; precision::Int = 120)
     v_max, occurrences = _max_and_occurrences(spec)
     setprecision(BigFloat, precision) do
         m = n
-        p_anomaly = _proba_at_most_v_max(n, m, v_max, occurrences, pmf, precision)
+        p_anomaly =
+            _proba_at_most_v_max(n, m, v_max, occurrences, pmf, precision)
         p_equal = pmf(n, m, v_max; precision = precision)
-        p_strictly_smaller =
-            sum(pmf(n, m, i; precision = precision) for i in 0:v_max - 1; init = BigFloat(0))
+        p_strictly_smaller = sum(
+            pmf(n, m, i; precision = precision) for i = 0:(v_max-1);
+            init = BigFloat(0),
+        )
         card = BigInt(1 << n - 1) * BigInt(1 << m - 1)
-        p_precise_equal = BigFloat(binomial(card, BigInt(occurrences))) *
-                          p_equal^occurrences *
-                          p_strictly_smaller^(card - occurrences)
+        p_precise_equal =
+            BigFloat(binomial(card, BigInt(occurrences))) *
+            p_equal^occurrences *
+            p_strictly_smaller^(card - occurrences)
         return -log2(p_precise_equal - p_anomaly + 1)
     end
 end

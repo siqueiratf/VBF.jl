@@ -1,13 +1,3 @@
-# Builds `BFA_catalog.sqlite` from human-editable sources under `data-raw/`.
-#
-# Run:
-#     julia --project=data-build data-build/build_catalog.jl
-#
-# The script is idempotent: running it overwrites the existing catalog file.
-# Statistics (DU, Lin, AlgDeg, BU, …) for every entry are computed via
-# the same VBF.jl primitives the runtime queries return — so the catalog
-# is internally consistent with what `ddt(s)` etc. would yield.
-
 using VBF
 using VBFCatalog
 import SQLite
@@ -31,9 +21,7 @@ function _today_utc()
 end
 
 function _reconstruct_bibtex(entry::BibEntry)
-    # round-trip the parsed entry back into a canonical BibTeX block,
-    # so the catalog's `bibtex` column is human-readable and
-    # tool-consumable (Mendeley/Zotero import, etc.)
+    # round-trip the parsed entry back into a canonical BibTeX block, so the catalog's `bibtex` column is human-readable and tool-consumable (Mendeley/Zotero import, etc.)
     io = IOBuffer()
     print(io, "@", entry.entry_type, "{", entry.bib_key)
     for (k, v) in sort(collect(entry.fields); by = first)
@@ -185,10 +173,6 @@ _maybe_chain_sboxu_import() =
         "sboxU";
         check = p -> isdir(joinpath(p, "sboxU", "scripts", "apnDB")))
 
-# Curated quadratic-APN CCZ-class representatives → first-class function
-# rows. Runs BEFORE the reconciliation chains so the bulk tables merge
-# their source tag into a matching rep row instead of recording a
-# spurious reconciliation disagreement.
 _maybe_chain_reps_import() =
     _maybe_chain_import("import_apn_reps.jl", "BFA_SBOXU_PATH",
         ("/home/zambonin/APN.jl/lpp-crypto@sboxU",
@@ -197,9 +181,7 @@ _maybe_chain_reps_import() =
         "APN reps";
         check = p -> isdir(joinpath(p, "sboxU", "scripts", "apnDB")))
 
-# Simon-Berg thesis: 27 CCZ classes of GF(2²)-coefficient quadratic APN over
-# GF(2⁸). 27 class representatives → first-class rows; membership SHAs merged
-# into matching rows only. Runs alongside the other rep/reconciliation chains.
+# Simon-Berg thesis: 27 CCZ classes of GF(2²)-coefficient quadratic APN over GF(2⁸). 27 class representatives → first-class rows; membership SHAs merged into matching rows only. Runs alongside the other rep/reconciliation chains.
 _maybe_chain_simonberg_import() =
     _maybe_chain_import("import_simonberg.jl", "BFA_THESIS_PATH",
         ("/home/zambonin/APN.jl/Simon-Berg@thesis",

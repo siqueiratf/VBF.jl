@@ -35,10 +35,10 @@ julia> length(s)
 ```
 """
 struct Spectrum
-    counts::Dict{Int, Int}
+    counts::Dict{Int,Int}
 end
 
-Spectrum() = Spectrum(Dict{Int, Int}())
+Spectrum() = Spectrum(Dict{Int,Int}())
 
 function Spectrum(values::AbstractVector{<:Integer})
     s = Spectrum()
@@ -56,7 +56,8 @@ end
 Increment `s[value]` by `count`. Returns `s` for chaining.
 """
 function add!(s::Spectrum, value::Integer, count::Integer = 1)
-    k = Int(value); c = Int(count)
+    k = Int(value)
+    c = Int(count)
     s.counts[k] = get(s.counts, k, 0) + c
     s
 end
@@ -102,7 +103,14 @@ Base.hash(s::Spectrum, h::UInt) = hash(s.counts, hash(:Spectrum, h))
 Base.copy(s::Spectrum) = Spectrum(copy(s.counts))
 
 function Base.show(io::IO, s::Spectrum)
-    print(io, "Spectrum(", length(s), " distinct values, mass ", total_mass(s), ")")
+    print(
+        io,
+        "Spectrum(",
+        length(s),
+        " distinct values, mass ",
+        total_mass(s),
+        ")",
+    )
 end
 
 function Base.show(io::IO, ::MIME"text/plain", s::Spectrum)

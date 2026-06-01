@@ -6,8 +6,7 @@ using Test
 reps = taniguchi_apn_representatives(4)
 
 @testset "Tan19 family on F2^8: three CCZ-classes, two of them new" begin
-    # Tan19 reports three CCZ-classes (Γ-ranks 13642 / 13700 / 13798): the a=0
-    # Zhou–Pott member and the two new a≠0 ones.
+    # Tan19 reports three CCZ-classes (Γ-ranks 13642 / 13700 / 13798): the a=0 Zhou–Pott member and the two new a≠0 ones.
     @test length(reps) == 3
     @test count(r -> r.new, reps) == 2          # two new (a ≠ 0)
     @test count(r -> !r.new, reps) == 1         # one old (a = 0)

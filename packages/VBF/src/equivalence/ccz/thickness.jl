@@ -27,9 +27,7 @@ Each EA-class in F's CCZ-class has at least one representative in this
 output (possibly multiple).
 """
 
-# ---------------------------------------------------------------------------
 # Thickness of a single subspace + thickness spectrum.
-# ---------------------------------------------------------------------------
 
 """
     thickness(basis::Vector{UInt32}, N::Int) -> Int
@@ -96,27 +94,21 @@ enumerating the n-dim Walsh-zero subspaces (tractable for `n ≤ 6`).
 function is_ccz_equivalent_to_permutation(F::SBox{N}) where {N}
     M = 2N
     bases = extract_linear_subspaces(walsh_zeroes(F), N; max_bits = M)
-    @inbounds for i in eachindex(bases), j in (i + 1):length(bases)
+    @inbounds for i in eachindex(bases), j = (i+1):length(bases)
         rank_f2(UInt32[bases[i]; bases[j]]; nbits = M) == M && return true
     end
     false
 end
 
-# ---------------------------------------------------------------------------
 # CCZ-class EA representatives.
-# ---------------------------------------------------------------------------
 
-# Build the CCZ mapping L : F₂²ⁿ → F₂²ⁿ that sends the graph of F to a function
-# graph, given the `2n`-bit basis of an n-dim Walsh-zero subspace `V₁` and a
-# completing basis `comp` (so `[V₁; comp]` spans F₂²ⁿ):
-#   L := transpose( F2LinearMap([V₁; comp]) ).
-# When `comp` is the basis of a *complementary Walsh-zero subspace* `V₂`
-# (`V₁ ⊕ V₂ = F₂²ⁿ`), the resulting representative is a permutation
-# (Canteaut–Perrin, FFA 2019); an arbitrary completion is used only as a
-# fallback when `V₁` has no Walsh-zero complement.
-function _ccz_mapping_from_bases(b1::Vector{UInt32}, comp::Vector{UInt32}, N::Int)
+function _ccz_mapping_from_bases(
+    b1::Vector{UInt32},
+    comp::Vector{UInt32},
+    N::Int,
+)
     M = 2N
-    return transpose(F2LinearMap{M, UInt32}(UInt32[b1; comp]))
+    return transpose(F2LinearMap{M,UInt32}(UInt32[b1; comp]))
 end
 
 # Backwards-compatible single-subspace mapping (arbitrary completion).
@@ -124,7 +116,7 @@ function _ccz_mapping_from_basis(basis::Vector{UInt32}, N::Int)
     M = 2N
     img = complete_basis(basis, M)
     reverse!(img)
-    return transpose(F2LinearMap{M, UInt32}(img))
+    return transpose(F2LinearMap{M,UInt32}(img))
 end
 
 """

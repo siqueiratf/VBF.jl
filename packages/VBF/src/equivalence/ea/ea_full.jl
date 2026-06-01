@@ -28,12 +28,15 @@ One inner `A₂` is recorded per `(outer L₁, constant shift)` pair (the
 rather than the full inner-automorphism orbit.
 """
 function ea_equivalences(
-    F::SBox{N,T}, G::SBox;
+    F::SBox{N,T},
+    G::SBox;
     k::Int = 4,
     max_outer_per_sigma::Int = 10^6,
 ) where {N,T}
-    results = NamedTuple{(:L1, :A2, :A_drift),
-                         Tuple{F2LinearMap{N,T}, F2LinearMap{N,T}, SBox{N,T}}}[]
+    results = NamedTuple{
+        (:L1, :A2, :A_drift),
+        Tuple{F2LinearMap{N,T},F2LinearMap{N,T},SBox{N,T}},
+    }[]
     inputbits(F) == inputbits(G) || return results
     storage_type(F) == storage_type(G) || return results
     G::SBox{N,T}
@@ -50,20 +53,28 @@ function ea_equivalences(
         outers = outer_permutations(partF, partG, sigma, T)
         length(outers) > max_outer_per_sigma && continue
         for L1_lut in outers
-            L1_cols = T[L1_lut[(1 << i) + 1] for i in 0:(N - 1)]
+            L1_cols = T[L1_lut[(1<<i)+1] for i = 0:(N-1)]
             L1_map = F2LinearMap{N,T}(L1_cols)
             is_invertible(L1_map) || continue
             L1_inv = inv(L1_map)
-            currentG_lut = T[L1_inv(G.lut[x + 1]) for x in 0:(n_size - 1)]
-            for shift_val in 0:(n_size - 1)
+            currentG_lut = T[L1_inv(G.lut[x+1]) for x = 0:(n_size-1)]
+            for shift_val = 0:(n_size-1)
                 shift = T(shift_val)
-                shifted_lut = T[currentG_lut[x + 1] ⊻ shift for x in 0:(n_size - 1)]
+                shifted_lut = T[currentG_lut[x+1] ⊻ shift for x = 0:(n_size-1)]
                 shifted_G = SBox{N,T}(shifted_lut)
                 res = inner_permutation(F, shifted_G)
                 res === nothing && continue
-                A2_map = F2LinearMap{N,T}(T[res.A2[(1 << i) + 1] for i in 0:(N - 1)])
-                A_drift_lut = T[L1_map(shift ⊻ res.A_drift[x + 1]) for x in 0:(n_size - 1)]
-                push!(results, (L1 = L1_map, A2 = A2_map, A_drift = SBox{N,T}(A_drift_lut)))
+                A2_map = F2LinearMap{N,T}(T[res.A2[(1<<i)+1] for i = 0:(N-1)])
+                A_drift_lut =
+                    T[L1_map(shift ⊻ res.A_drift[x+1]) for x = 0:(n_size-1)]
+                push!(
+                    results,
+                    (
+                        L1 = L1_map,
+                        A2 = A2_map,
+                        A_drift = SBox{N,T}(A_drift_lut),
+                    ),
+                )
             end
         end
     end

@@ -32,9 +32,9 @@ function mobius!(lut::Vector{T}) where {T<:Unsigned}
     block = 1
     while block < n_pow
         step = 2 * block
-        @inbounds for start in 0:step:n_pow - 1
-            for i in 1:block
-                lut[start + i + block] ⊻= lut[start + i]
+        @inbounds for start = 0:step:(n_pow-1)
+            for i = 1:block
+                lut[start+i+block] ⊻= lut[start+i]
             end
         end
         block = step
@@ -78,4 +78,4 @@ Only entry `m = 3` (bits `0` and `1` set, the monomial `x₀·x₁`) is
 nonzero, and its bit `0` marks that this monomial appears in output
 coordinate `0`.
 """
-anf(s::SBox{N, T}) where {N, T} = mobius(s.lut)
+anf(s::SBox{N,T}) where {N,T} = mobius(s.lut)

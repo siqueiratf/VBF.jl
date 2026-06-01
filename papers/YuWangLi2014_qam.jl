@@ -1,23 +1,3 @@
-# Reproduction: the QAM method
-# Yu, Wang, Li — Designs, Codes and Cryptography 2014  [YuWangLi2014QAM]
-#
-# Yu–Wang–Li give a one-to-one correspondence between quadratic APN functions
-# (without linear/constant part) and Quadratic APN Matrices (QAMs): `F` is APN
-# iff its derivative matrix is a QAM. BFA implements both directions
-# (`quadratic_apn_matrix` / `qam_to_sbox` / `is_qam`) and a search over the
-# cyclic QAM space (`search_qam`). This script checks the correspondence on the
-# re-housed firstQAM corpus and reproduces the n=4 search (the single quadratic
-# APN class, Gold x³).
-#
-# Reproduction mode: RUNS THE METHOD (n≤6) + VERIFIES PUBLISHED OUTPUT (n=8).
-#   The 8179 n=8 functions have no closed formula (cluster-scale QAM search), so
-#   they are loaded from the re-housed corpus and re-verified; the QAM method
-#   itself (Algorithm 1's full-space guess-and-determine, `search_qam_full`) is
-#   run from scratch — it recovers Gold x³ at n=4 here, and the complete n=6
-#   classification (13 classes) standalone. Full n=8 stays cluster-scale.
-#
-# Run standalone:  julia --project=. papers/YuWangLi2014_qam.jl
-
 using VBF
 using VBFCatalog
 
@@ -25,8 +5,7 @@ const EXPECTED = (corpus = 8179,)
 
 function reproduce()
     gold4 = SBox{4}(gf_monomial_lut(4, 3))
-    # the real QAM method: Algorithm 1's guess-and-determine over the full
-    # symmetric QAM space recovers the n=4 classification (the Gold x³ class)
+    # the real QAM method: Algorithm 1's guess-and-determine over the full symmetric QAM space recovers the n=4 classification (the Gold x³ class)
     gd = search_qam_full(4; limit = 1)
     gd_gold = !isempty(gd) && apn_ea_mugshot(gd[1]) == apn_ea_mugshot(gold4)
     # the narrower cyclic search also recovers it on F2^4

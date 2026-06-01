@@ -27,10 +27,6 @@ would prune further but is not used here.
     return 31 - leading_zeros(v)
 end
 
-# Helper: does `prev_basis` violate GJB form with new vector `b`?
-# Specifically, for every `prev_b` in current basis with leading bit `p_prev`,
-#   - bit `p_prev` of `b` must be 0   (b cannot have 1 at prev's leading bit)
-#   - bit `b_msb` of `prev_b` must be 0  (prev cannot have 1 at b's leading bit)
 @inline function _gjb_clean(prev_basis::Vector{UInt32}, b::UInt32, b_msb::Int)
     @inbounds for prev_b in prev_basis
         prev_msb = _leading_bit_pos(prev_b)
@@ -40,8 +36,7 @@ end
     return true
 end
 
-# Recursive DFS. Mutates `bases` (the output vector of GJB bases) and
-# threads `current_basis` and `current_span` as mutable state.
+# Recursive DFS; appends to `bases` and threads `current_basis`/`current_span`.
 function _subspace_dfs!(
     bases::Vector{Vector{UInt32}},
     z_sorted::Vector{UInt32},
@@ -76,11 +71,18 @@ function _subspace_dfs!(
         push!(current_basis, b)
         old_span_size = length(current_span)
         resize!(current_span, 2 * old_span_size)
-        for i in 1:old_span_size
-            current_span[old_span_size + i] = current_span[i] ⊻ b
+        for i = 1:old_span_size
+            current_span[old_span_size+i] = current_span[i] ⊻ b
         end
-        _subspace_dfs!(bases, z_sorted, indicator, dim,
-                       current_basis, current_span, b_msb)
+        _subspace_dfs!(
+            bases,
+            z_sorted,
+            indicator,
+            dim,
+            current_basis,
+            current_span,
+            b_msb,
+        )
         # Backtrack: restore basis and span.
         pop!(current_basis)
         resize!(current_span, old_span_size)
@@ -115,10 +117,13 @@ true
 ```
 """
 function extract_linear_subspaces(
-    z::Vector{UInt32}, dim::Int; max_bits::Int = 32,
+    z::Vector{UInt32},
+    dim::Int;
+    max_bits::Int = 32,
 )
-    dim ≥ 0 ||
-        throw(ArgumentError("extract_linear_subspaces: dim must be ≥ 0, got $dim"))
+    dim ≥ 0 || throw(
+        ArgumentError("extract_linear_subspaces: dim must be ≥ 0, got $dim"),
+    )
     dim == 0 && return [UInt32[]]
     z_sorted = sort(filter(!=(UInt32(0)), z); rev = true)
     isempty(z_sorted) && return Vector{Vector{UInt32}}()
@@ -126,8 +131,15 @@ function extract_linear_subspaces(
     bases = Vector{Vector{UInt32}}()
     current_basis = UInt32[]
     current_span = UInt32[0]
-    _subspace_dfs!(bases, z_sorted, indicator, dim,
-                   current_basis, current_span, max_bits)
+    _subspace_dfs!(
+        bases,
+        z_sorted,
+        indicator,
+        dim,
+        current_basis,
+        current_span,
+        max_bits,
+    )
     return bases
 end
 
@@ -141,9 +153,9 @@ function span_from_basis(basis::Vector{UInt32})
     span = UInt32[0]
     @inbounds for b in basis
         new_span = Vector{UInt32}(undef, 2 * length(span))
-        for i in 1:length(span)
+        for i = 1:length(span)
             new_span[i] = span[i]
-            new_span[length(span) + i] = span[i] ⊻ b
+            new_span[length(span)+i] = span[i] ⊻ b
         end
         span = new_span
     end

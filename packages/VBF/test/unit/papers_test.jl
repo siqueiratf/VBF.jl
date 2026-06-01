@@ -3,18 +3,12 @@ using VBFCatalog
 using VBF
 using Test
 
-# Each paper-reproduction notebook in `papers/` is a standalone script
-# exposing `reproduce()`. We evaluate each in a fresh anonymous module so
-# their top-level `reproduce`/`report` definitions don't collide, then
-# check the reproduced result against the published (frozen) values.
-
 const PAPERS_DIR = normpath(joinpath(@__DIR__, "..", "..", "..", "..", "papers"))
 
 function _run_paper(filename::AbstractString)
     m = Module(Symbol(replace(filename, '.' => '_')))
     Base.include(m, joinpath(PAPERS_DIR, filename))
-    # read the freshly-defined binding and call it, both in the latest
-    # world (Julia ≥ 1.12 world-age semantics for new global bindings).
+    # read the freshly-defined binding and call it, both in the latest world (Julia ≥ 1.12 world-age semantics for new global bindings).
     fn = Base.invokelatest(getfield, m, :reproduce)
     return Base.invokelatest(fn)
 end
@@ -96,8 +90,7 @@ end
 end
 
 @testset "8-bit quadratic-APN landscape: 7 corpora, raw total 32,916" begin
-    # The fast totals; the full ortho-derivative dedup (→ the literature's 32,892)
-    # runs standalone (`distinct_up_to_ea()`), too slow for the suite.
+    # The fast totals; the full ortho-derivative dedup (→ the literature's 32,892) runs standalone (`distinct_up_to_ea()`), too slow for the suite.
     r = _run_paper("quadratic_apn_8bit_landscape.jl")
     @test r.n_corpora == 7
     @test r.raw == 32916

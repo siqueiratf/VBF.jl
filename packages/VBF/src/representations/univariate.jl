@@ -34,35 +34,52 @@ function _tokenize_polynomial(s::AbstractString)
         if isspace(c)
             i = nextind(s, i)
         elseif c == '+'
-            push!(out, "+"); i = nextind(s, i)
-        elseif c == '*' && i + 1 ≤ n && s[i + 1] == '*'
-            push!(out, "**"); i += 2
+            push!(out, "+")
+            i = nextind(s, i)
+        elseif c == '*' && i + 1 ≤ n && s[i+1] == '*'
+            push!(out, "**")
+            i += 2
         elseif c == '*'
-            push!(out, "*"); i = nextind(s, i)
+            push!(out, "*")
+            i = nextind(s, i)
         elseif c == '^'
-            push!(out, "**"); i = nextind(s, i)            # normalise ^ to **
+            push!(out, "**")
+            i = nextind(s, i)            # normalise ^ to **
         elseif c == '('
-            push!(out, "("); i = nextind(s, i)
+            push!(out, "(")
+            i = nextind(s, i)
         elseif c == ')'
-            push!(out, ")"); i = nextind(s, i)
+            push!(out, ")")
+            i = nextind(s, i)
         elseif c == 'X' || c == 'x'
-            push!(out, "X"); i = nextind(s, i)
-        elseif (c == 'k' || c == 'K') && i + 2 ≤ n && lowercase(s[i:i + 2]) == "ksi"
-            push!(out, "ksi"); i += 3
+            push!(out, "X")
+            i = nextind(s, i)
+        elseif (c == 'k' || c == 'K') &&
+               i + 2 ≤ n &&
+               lowercase(s[i:(i+2)]) == "ksi"
+            push!(out, "ksi")
+            i += 3
         elseif c == 'g'
-            # SageMath's `g = field.gen()` is the same primitive element as `ksi`
-            push!(out, "ksi"); i = nextind(s, i)
+            # SageMath's `field.gen()` is the same primitive element as `ksi`.
+            push!(out, "ksi")
+            i = nextind(s, i)
         elseif c == 'a'
-            # Magma / Simon-Berg convention: `a = field.gen()`, same primitive
-            # element as `ksi`. (No identifier in these grammars contains 'a'.)
-            push!(out, "ksi"); i = nextind(s, i)
+            # Magma / Simon-Berg: `a` is the generator, the same primitive
+            # element as `ksi`.
+            push!(out, "ksi")
+            i = nextind(s, i)
         elseif isdigit(c)
             j = i
-            while j ≤ n && isdigit(s[j]); j = nextind(s, j); end
+            while j ≤ n && isdigit(s[j])
+                
+                j = nextind(s, j)
+            end
             push!(out, s[i:prevind(s, j)])
             i = j
         else
-            error("unexpected character $(repr(c)) at position $i in $(repr(s))")
+            error(
+                "unexpected character $(repr(c)) at position $i in $(repr(s))",
+            )
         end
     end
     out
@@ -83,19 +100,31 @@ Constants in the expression are interpreted in F₂: `0` drops the term,
 `1` is the multiplicative identity. Any other integer literal that
 appears as a standalone constant is reduced mod 2.
 """
-function evaluate_polynomial(expr_str::AbstractString, x::Integer, n::Integer,
-                              modulus::Integer; ksi::Integer = 2)
+function evaluate_polynomial(
+    expr_str::AbstractString,
+    x::Integer,
+    n::Integer,
+    modulus::Integer;
+    ksi::Integer = 2,
+)
     toks = _tokenize_polynomial(expr_str)
-    pos  = Ref(1)
-    val  = _parse_polynomial!(toks, pos, Int(x), Int(n), Int(modulus), Int(ksi))
-    pos[] ≤ length(toks) &&
-        error("polynomial parser: trailing tokens after expression at position $(pos[])")
+    pos = Ref(1)
+    val = _parse_polynomial!(toks, pos, Int(x), Int(n), Int(modulus), Int(ksi))
+    pos[] ≤ length(toks) && error(
+        "polynomial parser: trailing tokens after expression at position $(pos[])",
+    )
     val
 end
 
 # Sum of terms; stops at end-of-tokens or at a closing ')'.
-function _parse_polynomial!(toks::Vector{String}, pos::Ref{Int},
-                             x::Int, n::Int, modulus::Int, ksi::Int)
+function _parse_polynomial!(
+    toks::Vector{String},
+    pos::Ref{Int},
+    x::Int,
+    n::Int,
+    modulus::Int,
+    ksi::Int,
+)
     result = 0
     while pos[] ≤ length(toks)
         tok = toks[pos[]]
@@ -111,8 +140,14 @@ function _parse_polynomial!(toks::Vector{String}, pos::Ref{Int},
 end
 
 # Product of factors; stops at '+' or ')' or end-of-tokens.
-function _parse_term!(toks::Vector{String}, pos::Ref{Int},
-                     x::Int, n::Int, modulus::Int, ksi::Int)
+function _parse_term!(
+    toks::Vector{String},
+    pos::Ref{Int},
+    x::Int,
+    n::Int,
+    modulus::Int,
+    ksi::Int,
+)
     coef = 1               # accumulated coefficient ∈ GF(2ⁿ)
     var_exp = 0            # accumulated exponent of X in this term
     saw_factor = false
@@ -126,7 +161,8 @@ function _parse_term!(toks::Vector{String}, pos::Ref{Int},
             saw_factor = true
             pos[] += 1
             sub = _parse_polynomial!(toks, pos, x, n, modulus, ksi)
-            pos[] ≤ length(toks) && toks[pos[]] == ")" || error("polynomial parser: missing ')'")
+            pos[] ≤ length(toks) && toks[pos[]] == ")" ||
+                error("polynomial parser: missing ')'")
             pos[] += 1
             coef = gf_mul(coef, sub, n; modulus = modulus)
         elseif tok == "X"
@@ -137,8 +173,12 @@ function _parse_term!(toks::Vector{String}, pos::Ref{Int},
             saw_factor = true
             pos[] += 1
             e = _maybe_read_pow!(toks, pos)
-            coef = gf_mul(coef, gf_pow(ksi, e, n; modulus = modulus),
-                          n; modulus = modulus)
+            coef = gf_mul(
+                coef,
+                gf_pow(ksi, e, n; modulus = modulus),
+                n;
+                modulus = modulus,
+            )
         elseif occursin(r"^\d+$", tok)
             saw_factor = true
             pos[] += 1
@@ -158,8 +198,9 @@ function _maybe_read_pow!(toks::Vector{String}, pos::Ref{Int})
     pos[] += 1
     pos[] ≤ length(toks) ||
         error("polynomial parser: expected exponent after `**`")
-    occursin(r"^\d+$", toks[pos[]]) ||
-        error("polynomial parser: expected integer after `**`, got $(repr(toks[pos[]]))")
+    occursin(r"^\d+$", toks[pos[]]) || error(
+        "polynomial parser: expected integer after `**`, got $(repr(toks[pos[]]))",
+    )
     e = parse(Int, toks[pos[]])
     pos[] += 1
     e
@@ -171,23 +212,19 @@ end
 `length-2ⁿ` lookup table of `x ↦ p(x)` for the polynomial expression
 `p` parsed from `expr_str`.
 """
-function polynomial_to_lut(expr_str::AbstractString, n::Integer, modulus::Integer;
-                            ksi::Integer = 2)
+function polynomial_to_lut(
+    expr_str::AbstractString,
+    n::Integer,
+    modulus::Integer;
+    ksi::Integer = 2,
+)
     len = 1 << Int(n)
     out = Vector{Int}(undef, len)
-    for x in 0:len - 1
-        out[x + 1] = evaluate_polynomial(expr_str, x, n, modulus; ksi = ksi)
+    for x = 0:(len-1)
+        out[x+1] = evaluate_polynomial(expr_str, x, n, modulus; ksi = ksi)
     end
     out
 end
-
-# ----- bulk evaluation (parse-once, then evaluate at all 2ⁿ points) ---------
-#
-# The recursive-descent `polynomial_to_lut` re-tokenizes and re-parses the
-# expression at every `x`, which is fine for a few hundred polynomials but
-# far too slow for hundreds of thousands. For *flat* polynomials (a sum of
-# monomials `c · Xᵉ`, no parenthesised sub-expressions) we parse once into
-# `(coef, exp)` terms and share a per-`x` table of powers across polynomials.
 
 """
     polynomial_terms(expr_str, n, modulus; ksi=2) -> Vector{Tuple{Int,Int}}
@@ -198,39 +235,61 @@ exponent the power of `X`. Terms with a zero coefficient (an even integer
 literal in F₂) are dropped. Throws on parenthesised sub-expressions; use
 [`evaluate_polynomial`](@ref) for those.
 """
-function polynomial_terms(expr_str::AbstractString, n::Integer, modulus::Integer;
-                           ksi::Integer = 2)
+function polynomial_terms(
+    expr_str::AbstractString,
+    n::Integer,
+    modulus::Integer;
+    ksi::Integer = 2,
+)
     toks = _tokenize_polynomial(expr_str)
-    ("(" in toks || ")" in toks) &&
-        error("polynomial_terms: parenthesised sub-expressions unsupported in $(repr(expr_str))")
-    terms = Tuple{Int, Int}[]
-    nn = Int(n); mod = Int(modulus); k = Int(ksi)
-    i = 1; L = length(toks)
+    ("(" in toks || ")" in toks) && error(
+        "polynomial_terms: parenthesised sub-expressions unsupported in $(repr(expr_str))",
+    )
+    terms = Tuple{Int,Int}[]
+    nn = Int(n)
+    mod = Int(modulus)
+    k = Int(ksi)
+    i = 1
+    L = length(toks)
     while i ≤ L
-        coef = 1; vexp = 0; saw = false
+        coef = 1
+        vexp = 0
+        saw = false
         while i ≤ L && toks[i] != "+"
             t = toks[i]
             if t == "*"
                 i += 1
             elseif t == "X"
-                saw = true; i += 1
+                saw = true
+                i += 1
                 if i ≤ L && toks[i] == "**"
-                    vexp += parse(Int, toks[i + 1]); i += 2
+                    vexp += parse(Int, toks[i+1])
+                    i += 2
                 else
                     vexp += 1
                 end
             elseif t == "ksi"
-                saw = true; i += 1
+                saw = true
+                i += 1
                 e = 1
                 if i ≤ L && toks[i] == "**"
-                    e = parse(Int, toks[i + 1]); i += 2
+                    e = parse(Int, toks[i+1])
+                    i += 2
                 end
-                coef = gf_mul(coef, gf_pow(k, e, nn; modulus = mod), nn; modulus = mod)
+                coef = gf_mul(
+                    coef,
+                    gf_pow(k, e, nn; modulus = mod),
+                    nn;
+                    modulus = mod,
+                )
             elseif occursin(r"^\d+$", t)
-                saw = true; i += 1
+                saw = true
+                i += 1
                 iseven(parse(Int, t)) && (coef = 0)
             else
-                error("polynomial_terms: unexpected token $(repr(t)) in $(repr(expr_str))")
+                error(
+                    "polynomial_terms: unexpected token $(repr(t)) in $(repr(expr_str))",
+                )
             end
         end
         i ≤ L && toks[i] == "+" && (i += 1)
@@ -247,15 +306,17 @@ Built once and shared across all polynomials so that [`terms_to_lut`](@ref)
 is a table lookup plus one `gf_mul` per term.
 """
 function monomial_power_table(n::Integer, modulus::Integer)
-    len = 1 << Int(n); nn = Int(n); mod = Int(modulus)
+    len = 1 << Int(n)
+    nn = Int(n)
+    mod = Int(modulus)
     tab = Vector{Vector{Int}}(undef, len)
-    for x in 0:len - 1
+    for x = 0:(len-1)
         row = Vector{Int}(undef, len)
         row[1] = 1
-        for e in 1:len - 1
-            row[e + 1] = gf_mul(row[e], x, nn; modulus = mod)
+        for e = 1:(len-1)
+            row[e+1] = gf_mul(row[e], x, nn; modulus = mod)
         end
-        tab[x + 1] = row
+        tab[x+1] = row
     end
     tab
 end
@@ -267,34 +328,37 @@ Length-`2ⁿ` LUT of `x ↦ Σ cᵢ·x^eᵢ` from `(coef, exp)` `terms`. Pass a 
 [`monomial_power_table`](@ref) as `powtab` to amortise the power computation
 across many polynomials; without it, falls back to `gf_pow` per term.
 """
-function terms_to_lut(terms::Vector{Tuple{Int, Int}}, n::Integer, modulus::Integer;
-                       powtab::Union{Nothing, Vector{Vector{Int}}} = nothing)
-    len = 1 << Int(n); nn = Int(n); mod = Int(modulus)
+function terms_to_lut(
+    terms::Vector{Tuple{Int,Int}},
+    n::Integer,
+    modulus::Integer;
+    powtab::Union{Nothing,Vector{Vector{Int}}} = nothing,
+)
+    len = 1 << Int(n)
+    nn = Int(n)
+    mod = Int(modulus)
     out = zeros(Int, len)
-    for x in 0:len - 1
+    for x = 0:(len-1)
         acc = 0
         if powtab === nothing
             for (c, e) in terms
-                acc ⊻= gf_mul(c, gf_pow(x, e, nn; modulus = mod), nn; modulus = mod)
+                acc ⊻= gf_mul(
+                    c,
+                    gf_pow(x, e, nn; modulus = mod),
+                    nn;
+                    modulus = mod,
+                )
             end
         else
-            row = powtab[x + 1]
+            row = powtab[x+1]
             for (c, e) in terms
-                acc ⊻= gf_mul(c, row[e + 1], nn; modulus = mod)
+                acc ⊻= gf_mul(c, row[e+1], nn; modulus = mod)
             end
         end
-        out[x + 1] = acc
+        out[x+1] = acc
     end
     out
 end
-
-# ----- compact quadratic encoding -------------------------------------------
-#
-# A degree-≤2 ("quadratic") function over GF(2ⁿ) is determined by its
-# coefficients on the univariate exponents of 2-adic weight ≤ 2. Storing just
-# those coefficients gives a fixed, lossless, fixed-width encoding — the
-# substrate for VBFCatalog's bulk-corpus *description* store. For n=8 that is
-# 37 GF(2⁸) coefficients = 37 bytes (vs a 256-byte LUT).
 
 """
     quadratic_exponents(n) -> Vector{Int}
@@ -303,7 +367,8 @@ The univariate exponents of Hamming (2-adic) weight ≤ 2 in `0:2ⁿ-1`, ascendi
 the constant (weight 0), the `n` linearised terms `X^(2ⁱ)` (weight 1), and the
 `C(n,2)` quadratic terms `X^(2ⁱ+2ʲ)` (weight 2). For `n=8`: `1+8+28 = 37`.
 """
-quadratic_exponents(n::Integer) = [e for e in 0:(1 << Int(n)) - 1 if count_ones(e) ≤ 2]
+quadratic_exponents(n::Integer) =
+    [e for e = 0:((1<<Int(n))-1) if count_ones(e) ≤ 2]
 
 """
     encode_quadratic(terms, n) -> Vector{UInt8}
@@ -314,20 +379,21 @@ aligned to [`quadratic_exponents`](@ref): `cld(n,8)` little-endian bytes per
 `GF(2ⁿ)` coefficient (37 bytes at `n=8`). Lossless; [`decode_quadratic_lut`](@ref)
 rebuilds the exact LUT. Throws if any term's exponent has weight > 2.
 """
-function encode_quadratic(terms::Vector{Tuple{Int, Int}}, n::Integer)
+function encode_quadratic(terms::Vector{Tuple{Int,Int}}, n::Integer)
     nn = Int(n)
     exps = quadratic_exponents(nn)
     slot = Dict(e => i for (i, e) in enumerate(exps))
     coeffs = zeros(Int, length(exps))
     for (c, e) in terms
-        haskey(slot, e) ||
-            error("encode_quadratic: exponent $e has weight > 2 (not a quadratic term)")
+        haskey(slot, e) || error(
+            "encode_quadratic: exponent $e has weight > 2 (not a quadratic term)",
+        )
         coeffs[slot[e]] ⊻= c               # field addition of like terms
     end
     nb = cld(nn, 8)
     out = Vector{UInt8}(undef, length(coeffs) * nb)
-    for (i, c) in enumerate(coeffs), b in 0:nb - 1
-        out[(i - 1) * nb + b + 1] = UInt8((c >> (8b)) & 0xff)
+    for (i, c) in enumerate(coeffs), b = 0:(nb-1)
+        out[(i-1)*nb+b+1] = UInt8((c >> (8b)) & 0xff)
     end
     out
 end
@@ -338,18 +404,23 @@ end
 Inverse of [`encode_quadratic`](@ref): rebuild the length-`2ⁿ` LUT from a packed
 quadratic-coefficient byte vector over `GF(2ⁿ)` modulo `modulus`.
 """
-function decode_quadratic_lut(bytes::AbstractVector{UInt8}, n::Integer, modulus::Integer;
-                               powtab::Union{Nothing, Vector{Vector{Int}}} = nothing)
+function decode_quadratic_lut(
+    bytes::AbstractVector{UInt8},
+    n::Integer,
+    modulus::Integer;
+    powtab::Union{Nothing,Vector{Vector{Int}}} = nothing,
+)
     nn = Int(n)
     exps = quadratic_exponents(nn)
     nb = cld(nn, 8)
-    length(bytes) == length(exps) * nb ||
-        error("decode_quadratic_lut: expected $(length(exps) * nb) bytes, got $(length(bytes))")
-    terms = Tuple{Int, Int}[]
+    length(bytes) == length(exps) * nb || error(
+        "decode_quadratic_lut: expected $(length(exps) * nb) bytes, got $(length(bytes))",
+    )
+    terms = Tuple{Int,Int}[]
     for (i, e) in enumerate(exps)
         c = 0
-        for b in 0:nb - 1
-            c |= Int(bytes[(i - 1) * nb + b + 1]) << (8b)
+        for b = 0:(nb-1)
+            c |= Int(bytes[(i-1)*nb+b+1]) << (8b)
         end
         c != 0 && push!(terms, (c, e))
     end
@@ -376,10 +447,15 @@ rejected rather than silently truncated. Pass a shared
 [`monomial_power_table`](@ref) as `powtab` to amortise the interpolation across
 many functions (e.g. a whole bulk corpus).
 """
-function encode_quadratic(F::SBox{N, T}; modulus::Integer = conway_polynomial(N),
-                          verify::Bool = true,
-                          powtab::Union{Nothing, Vector{Vector{Int}}} = nothing) where {N, T}
-    nn = Int(N); q = 1 << nn; mod = Int(modulus)
+function encode_quadratic(
+    F::SBox{N,T};
+    modulus::Integer = conway_polynomial(N),
+    verify::Bool = true,
+    powtab::Union{Nothing,Vector{Vector{Int}}} = nothing,
+) where {N,T}
+    nn = Int(N)
+    q = 1 << nn
+    mod = Int(modulus)
     tab = powtab === nothing ? monomial_power_table(nn, mod) : powtab
     exps = quadratic_exponents(nn)
     nb = cld(nn, 8)
@@ -391,20 +467,21 @@ function encode_quadratic(F::SBox{N, T}; modulus::Integer = conway_polynomial(N)
             c = Int(lut[1])                        # c₀ = F(0)
         else
             j = q - 1 - e                          # paired exponent, in 1:q-2
-            for a in 1:q - 1
-                fa = Int(lut[a + 1])
+            for a = 1:(q-1)
+                fa = Int(lut[a+1])
                 fa == 0 && continue
-                c ⊻= gf_mul(fa, tab[a + 1][j + 1], nn; modulus = mod)
+                c ⊻= gf_mul(fa, tab[a+1][j+1], nn; modulus = mod)
             end
         end
-        for b in 0:nb - 1
-            out[(i - 1) * nb + b + 1] = UInt8((c >> (8b)) & 0xff)
+        for b = 0:(nb-1)
+            out[(i-1)*nb+b+1] = UInt8((c >> (8b)) & 0xff)
         end
     end
     if verify
-        decode_quadratic_lut(out, nn, mod; powtab = tab) == Int.(lut) ||
-            error("encode_quadratic(::SBox): F is not degree ≤ 2 over GF(2^$nn) " *
-                  "(round-trip mismatch); algebraic_degree = $(algebraic_degree(F))")
+        decode_quadratic_lut(out, nn, mod; powtab = tab) == Int.(lut) || error(
+            "encode_quadratic(::SBox): F is not degree ≤ 2 over GF(2^$nn) " *
+            "(round-trip mismatch); algebraic_degree = $(algebraic_degree(F))",
+        )
     end
     out
 end

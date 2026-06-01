@@ -29,10 +29,10 @@ quadratic homogeneous `F`, [`is_qam`](@ref) of this matrix decides APN-ness.
 """
 function quadratic_apn_matrix(F::SBox{N}) where {N}
     M = zeros(Int, N, N)
-    @inbounds for i in 1:N
+    @inbounds for i = 1:N
         bi = 1 << (i - 1)
         Fbi = Int(F(bi))
-        for j in i + 1:N
+        for j = (i+1):N
             bj = 1 << (j - 1)
             v = Int(F(bi ⊻ bj)) ⊻ Fbi ⊻ Int(F(bj))
             M[i, j] = v
@@ -55,8 +55,8 @@ function is_qam(M::AbstractMatrix{<:Integer})
     size(M, 2) == n || throw(ArgumentError("is_qam: matrix must be square"))
     n <= 8 * sizeof(UInt) || throw(ArgumentError("is_qam: n too large"))
     vec = Vector{UInt}(undef, n)
-    @inbounds for mask in 1:(1 << n) - 1            # nonempty row subsets
-        for i in 1:n
+    @inbounds for mask = 1:((1<<n)-1)            # nonempty row subsets
+        for i = 1:n
             acc = 0
             s = mask
             while s != 0
@@ -98,17 +98,18 @@ symmetric, zero-diagonal `n×n` matrix `M` over `GF(2ⁿ)`:
 """
 function qam_to_sbox(M::AbstractMatrix{<:Integer})
     n = size(M, 1)
-    size(M, 2) == n || throw(ArgumentError("qam_to_sbox: matrix must be square"))
+    size(M, 2) == n ||
+        throw(ArgumentError("qam_to_sbox: matrix must be square"))
     lut = zeros(Int, 1 << n)
-    @inbounds for x in 1:(1 << n) - 1
+    @inbounds for x = 1:((1<<n)-1)
         acc = 0
-        for i in 1:n
+        for i = 1:n
             ((x >> (i - 1)) & 1) == 1 || continue
-            for j in i + 1:n
+            for j = (i+1):n
                 ((x >> (j - 1)) & 1) == 1 && (acc ⊻= M[i, j])
             end
         end
-        lut[x + 1] = acc
+        lut[x+1] = acc
     end
     SBox{n}(lut)
 end

@@ -33,23 +33,23 @@ Invariants:
 - `bct(s)[a + 1, b + 1] ≥ ddt(s)[a + 1, b + 1]` (Cid et al. Lemma 1).
 - Every entry is even for `N ≥ 2`.
 """
-function bct(s::SBox{N, T}) where {N, T}
+function bct(s::SBox{N,T}) where {N,T}
     n = 1 << N
     sinv = inv(s)               # validates permutation
     lut = s.lut
     inv_lut = sinv.lut
     B = zeros(Int, n, n)
-    @inbounds for a in 0:n - 1, b in 0:n - 1
+    @inbounds for a = 0:(n-1), b = 0:(n-1)
         c = 0
         Tb = T(b)
-        for x in 0:n - 1
-            Fx  = lut[x + 1]
-            Fxa = lut[(x ⊻ a) + 1]
-            l = inv_lut[(Fx  ⊻ Tb) + 1]
-            r = inv_lut[(Fxa ⊻ Tb) + 1]
+        for x = 0:(n-1)
+            Fx = lut[x+1]
+            Fxa = lut[(x⊻a)+1]
+            l = inv_lut[(Fx⊻Tb)+1]
+            r = inv_lut[(Fxa⊻Tb)+1]
             (l ⊻ r) == T(a) && (c += 1)
         end
-        B[a + 1, b + 1] = c
+        B[a+1, b+1] = c
     end
     B
 end
@@ -64,7 +64,7 @@ function boomerang_spectrum(s::SBox)
     B = bct(s)
     n = size(B, 1)
     sp = Spectrum()
-    @inbounds for a in 2:n, b in 2:n
+    @inbounds for a = 2:n, b = 2:n
         add!(sp, B[a, b])
     end
     sp
@@ -87,7 +87,7 @@ function boomerang_uniformity(s::SBox)
     B = bct(s)
     n = size(B, 1)
     u = 0
-    @inbounds for a in 2:n, b in 2:n
+    @inbounds for a = 2:n, b = 2:n
         B[a, b] > u && (u = B[a, b])
     end
     u
@@ -109,17 +109,17 @@ Invariants:
 - `fbct(s)[a + 1, a + 1] = 2^N` (diagonal: `b = a` gives `F ⊕ F ⊕ F ⊕ F = 0`).
 - Entries are even for `N ≥ 2`.
 """
-function fbct(s::SBox{N, T}) where {N, T}
+function fbct(s::SBox{N,T}) where {N,T}
     n = 1 << N
     lut = s.lut
     F = zeros(Int, n, n)
-    @inbounds for a in 0:n - 1, b in 0:n - 1
+    @inbounds for a = 0:(n-1), b = 0:(n-1)
         c = 0
-        for x in 0:n - 1
-            v = lut[x + 1] ⊻ lut[(x ⊻ a) + 1] ⊻ lut[(x ⊻ b) + 1] ⊻ lut[(x ⊻ a ⊻ b) + 1]
+        for x = 0:(n-1)
+            v = lut[x+1] ⊻ lut[(x⊻a)+1] ⊻ lut[(x⊻b)+1] ⊻ lut[(x⊻a⊻b)+1]
             v == zero(T) && (c += 1)
         end
-        F[a + 1, b + 1] = c
+        F[a+1, b+1] = c
     end
     F
 end
@@ -134,7 +134,7 @@ function fbct_spectrum(s::SBox)
     F = fbct(s)
     n = size(F, 1)
     sp = Spectrum()
-    @inbounds for a in 2:n, b in 2:n
+    @inbounds for a = 2:n, b = 2:n
         a == b && continue
         add!(sp, F[a, b])
     end
@@ -151,7 +151,7 @@ function fbct_uniformity(s::SBox)
     F = fbct(s)
     n = size(F, 1)
     u = 0
-    @inbounds for a in 2:n, b in 2:n
+    @inbounds for a = 2:n, b = 2:n
         a == b && continue
         F[a, b] > u && (u = F[a, b])
     end

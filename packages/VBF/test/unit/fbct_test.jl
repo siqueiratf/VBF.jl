@@ -57,8 +57,7 @@ end
     @test fbct_uniformity(load_literature_sbox("GIFT"))     ≤ 16
     @test fbct_uniformity(load_literature_sbox("SKINNY_4")) ≤ 16
 
-    # Spectrum total mass excludes row 0, col 0, and the b = a diagonal:
-    # (n-1)·(n-1) - (n-1) = (n-1)(n-2)
+    # Spectrum total mass excludes row 0, col 0, and the b = a diagonal: (n-1)·(n-1) - (n-1) = (n-1)(n-2)
     n = 16
     @test total_mass(fbct_spectrum(load_literature_sbox("PRESENT"))) == (n - 1) * (n - 2)
 end

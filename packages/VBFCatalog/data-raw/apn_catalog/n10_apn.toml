@@ -1,14 +1,3 @@
-# n = 10 APN functions (monomial entries).
-#
-# n = 10 is even and 2^10 - 1 = 1023 = 3 · 11 · 31. Like n=6 and n=8,
-# every monomial APN exponent shares a factor with 1023, so none of
-# these are permutations.
-#
-# This dimension is also where the Dobbertin exponent family kicks in
-# (n = 5i with i = 2 gives n = 10 and the Dobbertin x^339).
-#
-# Modulus: x^10 + x^3 + 1 (primitive_polynomial(10) = 1033).
-
 schema_version = 1
 
 [[apn_functions]]

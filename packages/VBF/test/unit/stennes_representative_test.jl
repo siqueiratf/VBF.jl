@@ -4,9 +4,7 @@ using VBF
 using Test
 using Random
 
-# Tests for `linear_representative` (Stennes' algorithm). The strategy
-# dispatch via `are_linear_equivalent(...; strategy = :stennes)` is exercised
-# separately in test_linear_equivalence_api.jl.
+# Tests for `linear_representative` (Stennes' algorithm). The strategy dispatch via `are_linear_equivalent(...; strategy = :stennes)` is exercised separately in test_linear_equivalence_api.jl.
 
 @testset "rejects non-permutations" begin
     c = SBox(UInt8[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])
@@ -15,8 +13,7 @@ using Random
 end
 
 @testset "B ∘ representative == F ∘ A on the full domain" begin
-    # The invariant `B(rep(x)) == F(A(x))` is what defines the returned
-    # maps; check it for every input on a range of representative S-boxes.
+    # The invariant `B(rep(x)) == F(A(x))` is what defines the returned maps; check it for every input on a range of representative S-boxes.
     for name in ("PRESENT", "GIFT", "Midori_Sb0", "SKINNY_4", "Piccolo")
         F = load_literature_sbox(name)
         result = linear_representative(F)
@@ -39,8 +36,7 @@ end
 end
 
 @testset "Stennes ↔ backtracking agree on linear equivalence (n ≤ 4)" begin
-    # For every pair of 4-bit catalog permutations: linear equivalence
-    # decided by Stennes (reps equal) must match the LPP backtracking decision.
+    # For every pair of 4-bit catalog permutations: linear equivalence decided by Stennes (reps equal) must match the LPP backtracking decision.
     names = filter(literature_sbox_names()) do n
         s = load_literature_sbox(n)
         is_permutation(s) && inputbits(s) == 4
@@ -80,8 +76,7 @@ end
 end
 
 @testset "n=5 monomial APN: Gold x³, x⁵, Kasami x¹⁵ have distinct reps" begin
-    # Linear-equivalence classes are determined by the Frobenius orbit of
-    # the monomial exponent. For n=5 the orbits of 3, 5, 15 are disjoint.
+    # Linear-equivalence classes are determined by the Frobenius orbit of the monomial exponent. For n=5 the orbits of 3, 5, 15 are disjoint.
     F3  = load_apn_function("n5_Gold_x3")
     F5  = load_apn_function("n5_Gold_x5")
     F15 = load_apn_function("n5_Kasami_x15")
@@ -96,9 +91,7 @@ end
 end
 
 @testset "F(0) ≠ 0 path: representative still computed correctly" begin
-    # AES has AES(0) = 0x63 ≠ 0 — exercises the `else` branch of the
-    # init special case in `linear_representative`. We only check the
-    # B ∘ rep == F ∘ A invariant; AES at n=8 is expensive otherwise.
+    # AES has AES(0) = 0x63 ≠ 0 — exercises the `else` branch of the init special case in `linear_representative`. We only check the B ∘ rep == F ∘ A invariant; AES at n=8 is expensive otherwise.
     aes = load_literature_sbox("AES")
     @test aes(0) != 0
     # Test on a small mod: build a 4-bit permutation with F(0) != 0.

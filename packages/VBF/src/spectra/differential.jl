@@ -35,15 +35,15 @@ Invariants (checked in the property tests):
 - Row `0` is `[2^N, 0, 0, …, 0]` (the trivial difference).
 - `ddt(s)[1, 1] = 2^N` because `a = b = 0`.
 """
-function ddt(s::SBox{N, T}) where {N, T}
+function ddt(s::SBox{N,T}) where {N,T}
     n = 1 << N
     d = zeros(Int, n, n)
     lut = s.lut
-    @inbounds for x in 0:n - 1
-        Fx = lut[x + 1]
-        for a in 0:n - 1
-            Fxa = lut[(x ⊻ a) + 1]
-            d[a + 1, Int(Fx ⊻ Fxa) + 1] += 1
+    @inbounds for x = 0:(n-1)
+        Fx = lut[x+1]
+        for a = 0:(n-1)
+            Fxa = lut[(x⊻a)+1]
+            d[a+1, Int(Fx⊻Fxa)+1] += 1
         end
     end
     d
@@ -60,7 +60,7 @@ function differential_spectrum(s::SBox)
     d = ddt(s)
     n = size(d, 1)
     sp = Spectrum()
-    @inbounds for a in 2:n, b in 1:n      # skip row a=0
+    @inbounds for a = 2:n, b = 1:n      # skip row a=0
         add!(sp, d[a, b])
     end
     sp
@@ -93,7 +93,7 @@ function differential_uniformity(s::SBox)
     d = ddt(s)
     n = size(d, 1)
     u = 0
-    @inbounds for a in 2:n, b in 1:n
+    @inbounds for a = 2:n, b = 1:n
         d[a, b] > u && (u = d[a, b])
     end
     u

@@ -1,24 +1,3 @@
-# Imports sboxU's APN function database into the BFA catalog.
-#
-# Reads the Python LUT literals in
-# `sboxU/sboxU/scripts/apnDB/{BeierleLeander, firstQAM, secondQAM, apn_8bit_BLP22}.py`,
-# extracts each LUT, computes its SHA-256, and:
-#
-#   - if the SHA already exists in the BFA `functions` table:
-#       merge "sboxu@<sha>" into the row's `source_repo` pipe-list;
-#   - else:
-#       insert a row into `reconciliation_disagreements` with
-#       `present_in = "sboxu@<sha>"`, `absent_from = "bfa@<sha>"`,
-#       `kind = "only_in_some"`, and the LUT's SHA-256 in `lut_sha256`.
-#
-# This is a *one-off* developer-time step. The BFA package never depends
-# on sboxU at runtime; only this script reads from sboxU's checkout.
-#
-# Usage:
-#     # uses BFA_SBOXU_PATH env var or default ~/sboxU
-#     julia --project=data-build data-build/import_sboxu_apn.jl
-#     julia --project=data-build data-build/import_sboxu_apn.jl --max 200
-
 using VBF
 using VBFCatalog
 import SQLite
@@ -75,10 +54,6 @@ sampling). `nothing` means "all".
 function parse_apn_lut_file(path::AbstractString; max_luts::Union{Nothing, Integer} = nothing)
     text = read(path, String)
     luts = Vector{Int}[]
-    # Match `[ … ]` where the body contains only integer literals
-    # (decimal or hex) separated by commas / whitespace. The outer
-    # `all_funcs = [` list does not match because its body contains
-    # the `[` and `]` characters of the inner lists.
     pattern = r"\[((?:\s*(?:0[xX][0-9a-fA-F]+|\d+)\s*,?\s*)+)\]"
     for m in eachmatch(pattern, text)
         body = strip(m.captures[1])
@@ -231,8 +206,7 @@ function _cli_args()
     (max,)
 end
 
-# Auto-run on `include` (non-interactive). The BFA_SBOXU_NO_AUTORUN guard lets
-# other importers reuse `parse_apn_lut_file` without touching the catalog.
+# Auto-run on `include` (non-interactive). The BFA_SBOXU_NO_AUTORUN guard lets other importers reuse `parse_apn_lut_file` without touching the catalog.
 if !isinteractive() && get(ENV, "BFA_SBOXU_NO_AUTORUN", "0") != "1"
     max, = _cli_args()
     main(; max_luts_per_file = max)

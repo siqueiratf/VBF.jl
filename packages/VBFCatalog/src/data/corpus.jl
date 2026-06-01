@@ -23,7 +23,8 @@ _corpora_dir() = normpath(joinpath(@__DIR__, "..", "..", "corpora"))
 
 Path to the committed side store `corpora/<name>.sqlite` (the compact encodings).
 """
-corpus_store_path(name::AbstractString) = joinpath(_corpora_dir(), String(name) * ".sqlite")
+corpus_store_path(name::AbstractString) =
+    joinpath(_corpora_dir(), String(name) * ".sqlite")
 
 _row_namedtuple(r) = (; (c => getproperty(r, c) for c in propertynames(r))...)
 
@@ -32,8 +33,10 @@ _row_namedtuple(r) = (; (c => getproperty(r, c) for c in propertynames(r))...)
 
 Names of the registered bulk corpora.
 """
-list_corpora(db::SQLite.DB) =
-    [String(r.name) for r in DBInterface.execute(db, "SELECT name FROM bulk_corpora ORDER BY name")]
+list_corpora(db::SQLite.DB) = [
+    String(r.name) for r in
+    DBInterface.execute(db, "SELECT name FROM bulk_corpora ORDER BY name")
+]
 
 """
     corpus_info(db, name) -> NamedTuple | nothing
@@ -41,7 +44,10 @@ list_corpora(db::SQLite.DB) =
 The `bulk_corpora` descriptor row for `name` (or `nothing`).
 """
 function corpus_info(db::SQLite.DB, name::AbstractString)
-    sql = "SELECT * FROM bulk_corpora WHERE name = " * _sql_quote(String(name)) * " LIMIT 1"
+    sql =
+        "SELECT * FROM bulk_corpora WHERE name = " *
+        _sql_quote(String(name)) *
+        " LIMIT 1"
     for r in DBInterface.execute(db, sql)
         return _row_namedtuple(r)
     end
@@ -66,7 +72,10 @@ function corpus_coefficients(name::AbstractString, i::Integer)
     isfile(path) || error("corpus '$name': side store not found at $path")
     store = SQLite.DB(path)
     try
-        for r in DBInterface.execute(store, "SELECT coeffs FROM members WHERE idx = $(Int(i)) LIMIT 1")
+        for r in DBInterface.execute(
+            store,
+            "SELECT coeffs FROM members WHERE idx = $(Int(i)) LIMIT 1",
+        )
             return Vector{UInt8}(r.coeffs)
         end
     finally
@@ -84,7 +93,8 @@ compact encoding to a LUT over the corpus' `GF(2ⁿ)` field.
 function corpus_function(db::SQLite.DB, name::AbstractString, i::Integer)
     info = corpus_info(db, name)
     info === nothing && error("unknown corpus '$name'")
-    n = Int(info.n); mod = Int(info.modulus)
+    n = Int(info.n)
+    mod = Int(info.modulus)
     lut = decode_quadratic_lut(corpus_coefficients(name, i), n, mod)
     SBox{n}(lut)
 end
@@ -105,24 +115,38 @@ function build_corpus_store!(name::AbstractString, encodings)
     isfile(path) && rm(path)
     store = SQLite.DB(path)
     try
-        SQLite.execute(store, "CREATE TABLE members (idx INTEGER PRIMARY KEY, coeffs BLOB NOT NULL)")
+        SQLite.execute(
+            store,
+            "CREATE TABLE members (idx INTEGER PRIMARY KEY, coeffs BLOB NOT NULL)",
+        )
         SQLite.execute(store, "BEGIN")
-        idx = 0; bpm = 0
+        idx = 0
+        bpm = 0
         for enc in encodings
-            idx += 1; bpm = length(enc)
-            SQLite.execute(store, "INSERT INTO members (idx, coeffs) VALUES ($idx, X'" *
-                                  bytes2hex(enc) * "')")
+            idx += 1
+            bpm = length(enc)
+            SQLite.execute(
+                store,
+                "INSERT INTO members (idx, coeffs) VALUES ($idx, X'" *
+                bytes2hex(enc) *
+                "')",
+            )
         end
         SQLite.execute(store, "COMMIT")
     finally
         close(store)
     end
     # count via the file we just wrote
-    cnt = 0; bpm = 0
+    cnt = 0
+    bpm = 0
     let s = SQLite.DB(path)
         try
-            for r in DBInterface.execute(s, "SELECT COUNT(*) c, MAX(LENGTH(coeffs)) b FROM members")
-                cnt = Int(r.c); bpm = r.b === missing ? 0 : Int(r.b)
+            for r in DBInterface.execute(
+                s,
+                "SELECT COUNT(*) c, MAX(LENGTH(coeffs)) b FROM members",
+            )
+                cnt = Int(r.c)
+                bpm = r.b === missing ? 0 : Int(r.b)
             end
         finally
             close(s)
@@ -140,21 +164,70 @@ end
 Insert the `bulk_corpora` descriptor row (replacing any existing row of the same
 name).
 """
-function register_corpus!(db::SQLite.DB; name, n, m, member_count, degree, modulus,
-                          encoding, bytes_per_member, store_file, store_sha256,
-                          family, bib_key, source_repo, contributor, added_date, notes)
-    SQLite.execute(db, "DELETE FROM bulk_corpora WHERE name = " * _sql_quote(String(name)))
+function register_corpus!(
+    db::SQLite.DB;
+    name,
+    n,
+    m,
+    member_count,
+    degree,
+    modulus,
+    encoding,
+    bytes_per_member,
+    store_file,
+    store_sha256,
+    family,
+    bib_key,
+    source_repo,
+    contributor,
+    added_date,
+    notes,
+)
+    SQLite.execute(
+        db,
+        "DELETE FROM bulk_corpora WHERE name = " * _sql_quote(String(name)),
+    )
     bib = bib_key === nothing ? "NULL" : _sql_quote(String(bib_key))
-    SQLite.execute(db, string(
-        "INSERT INTO bulk_corpora (name, n, m, member_count, degree, modulus, ",
-        "encoding, bytes_per_member, store_file, store_sha256, family, bib_key, ",
-        "source_repo, contributor, added_date, notes) VALUES (",
-        _sql_quote(String(name)), ", ", Int(n), ", ", Int(m), ", ", Int(member_count), ", ",
-        Int(degree), ", ", Int(modulus), ", ", _sql_quote(String(encoding)), ", ",
-        Int(bytes_per_member), ", ", _sql_quote(String(store_file)), ", ",
-        _sql_quote(String(store_sha256)), ", ", _sql_quote(String(family)), ", ", bib, ", ",
-        _sql_quote(String(source_repo)), ", ", _sql_quote(String(contributor)), ", ",
-        _sql_quote(String(added_date)), ", ", _sql_quote(String(notes)), ")"))
+    SQLite.execute(
+        db,
+        string(
+            "INSERT INTO bulk_corpora (name, n, m, member_count, degree, modulus, ",
+            "encoding, bytes_per_member, store_file, store_sha256, family, bib_key, ",
+            "source_repo, contributor, added_date, notes) VALUES (",
+            _sql_quote(String(name)),
+            ", ",
+            Int(n),
+            ", ",
+            Int(m),
+            ", ",
+            Int(member_count),
+            ", ",
+            Int(degree),
+            ", ",
+            Int(modulus),
+            ", ",
+            _sql_quote(String(encoding)),
+            ", ",
+            Int(bytes_per_member),
+            ", ",
+            _sql_quote(String(store_file)),
+            ", ",
+            _sql_quote(String(store_sha256)),
+            ", ",
+            _sql_quote(String(family)),
+            ", ",
+            bib,
+            ", ",
+            _sql_quote(String(source_repo)),
+            ", ",
+            _sql_quote(String(contributor)),
+            ", ",
+            _sql_quote(String(added_date)),
+            ", ",
+            _sql_quote(String(notes)),
+            ")",
+        ),
+    )
     nothing
 end
 
@@ -170,27 +243,50 @@ Reconstruct every member's full LUT and write them to a side sqlite
 never committed). Returns the path. This is the heavy "full-LUT" store; most uses
 only need `corpus_function` (per-member, on the fly).
 """
-function materialize_corpus_luts(db::SQLite.DB, name::AbstractString;
-                                 path::AbstractString = joinpath(_lut_cache_dir(), String(name) * "_luts.sqlite"))
+function materialize_corpus_luts(
+    db::SQLite.DB,
+    name::AbstractString;
+    path::AbstractString = joinpath(
+        _lut_cache_dir(),
+        String(name) * "_luts.sqlite",
+    ),
+)
     info = corpus_info(db, name)
     info === nothing && error("unknown corpus '$name'")
-    n = Int(info.n); mod = Int(info.modulus)
+    n = Int(info.n)
+    mod = Int(info.modulus)
     powtab = monomial_power_table(n, mod)
     isfile(path) && rm(path)
     out = SQLite.DB(path)
     src = SQLite.DB(corpus_store_path(name))
     try
-        SQLite.execute(out, "CREATE TABLE members (idx INTEGER PRIMARY KEY, lut BLOB NOT NULL)")
+        SQLite.execute(
+            out,
+            "CREATE TABLE members (idx INTEGER PRIMARY KEY, lut BLOB NOT NULL)",
+        )
         SQLite.execute(out, "BEGIN")
-        for r in DBInterface.execute(src, "SELECT idx, coeffs FROM members ORDER BY idx")
-            lut = decode_quadratic_lut(Vector{UInt8}(r.coeffs), n, mod; powtab = powtab)
+        for r in DBInterface.execute(
+            src,
+            "SELECT idx, coeffs FROM members ORDER BY idx",
+        )
+            lut = decode_quadratic_lut(
+                Vector{UInt8}(r.coeffs),
+                n,
+                mod;
+                powtab = powtab,
+            )
             s = SBox{n}(lut)
-            SQLite.execute(out, "INSERT INTO members (idx, lut) VALUES ($(Int(r.idx)), X'" *
-                                bytes2hex(canonical_lut_bytes(s)) * "')")
+            SQLite.execute(
+                out,
+                "INSERT INTO members (idx, lut) VALUES ($(Int(r.idx)), X'" *
+                bytes2hex(canonical_lut_bytes(s)) *
+                "')",
+            )
         end
         SQLite.execute(out, "COMMIT")
     finally
-        close(src); close(out)
+        close(src)
+        close(out)
     end
     path
 end

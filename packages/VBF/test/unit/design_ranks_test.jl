@@ -3,11 +3,6 @@ using VBF
 using Random
 using Test
 
-# Edel–Pott Γ-rank / Δ-rank: CCZ-invariant design 2-ranks that distinguish APN
-# classes sharing differential/Walsh spectra (the invariant absent when we
-# validated Taniguchi). Tractable at small n; n=8 (the literature's values) is
-# guarded as impractical.
-
 @testset "Γ/Δ-rank: values, the Δ-rank bound, and CCZ-invariance (n=5)" begin
     n = 5
     F = SBox{n}(gf_monomial_lut(n, 3))           # Gold x³ on F₂⁵

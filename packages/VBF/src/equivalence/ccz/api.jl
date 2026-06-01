@@ -76,59 +76,50 @@ true
 ```
 """
 function are_ccz_equivalent(
-    F::SBox, G::SBox;
+    F::SBox,
+    G::SBox;
     strategy::Symbol = :auto,
     ea_max_outer_per_sigma::Int = 10^6,
     max_class_reps::Int = 10^4,
 )
     inputbits(F) == inputbits(G) || return false
     storage_type(F) == storage_type(G) || return false
-    # Reflexivity (identity CCZ-map) — also avoids enumerating the whole
-    # CCZ-class and running EA on each rep for the F == G case. Scoped to :auto
-    # so an explicitly requested (or invalid) strategy still reaches dispatch.
+    # Reflexivity short-circuit (identity CCZ-map), scoped to :auto.
     strategy === :auto && F.lut == G.lut && return true
 
-    # CCZ = EA on the quadratic-APN class (Yoshiara 2012): the fast, reliable path.
+    # CCZ = EA on the quadratic-APN class (Yoshiara 2012): the fast path.
     Fq = is_quadratic_apn(F)
     Gq = is_quadratic_apn(G)
     Fq && Gq && return are_ea_equivalent(F, G)
 
     s = strategy == :auto ? :canteaut_perrin : strategy
-    s === :canteaut_perrin ||
-        throw(ArgumentError("are_ccz_equivalent: unknown strategy $(repr(strategy))"))
+    s === :canteaut_perrin || throw(
+        ArgumentError("are_ccz_equivalent: unknown strategy $(repr(strategy))"),
+    )
 
     # Necessary CCZ-invariant rejects (cheap).
     walsh_zeroes_size(F) == walsh_zeroes_size(G) || return false
     sort(vec(ddt(F))) == sort(vec(ddt(G))) || return false
 
-    # Exactly one side is quadratic APN — e.g. the Kim function (quadratic) and
-    # the Dillon permutation (degree 4) in the same CCZ-class. Enumerate the
-    # OTHER side's CCZ-class and test EA against the quadratic one. EA preserves
-    # algebraic degree, so only the degree-2 representatives can be EA-equivalent
-    # to a quadratic target — and EA between two quadratic APN is the reliable
-    # ortho-derivative test, sidestepping Heggebakk's incompleteness on the
-    # higher-degree permutation representatives.
+    # One side quadratic APN: EA preserves degree, so EA-test the degree-2 reps.
     Gq && return _ccz_match_quadratic(F, G, max_class_reps)
     Fq && return _ccz_match_quadratic(G, F, max_class_reps)
 
-    # Neither side is quadratic APN: the permutation-only Canteaut–Perrin
-    # enumeration (non-quadratic non-permutations are not decided — they reduce
-    # to linear-code equivalence; see the module docstring).
+    # Neither side quadratic APN: permutation-only Canteaut-Perrin enumeration.
     (is_permutation(F) && is_permutation(G)) || return false
     reps = enumerate_ccz_class(F)
     length(reps) > max_class_reps && return false
     for rep in reps
         rep == G && return true                 # cheap exact-LUT path
-        are_ea_equivalent(rep, G; max_outer_per_sigma = ea_max_outer_per_sigma) &&
-            return true
+        are_ea_equivalent(
+            rep,
+            G;
+            max_outer_per_sigma = ea_max_outer_per_sigma,
+        ) && return true
     end
     return false
 end
 
-# Decide whether the quadratic-APN `Gq` lies in `F`'s CCZ-class: enumerate class
-# representatives and EA-test the degree-2 ones against `Gq`. EA preserves degree,
-# so non-quadratic reps cannot match `Gq` and are skipped; EA between two
-# quadratic APN is the (reliable) ortho-derivative test.
 function _ccz_match_quadratic(F::SBox, Gq::SBox, max_class_reps::Int)
     reps = enumerate_ccz_class(F)
     length(reps) > max_class_reps && return false

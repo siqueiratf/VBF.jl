@@ -1,37 +1,8 @@
-# Imports Simon Berg's thesis data — "All CCZ classes of functions with
-# coefficients in GF(2²) over GF(2⁸)" — into the BFA catalog.
-#
-# Layout: 27 files `rep1.txt … rep27.txt`, each a flat Sage/Magma list
-# `[ poly, poly, … ]` of quadratic-APN polynomials over GF(2⁸) (generator
-# `a`, coefficients in the GF(4) subgroup {1, a^85, a^170}, exponents < 256).
-# All members of one file are CCZ-equivalent (one class per file, verified by
-# distinct ortho-derivative differential+Walsh fingerprints across files); the
-# 27 files are 27 distinct CCZ classes, with 2k–12k members each (~205k total).
-#
-# Ingestion policy (Stage C, 2026-05-29): "representatives as rows + full
-# membership as a bulk corpus".
-#   - The first polynomial of each class is materialised as a first-class
-#     `functions` row (family `CCZ-rep-GF4`), or, if its LUT already names a row,
-#     its source tag is merged in.
-#   - ALL ~196k members are stored compactly in the bulk-corpus side store
-#     `corpora/simonberg_gf4_n8.sqlite` as `quadratic-coeffs-v1` encodings
-#     (37 bytes each), with one descriptor row in `bulk_corpora`. The full LUTs
-#     are reconstructed on demand (`corpus_function`) — they never enter the
-#     `functions` table.
-#
-# Polynomials are evaluated over GF(2⁸) with the Conway polynomial (matching
-# Sage's `GF(2**8)`, so `a`/`ksi` ↦ the element 2). One-off developer step;
-# BFA never depends on the thesis checkout at runtime.
-#
-# Usage (uses BFA_THESIS_PATH or the default APN.jl layout):
-#     julia --project=data-build data-build/import_simonberg.jl
-
 using VBF
 using VBFCatalog
 import SQLite
 import DBInterface
 import Dates
-
 
 const _THESIS_PATHS = (
     get(ENV, "BFA_THESIS_PATH", ""),
@@ -57,9 +28,7 @@ end
 
 # --- parsing ----------------------------------------------------------------
 
-# The polynomial strings of one `repN.txt`. The file is a single flat list
-# `[ p1, p2, … ]` with no nested brackets, so top-level commas separate the
-# polynomials.
+# The polynomial strings of one `repN.txt`. The file is a single flat list `[ p1, p2, … ]` with no nested brackets, so top-level commas separate the polynomials.
 function _class_polynomials(path::AbstractString)
     body = strip(read(path, String))
     (startswith(body, "[") && endswith(body, "]")) ||
@@ -128,9 +97,7 @@ function _human(io::IO, st::ClassStats)
                 "rep=$(st.rep_inserted ? "inserted" : "merged")")
 end
 
-# Process one class file: insert/merge its representative (first member) as a
-# first-class row, and return that class' compact `quadratic-coeffs-v1`
-# encodings for ALL members (for the bulk-corpus side store).
+# Process one class file: insert/merge its representative (first member) as a first-class row, and return that class' compact `quadratic-coeffs-v1` encodings for ALL members (for the bulk-corpus side store).
 function import_one_class!(db::SQLite.DB, path::AbstractString, class::Int;
                            source_tag::AbstractString, bfa_repo::AbstractString,
                            contributor::AbstractString, added_date::AbstractString,
@@ -147,8 +114,7 @@ function import_one_class!(db::SQLite.DB, path::AbstractString, class::Int;
         k == 1 && (rep_terms = terms)
     end
 
-    # representative = first member; assert it is APN (a cheap validation that
-    # the parser + Conway field reproduce a genuine quadratic-APN function).
+    # representative = first member; assert it is APN (a cheap validation that the parser + Conway field reproduce a genuine quadratic-APN function).
     rep = SBox{n}(terms_to_lut(rep_terms, n, modulus; powtab = powtab))
     differential_uniformity(rep) == 2 || error("simonberg: class $class representative not APN")
     rep_sha = lut_sha256_hex(rep)
@@ -225,9 +191,7 @@ function main()
     return nothing
 end
 
-# Auto-run when included by build_catalog.jl (non-interactive). The
-# BFA_SIMONBERG_NO_AUTORUN guard lets tests `include` this file for its
-# helpers without touching the catalog.
+# Auto-run when included by build_catalog.jl (non-interactive). The BFA_SIMONBERG_NO_AUTORUN guard lets tests `include` this file for its helpers without touching the catalog.
 if !isinteractive() && get(ENV, "BFA_SIMONBERG_NO_AUTORUN", "0") != "1"
     main()
 end

@@ -50,9 +50,7 @@ end
     @test !are_linear_equivalent(c, c; strategy = :stennes)
 end
 
-# ---------------------------------------------------------------------------
 # Catalog-level spot checks
-# ---------------------------------------------------------------------------
 
 @testset "reflexivity on every 4-bit catalog permutation" begin
     for name in literature_sbox_names()
@@ -64,9 +62,7 @@ end
 end
 
 @testset "n=5 Gold/Kasami monomials are pairwise NOT linearly equivalent" begin
-    # For monomial APNs x^d, x^d' over GF(2^n), linear equivalence happens
-    # iff d' ∈ {2^k · d mod (2^n - 1) : k ∈ ℤ} (Frobenius orbit).
-    # For n=5 these orbits are disjoint for d ∈ {3, 5, 15}.
+    # For monomial APNs x^d, x^d' over GF(2^n), linear equivalence happens iff d' ∈ {2^k · d mod (2^n - 1) : k ∈ ℤ} (Frobenius orbit). For n=5 these orbits are disjoint for d ∈ {3, 5, 15}.
     s3  = load_apn_function("n5_Gold_x3")
     s5  = load_apn_function("n5_Gold_x5")
     s15 = load_apn_function("n5_Kasami_x15")
@@ -84,13 +80,10 @@ end
 end
 
 @testset "AES and AES_inv: different linear-equivalence class" begin
-    # AES uses inversion-then-affine; AES_inv is its functional inverse.
-    # They are CCZ-equivalent (every function is CCZ-equivalent to its
-    # inverse) but NOT generally linearly equivalent.
+    # AES uses inversion-then-affine; AES_inv is its functional inverse. They are CCZ-equivalent (every function is CCZ-equivalent to its inverse) but NOT generally linearly equivalent.
     aes = load_literature_sbox("AES")
     inv_aes = load_literature_sbox("AES_inv")
-    # Even the same n=8 case can be expensive — search bounded by smart
-    # pruning. The reflexivity case is always cheap.
+    # Even the same n=8 case can be expensive — search bounded by smart pruning. The reflexivity case is always cheap.
     @test are_linear_equivalent(aes, aes)
 end
 

@@ -3,11 +3,6 @@ using VBF
 using VBFCatalog
 using Test
 
-# The Simon-Berg thesis corpus: all CCZ classes of GF(2²)-coefficient quadratic
-# APN over GF(2⁸), stored compactly in a side store (one `bulk_corpora` row in
-# the main catalog) and reconstructed on demand. These are read-only checks
-# against the committed catalog + corpus store.
-
 @testset "bulk_corpora descriptor" begin
     db = load_catalog()
     @test "simonberg_gf4_n8" in list_corpora(db)
@@ -27,8 +22,7 @@ end
 
 @testset "members reconstruct as quadratic APN, members ≠ functions rows" begin
     db = load_catalog()
-    # member 1 of each class is the class representative → its LUT matches the
-    # first-class CCZ-rep-GF4 row.
+    # member 1 of each class is the class representative → its LUT matches the first-class CCZ-rep-GF4 row.
     s1 = corpus_function(db, "simonberg_gf4_n8", 1)
     @test inputbits(s1) == 8
     @test differential_uniformity(s1) == 2     # APN
@@ -50,8 +44,7 @@ end
 
 @testset "the seven 8-bit quadratic-APN literature corpora" begin
     db = load_catalog()
-    # bib_key => member_count, the quadratic-APN families forming the pre-3.4 GB
-    # landscape (firstQAM stores 8179: its single non-quadratic member is excluded)
+    # bib_key => member_count, the quadratic-APN families forming the pre-3.4 GB landscape (firstQAM stores 8179: its single non-quadratic member is excluded)
     expected = Dict(
         "edelpott2009_n8"             => ("EdelPott2009", 22),
         "wengtangong2013_n8"          => ("WengTanGong2013", 10),

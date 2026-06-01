@@ -1,23 +1,3 @@
-# Reproduction: new quadratic APN functions by recursive tree search
-# Beierle, Leander — IEEE Trans. Inf. Theory 2022  [BeierleLeander2022]
-#
-# Beierle–Leander find quadratic APN functions with a degree-/DDT-pruned
-# recursive tree search; the n=7/8 search fixes a linear self-equivalence
-# (A∘F = F∘B) to stay tractable. BFA implements both the plain search
-# (`search_quadratic_apn`) and the LE-automorphism-constrained one
-# (`search_quadratic_apn_le`). This script runs the actual method at n=7 (the
-# canonical class that the paper reports as APN-bearing) and confirms the paper's
-# 12,921 new 8-bit functions, re-housed as the BeierleLeander2022 corpus.
-#
-# Reproduction mode: RUNS THE METHOD (n=7) + VERIFIES PUBLISHED OUTPUT (n=8).
-#   The constrained tree search is run from scratch at n=7 and yields a quadratic
-#   APN admitting the class-1 LE-automorphism (reproducing the paper's n=7
-#   result); the 12923 n=8 functions are the output of a cluster-scale search, so
-#   they are loaded from the re-housed corpus and re-verified. Full n=8
-#   enumeration stays cluster-scale.
-#
-# Run standalone:  julia --project=. papers/BeierleLeander2022_tree_search.jl
-
 using VBF
 using VBFCatalog
 using TOML

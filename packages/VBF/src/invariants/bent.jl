@@ -22,16 +22,16 @@ julia> isempty(bent_components(gold_apn(5, 1)))  # n = 5 is odd
 true
 ```
 """
-function bent_components(F::SBox{N, T}) where {N, T}
+function bent_components(F::SBox{N,T}) where {N,T}
     isodd(N) && return Int[]
     L = lat(F)
     n = 1 << N
     target = 1 << (N ÷ 2)
     out = Int[]
-    @inbounds for b in 0:n - 1
+    @inbounds for b = 0:(n-1)
         bent = true
-        for a in 0:n - 1
-            if abs(L[a + 1, b + 1]) != target
+        for a = 0:(n-1)
+            if abs(L[a+1, b+1]) != target
                 bent = false
                 break
             end
@@ -47,11 +47,11 @@ end
 The output masks `b` whose component `b·F` is *not* bent (includes `b = 0`). For
 odd `n` this is every mask. A linear-equivalence invariant (as a set).
 """
-function nonbent_components(F::SBox{N, T}) where {N, T}
+function nonbent_components(F::SBox{N,T}) where {N,T}
     n = 1 << N
-    isodd(N) && return collect(0:n - 1)
+    isodd(N) && return collect(0:(n-1))
     bent = Set(bent_components(F))
-    [b for b in 0:n - 1 if !(b in bent)]
+    [b for b = 0:(n-1) if !(b in bent)]
 end
 
 """
@@ -61,4 +61,5 @@ The Gológlu nonbent signature: [`subspace_count_signature`](@ref) of the nonben
 component set — `[#nonbent∖{0}, #2-dim, #3-dim, …]`. A linear-equivalence
 invariant (discriminating for even `n`).
 """
-nonbent_signature(F::SBox{N, T}) where {N, T} = subspace_count_signature(nonbent_components(F), N)
+nonbent_signature(F::SBox{N,T}) where {N,T} =
+    subspace_count_signature(nonbent_components(F), N)

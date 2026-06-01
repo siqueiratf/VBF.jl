@@ -34,19 +34,19 @@ Invariants (checked in tests):
 - Per row (and per column), `∑_b LAT[a, b]^2 = 2^(2N)` by Parseval.
 - Every entry is an even integer for `N ≥ 1`.
 """
-function lat(s::SBox{N, T}) where {N, T}
+function lat(s::SBox{N,T}) where {N,T}
     n = 1 << N
     L = zeros(Int, n, n)
     lut = s.lut
-    @inbounds for b in 0:n - 1
+    @inbounds for b = 0:(n-1)
         bT = T(b)
         v = Vector{Int}(undef, n)
-        for x in 0:n - 1
-            v[x + 1] = 1 - 2 * (count_ones(bT & lut[x + 1]) & 1)
+        for x = 0:(n-1)
+            v[x+1] = 1 - 2 * (count_ones(bT & lut[x+1]) & 1)
         end
         walsh_hadamard!(v)
-        for a in 0:n - 1
-            L[a + 1, b + 1] = v[a + 1]
+        for a = 0:(n-1)
+            L[a+1, b+1] = v[a+1]
         end
     end
     L
@@ -62,7 +62,7 @@ function absolute_walsh_spectrum(s::SBox)
     L = lat(s)
     n = size(L, 1)
     sp = Spectrum()
-    @inbounds for a in 1:n, b in 1:n
+    @inbounds for a = 1:n, b = 1:n
         a == 1 && b == 1 && continue
         add!(sp, abs(L[a, b]))
     end
@@ -91,7 +91,7 @@ function linearity(s::SBox)
     L = lat(s)
     n = size(L, 1)
     u = 0
-    @inbounds for a in 1:n, b in 1:n
+    @inbounds for a = 1:n, b = 1:n
         a == 1 && b == 1 && continue
         v = abs(L[a, b])
         v > u && (u = v)
@@ -108,15 +108,21 @@ entry. With `shift_a = shift_b = 0` this is the classical power moment;
 `sigma_multiplicities` aggregates a related shifted family. (After
 `vbf_wt_power_moment` in Kaleyski's VBF library.)
 """
-function walsh_power_moment(s::SBox{N, T}, k::Integer;
-                            shift_a::Integer = 0, shift_b::Integer = 0) where {N, T}
+function walsh_power_moment(
+    s::SBox{N,T},
+    k::Integer;
+    shift_a::Integer = 0,
+    shift_b::Integer = 0,
+) where {N,T}
     L = lat(s)
     n = 1 << N
-    sa = Int(shift_a); sb = Int(shift_b); kk = Int(k)
+    sa = Int(shift_a)
+    sb = Int(shift_b)
+    kk = Int(k)
     total = 0
-    @inbounds for a in 0:n - 1, b in 0:n - 1
+    @inbounds for a = 0:(n-1), b = 0:(n-1)
         sgn = isodd(count_ones(a & sa) + count_ones(b & sb)) ? -1 : 1
-        total += sgn * Int(L[a + 1, b + 1])^kk
+        total += sgn * Int(L[a+1, b+1])^kk
     end
     total
 end

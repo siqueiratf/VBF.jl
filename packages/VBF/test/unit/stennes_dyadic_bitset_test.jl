@@ -3,8 +3,7 @@ using VBFCatalog
 using VBF
 using Test
 
-# Direct unit tests for the dyadic-bitset substrate. These functions are
-# internal (prefixed `_db_`); we test through `VBF.<name>`.
+# Direct unit tests for the dyadic-bitset substrate. These functions are internal (prefixed `_db_`); we test through `VBF.<name>`.
 
 @testset "single-chunk: 4-bit, 8-bit, 16-bit, 32-bit, 64-bit init" begin
     for nb in (4, 8, 16, 32, 64)

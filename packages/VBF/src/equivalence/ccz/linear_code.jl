@@ -27,11 +27,11 @@ leading constant `1`. (Edel-Pott Theorem 9.)
 function ccz_matrix(F::SBox{N,T}) where {N,T}
     n_size = 1 << N
     M = falses(2N + 1, n_size)
-    @inbounds for x in 0:(n_size - 1)
-        M[1, x + 1] = true
-        v = (UInt64(x) << N) | UInt64(F.lut[x + 1])
-        for b in 0:(2N - 1)
-            M[b + 2, x + 1] = ((v >> b) & 1) == 1
+    @inbounds for x = 0:(n_size-1)
+        M[1, x+1] = true
+        v = (UInt64(x) << N) | UInt64(F.lut[x+1])
+        for b = 0:(2N-1)
+            M[b+2, x+1] = ((v >> b) & 1) == 1
         end
     end
     return M
@@ -48,17 +48,17 @@ function ea_matrix(F::SBox{N,T}) where {N,T}
     n_size = 1 << N
     ncols = n_size + (n_size - 1)
     M = falses(2N + 1, ncols)
-    @inbounds for x in 0:(n_size - 1)
-        M[1, x + 1] = true
-        v = (UInt64(x) << N) | UInt64(F.lut[x + 1])
-        for b in 0:(2N - 1)
-            M[b + 2, x + 1] = ((v >> b) & 1) == 1
+    @inbounds for x = 0:(n_size-1)
+        M[1, x+1] = true
+        v = (UInt64(x) << N) | UInt64(F.lut[x+1])
+        for b = 0:(2N-1)
+            M[b+2, x+1] = ((v >> b) & 1) == 1
         end
     end
-    @inbounds for y in 1:(n_size - 1)
+    @inbounds for y = 1:(n_size-1)
         col = n_size + y
-        for b in 0:(2N)
-            M[b + 1, col] = ((UInt64(y) >> b) & 1) == 1
+        for b = 0:(2N)
+            M[b+1, col] = ((UInt64(y) >> b) & 1) == 1
         end
     end
     return M

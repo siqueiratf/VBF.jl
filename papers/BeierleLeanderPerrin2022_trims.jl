@@ -1,21 +1,3 @@
-# Reproduction: trims and extensions of quadratic APN functions
-# Beierle, Leander, Perrin — Designs, Codes and Cryptography 2022  [BeierleLeanderPerrin2022Trims]
-#
-# Beierle–Leander–Perrin study restrictions of a quadratic APN function to an
-# affine hyperplane followed by an output projection (a "trim"); the multiset of
-# the resulting EA-classes is an EA-invariant (the trim spectrum), and the
-# inverse operation is an "extension". BFA implements `trim_spectrum` and
-# `extend_quadratic_apn`. This script checks an extension of a low-dimensional
-# quadratic APN is again quadratic APN, that the trim spectrum is non-trivial,
-# and that the paper's 6,368 new 8-bit functions (re-housed) are quadratic APN.
-#
-# Reproduction mode: VERIFIES PUBLISHED SEARCH OUTPUT + DEMONSTRATES THE METHOD.
-#   The 6368 n=8 functions are the output of a cluster-scale extension search, so
-#   they are loaded from the re-housed corpus and re-verified; trims and the
-#   extension search itself are run from scratch at low dimension.
-#
-# Run standalone:  julia --project=. papers/BeierleLeanderPerrin2022_trims.jl
-
 using VBF
 using VBFCatalog
 

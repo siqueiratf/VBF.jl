@@ -3,12 +3,6 @@ using VBFCatalog
 using VBF
 using Test
 
-# The curated quadratic-APN CCZ-class representatives imported from
-# sboxU's apnDB (reprs6/7/8 + eightBitAPN) land in the catalog under the
-# `APN-rep` family. These tests are written relationally (derived from the
-# catalog) so they don't desync when the upstream rep lists change; the
-# absolute count is pinned in `test_catalog_content.jl`.
-
 @testset "APN-rep family: present and well-formed" begin
     db = load_catalog()
     reps = list_functions(db; family = "APN-rep")
@@ -24,8 +18,7 @@ end
 @testset "APN-rep rows round-trip and recompute their stats" begin
     db = load_catalog()
     reps = list_functions(db; family = "APN-rep")
-    # spot-check a sample across dimensions (recomputing stats for all
-    # ~500 would be slow; sample deterministically)
+    # spot-check a sample across dimensions (recomputing stats for all ~500 would be slow; sample deterministically)
     sample = reps[1:max(1, length(reps) ÷ 50):end]
     for r in sample
         s = load_sbox(db, r.id)

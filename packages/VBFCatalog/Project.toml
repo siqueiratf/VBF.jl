@@ -3,10 +3,6 @@ uuid = "806e9246-bd0c-40c6-b7ea-7b2eabc2fba0"
 version = "0.1.0-DEV"
 authors = ["Gustavo Zambonin"]
 
-# Build-only deps (Parquet2, JSON3, Tables) and unused deps (Arrow,
-# StructTypes, Tar) were moved out — see `data-build/Project.toml`. They are
-# referenced only by the dev-time importers, never by VBFCatalog's runtime
-# `src/`, and dragged a ~110s Parquet2 precompile into every CI test run.
 [deps]
 VBF = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
 Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"

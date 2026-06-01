@@ -1,15 +1,3 @@
-# Reproduction: switching construction + Table 9 quadratic APN functions
-# Yves Edel, Alexander Pott — Adv. Math. Commun. 2009  [EdelPott2009]
-#
-# Reproduction mode: RECOMPUTES FROM FORMULAS (+ demonstrates the method).
-#   The 22 quadratic 8-bit APN functions of Table 9 are explicit univariate
-#   polynomials, so this script evaluates them from scratch over GF(2⁸)
-#   (`data/EdelPott2009_table9.txt`) and checks they reproduce the re-housed
-#   EdelPott2009 corpus exactly. It also exercises the paper's *switching*
-#   construction (`switching_neighbors`) on a small APN function.
-#
-# Run standalone:  julia --project=. papers/EdelPott2009_switching.jl
-
 using VBF
 using VBFCatalog
 

@@ -4,15 +4,13 @@ using VBFCatalog
 using Test
 using Random
 
-# Helpers: a Gold x³ function over GF(2ⁿ) (non-permutation, quadratic, APN for
-# odd n; n4 is the classic non-bijective APN), and a random linear-equivalent.
+# Helpers: a Gold x³ function over GF(2ⁿ) (non-permutation, quadratic, APN for odd n; n4 is the classic non-bijective APN), and a random linear-equivalent.
 gold(n) = SBox{n}(gf_monomial_lut(n, 3))
 lin_equiv(rng, F::SBox{N}) where {N} =
     random_invertible_linear_map(rng, Val(N)) ∘ F ∘ random_invertible_linear_map(rng, Val(N))
 
 @testset "subspaces in a set: closed forms on a full k-space" begin
-    # the full 3-dimensional space {0,…,7}: 7 nonzero elts, [3 choose 2]₂ = 7
-    # two-dimensional subspaces, and one 3-dimensional subspace (itself).
+    # the full 3-dimensional space {0,…,7}: 7 nonzero elts, [3 choose 2]₂ = 7 two-dimensional subspaces, and one 3-dimensional subspace (itself).
     S = collect(0:7)
     @test length(smallest_basis(S)) == 3
     @test length(find_2d_subspaces(S, 3)) == 7
@@ -39,8 +37,7 @@ end
 end
 
 @testset "nonbent_signature is a linear-equivalence invariant" begin
-    # done at n=4 — `nonbent_signature` enumerates subspaces of the nonbent set,
-    # which is only cheap when that set is small (it explodes near-full at n=8).
+    # done at n=4 — `nonbent_signature` enumerates subspaces of the nonbent set, which is only cheap when that set is small (it explodes near-full at n=8).
     rng = MersenneTwister(0xB0BA)
     F = gold(4)
     sig = nonbent_signature(F)

@@ -34,26 +34,36 @@ julia> id(2)
 0x02
 ```
 """
-struct SBox{N, T<:Unsigned}
+struct SBox{N,T<:Unsigned}
     lut::Vector{T}
 
-    function SBox{N, T}(lut::Vector{T}) where {N, T<:Unsigned}
-        N isa Integer && N ≥ 1 ||
-            throw(ArgumentError("SBox{N,T}: N must be a positive integer, got $N"))
-        N ≤ 8 * sizeof(T) ||
-            throw(ArgumentError(
-                "SBox{$N, $T}: N=$N exceeds storage width 8*sizeof($T)=$(8 * sizeof(T))"))
+    function SBox{N,T}(lut::Vector{T}) where {N,T<:Unsigned}
+        N isa Integer && N ≥ 1 || throw(
+            ArgumentError("SBox{N,T}: N must be a positive integer, got $N"),
+        )
+        N ≤ 8 * sizeof(T) || throw(
+            ArgumentError(
+                "SBox{$N, $T}: N=$N exceeds storage width 8*sizeof($T)=$(8 * sizeof(T))",
+            ),
+        )
         len = 1 << N
-        length(lut) == len ||
-            throw(ArgumentError(
-                "SBox{$N, $T}: LUT must have length 2^$N = $len, got $(length(lut))"))
+        length(lut) == len || throw(
+            ArgumentError(
+                "SBox{$N, $T}: LUT must have length 2^$N = $len, got $(length(lut))",
+            ),
+        )
         # Range check: every entry must fit in N bits.
-        N < 8 * sizeof(T) && (mask = T(len - 1); for (i, v) in pairs(lut)
-            v & mask == v ||
-                throw(ArgumentError(
-                    "SBox{$N, $T}: lut[$i] = $v exceeds $N-bit range"))
-        end)
-        new{N, T}(lut)
+        N < 8 * sizeof(T) && (
+            mask = T(len - 1);
+            for (i, v) in pairs(lut)
+                v & mask == v || throw(
+                    ArgumentError(
+                        "SBox{$N, $T}: lut[$i] = $v exceeds $N-bit range",
+                    ),
+                )
+            end
+        )
+        new{N,T}(lut)
     end
 end
 
@@ -65,21 +75,26 @@ end
 Smallest unsigned type with at least `N` bits.
 """
 function _storage_for(N::Integer)
-    N ≤ 8  && return UInt8
+    N ≤ 8 && return UInt8
     N ≤ 16 && return UInt16
     N ≤ 32 && return UInt32
     N ≤ 64 && return UInt64
-    throw(ArgumentError("scalar SBox not supported for N=$N > 64; bit-packed storage is not implemented"))
+    throw(
+        ArgumentError(
+            "scalar SBox not supported for N=$N > 64; bit-packed storage is not implemented",
+        ),
+    )
 end
 
-SBox{N}(lut::AbstractVector{<:Integer}) where N =
-    SBox{N, _storage_for(N)}(convert(Vector{_storage_for(N)}, lut))
+SBox{N}(lut::AbstractVector{<:Integer}) where {N} =
+    SBox{N,_storage_for(N)}(convert(Vector{_storage_for(N)}, lut))
 
 function SBox(lut::AbstractVector{<:Integer})
     n = length(lut)
     n ≥ 1 || throw(ArgumentError("SBox: empty LUT"))
     N = trailing_zeros(n)
-    1 << N == n || throw(ArgumentError("SBox: LUT length $n is not a power of 2"))
+    1 << N == n ||
+        throw(ArgumentError("SBox: LUT length $n is not a power of 2"))
     SBox{N}(lut)
 end
 
@@ -97,32 +112,32 @@ inputbits(::SBox{N}) where {N} = N::Int
 
 Underlying unsigned-integer storage type of the LUT.
 """
-storage_type(::SBox{N, T}) where {N, T} = T
+storage_type(::SBox{N,T}) where {N,T} = T
 
 # --- evaluation ---------------------------------------------------------------
 
-@inline (s::SBox)(x::Integer) = s.lut[x + 1]
-@inline Base.getindex(s::SBox, x::Integer) = s.lut[x + 1]
+@inline (s::SBox)(x::Integer) = s.lut[x+1]
+@inline Base.getindex(s::SBox, x::Integer) = s.lut[x+1]
 
 # --- Base interface -----------------------------------------------------------
 
 Base.length(s::SBox{N}) where {N} = 1 << N
 Base.size(s::SBox{N}) where {N} = (1 << N,)
 
-Base.:(==)(a::SBox{N, T}, b::SBox{N, T}) where {N, T} = a.lut == b.lut
+Base.:(==)(a::SBox{N,T}, b::SBox{N,T}) where {N,T} = a.lut == b.lut
 Base.:(==)(a::SBox{N}, b::SBox{N}) where {N} = a.lut == b.lut
 Base.:(==)(::SBox, ::SBox) = false
-Base.hash(s::SBox{N, T}, h::UInt) where {N, T} =
+Base.hash(s::SBox{N,T}, h::UInt) where {N,T} =
     hash(s.lut, hash((:SBox, N, T), h))
 
-Base.copy(s::SBox{N, T}) where {N, T} = SBox{N, T}(copy(s.lut))
+Base.copy(s::SBox{N,T}) where {N,T} = SBox{N,T}(copy(s.lut))
 
 """
     is_permutation(s::SBox) -> Bool
 
 `true` iff the underlying LUT is a bijection of `F₂ᴺ`.
 """
-function is_permutation(s::SBox{N, T}) where {N, T}
+function is_permutation(s::SBox{N,T}) where {N,T}
     n = 1 << N
     seen = falses(n)
     @inbounds for v in s.lut
@@ -140,13 +155,13 @@ end
 `true` iff `s` is an F₂-linear function: `s(0) = 0` and
 `s(x) ⊕ s(y) = s(x ⊕ y)` for all `x, y`.
 """
-function is_linear(s::SBox{N, T}) where {N, T}
+function is_linear(s::SBox{N,T}) where {N,T}
     s.lut[1] == 0 || return false
     n = 1 << N
-    @inbounds for x in 0:n - 1
-        sx = Int(s.lut[x + 1])
-        for y in 0:n - 1
-            (sx ⊻ Int(s.lut[y + 1])) == Int(s.lut[(x ⊻ y) + 1]) || return false
+    @inbounds for x = 0:(n-1)
+        sx = Int(s.lut[x+1])
+        for y = 0:(n-1)
+            (sx ⊻ Int(s.lut[y+1])) == Int(s.lut[(x⊻y)+1]) || return false
         end
     end
     true
@@ -158,35 +173,34 @@ end
 Functional inverse of `s`. Throws `ArgumentError` if `s` is not a
 permutation.
 """
-function Base.inv(s::SBox{N, T}) where {N, T}
+function Base.inv(s::SBox{N,T}) where {N,T}
     n = 1 << N
     inv_lut = zeros(T, n)
     seen = falses(n)
-    @inbounds for x in 0:n - 1
-        y = Int(s.lut[x + 1])
-        seen[y + 1] &&
+    @inbounds for x = 0:(n-1)
+        y = Int(s.lut[x+1])
+        seen[y+1] &&
             throw(ArgumentError("inv(s::SBox): s is not a permutation"))
-        inv_lut[y + 1] = T(x)
-        seen[y + 1] = true
+        inv_lut[y+1] = T(x)
+        seen[y+1] = true
     end
-    all(seen) ||
-        throw(ArgumentError("inv(s::SBox): s is not a permutation"))
-    SBox{N, T}(inv_lut)
+    all(seen) || throw(ArgumentError("inv(s::SBox): s is not a permutation"))
+    SBox{N,T}(inv_lut)
 end
 
-function Base.show(io::IO, s::SBox{N, T}) where {N, T}
+function Base.show(io::IO, s::SBox{N,T}) where {N,T}
     print(io, "SBox{", N, ", ", T, "} (", 1 << N, "-element LUT)")
 end
 
-function Base.show(io::IO, ::MIME"text/plain", s::SBox{N, T}) where {N, T}
+function Base.show(io::IO, ::MIME"text/plain", s::SBox{N,T}) where {N,T}
     show(io, s)
     println(io)
     n = 1 << N
     cols = N ≤ 4 ? n : min(16, n)
-    for row_start in 0:cols:n-1
+    for row_start = 0:cols:(n-1)
         print(io, "  ")
-        for i in row_start:min(row_start + cols - 1, n - 1)
-            print(io, lpad(repr(s.lut[i + 1]), 6), " ")
+        for i = row_start:min(row_start+cols-1, n-1)
+            print(io, lpad(repr(s.lut[i+1]), 6), " ")
         end
         row_start + cols < n && println(io)
     end

@@ -1,13 +1,3 @@
-# Reproduction: Boomerang Connectivity Table
-# Cid, Huang, Peyrin, Sasaki, Song — EUROCRYPT 2018  [CidEtAl2018BCT]
-#
-# The BCT measures resistance to boomerang attacks; its maximum off-origin
-# entry is the *boomerang uniformity*. This script recomputes it for
-# standard cipher S-boxes with BFA's `boomerang_uniformity` and checks it
-# against the published values.
-#
-# Run standalone:  julia --project=. papers/CidEtAl2018_boomerang.jl
-
 using VBF
 using VBFCatalog
 

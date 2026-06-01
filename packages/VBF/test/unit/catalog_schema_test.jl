@@ -70,9 +70,7 @@ end
         path = joinpath(tmp, "test.sqlite")
         db = create_catalog(path; bfa_version = "0.1.0-test", git_sha = "deadbeef")
 
-        # SQLite.jl's Row reads via a shared cursor: collect() invalidates
-        # the rows because the cursor moves past the last row. Iterate
-        # eagerly inside the loop body.
+        # SQLite.jl's Row reads via a shared cursor: collect() invalidates the rows because the cursor moves past the last row. Iterate eagerly inside the loop body.
         names = String[]
         for r in DBInterface.execute(
                 db, "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")

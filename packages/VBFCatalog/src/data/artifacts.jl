@@ -40,8 +40,7 @@ function list_artifacts()
     catch
         return String[]
     end
-    # Top-level keys are artifact names; nested keys in [[<name>.download]]
-    # don't appear as top-level. Filter to dict-valued entries.
+    # Top-level keys are artifact names; filter to dict-valued entries.
     sort!(String[k for (k, v) in data if v isa AbstractDict])
 end
 
@@ -67,9 +66,11 @@ in `Artifacts.toml`.
 """
 function artifact_path(name::AbstractString)
     n = String(name)
-    n in list_artifacts() ||
-        throw(ArgumentError(
+    n in list_artifacts() || throw(
+        ArgumentError(
             "artifact_path: $(repr(n)) is not declared in $(_artifacts_toml()); " *
-            "see list_artifacts() for the current set"))
+            "see list_artifacts() for the current set",
+        ),
+    )
     Artifacts.@artifact_str n
 end

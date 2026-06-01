@@ -17,8 +17,7 @@ end
 end
 
 @testset "linear_structures: every literature S-box is structure-free" begin
-    # A cryptographically strong S-box has no non-trivial linear structures.
-    # Every entry in our catalog is designed for this.
+    # A cryptographically strong S-box has no non-trivial linear structures. Every entry in our catalog is designed for this.
     for name in literature_sbox_names()
         s = load_literature_sbox(name)
         @test isempty(linear_structures(s))
@@ -27,8 +26,7 @@ end
 end
 
 @testset "linear_structures: count matches DDT 2^N entries" begin
-    # Sanity: |linear_structures| equals the count of DDT entries equal to 2^N
-    # in rows 2:end (since we exclude row a=0).
+    # Sanity: |linear_structures| equals the count of DDT entries equal to 2^N in rows 2:end (since we exclude row a=0).
     for name in literature_sbox_names()
         s = load_literature_sbox(name)
         d = ddt(s)

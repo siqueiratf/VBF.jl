@@ -3,18 +3,72 @@ Sporadic / named APN instances — specific functions of historical or structura
 importance that are not (presented as) members of an infinite family.
 """
 
-# Browning–Dillon–McQuistan–Wolfe (2010), the lookup table as printed (read
-# row-major, f(8·r + c) = entry[r][c]), over GF(2⁶) with MAGMA's default
-# primitive element (minimal polynomial x⁶+x⁴+x³+x+1).
+# Browning-Dillon-McQuistan-Wolfe (2010), row-major: f(8r + c) = entry[r][c].
 const _DILLON_N6_PERMUTATION = Int[
-    0, 54, 48, 13, 15, 18, 53, 35,
-    25, 63, 45, 52,  3, 20, 41, 33,
-    59, 36,  2, 34, 10,  8, 57, 37,
-    60, 19, 42, 14, 50, 26, 58, 24,
-    39, 27, 21, 17, 16, 29,  1, 62,
-    47, 40, 51, 56,  7, 43, 44, 38,
-    31, 11,  4, 28, 61, 46,  5, 49,
-     9,  6, 23, 32, 30, 12, 55, 22,
+    0,
+    54,
+    48,
+    13,
+    15,
+    18,
+    53,
+    35,
+    25,
+    63,
+    45,
+    52,
+    3,
+    20,
+    41,
+    33,
+    59,
+    36,
+    2,
+    34,
+    10,
+    8,
+    57,
+    37,
+    60,
+    19,
+    42,
+    14,
+    50,
+    26,
+    58,
+    24,
+    39,
+    27,
+    21,
+    17,
+    16,
+    29,
+    1,
+    62,
+    47,
+    40,
+    51,
+    56,
+    7,
+    43,
+    44,
+    38,
+    31,
+    11,
+    4,
+    28,
+    61,
+    46,
+    5,
+    49,
+    9,
+    6,
+    23,
+    32,
+    30,
+    12,
+    55,
+    22,
 ]
 
 """
@@ -64,6 +118,9 @@ julia> (is_permutation(K), differential_uniformity(K), algebraic_degree(K))
 """
 function kim_apn()
     mod = conway_polynomial(6)                     # x⁶+x⁴+x³+x+1
-    SBox{6}([gf_pow(x, 3, 6; modulus = mod) ⊻ gf_pow(x, 10, 6; modulus = mod) ⊻
-             gf_mul(2, gf_pow(x, 24, 6; modulus = mod), 6; modulus = mod) for x in 0:63])
+    SBox{6}([
+        gf_pow(x, 3, 6; modulus = mod) ⊻ gf_pow(x, 10, 6; modulus = mod) ⊻
+        gf_mul(2, gf_pow(x, 24, 6; modulus = mod), 6; modulus = mod) for
+        x = 0:63
+    ])
 end

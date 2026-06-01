@@ -30,16 +30,20 @@ function ccz_block_decomposition(L::F2LinearMap{M,S}) where {M,S}
     Bcols = Vector{S}(undef, n)
     Ccols = Vector{S}(undef, n)
     Dcols = Vector{S}(undef, n)
-    @inbounds for i in 1:n
+    @inbounds for i = 1:n
         v = L.cols[i]
-        w = L.cols[n + i]
+        w = L.cols[n+i]
         Acols[i] = v & mask
         Ccols[i] = (v >> n) & mask
         Dcols[i] = w & mask
         Bcols[i] = (w >> n) & mask
     end
-    return (A = F2LinearMap{M ÷ 2, S}(Acols), B = F2LinearMap{M ÷ 2, S}(Bcols),
-            C = F2LinearMap{M ÷ 2, S}(Ccols), D = F2LinearMap{M ÷ 2, S}(Dcols))
+    return (
+        A = F2LinearMap{M ÷ 2,S}(Acols),
+        B = F2LinearMap{M ÷ 2,S}(Bcols),
+        C = F2LinearMap{M ÷ 2,S}(Ccols),
+        D = F2LinearMap{M ÷ 2,S}(Dcols),
+    )
 end
 
 """
@@ -53,15 +57,18 @@ The first `n` columns are `B(eᵢ)` (low half), the next `n` are
 
 Stored over `UInt32` to match the function-graph packing.
 """
-function ea_mapping(A::F2LinearMap{N,S}, B::F2LinearMap{N,S},
-                    C::F2LinearMap{N,S}) where {N,S}
+function ea_mapping(
+    A::F2LinearMap{N,S},
+    B::F2LinearMap{N,S},
+    C::F2LinearMap{N,S},
+) where {N,S}
     A_inv = inv(A)
     C_prime = compose(C, A_inv)        # C ∘ A⁻¹
     cols = Vector{UInt32}(undef, 2N)
-    @inbounds for i in 0:(N - 1)
+    @inbounds for i = 0:(N-1)
         ei = S(1) << i
-        cols[i + 1] = UInt32(B(ei))
-        cols[N + i + 1] = (UInt32(A_inv(ei)) << N) | UInt32(C_prime(ei))
+        cols[i+1] = UInt32(B(ei))
+        cols[N+i+1] = (UInt32(A_inv(ei)) << N) | UInt32(C_prime(ei))
     end
-    return F2LinearMap{2N, UInt32}(cols)
+    return F2LinearMap{2N,UInt32}(cols)
 end

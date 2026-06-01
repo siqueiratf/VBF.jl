@@ -1,17 +1,3 @@
-# n = 8 APN functions (monomial entries).
-#
-# n = 8 is the cryptographically important case (every byte-oriented
-# block cipher S-box). 2^8 - 1 = 255 = 3 · 5 · 17, so most low-degree
-# Gold/Kasami exponents share a factor with 255 and are NOT
-# permutations.
-#
-# Note in particular: the field inverse x^(2^8 - 2) = x^254 is *not*
-# APN — its differential uniformity is 4 (the famous "almost APN"
-# result, Daemen-Rijmen's justification for using it in AES). It is
-# therefore absent from this file.
-#
-# Modulus: x^8 + x^4 + x^3 + x + 1  (FIPS 197 / Rijndael, = 283).
-
 schema_version = 1
 
 # --- Gold (i = 1, 3) — only two distinct classes up to CCZ for n=8 ----------

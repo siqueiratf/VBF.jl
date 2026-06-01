@@ -15,7 +15,7 @@ storage type `T` defaults to the smallest unsigned covering `N` bits.
 
 using Random
 
-@inline _nbit_mask(::Val{N}, ::Type{T}) where {N, T} =
+@inline _nbit_mask(::Val{N}, ::Type{T}) where {N,T} =
     N == 8 * sizeof(T) ? ~zero(T) : T((one(T) << N) - one(T))
 
 """
@@ -23,10 +23,13 @@ using Random
 
 A uniformly random `N`-bit S-box (not necessarily a permutation).
 """
-function random_function_sbox(rng::AbstractRNG, ::Val{N},
-                              ::Type{T} = _storage_for(N)) where {N, T}
+function random_function_sbox(
+    rng::AbstractRNG,
+    ::Val{N},
+    ::Type{T} = _storage_for(N),
+) where {N,T}
     n = 1 << N
-    SBox{N, T}(T[rand(rng, zero(T):T(n - 1)) for _ in 1:n])
+    SBox{N,T}(T[rand(rng, zero(T):T(n-1)) for _ = 1:n])
 end
 
 """
@@ -35,11 +38,14 @@ end
 A uniformly random permutation `SBox{N}` (Fisher–Yates shuffle of the
 identity LUT). Ports `rand_invertible_Sbox`.
 """
-function random_permutation_sbox(rng::AbstractRNG, ::Val{N},
-                                 ::Type{T} = _storage_for(N)) where {N, T}
-    lut = collect(T(0):T((1 << N) - 1))
+function random_permutation_sbox(
+    rng::AbstractRNG,
+    ::Val{N},
+    ::Type{T} = _storage_for(N),
+) where {N,T}
+    lut = collect(T(0):T((1<<N)-1))
     shuffle!(rng, lut)
-    SBox{N, T}(lut)
+    SBox{N,T}(lut)
 end
 
 """
@@ -48,10 +54,13 @@ end
 A random F₂-linear map (each basis image drawn uniformly; may be
 singular). Ports the square case of `rand_linear_function`.
 """
-function random_linear_function(rng::AbstractRNG, ::Val{N},
-                                ::Type{T} = _storage_for(N)) where {N, T}
+function random_linear_function(
+    rng::AbstractRNG,
+    ::Val{N},
+    ::Type{T} = _storage_for(N),
+) where {N,T}
     mask = _nbit_mask(Val(N), T)
-    F2LinearMap{N, T}(T[rand(rng, T) & mask for _ in 1:N])
+    F2LinearMap{N,T}(T[rand(rng, T) & mask for _ = 1:N])
 end
 
 """
@@ -60,8 +69,11 @@ end
 A uniformly random *invertible* F₂-linear map: basis images are drawn
 until `N` of them are linearly independent. Ports `rand_linear_permutation`.
 """
-function random_invertible_linear_map(rng::AbstractRNG, ::Val{N},
-                                      ::Type{T} = _storage_for(N)) where {N, T}
+function random_invertible_linear_map(
+    rng::AbstractRNG,
+    ::Val{N},
+    ::Type{T} = _storage_for(N),
+) where {N,T}
     mask = _nbit_mask(Val(N), T)
     cols = T[]
     bs = T[]
@@ -72,7 +84,7 @@ function random_invertible_linear_map(rng::AbstractRNG, ::Val{N},
         push!(cols, v)
         bs = linear_basis(vcat(bs, v); nbits = N)
     end
-    F2LinearMap{N, T}(cols)
+    F2LinearMap{N,T}(cols)
 end
 
 """
@@ -88,10 +100,13 @@ const random_linear_permutation = random_invertible_linear_map
 A random invertible F₂-affine map: an invertible linear part
 ([`random_invertible_linear_map`](@ref)) plus a uniformly random constant.
 """
-function random_affine_permutation(rng::AbstractRNG, ::Val{N},
-                                   ::Type{T} = _storage_for(N)) where {N, T}
+function random_affine_permutation(
+    rng::AbstractRNG,
+    ::Val{N},
+    ::Type{T} = _storage_for(N),
+) where {N,T}
     L = random_invertible_linear_map(rng, Val(N), T)
-    F2AffineMap{N, T}(L, rand(rng, T) & _nbit_mask(Val(N), T))
+    F2AffineMap{N,T}(L, rand(rng, T) & _nbit_mask(Val(N), T))
 end
 
 """
@@ -103,13 +118,15 @@ not yet spanned and closing under XOR (after `random_linear_subspace` in
 Kaleyski's VBF library).
 """
 function random_linear_subspace(rng::AbstractRNG, n::Integer, k::Integer)
-    nn = Int(n); kk = Int(k)
-    0 ≤ kk ≤ nn || throw(ArgumentError("random_linear_subspace: need 0 ≤ k ≤ n"))
+    nn = Int(n)
+    kk = Int(k)
+    0 ≤ kk ≤ nn ||
+        throw(ArgumentError("random_linear_subspace: need 0 ≤ k ≤ n"))
     elems = Set{Int}((0,))
-    for _ in 1:kk
-        r = rand(rng, 0:(1 << nn) - 1)
+    for _ = 1:kk
+        r = rand(rng, 0:((1<<nn)-1))
         while r in elems
-            r = rand(rng, 0:(1 << nn) - 1)
+            r = rand(rng, 0:((1<<nn)-1))
         end
         for e in collect(elems)
             push!(elems, e ⊻ r)

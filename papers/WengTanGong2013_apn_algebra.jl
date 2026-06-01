@@ -1,20 +1,3 @@
-# Reproduction: quadratic APN functions and their APN algebra
-# Weng, Tan, Gong — WCC 2013  [WengTanGong2013]
-#
-# Weng–Tan–Gong characterise a quadratic APN function `F` by the commutative
-# "APN algebra" `x ∗ y = F(x+y)+F(x)+F(y)+F(0)` — exactly the second-order
-# derivative / associated bilinear form. In BFA that form is the **derivative
-# matrix** `quadratic_apn_matrix(F)`, which is a QAM (`is_qam`) precisely when F
-# is APN (Yu–Wang–Li). This script checks that characterisation on the paper's
-# 10 new quadratic 8-bit APN functions, re-housed as the WengTanGong2013 corpus.
-#
-# Reproduction mode: VERIFIES PUBLISHED OUTPUT + CHARACTERISATION.
-#   The 10 functions are the published result of an APN-algebra computer search;
-#   they are loaded from the re-housed corpus and re-verified, and the
-#   APN-algebra ⇔ QAM characterisation is checked on each.
-#
-# Run standalone:  julia --project=. papers/WengTanGong2013_apn_algebra.jl
-
 using VBF
 using VBFCatalog
 

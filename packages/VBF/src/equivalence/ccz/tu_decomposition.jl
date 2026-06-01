@@ -32,8 +32,7 @@ machinery (`walsh_zeroes`, `extract_linear_subspaces`, `thickness`).
     implemented incorrectly.
 """
 
-# Raw-LUT helpers for the t-bit / (n-t)-bit mini-blocks (whose bit-widths
-# are runtime values, so they are kept as plain LUTs rather than SBoxes).
+# Raw-LUT helpers for the t / (n-t)-bit mini-blocks (runtime bit-widths).
 
 function _is_perm_lut(lut::Vector{T}) where {T}
     n = length(lut)
@@ -50,8 +49,8 @@ end
 function _inv_lut(lut::Vector{T}) where {T}
     n = length(lut)
     out = Vector{T}(undef, n)
-    @inbounds for x in 0:n-1
-        out[Int(lut[x + 1]) + 1] = T(x)
+    @inbounds for x = 0:(n-1)
+        out[Int(lut[x+1])+1] = T(x)
     end
     out
 end
@@ -74,11 +73,11 @@ The `TU_t` decomposition of an `N`-bit function. Fields:
 
 Reconstruct the underlying function with [`apply_tu`](@ref).
 """
-struct TUDecomposition{N, T}
+struct TUDecomposition{N,T}
     t::Int
-    A::F2AffineMap{N, T}
-    B::F2AffineMap{N, T}
-    C::F2AffineMap{N, T}
+    A::F2AffineMap{N,T}
+    B::F2AffineMap{N,T}
+    C::F2AffineMap{N,T}
     Tblocks::Vector{Vector{T}}
     Ublocks::Vector{Vector{T}}
     Tinv::Vector{Vector{T}}
@@ -86,26 +85,40 @@ struct TUDecomposition{N, T}
 end
 
 # Validate the T blocks, invert them, derive U', and assemble.
-function _build_tu(A::F2AffineMap{N, T}, B::F2AffineMap{N, T}, C::F2AffineMap{N, T},
-                   Tblocks::Vector{Vector{T}}, Ublocks::Vector{Vector{T}}) where {N, T}
+function _build_tu(
+    A::F2AffineMap{N,T},
+    B::F2AffineMap{N,T},
+    C::F2AffineMap{N,T},
+    Tblocks::Vector{Vector{T}},
+    Ublocks::Vector{Vector{T}},
+) where {N,T}
     t = trailing_zeros(length(Tblocks[1]))
     n_t = N - t
-    length(Tblocks) == (1 << n_t) ||
-        throw(ArgumentError("TU decomposition: expected $(1 << n_t) T blocks, got $(length(Tblocks))"))
-    length(Ublocks) == (1 << t) ||
-        throw(ArgumentError("TU decomposition: expected $(1 << t) U blocks, got $(length(Ublocks))"))
+    length(Tblocks) == (1 << n_t) || throw(
+        ArgumentError(
+            "TU decomposition: expected $(1 << n_t) T blocks, got $(length(Tblocks))",
+        ),
+    )
+    length(Ublocks) == (1 << t) || throw(
+        ArgumentError(
+            "TU decomposition: expected $(1 << t) U blocks, got $(length(Ublocks))",
+        ),
+    )
     Tinv = Vector{Vector{T}}(undef, length(Tblocks))
     @inbounds for (k, Tk) in enumerate(Tblocks)
-        _is_perm_lut(Tk) ||
-            throw(ArgumentError("ill-formed TU-decomposition: every T block must be a permutation"))
+        _is_perm_lut(Tk) || throw(
+            ArgumentError(
+                "ill-formed TU-decomposition: every T block must be a permutation",
+            ),
+        )
         Tinv[k] = _inv_lut(Tk)
     end
-    Uprime = [Vector{T}(undef, 1 << n_t) for _ in 1:(1 << t)]
-    @inbounds for x1 in 0:(1 << t) - 1, x2 in 0:(1 << n_t) - 1
-        k = Int(Tblocks[x2 + 1][x1 + 1])
-        Uprime[k + 1][x2 + 1] = Ublocks[x1 + 1][x2 + 1]
+    Uprime = [Vector{T}(undef, 1 << n_t) for _ = 1:(1<<t)]
+    @inbounds for x1 = 0:((1<<t)-1), x2 = 0:((1<<n_t)-1)
+        k = Int(Tblocks[x2+1][x1+1])
+        Uprime[k+1][x2+1] = Ublocks[x1+1][x2+1]
     end
-    TUDecomposition{N, T}(t, A, B, C, Tblocks, Ublocks, Tinv, Uprime)
+    TUDecomposition{N,T}(t, A, B, C, Tblocks, Ublocks, Tinv, Uprime)
 end
 
 """
@@ -115,22 +128,22 @@ Reconstruct the function whose decomposition is `td`. Inverse of
 [`tu_decomposition_from_space_basis`](@ref); ports
 `TUdecomposition.get_S_box`.
 """
-function apply_tu(td::TUDecomposition{N, T}) where {N, T}
+function apply_tu(td::TUDecomposition{N,T}) where {N,T}
     t = td.t
     mask_t = (T(1) << t) - T(1)
     n_size = 1 << N
     result = Vector{T}(undef, n_size)
-    @inbounds for x in 0:n_size - 1
+    @inbounds for x = 0:(n_size-1)
         y = td.A(T(x))
         x2 = y >> t
         x1 = y & mask_t
-        y1 = td.Tblocks[Int(x2) + 1][Int(x1) + 1]
-        y2 = td.Ublocks[Int(x1) + 1][Int(x2) + 1]
+        y1 = td.Tblocks[Int(x2)+1][Int(x1)+1]
+        y2 = td.Ublocks[Int(x1)+1][Int(x2)+1]
         combined = y1 | (y2 << t)
         z = combined ⊻ td.C(y)
-        result[x + 1] = td.B(z)
+        result[x+1] = td.B(z)
     end
-    SBox{N, T}(result)
+    SBox{N,T}(result)
 end
 
 """
@@ -139,9 +152,13 @@ end
 The decomposition's "core": the same `T`/`U` mini-blocks with the outer
 maps stripped (`A = B = identity`, `C = 0`). Ports `TUdecomposition.core`.
 """
-core(td::TUDecomposition{N, T}) where {N, T} =
-    _build_tu(identity_affine_map(N, T), identity_affine_map(N, T),
-              zero_affine_map(N, T), td.Tblocks, td.Ublocks)
+core(td::TUDecomposition{N,T}) where {N,T} = _build_tu(
+    identity_affine_map(N, T),
+    identity_affine_map(N, T),
+    zero_affine_map(N, T),
+    td.Tblocks,
+    td.Ublocks,
+)
 
 """
     twist(td::TUDecomposition{N, T}) -> TUDecomposition{N, T}
@@ -149,9 +166,13 @@ core(td::TUDecomposition{N, T}) where {N, T} =
 The "twist": the core built from the inverse `T` blocks and the `U'`
 view (`A = B = identity`, `C = 0`). Ports `TUdecomposition.twist`.
 """
-twist(td::TUDecomposition{N, T}) where {N, T} =
-    _build_tu(identity_affine_map(N, T), identity_affine_map(N, T),
-              zero_affine_map(N, T), td.Tinv, td.Uprime)
+twist(td::TUDecomposition{N,T}) where {N,T} = _build_tu(
+    identity_affine_map(N, T),
+    identity_affine_map(N, T),
+    zero_affine_map(N, T),
+    td.Tinv,
+    td.Uprime,
+)
 
 """
     tu_decomposition_from_space_basis(s::SBox{N, T}, basis::Vector{UInt32})
@@ -162,7 +183,10 @@ is `basis` (each a `2N`-bit packed `(a ≪ N) | b`). The thickness `t` of
 the subspace becomes the `t` of the decomposition. Ports
 `tu_decomposition_from_space_basis`. Throws if `t = 0`.
 """
-function tu_decomposition_from_space_basis(s::SBox{N, T}, basis::Vector{UInt32}) where {N, T}
+function tu_decomposition_from_space_basis(
+    s::SBox{N,T},
+    basis::Vector{UInt32},
+) where {N,T}
     n = N
     m = N
     t = thickness(basis, m)
@@ -182,18 +206,18 @@ function tu_decomposition_from_space_basis(s::SBox{N, T}, basis::Vector{UInt32})
             old_rank = new_rank
         end
     end
-    length(reordered) == t ||
-        throw(ArgumentError("invalid Walsh-zero subspace basis for TU decomposition"))
+    length(reordered) == t || throw(
+        ArgumentError("invalid Walsh-zero subspace basis for TU decomposition"),
+    )
 
     sanitized = reordered[1:t]
-    # Clear the low-m part of every remaining basis vector by adding a
-    # combination of the thickness vectors.
+    # Clear the low-m part of each remaining basis vector via thickness vectors.
     for b in basis
         if !(b in reordered)
-            for coeff in 0:(1 << t) - 1
+            for coeff = 0:((1<<t)-1)
                 bp = b
-                for i in 0:t-1
-                    ((coeff >> i) & 1) == 1 && (bp ⊻= reordered[i + 1])
+                for i = 0:(t-1)
+                    ((coeff >> i) & 1) == 1 && (bp ⊻= reordered[i+1])
                 end
                 if (bp & mask_m) == 0
                     push!(sanitized, bp)
@@ -203,7 +227,7 @@ function tu_decomposition_from_space_basis(s::SBox{N, T}, basis::Vector{UInt32})
         end
     end
 
-    basis_A = T[T(b >> m) for b in sanitized[t + 1:n]]
+    basis_A = T[T(b >> m) for b in sanitized[(t+1):n]]
     basis_C = T[T(b >> m) for b in sanitized[1:t]]
     basis_B = T[T(b & mask_m) for b in sanitized[1:t]]
 
@@ -215,22 +239,22 @@ function tu_decomposition_from_space_basis(s::SBox{N, T}, basis::Vector{UInt32})
     Ainv = inv(A)
     Binv = inv(B)
     s_prime = Vector{T}(undef, 1 << n)
-    @inbounds for x in 0:(1 << n) - 1
+    @inbounds for x = 0:((1<<n)-1)
         y = Ainv(T(x))
-        y = s.lut[Int(y) + 1]
+        y = s.lut[Int(y)+1]
         y = Binv(y)
-        s_prime[x + 1] = y ⊻ C(T(x))
+        s_prime[x+1] = y ⊻ C(T(x))
     end
 
     mask_t = (T(1) << t) - T(1)
     n_t = n - t
-    Tblocks = [Vector{T}(undef, 1 << t) for _ in 1:(1 << n_t)]
-    Ublocks = [Vector{T}(undef, 1 << n_t) for _ in 1:(1 << t)]
-    @inbounds for x1 in 0:(1 << t) - 1, x2 in 0:(1 << n_t) - 1
+    Tblocks = [Vector{T}(undef, 1 << t) for _ = 1:(1<<n_t)]
+    Ublocks = [Vector{T}(undef, 1 << n_t) for _ = 1:(1<<t)]
+    @inbounds for x1 = 0:((1<<t)-1), x2 = 0:((1<<n_t)-1)
         x = x1 | (x2 << t)
-        sp = s_prime[x + 1]
-        Tblocks[x2 + 1][x1 + 1] = sp & mask_t
-        Ublocks[x1 + 1][x2 + 1] = sp >> t
+        sp = s_prime[x+1]
+        Tblocks[x2+1][x1+1] = sp & mask_t
+        Ublocks[x1+1][x2+1] = sp >> t
     end
 
     return _build_tu(A, B, C, Tblocks, Ublocks)
@@ -244,29 +268,49 @@ Walsh-zero subspace of positive thickness. Ports `get_tu_decompositions`.
 Pass `bases` (a vector of `2N`-bit subspace bases) to reuse a previously
 computed Walsh-zero enumeration.
 """
-function get_tu_decompositions(F::SBox{N, T}; bases = nothing) where {N, T}
-    spaces = bases === nothing ?
+function get_tu_decompositions(F::SBox{N,T}; bases = nothing) where {N,T}
+    spaces =
+        bases === nothing ?
         extract_linear_subspaces(walsh_zeroes(F), N; max_bits = 2N) : bases
-    result = TUDecomposition{N, T}[]
+    result = TUDecomposition{N,T}[]
     for w in spaces
         t = thickness(w, N)
-        (t > 0 && t ≤ N) && push!(result, tu_decomposition_from_space_basis(F, w))
+        (t > 0 && t ≤ N) &&
+            push!(result, tu_decomposition_from_space_basis(F, w))
     end
     return result
 end
 
 # --- Base interface -----------------------------------------------------------
 
-Base.:(==)(a::TUDecomposition{N, T}, b::TUDecomposition{N, T}) where {N, T} =
+Base.:(==)(a::TUDecomposition{N,T}, b::TUDecomposition{N,T}) where {N,T} =
     apply_tu(a) == apply_tu(b)
 
-function Base.show(io::IO, td::TUDecomposition{N, T}) where {N, T}
+function Base.show(io::IO, td::TUDecomposition{N,T}) where {N,T}
     print(io, "TUDecomposition{", N, ", ", T, "} (t = ", td.t, ")")
 end
 
-function Base.show(io::IO, ::MIME"text/plain", td::TUDecomposition{N, T}) where {N, T}
+function Base.show(
+    io::IO,
+    ::MIME"text/plain",
+    td::TUDecomposition{N,T},
+) where {N,T}
     show(io, td)
     println(io)
-    println(io, "  T: ", length(td.Tblocks), " keyed ", td.t, "-bit permutations")
-    println(io, "  U: ", length(td.Ublocks), " functions of ", N - td.t, " bits")
+    println(
+        io,
+        "  T: ",
+        length(td.Tblocks),
+        " keyed ",
+        td.t,
+        "-bit permutations",
+    )
+    println(
+        io,
+        "  U: ",
+        length(td.Ublocks),
+        " functions of ",
+        N - td.t,
+        " bits",
+    )
 end

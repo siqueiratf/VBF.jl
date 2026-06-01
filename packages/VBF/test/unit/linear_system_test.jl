@@ -106,9 +106,7 @@ end
 end
 
 @testset "solve_f2: underdetermined → some solution; verify A·x == b" begin
-    # Underdetermined: 2 rows in 3 unknowns.
-    # Row 1: x₀ + x₁ = 1
-    # Row 2: x₁ + x₂ = 0
+    # Underdetermined: 2 rows in 3 unknowns. Row 1: x₀ + x₁ = 1 Row 2: x₁ + x₂ = 0
     A = UInt8[0b011, 0b110]
     x = solve_f2(A, UInt8(0b01); nbits = 3)
     @test x !== nothing

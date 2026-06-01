@@ -1,27 +1,7 @@
-# Imports the Xanadu `apn-ccz-graph-framework/list_of_APN_functions_for_different_n`
-# into the BFA catalog by:
-#
-#   1. parsing each polynomial expression in the file (X, ksi, +, *, **);
-#   2. evaluating it as a length-2ⁿ LUT over GF(2ⁿ) using the Conway
-#      polynomial for n (which is what Sage uses for `GF(2^n)` and so
-#      is what Xanadu's `ksi` refers to);
-#   3. hashing the LUT and either merging "xanadu@<sha>" into an existing
-#      BFA function row, merging it into an existing
-#      reconciliation_disagreements row, or recording a fresh
-#      reconciliation row with `kind="only_in_some"`.
-#
-# Idempotent on re-run (no duplicate sources, no duplicate rows).
-#
-# Usage:
-#     # uses BFA_XANADU_PATH env var or default ~/sboxU/apn-ccz-graph-framework
-#     julia --project=data-build data-build/import_xanadu_apn.jl
-#     julia --project=data-build data-build/import_xanadu_apn.jl --max 50
-
 using VBF
 using VBFCatalog
 import SQLite
 import DBInterface
-
 
 const _DEFAULT_XANADU_PATHS = (
     get(ENV, "BFA_XANADU_PATH", ""),

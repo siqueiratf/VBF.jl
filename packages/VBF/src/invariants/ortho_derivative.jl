@@ -60,23 +60,22 @@ function ortho_derivative(F::SBox{N,T}) where {N,T}
     result = zeros(T, n_size)
     ddt_row = Vector{Int}(undef, n_size)
 
-    @inbounds for a in 1:(n_size - 1)
+    @inbounds for a = 1:(n_size-1)
         # DDT row at a: count #{x : F(x) ⊕ F(x ⊕ a) = b} for each b.
         fill!(ddt_row, 0)
-        for x in 0:(n_size - 1)
-            d = Int(F.lut[x + 1] ⊻ F.lut[(x ⊻ a) + 1])
-            ddt_row[d + 1] += 1
+        for x = 0:(n_size-1)
+            d = Int(F.lut[x+1] ⊻ F.lut[(x⊻a)+1])
+            ddt_row[d+1] += 1
         end
         row_0 = ddt_row[1]   # DDT(a, 0)
 
-        # Hyperplane: {b ≥ 1 : DDT(a, b) ≠ DDT(a, 0)}. For APN, row_0 = 0
-        # and |hyperplane| = 2^{n-1}.
+        # Hyperplane {b ≥ 1 : DDT(a, b) ≠ DDT(a, 0)}; APN ⇒ |H| = 2^{n-1}.
         hp_count = 0
         # We store the hyperplane elements in a stack-allocated-like Vector.
         hyperplane = Int[]
         sizehint!(hyperplane, n_size >> 1)
-        for b in 1:(n_size - 1)
-            if ddt_row[b + 1] != row_0
+        for b = 1:(n_size-1)
+            if ddt_row[b+1] != row_0
                 push!(hyperplane, b)
                 hp_count += 1
             end
@@ -84,10 +83,10 @@ function ortho_derivative(F::SBox{N,T}) where {N,T}
         # APN condition: |H_a| must be exactly 2^{n-1}. If smaller, F isn't APN.
         hp_count == (n_size >> 1) || return nothing
 
-        # Brute-force search for ortho ∈ [1, 2ⁿ - 1] with ⟨ortho, b⟩ = 1 for all b in H_a.
+        # Brute-force ortho ∈ [1, 2ⁿ - 1] with ⟨ortho, b⟩ = 1 for all b in H_a.
         found = false
         ortho_val = 0
-        for candidate in 1:(n_size - 1)
+        for candidate = 1:(n_size-1)
             ok = true
             for b in hyperplane
                 if (count_ones(UInt32(candidate) & UInt32(b)) & 1) == 0
@@ -102,7 +101,7 @@ function ortho_derivative(F::SBox{N,T}) where {N,T}
             end
         end
         found || return nothing
-        result[a + 1] = T(ortho_val)
+        result[a+1] = T(ortho_val)
     end
     return SBox{N,T}(result)
 end

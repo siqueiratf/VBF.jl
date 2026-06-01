@@ -15,12 +15,6 @@ using Random
     walsh_hadamard!(v)
     @test v == [8, -2]
 
-    # length 4: hand-traced
-    # input [1, 1, 1, -1]
-    # stage 1 (block=1):
-    #   pair (1,1) → (2, 0); pair (1,-1) → (0, 2). v = [2, 0, 0, 2]
-    # stage 2 (block=2):
-    #   pair (2,0) → (2, 2); pair (0,2) → (2, -2). v = [2, 2, 2, -2]
     v = [1, 1, 1, -1]
     walsh_hadamard!(v)
     @test v == [2, 2, 2, -2]
@@ -86,10 +80,6 @@ end
     end
 
     @testset "f(x) = x_0 concentrates on u = 1" begin
-        # n=3: truth table indexed by x = x_2 x_1 x_0
-        # f(x) = x_0 → tt = [0, 1, 0, 1, 0, 1, 0, 1].
-        # W_f(u) = ∑_x (-1)^{u·x + f(x)} = ∑_x (-1)^{u·x + x_0}.
-        # For u = 1 (u·x = x_0), the exponent is 2 x_0 ≡ 0 mod 2 so W(1) = +2^n.
         f = [0, 1, 0, 1, 0, 1, 0, 1]
         w = walsh_transform(f)
         @test w[1] == 0

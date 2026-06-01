@@ -29,7 +29,7 @@ candidate — practical for small `(n, m)`.
 
 # Frobenius `x ↦ x^(2^t)` in GF(2ⁿ), by repeated squaring (handles x = 0).
 @inline function _frobenius(x::Int, t::Int, n::Int)
-    @inbounds for _ in 1:t
+    @inbounds for _ = 1:t
         x = Int(gf_pow(x, 2, n))
     end
     x
@@ -45,13 +45,14 @@ conjugates (the `k`-th entry is the rep raised to `2^{m·k}`). Reproduces the
 reference's per-`(n,m)` `Assign` structure.
 """
 function qam_cyclic_orbits(n::Integer, m::Integer)
-    m >= 1 && n % m == 0 || throw(ArgumentError("qam_cyclic_orbits: need m ≥ 1 and m ∣ n"))
+    m >= 1 && n % m == 0 ||
+        throw(ArgumentError("qam_cyclic_orbits: need m ≥ 1 and m ∣ n"))
     key(i, j) = i < j ? (i, j) : (j, i)
-    seen = Set{Tuple{Int, Int}}()
-    orbits = Vector{Vector{Tuple{Int, Int}}}()
-    for i in 0:n - 1, j in i + 1:n - 1
+    seen = Set{Tuple{Int,Int}}()
+    orbits = Vector{Vector{Tuple{Int,Int}}}()
+    for i = 0:(n-1), j = (i+1):(n-1)
         key(i, j) in seen && continue
-        orb = Tuple{Int, Int}[]
+        orb = Tuple{Int,Int}[]
         ci, cj = i, j
         while !(key(ci, cj) in seen)
             k = key(ci, cj)
@@ -73,10 +74,17 @@ Build the `n×n` symmetric, zero-diagonal derivative matrix of a
 [`qam_cyclic_orbits`](@ref): along each orbit the entry at step `k` is the
 free value raised to `2^{m·k}` (Frobenius).
 """
-function qam_from_cyclic(n::Integer, m::Integer, values::AbstractVector{<:Integer})
+function qam_from_cyclic(
+    n::Integer,
+    m::Integer,
+    values::AbstractVector{<:Integer},
+)
     orbits = qam_cyclic_orbits(n, m)
-    length(values) == length(orbits) ||
-        throw(ArgumentError("qam_from_cyclic: expected $(length(orbits)) values, got $(length(values))"))
+    length(values) == length(orbits) || throw(
+        ArgumentError(
+            "qam_from_cyclic: expected $(length(orbits)) values, got $(length(values))",
+        ),
+    )
     M = zeros(Int, n, n)
     @inbounds for (vi, orb) in enumerate(orbits)
         v = Int(values[vi])
@@ -97,13 +105,14 @@ Theorem 1 of Ivković–Nikova (the set `Cat^m_I`): the nonzero `a ∈ GF(2ⁿ)`
 over `GF(2)`. Used to restrict the leading free variable of the QAM search.
 """
 function independent_conjugate_elements(n::Integer, m::Integer)
-    n % m == 0 || throw(ArgumentError("independent_conjugate_elements: need m ∣ n"))
+    n % m == 0 ||
+        throw(ArgumentError("independent_conjugate_elements: need m ∣ n"))
     r = n ÷ m
     out = Int[]
     conj = Vector{UInt}(undef, r)
-    for a in 1:(1 << n) - 1
+    for a = 1:((1<<n)-1)
         x = a
-        @inbounds for k in 1:r
+        @inbounds for k = 1:r
             conj[k] = UInt(x)
             x = Int(gf_pow(x, 1 << m, Int(n)))       # x^(2ᵐ)
         end
@@ -124,15 +133,16 @@ test [`is_qam`](@ref)`(M; shift=m)`.
 """
 function cyclic_qam_subset_representatives(n::Integer, m::Integer)
     nn = Int(n)
-    shift(mask) = ((mask << m) | (mask >> (nn - m))) & ((1 << nn) - 1)   # rotate left by m
+    # rotate left by m within nn bits
+    shift(mask) = ((mask << m) | (mask >> (nn - m))) & ((1 << nn) - 1)
     seen = falses(1 << nn)
     reps = Int[]
-    for mask in 1:(1 << nn) - 1
-        seen[mask + 1] && continue
+    for mask = 1:((1<<nn)-1)
+        seen[mask+1] && continue
         push!(reps, mask)
         s = mask
-        while !seen[s + 1]
-            seen[s + 1] = true
+        while !seen[s+1]
+            seen[s+1] = true
             s = shift(s)
         end
     end
@@ -141,11 +151,11 @@ end
 
 # Rank of the n field elements ⊕_{j∈S} M[i,j] (rows i), over GF(2).
 @inline function _qam_subset_rank(M, n::Int, mask::Int, vec::Vector{UInt})
-    @inbounds for i in 1:n
+    @inbounds for i = 1:n
         acc = 0
         s = mask
         while s != 0
-            acc ⊻= M[i, trailing_zeros(s) + 1]
+            acc ⊻= M[i, trailing_zeros(s)+1]
             s &= s - 1
         end
         vec[i] = UInt(acc)
@@ -163,7 +173,8 @@ Equal to [`is_qam`](@ref)`(M)` when `M` has the cyclic structure.
 """
 function is_cyclic_qam(M::AbstractMatrix{<:Integer}, m::Integer)
     n = size(M, 1)
-    size(M, 2) == n || throw(ArgumentError("is_cyclic_qam: matrix must be square"))
+    size(M, 2) == n ||
+        throw(ArgumentError("is_cyclic_qam: matrix must be square"))
     vec = Vector{UInt}(undef, n)
     for mask in cyclic_qam_subset_representatives(n, m)
         _qam_subset_rank(M, n, mask, vec) < n - 1 && return false
@@ -184,8 +195,12 @@ and return the distinct ones up to EA-class ([`apn_ea_mugshot`](@ref)). At most
 within that budget). Practical for small `(n,m)`; see the module docstring for
 the acceleration the reference uses at `n = 8, 10`.
 """
-function search_qam(n::Integer, m::Integer; limit::Integer = typemax(Int),
-                    max_evaluations::Integer = 1 << 22)
+function search_qam(
+    n::Integer,
+    m::Integer;
+    limit::Integer = typemax(Int),
+    max_evaluations::Integer = 1 << 22,
+)
     nn = Int(n)
     orbits = qam_cyclic_orbits(nn, m)
     k = length(orbits)
@@ -193,21 +208,21 @@ function search_qam(n::Integer, m::Integer; limit::Integer = typemax(Int),
     subfields = Vector{Vector{Int}}(undef, k)
     for (oi, orb) in enumerate(orbits)
         d = gcd(m * length(orb), nn)
-        subfields[oi] = [x for x in 0:(1 << nn) - 1 if _frobenius(x, d, nn) == x]
+        subfields[oi] = [x for x = 0:((1<<nn)-1) if _frobenius(x, d, nn) == x]
     end
     sizes = length.(subfields)
 
-    found = SBox{nn, _storage_for(nn)}[]
+    found = SBox{nn,_storage_for(nn)}[]
     seen = Set{APNEAMugshot}()
     vals = zeros(Int, k)
     counter = zeros(Int, k)
     evals = 0
     while true
-        @inbounds for vi in 1:k
-            vals[vi] = subfields[vi][counter[vi] + 1]
+        @inbounds for vi = 1:k
+            vals[vi] = subfields[vi][counter[vi]+1]
         end
         M = qam_from_cyclic(nn, m, vals)
-        if is_cyclic_qam(M, m)                       # Theorem-3-accelerated test
+        if is_cyclic_qam(M, m)  # Theorem-3-accelerated test
             S = qam_to_sbox(M)
             mug = apn_ea_mugshot(S)
             if !(mug in seen)
@@ -252,23 +267,26 @@ of completed matrices examined (the space is large, so a budget keeps it
 bounded). Reproduces the complete small classifications: `n=5` → the single
 Gold-`x³` class, `n=6` → the 13 CCZ-inequivalent quadratic APN classes.
 """
-function search_qam_full(n::Integer; limit::Integer = typemax(Int),
-                         max_evaluations::Integer = 1 << 24,
-                         modulus::Integer = conway_polynomial(n))
+function search_qam_full(
+    n::Integer;
+    limit::Integer = typemax(Int),
+    max_evaluations::Integer = 1 << 24,
+    modulus::Integer = conway_polynomial(n),
+)
     nn = Int(n)
-    M = [zeros(Int, nn) for _ in 1:nn]            # symmetric, zero diagonal
+    M = [zeros(Int, nn) for _ = 1:nn]            # symmetric, zero diagonal
     seen = Set{APNEAMugshot}()
     reps = SBox{nn}[]
     evals = Ref(0)
     vecbuf = zeros(UInt, nn)
     done() = length(reps) >= limit || evals[] >= max_evaluations
 
-    # Is the c×c leading submatrix proper (every nonzero row-combination has
-    # GF(2)-rank ≥ c-1)? The guess-and-determine prune (Yu–Wang–Li Cor. 2).
+    # Is the c×c leading submatrix proper (nonzero row-sums have rank ≥ c-1)?
     proper = function (c::Int)
-        @inbounds for mask in 1:(1 << c) - 1
-            for i in 1:c
-                v = UInt(0); s = mask
+        @inbounds for mask = 1:((1<<c)-1)
+            for i = 1:c
+                v = UInt(0)
+                s = mask
                 while s != 0
                     r = trailing_zeros(s) + 1
                     v ⊻= UInt(M[r][i])
@@ -288,8 +306,9 @@ function search_qam_full(n::Integer; limit::Integer = typemax(Int),
             proper(c) && fill_col(c + 1)
             return
         end
-        @inbounds for v in 0:(1 << nn) - 1
-            M[r][c] = v; M[c][r] = v
+        @inbounds for v = 0:((1<<nn)-1)
+            M[r][c] = v
+            M[c][r] = v
             fill_entry(c, r + 1)
             done() && return
         end
@@ -299,14 +318,15 @@ function search_qam_full(n::Integer; limit::Integer = typemax(Int),
         if c > nn
             evals[] += 1
             Mat = Matrix{Int}(undef, nn, nn)
-            @inbounds for i in 1:nn, j in 1:nn
+            @inbounds for i = 1:nn, j = 1:nn
                 Mat[i, j] = M[i][j]
             end
             if is_qam(Mat)
                 F = qam_to_sbox(Mat)
                 mg = apn_ea_mugshot(F)
                 if !(mg in seen)
-                    push!(seen, mg); push!(reps, F)
+                    push!(seen, mg)
+                    push!(reps, F)
                 end
             end
             return

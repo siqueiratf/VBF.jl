@@ -6,11 +6,6 @@ using Test
 @testset "list_functions / count_functions: filters" begin
     db = load_catalog()
 
-    # The catalog holds four function families: Literature, the declarative
-    # APN catalog, the imported sboxU quadratic-APN reps (APN-rep), and the
-    # Simon-Berg GF(2²)-coefficient CCZ-class reps (CCZ-rep-GF4). Family
-    # contributions are read back from the catalog so these assertions verify
-    # the filters partition consistently as the lists evolve.
     reps        = list_functions(db; family = "APN-rep")
     n_reps      = length(reps)
     reps_n8     = count(r -> r.n == 8, reps)
@@ -46,8 +41,7 @@ using Test
     @test all(r.n == 8 for r in eight)
     @test Set(["AES", "AES_inv"]) ⊆ Set([r.canonical_name for r in eight])
 
-    # Functions are derived per dimension from the loader caches so the
-    # counts don't desync when entries are added to either catalog.
+    # Functions are derived per dimension from the loader caches so the counts don't desync when entries are added to either catalog.
     n4_lit = count(n -> literature_sbox_metadata(n)["n"] == 4, literature_sbox_names())
     n4_apn = count(n -> apn_catalog_metadata(n)["n"] == 4, apn_catalog_names())
     four = list_functions(db; n = 4)

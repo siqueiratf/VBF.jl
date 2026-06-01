@@ -14,8 +14,7 @@ end
 end
 
 @testset "bct_coeff_probability (n=4): PMF sums ~ 1 over the BCT support [0, 2^n]" begin
-    # Actual BCT entries are bounded by 2^n; the BPT formula assigns
-    # vanishing mass beyond that bound (truncation tail ~10⁻⁴ for n=4).
+    # Actual BCT entries are bounded by 2^n; the BPT formula assigns vanishing mass beyond that bound (truncation tail ~10⁻⁴ for n=4).
     n = 4
     s = sum(bct_coeff_probability(n, n, 2d) for d in 0:1 << (n - 1))
     @test s > BigFloat("0.999")

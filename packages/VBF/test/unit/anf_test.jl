@@ -15,8 +15,7 @@ using Random
     mobius!(v)
     @test v == UInt8[0x01, 0x02]   # second entry XOR-ed with first
 
-    # length 4 — F(00)=0, F(01)=1, F(10)=0, F(11)=1 is the function "bit 0".
-    # ANF: F(x) = x_0; coefficients [const, x_0, x_1, x_0 x_1] = [0, 1, 0, 0].
+    # length 4 — F(00)=0, F(01)=1, F(10)=0, F(11)=1 is the function "bit 0". ANF: F(x) = x_0; coefficients [const, x_0, x_1, x_0 x_1] = [0, 1, 0, 0].
     v = UInt8[0, 1, 0, 1]
     mobius!(v)
     @test v == UInt8[0, 1, 0, 0]
@@ -64,8 +63,7 @@ end
 end
 
 @testset "anf(s::SBox)" begin
-    # identity SBox: F(x) = x; ANF should be the indicator monomial x_b for
-    # bit b — i.e., anf[m+1] has bit b set iff m = 2^b.
+    # identity SBox: F(x) = x; ANF should be the indicator monomial x_b for bit b — i.e., anf[m+1] has bit b set iff m = 2^b.
     id = SBox(UInt8[0, 1, 2, 3])  # N=2
     a = anf(id)
     @test length(a) == 4
@@ -79,8 +77,7 @@ end
 end
 
 @testset "anf reflects algebraic degree of small functions" begin
-    # F(x_1, x_0) = x_0 x_1 in bit 0 only
-    # truth table: F(00)=0, F(01)=0, F(10)=0, F(11)=1
+    # F(x_1, x_0) = x_0 x_1 in bit 0 only truth table: F(00)=0, F(01)=0, F(10)=0, F(11)=1
     s = SBox(UInt8[0, 0, 0, 1])
     a = anf(s)
     @test a[1] == 0  # no constant

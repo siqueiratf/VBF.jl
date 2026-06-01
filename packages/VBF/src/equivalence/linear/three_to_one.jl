@@ -28,25 +28,25 @@ triplicate.)
 three times, and the image has exactly `(2ⁿ-1)/3 + 1` distinct values (forces
 `n` even).
 """
-function is_3_to_1(F::SBox{N, T}) where {N, T}
+function is_3_to_1(F::SBox{N,T}) where {N,T}
     n = 1 << N
     (n - 1) % 3 == 0 || return false
     counts = zeros(Int, n)
     @inbounds for v in F.lut
-        (counts[Int(v) + 1] += 1) > 3 && return false
+        (counts[Int(v)+1] += 1) > 3 && return false
     end
     count(!iszero, counts) == (n - 1) ÷ 3 + 1
 end
 
-# Backtracking over standard-basis images of the adjoint `L`, accepting an image
-# `y = L(2ⁱ)` only when `W_F(y, 2ⁱ) ≡ 1 (mod 3)` and the same holds for the
-# combinations already generated. `collect_all` either stops at the first `L`
-# or accumulates every one.
-function _triplicate_adjoint_search(Lmat::Matrix{Int}, N::Int, collect_all::Bool)
+function _triplicate_adjoint_search(
+    Lmat::Matrix{Int},
+    N::Int,
+    collect_all::Bool,
+)
     n = 1 << N
     basis = zeros(Int, N)
-    results = F2LinearMap{N, _storage_for(N)}[]
-    found = Ref{Union{Nothing, F2LinearMap{N, _storage_for(N)}}}(nothing)
+    results = F2LinearMap{N,_storage_for(N)}[]
+    found = Ref{Union{Nothing,F2LinearMap{N,_storage_for(N)}}}(nothing)
     m3(v) = (r = v % 3; r < 0 ? r + 3 : r)
     function rec(i::Int)
         if i == N
@@ -54,22 +54,23 @@ function _triplicate_adjoint_search(Lmat::Matrix{Int}, N::Int, collect_all::Bool
             collect_all ? (push!(results, lm); false) : (found[] = lm; true)
         else
             b = 1 << i
-            for y in 0:n - 1
-                m3(Lmat[y + 1, b + 1]) == 1 || continue
+            for y = 0:(n-1)
+                m3(Lmat[y+1, b+1]) == 1 || continue
                 ok = true
-                for d in 0:(1 << (i == 0 ? 0 : i - 1)) - 1
-                    i == 0 && break                 # no combinations before the first image
+                for d = 0:((1<<(i==0 ? 0 : i-1))-1)
+                    i == 0 && break  # no combinations before the first image
                     nx = b ⊻ d
                     ny = y
-                    for j in 0:i - 2
-                        (d >> j) & 1 == 1 && (ny ⊻= basis[j + 1])
+                    for j = 0:(i-2)
+                        (d >> j) & 1 == 1 && (ny ⊻= basis[j+1])
                     end
-                    if m3(Lmat[ny + 1, nx + 1]) != 1
-                        ok = false; break
+                    if m3(Lmat[ny+1, nx+1]) != 1
+                        ok = false
+                        break
                     end
                 end
                 ok || continue
-                basis[i + 1] = y
+                basis[i+1] = y
                 rec(i + 1) && return true
             end
             false
@@ -86,7 +87,7 @@ An invertible F₂-linear `L` with `W_F(L(b), b) ≡ 1 (mod 3)` for all `b` (the
 adjoint of the linear `l` making `F ⊕ l` triplicate), or `nothing` if none
 exists.
 """
-triplicate_adjoint(F::SBox{N, T}) where {N, T} =
+triplicate_adjoint(F::SBox{N,T}) where {N,T} =
     _triplicate_adjoint_search(lat(F), N, false)
 
 """
@@ -103,5 +104,5 @@ is_equivalent_to_triplicate(F::SBox) = triplicate_adjoint(F) !== nothing
 Every `L` satisfying the triplicate mod-3 Walsh condition (see
 [`triplicate_adjoint`](@ref)).
 """
-triplicate_adjoints(F::SBox{N, T}) where {N, T} =
+triplicate_adjoints(F::SBox{N,T}) where {N,T} =
     _triplicate_adjoint_search(lat(F), N, true)

@@ -30,11 +30,7 @@ APN and of degree 2 before being returned, so the constraint pruning never lets 
 non-extension through.
 """
 
-# Search state for one `extend_quadratic_apn` call. `lower`/`sbox` index by
-# value+1; `ddt[δ+1, β+1]` counts upper-half pairs at input difference δ < 2ᵐ;
-# `possibles[a, k+1]` records whether `L(a)` may equal `k` for lower-half input
-# difference `a`; `L` holds the m basis images (−1 unset).
-mutable struct _ExtSearch{n, T}
+mutable struct _ExtSearch{n,T}
     m::Int
     half::Int
     full::Int
@@ -44,73 +40,75 @@ mutable struct _ExtSearch{n, T}
     L::Vector{Int}
     Lorder::Vector{Vector{Int}}
     limit::Int
-    cands::Vector{SBox{n, T}}
+    cands::Vector{SBox{n,T}}
 end
 
 @inline _evlin(L, x::Int, m::Int) = begin
     y = 0
-    @inbounds for i in 0:m - 1
-        ((x >> i) & 1) == 1 && (y ⊻= L[i + 1])
+    @inbounds for i = 0:(m-1)
+        ((x >> i) & 1) == 1 && (y ⊻= L[i+1])
     end
     y
 end
 
-# Incremental upper-half DDT: fold position `c` (≥ 2ᵐ) against the upper-half
-# points below it, mirroring the add/remove early-stop used throughout the port.
+# Incremental upper-half DDT: fold c against the upper-half points below it.
 function _ext_add_ddt!(s::_ExtSearch, c::Int)
-    sb = s.sbox; ddt = s.ddt; half = s.half
-    @inbounds for d in half:c - 1
+    sb = s.sbox
+    ddt = s.ddt
+    half = s.half
+    @inbounds for d = half:(c-1)
         δ = c ⊻ d
         if iseven(count_ones(δ))
-            β = sb[c + 1] ⊻ sb[d + 1]
-            ddt[δ + 1, β + 1] += 2
-            ddt[δ + 1, β + 1] > 2 && return false
+            β = sb[c+1] ⊻ sb[d+1]
+            ddt[δ+1, β+1] += 2
+            ddt[δ+1, β+1] > 2 && return false
         end
     end
     true
 end
 
 function _ext_remove_ddt!(s::_ExtSearch, c::Int)
-    sb = s.sbox; ddt = s.ddt; half = s.half
-    @inbounds for d in half:c - 1
+    sb = s.sbox
+    ddt = s.ddt
+    half = s.half
+    @inbounds for d = half:(c-1)
         δ = c ⊻ d
         if iseven(count_ones(δ))
-            β = sb[c + 1] ⊻ sb[d + 1]
-            ddt[δ + 1, β + 1] -= 2
-            ddt[δ + 1, β + 1] == 2 && return false
+            β = sb[c+1] ⊻ sb[d+1]
+            ddt[δ+1, β+1] -= 2
+            ddt[δ+1, β+1] == 2 && return false
         end
     end
     true
 end
 
-# Tentatively set `L[depth] = y` and check every newly determined `L`-value over
-# the span `[2^depth, 2^{depth+1})` against the `possibles` table.
+# Set L[depth] = y and check the new L-values against `possibles`.
 function _is_potential_L!(s::_ExtSearch, depth::Int, y::Int)
-    s.L[depth + 1] = y
+    s.L[depth+1] = y
     x = 1 << depth
-    @inbounds for xS in x:(x << 1) - 1
-        if !s.possibles[xS, _evlin(s.L, xS, s.m) + 1]
-            s.L[depth + 1] = -1
+    @inbounds for xS = x:((x<<1)-1)
+        if !s.possibles[xS, _evlin(s.L, xS, s.m)+1]
+            s.L[depth+1] = -1
             return false
         end
     end
     true
 end
 
-function _ext_recurse!(s::_ExtSearch{n, T}, depth::Int) where {n, T}
+function _ext_recurse!(s::_ExtSearch{n,T}, depth::Int) where {n,T}
     length(s.cands) >= s.limit && return
-    if depth == s.m                       # L fully determined → record candidate
-        push!(s.cands, SBox{n, T}(T.(s.sbox)))
+    if depth == s.m  # L fully determined → record candidate
+        push!(s.cands, SBox{n,T}(T.(s.sbox)))
         return
     end
     x = 1 << depth
-    @inbounds for y in s.Lorder[depth + 1]
+    @inbounds for y in s.Lorder[depth+1]
         if _is_potential_L!(s, depth, y)
             ok = true
             last = x - 1
-            for xS in x:(x << 1) - 1
+            for xS = x:((x<<1)-1)
                 pos = s.half + xS
-                s.sbox[pos + 1] = _evlin(s.L, xS, s.m) ⊻ s.sbox[xS + 1]
+                s.sbox[pos+1] = _evlin(s.L, xS, s.m) ⊻ s.sbox[xS+1]
                 last = xS
                 if !_ext_add_ddt!(s, pos)
                     ok = false
@@ -118,11 +116,11 @@ function _ext_recurse!(s::_ExtSearch{n, T}, depth::Int) where {n, T}
                 end
             end
             ok && _ext_recurse!(s, depth + 1)
-            for xS in last:-1:x          # undo, in reverse
+            for xS = last:-1:x          # undo, in reverse
                 _ext_remove_ddt!(s, s.half + xS)
-                s.sbox[s.half + xS + 1] = -1
+                s.sbox[s.half+xS+1] = -1
             end
-            s.L[depth + 1] = -1
+            s.L[depth+1] = -1
         end
         length(s.cands) >= s.limit && return
     end
@@ -141,66 +139,78 @@ pass an `AbstractRNG` for a reproducible randomised top coordinate and `L` order
 Each returned function is independently re-verified to be APN
 (`differential_uniformity == 2`) and of algebraic degree `2`.
 """
-function extend_quadratic_apn(G::SBox{M}; limit::Integer = 1,
-                              rng::Union{Nothing, AbstractRNG} = nothing) where {M}
+function extend_quadratic_apn(
+    G::SBox{M};
+    limit::Integer = 1,
+    rng::Union{Nothing,AbstractRNG} = nothing,
+) where {M}
     n = M + 1
     T = _storage_for(n)
     half = 1 << M
     full = 1 << n
 
-    # --- lower half: G with a degree-≤2 top output coordinate c ---
-    # Deterministically c = 0; with an rng, a random degree-≤2 coordinate found
-    # by per-position binary backtracking under the cube-sum degree bound.
-    lower = [Int(G(x)) for x in 0:half - 1]   # top bit 0 (values < 2ᴹ)
+    # Lower half: G with a degree-≤2 top coordinate c (0 or random).
+    lower = [Int(G(x)) for x = 0:(half-1)]   # top bit 0 (values < 2ᴹ)
     if rng !== nothing
         lower = _ext_random_top_coord(G, M, rng)
     end
 
     sbox = fill(-1, full)
-    @inbounds for x in 0:half - 1
-        sbox[x + 1] = lower[x + 1]
+    @inbounds for x = 0:(half-1)
+        sbox[x+1] = lower[x+1]
     end
 
-    # --- per-difference constraints on L (extract_betas + remove_impossibles) ---
+    # Per-difference constraints on L (extract_betas + remove_impossibles).
     possibles = trues(half, full)
-    @inbounds for a in 1:half - 1
+    @inbounds for a = 1:(half-1)
         betas = Int[]
         seen = falses(full)
-        for x in 0:half - 1
-            β = lower[x + 1] ⊻ lower[(x ⊻ a) + 1]
-            if !seen[β + 1]
-                seen[β + 1] = true
+        for x = 0:(half-1)
+            β = lower[x+1] ⊻ lower[(x⊻a)+1]
+            if !seen[β+1]
+                seen[β+1] = true
                 push!(betas, β)
             end
         end
         for β1 in betas, β2 in betas
-            possibles[a, (β1 ⊻ β2) + 1] = false
+            possibles[a, (β1⊻β2)+1] = false
         end
     end
 
     # --- L-order per depth (natural, or reproducibly shuffled) ---
-    Lorder = [collect(0:full - 1) for _ in 1:M]
+    Lorder = [collect(0:(full-1)) for _ = 1:M]
     if rng !== nothing
-        for d in 1:M
+        for d = 1:M
             shuffle!(rng, Lorder[d])
         end
     end
 
     # seed the upper half's base point: F(2ᴹ) = F(0)
-    sbox[half + 1] = sbox[1]
+    sbox[half+1] = sbox[1]
 
-    s = _ExtSearch{n, T}(M, half, full, sbox, zeros(Int, half, full), possibles,
-                        fill(-1, M), Lorder, Int(limit), SBox{n, T}[])
+    s = _ExtSearch{n,T}(
+        M,
+        half,
+        full,
+        sbox,
+        zeros(Int, half, full),
+        possibles,
+        fill(-1, M),
+        Lorder,
+        Int(limit),
+        SBox{n,T}[],
+    )
     _ext_recurse!(s, 0)
 
     # independent confirmation: keep only genuine quadratic APN extensions
-    filter!(F -> differential_uniformity(F) == 2 && algebraic_degree(F) == 2, s.cands)
+    filter!(
+        F -> differential_uniformity(F) == 2 && algebraic_degree(F) == 2,
+        s.cands,
+    )
     s.cands
 end
 
-# Draw a random top output coordinate `c : F₂ᴹ → F₂` of algebraic degree ≤ 2 by
-# per-position binary backtracking under the cube-sum degree bound, returning the
-# lower-half lookup table `G(x) ⊕ (c(x) ≪ M)`.
+# Random degree-≤2 top coordinate c; lower half is G(x) ⊕ (c(x) ≪ M).
 function _ext_random_top_coord(G::SBox{M}, m::Int, rng::AbstractRNG) where {M}
     half = 1 << m
     full = 1 << (m + 1)
@@ -209,22 +219,22 @@ function _ext_random_top_coord(G::SBox{M}, m::Int, rng::AbstractRNG) where {M}
     cube_sum = zeros(Int, full)
 
     adddeg = function (c)
-        @inbounds for u in 0:full - 1
+        @inbounds for u = 0:(full-1)
             if count_ones(u) >= 3 && (c & ~u) == 0
-                cube_ctr[u + 1] += 1
-                cube_sum[u + 1] ⊻= lower[c + 1]
-                if cube_ctr[u + 1] == (1 << count_ones(u))
-                    cube_sum[u + 1] != 0 && return false
+                cube_ctr[u+1] += 1
+                cube_sum[u+1] ⊻= lower[c+1]
+                if cube_ctr[u+1] == (1 << count_ones(u))
+                    cube_sum[u+1] != 0 && return false
                 end
             end
         end
         true
     end
     remdeg = function (c)
-        @inbounds for u in 0:full - 1
+        @inbounds for u = 0:(full-1)
             if count_ones(u) >= 3 && (c & ~u) == 0
-                cube_ctr[u + 1] -= 1
-                cube_sum[u + 1] ⊻= lower[c + 1]
+                cube_ctr[u+1] -= 1
+                cube_sum[u+1] ⊻= lower[c+1]
             end
         end
         nothing
@@ -235,12 +245,12 @@ function _ext_random_top_coord(G::SBox{M}, m::Int, rng::AbstractRNG) where {M}
     function rec(c)
         c == half && return true
         for bit in shuffle!(rng, [0, 1])
-            lower[c + 1] = Int(G(c)) ⊻ (bit << m)
+            lower[c+1] = Int(G(c)) ⊻ (bit << m)
             if adddeg(c) && rec(c + 1)
                 return true
             end
             remdeg(c)
-            lower[c + 1] = -1
+            lower[c+1] = -1
         end
         false
     end

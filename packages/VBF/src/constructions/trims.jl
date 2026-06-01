@@ -22,29 +22,25 @@ of each trim — and hence the trim spectrum — are independent of that choice,
 they reproduce the reference's invariant content exactly.
 """
 
-# For every nonzero direction `a` (1-based index `a`), precompute the linear
-# bijection `F₂ⁿ⁻¹ ↔ a^⊥`: `embed[a][x+1]` is the image of `x`, `embinv[a][y+1]`
-# its inverse on `a^⊥` (and `-1` off it); `not_orth[a]` is the smallest element
-# with `⟨·, a⟩ = 1`.
 function _trim_tables(::Val{N}) where {N}
     m = 1 << N
     half = 1 << (N - 1)
     embed = Vector{Vector{Int}}(undef, m - 1)
     embinv = Vector{Vector{Int}}(undef, m - 1)
     not_orth = Vector{Int}(undef, m - 1)
-    for a in 1:m - 1
+    for a = 1:(m-1)
         basis = kernel_f2([UInt(a)]; nbits = N)       # spans a^⊥ (N-1 vectors)
         lut = Vector{Int}(undef, half)
         inv = fill(-1, m)
-        @inbounds for x in 0:half - 1
+        @inbounds for x = 0:(half-1)
             y = 0
-            for i in 0:N - 2
+            for i = 0:(N-2)
                 if (x >> i) & 1 == 1
-                    y ⊻= Int(basis[i + 1])
+                    y ⊻= Int(basis[i+1])
                 end
             end
-            lut[x + 1] = y
-            inv[y + 1] = x
+            lut[x+1] = y
+            inv[y+1] = x
         end
         embed[a] = lut
         embinv[a] = inv
@@ -57,19 +53,25 @@ function _trim_tables(::Val{N}) where {N}
     embed, embinv, not_orth
 end
 
-# The single trim of `F` for direction `a`, coset bit `e`, projection `b`,
-# using the precomputed tables.
-function _trim(F::SBox{N}, a::Int, e::Int, b::Int,
-               embed, embinv, not_orth) where {N}
+# The single trim of F for direction a, coset bit e, projection b.
+function _trim(
+    F::SBox{N},
+    a::Int,
+    e::Int,
+    b::Int,
+    embed,
+    embinv,
+    not_orth,
+) where {N}
     half = 1 << (N - 1)
     g = not_orth[b]
     Lin = embed[a]
     Lout = embinv[g]
     f = Vector{Int}(undef, half)
-    @inbounds for x in 0:half - 1
-        s_xe = Int(F(Lin[x + 1] ⊻ e))
+    @inbounds for x = 0:(half-1)
+        s_xe = Int(F(Lin[x+1] ⊻ e))
         y = f2_dot(s_xe, g) == 1 ? s_xe ⊻ b : s_xe   # project into g^⊥ along b
-        f[x + 1] = Lout[y + 1]
+        f[x+1] = Lout[y+1]
     end
     SBox{N - 1}(f)
 end
@@ -84,9 +86,9 @@ function trims(F::SBox{N}) where {N}
     N >= 2 || throw(ArgumentError("trims: N must be ≥ 2, got $N"))
     m = 1 << N
     embed, embinv, not_orth = _trim_tables(Val(N))
-    out = SBox{N - 1, _storage_for(N - 1)}[]
+    out = SBox{N - 1,_storage_for(N - 1)}[]
     sizehint!(out, 2 * (m - 1)^2)
-    for a in 1:m - 1, e in (0, not_orth[a]), b in 1:m - 1
+    for a = 1:(m-1), e in (0, not_orth[a]), b = 1:(m-1)
         push!(out, _trim(F, a, e, b, embed, embinv, not_orth))
     end
     out
@@ -110,7 +112,7 @@ it. The fingerprint set (and counts) is invariant under linear — indeed CCZ �
 equivalence of `F`, making this a linear-equivalence invariant.
 """
 function trim_spectrum(F::SBox{N}) where {N}
-    spec = Dict{APNEAMugshot, Int}()
+    spec = Dict{APNEAMugshot,Int}()
     for t in apn_trims(F)
         m = apn_ea_mugshot(t)
         spec[m] = get(spec, m, 0) + 1

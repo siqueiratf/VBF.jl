@@ -1,13 +1,3 @@
-# Reproduction: Anomalies and Vector Space Search
-# Bonnetain, Perrin, Tian — ASIACRYPT 2019  [BonnetainPerrinTian2019Anomaly]
-#
-# The "positive anomaly" of a table scores how implausibly small its
-# maximum is under the random-permutation null. The AES DDT is extremely
-# anomalous (its differential uniformity 4 is far smaller than a random
-# 8-bit permutation's), scoring well over 1000 bits.
-#
-# Run standalone:  julia --project=. papers/BonnetainPerrinTian2019_anomaly.jl
-
 using VBF
 using VBFCatalog
 

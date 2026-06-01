@@ -12,9 +12,7 @@ using Random
 end
 
 @testset "ea_multiplicities: total count invariant" begin
-    # The k=4 recursion enumerates (y₁, y₂, y₃) ∈ (F₂ⁿ)^3 — exactly
-    # 2^(3n) tuples — and each contributes 1 to exactly one bucket.
-    # So sum(multiplicities) must equal 2^(3n).
+    # The k=4 recursion enumerates (y₁, y₂, y₃) ∈ (F₂ⁿ)^3 — exactly 2^(3n) tuples — and each contributes 1 to exactly one bucket. So sum(multiplicities) must equal 2^(3n).
     for name in ("PRESENT", "GIFT", "Midori_Sb0", "SKINNY_4")
         F = load_literature_sbox(name)
         n = inputbits(F)
@@ -25,10 +23,6 @@ end
 end
 
 @testset "ea_multiplicities: zero-value contribution" begin
-    # The "diagonal" tuple (y, y, 0) contributes F(y) ⊕ F(y) ⊕ F(0) ⊕ F(0) = 0.
-    # In fact, any tuple with y₁ ⊕ y₂ ⊕ y₃ = 0 makes y₁ ⊕ y₂ ⊕ y₃ ⊕ (y₁⊕y₂⊕y₃) = 0,
-    # so they all contribute to a single fixed value (depending on F).
-    # We don't constrain the specific multiplicity but confirm it's non-zero.
     F = load_literature_sbox("PRESENT")
     m = ea_multiplicities(F, 4)
     @test any(>(0), m)
@@ -60,8 +54,7 @@ end
 end
 
 @testset "ea_partition: EA-invariance of bucket-size signature" begin
-    # Build G = L₁ ∘ F ∘ L₂(· ⊕ a) ⊕ drift, with drift an arbitrary
-    # affine function. Signature must match F's.
+    # Build G = L₁ ∘ F ∘ L₂(· ⊕ a) ⊕ drift, with drift an arbitrary affine function. Signature must match F's.
     rng = MersenneTwister(0xBFA82)
     @testset "n=$N" for N in (4, 5)
         T = UInt8

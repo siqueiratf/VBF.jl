@@ -17,11 +17,10 @@ maintained in row-reduced form. A branch dies on the first inconsistency; a
 complete `L₂` with a full-rank `L₁` is a witness.
 """
 
-# A partial linear map held as a row-reduced set of independent inputs `bin`
-# (each with a distinct high-bit pivot) and their required outputs `bout`.
-# `_lin_add!` folds in the constraint `L(u) = v`, returning `false` on conflict.
+# Partial linear map: RREF inputs `bin`/outputs `bout`; _lin_add! folds L(u)=v.
 function _lin_add!(bin::Vector{Int}, bout::Vector{Int}, u::Integer, v::Integer)
-    r = Int(u); o = Int(v) & 0   # o accumulates the output of the reduced part
+    r = Int(u)
+    o = Int(v) & 0   # o accumulates the output of the reduced part
     o = 0
     @inbounds for k in eachindex(bin)
         p = bin[k]
@@ -47,17 +46,14 @@ Decide whether invertible F₂-linear maps `L₁, L₂` exist with `G = L₁∘F
 for arbitrary (possibly non-permutation) `F, G`. See the module docstring.
 """
 function are_linearly_equivalent_general(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
-    # Fast necessary rejects: the DDT and absolute-Walsh spectra are
-    # linear-equivalence invariants. A mismatch ⇒ not linearly equivalent —
-    # instant, and it spares the backtracking the costly job of *exhausting* an
-    # inequivalent pair (the expensive case).
     differential_spectrum(F) == differential_spectrum(G) || return false
     absolute_walsh_spectrum(F) == absolute_walsh_spectrum(G) || return false
     NN = 1 << N
     Fl = F.lut
     Gl = G.lut
-    L2 = fill(-1, NN); L2[1] = 0       # L₂(0) = 0
-    used = Int[]                       # chosen L₂ basis images (for independence)
+    L2 = fill(-1, NN)
+    L2[1] = 0       # L₂(0) = 0
+    used = Int[]                       # chosen L₂ basis images
 
     # is `v` independent of the images chosen so far (so L₂ stays invertible)?
     indep = function (v::Int)
@@ -71,25 +67,22 @@ function are_linearly_equivalent_general(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
     end
 
     rec = function (i::Int, bin::Vector{Int}, bout::Vector{Int})
-        # L₂ complete and consistent. L₁ is pinned on span(image F) by the
-        # constraints (bin ↦ bout); it extends to an invertible map iff that
-        # determined part is injective, i.e. the outputs are as independent as
-        # the inputs. (`length(bin) == N` alone would both reject non-spanning F
-        # — e.g. constant functions, breaking reflexivity — and risk accepting a
-        # non-invertible L₁ when the outputs are dependent.)
         i == N && return rank_f2(UInt32.(bout); nbits = N) == length(bin)
         b = 1 << i
-        @inbounds for img in 1:NN - 1
+        @inbounds for img = 1:(NN-1)
             indep(img) || continue
-            bin2 = copy(bin); bout2 = copy(bout)
-            newpos = Int[]; ok = true
-            for x in 0:NN - 1                       # span of basis bits 0..i-1 is x < 2^i
+            bin2 = copy(bin)
+            bout2 = copy(bout)
+            newpos = Int[]
+            ok = true
+            for x = 0:(NN-1)  # span of basis bits 0..i-1 is x < 2^i
                 x >> i == 0 || continue
                 nx = x ⊻ b
-                L2[nx + 1] = L2[x + 1] ⊻ img
+                L2[nx+1] = L2[x+1] ⊻ img
                 push!(newpos, nx)
-                if !_lin_add!(bin2, bout2, Fl[L2[nx + 1] + 1], Gl[nx + 1])
-                    ok = false; break
+                if !_lin_add!(bin2, bout2, Fl[L2[nx+1]+1], Gl[nx+1])
+                    ok = false
+                    break
                 end
             end
             if ok
@@ -98,13 +91,14 @@ function are_linearly_equivalent_general(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
                 pop!(used)
             end
             for p in newpos
-                L2[p + 1] = -1
+                L2[p+1] = -1
             end
         end
         false
     end
 
-    bin = Int[]; bout = Int[]
+    bin = Int[]
+    bout = Int[]
     _lin_add!(bin, bout, Fl[1], Gl[1])              # F(L₂(0)) = F(0) ↦ G(0)
     rec(0, bin, bout)
 end

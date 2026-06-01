@@ -31,13 +31,6 @@ end
 end
 
 @testset "apn_ea_mugshot: necessary, not sufficient" begin
-    # For quadratic APN F, G: F ~_EA G ⇒ mugshot equal. The converse
-    # is not always true — the mugshot hashes the SPECTRA (walsh, DDT)
-    # of the ortho-derivative, which can collide even when the
-    # ortho-derivatives themselves are linearly INequivalent.
-    # n5_Gold_x3 vs n5_Gold_x5 is an empirical example of mugshot
-    # collision despite EA-INequivalence; pin this here so the
-    # not-sufficient property is visible regression evidence.
     F3 = load_apn_function("n5_Gold_x3")
     F5 = load_apn_function("n5_Gold_x5")
     @test apn_ea_mugshot(F3) == apn_ea_mugshot(F5)
@@ -77,8 +70,7 @@ end
 end
 
 @testset "apn_ea_mugshot: non-quadratic-APN path handles permutations" begin
-    # For non-quadratic APN with thickness defined (i.e., a permutation),
-    # the mugshot's thickness field is populated.
+    # For non-quadratic APN with thickness defined (i.e., a permutation), the mugshot's thickness field is populated.
     F = load_apn_function("n5_Kasami_x15")
     @test is_permutation(F)
     @test algebraic_degree(F) > 2

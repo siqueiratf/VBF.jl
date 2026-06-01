@@ -21,7 +21,7 @@ julia> length(image_set(load_literature_sbox("PRESENT")))  # 4-bit permutation
 16
 ```
 """
-image_set(F::SBox{N, T}) where {N, T} = sort!(collect(Set(Int.(F.lut))))
+image_set(F::SBox{N,T}) where {N,T} = sort!(collect(Set(Int.(F.lut))))
 
 """
     image_subspaces(F) -> Vector{Int}
@@ -30,4 +30,5 @@ image_set(F::SBox{N, T}) where {N, T} = sort!(collect(Set(Int.(F.lut))))
 #3-dim, …]`. A linear-equivalence invariant (trivial for permutations, whose
 image is the whole space).
 """
-image_subspaces(F::SBox{N, T}) where {N, T} = subspace_count_signature(image_set(F), N)
+image_subspaces(F::SBox{N,T}) where {N,T} =
+    subspace_count_signature(image_set(F), N)

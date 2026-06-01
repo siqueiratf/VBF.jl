@@ -33,8 +33,7 @@ end
 end
 
 @testset "ea_equivalences: degenerate monomial-APN partition short-circuits" begin
-    # n5_Gold_x3 has signature [31, 1]; outer count = |GL(5,F₂)| ≫ default
-    # cap, so ea_equivalences returns empty (heggebakk limitation).
+    # n5_Gold_x3 has signature [31, 1]; outer count = |GL(5,F₂)| ≫ default cap, so ea_equivalences returns empty (heggebakk limitation).
     F = load_apn_function("n5_Gold_x3")
     @test isempty(ea_equivalences(F, F))
 end

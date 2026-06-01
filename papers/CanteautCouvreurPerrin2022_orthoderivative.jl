@@ -1,14 +1,3 @@
-# Reproduction: Recovering or Testing Extended-Affine Equivalence
-# Canteaut, Couvreur, Perrin — IEEE TIT 2022  [CanteautCouvreurPerrin2022EA]
-#
-# For quadratic APN functions the ortho-derivative is an EA-invariant, so it
-# can separate EA-classes that coarser tests miss. The n=5 Gold functions
-# x^3 and x^5 lie in distinct Frobenius orbits and are therefore
-# EA-INequivalent — BFA's `are_ea_equivalent` (auto-routed through the
-# ortho-derivative for quadratic APN) detects this.
-#
-# Run standalone:  julia --project=. papers/CanteautCouvreurPerrin2022_orthoderivative.jl
-
 using VBF
 using VBFCatalog
 

@@ -59,8 +59,7 @@ end
 end
 
 @testset "inner_permutation: rejects EA-inequivalent pair" begin
-    # PRESENT and SKINNY_4 have different cryptographic profiles
-    # (different DDT/LAT) and are not EA-equivalent.
+    # PRESENT and SKINNY_4 have different cryptographic profiles (different DDT/LAT) and are not EA-equivalent.
     F = load_literature_sbox("PRESENT")
     H = load_literature_sbox("SKINNY_4")
     res = inner_permutation(F, H)

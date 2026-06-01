@@ -27,21 +27,17 @@ heavy structure. heggebakk's algorithm iterates over these candidates
 and for each invokes the inner-permutation search.
 """
 
-# ---------------------------------------------------------------------------
 # Bucket-map enumeration.
-# ---------------------------------------------------------------------------
 
-# Lightweight permutations generator: returns Vector{Vector{Int}} of all n!
-# permutations of `v`. Used only for size-class permutations within bucket-
-# map enumeration; the size classes are small in practice.
+# All n! permutations of `v` (used for the small bucket size-classes).
 function _all_permutations(v::Vector{Int})
     n = length(v)
     n == 0 && return [Int[]]
     n == 1 && return [v]
     out = Vector{Vector{Int}}()
     n ≤ 20 && sizehint!(out, factorial(n))   # factorial(21) overflows Int64
-    for i in 1:n
-        rest = vcat(@view(v[1:(i - 1)]), @view(v[(i + 1):n]))
+    for i = 1:n
+        rest = vcat(@view(v[1:(i-1)]), @view(v[(i+1):n]))
         for p in _all_permutations(rest)
             push!(out, [v[i]; p])
         end
@@ -69,13 +65,16 @@ count would exceed `max_maps` — the caller then reports "not decided"
 unstructured partitions. Quadratic APN do not hit this path (they route
 through the ortho-derivative test).
 """
-function enumerate_bucket_maps(partF::EAPartition, partG::EAPartition;
-                               max_maps::Integer = 10^6)
+function enumerate_bucket_maps(
+    partF::EAPartition,
+    partG::EAPartition;
+    max_maps::Integer = 10^6,
+)
     nF = nbuckets(partF)
     nbuckets(partG) == nF || return Vector{Vector{Int}}()
     # Group F-buckets and G-buckets by size
-    f_by_size = Dict{Int, Vector{Int}}()
-    g_by_size = Dict{Int, Vector{Int}}()
+    f_by_size = Dict{Int,Vector{Int}}()
+    g_by_size = Dict{Int,Vector{Int}}()
     @inbounds for (i, sz) in enumerate(partF.bucket_sizes)
         push!(get!(f_by_size, sz, Int[]), i)
     end
@@ -85,13 +84,12 @@ function enumerate_bucket_maps(partF::EAPartition, partG::EAPartition;
     # Size multiset must match exactly
     keys(f_by_size) == keys(g_by_size) || return Vector{Vector{Int}}()
     for sz in keys(f_by_size)
-        length(f_by_size[sz]) == length(g_by_size[sz]) || return Vector{Vector{Int}}()
+        length(f_by_size[sz]) == length(g_by_size[sz]) ||
+            return Vector{Vector{Int}}()
     end
 
     sorted_sizes = sort!(collect(keys(f_by_size)))
-    # Bail before materializing if the map count ∏ₛ mₛ! would blow up. Uses
-    # big-int arithmetic (factorial(21) already overflows Int64) and stops as
-    # soon as the running product crosses the cap.
+    # Bail before materializing if the map count ∏ₛ mₛ! exceeds the cap.
     total = big(1)
     for sz in sorted_sizes
         total *= factorial(big(length(g_by_size[sz])))
@@ -121,12 +119,9 @@ function enumerate_bucket_maps(partF::EAPartition, partG::EAPartition;
     return out
 end
 
-# ---------------------------------------------------------------------------
 # Outer-permutation DFS.
-# ---------------------------------------------------------------------------
 
-# DFS body. State threaded by mutable arrays; backtracking by undoing
-# `generated_images` flags.
+# DFS body; state in mutable arrays, backtracking undoes generated_images.
 function _outer_recurse!(
     k::Int,
     basis::Vector{T},
@@ -143,51 +138,60 @@ function _outer_recurse!(
         return
     end
 
-    bk_F = partF.position_of_value[basis[k + 1] + 1]
+    bk_F = partF.position_of_value[basis[k+1]+1]
     bk_G = sigma[bk_F]
     LIMIT = (k == 0) ? 1 : (1 << k)
 
     @inbounds for ck_val in partG.buckets[bk_G]
         ck = T(ck_val)
         # Must be a new image (L is a permutation)
-        generated_images[ck + 1] && continue
+        generated_images[ck+1] && continue
         problem = false
         # Extend by linearity to all linear combinations of basis[0..k]
-        for lincomb in 0:(LIMIT - 1)
-            x = T(lincomb) ⊻ basis[k + 1]
+        for lincomb = 0:(LIMIT-1)
+            x = T(lincomb) ⊻ basis[k+1]
             y = ck
             if k > 0
-                for i in 0:(k - 1)
+                for i = 0:(k-1)
                     if ((lincomb >> i) & 1) == 1
-                        y ⊻= generated[basis[i + 1] + 1]
+                        y ⊻= generated[basis[i+1]+1]
                     end
                 end
             end
-            if partF.bucket_sizes[partF.position_of_value[x + 1]] !=
-               partG.bucket_sizes[partG.position_of_value[y + 1]]
+            if partF.bucket_sizes[partF.position_of_value[x+1]] !=
+               partG.bucket_sizes[partG.position_of_value[y+1]]
                 problem = true
                 break
             end
-            generated[x + 1] = y
-            generated_images[y + 1] = true
+            generated[x+1] = y
+            generated_images[y+1] = true
         end
 
         if !problem
-            _outer_recurse!(k + 1, basis, generated, generated_images,
-                            partF, partG, sigma, N, results)
+            _outer_recurse!(
+                k + 1,
+                basis,
+                generated,
+                generated_images,
+                partF,
+                partG,
+                sigma,
+                N,
+                results,
+            )
         end
 
         # Reset generated_images for every y we (potentially) set.
-        for lincomb in 0:(LIMIT - 1)
+        for lincomb = 0:(LIMIT-1)
             y = ck
             if k > 0
-                for i in 0:(k - 1)
+                for i = 0:(k-1)
                     if ((lincomb >> i) & 1) == 1
-                        y ⊻= generated[basis[i + 1] + 1]
+                        y ⊻= generated[basis[i+1]+1]
                     end
                 end
             end
-            generated_images[y + 1] = false
+            generated_images[y+1] = false
         end
     end
 end
@@ -223,9 +227,18 @@ function outer_permutations(
     generated = zeros(T, n)
     generated_images = falses(n)
     generated_images[1] = true   # L(0) = 0
-    basis = T[T(1) << k for k in 0:(N - 1)]
-    _outer_recurse!(0, basis, generated, generated_images,
-                    partF, partG, sigma, N, results)
+    basis = T[T(1) << k for k = 0:(N-1)]
+    _outer_recurse!(
+        0,
+        basis,
+        generated,
+        generated_images,
+        partF,
+        partG,
+        sigma,
+        N,
+        results,
+    )
     return results
 end
 
@@ -240,7 +253,11 @@ parallel with their L-candidate LUT vectors.
 If the bucket-size multisets of `F` and `G` differ, both returned
 vectors are empty (a fast necessary EA-equivalence rejection).
 """
-function outer_permutations_all(F::SBox{N,T}, G::SBox{N,T}; k::Int = 4) where {N,T}
+function outer_permutations_all(
+    F::SBox{N,T},
+    G::SBox{N,T};
+    k::Int = 4,
+) where {N,T}
     partF = ea_partition(F, k)
     partG = ea_partition(G, k)
     sigmas = enumerate_bucket_maps(partF, partG)

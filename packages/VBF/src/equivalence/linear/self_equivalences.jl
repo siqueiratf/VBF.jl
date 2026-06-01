@@ -10,18 +10,20 @@ propagation-pruned backtracking in `backtracking.jl`. It exposes
 [`self_linear_equivalences`](@ref) and [`self_affine_equivalences`](@ref).
 """
 
-# Reconstruct the (L₁, L₂) pair from a complete set of L₂ basis images.
-# Given `l2_imgs` (the images L₂(eᵢ)), L₂ is immediate, and L₁ is forced
-# by `G(x) = L₁(F(L₂(x)))` — fill L₁'s LUT then read its columns.
-function _reconstruct_le_pair(F::SBox{N,T}, G::SBox{N,T}, l2_imgs::Vector{T}) where {N,T}
+# Rebuild (L₁, L₂) from the L₂ basis images; L₁ is forced by G = L₁ ∘ F ∘ L₂.
+function _reconstruct_le_pair(
+    F::SBox{N,T},
+    G::SBox{N,T},
+    l2_imgs::Vector{T},
+) where {N,T}
     L2 = F2LinearMap{N,T}(copy(l2_imgs))
     n_pow = 1 << N
     lut_L1 = Vector{T}(undef, n_pow)
-    @inbounds for x in 0:(n_pow - 1)
-        y = F.lut[L2(T(x)) + 1]      # F(L₂(x))
-        lut_L1[y + 1] = G.lut[x + 1] # = G(x)
+    @inbounds for x = 0:(n_pow-1)
+        y = F.lut[L2(T(x))+1]      # F(L₂(x))
+        lut_L1[y+1] = G.lut[x+1] # = G(x)
     end
-    L1 = F2LinearMap{N,T}(T[lut_L1[(1 << j) + 1] for j in 0:(N - 1)])
+    L1 = F2LinearMap{N,T}(T[lut_L1[(1<<j)+1] for j = 0:(N-1)])
     return (L1 = L1, L2 = L2)
 end
 
@@ -37,7 +39,7 @@ propagation/pruning, but instead of stopping at the first complete
 `L₂` it records the reconstructed `(L1, L2)` pair and continues.
 """
 function linear_equivalences(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
-    results = NamedTuple{(:L1, :L2), Tuple{F2LinearMap{N,T}, F2LinearMap{N,T}}}[]
+    results = NamedTuple{(:L1, :L2),Tuple{F2LinearMap{N,T},F2LinearMap{N,T}}}[]
     (is_permutation(F) && is_permutation(G)) || return results
     n_pow = 1 << N
 
@@ -51,20 +53,20 @@ function linear_equivalences(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
             return
         end
         span = linear_basis(l2_imgs; nbits = N)
-        @inbounds for c in T(1):T(n_pow - 1)
+        @inbounds for c = T(1):T(n_pow-1)
             is_in_span(c, span; nbits = N) && continue
             push!(l2_imgs, c)
             phi_snap = length(phi_basis)
             ok = true
             n_old = 1 << i
-            for x_old_idx in 0:(n_old - 1)
+            for x_old_idx = 0:(n_old-1)
                 l2_x_old = zero(T)
-                for k in 0:(i - 1)
-                    ((x_old_idx >> k) & 1) == 1 && (l2_x_old ⊻= l2_imgs[k + 1])
+                for k = 0:(i-1)
+                    ((x_old_idx >> k) & 1) == 1 && (l2_x_old ⊻= l2_imgs[k+1])
                 end
                 x_new_idx = x_old_idx ⊻ (1 << i)
-                a = T(F.lut[(l2_x_old ⊻ c) + 1])
-                A = T(G.lut[x_new_idx + 1])
+                a = T(F.lut[(l2_x_old⊻c)+1])
+                A = T(G.lut[x_new_idx+1])
                 if !_phi_add!(phi_basis, a, A)
                     ok = false
                     break
@@ -113,13 +115,15 @@ since substitution gives `A1(F(A2(y))) = F(y)`. Cost is `O(2^{2n})`
 linear-equivalence searches — affordable for `n ≤ 5`, expensive beyond.
 """
 function self_affine_equivalences(F::SBox{N,T}) where {N,T}
-    is_permutation(F) ||
-        throw(ArgumentError("self_affine_equivalences: F must be a permutation"))
+    is_permutation(F) || throw(
+        ArgumentError("self_affine_equivalences: F must be a permutation"),
+    )
     n_pow = 1 << N
-    results = NamedTuple{(:A1, :A2), Tuple{F2AffineMap{N,T}, F2AffineMap{N,T}}}[]
-    @inbounds for c_in in 0:(n_pow - 1)
-        for c_out in 0:(n_pow - 1)
-            shifted_lut = T[F.lut[(T(x) ⊻ T(c_in)) + 1] ⊻ T(c_out) for x in 0:(n_pow - 1)]
+    results = NamedTuple{(:A1, :A2),Tuple{F2AffineMap{N,T},F2AffineMap{N,T}}}[]
+    @inbounds for c_in = 0:(n_pow-1)
+        for c_out = 0:(n_pow-1)
+            shifted_lut =
+                T[F.lut[(T(x)⊻T(c_in))+1] ⊻ T(c_out) for x = 0:(n_pow-1)]
             shifted = SBox{N,T}(shifted_lut)
             for eq in linear_equivalences(F, shifted)
                 A1 = F2AffineMap(eq.L1, T(c_out))

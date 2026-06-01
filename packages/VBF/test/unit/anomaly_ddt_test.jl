@@ -14,8 +14,7 @@ end
 end
 
 @testset "ddt_coeff_probability: PMF sums to ~1 over even c" begin
-    # Σ_d P(DDT = 2d) for d = 0..2^(n-1) should be ~1 (some mass beyond
-    # the tail is truncated; for n=4 it's >0.999 typically).
+    # Σ_d P(DDT = 2d) for d = 0..2^(n-1) should be ~1 (some mass beyond the tail is truncated; for n=4 it's >0.999 typically).
     for n in (3, 4, 5, 6)
         s = sum(ddt_coeff_probability(n, n, 2d) for d in 0:1 << (n - 1))
         @test s > BigFloat("0.99")
@@ -53,9 +52,7 @@ end
 end
 
 @testset "expected_max_distribution: peak DU(n=8 permutation) ≈ 8" begin
-    # For a uniformly random function F₂⁸ → F₂⁸, expected DU is around 8
-    # (Daemen-Rijmen; matches the well-known fact that 4-uniform S-boxes
-    # like AES are uncommon).
+    # For a uniformly random function F₂⁸ → F₂⁸, expected DU is around 8 (Daemen-Rijmen; matches the well-known fact that 4-uniform S-boxes like AES are uncommon).
     pmf = expected_differential_uniformity_distribution(8; vmax = 32)
     peak = argmax(pmf)
     @test peak in 6:12

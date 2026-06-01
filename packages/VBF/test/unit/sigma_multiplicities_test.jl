@@ -9,8 +9,7 @@ using Test
 end
 
 @testset "sigma_multiplicities: total mass = 2ⁿ" begin
-    # σ is computed for each s ∈ F₂ⁿ, so the spectrum should have
-    # exactly 2ⁿ entries (with multiplicity).
+    # σ is computed for each s ∈ F₂ⁿ, so the spectrum should have exactly 2ⁿ entries (with multiplicity).
     for name in ("PRESENT", "GIFT", "SKINNY_4")
         F = load_literature_sbox(name)
         sp = sigma_multiplicities(F)
@@ -60,11 +59,6 @@ end
 end
 
 @testset "sigma_multiplicities: agrees on EA-equivalent inputs (catalog spot)" begin
-    # σ is an EA-invariant. The two Gold APNs at n=5 are EA-INequivalent
-    # (different Frobenius orbits), but each is EA-equivalent to itself,
-    # so reflexivity must hold. Stronger discrimination is the
-    # ortho-derivative's job; σ alone may collide between CCZ-classes
-    # of similar function families.
     F1 = load_apn_function("n5_Gold_x3")
     F2 = load_apn_function("n5_Gold_x3")
     @test sigma_multiplicities(F1) == sigma_multiplicities(F2)

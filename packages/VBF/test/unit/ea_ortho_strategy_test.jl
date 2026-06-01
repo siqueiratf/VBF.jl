@@ -12,9 +12,7 @@ using Test
 end
 
 @testset ":ortho_derivative strategy: distinguishes Frobenius orbits" begin
-    # n5_Gold_x3 and n5_Gold_x5 are NOT EA-equivalent (different Frobenius
-    # orbits). The :heggebakk strategy short-circuits because the k=4 partition
-    # is degenerate; the ortho-derivative path decides correctly.
+    # n5_Gold_x3 and n5_Gold_x5 are NOT EA-equivalent (different Frobenius orbits). The :heggebakk strategy short-circuits because the k=4 partition is degenerate; the ortho-derivative path decides correctly.
     F3 = load_apn_function("n5_Gold_x3")
     F5 = load_apn_function("n5_Gold_x5")
     @test !are_ea_equivalent(F3, F5; strategy = :ortho_derivative)
@@ -28,9 +26,7 @@ end
 end
 
 @testset ":auto routes quadratic APN to :ortho_derivative" begin
-    # The auto-router picks :ortho_derivative for quadratic-APN
-    # permutations. Verify by checking that the result agrees with
-    # explicitly calling :ortho_derivative.
+    # The auto-router picks :ortho_derivative for quadratic-APN permutations. Verify by checking that the result agrees with explicitly calling :ortho_derivative.
     F3 = load_apn_function("n5_Gold_x3")
     F5 = load_apn_function("n5_Gold_x5")
     @test are_ea_equivalent(F3, F5; strategy = :auto) ==
@@ -38,8 +34,7 @@ end
 end
 
 @testset ":auto still uses :heggebakk for non-quadratic inputs" begin
-    # n=4 PRESENT is a permutation with non-degenerate partition; auto
-    # routes to :heggebakk. F ~_EA F always.
+    # n=4 PRESENT is a permutation with non-degenerate partition; auto routes to :heggebakk. F ~_EA F always.
     F = load_literature_sbox("PRESENT")
     @test are_ea_equivalent(F, F; strategy = :auto)
 end

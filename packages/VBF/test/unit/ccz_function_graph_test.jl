@@ -40,8 +40,7 @@ end
 end
 
 @testset "ccz_equivalent_function: swap map recovers inv(F)" begin
-    # The CCZ map (x, y) → (y, x) applied to graph(F) = {(x, F(x))}
-    # gives {(F(x), x)} = graph(F⁻¹).
+    # The CCZ map (x, y) → (y, x) applied to graph(F) = {(x, F(x))} gives {(F(x), x)} = graph(F⁻¹).
     F = load_literature_sbox("PRESENT")
     @test is_permutation(F)
     N, T = 4, UInt8
@@ -100,11 +99,6 @@ end
         @test sort(vec(ddt(F_eq))) == ref_ddt_sorted
     end
 
-    # Random F₂^{2N} maps are usually inadmissible (the transformed graph is not
-    # a function), so for some seeds the loop above asserts nothing. Guarantee
-    # coverage with a block-diagonal map diag(L₁, L₂): block-diagonal over the
-    # contiguous input/output halves is always admissible — its graph image is
-    # the EA-equivalent L₂∘F∘L₁⁻¹ — so the construction always returns a function.
     invertible_cols(k) = begin
         cols = T[]; bs = T[]
         while length(cols) < k

@@ -24,30 +24,30 @@ julia> total_mass(pi_multiset(gold_apn(5, 1), 0)) == 1 << 5
 true
 ```
 """
-function pi_multiset(F::SBox{N, T}, β::Integer) where {N, T}
+function pi_multiset(F::SBox{N,T}, β::Integer) where {N,T}
     n = 1 << N
     lut = F.lut
     b0 = Int(β)
-    hits = zeros(Int, n)                 # hits[b+1] = #directions a that reach b
+    hits = zeros(Int, n)  # hits[b+1] = #directions a that reach b
     seen = falses(n)
-    @inbounds for a in 0:n - 1
+    @inbounds for a = 0:(n-1)
         fill!(seen, false)
-        fab = Int(lut[(a ⊻ b0) + 1])     # F(a⊕β)
-        for x in 0:n - 1
-            b = (Int(lut[x + 1]) ⊻ Int(lut[(x ⊻ a) + 1])) ⊻ fab
-            seen[b + 1] = true
+        fab = Int(lut[(a⊻b0)+1])     # F(a⊕β)
+        for x = 0:(n-1)
+            b = (Int(lut[x+1]) ⊻ Int(lut[(x⊻a)+1])) ⊻ fab
+            seen[b+1] = true
         end
-        for b in 0:n - 1
-            seen[b + 1] && (hits[b + 1] += 1)
+        for b = 0:(n-1)
+            seen[b+1] && (hits[b+1] += 1)
         end
     end
     sp = Spectrum()
-    counts = zeros(Int, n + 1)           # counts[m+1] = #outputs hit by m directions
+    counts = zeros(Int, n + 1)  # counts[m+1] = #outputs hit by m directions
     for h in hits
-        counts[h + 1] += 1
+        counts[h+1] += 1
     end
-    for m in 0:n
-        counts[m + 1] > 0 && add!(sp, m, counts[m + 1])
+    for m = 0:n
+        counts[m+1] > 0 && add!(sp, m, counts[m+1])
     end
     sp
 end

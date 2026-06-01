@@ -32,17 +32,18 @@ function walsh_hadamard!(v::Vector{Int})
     n_pow = length(v)
     n_pow ≥ 1 || throw(ArgumentError("walsh_hadamard!: empty input"))
     n = trailing_zeros(n_pow)
-    1 << n == n_pow ||
-        throw(ArgumentError("walsh_hadamard!: length $n_pow is not a power of 2"))
+    1 << n == n_pow || throw(
+        ArgumentError("walsh_hadamard!: length $n_pow is not a power of 2"),
+    )
     block = 1
     while block < n_pow
         step = 2 * block
-        @inbounds for start in 0:step:n_pow - 1
-            for i in 1:block
-                a = v[start + i]
-                b = v[start + i + block]
-                v[start + i]         = a + b
-                v[start + i + block] = a - b
+        @inbounds for start = 0:step:(n_pow-1)
+            for i = 1:block
+                a = v[start+i]
+                b = v[start+i+block]
+                v[start+i] = a + b
+                v[start+i+block] = a - b
             end
         end
         block = step
@@ -55,7 +56,8 @@ end
 
 Allocating FWHT.
 """
-walsh_hadamard(v::AbstractVector{<:Integer}) = walsh_hadamard!(Int[Int(x) for x in v])
+walsh_hadamard(v::AbstractVector{<:Integer}) =
+    walsh_hadamard!(Int[Int(x) for x in v])
 
 """
     walsh_transform(f::AbstractVector{<:Integer}) -> Vector{Int}
@@ -70,12 +72,14 @@ function walsh_transform(f::AbstractVector{<:Integer})
     n_pow = length(f)
     n_pow ≥ 1 || throw(ArgumentError("walsh_transform: empty input"))
     n = trailing_zeros(n_pow)
-    1 << n == n_pow ||
-        throw(ArgumentError("walsh_transform: length $n_pow is not a power of 2"))
+    1 << n == n_pow || throw(
+        ArgumentError("walsh_transform: length $n_pow is not a power of 2"),
+    )
     v = Vector{Int}(undef, n_pow)
-    @inbounds for i in 1:n_pow
+    @inbounds for i = 1:n_pow
         b = f[i]
-        b == 0 || b == 1 ||
+        b == 0 ||
+            b == 1 ||
             throw(ArgumentError("walsh_transform: f[$i] = $b not in {0,1}"))
         v[i] = 1 - 2 * Int(b)
     end

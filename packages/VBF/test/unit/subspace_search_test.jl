@@ -13,8 +13,7 @@ using Test
 end
 
 @testset "extract_linear_subspaces: F₂² closed-form counts" begin
-    # All nonzero elements of F₂² = {1, 2, 3}. 1-dim subspaces: 3 (one per
-    # nonzero); 2-dim subspaces: 1 (the whole space).
+    # All nonzero elements of F₂² = {1, 2, 3}. 1-dim subspaces: 3 (one per nonzero); 2-dim subspaces: 1 (the whole space).
     z = UInt32[1, 2, 3]
     @test length(extract_linear_subspaces(z, 1; max_bits = 2)) == 3
     @test length(extract_linear_subspaces(z, 2; max_bits = 2)) == 1
@@ -23,8 +22,7 @@ end
 end
 
 @testset "extract_linear_subspaces: F₂³ closed-form counts" begin
-    # z = all nonzero of F₂³ = {1..7}. Number of k-dim subspaces of F₂³:
-    # 1-dim: 7 (one per nonzero); 2-dim: 7; 3-dim: 1 (Gaussian binomial coeffs).
+    # z = all nonzero of F₂³ = {1..7}. Number of k-dim subspaces of F₂³: 1-dim: 7 (one per nonzero); 2-dim: 7; 3-dim: 1 (Gaussian binomial coeffs).
     z = UInt32[1, 2, 3, 4, 5, 6, 7]
     @test length(extract_linear_subspaces(z, 1; max_bits = 3)) == 7
     @test length(extract_linear_subspaces(z, 2; max_bits = 3)) == 7
@@ -32,8 +30,7 @@ end
 end
 
 @testset "extract_linear_subspaces: GJB invariants on every basis" begin
-    # Basis must have strictly decreasing leading bits and pairwise-cleared
-    # leading-bit columns.
+    # Basis must have strictly decreasing leading bits and pairwise-cleared leading-bit columns.
     z = UInt32[1, 2, 3, 4, 5, 6, 7]
     for basis in extract_linear_subspaces(z, 3; max_bits = 3)
         msbs = [VBF._leading_bit_pos(b) for b in basis]
@@ -64,8 +61,7 @@ end
 end
 
 @testset "extract_linear_subspaces: each subspace counted once" begin
-    # span_from_basis(basis) should give the same set across all returned
-    # bases — but each set should be unique.
+    # span_from_basis(basis) should give the same set across all returned bases — but each set should be unique.
     F = load_literature_sbox("PRESENT")
     Z = walsh_zeroes(F)
     bases = extract_linear_subspaces(Z, 4; max_bits = 8)
@@ -74,8 +70,7 @@ end
 end
 
 @testset "extract_linear_subspaces: CCZ-invariance under inv(F) at n=4" begin
-    # The number of n-dim subspaces of Z(F) is a CCZ-invariant. inv(F) is
-    # CCZ-equivalent to F. So the counts must match.
+    # The number of n-dim subspaces of Z(F) is a CCZ-invariant. inv(F) is CCZ-equivalent to F. So the counts must match.
     for name in ("PRESENT", "GIFT", "SKINNY_4", "Midori_Sb0")
         F = load_literature_sbox(name)
         N = inputbits(F)

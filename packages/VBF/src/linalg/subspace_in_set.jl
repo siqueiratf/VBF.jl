@@ -30,7 +30,10 @@ function smallest_basis(subspace::AbstractVector{<:Integer})
     basis
 end
 
-_set_mask(S, n) = (m = falses(1 << Int(n)); for s in S; m[Int(s) + 1] = true; end; m)
+_set_mask(S, n) = (m = falses(1 << Int(n)); for s in S
+    ;
+    m[Int(s)+1] = true;
+end; m)
 
 """
     find_2d_subspaces(S, n) -> Vector{Vector{Int}}
@@ -42,12 +45,14 @@ function find_2d_subspaces(S::AbstractVector{<:Integer}, n::Integer)
     inset = _set_mask(S, n)
     out = Vector{Int}[]
     L = length(S)
-    @inbounds for i in 1:L
+    @inbounds for i = 1:L
         x = Int(S[i])
-        for j in i + 1:L
-            y = Int(S[j]); z = x ⊻ y
-            if x < z && y < z && inset[z + 1]
-                push!(out, sort!([0, x, y, z]))   # z is the largest; each 2-space found once
+        for j = (i+1):L
+            y = Int(S[j])
+            z = x ⊻ y
+            if x < z && y < z && inset[z+1]
+                # z is the largest; each 2-space is found once
+                push!(out, sort!([0, x, y, z]))
             end
         end
     end
@@ -61,8 +66,11 @@ Given a list of `k`-dimensional F₂ subspaces (sorted element vectors) containe
 in `S`, return every distinct `(k+1)`-dimensional subspace contained in `S`,
 formed as `M ∪ (M ⊕ x)` for `x ∈ S ∖ M` whose coset `M ⊕ x` is entirely in `S`.
 """
-function expand_subspaces(S::AbstractVector{<:Integer}, subspaces::Vector{Vector{Int}},
-                          n::Integer)
+function expand_subspaces(
+    S::AbstractVector{<:Integer},
+    subspaces::Vector{Vector{Int}},
+    n::Integer,
+)
     isempty(subspaces) && return Vector{Int}[]
     inset = _set_mask(S, n)
     seen = Set{Vector{Int}}()
@@ -73,7 +81,7 @@ function expand_subspaces(S::AbstractVector{<:Integer}, subspaces::Vector{Vector
             x = Int(s)
             x in Mset && continue
             coset = [m ⊻ x for m in M]
-            all(e -> inset[e + 1], coset) || continue
+            all(e -> inset[e+1], coset) || continue
             new = sort!(vcat(M, coset))
             if !(new in seen)
                 push!(seen, new)
@@ -94,7 +102,7 @@ bijectively onto subspaces-in-`L(S)`). Backs `nonbent_signature` and
 `image_subspaces`.
 """
 function subspace_count_signature(S::AbstractVector{<:Integer}, n::Integer)
-    counts = Int[length(S) - 1]
+    counts = Int[length(S)-1]
     cur = find_2d_subspaces(S, n)
     push!(counts, length(cur))
     while true

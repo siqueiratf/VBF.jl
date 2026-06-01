@@ -3,8 +3,7 @@ using VBF
 using Test
 
 @testset "BCP binomial (n = 3k) is quadratic and APN" begin
-    # n = 3k with k = 2 (smallest valid: gcd(k,3)=1), n = 6.
-    # s coprime to 3k = 6 ⇒ s ∈ {1, 5}; both give a valid i = s·k mod 3.
+    # n = 3k with k = 2 (smallest valid: gcd(k,3)=1), n = 6. s coprime to 3k = 6 ⇒ s ∈ {1, 5}; both give a valid i = s·k mod 3.
     for s in (1, 5)
         F = bcp_apn(2, s)
         @test inputbits(F) == 6
@@ -14,8 +13,7 @@ using Test
 end
 
 @testset "BCL binomial (n = 4k) is quadratic and APN" begin
-    # n = 4k with k = 1 (smallest valid: gcd(k,2)=1, k odd), n = 4.
-    # s coprime to 2k = 2 and s ≤ 4k−1 = 3 ⇒ s ∈ {1, 3}.
+    # n = 4k with k = 1 (smallest valid: gcd(k,2)=1, k odd), n = 4. s coprime to 2k = 2 and s ≤ 4k−1 = 3 ⇒ s ∈ {1, 3}.
     for s in (1, 3)
         F = bcl_apn(1, s)
         @test inputbits(F) == 4

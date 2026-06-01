@@ -75,8 +75,7 @@ end
     @test linearity(load_literature_sbox("AES"))     == 32
     @test linearity(load_literature_sbox("AES_inv")) == 32
 
-    # 4-bit ciphers: all designed for linearity 8 except GIFT and Piccolo
-    # (which trade off vs. circuit area).
+    # 4-bit ciphers: all designed for linearity 8 except GIFT and Piccolo (which trade off vs. circuit area).
     @test linearity(load_literature_sbox("PRESENT"))    == 8
     @test linearity(load_literature_sbox("GIFT"))       == 8
     @test linearity(load_literature_sbox("Midori_Sb0")) == 8
@@ -101,8 +100,7 @@ end
 end
 
 @testset "absolute_walsh_spectrum: AES alphabet" begin
-    # For N ≥ 2 every LAT entry is a multiple of 4. AES's |LAT| alphabet
-    # is {0, 4, 8, 12, 16, 20, 24, 28, 32}.
+    # For N ≥ 2 every LAT entry is a multiple of 4. AES's |LAT| alphabet is {0, 4, 8, 12, 16, 20, 24, 28, 32}.
     s = load_literature_sbox("AES")
     sp = absolute_walsh_spectrum(s)
     @test Set(first.(sorted_pairs(sp))) == Set([0, 4, 8, 12, 16, 20, 24, 28, 32])

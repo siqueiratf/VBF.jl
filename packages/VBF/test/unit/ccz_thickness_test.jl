@@ -5,14 +5,11 @@ using Test
 
 @testset "thickness: small closed-form examples" begin
     N = 4
-    # Subspace {(a, 0)} packed as [128, 64, 32, 16]: projection onto
-    # low 4 bits is all zeros → rank 0 → thickness 0.
+    # Subspace {(a, 0)} packed as [128, 64, 32, 16]: projection onto low 4 bits is all zeros → rank 0 → thickness 0.
     @test thickness(UInt32[128, 64, 32, 16], N) == 0
-    # Subspace {(0, b)} packed as [8, 4, 2, 1]: projection IS the basis
-    # itself, rank 4 → thickness 4.
+    # Subspace {(0, b)} packed as [8, 4, 2, 1]: projection IS the basis itself, rank 4 → thickness 4.
     @test thickness(UInt32[8, 4, 2, 1], N) == 4
-    # Mixed subspace: basis [129, 64, 32, 16] = {(8, 1), (4, 0), (2, 0), (1, 0)}.
-    # Projection onto low 4 bits: {1, 0, 0, 0} → rank 1.
+    # Mixed subspace: basis [129, 64, 32, 16] = {(8, 1), (4, 0), (2, 0), (1, 0)}. Projection onto low 4 bits: {1, 0, 0, 0} → rank 1.
     @test thickness(UInt32[129, 64, 32, 16], N) == 1
 end
 
@@ -25,9 +22,7 @@ end
 end
 
 @testset "thickness_spectrum: NOT a CCZ-invariant (documented)" begin
-    # F and inv(F) are CCZ-equivalent (via the swap map on F₂²ⁿ), but
-    # individual subspace thicknesses don't commute with the swap action
-    # — so the spectra typically differ. GIFT is a concrete witness.
+    # F and inv(F) are CCZ-equivalent (via the swap map on F₂²ⁿ), but individual subspace thicknesses don't commute with the swap action — so the spectra typically differ. GIFT is a concrete witness.
     spec_F = thickness_spectrum(load_literature_sbox("GIFT"))
     spec_inv = thickness_spectrum(inv(load_literature_sbox("GIFT")))
     @test spec_F != spec_inv
@@ -44,9 +39,7 @@ end
 end
 
 @testset "thickness_spectrum: distinguishes GIFT from PRESENT" begin
-    # GIFT and PRESENT have the same |Z(F)| = 123 but different numbers
-    # of 4-dim subspaces (64 vs 112). Their thickness spectra must therefore
-    # differ.
+    # GIFT and PRESENT have the same |Z(F)| = 123 but different numbers of 4-dim subspaces (64 vs 112). Their thickness spectra must therefore differ.
     spec_present = thickness_spectrum(load_literature_sbox("PRESENT"))
     spec_gift = thickness_spectrum(load_literature_sbox("GIFT"))
     @test spec_present != spec_gift
@@ -70,9 +63,7 @@ end
 end
 
 @testset "enumerate_ccz_class: produces valid SBoxes" begin
-    # Not every rep is a permutation — only thickness-N subspaces yield
-    # permutations; lower-thickness reps are arbitrary functions in F's
-    # CCZ-class.
+    # Not every rep is a permutation — only thickness-N subspaces yield permutations; lower-thickness reps are arbitrary functions in F's CCZ-class.
     F = load_literature_sbox("PRESENT")
     reps = enumerate_ccz_class(F)
     @test !isempty(reps)
@@ -84,19 +75,13 @@ end
 end
 
 @testset "enumerate_ccz_class: at least one permutation rep exists" begin
-    # F itself is a permutation; F is in its own CCZ-class, so at least
-    # one rep must be a permutation. (Empirically the count is the number
-    # of thickness-N subspaces, but the precise relation depends on
-    # admissibility of the L-construction and is not asserted here.)
     F = load_literature_sbox("PRESENT")
     reps = enumerate_ccz_class(F)
     @test any(is_permutation, reps)
 end
 
 @testset "enumerate_ccz_class: deduplicated count matches subspaces" begin
-    # The total number of reps equals the number of admissible CCZ-mappings,
-    # which equals the count of N-dim subspaces of Z(F) (every basis L
-    # we build is invertible since complete_basis produces a full basis).
+    # The total number of reps equals the number of admissible CCZ-mappings, which equals the count of N-dim subspaces of Z(F) (every basis L we build is invertible since complete_basis produces a full basis).
     F = load_literature_sbox("PRESENT")
     Z = walsh_zeroes(F)
     bases = extract_linear_subspaces(Z, 4; max_bits = 8)

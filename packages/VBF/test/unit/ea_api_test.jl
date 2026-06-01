@@ -7,10 +7,6 @@ using Random
 # Helper: build a random invertible F₂-linear map (4-bit) from an RNG.
 _rand_invertible_4(rng) = random_invertible_linear_map(rng, Val(4), UInt8)
 
-# Helper: build a constructed EA-equivalent permutation
-#   G(x) = L₁(F(A₂(x))) ⊕ L_drift(x)
-# and ensure it's still a permutation. Returns (G, L₁, A₂, L_drift) on success
-# or `nothing` if no drift works within `max_tries` attempts.
 function _build_ea_perm(F::SBox{4, UInt8}, rng; max_tries = 5000,
                         allow_zero_drift = true)
     T = UInt8
@@ -117,18 +113,13 @@ end
     id_lut = UInt8[x for x in 0:15]
     G = SBox{4, UInt8}(id_lut)
     @test !is_permutation(F) || is_permutation(G)
-    # Signatures may match in some unlucky cases; we don't assert mismatch,
-    # but we do assert the decision is `false` and runs fast.
+    # Signatures may match in some unlucky cases; we don't assert mismatch, but we do assert the decision is `false` and runs fast.
     t = @elapsed result = are_ea_equivalent(F, G)
     @test result == false
     @test t < 1.0
 end
 
 @testset "are_ea_equivalent: monomial APN is now decided via :auto routing" begin
-    # n=5 monomial APN: the heggebakk k=4 partition is degenerate ([31, 1])
-    # so :heggebakk alone short-circuits. The :ortho_derivative strategy
-    # (auto-routed for quadratic-APN permutations) decides correctly
-    # without needing the outer-permutation enumeration.
     F = load_apn_function("n5_Gold_x3")
     @test are_ea_equivalent(F, F)   # reflexive — :auto picks :ortho_derivative
     @test are_ea_equivalent(F, F; strategy = :ortho_derivative)

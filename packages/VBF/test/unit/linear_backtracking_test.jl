@@ -4,9 +4,7 @@ using VBF
 using Test
 using Random
 
-# Direct unit tests against VBF.are_linearly_equivalent_perm; the public
-# `are_linear_equivalent` strategy-dispatch lives in api.jl and gets
-# tested separately.
+# Direct unit tests against VBF.are_linearly_equivalent_perm; the public `are_linear_equivalent` strategy-dispatch lives in api.jl and gets tested separately.
 
 @testset "reflexivity: F ~ F for every catalog permutation" begin
     # Small n so the search is fast even for the catalog's 4-bit entries.
@@ -48,9 +46,7 @@ end
 end
 
 @testset "asymmetry under affine offset (most pairs are not linear-equivalent)" begin
-    # Adding a non-zero constant to G almost always breaks linear
-    # equivalence — every linear map sends 0 to 0, so F(0) = 0 forces
-    # G(0) = 0; if G(0) ≠ 0 and F(0) = 0, the algorithm must say "no".
+    # Adding a non-zero constant to G almost always breaks linear equivalence — every linear map sends 0 to 0, so F(0) = 0 forces G(0) = 0; if G(0) ≠ 0 and F(0) = 0, the algorithm must say "no".
     F = SBox(UInt8[0, 1, 9, 14, 13, 11, 7, 6, 15, 2, 12, 5, 10, 4, 3, 8])  # n=4 perm, F(0)=0
     @test F(0) == 0
 

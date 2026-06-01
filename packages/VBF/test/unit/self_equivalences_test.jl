@@ -60,9 +60,7 @@ end
 end
 
 @testset "self_linear_equivalences: monomial APN has a non-trivial group" begin
-    # Gold APN x^3 over GF(2^5) has a large linear self-equivalence group
-    # (the multiplicative + Frobenius structure). Must be more than just
-    # the identity.
+    # Gold APN x^3 over GF(2^5) has a large linear self-equivalence group (the multiplicative + Frobenius structure). Must be more than just the identity.
     F = load_apn_function("n5_Gold_x3")
     sl = self_linear_equivalences(F)
     @test length(sl) > 1
@@ -85,8 +83,7 @@ end
             eq.A1(F.lut[eq.A2(T(x)) + 1]) == F.lut[x + 1]
         end
     end
-    # The linear self-equivalences embed as affine ones (c_in = c_out = 0),
-    # so the affine count is at least the linear count.
+    # The linear self-equivalences embed as affine ones (c_in = c_out = 0), so the affine count is at least the linear count.
     @test length(sa) ≥ length(self_linear_equivalences(F))
 end
 

@@ -17,12 +17,6 @@ end
 end
 
 @testset "are_affine_equivalent: handles non-permutations" begin
-    # A permutation and a constant function differ in their (CCZ-/affine-
-    # invariant) differential spectra, so they are not affine-equivalent —
-    # but a non-permutation IS affine-equivalent to itself (reflexivity).
-    # The general (non-permutation) path must respect this; an earlier
-    # version routed every non-permutation to a hard `false`, breaking
-    # reflexivity for the 3-to-1 quadratic APN that are the common case.
     c = SBox(UInt8[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])
     F = load_literature_sbox("PRESENT")
     @test !are_affine_equivalent(F, c)
@@ -32,9 +26,7 @@ end
 end
 
 @testset "are_affine_equivalent: non-permutation quadratic APN" begin
-    # kim_apn is a 3-to-1 (non-permutation) quadratic APN on n=6. Affine
-    # equivalence must hold reflexively, be symmetric, recover a constructed
-    # affine copy, and separate it from a genuinely inequivalent APN.
+    # kim_apn is a 3-to-1 (non-permutation) quadratic APN on n=6. Affine equivalence must hold reflexively, be symmetric, recover a constructed affine copy, and separate it from a genuinely inequivalent APN.
     rng = MersenneTwister(0xAFF14E)
     F = kim_apn()
     N = inputbits(F)
@@ -62,8 +54,7 @@ end
 end
 
 @testset "shifted SBoxes are affine-equivalent to the original" begin
-    # Construct G(x) = F(x ⊕ a) ⊕ b for random (a, b); must be affine-
-    # equivalent to F.
+    # Construct G(x) = F(x ⊕ a) ⊕ b for random (a, b); must be affine- equivalent to F.
     rng = MersenneTwister(0xBFA71)
     for name in ("PRESENT", "GIFT", "SKINNY_4")
         F = load_literature_sbox(name)
@@ -106,8 +97,7 @@ end
 end
 
 @testset "n=5 monomial APN: pairwise NOT affine-equivalent" begin
-    # x^3, x^5, x^15 are in distinct Frobenius orbits — adding affine
-    # drift doesn't bridge classes.
+    # x^3, x^5, x^15 are in distinct Frobenius orbits — adding affine drift doesn't bridge classes.
     F3  = load_apn_function("n5_Gold_x3")
     F5  = load_apn_function("n5_Gold_x5")
     F15 = load_apn_function("n5_Kasami_x15")

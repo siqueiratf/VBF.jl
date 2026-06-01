@@ -5,10 +5,6 @@ using Test
 import GaloisFields
 
 @testset "CONWAY_POLYNOMIALS match the authoritative GaloisFields database" begin
-    # Our hand-maintained Conway table is validated against GaloisFields.jl's
-    # Conway-polynomial database (the canonical source, matching SageMath's
-    # GF(2^n)). `conwaypolynomial(2, n)` returns coefficients low→high; we
-    # encode them into our integer bit-convention (incl. the leading x^n bit).
     encode(coeffs) = foldl((acc, ic) -> acc | ((Int(ic[2]) & 1) << (ic[1] - 1)),
                            enumerate(coeffs); init = 0)
     for (n, modulus) in CONWAY_POLYNOMIALS
@@ -28,8 +24,7 @@ end
 end
 
 @testset "gf_mul: small cases by hand" begin
-    # GF(4) with x² + x + 1.  Elements: {0, 1, x, x+1}.
-    # x · x = x² = x + 1 (since x² + x + 1 = 0)
+    # GF(4) with x² + x + 1.  Elements: {0, 1, x, x+1}. x · x = x² = x + 1 (since x² + x + 1 = 0)
     @test gf_mul(0b10, 0b10, 2) == 0b11
     # x · (x+1) = x² + x = (x+1) + x = 1
     @test gf_mul(0b10, 0b11, 2) == 0b01
@@ -38,8 +33,7 @@ end
 end
 
 @testset "gf_mul: GF(2^4) reproduces existing n=4 Gold APN" begin
-    # Direct check that gf_mul matches the conventions used by the
-    # hand-written n4_Gold_x3 LUT (modulus x⁴ + x + 1).
+    # Direct check that gf_mul matches the conventions used by the hand-written n4_Gold_x3 LUT (modulus x⁴ + x + 1).
     @test gf_mul(2, 2, 4) == 4        # x · x = x²
     @test gf_mul(2, 8, 4) == 3        # x · x³ = x⁴ = x + 1 (reduces)
     @test gf_mul(3, 3, 4) == 5        # (x+1)² = x² + 1
@@ -106,8 +100,7 @@ end
 end
 
 @testset "gf_monomial_lut: matches the committed n=5 entries" begin
-    # n=5 LUTs committed in data-raw/apn_catalog/n5_apn.toml were
-    # computed with x⁵ + x² + 1 = 37 as the modulus.
+    # n=5 LUTs committed in data-raw/apn_catalog/n5_apn.toml were computed with x⁵ + x² + 1 = 37 as the modulus.
     @test gf_monomial_lut(5, 3)  == [0, 1, 8, 15, 10, 31, 23, 4, 26, 25, 3, 6, 9, 30, 5, 20,
                                        14, 18, 22, 12, 24, 16, 21, 27, 2, 28, 11, 19, 13, 7, 17, 29]
     @test gf_monomial_lut(5, 5)  == [0, 1, 5, 22, 17, 25, 4, 30, 31, 24, 18, 7, 20, 26, 9, 21,
@@ -159,8 +152,7 @@ end
     bytes = encode_quadratic(gold; modulus = mod)
     @test length(bytes) == 37
     @test decode_quadratic_lut(bytes, n, mod) == Int.(gold.lut)
-    # LUT-interpolation agrees with the term-based encoding of the same polynomial,
-    # and recovers exactly X³ (only the weight-2 exponent 3 is set)
+    # LUT-interpolation agrees with the term-based encoding of the same polynomial, and recovers exactly X³ (only the weight-2 exponent 3 is set)
     @test bytes == encode_quadratic(polynomial_terms("X^3", n, mod), n)
     @test decode_quadratic_lut(bytes, n, mod) == terms_to_lut([(1, 3)], n, mod)
     # a higher-degree map (inverse x^(2ⁿ-2), degree n-1) is rejected, not truncated

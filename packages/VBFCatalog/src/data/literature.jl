@@ -13,21 +13,22 @@ Loads `data-raw/literature_sboxes.toml` and exposes its entries as
 
 import TOML
 
-const _LITERATURE_CACHE = Ref{Union{Dict{String, Any}, Nothing}}(nothing)
+const _LITERATURE_CACHE = Ref{Union{Dict{String,Any},Nothing}}(nothing)
 
-_literature_path() =
-    normpath(joinpath(@__DIR__, "..", "..", "data-raw", "literature_sboxes.toml"))
+_literature_path() = normpath(
+    joinpath(@__DIR__, "..", "..", "data-raw", "literature_sboxes.toml"),
+)
 
 function _load_literature_raw()
     cache = _LITERATURE_CACHE[]
     cache === nothing || return cache
     path = _literature_path()
-    isfile(path) ||
-        error("BFA: literature_sboxes.toml not found at $path — was the package distributed without data-raw/?")
+    isfile(path) || error(
+        "BFA: literature_sboxes.toml not found at $path — was the package distributed without data-raw/?",
+    )
     data = TOML.parsefile(path)
-    haskey(data, "sboxes") ||
-        error("BFA: $path has no [[sboxes]] entries")
-    by_name = Dict{String, Any}()
+    haskey(data, "sboxes") || error("BFA: $path has no [[sboxes]] entries")
+    by_name = Dict{String,Any}()
     for entry in data["sboxes"]
         name = entry["name"]::String
         haskey(by_name, name) &&
@@ -53,8 +54,11 @@ lut). Throws `ArgumentError` if `name` is unknown.
 """
 function literature_sbox_metadata(name::AbstractString)
     cache = _load_literature_raw()
-    haskey(cache, String(name)) ||
-        throw(ArgumentError("no literature S-box named $(repr(String(name))) — try literature_sbox_names()"))
+    haskey(cache, String(name)) || throw(
+        ArgumentError(
+            "no literature S-box named $(repr(String(name))) — try literature_sbox_names()",
+        ),
+    )
     cache[String(name)]
 end
 
@@ -82,8 +86,10 @@ function load_literature_sbox(name::AbstractString)
     entry = literature_sbox_metadata(name)
     n = entry["n"]::Int
     m = entry["m"]::Int
-    n == m ||
-        throw(ArgumentError(
-            "load_literature_sbox: $(repr(String(name))) has n=$n ≠ m=$m; rectangular S-boxes need the RectSBox type (not yet implemented)"))
+    n == m || throw(
+        ArgumentError(
+            "load_literature_sbox: $(repr(String(name))) has n=$n ≠ m=$m; rectangular S-boxes need the RectSBox type (not yet implemented)",
+        ),
+    )
     SBox{n}(convert(Vector{Int}, entry["lut"]))
 end

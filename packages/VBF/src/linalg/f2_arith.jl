@@ -50,25 +50,28 @@ After the call:
 
 The pivot column order is LSB → MSB.
 """
-function gauss_jordan!(rows::Vector{T}; nbits::Integer = 8 * sizeof(T)) where {T<:Unsigned}
+function gauss_jordan!(
+    rows::Vector{T};
+    nbits::Integer = 8 * sizeof(T),
+) where {T<:Unsigned}
     @assert 1 ≤ nbits ≤ 8 * sizeof(T)
     n = length(rows)
     rank = 0
-    @inbounds for c in 0:nbits-1
+    @inbounds for c = 0:(nbits-1)
         bit = T(1) << c
         # find pivot row in unprocessed range
         p = 0
-        for i in (rank + 1):n
+        for i = (rank+1):n
             if (rows[i] & bit) != zero(T)
                 p = i
                 break
             end
         end
         p == 0 && continue
-        rows[rank + 1], rows[p] = rows[p], rows[rank + 1]
-        pivot = rows[rank + 1]
+        rows[rank+1], rows[p] = rows[p], rows[rank+1]
+        pivot = rows[rank+1]
         # eliminate this bit from every other row
-        for i in 1:n
+        for i = 1:n
             i == rank + 1 && continue
             if (rows[i] & bit) != zero(T)
                 rows[i] ⊻= pivot
@@ -84,7 +87,10 @@ end
 
 F₂ rank of a matrix given as a vector of row-bitmasks. Non-destructive.
 """
-function rank_f2(rows::AbstractVector{T}; nbits::Integer = 8 * sizeof(T)) where {T<:Unsigned}
+function rank_f2(
+    rows::AbstractVector{T};
+    nbits::Integer = 8 * sizeof(T),
+) where {T<:Unsigned}
     gauss_jordan!(collect(rows); nbits)
 end
 
@@ -95,7 +101,10 @@ end
 Reduced row echelon basis of the F₂ row span of `rows`. The returned
 vector has length equal to the rank; zero rows have been dropped.
 """
-function linear_basis(rows::AbstractVector{T}; nbits::Integer = 8 * sizeof(T)) where {T<:Unsigned}
+function linear_basis(
+    rows::AbstractVector{T};
+    nbits::Integer = 8 * sizeof(T),
+) where {T<:Unsigned}
     work = collect(rows)
     r = gauss_jordan!(work; nbits)
     work[1:r]
@@ -112,8 +121,11 @@ in reduced row echelon form (e.g., the output of [`linear_basis`](@ref));
 Implementation: for each basis row in order, if the pivot bit is set in
 `v`, XOR the row into `v`. At the end, `v == 0` iff it was in span.
 """
-function is_in_span(v::T, basis::AbstractVector{T};
-                    nbits::Integer = 8 * sizeof(T)) where {T<:Unsigned}
+function is_in_span(
+    v::T,
+    basis::AbstractVector{T};
+    nbits::Integer = 8 * sizeof(T),
+) where {T<:Unsigned}
     x = v
     @inbounds for row in basis
         row == zero(T) && continue
@@ -136,16 +148,22 @@ greedily; throws if `partial` was not already independent.
 Returns a fresh `Vector{T}` of length `nbits` whose first
 `length(partial)` rows are the original basis.
 """
-function complete_basis(partial::AbstractVector{T}, nbits::Integer) where {T<:Unsigned}
+function complete_basis(
+    partial::AbstractVector{T},
+    nbits::Integer,
+) where {T<:Unsigned}
     1 ≤ nbits ≤ 8 * sizeof(T) ||
         throw(ArgumentError("complete_basis: nbits=$nbits out of range for $T"))
     work = collect(partial)
     r = gauss_jordan!(work; nbits)
-    r == length(partial) ||
-        throw(ArgumentError("complete_basis: input is not linearly independent (rank $r of $(length(partial)) rows)"))
+    r == length(partial) || throw(
+        ArgumentError(
+            "complete_basis: input is not linearly independent (rank $r of $(length(partial)) rows)",
+        ),
+    )
     out = collect(partial)
     sizehint!(out, nbits)
-    for c in 0:nbits-1
+    for c = 0:(nbits-1)
         e = T(1) << c
         is_in_span(e, work; nbits) && continue
         push!(out, e)
@@ -169,15 +187,24 @@ This is the reversed counterpart of [`complete_basis`](@ref) and underlies
 [`generating_affine_map_r`](@ref). Throws if `partial` was not already
 linearly independent.
 """
-function complete_basis_reversed(partial::AbstractVector{T}, nbits::Integer) where {T<:Unsigned}
-    1 ≤ nbits ≤ 8 * sizeof(T) ||
-        throw(ArgumentError("complete_basis_reversed: nbits=$nbits out of range for $T"))
+function complete_basis_reversed(
+    partial::AbstractVector{T},
+    nbits::Integer,
+) where {T<:Unsigned}
+    1 ≤ nbits ≤ 8 * sizeof(T) || throw(
+        ArgumentError(
+            "complete_basis_reversed: nbits=$nbits out of range for $T",
+        ),
+    )
     work = collect(partial)
     r = gauss_jordan!(work; nbits)
-    r == length(partial) ||
-        throw(ArgumentError("complete_basis_reversed: input is not linearly independent (rank $r of $(length(partial)) rows)"))
+    r == length(partial) || throw(
+        ArgumentError(
+            "complete_basis_reversed: input is not linearly independent (rank $r of $(length(partial)) rows)",
+        ),
+    )
     prefix = T[]
-    for c in 0:nbits-1
+    for c = 0:(nbits-1)
         length(prefix) + length(partial) == nbits && break
         e = T(1) << c
         is_in_span(e, work; nbits) && continue

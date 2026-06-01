@@ -21,20 +21,13 @@ end
 end
 
 @testset "ortho_derivative: not defined for non-quadratic APN" begin
-    # n5_Kasami_x15 = x^15 over GF(2⁵) has algebraic degree 4, so its
-    # ortho-derivative is undefined.
+    # n5_Kasami_x15 = x^15 over GF(2⁵) has algebraic degree 4, so its ortho-derivative is undefined.
     F = load_apn_function("n5_Kasami_x15")
     @test algebraic_degree(F) > 2
     @test ortho_derivative(F) === nothing
 end
 
 @testset "ortho_derivative: defining property — π is dual to the linear part of D_a F" begin
-    # For quadratic APN F, the image of D_a F is an *affine hyperplane*
-    # in F₂ⁿ. π_F(a) is the unique non-zero vector orthogonal to its
-    # **linear part** — i.e., for any two x, y ∈ F₂ⁿ:
-    #   ⟨π_F(a), D_a F(x) ⊕ D_a F(y)⟩ = 0.
-    # (Equivalently, ⟨π_F(a), D_a F(x)⟩ is constant in x — either always
-    # 0 when the image contains 0, or always 1 when it doesn't.)
     for name in ("n4_Gold_x3", "n5_Gold_x3", "n5_Gold_x5")
         F = load_apn_function(name)
         π = ortho_derivative(F)
@@ -55,8 +48,7 @@ end
 end
 
 @testset "ortho_derivative: identity (π_F)² ≡ … is an APN itself" begin
-    # The ortho-derivative is generally a quadratic APN itself
-    # (Canteaut-Charpin-Kyureghyan). Spot-check on n=4 Gold x^3.
+    # The ortho-derivative is generally a quadratic APN itself (Canteaut-Charpin-Kyureghyan). Spot-check on n=4 Gold x^3.
     F = load_apn_function("n4_Gold_x3")
     π = ortho_derivative(F)
     @test π !== nothing
@@ -64,12 +56,6 @@ end
 end
 
 @testset "ortho_derivative: distinguishes Frobenius orbits at n=5 (quadratic APN)" begin
-    # n5_Gold_x3 and n5_Gold_x5 are NOT linearly equivalent (different
-    # Frobenius orbits). Therefore their ortho-derivatives — which are
-    # themselves quadratic APN functions — should also NOT be linearly
-    # equivalent. This is the key APN-invariant property that lets us
-    # decide EA/CCZ-equivalence on monomial APN where the heggebakk
-    # partition is degenerate.
     F3 = load_apn_function("n5_Gold_x3")
     F5 = load_apn_function("n5_Gold_x5")
     π3 = ortho_derivative(F3)

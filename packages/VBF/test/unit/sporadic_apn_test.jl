@@ -19,8 +19,7 @@ end
 end
 
 @testset "is_ccz_equivalent_to_permutation (complementary Walsh-zero pair)" begin
-    # the Kim function is the canonical positive case: a non-permutation quadratic
-    # APN that IS CCZ-equivalent to a permutation (the Dillon one)
+    # the Kim function is the canonical positive case: a non-permutation quadratic APN that IS CCZ-equivalent to a permutation (the Dillon one)
     @test is_ccz_equivalent_to_permutation(kim_apn())
     @test is_ccz_equivalent_to_permutation(dillon_apn_permutation())
     @test is_ccz_equivalent_to_permutation(gold_apn(5, 1))   # x³ is a permutation on n=5
@@ -30,11 +29,6 @@ end
 end
 
 @testset "are_ccz_equivalent decides the cross-degree Kim ↔ Dillon case" begin
-    # The Kim function (quadratic) and the Dillon permutation (degree 4) are
-    # CCZ-equivalent but not EA-equivalent (CCZ does not preserve degree). The
-    # decision routes through the quadratic side's ortho-derivative EA test on
-    # the degree-2 representatives of the other's CCZ-class — reliable where the
-    # Heggebakk EA test on the degree-4 permutation reps is not.
     kim = kim_apn()
     dil = dillon_apn_permutation()
     @test are_ccz_equivalent(kim, dil)

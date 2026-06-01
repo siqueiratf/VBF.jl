@@ -1,27 +1,6 @@
-# Hand-curated catalog of well-known cryptographic S-boxes.
-#
-# Each entry is sourced from a primary specification (FIPS, RFC, or the
-# original paper) and carries a `bib_key` slug pointing into the
-# bibliography; `source` is the human-readable reference.
-#
-# Schema (informal; the Phase 3 SQLite catalog will formalize):
-#   name            : str, unique key — used by load_literature_sbox()
-#   description     : str
-#   n               : int, input bits (1..64)
-#   m               : int, output bits — must equal n for now (square only)
-#   is_permutation  : bool, whether the LUT is a bijection of F₂ⁿ
-#   bib_key         : str, bibliography slug
-#   source          : str, citation in human-readable form
-#   lut             : array of `2^n` non-negative integers (each < 2^m)
-#
-# Add new entries by appending another [[sboxes]] table; the loader picks
-# them up automatically. Verify with `VBF.literature_sbox_names()`.
-
 schema_version = 1
 
-# =============================================================================
 # 8-bit
-# =============================================================================
 
 [[sboxes]]
 name = "AES"
@@ -77,9 +56,7 @@ lut = [
     0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d,
 ]
 
-# =============================================================================
 # 4-bit
-# =============================================================================
 
 [[sboxes]]
 name = "PRESENT"
@@ -141,9 +118,7 @@ bib_key = "ShibutaniEtAl2011Piccolo"
 source = "Shibutani et al., 'Piccolo: An Ultra-Lightweight Blockcipher', CHES 2011"
 lut = [0xe, 0x4, 0xb, 0x2, 0x3, 0x8, 0x0, 0x9, 0x1, 0xa, 0x7, 0xf, 0x6, 0xc, 0x5, 0xd]
 
-# --- SERPENT ----------------------------------------------------------------
-# Anderson, Biham, Knudsen, 'Serpent: A Proposal for the Advanced Encryption
-# Standard' (1998). Eight 4-bit S-boxes, used in rounds 0..7 cyclically.
+# --- SERPENT ---------------------------------------------------------------- Anderson, Biham, Knudsen, 'Serpent: A Proposal for the Advanced Encryption Standard' (1998). Eight 4-bit S-boxes, used in rounds 0..7 cyclically.
 
 [[sboxes]]
 name = "SERPENT_S0"

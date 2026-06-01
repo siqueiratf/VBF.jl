@@ -1,5 +1,4 @@
-# Public catalog/data API. Everything callable from a paper notebook or by a
-# downstream user lives here; anything not exported is internal.
+# Public catalog/data API; anything not exported is internal.
 
 # literature S-boxes
 export load_literature_sbox, literature_sbox_names, literature_sbox_metadata

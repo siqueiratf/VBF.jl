@@ -4,10 +4,6 @@ using VBF
 using Test
 
 @testset "ortho_integral: round-trip ortho_derivative(ortho_integral(πF)) == πF" begin
-    # ortho_integral is determined only up to adding a linear function,
-    # which the ortho-derivative is invariant under. So the OUTER round
-    # trip must hold exactly even if the recovered Q differs from the
-    # original by a linear term.
     for name in ("n4_Gold_x3", "n5_Gold_x3", "n5_Gold_x5")
         F = load_apn_function(name)
         π = ortho_derivative(F)

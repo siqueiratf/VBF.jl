@@ -32,16 +32,9 @@ The exported entry point lives in `equivalence/linear/api.jl`; this
 file is the algorithm core.
 """
 
-# ---------------------------------------------------------------------------
 # φ basis (reduced linear constraint set)
-# ---------------------------------------------------------------------------
 
-# We keep φ as a list of `(a, A)` pairs in reduced form: each `a` has a
-# unique trailing-zero bit (its pivot column), and earlier basis entries
-# have been XOR-reduced against later ones during insertion. Adding a
-# new pair reduces (a, A) modulo the existing basis; if `a` becomes 0,
-# success requires `A == 0` too. Otherwise the pair is added as a new
-# basis row.
+# φ: reduced (a, A) pairs; adding one reduces modulo the basis (a→0 ⇒ A=0).
 
 """
     _phi_add!(basis::Vector{Tuple{T,T}}, a::T, A::T) -> Bool
@@ -51,7 +44,7 @@ unique trailing-zero bit). Returns `true` iff the addition is
 consistent — i.e., a contradiction `(0, nonzero)` was *not* observed.
 Mutates `basis` (appends a row if the reduced `a` is nonzero).
 """
-function _phi_add!(basis::Vector{Tuple{T, T}}, a::T, A::T) where {T<:Unsigned}
+function _phi_add!(basis::Vector{Tuple{T,T}}, a::T, A::T) where {T<:Unsigned}
     @inbounds for (b, B) in basis
         piv = trailing_zeros(b)
         if ((a >> piv) & T(1)) == T(1)
@@ -66,9 +59,7 @@ function _phi_add!(basis::Vector{Tuple{T, T}}, a::T, A::T) where {T<:Unsigned}
     true
 end
 
-# ---------------------------------------------------------------------------
 # Backtracking search
-# ---------------------------------------------------------------------------
 
 """
     are_linearly_equivalent_perm(F::SBox{N,T}, G::SBox{N,T}) -> Bool
@@ -85,19 +76,16 @@ Use `VBF.are_linear_equivalent(F, G)` (in `api.jl`) for the public
 entry point that handles dispatch, validates inputs, and chooses a
 default strategy.
 """
-function are_linearly_equivalent_perm(F::SBox{N, T}, G::SBox{N, T}) where {N, T}
+function are_linearly_equivalent_perm(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
     (is_permutation(F) && is_permutation(G)) || return false
     n_pow = 1 << N
 
-    # φ is initialised with the (F(0), G(0)) pair. Any linear map sends
-    # 0 to 0 so this implicitly also enforces φ(0) = 0 — _phi_add! will
-    # catch the F(0)=0, G(0)≠0 case as inconsistent.
-    phi_basis = Tuple{T, T}[]
+    # Seed φ with (F(0), G(0)); linear maps fix 0, so this also forces φ(0) = 0.
+    phi_basis = Tuple{T,T}[]
     _phi_add!(phi_basis, T(F.lut[1]), T(G.lut[1])) || return false
 
-    # L₂ basis images and the running RREF of their span (for fast
-    # linear-independence checks of candidates).
-    l2_imgs    = T[]
+    # L₂ basis images and the running RREF of their span (independence checks).
+    l2_imgs = T[]
     span_basis = T[]
 
     found = Ref(false)
@@ -107,7 +95,7 @@ function are_linearly_equivalent_perm(F::SBox{N, T}, G::SBox{N, T}) where {N, T}
             found[] = true
             return
         end
-        @inbounds for c in T(1):T(n_pow - 1)
+        @inbounds for c = T(1):T(n_pow-1)
             is_in_span(c, span_basis; nbits = N) && continue
 
             push!(l2_imgs, c)
@@ -115,16 +103,17 @@ function are_linearly_equivalent_perm(F::SBox{N, T}, G::SBox{N, T}) where {N, T}
             phi_snap = length(phi_basis)
             ok = true
 
-            # Add the 2^i new pairs for x_new = x_old ⊕ e_i, x_old in span(e_0..e_{i-1}).
+            # Add the 2^i new pairs for x_new = x_old ⊕ e_i, x_old in
+            # span(e_0..e_{i-1}).
             n_old = 1 << i
-            for x_old_idx in 0:n_old - 1
+            for x_old_idx = 0:(n_old-1)
                 l2_x_old = zero(T)
-                @inbounds for k in 0:i - 1
-                    ((x_old_idx >> k) & 1) == 1 && (l2_x_old ⊻= l2_imgs[k + 1])
+                @inbounds for k = 0:(i-1)
+                    ((x_old_idx >> k) & 1) == 1 && (l2_x_old ⊻= l2_imgs[k+1])
                 end
                 x_new_idx = x_old_idx ⊻ (1 << i)
-                a = T(F.lut[(l2_x_old ⊻ c) + 1])
-                A = T(G.lut[x_new_idx + 1])
+                a = T(F.lut[(l2_x_old⊻c)+1])
+                A = T(G.lut[x_new_idx+1])
                 if !_phi_add!(phi_basis, a, A)
                     ok = false
                     break

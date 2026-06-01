@@ -30,7 +30,7 @@ function _db_full(nbits::Int)
     if nbits >= 64
         return fill(typemax(UInt64), nc)
     else
-        return UInt64[(UInt64(1) << nbits) - UInt64(1)]
+        return UInt64[(UInt64(1)<<nbits)-UInt64(1)]
     end
 end
 
@@ -60,7 +60,8 @@ function _db_invert(b::_DBSet, nbits::Int)
     return _db_full(nbits) .⊻ b
 end
 
-@inline _db_setminus(a::_DBSet, b::_DBSet, nbits::Int) = a .& _db_invert(b, nbits)
+@inline _db_setminus(a::_DBSet, b::_DBSet, nbits::Int) =
+    a .& _db_invert(b, nbits)
 
 function _db_add!(b::_DBSet, e::Integer)
     e_int = Int(e)
@@ -116,10 +117,10 @@ function _db_xor_shift(b::_DBSet, s::Integer, nbits::Int)
             while bit <= high
                 if (high & bit) != 0
                     step = Int(bit)
-                    @inbounds for i in 0:(nc - 1)
+                    @inbounds for i = 0:(nc-1)
                         if (i & step) == 0
                             j = i + step
-                            a[i + 1], a[j + 1] = a[j + 1], a[i + 1]
+                            a[i+1], a[j+1] = a[j+1], a[i+1]
                         end
                     end
                 end

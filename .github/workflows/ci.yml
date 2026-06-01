@@ -14,11 +14,6 @@ concurrency:
 permissions:
   contents: read
 
-# Run JavaScript actions on Node.js 24. Several actions we depend on (directly
-# or transitively via the julia-actions wrappers — actions/cache, setup-julia)
-# still declare the deprecated Node.js 20 runtime; this opt-in forces them all
-# onto Node 24 ahead of GitHub making it the default (2026-06-16). Remove once
-# every action ships a Node 24 release.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -44,10 +39,6 @@ jobs:
       - name: Cache Julia depot
         uses: julia-actions/cache@v2
 
-      # The repo root is a `[workspace]` (no package); the testable member is
-      # `packages/VBF`. `Pkg.test()` there builds the test environment from
-      # `packages/VBF/test/Project.toml`, resolved against the shared workspace
-      # manifest (regenerated fresh each run — manifests are not committed).
       - name: Build package
         uses: julia-actions/julia-buildpkg@v1
         with:
@@ -58,6 +49,5 @@ jobs:
         with:
           project: packages/VBF
         env:
-          # Hosted runners are small; cap the worker count so the few heavy
-          # items (n=6 CCZ enumeration, affine equivalence) don't contend.
+          # Hosted runners are small; cap the worker count so the few heavy items (n=6 CCZ enumeration, affine equivalence) don't contend.
           RETESTITEMS_NWORKERS: '2'

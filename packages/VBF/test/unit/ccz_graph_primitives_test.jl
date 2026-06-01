@@ -21,13 +21,11 @@ end
 end
 
 @testset "ea_mapping ↔ block decomposition round-trip" begin
-    # ea_mapping(A=id, B, C=0) places B in the high blocks; decomposing
-    # should recover B. Use a concrete invertible B.
+    # ea_mapping(A=id, B, C=0) places B in the high blocks; decomposing should recover B. Use a concrete invertible B.
     B = F2LinearMap{4, UInt8}(UInt8[0x2, 0x4, 0x8, 0x1])  # cyclic shift
     em = ea_mapping(identity_linear_map(4), B, zero_linear_map(4))
     bd = ccz_block_decomposition(em)
-    # The block carrying B is the high half of the first n columns (= C-slot
-    # in the [A D; C B] layout maps B(eᵢ) into low bits of first n cols → A).
+    # The block carrying B is the high half of the first n columns (= C-slot in the [A D; C B] layout maps B(eᵢ) into low bits of first n cols → A).
     @test bd.A == B
 end
 
@@ -66,8 +64,7 @@ end
 end
 
 @testset "ccz_matrix: rank is a CCZ-invariant (F vs inv(F))" begin
-    # The CCZ-code's parameters (in particular its dimension = rank of
-    # the generator matrix) are CCZ-invariant. inv(F) is CCZ-equivalent.
+    # The CCZ-code's parameters (in particular its dimension = rank of the generator matrix) are CCZ-invariant. inv(F) is CCZ-equivalent.
     for name in ("PRESENT", "GIFT", "SKINNY_4")
         F = load_literature_sbox(name)
         is_permutation(F) || continue

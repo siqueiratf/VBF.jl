@@ -11,14 +11,12 @@ concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
-# Documenter deploys to the gh-pages branch using the built-in GITHUB_TOKEN,
-# which needs write access to repository contents.
+# Documenter deploys to the gh-pages branch using the built-in GITHUB_TOKEN, which needs write access to repository contents.
 permissions:
   contents: write
   statuses: write
 
-# See the note in ci.yml: force JS actions onto Node 24 ahead of the GitHub
-# default switch, until every action we use ships a Node 24 release.
+# See the note in ci.yml: force JS actions onto Node 24 ahead of the GitHub default switch, until every action we use ships a Node 24 release.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 

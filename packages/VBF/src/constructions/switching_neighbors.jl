@@ -23,9 +23,7 @@ that `D_aF(x₁) ⊕ D_aF(x₂) = u`, the quadruple `{x₁⊕a, x₁, x₂⊕a, 
 the `n-1` non-`u` coordinates of `F`) are removed from the solution space.
 """
 
-# A small homogeneous F₂ system over `nvars` Boolean unknowns supporting
-# incremental equation insertion, solution exclusion, and kernel-basis
-# extraction.
+# Small homogeneous F₂ system: incremental insertion and kernel extraction.
 mutable struct _SNSystem
     nvars::Int
     pivot_rows::Vector{BitVector}
@@ -35,12 +33,11 @@ end
 
 _sn_system(nvars::Int) = _SNSystem(nvars, BitVector[], Int[], BitVector[])
 
-# Turn a list of 0-based variable positions into a BitVector row,
-# XOR-toggling so repeated positions cancel (F₂ semantics).
+# 0-based variable positions to a BitVector row, XOR-toggling so repeats cancel.
 function _sn_rowof(nvars::Int, positions)
     row = falses(nvars)
     @inbounds for p in positions
-        row[p + 1] = !row[p + 1]
+        row[p+1] = !row[p+1]
     end
     row
 end
@@ -87,13 +84,12 @@ function _sn_rref!(rows::Vector{BitVector})
     return keep, cols
 end
 
-# Kernel basis of the equation system, with the removed solutions
-# quotiented out (only those actually in the kernel reduce its dimension).
+# Kernel basis of the system, with the removed solutions quotiented out.
 function _sn_kernel(S::_SNSystem)
     prows, pcols = _sn_rref!(S.pivot_rows)
     pivot_set = Set(pcols)
     kernel = BitVector[]
-    @inbounds for f in 1:S.nvars
+    @inbounds for f = 1:S.nvars
         f in pivot_set && continue
         v = falses(S.nvars)
         v[f] = true
@@ -142,19 +138,23 @@ function _sn_kernel(S::_SNSystem)
 end
 
 # All neighbours F ⊕ u·s for s in span(basis) \ {0}, keeping the APN ones.
-function _sn_apn_coset(F::SBox{N,T}, uu::T, basis::Vector{BitVector}) where {N,T}
+function _sn_apn_coset(
+    F::SBox{N,T},
+    uu::T,
+    basis::Vector{BitVector},
+) where {N,T}
     n_size = 1 << N
     result = SBox{N,T}[]
     seen = Set{Vector{T}}()
     nb = length(basis)
     nb == 0 && return result
-    @inbounds for combo in 1:(1 << nb) - 1
+    @inbounds for combo = 1:((1<<nb)-1)
         lut = copy(F.lut)
-        for j in 0:nb - 1
+        for j = 0:(nb-1)
             ((combo >> j) & 1) == 1 || continue
-            bj = basis[j + 1]
-            for x in 0:n_size - 1
-                bj[x + 1] && (lut[x + 1] ⊻= uu)
+            bj = basis[j+1]
+            for x = 0:(n_size-1)
+                bj[x+1] && (lut[x+1] ⊻= uu)
             end
         end
         lut in seen && continue
@@ -183,12 +183,13 @@ function switching_neighbors(F::SBox{N,T}) where {N,T}
     flut = F.lut
 
     # One constraint system per nonzero field element u (1-based: systems[u]).
-    systems = [_sn_system(n_size) for _ in 1:n_size - 1]
+    systems = [_sn_system(n_size) for _ = 1:(n_size-1)]
 
     # Exclude trivial neighbours: constant, linear, and F's own coordinates.
-    all_positions = collect(0:n_size - 1)
-    linear_positions = [Int[x for x in 0:n_size - 1 if (x >> i) & 1 == 1] for i in 0:N - 1]
-    for uu in 1:n_size - 1
+    all_positions = collect(0:(n_size-1))
+    linear_positions =
+        [Int[x for x = 0:(n_size-1) if (x >> i) & 1 == 1] for i = 0:(N-1)]
+    for uu = 1:(n_size-1)
         S = systems[uu]
         _sn_remove_solution!(S, all_positions)            # constant function
         for lp in linear_positions                        # linear coordinates
@@ -196,29 +197,31 @@ function switching_neighbors(F::SBox{N,T}) where {N,T}
         end
         Minv = inv(F2LinearMap{N,T}(complete_basis(T[T(uu)], N)))
         temp_s = compose(Minv, F)                          # M⁻¹ ∘ F
-        for i in 1:N - 1                                   # F's non-u coordinates
-            pos = Int[x for x in 0:n_size - 1 if (temp_s.lut[x + 1] >> i) & 1 == 1]
+        for i = 1:(N-1)  # F's non-u coordinates
+            pos = Int[x for x = 0:(n_size-1) if (temp_s.lut[x+1] >> i) & 1 == 1]
             _sn_remove_solution!(S, pos)
         end
     end
 
     # Complete necessary-constraint system.
-    @inbounds for a in 1:n_size - 1
-        for x1 in 0:n_size - 1
-            f_ax1 = flut[(x1 ⊻ a) + 1] ⊻ flut[x1 + 1]
-            for x2 in 0:n_size - 1
+    @inbounds for a = 1:(n_size-1)
+        for x1 = 0:(n_size-1)
+            f_ax1 = flut[(x1⊻a)+1] ⊻ flut[x1+1]
+            for x2 = 0:(n_size-1)
                 x1 == x2 && continue
                 x1 == (x2 ⊻ a) && continue
-                target = f_ax1 ⊻ flut[(x2 ⊻ a) + 1] ⊻ flut[x2 + 1]
+                target = f_ax1 ⊻ flut[(x2⊻a)+1] ⊻ flut[x2+1]
                 target == 0 && continue
-                _sn_add_equation!(systems[Int(target)],
-                                  (x1 ⊻ a, x1, x2 ⊻ a, x2))
+                _sn_add_equation!(
+                    systems[Int(target)],
+                    (x1 ⊻ a, x1, x2 ⊻ a, x2),
+                )
             end
         end
     end
 
     result = Vector{Vector{SBox{N,T}}}(undef, n_size - 1)
-    for uu in 1:n_size - 1
+    for uu = 1:(n_size-1)
         basis = _sn_kernel(systems[uu])
         result[uu] = _sn_apn_coset(F, T(uu), basis)
     end

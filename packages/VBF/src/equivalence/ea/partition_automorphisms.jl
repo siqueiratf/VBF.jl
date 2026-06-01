@@ -36,16 +36,12 @@ function permutation_order(F::SBox{N,T}) where {N,T}
     is_permutation(F) ||
         throw(ArgumentError("permutation_order: F must be a permutation"))
     n_size = 1 << N
-    id_lut = T[T(x) for x in 0:(n_size - 1)]
+    id_lut = T[T(x) for x = 0:(n_size-1)]
     F.lut == id_lut && return 1
-    # A permutation of 2ⁿ elements always cycles back to the identity
-    # (its order divides the lcm of its cycle lengths); is_permutation
-    # guarantees termination, and the order may exceed 2ⁿ (Landau's
-    # function), so no artificial cap.
     cur = copy(F.lut)
     order = 1
     while cur != id_lut
-        cur = T[F.lut[cur[x + 1] + 1] for x in 0:(n_size - 1)]
+        cur = T[F.lut[cur[x+1]+1] for x = 0:(n_size-1)]
         order += 1
     end
     return order

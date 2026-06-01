@@ -23,12 +23,12 @@ non-trivial linear structures.
 
 Every non-trivial linear structure `(a, c)` of `s`, sorted by `a` then `c`.
 """
-function linear_structures(s::SBox{N, T}) where {N, T}
+function linear_structures(s::SBox{N,T}) where {N,T}
     n = 1 << N
     d = ddt(s)
-    out = Tuple{T, T}[]
-    @inbounds for a in 1:n - 1, c in 0:n - 1
-        d[a + 1, c + 1] == n && push!(out, (T(a), T(c)))
+    out = Tuple{T,T}[]
+    @inbounds for a = 1:(n-1), c = 0:(n-1)
+        d[a+1, c+1] == n && push!(out, (T(a), T(c)))
     end
     out
 end

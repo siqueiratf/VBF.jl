@@ -26,9 +26,7 @@ Functions exposed:
   multiple outputs).
 """
 
-# ---------------------------------------------------------------------------
 # The 2n-bit packed graph type.
-# ---------------------------------------------------------------------------
 
 """
     FunctionGraph{N}
@@ -46,13 +44,18 @@ is the high `n` bits.
 struct FunctionGraph{N}
     packed::Vector{UInt32}
     function FunctionGraph{N}(packed::Vector{UInt32}) where {N}
-        N isa Int && 1 ≤ N ≤ 16 ||
-            throw(ArgumentError("FunctionGraph: N must be an Int in 1:16, got $N"))
-        2 * N ≤ 32 ||
-            throw(ArgumentError("FunctionGraph: 2N must fit in UInt32; got N=$N"))
+        N isa Int && 1 ≤ N ≤ 16 || throw(
+            ArgumentError("FunctionGraph: N must be an Int in 1:16, got $N"),
+        )
+        2 * N ≤ 32 || throw(
+            ArgumentError("FunctionGraph: 2N must fit in UInt32; got N=$N"),
+        )
         # The graph contains 2ⁿ entries.
-        length(packed) == (1 << N) ||
-            throw(ArgumentError("FunctionGraph: packed must have length 2^N = $(1 << N)"))
+        length(packed) == (1 << N) || throw(
+            ArgumentError(
+                "FunctionGraph: packed must have length 2^N = $(1 << N)",
+            ),
+        )
         # Internal storage is sorted ascending.
         sort!(packed)
         new{N}(packed)
@@ -62,8 +65,8 @@ end
 function FunctionGraph(F::SBox{N,T}) where {N,T}
     n_size = 1 << N
     packed = Vector{UInt32}(undef, n_size)
-    @inbounds for x in 0:(n_size - 1)
-        packed[x + 1] = (UInt32(x) << N) | UInt32(F.lut[x + 1])
+    @inbounds for x = 0:(n_size-1)
+        packed[x+1] = (UInt32(x) << N) | UInt32(F.lut[x+1])
     end
     # Already sorted: `(x << N) | y` is strictly increasing as x grows.
     return FunctionGraph{N}(packed)
@@ -74,13 +77,19 @@ inputbits(::FunctionGraph{N}) where {N} = N::Int
 Base.length(g::FunctionGraph) = length(g.packed)
 
 function Base.show(io::IO, g::FunctionGraph{N}) where {N}
-    print(io, "FunctionGraph{", N, "}(",
-          length(g.packed), " entries; 2N=", 2N, " bits packed)")
+    print(
+        io,
+        "FunctionGraph{",
+        N,
+        "}(",
+        length(g.packed),
+        " entries; 2N=",
+        2N,
+        " bits packed)",
+    )
 end
 
-# ---------------------------------------------------------------------------
 # Apply an F₂-affine map L : F₂²ⁿ → F₂²ⁿ to a graph.
-# ---------------------------------------------------------------------------
 
 """
     ccz_equivalent_function(F::SBox{N,T}, L::F2AffineMap{M, S}) ->
@@ -109,10 +118,14 @@ true
 ```
 """
 function ccz_equivalent_function(
-    F::SBox{N,T}, L::F2AffineMap{M, S},
+    F::SBox{N,T},
+    L::F2AffineMap{M,S},
 ) where {N,T,M,S}
-    M == 2 * N ||
-        throw(ArgumentError("ccz_equivalent_function: L must operate on F₂^{2N} = F₂^$(2N); got input length $M"))
+    M == 2 * N || throw(
+        ArgumentError(
+            "ccz_equivalent_function: L must operate on F₂^{2N} = F₂^$(2N); got input length $M",
+        ),
+    )
     n_size = 1 << N
     mask = (UInt32(1) << N) - UInt32(1)
     # Build the LUT, marking unset slots with the forbidden value 2^(N+1).
@@ -124,17 +137,15 @@ function ccz_equivalent_function(
         z = UInt32(L(S(entry)))
         x = z >> N
         y = z & mask
-        if lut[x + 1] != forbidden
+        if lut[x+1] != forbidden
             return nothing
         end
-        lut[x + 1] = y
+        lut[x+1] = y
     end
-    return SBox{N, T}(T.(lut))
+    return SBox{N,T}(T.(lut))
 end
 
-# ---------------------------------------------------------------------------
 # Graph transformation + translate-equivalence.
-# ---------------------------------------------------------------------------
 
 """
     graph_image_by(g::FunctionGraph{N}, L::F2LinearMap{M,S}) -> FunctionGraph{N}
@@ -146,8 +157,9 @@ without insisting it be a function — used by the ortho-derivative
 automorphism search.
 """
 function graph_image_by(g::FunctionGraph{N}, L::F2LinearMap{M,S}) where {N,M,S}
-    M == 2 * N ||
-        throw(ArgumentError("graph_image_by: L must operate on F₂^{2N} = F₂^$(2N)"))
+    M == 2 * N || throw(
+        ArgumentError("graph_image_by: L must operate on F₂^{2N} = F₂^$(2N)"),
+    )
     new_packed = UInt32[UInt32(L(S(entry))) for entry in g.packed]
     return FunctionGraph{N}(new_packed)
 end
@@ -158,7 +170,10 @@ end
 Every constant offset `o ∈ F₂²ⁿ` with `{p ⊕ o : p ∈ g1} == g2` (as
 sets). Empty when the graphs are not translates of one another.
 """
-function graph_xor_equivalence(g1::FunctionGraph{N}, g2::FunctionGraph{N}) where {N}
+function graph_xor_equivalence(
+    g1::FunctionGraph{N},
+    g2::FunctionGraph{N},
+) where {N}
     length(g1) == length(g2) || return UInt32[]
     set2 = Set(g2.packed)
     g2_first = @inbounds g2.packed[1]

@@ -1,25 +1,3 @@
-# Reproduction: the 8-bit quadratic-APN landscape known before the 3.4 GB set
-#
-# Prior to the large enumeration, 32,892 quadratic APN functions in eight
-# variables were known up to EA-equivalence, contributed by seven papers
-# (Edel–Pott 22, Yu–Wang–Li 8157, Weng–Tan–Gong 10, Taniguchi 2, Beierle–Leander
-# 12921, Yu–Perrin 5412, Beierle–Leander–Perrin 6368). All seven families are
-# re-housed as bulk corpora (32,916 members total — the raw counts). This
-# capstone recomputes the ortho-derivative EA-fingerprint (`apn_ea_mugshot`) of
-# every member and counts the distinct classes, *deriving* the literature's
-# 32,892 rather than assuming it: the 24 cross-family collisions are removed by
-# the computation, not by hand.
-#
-# `reproduce()` returns the fast per-family / raw totals (used by the test
-# suite). `distinct_up_to_ea()` performs the full ~33k-fingerprint deduplication
-# (minutes) and is run by `report()` / standalone.
-#
-# Reproduction mode: DERIVES the result from the re-housed corpora — the
-#   literature's 32,892 distinct-up-to-EA count is computed by ortho-derivative
-#   deduplication of all 32,916 members, not assumed.
-#
-# Run standalone:  julia --project=. papers/quadratic_apn_8bit_landscape.jl
-
 using VBF
 using VBFCatalog
 

@@ -73,15 +73,15 @@ result is what gets hashed for `lut_sha256` and stored in `lut_blob`.
 
 For now `m == n` (square S-boxes only).
 """
-function canonical_lut_bytes(s::SBox{N, T}) where {N, T}
+function canonical_lut_bytes(s::SBox{N,T}) where {N,T}
     bytes_per_entry = cld(N, 8)
     n = 1 << N
     out = Vector{UInt8}(undef, n * bytes_per_entry)
     @inbounds for (i, v) in pairs(s.lut)
         offset = (i - 1) * bytes_per_entry
         vi = UInt(v)
-        for b in 0:bytes_per_entry - 1
-            out[offset + b + 1] = UInt8((vi >> (8 * b)) & 0xff)
+        for b = 0:(bytes_per_entry-1)
+            out[offset+b+1] = UInt8((vi >> (8 * b)) & 0xff)
         end
     end
     out
@@ -106,31 +106,33 @@ Initialise a fresh SQLite catalog at `path` with the embedded
 `SCHEMA_VERSION`, the current UTC time, and the caller-supplied
 `bfa_version` / `git_sha` strings. Overwrites any existing file.
 """
-function create_catalog(path::AbstractString;
-                         bfa_version::AbstractString = "0.1.0-DEV",
-                         git_sha::AbstractString = "unknown")
+function create_catalog(
+    path::AbstractString;
+    bfa_version::AbstractString = "0.1.0-DEV",
+    git_sha::AbstractString = "unknown",
+)
     isfile(path) && rm(path)
     db = SQLite.DB(path)
-    # Use SQLite.execute, not DBInterface.execute, for write statements:
-    # DBInterface.execute returns a Cursor that holds resources until GC,
-    # which under --check-bounds=yes can block the implicit transaction
-    # commit. SQLite.execute returns nothing and releases the statement
-    # synchronously — what we want for DDL + writes.
+    # Writes use SQLite.execute; DBInterface's Cursor can block the commit.
     for stmt in _split_ddl(SCHEMA_DDL)
         isempty(strip(stmt)) && continue
         SQLite.execute(db, stmt)
     end
-    # Internal-only values (never user input) — safe to inline rather
-    # than parameter-bind. Avoids further interactions with the SQLite.jl
-    # 1.8 cursor lifetime issue.
+    # Internal-only values, safe to inline rather than parameter-bind.
     SQLite.execute(
         db,
         string(
             "INSERT INTO schema_meta (schema_version, built_at, bfa_version, git_sha) VALUES (",
-            Int(SCHEMA_VERSION), ", ",
-            _sql_quote(_utc_now_iso()), ", ",
-            _sql_quote(String(bfa_version)), ", ",
-            _sql_quote(String(git_sha)), ")"))
+            Int(SCHEMA_VERSION),
+            ", ",
+            _sql_quote(_utc_now_iso()),
+            ", ",
+            _sql_quote(String(bfa_version)),
+            ", ",
+            _sql_quote(String(git_sha)),
+            ")",
+        ),
+    )
     db
 end
 
@@ -153,9 +155,15 @@ disagrees with [`SCHEMA_VERSION`](@ref).
 function load_catalog(path::AbstractString = catalog_path())
     if !isfile(path)
         pkg_root = normpath(joinpath(@__DIR__, "..", ".."))
-        msg = string("BFA catalog not found at ", path, " — run\n",
-                     "    julia --project=", pkg_root, " data-build/build_catalog.jl\n",
-                     "to create it")
+        msg = string(
+            "BFA catalog not found at ",
+            path,
+            " — run\n",
+            "    julia --project=",
+            pkg_root,
+            " data-build/build_catalog.jl\n",
+            "to create it",
+        )
         throw(ArgumentError(msg))
     end
     db = SQLite.DB(path)
@@ -164,29 +172,31 @@ function load_catalog(path::AbstractString = catalog_path())
 end
 
 function _verify_schema!(db::SQLite.DB, path::AbstractString)
-    # SQLite.jl 1.4–1.8 anti-pattern: `collect(DBInterface.execute(...))` yields
-    # stale Row references because the cursor moves past the last row by the
-    # time `collect` returns. Always extract values inside the iteration loop
-    # (or use `first()` for single-row results).
     v = nothing
     found = false
-    for r in DBInterface.execute(db, "SELECT schema_version FROM schema_meta LIMIT 1")
+    for r in DBInterface.execute(
+        db,
+        "SELECT schema_version FROM schema_meta LIMIT 1",
+    )
         v = r.schema_version
         found = true
         break
     end
-    found ||
-        throw(ArgumentError("$path has no schema_meta row — catalog is empty or corrupted"))
-    isequal(v, SCHEMA_VERSION) ||
-        throw(ArgumentError(
+    found || throw(
+        ArgumentError(
+            "$path has no schema_meta row — catalog is empty or corrupted",
+        ),
+    )
+    isequal(v, SCHEMA_VERSION) || throw(
+        ArgumentError(
             "$path has schema_version $v but this BFA expects $SCHEMA_VERSION; " *
-            "re-run data-build/build_catalog.jl"))
+            "re-run data-build/build_catalog.jl",
+        ),
+    )
     db
 end
 
-# Naive SQL splitter: SQLite.jl's execute() handles only one statement at a
-# time. The schema DDL is a static, human-written file with no semicolons
-# in string literals, so splitting on ";" is safe here.
+# Naive SQL splitter: execute() takes one statement; the DDL has no literal ';'.
 function _split_ddl(ddl::AbstractString)
     stmts = String[]
     buf = IOBuffer()

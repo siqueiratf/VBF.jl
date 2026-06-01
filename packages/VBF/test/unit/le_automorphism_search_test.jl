@@ -4,9 +4,7 @@ using VBFCatalog
 using TOML
 using Test
 
-# Beierle–Leander 2022's n=7 LE-automorphism canonical-class tuples (re-housed
-# from the upstream into VBFCatalog data). The paper reports quadratic APN found
-# in classes 1, 7, 16, 19; the constrained search must reproduce that.
+# Beierle–Leander 2022's n=7 LE-automorphism canonical-class tuples (re-housed from the upstream into VBFCatalog data). The paper reports quadratic APN found in classes 1, 7, 16, 19; the constrained search must reproduce that.
 tuples = TOML.parsefile(joinpath(pkgdir(VBFCatalog), "data-raw",
                                  "le_automorphism_tuples", "n7.toml"))
 

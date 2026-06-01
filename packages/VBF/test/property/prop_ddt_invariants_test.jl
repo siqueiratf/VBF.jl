@@ -38,8 +38,7 @@ end
             d = ddt(s)
             n = 1 << N
 
-            # for a permutation, column 0 is also (2^N, 0, …, 0):
-            # F(x⊕a) ⊕ F(x) = 0 ⇔ x⊕a = x (injectivity) ⇔ a = 0
+            # for a permutation, column 0 is also (2^N, 0, …, 0): F(x⊕a) ⊕ F(x) = 0 ⇔ x⊕a = x (injectivity) ⇔ a = 0
             @test d[1, 1] == n
             @test all(==(0), view(d, 2:n, 1))
         end

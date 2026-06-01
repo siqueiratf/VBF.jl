@@ -1,25 +1,3 @@
-# Imports the `APN-Repository` n=6..9 APN catalog into the BFA catalog.
-#
-# APN-Repository stores each entry in Parquet with three relevant
-# columns:
-#
-#   field_n   int      — n
-#   irr_poly  string   — irreducible polynomial as a sum-of-monomials
-#                        string, e.g. "x^6 + x^4 + x^3 + x + 1"
-#   poly      string   — JSON list of [ksi_power, X_power] monomials,
-#                        e.g. "[[0, 3]]" for x^3 with coefficient ksi^0 = 1
-#
-# We materialise each entry to a length-2^n LUT using the per-row
-# irreducible polynomial (this is the *one source that records its own
-# field convention* — sboxU and Xanadu force us to guess), so the LUT
-# we compute matches what APN-Repository would compute. SHA the LUT,
-# then merge into the catalog under the same rules as the other importers.
-#
-# Usage:
-#     # uses BFA_APN_REPO_PATH env var or default ~/sboxU/APN-Repository
-#     julia --project=data-build data-build/import_apn_repository.jl
-#     julia --project=data-build data-build/import_apn_repository.jl --max 5
-
 using VBF
 using VBFCatalog
 import SQLite
@@ -27,7 +5,6 @@ import DBInterface
 import JSON3
 import Parquet2
 import Tables
-
 
 const _DEFAULT_APN_REPO_PATHS = (
     get(ENV, "BFA_APN_REPO_PATH", ""),

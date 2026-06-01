@@ -79,9 +79,7 @@ end
 end
 
 @testset "differential_spectrum: AES values" begin
-    # AES DDT is known: non-zero entries are 0, 2, 4. Row-by-row,
-    # exactly 1 entry of 4 + 126 entries of 2 + 129 entries of 0
-    # (per row excluding row 0 of a 4-uniform AES-style S-box).
+    # AES DDT is known: non-zero entries are 0, 2, 4. Row-by-row, exactly 1 entry of 4 + 126 entries of 2 + 129 entries of 0 (per row excluding row 0 of a 4-uniform AES-style S-box).
     s = load_literature_sbox("AES")
     sp = differential_spectrum(s)
     pairs = sorted_pairs(sp)

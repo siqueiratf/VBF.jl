@@ -64,5 +64,9 @@ function are_affine_equivalent(F::SBox, G::SBox; strategy::Symbol = :auto)
     elseif s === :general
         return _are_affine_equivalent_general(F, G)
     end
-    throw(ArgumentError("are_affine_equivalent: unknown strategy $(repr(strategy))"))
+    throw(
+        ArgumentError(
+            "are_affine_equivalent: unknown strategy $(repr(strategy))",
+        ),
+    )
 end

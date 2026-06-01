@@ -50,10 +50,6 @@ end
 end
 
 @testset "n=5 Gold/Kasami: permutation + APN" begin
-    # Algebraic degree of a monomial x^d equals popcount(d):
-    #   x^3  → popcount(3)  = 2 (Gold, quadratic)
-    #   x^5  → popcount(5)  = 2 (Gold, quadratic)
-    #   x^15 → popcount(15) = 4 (Kasami, not quadratic)
     expected = Dict("n5_Gold_x3" => 2, "n5_Gold_x5" => 2, "n5_Kasami_x15" => 4)
     for (name, deg) in expected
         s = load_apn_function(name)

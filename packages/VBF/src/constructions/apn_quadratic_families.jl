@@ -35,14 +35,22 @@ does fix which integer is the primitive element used to build `w`.
 """
 
 # Build the binomial  F(x) = x^{2ˢ+1} + w·x^{2^{ik}+2^{tk+s}}  over GF(2ⁿ).
-function _apn_binomial_lut(n::Int, s::Int, k::Int, i::Int, t::Int, w::Int, modulus::Int)
+function _apn_binomial_lut(
+    n::Int,
+    s::Int,
+    k::Int,
+    i::Int,
+    t::Int,
+    w::Int,
+    modulus::Int,
+)
     e1 = (1 << s) + 1
     e2 = (1 << (i * k)) + (1 << (t * k + s))
     out = Vector{Int}(undef, 1 << n)
-    @inbounds for x in 0:(1 << n) - 1
+    @inbounds for x = 0:((1<<n)-1)
         a = gf_pow(x, e1, n; modulus = modulus)
         b = gf_mul(w, gf_pow(x, e2, n; modulus = modulus), n; modulus = modulus)
-        out[x + 1] = a ⊻ b
+        out[x+1] = a ⊻ b
     end
     out
 end
@@ -62,21 +70,35 @@ Theorem 1.
 Requires `gcd(k, 3) = gcd(s, 3k) = 1` and the inequivalence guarantee
 `g₁ ≠ g₂` (see the module docstring); throws `ArgumentError` otherwise.
 """
-function bcp_apn(k::Integer, s::Integer; modulus::Integer = primitive_polynomial(3 * Int(k)))
-    kk = Int(k); ss = Int(s)
+function bcp_apn(
+    k::Integer,
+    s::Integer;
+    modulus::Integer = primitive_polynomial(3 * Int(k)),
+)
+    kk = Int(k)
+    ss = Int(s)
     n = 3 * kk
     kk ≥ 1 || throw(ArgumentError("bcp_apn: need k ≥ 1, got k=$kk"))
-    gcd(kk, 3) == 1 || throw(ArgumentError("bcp_apn: need gcd(k, 3) = 1, got k=$kk"))
-    gcd(ss, n) == 1 || throw(ArgumentError("bcp_apn: need gcd(s, 3k) = 1, got s=$ss, 3k=$n"))
+    gcd(kk, 3) == 1 ||
+        throw(ArgumentError("bcp_apn: need gcd(k, 3) = 1, got k=$kk"))
+    gcd(ss, n) == 1 ||
+        throw(ArgumentError("bcp_apn: need gcd(s, 3k) = 1, got s=$ss, 3k=$n"))
     i = mod(ss * kk, 3)
-    i == 0 && throw(ArgumentError("bcp_apn: i = s·k mod 3 must be nonzero, got 0 (s=$ss, k=$kk)"))
+    i == 0 && throw(
+        ArgumentError(
+            "bcp_apn: i = s·k mod 3 must be nonzero, got 0 (s=$ss, k=$kk)",
+        ),
+    )
     t = 3 - i
     d = (1 << (i * kk)) + (1 << (t * kk + ss)) - ((1 << ss) + 1)
     dd = d ÷ ((1 << kk) - 1)
     g1 = gcd((1 << (3 * kk)) - 1, dd)
     g2 = gcd((1 << kk) - 1, dd)
-    g1 != g2 || throw(ArgumentError(
-        "bcp_apn: APN guarantee needs g₁ ≠ g₂, got g₁=g₂=$g1 (k=$kk, s=$ss)"))
+    g1 != g2 || throw(
+        ArgumentError(
+            "bcp_apn: APN guarantee needs g₁ ≠ g₂, got g₁=g₂=$g1 (k=$kk, s=$ss)",
+        ),
+    )
     w = gf_pow(2, (1 << kk) - 1, n; modulus = Int(modulus))  # order 2^{2k}+2ᵏ+1
     SBox{n}(_apn_binomial_lut(n, ss, kk, i, t, w, Int(modulus)))
 end
@@ -95,16 +117,31 @@ Theorem 2.
 Requires `gcd(k, 2) = gcd(s, 2k) = 1` (so `k` and `s` are odd) and
 `s ≤ 4k − 1`; throws `ArgumentError` otherwise.
 """
-function bcl_apn(k::Integer, s::Integer; modulus::Integer = primitive_polynomial(4 * Int(k)))
-    kk = Int(k); ss = Int(s)
+function bcl_apn(
+    k::Integer,
+    s::Integer;
+    modulus::Integer = primitive_polynomial(4 * Int(k)),
+)
+    kk = Int(k)
+    ss = Int(s)
     n = 4 * kk
     kk ≥ 1 || throw(ArgumentError("bcl_apn: need k ≥ 1, got k=$kk"))
-    gcd(kk, 2) == 1 || throw(ArgumentError("bcl_apn: need gcd(k, 2) = 1 (k odd), got k=$kk"))
-    gcd(ss, 2 * kk) == 1 || throw(ArgumentError("bcl_apn: need gcd(s, 2k) = 1, got s=$ss, 2k=$(2kk)"))
-    ss ≤ 4 * kk - 1 || throw(ArgumentError("bcl_apn: need s ≤ 4k − 1, got s=$ss, 4k−1=$(4kk - 1)"))
+    gcd(kk, 2) == 1 ||
+        throw(ArgumentError("bcl_apn: need gcd(k, 2) = 1 (k odd), got k=$kk"))
+    gcd(ss, 2 * kk) == 1 || throw(
+        ArgumentError("bcl_apn: need gcd(s, 2k) = 1, got s=$ss, 2k=$(2kk)"),
+    )
+    ss ≤ 4 * kk - 1 || throw(
+        ArgumentError("bcl_apn: need s ≤ 4k − 1, got s=$ss, 4k−1=$(4kk - 1)"),
+    )
     i = mod(ss * kk, 4)
-    i == 0 && throw(ArgumentError("bcl_apn: i = s·k mod 4 must be nonzero, got 0 (s=$ss, k=$kk)"))
+    i == 0 && throw(
+        ArgumentError(
+            "bcl_apn: i = s·k mod 4 must be nonzero, got 0 (s=$ss, k=$kk)",
+        ),
+    )
     t = 4 - i
-    w = gf_pow(2, (1 << kk) - 1, n; modulus = Int(modulus))  # order 2^{3k}+2^{2k}+2ᵏ+1
+    # order 2^{3k} + 2^{2k} + 2ᵏ + 1
+    w = gf_pow(2, (1 << kk) - 1, n; modulus = Int(modulus))
     SBox{n}(_apn_binomial_lut(n, ss, kk, i, t, w, Int(modulus)))
 end

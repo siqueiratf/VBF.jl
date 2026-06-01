@@ -41,8 +41,7 @@ end
 end
 
 @testset "walsh_zeroes: same size on inv(F) (CCZ-invariance)" begin
-    # CCZ-equivalence preserves |Z(F)|. Functional inverse is always
-    # CCZ-equivalent to F, so |Z(F)| == |Z(F⁻¹)|.
+    # CCZ-equivalence preserves |Z(F)|. Functional inverse is always CCZ-equivalent to F, so |Z(F)| == |Z(F⁻¹)|.
     for name in ("PRESENT", "GIFT", "SKINNY_4", "Midori_Sb0")
         F = load_literature_sbox(name)
         @test is_permutation(F)

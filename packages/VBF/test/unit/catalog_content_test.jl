@@ -4,8 +4,7 @@ using VBF
 using Test
 import DBInterface
 
-# Tests against the committed BFA_catalog.sqlite. Regenerate with:
-#     julia --project=. data-build/build_catalog.jl
+# Tests against the committed BFA_catalog.sqlite. Regenerate with:     julia --project=. data-build/build_catalog.jl
 
 @testset "committed catalog is present" begin
     @test is_catalog_built()

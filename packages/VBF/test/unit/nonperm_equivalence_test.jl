@@ -3,11 +3,6 @@ using VBF
 using Random
 using Test
 
-# Equivalence testing for non-permutation functions. Almost every APN function
-# is 3-to-1 (not a permutation), so `are_ea_equivalent`, `are_ccz_equivalent`,
-# and `are_linear_equivalent` must handle non-permutation inputs and the
-# non-permutation ortho-derivatives via `are_linearly_equivalent_general`.
-
 # Taniguchi's three n=8 CCZ-classes (computed once) — pairwise EA-inequivalent.
 reps = [r.sbox for r in taniguchi_apn_representatives(4)]
 
@@ -25,11 +20,6 @@ reps = [r.sbox for r in taniguchi_apn_representatives(4)]
 end
 
 @testset "are_linearly_equivalent_general: degenerate (non-spanning) images" begin
-    # When F's image does not span F₂ⁿ, L₁ is only partially determined but
-    # still extends to an invertible map — the success test must be "the pinned
-    # part of L₁ is injective", not "L₁ is fully determined (length == N)".
-    # The earlier `length(bin) == N` test broke reflexivity here and risked
-    # accepting a non-invertible L₁ when the outputs were dependent.
     z  = SBox(UInt8[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])  # zero
     c3 = SBox(UInt8[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])  # constant 3
     c5 = SBox(UInt8[5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5])  # constant 5

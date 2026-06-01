@@ -28,14 +28,14 @@ relate) the graph survive.
     restriction.
 """
 
-# Core: given the linear equivalences relating o_src and o_dst (as
-# (L1, L2) pairs with o_dst = L1 ∘ o_src ∘ L2), enumerate candidate CCZ
-# maps via the `delta` sweep and keep those that translate G_src to G_dst.
+# From the (L1, L2) ortho-derivative maps, enumerate CCZ maps G_src → G_dst.
 function _ortho_derivative_maps(
-    F_dst::SBox{N,T}, F_src::SBox{N,T},
-    o_dst::SBox{N,T}, o_src::SBox{N,T},
+    F_dst::SBox{N,T},
+    F_src::SBox{N,T},
+    o_dst::SBox{N,T},
+    o_src::SBox{N,T},
 ) where {N,T}
-    result = F2LinearMap{2N, UInt32}[]
+    result = F2LinearMap{2N,UInt32}[]
     n_size = 1 << N
     G_dst = FunctionGraph(F_dst)
     G_src = FunctionGraph(F_src)
@@ -48,13 +48,14 @@ function _ortho_derivative_maps(
         L_A_inv = inv(L_A)
         L_B_T = transpose(L_B)
         # s_src ∘ L_A_inv evaluated on the canonical basis (and 0).
-        s_src_LAinv = T[s_src[L_A_inv(T(x)) + 1] for x in 0:(n_size - 1)]
-        @inbounds for delta in 0:(n_size - 1)
-            C0 = s_dst[delta + 1] ⊻ L_B_T(s_src_LAinv[1])   # s_src[L_A_inv(0)] = s_src[0]
+        s_src_LAinv = T[s_src[L_A_inv(T(x))+1] for x = 0:(n_size-1)]
+        @inbounds for delta = 0:(n_size-1)
+            # s_src[L_A_inv(0)] = s_src[0]
+            C0 = s_dst[delta+1] ⊻ L_B_T(s_src_LAinv[1])
             img = Vector{T}(undef, N)
-            for i in 0:(N - 1)
+            for i = 0:(N-1)
                 ei = 1 << i
-                img[i + 1] = C0 ⊻ s_dst[(ei ⊻ delta) + 1] ⊻ L_B_T(s_src_LAinv[ei + 1])
+                img[i+1] = C0 ⊻ s_dst[(ei⊻delta)+1] ⊻ L_B_T(s_src_LAinv[ei+1])
             end
             L_C = F2LinearMap{N,T}(img)
             L = ea_mapping(L_A_inv, L_B_T, L_C)
@@ -74,7 +75,7 @@ quadratic APN.
 """
 function automorphisms_from_ortho_derivative(F::SBox{N,T}) where {N,T}
     o = ortho_derivative(F)
-    o === nothing && return F2LinearMap{2N, UInt32}[]
+    o === nothing && return F2LinearMap{2N,UInt32}[]
     return _ortho_derivative_maps(F, F, o, o)
 end
 
@@ -87,10 +88,13 @@ not returned), derived from the linear equivalences of the
 ortho-derivatives. Non-empty iff `F` and `F_prime` are EA-equivalent
 (for quadratic APN).
 """
-function ea_mappings_from_ortho_derivative(F::SBox{N,T}, F_prime::SBox{N,T}) where {N,T}
+function ea_mappings_from_ortho_derivative(
+    F::SBox{N,T},
+    F_prime::SBox{N,T},
+) where {N,T}
     o = ortho_derivative(F)
     o_prime = ortho_derivative(F_prime)
-    (o === nothing || o_prime === nothing) && return F2LinearMap{2N, UInt32}[]
+    (o === nothing || o_prime === nothing) && return F2LinearMap{2N,UInt32}[]
     return _ortho_derivative_maps(F, F_prime, o, o_prime)
 end
 

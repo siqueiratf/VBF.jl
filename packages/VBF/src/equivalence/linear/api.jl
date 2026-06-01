@@ -53,8 +53,7 @@ false
 ```
 """
 function are_linear_equivalent(F::SBox, G::SBox; strategy::Symbol = :auto)
-    # Different input bit-widths or storage types cannot be equivalent —
-    # return false without throwing (matching the spirit of the predicate).
+    # Different bit-widths or storage types are never equivalent: return false.
     inputbits(F) == inputbits(G) || return false
     storage_type(F) == storage_type(G) || return false
 
@@ -63,7 +62,7 @@ function are_linear_equivalent(F::SBox, G::SBox; strategy::Symbol = :auto)
         if is_permutation(F) && is_permutation(G)
             s = inputbits(F) ≥ 5 ? :stennes : :lpp_backtracking
         else
-            s = :general          # non-permutations (e.g. ortho-derivatives of APN)
+            s = :general  # non-permutations (e.g. ortho-derivatives of APN)
         end
     end
     if s === :lpp_backtracking
@@ -71,12 +70,14 @@ function are_linear_equivalent(F::SBox, G::SBox; strategy::Symbol = :auto)
     elseif s === :general
         return are_linearly_equivalent_general(F, G)
     elseif s === :stennes
-        # Stennes works on permutations only; non-permutations are never
-        # linearly equivalent to a permutation, and two non-permutations
-        # don't admit the canonical-form construction. Defer to false.
+        # Stennes is permutations-only; defer non-permutations to false.
         (is_permutation(F) && is_permutation(G)) || return false
         return linear_representative(F).representative ==
                linear_representative(G).representative
     end
-    throw(ArgumentError("are_linear_equivalent: unknown strategy $(repr(strategy))"))
+    throw(
+        ArgumentError(
+            "are_linear_equivalent: unknown strategy $(repr(strategy))",
+        ),
+    )
 end
