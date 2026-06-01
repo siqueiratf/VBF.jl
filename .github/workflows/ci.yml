@@ -26,7 +26,7 @@ jobs:
   test:
     name: Test • Julia ${{ matrix.julia }} • ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -57,3 +57,7 @@ jobs:
         uses: julia-actions/julia-runtest@v1
         with:
           project: packages/VBF
+        env:
+          # Hosted runners are small; cap the worker count so the few heavy
+          # items (n=6 CCZ enumeration, affine equivalence) don't contend.
+          RETESTITEMS_NWORKERS: '2'
