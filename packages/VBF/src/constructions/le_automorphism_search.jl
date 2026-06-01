@@ -1,6 +1,7 @@
 """
-LE-automorphism-constrained search for quadratic APN functions — Beierle–Leander,
-"New Instances of Quadratic APN Functions" (IEEE-IT 2022).
+LE-automorphism-constrained search for quadratic APN functions
+([Beierle and Leander, 2022](@cite BeierleLeander2022), "New Instances of
+Quadratic APN Functions").
 
 The plain tree search [`search_quadratic_apn`](@ref) explodes past `n ≈ 6`. BL22's
 `n = 7, 8` search instead fixes a **linear self-equivalence**: for canonical
@@ -12,7 +13,7 @@ tractable.
 [`search_quadratic_apn_le`](@ref) fills the orbit representatives `pos` (one per
 `B`-orbit; `fix` lists nonzero fixed points to also search), propagating each
 assignment along its orbit and reusing the same incremental DDT- and degree-2
-pruning as the unconstrained search ([`_add_point!`](@ref)/[`_remove_point!`](@ref)).
+pruning as the unconstrained search (`_add_point!`/`_remove_point!`).
 Each completed candidate is independently re-verified (`du == 2 && deg == 2`).
 `A`, `B` are the length-`2ⁿ` lookup tables of the linear maps (the canonical-class
 tuples of BL22). The n=7 canonical classes 1, 7, 16, 19 each yield quadratic APN,

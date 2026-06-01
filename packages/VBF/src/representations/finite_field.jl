@@ -29,13 +29,27 @@ julia> using VBF
 julia> gf_mul(2, 3, 4)              # 2 · 3 in GF(2⁴) with x⁴ + x + 1
 6
 
-julia> gf_pow(2, 3, 4)              # 2³ = 8
-0x08 == 8
-true
+julia> gf_pow(2, 3, 4)             # x³ where x is the field generator
+8
 
-julia> gf_monomial_lut(4, 3)        # the n=4 Gold APN x³ LUT
+julia> gf_monomial_lut(4, 3)       # the n=4 Gold x³ APN LUT
 16-element Vector{Int64}:
- …
+  0
+  1
+  8
+ 15
+ 12
+ 10
+  1
+  1
+ 10
+ 15
+ 15
+ 12
+  8
+ 10
+  8
+ 12
 ```
 """
 
@@ -193,8 +207,8 @@ end
     gf_monomial_lut(n::Integer, d::Integer; modulus = primitive_polynomial(n)) -> Vector{Int}
 
 Length-`2ⁿ` lookup table of `x ↦ xᵈ` in `GF(2ⁿ)`, indexed by `x` in
-`0:2ⁿ - 1`. Useful for instantiating monomial S-boxes from the Gold,
-Kasami, Welch, Niho, and Dobbertin families.
+`0:2ⁿ - 1`. Useful for instantiating monomial S-boxes from the Gold
+([Gold, 1968](@cite Gold1968)), Kasami, Welch, Niho, and Dobbertin families.
 
 # Examples
 ```jldoctest

@@ -63,6 +63,16 @@ end
 A quadratic APN `Q` with `ortho_derivative(Q) == s`, or `nothing` if no
 such `Q` exists. The result is determined only up to adding an
 F₂-linear function.
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> π = ortho_derivative(gold_apn(5, 1));
+
+julia> ortho_derivative(ortho_integral(π)) == π
+true
+```
 """
 function ortho_integral(s::SBox{N,T}) where {N,T}
     n = N

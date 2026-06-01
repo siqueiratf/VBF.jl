@@ -13,6 +13,14 @@ of the F₂ subspaces it contains.
 
 The output masks `b` for which the component `b·F` is bent (`|W_F(a,b)| = 2^{n/2}`
 for all `a`). Empty when `n` is odd (no bent functions exist).
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> isempty(bent_components(gold_apn(5, 1)))  # n = 5 is odd
+true
+```
 """
 function bent_components(F::SBox{N, T}) where {N, T}
     isodd(N) && return Int[]

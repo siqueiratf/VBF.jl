@@ -165,8 +165,7 @@ the completion vectors **prepended**: the returned vector's *last*
 `length(partial)` rows are the original input, the first rows are
 greedily-chosen standard-basis vectors `2^c`.
 
-This is the reversed counterpart of [`complete_basis`](@ref); it ports
-sboxU's `complete_basis_reversed` and underlies
+This is the reversed counterpart of [`complete_basis`](@ref) and underlies
 [`generating_affine_map_r`](@ref). Throws if `partial` was not already
 linearly independent.
 """

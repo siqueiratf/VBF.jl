@@ -7,7 +7,7 @@ A vectorial Boolean function `F : F₂ᴺ → F₂ᴺ` stored as a lookup table.
 - `N`: number of input/output bits. Must satisfy `1 ≤ N ≤ 8*sizeof(T)`.
 - `T`: storage word. `UInt8` covers `N ≤ 8`, `UInt16` covers `N ≤ 16`,
   `UInt32` covers `N ≤ 32`, `UInt64` covers `N ≤ 64`. Functions on
-  `N > 64` bits use a different storage scheme (added in a later phase).
+  `N > 64` bits are not currently supported.
 
 # Fields
 - `lut::Vector{T}`: length `2^N`; `lut[x+1]` is `F(x)` for `x = 0,…,2^N-1`.
@@ -28,6 +28,7 @@ julia> using VBF
 
 julia> id = SBox(UInt8[0, 1, 2, 3])
 SBox{2, UInt8} (4-element LUT)
+    0x00   0x01   0x02   0x03
 
 julia> id(2)
 0x02
@@ -68,7 +69,7 @@ function _storage_for(N::Integer)
     N ≤ 16 && return UInt16
     N ≤ 32 && return UInt32
     N ≤ 64 && return UInt64
-    throw(ArgumentError("scalar SBox not supported for N=$N > 64; bit-packed storage lands in a later phase"))
+    throw(ArgumentError("scalar SBox not supported for N=$N > 64; bit-packed storage is not implemented"))
 end
 
 SBox{N}(lut::AbstractVector{<:Integer}) where N =

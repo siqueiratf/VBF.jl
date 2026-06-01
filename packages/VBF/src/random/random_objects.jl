@@ -9,7 +9,7 @@ storage type `T` defaults to the smallest unsigned covering `N` bits.
 - [`random_permutation_sbox`](@ref)      — uniform permutation `SBox{N}`
 - [`random_linear_function`](@ref)       — `F2LinearMap{N}` (possibly singular)
 - [`random_invertible_linear_map`](@ref) — random invertible `F2LinearMap{N}`
-  (alias [`random_linear_permutation`](@ref), the sboxU name)
+  (alias [`random_linear_permutation`](@ref))
 - [`random_affine_permutation`](@ref)    — invertible linear part + random shift
 """
 
@@ -78,7 +78,7 @@ end
 """
     random_linear_permutation(rng, ::Val{N}, ::Type{T}=_storage_for(N))
 
-Alias for [`random_invertible_linear_map`](@ref) (the sboxU name).
+Alias for [`random_invertible_linear_map`](@ref).
 """
 const random_linear_permutation = random_invertible_linear_map
 

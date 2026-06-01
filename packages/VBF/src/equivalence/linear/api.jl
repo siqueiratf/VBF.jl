@@ -7,10 +7,8 @@ exist invertible F₂-linear maps `L₁, L₂` such that
     G = L₁ ∘ F ∘ L₂.
 
 This file dispatches the public entry points to the underlying
-algorithm strategies. At v0.1 two strategies are available — propagation-
-pruned backtracking (Phase 5) and Stennes' canonical-representative
-algorithm (Phase 6); the affine-partition strategy follows in a later
-phase.
+algorithm strategies. Two strategies are available: propagation-pruned
+backtracking and Stennes' canonical-representative algorithm.
 
 # Functions
 - [`are_linear_equivalent`](@ref) — `Bool` decision procedure.

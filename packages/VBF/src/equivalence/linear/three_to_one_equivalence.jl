@@ -1,6 +1,7 @@
 """
 Linear equivalence of **canonical 3-to-1 (triplicate) functions**
-(Ivković–Kaleyski). A canonical triplicate has `F(0)=0` and every fibre equal to
+([Ivković and Kaleyski, 2022](@cite IvkovicKaleyski2022)). A canonical triplicate
+has `F(0)=0` and every fibre equal to
 an `F₄`-line `{i, βi, β²i}` (β the order-3 element of `GF(2ⁿ)`), all three mapping
 to the same value — so `x³` is the prototypical example.
 
@@ -11,7 +12,7 @@ invertible F₂-linear `L₁, L₂`, returning one such pair or `nothing`;
 The search guesses `L₁` on triple-outputs (pairing a `C₁`-output with a
 `C₂`-output), configures `L₂` by matching the three preimages of the paired
 triples (three rotations × two parities), propagates both maps by linearity, and
-backtracks on any contradiction — a port of Ivković–Kaleyski's algorithm.
+backtracks on any contradiction (Ivković–Kaleyski's algorithm).
 """
 
 # ----- canonical-triplicate representation ----------------------------------

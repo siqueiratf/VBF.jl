@@ -17,8 +17,7 @@
 #     `corpora/simonberg_gf4_n8.sqlite` as `quadratic-coeffs-v1` encodings
 #     (37 bytes each), with one descriptor row in `bulk_corpora`. The full LUTs
 #     are reconstructed on demand (`corpus_function`) — they never enter the
-#     `functions` table. (This supersedes Phase 15's "matches only", which found
-#     no coincidences with the existing catalog.)
+#     `functions` table.
 #
 # Polynomials are evaluated over GF(2⁸) with the Conway polynomial (matching
 # Sage's `GF(2**8)`, so `a`/`ksi` ↦ the element 2). One-off developer step;

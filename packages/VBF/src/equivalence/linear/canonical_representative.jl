@@ -14,7 +14,7 @@ comparison — the asymptotically faster route compared to backtracking
 once `n ≥ 6`.
 
 Implements Lukas Stennes' canonical-representative algorithm for linear
-equivalence (see the bibliography).
+equivalence, as found in sboxU ([Perrin et al., 2025](@cite sboxU)).
 
 The algorithm progressively defines `A` and `B` one input at a time,
 propagating each newly-fixed value via F₂-linearity (`A(x ⊕ y) =

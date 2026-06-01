@@ -1,6 +1,6 @@
 """
-Taniguchi's family of quadratic APN functions — Taniguchi, "On some quadratic
-APN functions" (Designs, Codes and Cryptography, 2019).
+Taniguchi's family of quadratic APN functions — [Taniguchi (2019)](@cite Taniguchi2019),
+"On some quadratic APN functions".
 
 Carlet's construction `F(x, y) = (B(x, y), G(x, y))` with the bent function
 `B(x, y) = x·y` turns a suitable `G` over `GF(2ⁿ) × GF(2ⁿ)` into an APN function
@@ -76,6 +76,14 @@ that separates quadratic-APN classes). Enumerates every admissible `(m, a, b)`
 (`gcd(m, half)=1`, `b ≠ 0`, `P` rootless), keeps the quadratic-APN members, and
 tags `new = (a ≠ 0)`. On `half = 4` this returns the three classes of Tan19 — one
 old (`a = 0`, Zhou–Pott) and the two new (`a ≠ 0`) ones.
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> length(taniguchi_apn_representatives(4))
+3
+```
 """
 function taniguchi_apn_representatives(half::Integer;
                                        modulus::Integer = primitive_polynomial(half))

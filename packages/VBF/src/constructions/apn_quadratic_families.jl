@@ -55,8 +55,9 @@ The quadratic APN binomial over `GF(2^{3k})`
     F(x) = x^{2ˢ+1} + w · x^{2^{ik} + 2^{tk+s}},   i = s·k mod 3,  t = 3 − i,
 
 with `w = α^{2ᵏ−1}` (`α = 2`, so `w` has order `2^{2k}+2ᵏ+1`). This is the
-`n` divisible by `3` class: Budaghyan–Carlet–Pott (2006), Theorem 2, refined as
-Budaghyan–Carlet–Leander (2008), Theorem 1.
+`n` divisible by `3` class: [Budaghyan–Carlet–Pott (2006)](@cite BudaghyanCarletPott2006),
+Theorem 2, refined as [Budaghyan–Carlet–Leander (2008)](@cite BudaghyanCarletLeander2008),
+Theorem 1.
 
 Requires `gcd(k, 3) = gcd(s, 3k) = 1` and the inequivalence guarantee
 `g₁ ≠ g₂` (see the module docstring); throws `ArgumentError` otherwise.
@@ -88,7 +89,8 @@ The quadratic APN binomial over `GF(2^{4k})`
     F(x) = x^{2ˢ+1} + w · x^{2^{ik} + 2^{tk+s}},   i = s·k mod 4,  t = 4 − i,
 
 with `w = α^{2ᵏ−1}` (`α = 2`, so `w` has order `2^{3k}+2^{2k}+2ᵏ+1`). This is the
-`n` divisible by `4` class: Budaghyan–Carlet–Leander (2008), Theorem 2.
+`n` divisible by `4` class: [Budaghyan–Carlet–Leander (2008)](@cite BudaghyanCarletLeander2008),
+Theorem 2.
 
 Requires `gcd(k, 2) = gcd(s, 2k) = 1` (so `k` and `s` are odd) and
 `s ≤ 4k − 1`; throws `ArgumentError` otherwise.

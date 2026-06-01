@@ -59,5 +59,23 @@ the ANF of the `b`-th output coordinate of `s`.
 
 To recover the truth table from `anf(s)`, call `mobius!` on it
 (the transform is its own inverse).
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> s = SBox(UInt8[0, 0, 0, 1]);   # output 0 is the AND x₀·x₁
+
+julia> anf(s)
+4-element Vector{UInt8}:
+ 0x00
+ 0x00
+ 0x00
+ 0x01
+```
+
+Only entry `m = 3` (bits `0` and `1` set, the monomial `x₀·x₁`) is
+nonzero, and its bit `0` marks that this monomial appears in output
+coordinate `0`.
 """
 anf(s::SBox{N, T}) where {N, T} = mobius(s.lut)

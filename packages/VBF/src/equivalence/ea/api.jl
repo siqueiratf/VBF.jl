@@ -21,14 +21,16 @@ and is itself strictly contained in CCZ-equivalence.
 whose ortho-derivatives are themselves permutations route to
 `:ortho_derivative`; everything else routes to `:heggebakk`.
 
-- `:ortho_derivative` — for quadratic APN. By Carlet-Charpin-
-  Kyureghyan 2007, the linear-equivalence class of the ortho-derivative
+- `:ortho_derivative` — for quadratic APN. By
+  [Canteaut, Couvreur and Perrin (2022)](@cite CanteautCouvreurPerrin2022EA), the
+  linear-equivalence class of the ortho-derivative
   `π_F` is an EA-invariant of F. The decision reduces to a single call
   to [`are_linear_equivalent`](@ref) on the ortho-derivatives — orders
   of magnitude faster than `:heggebakk`, and **correct on the monomial
-  APN where `:heggebakk` degenerates** (see Phase 8 limitations).
+  APN where `:heggebakk` degenerates**.
 
-- `:heggebakk` — Heggebakk's partition-respecting algorithm:
+- `:heggebakk` — Heggebakk's partition-respecting algorithm
+  ([Heggebakk, 2022](@cite Heggebakk2022Thesis)):
 
   1. Compute the k-multiplicity partition of `F` and `G`
      ([`ea_partition`](@ref)). If their bucket-size multisets differ,
@@ -54,10 +56,9 @@ whose ortho-derivatives are themselves permutations route to
   set is the full `GL(n, F₂)` and step 3 enumerates millions of
   candidates. The `max_outer_per_sigma` kwarg short-circuits this; on
   monomial APN at `n ≥ 5` the decision will return `false` even if
-  EA-equivalent. Phase 10 CCZ-invariants will provide the necessary
-  additional filtering for these cases. For now,
-  [`are_affine_equivalent`](@ref) is the recommended fallback when
-  affine drift is not relevant.
+  EA-equivalent. The `:ortho_derivative` strategy is the correct route
+  for those quadratic-APN cases; [`are_affine_equivalent`](@ref) is a
+  fallback when affine drift is not relevant.
 """
 
 # ---------------------------------------------------------------------------
@@ -78,6 +79,23 @@ other non-permutations return `false`.
 size per bucket map; a bucket map yielding more than this many `L₁`
 candidates is skipped (returning `false` overall if no other bucket
 map succeeds — see *Limitations* in the module docstring).
+
+# Examples
+
+The Gold functions `x³` and `x⁵` over `F₂⁵` are quadratic APN with
+distinct EA-classes (routed through the ortho-derivative test):
+
+```jldoctest
+julia> using VBF
+
+julia> are_ea_equivalent(load_apn_function("n5_Gold_x3"),
+                         load_apn_function("n5_Gold_x3"))
+true
+
+julia> are_ea_equivalent(load_apn_function("n5_Gold_x3"),
+                         load_apn_function("n5_Gold_x5"))
+false
+```
 """
 function are_ea_equivalent(
     F::SBox, G::SBox;
@@ -90,11 +108,9 @@ function are_ea_equivalent(
 
     s = strategy
     if s === :auto
-        # Reflexivity holds for every function (via identity maps), including
-        # the non-quadratic non-permutations that no strategy below can decide.
-        # Scoped to :auto so an explicitly requested strategy keeps its exact
-        # semantics (e.g. :heggebakk legitimately short-circuits on a
-        # degenerate partition, even for F vs F).
+        # Reflexivity holds for every function via identity maps. Scoped to
+        # :auto so an explicitly requested strategy keeps its exact semantics
+        # (:heggebakk legitimately short-circuits on a degenerate partition).
         F.lut == G.lut && return true
         s = _ea_auto_strategy(F, G)
     end
@@ -110,13 +126,10 @@ function are_ea_equivalent(
     throw(ArgumentError("are_ea_equivalent: unknown strategy $(repr(strategy))"))
 end
 
-# Pick a default strategy: prefer the ortho-derivative for quadratic APN
-# permutations (where it sidesteps heggebakk's degenerate-partition issue).
+# Quadratic APN (permutation or not) routes to the ortho-derivative test, which
+# handles non-permutations; everything else uses the permutation-only Heggebakk
+# search.
 function _ea_auto_strategy(F::SBox, G::SBox)
-    # Quadratic APN (permutation OR not — almost all APN are 3-to-1) routes to
-    # the ortho-derivative test, which now uses the general, non-permutation-
-    # capable linear-equivalence. Everything else falls back to the
-    # permutation-only Heggebakk search.
     algebraic_degree(F) == 2 && algebraic_degree(G) == 2 || return :heggebakk
     ortho_derivative(F) === nothing && return :heggebakk
     ortho_derivative(G) === nothing && return :heggebakk
@@ -125,13 +138,11 @@ end
 
 # Ortho-derivative-based EA-equivalence (necessary condition).
 #
-# For quadratic APN F, G: F ~_EA G ⇒ π_F ~_L π_G (Carlet-Charpin-
-# Kyureghyan 2007). We test this necessary condition via Phase 6's
-# :stennes linear-equivalence. Equal linear-equivalence classes of the
-# ortho-derivatives are necessary; sufficiency holds inside the
-# quadratic-APN class for most known families (and is empirically
-# confirmed for monomial APN, where this is the only way to make the
-# decision when heggebakk's partition degenerates).
+# For quadratic APN F, G: F ~_EA G ⇒ π_F ~_L π_G (Canteaut-Couvreur-
+# Perrin 2022). We test this necessary condition via linear-equivalence
+# of the ortho-derivatives. Sufficiency holds inside the quadratic-APN class
+# for most known families, and is the only way to decide monomial APN, where
+# heggebakk's partition degenerates.
 function _are_ea_equivalent_via_ortho(F::SBox, G::SBox)
     π_F = ortho_derivative(F)
     π_F === nothing && return false
@@ -139,12 +150,9 @@ function _are_ea_equivalent_via_ortho(F::SBox, G::SBox)
     π_G === nothing && return false
     # Fast necessary reject: the ortho-derivative fingerprint (its differential
     # and Walsh spectra are linear-equivalence invariants of π). Different
-    # fingerprints ⇒ not linear-equivalent ⇒ not EA-equivalent — instant, and it
-    # spares the exact backtracking the costly job of *exhausting* an inequivalent
-    # pair at n=8. Only same-fingerprint candidates pay for the exact test.
+    # fingerprints cannot be linear-equivalent, so only matching candidates pay
+    # for the exact backtracking test.
     apn_ea_mugshot(F) == apn_ea_mugshot(G) || return false
-    # `:auto` linear-equivalence routes non-permutation ortho-derivatives (the
-    # common case for 3-to-1 APN) through the general backtracking.
     return are_linear_equivalent(π_F, π_G)
 end
 

@@ -19,7 +19,7 @@ relate) the graph survive.
 
 !!! note "Permutation ortho-derivative required"
     These functions obtain the linear (self-)equivalences of the
-    ortho-derivative via Phase 6's `linear_equivalences`, which is
+    ortho-derivative via `linear_equivalences`, which is
     permutations-only. When the ortho-derivative is **not** a
     permutation (e.g. non-bijective quadratic APN such as `x³` over
     `GF(2⁴)`, whose ortho-derivative is many-to-one) the search yields

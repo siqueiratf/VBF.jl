@@ -18,8 +18,8 @@ The double sum is reorganised so that `∑_a W_F(a, b)^k` is precomputed once pe
 """
     sigma_multiplicities(F::SBox{N,T}; k::Int = 4) -> Spectrum
 
-The multiset `{σ_F^k(s) : s ∈ F₂ⁿ}` as a [`Spectrum`](@ref). Default
-`k = 4` matches sboxU.
+The multiset `{σ_F^k(s) : s ∈ F₂ⁿ}` as a [`Spectrum`](@ref). The default
+`k = 4` is the standard choice for the APN setting.
 
 # Examples
 

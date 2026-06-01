@@ -12,6 +12,14 @@ the F₂ subspaces it contains. Under `F ↦ L₁ ∘ F ∘ L₂` the image beco
 
 The sorted set of distinct output values of `F` (no multiplicities). For a
 permutation this is all of `GF(2ⁿ)`.
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> length(image_set(load_literature_sbox("PRESENT")))  # 4-bit permutation
+16
+```
 """
 image_set(F::SBox{N, T}) where {N, T} = sort!(collect(Set(Int.(F.lut))))
 

@@ -14,8 +14,8 @@ is affine. If found, we have `currentG = F ∘ A₂ ⊕ A` for some affine
 
 # Algorithm
 
-Two phases, mirroring `innerPermutation()` + `dfs()` in heggebakk's
-`permutation.c`:
+Two stages, mirroring `innerPermutation()` + `dfs()` in Heggebakk's
+algorithm:
 
 **(1) Domain reduction.** For each basis element `bᵢ = 2ⁱ`, compute
 the **3-derivative trail** of `currentG` at `bᵢ`,
@@ -52,8 +52,8 @@ lives in [`are_ea_equivalent`](@ref).
 Domain reduction is `O(2^{3n})` once. DFS is bounded by `∏ |domains[i]|`
 which depends on the partition refinement; for finely-partitioned `F`
 this is small. **For monomial APN (degenerate partition), the search
-becomes infeasible past n=4** — Phase 10's CCZ-invariants will provide
-the necessary additional filtering.
+becomes infeasible past n=4**; the `:ortho_derivative` EA strategy
+handles those cases instead.
 """
 
 # 3-derivative trail {f(x) ⊕ f(y) ⊕ f(x ⊕ y) : y ∈ F₂ⁿ} as a BitVector

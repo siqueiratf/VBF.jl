@@ -1,7 +1,7 @@
 """
 Enumeration of *all* linear equivalences, and the self-equivalence groups.
 
-Phase 6's [`are_linear_equivalent`](@ref) answers the yes/no question
+[`are_linear_equivalent`](@ref) answers the yes/no question
 "is `G = L₁ ∘ F ∘ L₂` for some invertible linear `L₁, L₂`?". Several
 downstream tools (automorphism groups, ortho-derivative-based EA
 mappings) need the *full set* of witnessing pairs `(L₁, L₂)`, not just

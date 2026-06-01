@@ -1,6 +1,6 @@
 """
-Extensions of quadratic APN functions (Beierle–Leander–Perrin, "Trims and
-extensions of quadratic APN functions", DCC 2022).
+Extensions of quadratic APN functions ([Beierle, Leander and Perrin, 2022](@cite BeierleLeanderPerrin2022Trims),
+"Trims and extensions of quadratic APN functions").
 
 An **extension** of an `(n-1)`-bit quadratic APN function `G` is an `n`-bit
 quadratic APN function `F` of which `G` is a trim. [`extend_quadratic_apn`](@ref)
@@ -133,7 +133,8 @@ end
     extend_quadratic_apn(G::SBox{M}; limit=1, rng=nothing) -> Vector{SBox{M+1}}
 
 Search for `(M+1)`-bit quadratic APN extensions of the `M`-bit quadratic APN
-function `G` (Beierle–Leander–Perrin, DCC 2022), returning up to `limit` of
+function `G` ([Beierle, Leander and Perrin, 2022](@cite BeierleLeanderPerrin2022Trims)),
+returning up to `limit` of
 them. Deterministic by default (top coordinate `c = 0`, natural `L` order);
 pass an `AbstractRNG` for a reproducible randomised top coordinate and `L` order.
 

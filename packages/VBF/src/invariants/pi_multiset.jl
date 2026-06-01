@@ -13,7 +13,16 @@ linear-equivalence invariant of `F`.
 
 `Π_F(β)`: a histogram mapping *(number of derivative directions hitting an
 output)* → *(how many outputs have that count)*, for the shifted derivatives
-`F(x) ⊕ F(x⊕a) ⊕ F(a⊕β)`.
+`F(x) ⊕ F(x⊕a) ⊕ F(a⊕β)`. The counts run over the `2ⁿ` output values, so the
+total mass equals `2ⁿ`.
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> total_mass(pi_multiset(gold_apn(5, 1), 0)) == 1 << 5
+true
+```
 """
 function pi_multiset(F::SBox{N, T}, β::Integer) where {N, T}
     n = 1 << N

@@ -14,10 +14,9 @@ For `A(x) = L(x) ⊕ c`:
 - `transpose(A)`   — transpose of the (linear) matrix; errors if `c ≠ 0`.
 
 !!! note "Square maps only"
-    sboxU's `cpp_F2AffineMap` is rectangular (`N → M`); BFA's
     [`F2AffineMap`](@ref) is square (`N → N`). Every map that arises in
     the TU-decomposition of an `(n,n)`-function is square, so the square
-    algebra suffices. Rectangular maps would need a separate type.
+    algebra suffices. Rectangular `N → M` maps would need a separate type.
 """
 
 # --- canonical instances ------------------------------------------------------
@@ -56,7 +55,7 @@ end
     compose(A1::F2AffineMap{N, T}, A2::F2AffineMap{N, T}) -> F2AffineMap{N, T}
 
 `A1 ∘ A2`: the affine map `x ↦ A1(A2(x))`. Linear part `L1 ∘ L2`,
-constant `A1(c2)` (matching `cpp_F2AffineMap::operator*`).
+constant `A1(c2)`.
 """
 compose(A1::F2AffineMap{N, T}, A2::F2AffineMap{N, T}) where {N, T} =
     F2AffineMap{N, T}(compose(A1.linear, A2.linear), A1(A2.constant))
@@ -66,8 +65,7 @@ Base.:∘(A1::F2AffineMap{N, T}, A2::F2AffineMap{N, T}) where {N, T} = compose(A
 """
     Base.transpose(A::F2AffineMap{N, T}) -> F2AffineMap{N, T}
 
-Transpose of the linear part (constant 0). Throws if `A` is non-linear,
-matching `cpp_F2AffineMap::transpose`.
+Transpose of the linear part (constant 0). Throws if `A` is non-linear.
 """
 function Base.transpose(A::F2AffineMap{N, T}) where {N, T}
     is_linear(A) ||
@@ -104,7 +102,7 @@ end
     swap_affine_map(t::Integer, n::Integer, m::Integer) -> F2AffineMap
 
 The `(n+m) → (n+m)` linear map that swaps a `TU`-decomposition's two
-branches, as in sboxU's `swap_F2AffineMap`. The image vectors are, in
+branches. The image vectors are, in
 order: `2^(n+i)` for `i<t`, `2^(t+i)` for `i<n-t`, `2^i` for `i<t`, and
 `2^(t+n+i)` for `i<m-t`.
 """

@@ -1,11 +1,12 @@
 """
-3-to-1 and triplicate functions (Ivković–Kaleyski).
+3-to-1 and triplicate functions ([Budaghyan, Ivković and Kaleyski, 2023](@cite BudaghyanIvkovicKaleyski2023)).
 
 A function `F : GF(2ⁿ) → GF(2ⁿ)` is **3-to-1** when every nonzero value is
 attained exactly three times (so `n` is even and the image has `(2ⁿ-1)/3 + 1`
 distinct values). `F` is **EA-equivalent to a triplicate function** iff there is
 an invertible F₂-linear map `L` with `W_F(L(b), b) ≡ 1 (mod 3)` for every `b`,
-where `W_F` is the Walsh/LAT coefficient; [`triplicate_adjoint`](@ref) searches
+where `W_F` is the Walsh/LAT coefficient
+([Ivković and Kaleyski, 2022](@cite IvkovicKaleyski2022)); [`triplicate_adjoint`](@ref) searches
 for such an `L` by backtracking over the standard-basis images, pruned by the
 mod-3 condition. (`L` is the adjoint of the linear `l` for which `F ⊕ l` is
 triplicate.)

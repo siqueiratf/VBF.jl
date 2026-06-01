@@ -8,7 +8,8 @@ For a function `F : F₂ⁿ → F₂ⁿ`, the **graph** is the subset
 Two functions `F, G : F₂ⁿ → F₂ⁿ` are **CCZ-equivalent** iff there
 exists an invertible F₂-affine map `L : F₂²ⁿ → F₂²ⁿ` such that
 `L(Γ_F) = Γ_G` as sets — this is the **Carlet-Charpin-Zinoviev**
-equivalence, strictly broader than EA-equivalence (which lives inside
+equivalence ([Carlet, Charpin and Zinoviev, 1998](@cite CarletCharpinZinoviev1998)),
+strictly broader than EA-equivalence (which lives inside
 the subgroup of CCZ-mappings of "block-triangular" form).
 
 # Internal representation
@@ -155,8 +156,7 @@ end
     graph_xor_equivalence(g1::FunctionGraph{N}, g2::FunctionGraph{N}) -> Vector{UInt32}
 
 Every constant offset `o ∈ F₂²ⁿ` with `{p ⊕ o : p ∈ g1} == g2` (as
-sets). Empty when the graphs are not translates of one another. Ports
-`cpp_FunctionGraph::xor_equivalence`.
+sets). Empty when the graphs are not translates of one another.
 """
 function graph_xor_equivalence(g1::FunctionGraph{N}, g2::FunctionGraph{N}) where {N}
     length(g1) == length(g2) || return UInt32[]

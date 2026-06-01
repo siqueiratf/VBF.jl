@@ -1,6 +1,6 @@
 """
-Quadratic APN Matrices (QAM) — Yu–Wang–Li (DCC 2014), as used by the QAM search
-method of Ivković–Nikova (eprint 2024/1838).
+Quadratic APN Matrices (QAM) — [Yu, Wang and Li (2014)](@cite YuWangLi2014QAM), as
+used by the QAM search method of [Ichanska, Berg, Kaleyski and Yu (2025)](@cite IchanskaBergKaleyskiYu2025).
 
 A quadratic homogeneous function `F : F₂ⁿ → F₂ⁿ` (degree 2, `F(0)=0`, no linear or
 constant part) is captured by its **derivative matrix** `M` over `GF(2ⁿ)`:
@@ -76,6 +76,14 @@ end
 
 Whether the quadratic homogeneous function `F` is APN, via its
 [`quadratic_apn_matrix`](@ref) and the QAM test.
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> is_qam(gold_apn(5, 1))
+true
+```
 """
 is_qam(F::SBox) = is_qam(quadratic_apn_matrix(F))
 

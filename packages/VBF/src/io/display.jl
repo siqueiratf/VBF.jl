@@ -4,10 +4,9 @@ the integer statistic tables (DDT / LAT / BCT / …). A pure-Julia
 presentation layer returning `String`s, so it composes with paper
 notebooks and is easy to snapshot-test.
 
-!!! note "Out of scope"
-    Rich-terminal experiment-logging UI is out of scope (terminal
-    infrastructure, not algorithmic content). The matplotlib "Pollock" plot
-    is deferred to a future plotting extension.
+The functions emit GitHub-flavoured Markdown ([`to_markdown`](@ref),
+[`table_to_markdown`](@ref)) or a LaTeX `array` ([`to_latex`](@ref),
+[`table_to_latex`](@ref)); no graphical plotting is provided here.
 """
 
 # --- S-box LUTs ---------------------------------------------------------------

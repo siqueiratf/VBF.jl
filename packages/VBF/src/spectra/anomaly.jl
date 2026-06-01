@@ -1,16 +1,16 @@
 """
-Anomaly framework — Bonnetain-Perrin-Tian ASIACRYPT 2019.
+Anomaly framework — [Bonnetain, Perrin and Tian (2019)](@cite BonnetainPerrinTian2019Anomaly).
 
 Given an S-box `F`, the *anomaly* quantifies how unlikely the observed
 maximum entry of its DDT / LAT / BCT is under the null hypothesis "F is
 a uniformly random permutation of F₂ⁿ". The original derivations of the
 per-coefficient probability mass functions for DDT and LAT are from
-Daemen-Rijmen 2007; the BCT formula is from Bonnetain-Perrin-Tian 2019.
+[Daemen and Rijmen (2007)](@cite DaemenRijmen2007Probability); the BCT formula is
+from [Bonnetain, Perrin and Tian (2019)](@cite BonnetainPerrinTian2019Anomaly).
 
 All routines work in arbitrary-precision arithmetic via stdlib
 `BigFloat`. The `precision` kwarg (in bits) controls `setprecision`
-locally; the default `120` matches sboxU's `DEFAULT_HIGH_PRECISION` and
-is enough for `n ≤ 8` corpora.
+locally; the default `120` is enough for `n ≤ 8` corpora.
 
 # Public surface
 - [`ddt_coeff_probability`](@ref) — PMF of a DDT coefficient under the

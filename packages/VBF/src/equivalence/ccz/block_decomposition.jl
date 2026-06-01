@@ -48,8 +48,8 @@ end
 
 The CCZ-map of an extended-affine equivalence with invertible linear
 parts `A` (input side) and `B` (output side) and linear drift `C`.
-Matches `cpp_EA_mapping`: the first `n` columns are `B(eᵢ)` (low half),
-the next `n` are `(A⁻¹(eᵢ) ≪ n) | (C∘A⁻¹)(eᵢ)`.
+The first `n` columns are `B(eᵢ)` (low half), the next `n` are
+`(A⁻¹(eᵢ) ≪ n) | (C∘A⁻¹)(eᵢ)`.
 
 Stored over `UInt32` to match the function-graph packing.
 """

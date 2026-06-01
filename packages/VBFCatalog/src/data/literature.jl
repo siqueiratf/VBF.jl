@@ -2,9 +2,7 @@
 Literature S-box catalog.
 
 Loads `data-raw/literature_sboxes.toml` and exposes its entries as
-`SBox` instances. When the Phase 3 SQLite catalog lands, this loader is
-re-routed to query the catalog; the public API (`load_literature_sbox`,
-`literature_sbox_names`) stays the same.
+`SBox` instances.
 
 # Functions
 - [`load_literature_sbox`](@ref) — fetch an `SBox` by name.

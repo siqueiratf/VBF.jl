@@ -25,6 +25,10 @@ julia> using VBF
 
 julia> identity_linear_map(4)
 F2LinearMap{4, UInt8} (identity)
+  e0 ↦ 0x01
+  e1 ↦ 0x02
+  e2 ↦ 0x04
+  e3 ↦ 0x08
 
 julia> L = F2LinearMap(UInt8[1, 2, 4, 8]);  L(0b1010)
 0x0a

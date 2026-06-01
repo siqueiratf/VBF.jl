@@ -52,6 +52,15 @@ struct EAPartition
 end
 
 inputbits(p::EAPartition) = p.n
+
+"""
+    nbuckets(p::EAPartition) -> Int
+
+Number of buckets in the partition: the count of distinct k-multiplicity classes
+([`ea_partition`](@ref) groups the inputs by how often each output value occurs in
+their k-th derivative). Two functions can be EA-equivalent only if their
+partitions have the same bucket-size multiset.
+"""
 nbuckets(p::EAPartition) = length(p.buckets)
 
 function Base.show(io::IO, p::EAPartition)

@@ -1,7 +1,7 @@
 """
 Linear-equivalence for **arbitrary** (possibly non-permutation) functions.
 
-`are_linearly_equivalent_perm` (the LPP backtracking, Phase 6) assumes both
+`are_linearly_equivalent_perm` (the LPP backtracking) assumes both
 S-boxes are permutations — it follows the functional inverse and silently
 returns `false` for non-bijective inputs. But the central APN use-case is
 non-bijective: almost every APN function is 3-to-1, and the ortho-derivative

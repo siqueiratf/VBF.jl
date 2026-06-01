@@ -5,7 +5,7 @@ Wraps the standard `Pkg.Artifacts` machinery so that callers ask for
 data by **logical name** (`"bfa_apn_n7_v1"`) rather than path. The
 indirection lets us:
 
-- store artifacts off-repo (Phase 9+: ~hundreds of MB of APN tables);
+- store artifacts off-repo (hundreds of MB of APN tables);
 - pin via SHA-256 in [`Artifacts.toml`](../../Artifacts.toml);
 - keep old paper-reproduction notebooks pointing at the artifact
   version they were authored against — even after newer versions ship.
@@ -16,8 +16,7 @@ indirection lets us:
 - [`have_artifact`](@ref)  — has the artifact been installed locally?
 - [`list_artifacts`](@ref) — every artifact name declared in `Artifacts.toml`.
 
-No artifacts are declared at v0.1.0; the first real one lands with the
-n=7..8 APN bulk Parquet in Phase 9.
+No artifacts are declared at v0.1.0.
 """
 
 import LazyArtifacts

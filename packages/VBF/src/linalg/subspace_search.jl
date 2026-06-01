@@ -16,9 +16,9 @@ to enumerate each subspace exactly once:
   (i.e., the leading bit of one basis vector clears that column in
   every other basis vector).
 
-The pure-DFS implementation is correct for any dimension; an MSB-spectrum
-pruning optimization could further prune the search but is not yet
-implemented (intended follow-up if `n ≥ 7` performance becomes a concern).
+The DFS is correct for any dimension. The GJB constraints already prune
+most of the search; an MSB-spectrum bound on the candidate leading bits
+would prune further but is not used here.
 """
 
 # Leading-1 bit position (LSB-0). Returns -1 for v == 0.

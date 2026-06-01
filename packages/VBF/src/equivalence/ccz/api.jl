@@ -3,9 +3,11 @@ Public CCZ-equivalence API.
 
 Two SBoxes `F, G : F₂ⁿ → F₂ⁿ` are **CCZ-equivalent** iff there exists
 an invertible F₂-affine map `L : F₂²ⁿ → F₂²ⁿ` with `L(Γ_F) = Γ_G`,
-where `Γ_F = {(x, F(x)) : x ∈ F₂ⁿ}` is the graph of `F`. CCZ strictly
-contains EA-equivalence (Phase 8), which strictly contains affine
-equivalence (Phase 7), which contains linear equivalence (Phase 6).
+where `Γ_F = {(x, F(x)) : x ∈ F₂ⁿ}` is the graph of `F` (the equivalence
+introduced by [Carlet, Charpin and Zinoviev, 1998](@cite CarletCharpinZinoviev1998)).
+CCZ strictly
+contains EA-equivalence, which strictly contains affine equivalence,
+which contains linear equivalence.
 
 # Functions
 - [`are_ccz_equivalent`](@ref) — `Bool` decision procedure.
@@ -13,7 +15,7 @@ equivalence (Phase 7), which contains linear equivalence (Phase 6).
 # Strategy
 
 The only strategy at v0.1 is `:canteaut_perrin`, based on the framework
-of Canteaut & Perrin (FFA 2019):
+of [Canteaut and Perrin (2019)](@cite CanteautPerrin2019CCZ):
 
   1. **Necessary conditions** — both `walsh_zeroes_size(F) ==
      walsh_zeroes_size(G)` and `sort(vec(ddt(F))) == sort(vec(ddt(G)))`
@@ -22,14 +24,14 @@ of Canteaut & Perrin (FFA 2019):
      [`thickness_spectrum`](@ref) — so it cannot be used here.)
   2. **Sufficient condition** — enumerate every EA-class representative
      in `F`'s CCZ-class via [`enumerate_ccz_class`](@ref) and check
-     [`are_ea_equivalent`](@ref) (Phase 8) against `G`. The Canteaut-
-     Perrin theorem guarantees this enumeration hits at least one
+     [`are_ea_equivalent`](@ref) against `G`. The Canteaut-Perrin
+     theorem guarantees this enumeration hits at least one
      representative per EA-class.
 
 # Decision coverage
 
 - **Both quadratic APN** — decided exactly via the ortho-derivative EA test
-  (CCZ = EA on this class, Yoshiara).
+  (CCZ = EA on this class, [Yoshiara, 2012](@cite Yoshiara2012)).
 - **Exactly one quadratic APN** (e.g. the Kim function vs the Dillon
   permutation, a quadratic and a degree-4 permutation in one CCZ-class) —
   decided by enumerating the other side's CCZ-class and EA-testing its
@@ -59,6 +61,19 @@ enumerate from `F`'s CCZ-class; the search short-circuits if exceeded
 EA-equivalence call.
 
 Permutations only at v0.1.
+
+# Examples
+
+The Kim function (quadratic APN) and the Dillon permutation (degree 4)
+lie in a single CCZ-class over `F₂⁶`, the first known APN permutation in
+even dimension:
+
+```jldoctest
+julia> using VBF
+
+julia> are_ccz_equivalent(kim_apn(), dillon_apn_permutation())
+true
+```
 """
 function are_ccz_equivalent(
     F::SBox, G::SBox;
@@ -73,7 +88,7 @@ function are_ccz_equivalent(
     # so an explicitly requested (or invalid) strategy still reaches dispatch.
     strategy === :auto && F.lut == G.lut && return true
 
-    # CCZ = EA on the quadratic-APN class (Yoshiara): the fast, reliable path.
+    # CCZ = EA on the quadratic-APN class (Yoshiara 2012): the fast, reliable path.
     Fq = is_quadratic_apn(F)
     Gq = is_quadratic_apn(G)
     Fq && Gq && return are_ea_equivalent(F, G)

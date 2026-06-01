@@ -7,7 +7,7 @@ EA-mapping functions (`automorphisms_from_ortho_derivative`,
 `ea_mappings_from_ortho_derivative`, `get_walsh_zeroes_spaces_quadratic_apn`,
 `enumerate_ea_classes_apn_quadratic`) require the CCZ graph machinery
 (block decomposition, `EA_mapping`, graph image / xor-equivalence) and
-live alongside it in the CCZ layer (Phase 12).
+live alongside it in the CCZ layer.
 """
 
 """

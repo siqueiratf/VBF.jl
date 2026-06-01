@@ -9,7 +9,10 @@ how many inputs `x` map a `⊕ a` shift to a `⊕ b` shift:
 
 The **differential uniformity** is the largest entry of the DDT outside
 row/column `a = b = 0` and bounds the success probability of any
-single-round differential attack.
+single-round differential attack. A function whose differential
+uniformity equals `2` (the minimum for even `N`) is called *almost
+perfect nonlinear* (APN); the notion is due to
+[Nyberg (1994)](@cite Nyberg1994).
 
 # Public surface
 - [`ddt`](@ref) — the table.
@@ -67,8 +70,10 @@ end
     differential_uniformity(s::SBox) -> Int
 
 Largest entry of `ddt(s)` outside row `0`. Equivalently, the smallest
-`δ` such that for all non-zero `a`, the differential
-`(a, ·)` holds for at most `δ` inputs.
+`δ` for which `s` is *differentially δ-uniform*: for every non-zero
+input difference `a` and every output difference `b`, the equation
+`F(x ⊕ a) ⊕ F(x) = b` has at most `δ` solutions `x`. The minimum `δ = 2`
+(for even `N`) characterises an APN function.
 
 # Examples
 ```jldoctest

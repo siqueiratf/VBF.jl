@@ -3,16 +3,17 @@ Reconciliation across multiple S-box/APN databases.
 
 The BFA catalog's `reconciliation_disagreements` table records every
 case where the same abstract function appears differently across the
-upstream sources we cross-check against (sboxU, Xanadu's
-apn-ccz-graph-framework, `APN-Repository`, …). This module is the
+upstream sources we cross-check against ([sboxU](@cite sboxU),
+[Xanadu's apn-ccz-graph-framework](@cite XanaduAPNCCZGraph),
+[`APN-Repository`](@cite AndersenAPNRepository), …). This module is the
 read/write API over that table; the actual import scripts live under
 `data-build/import_*_apn.jl`.
 
 # Disagreement kinds (the `kind` column)
 - `"only_in_some"`         — function present in some sources, absent from others (`present_in` / `absent_from` columns list which).
 - `"differential_uniformity_disagree"` — sources report different DUs for the same function.
-- `"ccz_equivalence_disagree"`         — one source claims `f ~ g` (CCZ), another disagrees. Reserved for Phase 8 when CCZ-equivalence tests land.
-- `"odds_disagree"`                    — APN-Repository's ODDS value differs from BFA's recomputed value. Reserved for Phase 9.
+- `"ccz_equivalence_disagree"`         — one source claims `f ~ g` (CCZ), another disagrees.
+- `"odds_disagree"`                    — APN-Repository's ODDS value differs from BFA's recomputed value.
 
 # Public surface
 - [`list_reconciliation_disagreements`](@ref)

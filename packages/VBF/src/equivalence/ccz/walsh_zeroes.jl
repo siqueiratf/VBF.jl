@@ -10,7 +10,8 @@ F₂ⁿ × F₂ⁿ` at which the linear approximation table `LAT(F)` vanishes:
 `b = 0` (since `LAT_F(a, 0) = 2ⁿ · 1[a = 0] - 2ⁿ` collapses to 0 for
 `a ≠ 0`). For a random function the size of `Z(F)` is close to `2^n`;
 for APN functions it has rich structure exploited by the
-Canteaut-Perrin CCZ theory.
+Canteaut-Perrin CCZ theory
+([Canteaut and Perrin, 2019](@cite CanteautPerrin2019CCZ)).
 
 The CCZ-equivalence test of Canteaut-Perrin starts by enumerating the
 **n-dimensional F₂-linear subspaces of `Z(F)`**: for every such

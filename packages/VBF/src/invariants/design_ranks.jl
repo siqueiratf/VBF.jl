@@ -1,5 +1,5 @@
 """
-Design 2-ranks of APN functions — the Γ-rank and Δ-rank (Edel–Pott, AMC 2009).
+Design 2-ranks of APN functions — the Γ-rank and Δ-rank ([Edel and Pott, 2009](@cite EdelPott2009)).
 
 For an APN function `F : F₂ⁿ → F₂ⁿ`, two CCZ-invariant integers come from the
 `F₂`-rank of the incidence matrices of designs developed from its graph:
@@ -66,6 +66,14 @@ _design_rank_guard(N) = N ≤ 7 || throw(ArgumentError(
 
 The Γ-rank of APN `F`: the `F₂`-rank of the incidence matrix of `dev(G_F)` (the
 development of the graph), a CCZ-invariant. Supports `n ≤ 7`.
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> gamma_rank(gold_apn(5, 1))
+330
+```
 """
 function gamma_rank(F::SBox{N}) where {N}
     _design_rank_guard(N)
@@ -79,6 +87,14 @@ end
 The Δ-rank of APN `F`: the `F₂`-rank of the incidence matrix of `dev(D_F)` with
 `D_F = {(a,b) : a ≠ 0, DDT[a,b] = 2}`, a CCZ-invariant with `Δ-rank ≤ 2^{n+1}`.
 Supports `n ≤ 7`.
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> delta_rank(gold_apn(5, 1))  # bounded by 2^(5+1) = 64
+42
+```
 """
 function delta_rank(F::SBox{N}) where {N}
     _design_rank_guard(N)

@@ -93,8 +93,22 @@ end
 """
     load_apn_function(name) -> SBox
 
-Construct the APN `SBox` `name`. Throws `ArgumentError` if the entry's
-`differential_uniformity` is not 2 (i.e., the entry mis-claims APN).
+Construct the APN `SBox` `name`. The differential uniformity is recomputed on
+load and the call throws `ArgumentError` if it is not 2 (i.e., the entry
+mis-claims APN). Use [`apn_catalog_names`](@ref) for the accepted names.
+
+# Examples
+```jldoctest
+julia> using VBF, VBFCatalog
+
+julia> g = load_apn_function("n5_Gold_x3");
+
+julia> differential_uniformity(g)
+2
+
+julia> inputbits(g)
+5
+```
 """
 function load_apn_function(name::AbstractString)
     entry = apn_catalog_metadata(name)

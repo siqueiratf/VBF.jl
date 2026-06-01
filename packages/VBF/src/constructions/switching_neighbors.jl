@@ -1,5 +1,5 @@
 """
-Switching-neighbour APN construction (Edel–Pott).
+Switching-neighbour APN construction ([Edel and Pott, 2009](@cite EdelPott2009)).
 
 For an APN function `F : F₂ⁿ → F₂ⁿ` and a nonzero field element `u`, a
 **`u`-switching neighbour** is an APN function of the form
