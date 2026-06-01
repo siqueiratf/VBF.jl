@@ -1,0 +1,14 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
+VBF = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
+VBFCatalog = "806e9246-bd0c-40c6-b7ea-7b2eabc2fba0"
+
+[sources]
+VBF = {path = "../packages/VBF"}
+VBFCatalog = {path = "../packages/VBFCatalog"}
+
+[compat]
+Documenter = "1"
+DocumenterCitations = "1"
+julia = "1.12"
