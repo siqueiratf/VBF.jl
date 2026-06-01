@@ -3,12 +3,15 @@
 % Every `bib_key` in `data-raw/{literature_sboxes.toml, apn_catalog/*.toml}`
 % must resolve to an entry below; the build script verifies this.
 %
-% Parsed by `src/data/bibliography.jl`'s minimal BibTeX parser:
-%   - one `@type{key, field = {value}, ...}` block per entry
-%   - field values must be either braced `{...}` or quoted `"..."`
-%     (nested braces inside `{...}` are tracked correctly)
-%   - line-leading `%` comments are skipped
-%   - field concatenation with `#` is NOT supported
+% Parsed both by src/data/bibliography.jl's minimal BibTeX parser and, for the
+% documentation site, by DocumenterCitations / BibParser. Keep entries standard:
+%   - one entry block per record (an entry type, a key, then field = value pairs)
+%   - field values must be either brace- or quote-delimited
+%     (nested braces inside a value are tracked correctly)
+%   - line-leading percent-sign comments are skipped
+%   - field concatenation with the hash sign is NOT supported
+%   - do NOT put an at-sign followed by a word in a comment: standards-compliant
+%     parsers read it as the start of an entry
 
 % --- Symmetric primitives: AES, PRESENT, GIFT, Midori, SKINNY, Piccolo, Serpent ---
 
@@ -336,4 +339,159 @@
     title   = {Millions of Inequivalent Quadratic {APN} Functions in Eight Variables},
     journal = {arXiv preprint arXiv:2508.04644},
     year    = {2025}
+}
+
+% --- Equivalence theory, ortho-derivatives, and constructions cited by the algorithms ---
+
+@article{CarletCharpinZinoviev1998,
+    author  = {Carlet, Claude and Charpin, Pascale and Zinoviev, Victor},
+    title   = {Codes, bent functions and permutations suitable for {DES}-like cryptosystems},
+    journal = {Designs, Codes and Cryptography},
+    volume  = {15},
+    number  = {2},
+    pages   = {125--156},
+    year    = {1998}
+}
+
+@article{Yoshiara2012,
+    author  = {Yoshiara, Satoshi},
+    title   = {Equivalences of quadratic {APN} functions},
+    journal = {Journal of Algebraic Combinatorics},
+    volume  = {35},
+    number  = {3},
+    pages   = {461--475},
+    year    = {2012}
+}
+
+@article{BudaghyanCarletPott2006,
+    author  = {Budaghyan, Lilya and Carlet, Claude and Pott, Alexander},
+    title   = {New Classes of Almost Bent and Almost Perfect Nonlinear Polynomials},
+    journal = {IEEE Transactions on Information Theory},
+    volume  = {52},
+    number  = {3},
+    pages   = {1141--1152},
+    year    = {2006}
+}
+
+@article{BudaghyanCarletLeander2008,
+    author  = {Budaghyan, Lilya and Carlet, Claude and Leander, Gregor},
+    title   = {Two Classes of Quadratic {APN} Binomials Inequivalent to Power Functions},
+    journal = {IEEE Transactions on Information Theory},
+    volume  = {54},
+    number  = {9},
+    pages   = {4218--4229},
+    year    = {2008}
+}
+
+@article{BudaghyanIvkovicKaleyski2023,
+    author  = {Budaghyan, Lilya and Ivkovic, Ivana and Kaleyski, Nikolay S.},
+    title   = {Triplicate functions},
+    journal = {Cryptography and Communications},
+    volume  = {15},
+    number  = {1},
+    pages   = {35--83},
+    year    = {2023}
+}
+
+@misc{IvkovicKaleyski2022,
+    author       = {Ivkovic, Ivana and Kaleyski, Nikolay S.},
+    title        = {Deciding and reconstructing linear equivalence of uniformly distributed functions},
+    howpublished = {Cryptology ePrint Archive, Paper 2022/666},
+    year         = {2022},
+    url          = {https://eprint.iacr.org/2022/666}
+}
+
+@article{IchanskaBergKaleyskiYu2025,
+    author  = {Ichanska, Nadiia and Berg, Simon and Kaleyski, Nikolay S. and Yu, Yuyin},
+    title   = {Pushing the {QAM} method for finding {APN} functions further},
+    journal = {Cryptography and Communications},
+    year    = {2025}
+}
+
+% --- Upstream implementations and data reimplemented natively (no runtime dependency) ---
+
+@misc{sboxU,
+    author       = {Perrin, L{\'{e}}o and Baudrin, Jules and Boeuf, Aur{\'{e}}lien and Bonnetain, Xavier and Couvreur, Alain and Fruchon, Merlin and Joly, Mathias and Galissant, Pierre and Stennes, Lukas},
+    title        = {sbox{U}: black-box analysis of discrete functions},
+    howpublished = {GitHub repository},
+    year         = {2025},
+    url          = {https://github.com/lpp-crypto/sboxU}
+}
+
+@misc{HeggebakkEAEquivalence,
+    author       = {Heggebakk, Marie},
+    title        = {Computationally testing {EA}- and affine equivalence of vectorial Boolean functions},
+    howpublished = {GitHub repository},
+    year         = {2021},
+    url          = {https://github.com/heggebakk/ea-equivalence}
+}
+
+@misc{BeierleSelfEquivalentAPN,
+    author       = {Beierle, Christof},
+    title        = {Searching for {APN} permutations with non-trivial linear self-equivalences},
+    howpublished = {GitHub repository},
+    year         = {2020},
+    url          = {https://github.com/cbe90/self_equivalent_apn}
+}
+
+@misc{BeierleQuadraticAPN,
+    author       = {Beierle, Christof},
+    title        = {Randomized tree search for quadratic {APN} functions},
+    howpublished = {GitHub repository},
+    year         = {2020},
+    url          = {https://github.com/cbe90/quadratic_apn}
+}
+
+@misc{BeierleTrimsExtensions,
+    author       = {Beierle, Christof},
+    title        = {Supplementary code to ``Trims and extensions of quadratic {APN} functions''},
+    howpublished = {GitHub repository},
+    year         = {2022},
+    url          = {https://github.com/cbe90/Supplementary-code-to-Trims-and-extensions-of-quadratic-APN-functions}
+}
+
+@misc{IvkovicTriplicateCode,
+    author       = {Ivkovic, Ivana},
+    title        = {Deciding linear equivalence of {3}-to-{1} vectorial Boolean functions},
+    howpublished = {GitHub repository},
+    year         = {2024},
+    url          = {https://github.com/telegrin/3to1_vbf_equivalence}
+}
+
+@misc{IchanskaQAMCode,
+    author       = {Ichanska, Nadiia},
+    title        = {The {QAM} method for finding {APN} functions},
+    howpublished = {GitHub repository},
+    year         = {2025},
+    url          = {https://github.com/NIchanska/QAM}
+}
+
+@misc{AndersenAPNRepository,
+    author       = {Andersen, Christian},
+    title        = {{APN}-Repository: a unified repository and tool for {APN} functions},
+    howpublished = {GitHub repository},
+    year         = {2025},
+    url          = {https://github.com/cma029/APN-Repository}
+}
+
+@misc{XanaduAPNCCZGraph,
+    author       = {{Xanadu-ins}},
+    title        = {Equivalence Determination of {APN} Functions Based on the {I/R} Algorithm},
+    howpublished = {GitHub repository},
+    year         = {2026},
+    url          = {https://github.com/Xanadu-ins/apn-ccz-graph-framework}
+}
+
+@mastersthesis{Berg2023Thesis,
+    author = {Berg, Simon},
+    title  = {Computational classification and investigation of cryptographically strong functions},
+    school = {University of Bergen},
+    year   = {2023}
+}
+
+@mastersthesis{Heggebakk2022Thesis,
+    author = {Heggebakk, Marie},
+    title  = {An efficient implementation of a test for {EA}-equivalence},
+    school = {University of Bergen},
+    year   = {2022}
 }
