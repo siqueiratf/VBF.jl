@@ -126,9 +126,9 @@ end
 
 @testset "are_ea_equivalent: monomial APN is now decided via :auto routing" begin
     # n=5 monomial APN: the heggebakk k=4 partition is degenerate ([31, 1])
-    # so :heggebakk alone short-circuits. Phase 10's :ortho_derivative
-    # strategy (auto-routed for quadratic-APN permutations) decides
-    # correctly without needing the outer-permutation enumeration.
+    # so :heggebakk alone short-circuits. The :ortho_derivative strategy
+    # (auto-routed for quadratic-APN permutations) decides correctly
+    # without needing the outer-permutation enumeration.
     F = load_apn_function("n5_Gold_x3")
     @test are_ea_equivalent(F, F)   # reflexive — :auto picks :ortho_derivative
     @test are_ea_equivalent(F, F; strategy = :ortho_derivative)

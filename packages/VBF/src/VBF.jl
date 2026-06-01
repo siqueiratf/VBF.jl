@@ -28,7 +28,7 @@ catalog); files load in dependency order:
 8. `io/`              — Markdown/LaTeX rendering.
 
 The data/catalog layer lives in the companion `VBFCatalog` package (it depends
-on `VBF`, never the reverse). See `ALGORITHMS.md` for the catalog index.
+on `VBF`, never the reverse). See the top-level README for the catalog index.
 """
 module VBF
 

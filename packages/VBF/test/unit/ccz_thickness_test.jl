@@ -50,14 +50,13 @@ end
     spec_present = thickness_spectrum(load_literature_sbox("PRESENT"))
     spec_gift = thickness_spectrum(load_literature_sbox("GIFT"))
     @test spec_present != spec_gift
-    # Sanity: lengths match the subspace counts seen at Phase 9 part 3.
+    # Sanity: lengths match the 4-dim subspace counts.
     @test length(spec_present) == 112
     @test length(spec_gift) == 64
 end
 
 @testset "thickness_spectrum: PRESENT histogram" begin
-    # Concrete histogram from Phase 9 part 3 debug. Pinning this gives
-    # a high-signal regression check.
+    # Concrete histogram pinned as a high-signal regression check.
     spec = thickness_spectrum(load_literature_sbox("PRESENT"))
     counts = Dict{Int, Int}()
     for t in spec

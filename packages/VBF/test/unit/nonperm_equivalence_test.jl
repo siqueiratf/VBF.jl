@@ -3,11 +3,10 @@ using VBF
 using Random
 using Test
 
-# Phase 22: equivalence testing for non-permutation functions. Almost every APN
-# function is 3-to-1 (not a permutation); previously `are_ea_equivalent` /
-# `are_ccz_equivalent` silently returned false for them (a permutation gate),
-# and `are_linear_equivalent` could not handle the non-permutation
-# ortho-derivatives. `are_linearly_equivalent_general` fixes the foundation.
+# Equivalence testing for non-permutation functions. Almost every APN function
+# is 3-to-1 (not a permutation), so `are_ea_equivalent`, `are_ccz_equivalent`,
+# and `are_linear_equivalent` must handle non-permutation inputs and the
+# non-permutation ortho-derivatives via `are_linearly_equivalent_general`.
 
 # Taniguchi's three n=8 CCZ-classes (computed once) — pairwise EA-inequivalent.
 reps = [r.sbox for r in taniguchi_apn_representatives(4)]
@@ -42,7 +41,7 @@ end
 @testset "are_ea_equivalent / are_ccz_equivalent work on non-permutation APN" begin
     F = SBox{6}(gf_monomial_lut(6, 3))
     @test !is_permutation(F)
-    @test are_ea_equivalent(F, F)               # was silently false before Phase 22
+    @test are_ea_equivalent(F, F)               # reflexive on a non-permutation
     @test are_ccz_equivalent(F, F)              # delegates to EA (CCZ = EA on quad APN)
     L1 = random_invertible_linear_map(MersenneTwister(1), Val(6))
     L2 = random_invertible_linear_map(MersenneTwister(2), Val(6))

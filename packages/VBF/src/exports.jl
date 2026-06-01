@@ -103,4 +103,3 @@ export table_anomaly, table_negative_anomaly
 # tier 8 — presentation
 export to_markdown, to_latex, table_to_markdown, table_to_latex
 
-# tier 3..5 — populated by later phases

@@ -12,10 +12,9 @@ using Test
 end
 
 @testset ":ortho_derivative strategy: distinguishes Frobenius orbits" begin
-    # The SHARP result of Phase 10: n5_Gold_x3 and n5_Gold_x5 are NOT
-    # EA-equivalent (different Frobenius orbits). Phase 8's :heggebakk
-    # short-circuits because the k=4 partition is degenerate; the
-    # ortho-derivative path decides correctly in milliseconds.
+    # n5_Gold_x3 and n5_Gold_x5 are NOT EA-equivalent (different Frobenius
+    # orbits). The :heggebakk strategy short-circuits because the k=4 partition
+    # is degenerate; the ortho-derivative path decides correctly.
     F3 = load_apn_function("n5_Gold_x3")
     F5 = load_apn_function("n5_Gold_x5")
     @test !are_ea_equivalent(F3, F5; strategy = :ortho_derivative)

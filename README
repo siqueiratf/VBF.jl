@@ -1,0 +1,233 @@
+VBF: vectorial Boolean function analysis
+========================================
+
+VBF is a Julia workspace for analysing vectorial Boolean functions, with a focus
+on APN (almost perfect nonlinear) functions and the linear / affine / EA / CCZ
+equivalence hierarchy. It reimplements, in native Julia, the algorithmic content
+of the sboxU cryptanalysis stack and several satellite projects (the Xanadu
+apn-ccz-graph-framework, heggebakk's ea-equivalence, cbe90's self_equivalent_apn
+and quadratic-APN search, the APN-Repository, NIchanska's QAM code, and
+telegrin's 3-to-1 equivalence). It does not depend on any of those repositories
+at run time or build time.
+
+The workspace has two packages:
+
+  VBF (packages/VBF)
+      Representations, F2 linear algebra, spectra, EA/CCZ invariants, the
+      equivalence predicates, and the construction/search routines.
+
+  VBFCatalog (packages/VBFCatalog)
+      The data layer (uses VBF). The curated SQLite catalog, multi-source
+      reconciliation, the bibliography, data importers, and bulk corpora.
+
+
+REPOSITORY LAYOUT
+-----------------
+
+The git repository root is a Julia [workspace] with no package of its own:
+
+  packages/VBF/         the analysis package
+  packages/VBFCatalog/  the data/catalog package (depends on VBF)
+  papers/               standalone paper-reproduction scripts
+  docs/                 Documenter.jl source for the API reference site
+
+
+QUICK START
+-----------
+
+Requires Julia >= 1.12 (the [workspace] feature, introduced in 1.12, is the
+floor). From the repository root:
+
+  julia -e 'using Pkg; Pkg.activate("packages/VBF"); Pkg.instantiate()'
+  julia -e 'using VBF'         # the algorithms
+  julia -e 'using VBFCatalog'  # the algorithms plus the catalog
+
+Run the test suite (ReTestItems, parallel):
+
+  julia -e 'using Pkg; Pkg.activate("packages/VBF"); Pkg.test()'
+
+
+DOCUMENTATION
+-------------
+
+The full API reference is generated from the source docstrings (every public
+name carries its mathematics and references) and published at
+
+  https://zambonin.github.io/VBF.jl/
+
+The VBF source is grouped by concept, one directory per chapter under
+packages/VBF/src:
+
+  representations/  SBox, F2 linear/affine maps, Spectrum, ANF, finite fields,
+                    univariate polynomials
+  linalg/           F2 (GF(2)) bit-packed linear algebra and subspace search
+  spectra/          DDT, Walsh/LAT, boomerang, algebraic degree, BPT anomaly
+  invariants/       ortho-derivative/integral, sigma multiplicities, mugshot,
+                    design 2-ranks, bent and image structure
+  equivalence/      the linear / affine / EA / CCZ hierarchy and 3-to-1 tests
+  constructions/    switching neighbours, quadratic-APN search, trims/extensions,
+                    QAM, known families, sporadic instances, Taniguchi
+  random/, io/      seeded generators and Markdown/LaTeX rendering
+
+To build the docs locally:
+
+  julia --project=docs -e 'using Pkg; Pkg.instantiate()'
+  julia --project=docs docs/make.jl
+
+The HTML lands in docs/build/.
+
+
+CATALOG AND DATA (VBFCatalog)
+-----------------------------
+
+VBFCatalog owns the on-disk SQLite catalog (BFA_catalog.sqlite), content-
+addressed by LUT SHA-256, with full provenance per row (bib_key, source_repo,
+contributor, added_date). Open it with load_catalog(); query with list_functions,
+count_functions, find_function; materialise an S-box with load_sbox. Literature
+S-boxes load via load_literature_sbox / literature_sbox_names (AES, AES inverse,
+and 14 four-bit cipher S-boxes: PRESENT, GIFT, Midori, SKINNY, Piccolo, Serpent
+S0..S7), each from a primary specification. APN entries load via
+load_apn_function and can be specified directly by exponent. The bibliography
+loads via load_bibliography / parse_bibtex from data-raw/bibliography.bib.
+
+The committed catalog has 603 first-class rows: 18 literature S-boxes, 28
+declarative APN functions (n in {4,5,6,7,8,9,10}), 530 quadratic-APN CCZ-class
+representatives (family APN-rep, from reprs6/7/8 and eightBitAPN), and 27
+Simon-Berg CCZ-class representatives (family CCZ-rep-GF4, one per CCZ class of
+GF(2^2)-coefficient quadratic APN over GF(2^8)). Cross-source reconciliation
+against sboxU, Xanadu, and the APN-Repository is queryable via
+reconciliation_by_source, functions_by_source, cross_source_matches,
+multi_source_functions; the committed catalog carries roughly 33k reconciliation
+rows (n in {6,7,8,9,10}).
+
+Very large function families are held as bulk corpora rather than first-class
+rows, so the committed catalog stays small: a bulk_corpora descriptor row plus a
+compact side store corpora/<name>.sqlite of quadratic-coefficient encodings, with
+each member's LUT reconstructed on demand. Access via list_corpora, corpus_info,
+corpus_length, corpus_function, and materialize_corpus_luts (the lazy full-LUT
+store). Simon Berg's 196,863-member corpus and the seven literature families of
+8-bit quadratic APN (Edel-Pott, Weng-Tan-Gong, Yu-Wang-Li, Taniguchi,
+Beierle-Leander, Yu-Perrin, Beierle-Leander-Perrin; 32,916 members, 32,892
+distinct up to EA) are stored this way.
+
+Developer-time importers that rebuild BFA_catalog.sqlite live under
+packages/VBFCatalog/data-build/ and run in their own standalone environment.
+They read the upstream checkouts (paths overridable via BFA_SBOXU_PATH,
+BFA_XANADU_PATH, BFA_APN_REPO_PATH, BFA_THESIS_PATH) and are never a run-time
+dependency. The importers mutate the committed catalog in place, so do not
+include one against the default catalog from a REPL or test; the relevant ones
+have a NO_AUTORUN guard for testing against a temporary copy.
+
+
+PAPER REPRODUCTIONS
+-------------------
+
+papers/ holds standalone scripts, each exposing reproduce() and checked against
+frozen expected/ outputs in the papers test item. They recompute a published
+result with VBF primitives: the boomerang uniformities of Cid et al. (EUROCRYPT
+2018), the AES DDT anomaly of Bonnetain-Perrin-Tian (ASIACRYPT 2019), the
+ortho-derivative EA-distinction of Canteaut-Couvreur-Perrin (IEEE TIT 2022), the
+seven 8-bit quadratic-APN sources listed above, and quadratic_apn_8bit_landscape,
+which derives the 32,892 figure by ortho-derivative deduplication of all
+re-housed members.
+
+
+DEVELOPMENT
+-----------
+
+Conventions
+  - One concept per file, grouped by concept directory. The module docstring at
+    the top of a file states the mathematics and the citation; each function has
+    its own docstring. Name files and modules by concept and cite the algorithm's
+    author or paper in the docstring, not the upstream project a routine came
+    from.
+  - Every piece is tested. Each test file is a single ReTestItems @testitem named
+    <feature>_test.jl under packages/VBF/test/{unit,property}; because items run
+    in isolated workers, each declares its own dependencies (using VBF,
+    VBFCatalog, ...). Favour high-signal anchors: closed-form counts (for example
+    |GL(5,F2)| = 9,999,360, Gaussian binomial subspace counts), round-trips,
+    CCZ-invariance under inv(F), and parity between two strategies.
+  - Document limitations in the docstring rather than hiding them (for example
+    "permutations only", "degenerate partition short-circuits", "linear-code
+    equivalence kernel out of scope").
+
+Implementation notes
+  - Indexing: the mathematics is 0-based, Julia is 1-based, so an S-box reads
+    lut[x+1].
+  - Bit-packing conventions differ by structure. FunctionGraph packs
+    (x << N) | F(x) (input high, output low); Walsh-zeroes pack (a << N) | b. A
+    wrong convention makes round-trips fail silently.
+  - Many algorithms are permutations-only (Stennes, the LPP backtracking,
+    linear_equivalences). ortho_derivative works for non-bijective quadratic APN,
+    but its output may itself be a non-permutation, which then blocks the
+    permutation-only downstream routines.
+  - For monomial APN, heggebakk's k=4 partition is degenerate ([2^n-1, 1]), so
+    the EA outer search would walk all of GL(n,F2); the :ortho_derivative
+    strategy is what actually decides EA-equivalence in that case.
+  - thickness_spectrum is an EA-invariant, not a CCZ-invariant (verified on GIFT
+    versus inv(GIFT)); are_ccz_equivalent uses |Z(F)| and the DDT multiset for
+    fast rejection instead.
+  - permutation_order must not cap at 2^n; Landau's function exceeds it (PRESENT
+    has order 84).
+
+Out of scope
+  - A native binary linear-code-equivalence backend (which would enable a
+    code-based are_ccz_equivalent; sboxU delegates this to SAGE / Leon's
+    algorithm).
+
+
+REPRODUCIBILITY
+---------------
+
+Every public S-box in the catalog carries its provenance (bib_key, source_repo,
+contributor, added_date). Independent implementations of EA- and CCZ-equivalence
+cross-check the published claims that depend on those relations. The paper
+reproductions ship with frozen expected/ outputs and run as part of the test
+suite, which CI exercises on every push and pull request against Julia 1.12 and
+the latest stable release.
+
+
+UPSTREAM SOURCES AND CREDITS
+----------------------------
+
+VBF reimplements, natively and with no runtime dependency, algorithms and data
+from the following projects. Each is credited in the rendered docs' References
+page, and at the docstring of the algorithm it backs:
+
+  sboxU                      Léo Perrin, Lukas Stennes, et al. (the linear
+                             canonical-representative algorithm and much of the
+                             analysis surface). https://github.com/lpp-crypto/sboxU
+  ea-equivalence             Marie Heggebakk (the EA-equivalence search; UiB
+                             master's thesis, 2022).
+                             https://github.com/heggebakk/ea-equivalence
+  self_equivalent_apn,       Christof Beierle (self-equivalent and quadratic-APN
+  quadratic_apn,             search; trims and extensions).
+  Trims-and-extensions       https://github.com/cbe90
+  3to1_vbf_equivalence       Ivana Ivković (3-to-1 / triplicate equivalence).
+                             https://github.com/telegrin/3to1_vbf_equivalence
+  QAM                        Nadiia Ichanska (the QAM construction method).
+                             https://github.com/NIchanska/QAM
+  APN-Repository             Christian Andersen (APN data and reconciliation).
+                             https://github.com/cma029/APN-Repository
+  apn-ccz-graph-framework    Xanadu-ins (CCZ-equivalence via graph isomorphism).
+                             https://github.com/Xanadu-ins/apn-ccz-graph-framework
+
+Data: the 196,863-member GF(2^2)-coefficient quadratic-APN corpus over GF(2^8)
+comes from Simon Berg's master's thesis, "Computational classification and
+investigation of cryptographically strong functions" (University of Bergen,
+2023).
+
+The primary research papers behind the algorithms are listed on the References
+page of the documentation site.
+
+
+LICENSE
+-------
+
+MIT. See LICENSE.
+
+
+CITATION
+--------
+
+See CITATION.cff.
