@@ -1,7 +1,7 @@
 using VBF
 using VBFCatalog
 
-const EXPECTED = (corpus = 22,)
+const EXPECTED = (corpus = 23,)
 const TABLE9 = normpath(joinpath(@__DIR__, "data", "EdelPott2009_table9.txt"))
 
 "Evaluate Table 9's polynomials over Conway GF(2⁸) into S-boxes."

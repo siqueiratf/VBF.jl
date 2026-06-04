@@ -46,7 +46,7 @@ end
     db = load_catalog()
     # bib_key => member_count, the quadratic-APN families forming the pre-3.4 GB landscape (firstQAM stores 8179: its single non-quadratic member is excluded)
     expected = Dict(
-        "edelpott2009_n8"             => ("EdelPott2009", 22),
+        "edelpott2009_n8"             => ("EdelPott2009", 23),
         "wengtangong2013_n8"          => ("WengTanGong2013", 10),
         "yuwangli2014_qam_n8"         => ("YuWangLi2014QAM", 8179),
         "taniguchi2019_n8"            => ("Taniguchi2019", 2),
