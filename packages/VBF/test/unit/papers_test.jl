@@ -74,7 +74,7 @@ end
 end
 
 @testset "BeierleLeander2022: tree search (incl. n=7 LE-automorphism) + corpus" begin
-    r = _run_paper("BeierleLeander2022_tree_search.jl")
+    r = _run_paper("Beierle_202107/BeierleLeander2022_tree_search.jl")
     @test r.corpus == 12923
     @test r.search_finds_quadratic_apn
     @test r.le_search_n7_apn            # the real BL22 method at n=7 (class 1)
@@ -82,7 +82,7 @@ end
 end
 
 @testset "BeierleLeanderPerrin2022: trims/extensions" begin
-    r = _run_paper("BeierleLeanderPerrin2022_trims.jl")
+    r = _run_paper("Beierle_202107/BeierleLeanderPerrin2022_trims.jl")
     @test r.corpus == 6368
     @test r.extension_is_apn
     @test r.trim_spectrum_nonempty
