@@ -6,29 +6,7 @@ import JSON3
 import Parquet2
 import Tables
 
-const _DEFAULT_APN_REPO_PATHS = (
-    get(ENV, "BFA_APN_REPO_PATH", ""),
-    "/home/zambonin/APN.jl/cma029@APN-Repository",   # current layout (2026-05-28)
-    joinpath(homedir(), "APN.jl", "cma029@APN-Repository"),
-    joinpath(homedir(), "sboxU", "APN-Repository"),   # legacy fallbacks
-    "/home/zambonin/sboxU/APN-Repository",
-)
-
-function apn_repo_path()
-    for p in _DEFAULT_APN_REPO_PATHS
-        isempty(p) && continue
-        isdir(joinpath(p, "database", "apn")) && return p
-    end
-    error("BFA: cannot find APN-Repository; set BFA_APN_REPO_PATH")
-end
-
-function apn_repo_short_sha(path::AbstractString)
-    try
-        return readchomp(`git -C $path rev-parse --short HEAD`)
-    catch
-        return "unknown"
-    end
-end
+include(joinpath(@__DIR__, "load_sources.jl"))
 
 # ---------------------------------------------------------------------------
 
@@ -186,26 +164,27 @@ function _human(io::IO, st::APNRepoStats, label::AbstractString)
 end
 
 function main(; max_rows::Union{Nothing, Integer} = nothing)
-    repo_dir = apn_repo_path()
-    sha = apn_repo_short_sha(repo_dir)
-    tag = "apnrepo@" * sha
-    bfa_sha = try
-        readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`)
-    catch
-        "unknown"
-    end
-    @info "APN-Repository import" repo_dir sha bfa_sha
-    db = load_catalog()
-    try
-        apn_dir = joinpath(repo_dir, "database", "apn")
-        for fname in sort(readdir(apn_dir))
-            endswith(fname, ".parquet") || continue
-            st = import_apn_repo_file!(db, joinpath(apn_dir, fname), tag;
-                                        bfa_sha = bfa_sha, max_rows = max_rows)
-            _human(stdout, st, fname)
+    with_source("apn_repo") do repo_dir
+        sha = source_short_sha(repo_dir)
+        tag = "apnrepo@" * sha
+        bfa_sha = try
+            readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`)
+        catch
+            "unknown"
         end
-    finally
-        close(db)
+        @info "APN-Repository import" repo_dir sha bfa_sha
+        db = load_catalog()
+        try
+            apn_dir = joinpath(repo_dir, "database", "apn")
+            for fname in sort(readdir(apn_dir))
+                endswith(fname, ".parquet") || continue
+                st = import_apn_repo_file!(db, joinpath(apn_dir, fname), tag;
+                                            bfa_sha = bfa_sha, max_rows = max_rows)
+                _human(stdout, st, fname)
+            end
+        finally
+            close(db)
+        end
     end
     return nothing
 end
@@ -225,7 +204,7 @@ function _cli_args()
     (max,)
 end
 
-if !isinteractive()
+if !isinteractive() && get(ENV, "BFA_APN_REPO_NO_AUTORUN", "0") != "1"
     max, = _cli_args()
     main(; max_rows = max)
 end

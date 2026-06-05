@@ -3,10 +3,13 @@ using VBFCatalog
 import SQLite
 import DBInterface
 import Dates
+import TOML
 
 const CATALOG_FILE = VBFCatalog.catalog_path()
 const LITERATURE_PATH = normpath(joinpath(@__DIR__, "..", "data-raw", "literature_sboxes.toml"))
 const APN_CATALOG_DIR = normpath(joinpath(@__DIR__, "..", "data-raw", "apn_catalog"))
+
+include(joinpath(@__DIR__, "load_sources.jl"))
 
 function _git_sha()
     try
@@ -141,71 +144,42 @@ function insert_apn_functions!(db::SQLite.DB, contributor::AbstractString,
     end
 end
 
-"""
-    _maybe_chain_sboxu_import()
-
-Best-effort post-step. If `data-build/import_sboxu_apn.jl` is present
-and sboxU is checked out at one of the well-known locations, run its
-`main()` to populate `reconciliation_disagreements`. Failures are
-warnings, not errors: the catalog is still usable without the import.
-"""
-function _maybe_chain_import(script_name::AbstractString, env_var::AbstractString,
-                              default_paths::Tuple, label::AbstractString;
-                              check::Function = isdir)
-    importer = joinpath(@__DIR__, script_name)
-    isfile(importer) || return
-    candidates = (get(ENV, env_var, ""), default_paths...)
-    any(c -> !isempty(c) && check(c), candidates) ||
-        (@warn "skipping $label import (no checkout found); set $env_var to enable"; return)
-    try
-        @info "Chaining into $label import" importer
-        include(importer)
-    catch err
-        @warn "$label import failed; the catalog is still usable" exception=(err, catch_backtrace())
+function _chain_external_imports()
+    config = TOML.parsefile(joinpath(@__DIR__, "sources.toml"))
+    for src in get(config, "source", [])
+        importer = joinpath(@__DIR__, src["importer"])
+        isfile(importer) || continue
+        label    = get(src, "label", src["name"])
+        env_var  = get(src, "env_var", "")
+        env_val  = get(ENV, env_var, "")
+        # Sources without an upstream URL are local-only: only include their
+        # script when the env var already points to a valid path.  This avoids
+        # loading optional heavy dependencies (e.g. Parquet2, JSON3) into
+        # projects that don't have them just because the importer script exists.
+        # Sources that declare an upstream can always be included because
+        # with_source() will auto-clone when the env var is unset.
+        if !haskey(src, "upstream") &&
+           !_bfa_check_valid(env_val, src["check_path"], get(src, "check_kind", "dir"))
+            @warn "BFA: skipping $label (source unavailable; set $env_var to enable)"
+            continue
+        end
+        # Clear the no_autorun guard so main() fires when we include the script.
+        # A previous include in this chain may have set it as a side-effect
+        # (e.g. import_quadratic_apn_8bit.jl sets BFA_SBOXU_NO_AUTORUN=1 to
+        # guard its own nested include of import_sboxu_apn.jl).
+        no_autorun = get(src, "no_autorun", "")
+        saved_guard = isempty(no_autorun) ? nothing : pop!(ENV, no_autorun, nothing)
+        try
+            @info "Chaining $label import" importer
+            include(importer)
+        catch err
+            @warn "$label import failed; the catalog is still usable" exception=(err, catch_backtrace())
+        finally
+            isempty(no_autorun) || (saved_guard === nothing ?
+                delete!(ENV, no_autorun) : setindex!(ENV, saved_guard, no_autorun))
+        end
     end
 end
-
-_maybe_chain_sboxu_import() =
-    _maybe_chain_import("import_sboxu_apn.jl", "BFA_SBOXU_PATH",
-        ("/home/zambonin/APN.jl/lpp-crypto@sboxU",
-         joinpath(homedir(), "APN.jl", "lpp-crypto@sboxU"),
-         joinpath(homedir(), "sboxU"), "/home/zambonin/sboxU"),
-        "sboxU";
-        check = p -> isdir(joinpath(p, "sboxU", "scripts", "apnDB")))
-
-_maybe_chain_reps_import() =
-    _maybe_chain_import("import_apn_reps.jl", "BFA_SBOXU_PATH",
-        ("/home/zambonin/APN.jl/lpp-crypto@sboxU",
-         joinpath(homedir(), "APN.jl", "lpp-crypto@sboxU"),
-         joinpath(homedir(), "sboxU"), "/home/zambonin/sboxU"),
-        "APN reps";
-        check = p -> isdir(joinpath(p, "sboxU", "scripts", "apnDB")))
-
-# Simon-Berg thesis: 27 CCZ classes of GF(2²)-coefficient quadratic APN over GF(2⁸). 27 class representatives → first-class rows; membership SHAs merged into matching rows only. Runs alongside the other rep/reconciliation chains.
-_maybe_chain_simonberg_import() =
-    _maybe_chain_import("import_simonberg.jl", "BFA_THESIS_PATH",
-        ("/home/zambonin/APN.jl/Simon-Berg@thesis",
-         joinpath(homedir(), "APN.jl", "Simon-Berg@thesis")),
-        "Simon-Berg thesis";
-        check = p -> isfile(joinpath(p, "rep1.txt")))
-
-_maybe_chain_xanadu_import() =
-    _maybe_chain_import("import_xanadu_apn.jl", "BFA_XANADU_PATH",
-        ("/home/zambonin/APN.jl/Xanadu-ins@apn-ccz-graph-framework",
-         joinpath(homedir(), "APN.jl", "Xanadu-ins@apn-ccz-graph-framework"),
-         joinpath(homedir(), "sboxU", "apn-ccz-graph-framework"),
-         "/home/zambonin/sboxU/apn-ccz-graph-framework"),
-        "Xanadu";
-        check = p -> isfile(joinpath(p, "list_of_APN_functions_for_different_n")))
-
-_maybe_chain_apn_repo_import() =
-    _maybe_chain_import("import_apn_repository.jl", "BFA_APN_REPO_PATH",
-        ("/home/zambonin/APN.jl/cma029@APN-Repository",
-         joinpath(homedir(), "APN.jl", "cma029@APN-Repository"),
-         joinpath(homedir(), "sboxU", "APN-Repository"),
-         "/home/zambonin/sboxU/APN-Repository"),
-        "APN-Repository";
-        check = p -> isdir(joinpath(p, "database", "apn")))
 
 function main()
     sha = _git_sha()
@@ -223,11 +197,7 @@ function main()
     end
     @info "Catalog populated (BFA-only step)" functions=n_funcs file_size_bytes=filesize(CATALOG_FILE)
     close(db)
-    _maybe_chain_reps_import()
-    _maybe_chain_simonberg_import()
-    _maybe_chain_sboxu_import()
-    _maybe_chain_xanadu_import()
-    _maybe_chain_apn_repo_import()
+    _chain_external_imports()
     final_size = filesize(CATALOG_FILE)
     if final_size > 0
         @info "Final catalog size" file_size_bytes=final_size

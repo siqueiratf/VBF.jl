@@ -3,41 +3,7 @@ using VBFCatalog
 import SQLite
 import DBInterface
 
-const _DEFAULT_SBOXU_PATHS = (
-    get(ENV, "BFA_SBOXU_PATH", ""),
-    "/home/zambonin/APN.jl/lpp-crypto@sboxU",   # current layout (2026-05-28)
-    joinpath(homedir(), "APN.jl", "lpp-crypto@sboxU"),
-    joinpath(homedir(), "sboxU"),               # legacy fallbacks
-    "/home/zambonin/sboxU",
-)
-
-"""
-    sboxu_path() -> String
-
-Resolve the on-disk location of the sboxU checkout. Honoured in order:
-`BFA_SBOXU_PATH`, `~/sboxU`, `/home/zambonin/sboxU`. Throws if none
-exist.
-"""
-function sboxu_path()
-    for p in _DEFAULT_SBOXU_PATHS
-        isempty(p) && continue
-        isdir(p) && return p
-    end
-    error("BFA: cannot find sboxU; set BFA_SBOXU_PATH or pass --sboxu-path")
-end
-
-"""
-    sboxu_short_sha(path) -> String
-
-`git -C path rev-parse --short HEAD`; returns "unknown" if git fails.
-"""
-function sboxu_short_sha(path::AbstractString)
-    try
-        return readchomp(`git -C $path rev-parse --short HEAD`)
-    catch
-        return "unknown"
-    end
-end
+include(joinpath(@__DIR__, "load_sources.jl"))
 
 """
     parse_apn_lut_file(path::AbstractString; max_luts = nothing) -> Vector{Vector{Int}}
@@ -165,26 +131,27 @@ re-running merges no duplicate sources and adds no duplicate
 reconciliation rows.
 """
 function main(; max_luts_per_file::Union{Nothing, Integer} = nothing)
-    sboxu_dir = sboxu_path()
-    sha = sboxu_short_sha(sboxu_dir)
-    tag = "sboxu@" * sha
-    bfa_sha = try readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`) catch; "unknown" end
-    @info "sboxU import" sboxu_dir sha bfa_sha
-    db = load_catalog()
-    try
-        for fname in ("BeierleLeander.py", "firstQAM.py", "secondQAM.py", "apn_8bit_BLP22.py")
-            full = joinpath(sboxu_dir, "sboxU", "scripts", "apnDB", fname)
-            if !isfile(full)
-                @warn "skipping (file missing)" path=full
-                continue
+    with_source("sboxu_reconcile") do sboxu_dir
+        sha = source_short_sha(sboxu_dir)
+        tag = "sboxu@" * sha
+        bfa_sha = try readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`) catch; "unknown" end
+        @info "sboxU import" sboxu_dir sha bfa_sha
+        db = load_catalog()
+        try
+            for fname in ("BeierleLeander.py", "firstQAM.py", "secondQAM.py", "apn_8bit_BLP22.py")
+                full = joinpath(sboxu_dir, "sboxU", "scripts", "apnDB", fname)
+                if !isfile(full)
+                    @warn "skipping (file missing)" path=full
+                    continue
+                end
+                st = import_sboxu_file!(db, full, tag;
+                                         bfa_sha = bfa_sha,
+                                         max_luts = max_luts_per_file)
+                _human(stdout, st, fname)
             end
-            st = import_sboxu_file!(db, full, tag;
-                                     bfa_sha = bfa_sha,
-                                     max_luts = max_luts_per_file)
-            _human(stdout, st, fname)
+        finally
+            close(db)
         end
-    finally
-        close(db)
     end
     return nothing
 end
@@ -206,7 +173,6 @@ function _cli_args()
     (max,)
 end
 
-# Auto-run on `include` (non-interactive). The BFA_SBOXU_NO_AUTORUN guard lets other importers reuse `parse_apn_lut_file` without touching the catalog.
 if !isinteractive() && get(ENV, "BFA_SBOXU_NO_AUTORUN", "0") != "1"
     max, = _cli_args()
     main(; max_luts_per_file = max)

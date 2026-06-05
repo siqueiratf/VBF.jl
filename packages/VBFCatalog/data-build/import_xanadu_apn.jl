@@ -3,29 +3,7 @@ using VBFCatalog
 import SQLite
 import DBInterface
 
-const _DEFAULT_XANADU_PATHS = (
-    get(ENV, "BFA_XANADU_PATH", ""),
-    "/home/zambonin/APN.jl/Xanadu-ins@apn-ccz-graph-framework",   # current layout (2026-05-28)
-    joinpath(homedir(), "APN.jl", "Xanadu-ins@apn-ccz-graph-framework"),
-    joinpath(homedir(), "sboxU", "apn-ccz-graph-framework"),       # legacy fallbacks
-    "/home/zambonin/sboxU/apn-ccz-graph-framework",
-)
-
-function xanadu_path()
-    for p in _DEFAULT_XANADU_PATHS
-        isempty(p) && continue
-        isfile(joinpath(p, "list_of_APN_functions_for_different_n")) && return p
-    end
-    error("BFA: cannot find apn-ccz-graph-framework; set BFA_XANADU_PATH")
-end
-
-function xanadu_short_sha(path::AbstractString)
-    try
-        return readchomp(`git -C $path rev-parse --short HEAD`)
-    catch
-        return "unknown"
-    end
-end
+include(joinpath(@__DIR__, "load_sources.jl"))
 
 # Parsed entry: (n, label, raw_expression_string)
 const XanaduEntry = NamedTuple{(:n, :label, :expr), Tuple{Int, String, String}}
@@ -168,26 +146,27 @@ function _human(io::IO, st::XanaduStats)
 end
 
 function main(; max_entries::Union{Nothing, Integer} = nothing)
-    xanadu_dir = xanadu_path()
-    sha = xanadu_short_sha(xanadu_dir)
-    tag = "xanadu@" * sha
-    bfa_sha = try
-        readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`)
-    catch
-        "unknown"
-    end
-    @info "Xanadu APN import" xanadu_dir sha bfa_sha
-    listing = joinpath(xanadu_dir, "list_of_APN_functions_for_different_n")
-    isfile(listing) || error("BFA: $listing missing")
-    entries = parse_xanadu_file(listing)
-    db = load_catalog()
-    try
-        st = import_xanadu_entries!(db, entries, tag;
-                                     bfa_sha = bfa_sha,
-                                     max_entries = max_entries)
-        _human(stdout, st)
-    finally
-        close(db)
+    with_source("xanadu") do xanadu_dir
+        sha = source_short_sha(xanadu_dir)
+        tag = "xanadu@" * sha
+        bfa_sha = try
+            readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`)
+        catch
+            "unknown"
+        end
+        @info "Xanadu APN import" xanadu_dir sha bfa_sha
+        listing = joinpath(xanadu_dir, "list_of_APN_functions_for_different_n")
+        isfile(listing) || error("BFA: $listing missing")
+        entries = parse_xanadu_file(listing)
+        db = load_catalog()
+        try
+            st = import_xanadu_entries!(db, entries, tag;
+                                         bfa_sha = bfa_sha,
+                                         max_entries = max_entries)
+            _human(stdout, st)
+        finally
+            close(db)
+        end
     end
     return nothing
 end
@@ -207,7 +186,7 @@ function _cli_args()
     (max,)
 end
 
-if !isinteractive()
+if !isinteractive() && get(ENV, "BFA_XANADU_NO_AUTORUN", "0") != "1"
     max, = _cli_args()
     main(; max_entries = max)
 end

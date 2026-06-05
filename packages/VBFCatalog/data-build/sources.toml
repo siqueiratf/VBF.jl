@@ -1,0 +1,71 @@
+# External data sources for the BFA catalog build.
+#
+# Each [[source]] entry declares one importer with its acquisition config:
+#   name       – identifier used in with_source(name) calls from the importer
+#   label      – human-readable description for log messages
+#   env_var    – env var for a local path override (fastest; skips network)
+#   upstream   – (optional) git URL; shallow-cloned into mktempdir() when
+#                env_var is unset or points to an invalid path; temp dir is
+#                deleted automatically after the importer returns
+#   check_path – path relative to the resolved root that must exist
+#   check_kind – "dir" (default) or "file"
+#   importer   – Julia script to run; executed in the order listed here by
+#                build_catalog.jl and targeted individually by the Makefile
+#   no_autorun – env var whose value "1" suppresses auto-run on include
+
+[[source]]
+name       = "apn_reps"
+label      = "APN reps"
+env_var    = "BFA_SBOXU_PATH"
+upstream   = "https://github.com/lpp-crypto/sboxU.git"
+check_path = "sboxU/scripts/apnDB"
+check_kind = "dir"
+importer   = "import_apn_reps.jl"
+no_autorun = "BFA_REPS_NO_AUTORUN"
+
+[[source]]
+name       = "quadratic_apn_8bit"
+label      = "quadratic APN 8-bit corpora"
+env_var    = "BFA_SBOXU_PATH"
+upstream   = "https://github.com/lpp-crypto/sboxU.git"
+check_path = "sboxU/scripts/apnDB"
+check_kind = "dir"
+importer   = "import_quadratic_apn_8bit.jl"
+no_autorun = "BFA_QAPN8_NO_AUTORUN"
+
+[[source]]
+name       = "sboxu_reconcile"
+label      = "sboxU reconciliation"
+env_var    = "BFA_SBOXU_PATH"
+upstream   = "https://github.com/lpp-crypto/sboxU.git"
+check_path = "sboxU/scripts/apnDB"
+check_kind = "dir"
+importer   = "import_sboxu_apn.jl"
+no_autorun = "BFA_SBOXU_NO_AUTORUN"
+
+[[source]]
+name       = "simonberg"
+label      = "Simon-Berg thesis"
+env_var    = "BFA_THESIS_PATH"
+check_path = "rep1.txt"
+check_kind = "file"
+importer   = "import_simonberg.jl"
+no_autorun = "BFA_SIMONBERG_NO_AUTORUN"
+
+[[source]]
+name       = "xanadu"
+label      = "Xanadu APN"
+env_var    = "BFA_XANADU_PATH"
+check_path = "list_of_APN_functions_for_different_n"
+check_kind = "file"
+importer   = "import_xanadu_apn.jl"
+no_autorun = "BFA_XANADU_NO_AUTORUN"
+
+[[source]]
+name       = "apn_repo"
+label      = "APN-Repository"
+env_var    = "BFA_APN_REPO_PATH"
+check_path = "database/apn"
+check_kind = "dir"
+importer   = "import_apn_repository.jl"
+no_autorun = "BFA_APN_REPO_NO_AUTORUN"

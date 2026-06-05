@@ -4,27 +4,7 @@ import SQLite
 import DBInterface
 import Dates
 
-const _THESIS_PATHS = (
-    get(ENV, "BFA_THESIS_PATH", ""),
-    "/home/zambonin/APN.jl/Simon-Berg@thesis",
-    joinpath(homedir(), "APN.jl", "Simon-Berg@thesis"),
-)
-
-function _thesis_dir()
-    for p in _THESIS_PATHS
-        isempty(p) && continue
-        isfile(joinpath(p, "rep1.txt")) && return p
-    end
-    error("BFA: cannot find Simon-Berg@thesis; set BFA_THESIS_PATH")
-end
-
-function _thesis_short_sha(path::AbstractString)
-    try
-        return readchomp(`git -C $path rev-parse --short HEAD`)
-    catch
-        return "unknown"
-    end
-end
+include(joinpath(@__DIR__, "load_sources.jl"))
 
 # --- parsing ----------------------------------------------------------------
 
@@ -136,8 +116,8 @@ function import_one_class!(db::SQLite.DB, path::AbstractString, class::Int;
 end
 
 function main()
-    dir = _thesis_dir()
-    sha = _thesis_short_sha(dir)
+    with_source("simonberg") do dir
+    sha = source_short_sha(dir)
     tag = "simonberg@" * sha
     bfa_sha = try
         readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`)
@@ -188,6 +168,7 @@ function main()
     finally
         close(db)
     end
+    end  # with_source
     return nothing
 end
 

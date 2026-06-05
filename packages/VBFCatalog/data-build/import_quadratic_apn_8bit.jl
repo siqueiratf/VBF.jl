@@ -6,7 +6,7 @@ import SQLite
 import DBInterface
 import Dates
 
-include(joinpath(@__DIR__, "import_sboxu_apn.jl"))   # parse_apn_lut_file, sboxu_path, sboxu_short_sha
+include(joinpath(@__DIR__, "import_sboxu_apn.jl"))   # parse_apn_lut_file; also loads load_sources.jl
 
 const N = 8
 const MOD8 = conway_polynomial(N)
@@ -116,26 +116,28 @@ function import_family!(db::SQLite.DB, fam::Family, apndb::AbstractString;
 end
 
 function main()
-    apndb = joinpath(sboxu_path(), "sboxU", "scripts", "apnDB")
-    isdir(apndb) || error("apnDB not found at $apndb")
-    sha = sboxu_short_sha(sboxu_path())
-    bfa_sha = try readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`) catch; "unknown" end
-    source_repo = "bfa@$bfa_sha|sboxu@$sha"
-    contributor = "BFA quadratic-APN 8-bit literature import (automated)"
-    added = string(Dates.now(Dates.UTC)) * "Z"
-    @info "quadratic-APN 8-bit re-housing" apndb sha bfa_sha
-    powtab = monomial_power_table(N, MOD8)
-    db = load_catalog()
-    try
-        total = 0
-        for fam in FAMILIES
-            total += import_family!(db, fam, apndb;
-                powtab = powtab, source_repo = source_repo,
-                contributor = contributor, added = added)
+    with_source("quadratic_apn_8bit") do sboxu_root
+        apndb = joinpath(sboxu_root, "sboxU", "scripts", "apnDB")
+        isdir(apndb) || error("apnDB not found at $apndb")
+        sha = source_short_sha(sboxu_root)
+        bfa_sha = try readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`) catch; "unknown" end
+        source_repo = "bfa@$bfa_sha|sboxu@$sha"
+        contributor = "BFA quadratic-APN 8-bit literature import (automated)"
+        added = string(Dates.now(Dates.UTC)) * "Z"
+        @info "quadratic-APN 8-bit re-housing" apndb sha bfa_sha
+        powtab = monomial_power_table(N, MOD8)
+        db = load_catalog()
+        try
+            total = 0
+            for fam in FAMILIES
+                total += import_family!(db, fam, apndb;
+                    powtab = powtab, source_repo = source_repo,
+                    contributor = contributor, added = added)
+            end
+            println("[quadratic-apn-8bit] TOTAL members re-housed = $total across $(length(FAMILIES)) corpora")
+        finally
+            close(db)
         end
-        println("[quadratic-apn-8bit] TOTAL members re-housed = $total across $(length(FAMILIES)) corpora")
-    finally
-        close(db)
     end
     return nothing
 end

@@ -4,30 +4,7 @@ import SQLite
 import DBInterface
 import Dates
 
-const _REPS_SBOXU_PATHS = (
-    get(ENV, "BFA_SBOXU_PATH", ""),
-    "/home/zambonin/APN.jl/lpp-crypto@sboxU",   # current layout (2026-05-28)
-    joinpath(homedir(), "APN.jl", "lpp-crypto@sboxU"),
-    joinpath(homedir(), "sboxU"),               # legacy fallbacks
-    "/home/zambonin/sboxU",
-)
-
-function _apndb_dir()
-    for p in _REPS_SBOXU_PATHS
-        isempty(p) && continue
-        d = joinpath(p, "sboxU", "scripts", "apnDB")
-        isdir(d) && return d
-    end
-    error("BFA: cannot find sboxU/sboxU/scripts/apnDB; set BFA_SBOXU_PATH")
-end
-
-function _sboxu_short_sha(path::AbstractString)
-    try
-        return readchomp(`git -C $path rev-parse --short HEAD`)
-    catch
-        return "unknown"
-    end
-end
+include(joinpath(@__DIR__, "load_sources.jl"))
 
 # --- extraction -------------------------------------------------------------
 
@@ -216,10 +193,8 @@ function import_reps!(db::SQLite.DB, entries::Vector{RepEntry}, source_tag::Abst
     RepStats(parsed, inserted, merged, not_apn)
 end
 
-function main()
-    dir = _apndb_dir()
-    sboxu_root = dirname(dirname(dirname(dir)))
-    sha = _sboxu_short_sha(sboxu_root)
+function _do_import(dir::AbstractString, sboxu_root::AbstractString)
+    sha = source_short_sha(sboxu_root)
     tag = "sboxu@" * sha
     bfa_sha = try
         readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`)
@@ -254,6 +229,13 @@ function main()
         end
     finally
         close(db)
+    end
+end
+
+function main()
+    with_source("apn_reps") do sboxu_root
+        dir = joinpath(sboxu_root, "sboxU", "scripts", "apnDB")
+        _do_import(dir, sboxu_root)
     end
     return nothing
 end

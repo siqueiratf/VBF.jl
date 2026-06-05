@@ -6,6 +6,7 @@
 *.dll
 *.o
 *.a
+*.pdf
 docs/build/
 docs/site/
 Manifest.toml
