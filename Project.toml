@@ -3,3 +3,5 @@ projects = ["packages/VBF", "packages/VBFCatalog"]
 
 [deps]
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+VBF = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
+VBFCatalog = "806e9246-bd0c-40c6-b7ea-7b2eabc2fba0"
