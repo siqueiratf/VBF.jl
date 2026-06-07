@@ -1,7 +1,7 @@
 using VBF
 using VBFCatalog
 
-const EXPECTED = (corpus = 23,)
+const EXPECTED = (corpus = 22, table9 = 23)
 const TABLE9 = normpath(joinpath(@__DIR__, "data", "EdelPott2009_table9.txt"))
 
 "Evaluate Table 9's polynomials over Conway GF(2⁸) into S-boxes."
@@ -13,7 +13,9 @@ end
 
 function reproduce()
     fns = table9_functions()
-    quad_apn = all(differential_uniformity(F) == 2 && algebraic_degree(F) == 2 for F in fns)
+    apn = all(differential_uniformity(F) == 2 for F in fns)
+    quadratic_fns = [F for F in fns if algebraic_degree(F) == 2]
+    quad_apn = all(differential_uniformity(F) == 2 for F in quadratic_fns)
     gold = SBox{4}(gf_monomial_lut(4, 3))
     apn_neighbors = count(F -> differential_uniformity(F) == 2,
                           Iterators.flatten(switching_neighbors(gold)))
@@ -22,8 +24,9 @@ function reproduce()
         n = corpus_length(db, "edelpott2009_n8")
         # the freshly-evaluated formulas match the re-housed corpus byte-for-byte
         corpus_shas = Set(lut_sha256_hex(corpus_function(db, "edelpott2009_n8", i)) for i in 1:n)
-        recomputed_shas = Set(lut_sha256_hex(F) for F in fns)
-        (n_polynomials = length(fns), corpus = n,
+        recomputed_shas = Set(lut_sha256_hex(F) for F in quadratic_fns)
+        (n_polynomials = length(fns), n_quadratic_polynomials = length(quadratic_fns),
+         corpus = n, all_apn = apn,
          all_quadratic_apn = quad_apn,
          matches_corpus = (recomputed_shas == corpus_shas),
          apn_neighbors = apn_neighbors)
@@ -35,7 +38,8 @@ end
 function report(io::IO = stdout)
     r = reproduce()
     println(io, "# Switching construction + Table 9 — Edel–Pott 2009")
-    println(io, "- Table 9 polynomials evaluated     : ", r.n_polynomials, " (all quadratic APN: ", r.all_quadratic_apn, ")")
+    println(io, "- Table 9 polynomials evaluated     : ", r.n_polynomials, " (all APN: ", r.all_apn, ")")
+    println(io, "- quadratic APN subset              : ", r.n_quadratic_polynomials, " (all quadratic APN: ", r.all_quadratic_apn, ")")
     println(io, "- recomputed == re-housed corpus    : ", r.matches_corpus, " (", r.corpus, " members)")
     println(io, "- APN switching-neighbours of x³(n=4): ", r.apn_neighbors)
 end

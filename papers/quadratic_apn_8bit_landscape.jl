@@ -3,7 +3,7 @@ using VBFCatalog
 
 # (corpus name, bib_key, raw member count)
 const FAMILIES = [
-    ("edelpott2009_n8", "EdelPott2009", 23),
+    ("edelpott2009_n8", "EdelPott2009", 22),
     ("wengtangong2013_n8", "WengTanGong2013", 10),
     ("yuwangli2014_qam_n8", "YuWangLi2014QAM", 8179),
     ("taniguchi2019_n8", "Taniguchi2019", 2),

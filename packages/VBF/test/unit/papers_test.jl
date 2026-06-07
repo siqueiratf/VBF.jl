@@ -45,9 +45,11 @@ end
 @testset "EdelPott2009: Table 9 recomputed from formulas + switching" begin
     r = _run_paper("EdelPott2009_switching.jl")
     @test r.n_polynomials == 23
+    @test r.all_apn
+    @test r.n_quadratic_polynomials == 22
     @test r.all_quadratic_apn
-    @test r.matches_corpus             # formulas → functions == re-housed corpus
-    @test r.corpus == 23
+    @test r.matches_corpus             # quadratic formulas → functions == re-housed corpus
+    @test r.corpus == 22
     @test r.apn_neighbors > 0          # switching a small APN yields APN neighbours
 end
 
