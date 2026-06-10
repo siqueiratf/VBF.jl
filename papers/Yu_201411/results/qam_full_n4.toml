@@ -1,0 +1,165 @@
+completed_chunks = [1, 2, 3, 5, 7, 8, 9, 11, 13, 15]
+
+[[chunks]]
+complete = true
+completed_at = "2026-06-08T15:27:14"
+evaluated = 75264
+h12 = 1
+[[chunks]]
+complete = true
+completed_at = "2026-06-08T15:27:23"
+evaluated = 75264
+h12 = 7
+[[chunks]]
+complete = true
+completed_at = "2026-06-08T15:27:26"
+evaluated = 75264
+h12 = 9
+[[chunks]]
+complete = true
+completed_at = "2026-06-08T15:27:29"
+evaluated = 75264
+h12 = 3
+[[chunks]]
+complete = true
+completed_at = "2026-06-08T15:27:36"
+evaluated = 75264
+h12 = 5
+[[chunks]]
+complete = true
+completed_at = "2026-06-08T15:27:36"
+evaluated = 75264
+h12 = 13
+[[chunks]]
+complete = true
+completed_at = "2026-06-08T15:27:40"
+evaluated = 75264
+h12 = 15
+[[chunks]]
+complete = true
+completed_at = "2026-06-08T15:27:40"
+evaluated = 75264
+h12 = 11
+[[chunks]]
+complete = true
+completed_at = "2026-06-08T15:30:09"
+evaluated = 75264
+h12 = 2
+[[chunks]]
+complete = true
+completed_at = "2026-06-08T15:30:15"
+evaluated = 75264
+h12 = 8
+
+[[classes]]
+index = 1
+lut = [0, 0, 0, 9, 0, 1, 2, 10, 0, 2, 3, 8, 4, 7, 5, 15]
+mugshot_key = "kind=quadratic|walsh=-8:5,-4:60,0:75,4:100,8:15,16:1|ddt=0:135,2:120,16:1"
+n = 4
+paper_restricted_polynomial = "a^5*X^3 + X^5 + X^6 + a^8*X^9 + a^14*X^10 + a^9*X^12"
+qam_matrix = [[0, 9, 1, 2], [9, 0, 2, 3], [1, 2, 0, 4], [2, 3, 4, 0]]
+qam_upper_triangle = [9, 1, 2, 2, 3, 4]
+quadratic_coefficients_format = "quadratic-coeffs-v1"
+quadratic_coefficients_hex = "000906060701010805090a"
+source_chunk_h12 = 9
+univariate_polynomial = "a^14*X^1 + a^5*X^2 + a^5*X^3 + a^10*X^4 + X^5 + X^6 + a^3*X^8 + a^8*X^9 + a^14*X^10 + a^9*X^12"
+
+    [[classes.paper_restricted_terms]]
+    coefficient = 6
+    coefficient_power_of_x = 5
+    exponent = 3
+    i = 2
+    t = 1
+    [[classes.paper_restricted_terms]]
+    coefficient = 1
+    coefficient_power_of_x = 0
+    exponent = 5
+    i = 3
+    t = 1
+    [[classes.paper_restricted_terms]]
+    coefficient = 1
+    coefficient_power_of_x = 0
+    exponent = 6
+    i = 3
+    t = 2
+    [[classes.paper_restricted_terms]]
+    coefficient = 5
+    coefficient_power_of_x = 8
+    exponent = 9
+    i = 4
+    t = 1
+    [[classes.paper_restricted_terms]]
+    coefficient = 9
+    coefficient_power_of_x = 14
+    exponent = 10
+    i = 4
+    t = 2
+    [[classes.paper_restricted_terms]]
+    coefficient = 10
+    coefficient_power_of_x = 9
+    exponent = 12
+    i = 4
+    t = 3
+
+    [[classes.univariate_terms]]
+    binary_weight = 1
+    coefficient = 9
+    coefficient_power_of_x = 14
+    exponent = 1
+    [[classes.univariate_terms]]
+    binary_weight = 1
+    coefficient = 6
+    coefficient_power_of_x = 5
+    exponent = 2
+    [[classes.univariate_terms]]
+    binary_weight = 2
+    coefficient = 6
+    coefficient_power_of_x = 5
+    exponent = 3
+    [[classes.univariate_terms]]
+    binary_weight = 1
+    coefficient = 7
+    coefficient_power_of_x = 10
+    exponent = 4
+    [[classes.univariate_terms]]
+    binary_weight = 2
+    coefficient = 1
+    coefficient_power_of_x = 0
+    exponent = 5
+    [[classes.univariate_terms]]
+    binary_weight = 2
+    coefficient = 1
+    coefficient_power_of_x = 0
+    exponent = 6
+    [[classes.univariate_terms]]
+    binary_weight = 1
+    coefficient = 8
+    coefficient_power_of_x = 3
+    exponent = 8
+    [[classes.univariate_terms]]
+    binary_weight = 2
+    coefficient = 5
+    coefficient_power_of_x = 8
+    exponent = 9
+    [[classes.univariate_terms]]
+    binary_weight = 2
+    coefficient = 9
+    coefficient_power_of_x = 14
+    exponent = 10
+    [[classes.univariate_terms]]
+    binary_weight = 2
+    coefficient = 10
+    coefficient_power_of_x = 9
+    exponent = 12
+
+[metadata]
+dedup = "ea"
+exhaustive = false
+expected_classes = "unknown"
+julia_threads = 8
+modulus = 19
+n = 4
+paper = "Yu-Wang-Li 2014"
+search = "full symmetric QAM, chunked by H[1,2]"
+threaded = true
+updated_at = "2026-06-08T15:30:15"

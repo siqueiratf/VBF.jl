@@ -1,0 +1,29 @@
+[algorithm1]
+all_ok = true
+full_n6 = "nothing"
+
+    [algorithm1.algorithm1]
+    all_apn = true
+    all_qam = true
+    all_quadratic = true
+    completed = 266
+    distinct_classes = 1
+    generated = 1
+    gold_class_found = true
+    limit = 1
+    max_nodes = 9223372036854775807
+    n = 5
+    truncated = true
+    visited_nodes = 300
+
+    [algorithm1.full_n5]
+    all_apn = true
+    all_qam = true
+    all_quadratic = true
+    classes = 1
+    expected_classes = 1
+    expected_ok = true
+    gold_class_found = true
+    limit = 1
+    max_evaluations = 16777216
+    n = 5

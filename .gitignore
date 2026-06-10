@@ -7,6 +7,9 @@
 *.o
 *.a
 *.pdf
+*.md
+*.tex
+*.txt
 docs/build/
 docs/site/
 Manifest.toml
@@ -25,3 +28,6 @@ docs/src/api/
 # Source PDFs of cited papers are copyrighted and never committed.
 papers/*.pdf
 /apn-lib/
+
+
+
