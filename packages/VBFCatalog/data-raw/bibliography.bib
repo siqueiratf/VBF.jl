@@ -15,483 +15,1131 @@
 
 % --- Symmetric primitives: AES, PRESENT, GIFT, Midori, SKINNY, Piccolo, Serpent ---
 
-@techreport{FIPS197,
-    title       = {Advanced Encryption Standard (AES)},
-    institution = {National Institute of Standards and Technology},
-    year        = {2001},
-    number      = {FIPS 197},
-    url         = {https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197.pdf}
+@article{Carlet_000,
+ author = {Claude Carlet and Pascale Charpin and Victor Zinoviev},
+ title = {{Codes, {{Bent Functions}} and {{Permutations Suitable For DES-
+     likeCryptosystems}}}},
 }
 
-@inproceedings{BogdanovEtAl2007,
-    author    = {Bogdanov, Andrey and Knudsen, Lars R. and Leander, Gregor and Paar, Christof and Poschmann, Axel and Robshaw, Matthew J. B. and Seurin, Yannick and Vikkelsoe, C.},
-    title     = {{PRESENT}: An Ultra-Lightweight Block Cipher},
-    booktitle = {Cryptographic Hardware and Embedded Systems -- {CHES} 2007},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {4727},
-    pages     = {450--466},
-    year      = {2007},
-    publisher = {Springer},
-    doi       = {10.1007/978-3-540-74735-2_31}
+@article{Kasami_000,
+ author = {Tadao Kasami},
+ title = {{{WEIGHT DISTRIBUTIONS OF}}},
 }
 
-@inproceedings{BanikEtAl2017GIFT,
-    author    = {Banik, Subhadeep and Pandey, Sumit Kumar and Peyrin, Thomas and Sasaki, Yu and Sim, Siang Meng and Todo, Yosuke},
-    title     = {{GIFT}: A Small {PRESENT}},
-    booktitle = {Cryptographic Hardware and Embedded Systems -- {CHES} 2017},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {10529},
-    pages     = {321--345},
-    year      = {2017},
-    publisher = {Springer},
-    doi       = {10.1007/978-3-319-66787-4_16}
+@article{Tan_000,
+ author = {Yin Tan and Longjiang Qu and Chik How Tan and Chao Li},
+ title = {{New {{Families}} of {{Differentially}} 4-{{Uniform Permutations}}
+     over {{F22k}}}},
 }
 
-@inproceedings{BanikEtAl2015Midori,
-    author    = {Banik, Subhadeep and Bogdanov, Andrey and Isobe, Takanori and Shibutani, Kyoji and Hiwatari, Harunaga and Akishita, Toru and Regazzoni, Francesco},
-    title     = {{Midori}: A Block Cipher for Low Energy},
-    booktitle = {Advances in Cryptology -- {ASIACRYPT} 2015},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {9453},
-    pages     = {411--436},
-    year      = {2015},
-    publisher = {Springer},
-    doi       = {10.1007/978-3-662-48800-3_17}
+@article{Gold_196801,
+ doi = {10.1109/TIT.1968.1054106},
+ author = {R. Gold},
+ title = {{Maximal Recursive Sequences with 3-Valued Recursive Cross-Correlation
+     Functions ({{Corresp}}.)}},
+ year = 1968,
+ month = jan,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 14,
+ number = 1,
+ pages = {154--156},
 }
 
-@inproceedings{BeierleEtAl2016SKINNY,
-    author    = {Beierle, Christof and Jean, J{\'e}r{\'e}my and K{\"o}lbl, Stefan and Leander, Gregor and Moradi, Amir and Peyrin, Thomas and Sasaki, Yu and Sasdrich, Pascal and Sim, Siang Meng},
-    title     = {The {SKINNY} Family of Block Ciphers and Its Low-Latency Variant {MANTIS}},
-    booktitle = {Advances in Cryptology -- {CRYPTO} 2016},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {9815},
-    pages     = {123--153},
-    year      = {2016},
-    publisher = {Springer},
-    doi       = {10.1007/978-3-662-53008-5_5}
+@article{Kasami_197105,
+ doi = {10.1016/S0019-9958(71)90473-6},
+ author = {T. Kasami},
+ title = {{The Weight Enumerators for Several Classes of Subcodes of the 2nd
+     Order Binary {{Reed-Muller}} Codes}},
+ year = 1971,
+ month = may,
+ journal = {{Information and Control}},
+ volume = 18,
+ number = 4,
+ pages = {369--394},
 }
 
-@inproceedings{ShibutaniEtAl2011Piccolo,
-    author    = {Shibutani, Kyoji and Isobe, Takanori and Hiwatari, Harunaga and Mitsuda, Atsushi and Akishita, Toru and Shirai, Taizo},
-    title     = {{Piccolo}: An Ultra-Lightweight Blockcipher},
-    booktitle = {Cryptographic Hardware and Embedded Systems -- {CHES} 2011},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {6917},
-    pages     = {342--357},
-    year      = {2011},
-    publisher = {Springer},
-    doi       = {10.1007/978-3-642-23951-9_23}
+@article{Siegenthaler_198409,
+ doi = {10.1109/TIT.1984.1056949},
+ author = {T. Siegenthaler},
+ title = {{Correlation-Immunity of Nonlinear Combining Functions for
+     Cryptographic Applications ({{Corresp}}.)}},
+ year = 1984,
+ month = sep,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 30,
+ number = 5,
+ pages = {776--780},
 }
 
-@misc{AndersonBihamKnudsen1998Serpent,
-    author       = {Anderson, Ross and Biham, Eli and Knudsen, Lars},
-    title        = {Serpent: A Proposal for the Advanced Encryption Standard},
-    year         = {1998},
-    howpublished = {{NIST} {AES} Proposal},
-    url          = {https://www.cl.cam.ac.uk/~rja14/Papers/serpent.pdf}
+@article{Siegenthaler_198501,
+ doi = {10.1109/TC.1985.1676518},
+ author = {Siegenthaler},
+ title = {{Decrypting a {{Class}} of {{Stream Ciphers Using Ciphertext Only}}}},
+ year = 1985,
+ month = jan,
+ journal = {{IEEE Transactions on Computers}},
+ volume = {C-34},
+ number = 1,
+ pages = {81--85},
 }
 
-% --- New: TWINE, KLEIN, PRINCE, LBlock ---
-
-@inproceedings{SuzakiEtAl2012TWINE,
-    author    = {Suzaki, Tomoyasu and Minematsu, Kazuhiko and Morioka, Sumio and Kobayashi, Eita},
-    title     = {{TWINE}: A Lightweight Block Cipher for Multiple Platforms},
-    booktitle = {Selected Areas in Cryptography -- {SAC} 2012},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {7707},
-    pages     = {339--354},
-    year      = {2012},
-    publisher = {Springer},
-    doi       = {10.1007/978-3-642-35999-6_22}
+@article{Xiao_198805,
+ doi = {10.1109/18.6037},
+ author = {G.-Z. Xiao and J.L. Massey},
+ title = {{A Spectral Characterization of Correlation-Immune Combining
+     Functions}},
+ year = 1988,
+ month = may,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 34,
+ number = 3,
+ pages = {569--571},
 }
 
-@inproceedings{GongNikovaLaw2011KLEIN,
-    author    = {Gong, Zheng and Nikova, Svetla and Law, Yee Wei},
-    title     = {{KLEIN}: A New Family of Lightweight Block Ciphers},
-    booktitle = {{RFIDSec} 2011},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {7055},
-    pages     = {1--18},
-    year      = {2011},
-    publisher = {Springer},
-    doi       = {10.1007/978-3-642-25286-0_1}
+@incollection{Chepyzhov_199100,
+ doi = {10.1007/3-540-46416-6_16},
+ isbn = {978-3-540-54620-7},
+ author = {Vladimir Chepyzhov and Ben Smeets},
+ title = {{On {{A Fast Correlation Attack}} on {{Certain Stream Ciphers}}}},
+ year = 1991,
+ volume = 547,
+ booktitle = {{Advances in {{Cryptology}} --- {{EUROCRYPT}} '91}},
+ editor = {Donald W. Davies},
+ pages = {176--185},
+ publisher = {Springer Berlin Heidelberg},
 }
 
-@inproceedings{WuZhang2011LBlock,
-    author    = {Wu, Wenling and Zhang, Lei},
-    title     = {{LBlock}: A Lightweight Block Cipher},
-    booktitle = {Applied Cryptography and Network Security -- {ACNS} 2011},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {6715},
-    pages     = {327--344},
-    year      = {2011},
-    publisher = {Springer},
-    doi       = {10.1007/978-3-642-21554-4_19}
+@incollection{Camion_199200,
+ doi = {10.1007/3-540-46766-1_6},
+ isbn = {978-3-540-55188-1},
+ author = {P. Camion and C. Carlet and P. Charpin and N. Sendrier},
+ title = {{On {{Correlation-immune}} Functions}},
+ year = 1992,
+ volume = 576,
+ booktitle = {{Advances in {{Cryptology}} --- {{CRYPTO}} '91}},
+ editor = {Joan Feigenbaum},
+ pages = {86--100},
+ publisher = {Springer Berlin Heidelberg},
 }
 
-% --- APN families & cryptanalytic foundations ---
-
-@inproceedings{Nyberg1994,
-    author    = {Nyberg, Kaisa},
-    title     = {Differentially Uniform Mappings for Cryptography},
-    booktitle = {Advances in Cryptology -- {EUROCRYPT} '93},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {765},
-    pages     = {55--64},
-    year      = {1994},
-    publisher = {Springer},
-    doi       = {10.1007/3-540-48285-7_6}
+@inproceedings{Tietäväinen_199200,
+ isbn = {978-3-540-46739-7},
+ author = {A. Tietäväinen},
+ title = {{On the Correlation of Sequences}},
+ year = 1992,
+ booktitle = {{Algebraic {{Coding}}}},
+ editor = {Gérard Cohen and Antoine Lobstein and Gilles Zémor and Simon Litsyn},
+ pages = {1--4},
+ publisher = {Springer Berlin Heidelberg},
 }
 
-@article{Gold1968,
-    author  = {Gold, Robert},
-    title   = {Maximal Recursive Sequences with 3-Valued Recursive Cross-Correlation Functions},
-    journal = {{IEEE} Transactions on Information Theory},
-    volume  = {14},
-    number  = {1},
-    pages   = {154--156},
-    year    = {1968},
-    doi     = {10.1109/TIT.1968.1054106}
+@incollection{Janwa_199300,
+ doi = {10.1007/3-540-56686-4_43},
+ isbn = {978-3-540-56686-1 978-3-540-47630-6},
+ author = {H. Janwa and R. M. Wilson},
+ title = {{Hyperplane Sections of Fermat Varieties in {{P}} 3 in Char. 2 and
+     Some Applications to Cyclic Codes}},
+ year = 1993,
+ volume = 673,
+ booktitle = {{Applied {{Algebra}}, {{Algebraic Algorithms}} and {{Error-
+     Correcting Codes}}}},
+ editor = {Gerhard Goos and Juris Hartmanis and Gérard Cohen and Teo Mora and
+     Oscar Moreno},
+ pages = {180--194},
+ publisher = {Springer Berlin Heidelberg},
 }
 
-% --- Cryptanalysis tools cited in BFA's docstrings ---
-
-@inproceedings{CidEtAl2018BCT,
-    author    = {Cid, Carlos and Huang, Tao and Peyrin, Thomas and Sasaki, Yu and Song, Ling},
-    title     = {Boomerang Connectivity Table: {A} New Cryptanalysis Tool},
-    booktitle = {Advances in Cryptology -- {EUROCRYPT} 2018},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {10821},
-    pages     = {683--714},
-    year      = {2018},
-    publisher = {Springer},
-    doi       = {10.1007/978-3-319-78375-8_22}
+@inproceedings{Nyberg_199300,
+ isbn = {978-3-540-47555-2},
+ author = {Kaisa Nyberg},
+ title = {{On the Construction of Highly Nonlinear Permutations}},
+ year = 1993,
+ booktitle = {{Advances in {{Cryptology}} --- {{EUROCRYPT}}' 92}},
+ editor = {Rainer A. Rueppel},
+ pages = {92--98},
+ publisher = {Springer Berlin Heidelberg},
 }
 
-@inproceedings{BonnetainPerrinTian2019Anomaly,
-    author    = {Bonnetain, Xavier and Perrin, L{\'e}o and Tian, Shizhu},
-    title     = {Anomalies and Vector Space Search: Tools for {S}-Box Analysis},
-    booktitle = {Advances in Cryptology -- {ASIACRYPT} 2019},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {11923},
-    pages     = {196--223},
-    year      = {2019},
-    publisher = {Springer},
-    doi       = {10.1007/978-3-030-34618-8_7}
+@incollection{Beth_199400,
+ doi = {10.1007/3-540-48285-7_7},
+ author = {T. Beth and C. Ding},
+ title = {{On {{Almost Perfect Nonlinear Permutations}}}},
+ year = 1994,
+ volume = 765,
+ booktitle = {{Advances in {{Cryptology}} --- {{EUROCRYPT}} '93}},
+ editor = {Tor Helleseth},
+ pages = {65--76},
+ publisher = {Springer Berlin Heidelberg},
 }
 
-@article{DaemenRijmen2007Probability,
-    author  = {Daemen, Joan and Rijmen, Vincent},
-    title   = {Probability Distributions of Correlation and Differentials in Block Ciphers},
-    journal = {Journal of Mathematical Cryptology},
-    volume  = {1},
-    number  = {3},
-    pages   = {221--242},
-    year    = {2007},
-    doi     = {10.1515/JMC.2007.011}
+@book{Helleseth_199400,
+ isbn = {978-3-540-57600-6 978-3-540-48285-7},
+ author = {Tor Helleseth},
+ title = {{Advances in {{Cryptology}} - {{EUROCRYPT}} '93: {{Workshop}} on the
+     {{Theory}} and {{Application}} of {{Cryptographic Techniques Lofthus}},
+     {{Norway}}, {{May}} 23-27, 1993 {{Proceedings}}}},
+ year = 1994,
+ series = {Lecture {{Notes}} in {{Computer Science Ser}}},
+ number = {v.765},
+ publisher = {Springer Berlin / Heidelberg},
 }
 
-% --- Algorithmic sources ported by BFA (reconciled with sboxU's biblio) ---
-
-@inproceedings{BiryukovEtAl2003EquivalenceToolbox,
-    author    = {Biryukov, Alex and De Canni{\`{e}}re, Christophe and Braeken, An and Preneel, Bart},
-    title     = {A Toolbox for Cryptanalysis: Linear and Affine Equivalence Algorithms},
-    booktitle = {Advances in Cryptology -- {EUROCRYPT} 2003},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {2656},
-    pages     = {33--50},
-    year      = {2003},
-    publisher = {Springer},
-    doi       = {10.1007/3-540-39200-9_3}
+@incollection{Matsui_199400,
+ doi = {10.1007/3-540-48285-7_33},
+ isbn = {978-3-540-57600-6 978-3-540-48285-7},
+ author = {Mitsuru Matsui},
+ title = {{Linear {{Cryptanalysis Method}} for {{DES Cipher}}}},
+ year = 1994,
+ volume = 765,
+ booktitle = {{Advances in {{Cryptology}} --- {{EUROCRYPT}} '93}},
+ editor = {Gerhard Goos and Juris Hartmanis and Tor Helleseth},
+ pages = {386--397},
+ publisher = {Springer Berlin Heidelberg},
 }
 
-@inproceedings{BiryukovPerrin2015ReverseEngineering,
-    author    = {Biryukov, Alex and Perrin, L{\'{e}}o},
-    title     = {On Reverse-Engineering S-Boxes with Hidden Design Criteria or Structure},
-    booktitle = {Advances in Cryptology -- {CRYPTO} 2015},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {9215},
-    pages     = {116--140},
-    year      = {2015},
-    publisher = {Springer},
-    doi       = {10.1007/978-3-662-47989-6_6}
+@incollection{Nyberg_199400,
+ doi = {10.1007/3-540-48285-7_6},
+ isbn = {978-3-540-57600-6},
+ author = {Kaisa Nyberg},
+ title = {{Differentially Uniform Mappings for Cryptography}},
+ year = 1994,
+ volume = 765,
+ booktitle = {{Advances in {{Cryptology}} --- {{EUROCRYPT}} '93}},
+ editor = {Tor Helleseth},
+ pages = {55--64},
+ publisher = {Springer Berlin Heidelberg},
 }
 
-@article{CanteautPerrin2019CCZ,
-    author  = {Canteaut, Anne and Perrin, L{\'{e}}o},
-    title   = {On CCZ-equivalence, extended-affine equivalence, and function twisting},
-    journal = {Finite Fields and Their Applications},
-    volume  = {56},
-    pages   = {209--246},
-    year    = {2019},
-    doi     = {10.1016/j.ffa.2018.11.008}
+@incollection{Chabaud_199500,
+ doi = {10.1007/BFb0053450},
+ isbn = {978-3-540-60176-0 978-3-540-44717-7},
+ author = {Florent Chabaud and Serge Vaudenay},
+ title = {{Links between Differential and Linear Cryptanalysis}},
+ year = 1995,
+ volume = 950,
+ booktitle = {{Advances in {{Cryptology}} --- {{EUROCRYPT}}'94}},
+ editor = {Gerhard Goos and Juris Hartmanis and Jan Van Leeuwen and Alfredo De
+     Santis},
+ pages = {356--365},
+ publisher = {Springer Berlin Heidelberg},
 }
 
-@article{CanteautCouvreurPerrin2022EA,
-    author  = {Canteaut, Anne and Couvreur, Alain and Perrin, L{\'{e}}o},
-    title   = {Recovering or Testing Extended-Affine Equivalence},
-    journal = {{IEEE} Transactions on Information Theory},
-    volume  = {68},
-    number  = {9},
-    pages   = {6187--6206},
-    year    = {2022},
-    doi     = {10.1109/TIT.2022.3166692}
+@article{Bosma_199700,
+ doi = {10.1006/jsco.1996.0125},
+ author = {Wieb Bosma and John Cannon and Catherine Playoust},
+ title = {{The {M}agma algebra system. {I}. {T}he user language}},
+ year = 1997,
+ journal = {{J. Symbolic Comput.}},
+ volume = 24,
+ number = {3-4},
+ pages = {235--265},
+ note = {Computational algebra and number theory (London, 1993)},
 }
 
-@article{EdelPott2009,
-    author  = {Edel, Yves and Pott, Alexander},
-    title   = {A new almost perfect nonlinear function which is not quadratic},
-    journal = {Advances in Mathematics of Communications},
-    volume  = {3},
-    number  = {1},
-    pages   = {59--81},
-    year    = {2009}
+@article{Carlet_199811,
+ doi = {10.1023/A:1008344232130},
+ author = {Claude Carlet and Pascale Charpin and Victor Zinoviev},
+ title = {{Codes, {{Bent Functions}} and {{Permutations Suitable For DES-like
+     Cryptosystems}}}},
+ year = 1998,
+ month = nov,
+ journal = {{Designs, Codes and Cryptography}},
+ volume = 15,
+ number = 2,
+ pages = {125--156},
 }
 
-@article{YuWangLi2014QAM,
-    author  = {Yu, Yuyin and Wang, Mingsheng and Li, Yongqiang},
-    title   = {A matrix approach for constructing quadratic {APN} functions},
-    journal = {Designs, Codes and Cryptography},
-    volume  = {73},
-    number  = {2},
-    pages   = {587--600},
-    year    = {2014},
-    note    = {Updated version: Cryptology ePrint Archive, Report 2013/007},
-    url     = {https://eprint.iacr.org/2013/007}
+@incollection{Goos_199900,
+ doi = {10.1007/3-540-48405-1_12},
+ isbn = {978-3-540-66347-8 978-3-540-48405-9},
+ author = {Gerhard Goos and Juris Hartmanis and Jan Van Leeuwen and Thomas
+     Johansson and Fredrik Jönsson},
+ title = {{Fast {{Correlation Attacks Based}} on {{Turbo Code Techniques}}}},
+ year = 1999,
+ volume = 1666,
+ booktitle = {{Advances in {{Cryptology}} --- {{CRYPTO}}' 99}},
+ editor = {Michael Wiener},
+ pages = {181--197},
+ publisher = {Springer Berlin Heidelberg},
 }
 
-@inproceedings{WengTanGong2013,
+@incollection{Johansson_199900,
+ doi = {10.1007/3-540-48910-X_24},
+ isbn = {978-3-540-65889-4 978-3-540-48910-8},
+ author = {Thomas Johansson and Fredrik Jönsson},
+ title = {{Improved {{Fast Correlation Attacks}} on {{Stream Ciphers}} via
+     {{Convolutional Codes}}}},
+ year = 1999,
+ volume = 1592,
+ booktitle = {{Advances in {{Cryptology}} --- {{EUROCRYPT}} '99}},
+ editor = {Gerhard Goos and Juris Hartmanis and Jan Van Leeuwen and Jacques
+     Stern},
+ pages = {347--362},
+ publisher = {Springer Berlin Heidelberg},
+}
+
+@article{Dobbertin_199905,
+ doi = {10.1006/inco.1998.2764},
+ author = {Hans Dobbertin},
+ title = {{Almost {{Perfect Nonlinear Power Functions}} on {{GF}}(2n): {{The
+     Niho Case}}}},
+ year = 1999,
+ month = may,
+ journal = {{Information and Computation}},
+ volume = 151,
+ number = {1-2},
+ pages = {57--72},
+}
+
+@article{Dobbertin_199905b,
+ doi = {10.1109/18.761283},
+ author = {H. Dobbertin},
+ title = {{Almost Perfect Nonlinear Power Functions on {{GF}}(2/Sup n/): The
+     {{Welch}} Case}},
+ year = 1999,
+ month = may,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 45,
+ number = 4,
+ pages = {1271--1275},
+}
+
+@incollection{Canteaut_200000,
+ doi = {10.1007/3-540-45539-6_40},
+ isbn = {978-3-540-67517-4 978-3-540-45539-4},
+ author = {Anne Canteaut and Michaël Trabbia},
+ title = {{Improved {{Fast Correlation Attacks Using Parity-Check Equations}} of
+     {{Weight}} 4 and 5}},
+ year = 2000,
+ volume = 1807,
+ booktitle = {{Advances in {{Cryptology}} --- {{EUROCRYPT}} 2000}},
+ editor = {Gerhard Goos and Juris Hartmanis and Jan Van Leeuwen and Bart
+     Preneel},
+ pages = {573--588},
+ publisher = {Springer Berlin Heidelberg},
+}
+
+@incollection{Sarkar_200000,
+ doi = {10.1007/3-540-44598-6_32},
+ isbn = {978-3-540-67907-3 978-3-540-44598-2},
+ author = {Palash Sarkar and Subhamoy Maitra},
+ title = {{Nonlinearity {{Bounds}} and {{Constructions}} of {{Resilient Boolean
+     Functions}}}},
+ year = 2000,
+ volume = 1880,
+ booktitle = {{Advances in {{Cryptology}} --- {{CRYPTO}} 2000}},
+ editor = {Gerhard Goos and Juris Hartmanis and Jan Van Leeuwen and Mihir
+     Bellare},
+ pages = {515--532},
+ publisher = {Springer Berlin Heidelberg},
+}
+
+@incollection{Tarannikov_200000,
+ doi = {10.1007/3-540-44495-5_3},
+ isbn = {978-3-540-41452-0 978-3-540-44495-4},
+ author = {Yuriy V. Tarannikov},
+ title = {{On {{Resilient Boolean Functions}} with {{Maximal Possible
+     Nonlinearity}}}},
+ year = 2000,
+ volume = 1977,
+ booktitle = {{Progress in {{Cryptology}} ---{{INDOCRYPT}} 2000}},
+ editor = {Gerhard Goos and Juris Hartmanis and Jan Van Leeuwen and Bimal Roy
+     and Eiji Okamoto},
+ pages = {19--30},
+ publisher = {Springer Berlin Heidelberg},
+}
+
+@incollection{Dobbertin_200100,
+ doi = {10.1007/978-3-642-56755-1_11},
+ isbn = {978-3-642-62498-8 978-3-642-56755-1},
+ author = {Hans Dobbertin},
+ title = {{Almost {{Perfect Nonlinear Power Functions}} on {{GF}}(2 n ): {{A New
+     Case}} for n {{Divisible}} by 5}},
+ year = 2001,
+ booktitle = {{Finite {{Fields}} and {{Applications}}}},
+ editor = {Dieter Jungnickel and Harald Niederreiter},
+ pages = {113--121},
+ publisher = {Springer Berlin Heidelberg},
+}
+
+@incollection{Carlet_200200,
+ doi = {10.1007/978-1-4471-0673-9_9},
+ isbn = {978-1-85233-529-8 978-1-4471-0673-9},
+ author = {Claude Carlet},
+ title = {{On the {{Coset Weight Divisibility}} and {{Nonlinearity}} of
+     {{Resilient}} and {{Correlation-Immune Functions}}}},
+ year = 2002,
+ booktitle = {{Sequences and Their {{Applications}}}},
+ editor = {T. Helleseth and P. V. Kumar and K. Yang},
+ pages = {131--144},
+ publisher = {Springer London},
+}
+
+@incollection{Biryukov_200300,
+ doi = {10.1007/3-540-39200-9_3},
+ author = {Alex Biryukov and Christophe De Cannière and An Braeken and Bart
+     Preneel},
+ title = {{A {{Toolbox}} for {{Cryptanalysis}}: {{Linear}} and {{Affine
+     Equivalence Algorithms}}}},
+ year = 2003,
+ volume = 2656,
+ booktitle = {{Advances in {{Cryptology}} --- {{EUROCRYPT}} 2003}},
+ editor = {Gerhard Goos and Juris Hartmanis and Jan Van Leeuwen and Eli Biham},
+ pages = {33--50},
+ publisher = {Springer Berlin Heidelberg},
+}
+
+@misc{Budaghyan_200506,
+ doi = {10.48550/arXiv.math/0506604},
+ author = {Lilya Budaghyan and Claude Carlet and Alexander Pott},
+ title = {{New {{Classes}} of {{Almost Bent}} and {{Almost Perfect Nonlinear
+     Polynomials}}}},
+ year = 2005,
+ month = jun,
+ number = {arXiv:math/0506604},
+ publisher = {arXiv},
+}
+
+@inproceedings{Budaghyan_200607,
+ doi = {10.1109/ISIT.2006.262131},
+ isbn = {978-1-4244-0505-3},
+ author = {Lilya Budaghyan and Claude Carlet and Patrick Felke and Gregor
+     Leander},
+ title = {{An Infinite Class of Quadratic {{APN}} Functions Which Are Not
+     Equivalent to Power Mappings}},
+ year = 2006,
+ month = jul,
+ booktitle = {{2006 {{IEEE International Symposium}} on {{Information
+     Theory}}}},
+ pages = {2637--2641},
+ publisher = {IEEE},
+}
+
+@article{Berger_200609,
+ doi = {10.1109/TIT.2006.880036},
+ author = {T.P. Berger and A. Canteaut and P. Charpin and Y. Laigle-Chapuy},
+ title = {{On {{Almost Perfect Nonlinear Functions Over}}\$mmb
+     {{F}}\_2\textasciicircum n\$}},
+ year = 2006,
+ month = sep,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 52,
+ number = 9,
+ pages = {4160--4170},
+}
+
+@article{Coulter_200801,
+ doi = {10.1016/j.aim.2007.07.007},
+ author = {Robert S. Coulter and Marie Henderson},
+ title = {{Commutative Presemifields and Semifields}},
+ year = 2008,
+ month = jan,
+ journal = {{Advances in Mathematics}},
+ volume = 217,
+ number = 1,
+ pages = {282--304},
+}
+
+@article{Budaghyan_200805,
+ doi = {10.1109/TIT.2008.920246},
+ author = {Lilya Budaghyan and Claude Carlet},
+ title = {{Classes of {{Quadratic APN Trinomials}} and {{Hexanomials}} and
+     {{Related Structures}}}},
+ year = 2008,
+ month = may,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 54,
+ number = 5,
+ pages = {2354--2357},
+}
+
+@article{Bracken_200807,
+ doi = {10.1016/j.ffa.2007.11.002},
+ author = {Carl Bracken and Eimear Byrne and Nadya Markin and Gary McGuire},
+ title = {{New Families of Quadratic Almost Perfect Nonlinear Trinomials and
+     Multinomials}},
+ year = 2008,
+ month = jul,
+ journal = {{Finite Fields and Their Applications}},
+ volume = 14,
+ number = 3,
+ pages = {703--714},
+}
+
+@article{Budaghyan_200809,
+ doi = {10.1109/TIT.2008.928275},
+ author = {Lilya Budaghyan and Claude Carlet and Gregor Leander},
+ title = {{Two {{Classes}} of {{Quadratic APN Binomials Inequivalent}} to
+     {{Power Functions}}}},
+ year = 2008,
+ month = sep,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 54,
+ number = 9,
+ pages = {4218--4229},
+}
+
+@article{Brinkmann_200812,
+ doi = {10.1007/s10623-008-9194-6},
+ author = {Marcus Brinkmann and Gregor Leander},
+ title = {{On the Classification of {{APN}} Functions up to Dimension Five}},
+ year = 2008,
+ month = dec,
+ journal = {{Designs, Codes and Cryptography}},
+ volume = 49,
+ number = {1-3},
+ pages = {273--288},
+}
+
+@article{Edel_200900,
+ doi = {10.3934/amc.2009.3.59},
+ author = {Yves Edel and Alexander Pott},
+ title = {{A New Almost Perfect Nonlinear Function Which Is Not Quadratic}},
+ year = 2009,
+ journal = {{Advances in Mathematics of Communications}},
+ volume = 3,
+ number = 1,
+ pages = {59--81},
+}
+
+@article{Budaghyan_200904,
+ doi = {10.1016/j.ffa.2008.10.001},
+ author = {Lilya Budaghyan and Claude Carlet and Gregor Leander},
+ title = {{Constructing New {{APN}} Functions from Known Ones}},
+ year = 2009,
+ month = apr,
+ journal = {{Finite Fields and Their Applications}},
+ volume = 15,
+ number = 2,
+ pages = {150--159},
+}
+
+@inproceedings{Budaghyan_200910,
+ doi = {10.1109/ITW.2009.5351383},
+ author = {Lilya Budaghyan and Claude Carlet and Gregor Leander},
+ title = {{On a Construction of Quadratic {{APN}} Functions}},
+ year = 2009,
+ month = oct,
+ booktitle = {{2009 {{IEEE Information Theory Workshop}}}},
+ pages = {374--378},
+}
+
+@incollection{Carlet_201006,
+ doi = {10.1017/CBO9780511780448.012},
+ isbn = {978-0-521-84752-0 978-0-511-78044-8},
+ author = {Claude Carlet},
+ title = {{Vectorial {{Boolean Functions}} for {{Cryptography}}}},
+ year = 2010,
+ month = jun,
+ booktitle = {{Boolean {{Models}} and {{Methods}} in {{Mathematics}}, {{Computer
+     Science}}, and {{Engineering}}}},
+ editor = {Yves Crama and Peter L. Hammer},
+ pages = {398--470},
+ edition = 1,
+ publisher = {Cambridge University Press},
+}
+
+@incollection{Carlet_201006b,
+ doi = {10.1017/CBO9780511780448.011},
+ isbn = {978-0-521-84752-0 978-0-511-78044-8},
+ author = {Claude Carlet},
+ title = {{Boolean {{Functions}} for {{Cryptography}} and {{Error-Correcting
+     Codes}}}},
+ year = 2010,
+ month = jun,
+ booktitle = {{Boolean {{Models}} and {{Methods}} in {{Mathematics}}, {{Computer
+     Science}}, and {{Engineering}}}},
+ editor = {Yves Crama and Peter L. Hammer},
+ pages = {257--397},
+ edition = 1,
+ publisher = {Cambridge University Press},
+}
+
+@article{Bracken_201103,
+ doi = {10.1007/s12095-010-0038-7},
+ author = {Carl Bracken and Eimear Byrne and Nadya Markin and Gary McGuire},
+ title = {{A Few More Quadratic {{APN}} Functions}},
+ year = 2011,
+ month = mar,
+ journal = {{Cryptography and Communications}},
+ volume = 3,
+ number = 1,
+ pages = {43--53},
+}
+
+@article{Budaghyan_201109,
+ doi = {10.1142/S0129054111008684},
+ author = {Lilya Budaghyan and Tor Helleseth},
+ title = {{{ON ISOTOPISMS OF COMMUTATIVE PRESEMIFIELDS AND CCZ-EQUIVALENCE OF
+     FUNCTIONS}}},
+ year = 2011,
+ month = sep,
+ journal = {{International Journal of Foundations of Computer Science}},
+ volume = 22,
+ number = 06,
+ pages = {1243--1258},
+}
+
+@article{Bracken_201205,
+ doi = {10.1016/j.ffa.2011.11.006},
+ author = {Carl Bracken and Chik How Tan and Yin Tan},
+ title = {{Binomial Differentially 4 Uniform Permutations with High
+     Nonlinearity}},
+ year = 2012,
+ month = may,
+ journal = {{Finite Fields and Their Applications}},
+ volume = 18,
+ number = 3,
+ pages = {537--546},
+}
+
+@article{Yuyin_201300,
+ doi = {10.23919/CJE.2013.10283974},
+ author = {YU Yuyin and WANG Mingsheng and LI Yongqiang},
+ title = {{Constructing Differentially 4 Uniform Permutations from Known Ones}},
+ year = 2013,
+ journal = {{Chinese Journal of Electronics}},
+ volume = 22,
+ number = 3,
+ pages = {495-499},
+}
+
+@article{Zhou_201302,
+ doi = {10.1016/j.aim.2012.10.014},
+ author = {Yue Zhou and Alexander Pott},
+ title = {{A New Family of Semifields with 2 Parameters}},
+ year = 2013,
+ month = feb,
+ journal = {{Advances in Mathematics}},
+ volume = 234,
+ pages = {43--60},
+}
+
+@book{Mullen_201306,
+ doi = {10.1201/b15006},
+ isbn = {978-0-429-10519-7},
+ author = {Gary L. Mullen and Daniel Panario},
+ title = {{Handbook of {{Finite Fields}}}},
+ year = 2013,
+ month = jun,
+ edition = 0,
+ publisher = {{Chapman and Hall/CRC}},
+}
+
+@inproceedings{Carlet_201400,
+ isbn = {978-3-319-12087-4},
+ author = {Claude Carlet and Deng Tang and Xiaohu Tang and Qunying Liao},
+ title = {{New {{Construction}} of {{Differentially}} 4-{{Uniform
+     Bijections}}}},
+ year = 2014,
+ booktitle = {{Information {{Security}} and {{Cryptology}}}},
+ editor = {Dongdai Lin and Shouhuai Xu and Moti Yung},
+ pages = {22--38},
+ publisher = {Springer International Publishing},
+}
+
+@article{Zha_201401,
+ doi = {10.1016/j.ffa.2013.08.003},
+ author = {Zhengbang Zha and Lei Hu and Siwei Sun},
+ title = {{Constructing New Differentially 4-Uniform Permutations from the
+     Inverse Function}},
+ year = 2014,
+ month = jan,
+ journal = {{Finite Fields and Their Applications}},
+ volume = 25,
+ pages = {64--78},
+}
+
+@article{Dempwolff_201403,
+ doi = {10.1007/s10801-013-0454-9},
+ author = {Ulrich Dempwolff and Yves Edel},
+ title = {{Dimensional Dual Hyperovals and {{APN}} Functions with Translation
+     Groups}},
+ year = 2014,
+ month = mar,
+ journal = {{Journal of Algebraic Combinatorics}},
+ volume = 39,
+ number = 2,
+ pages = {457--496},
+}
+
+@article{Li_201408,
+ doi = {10.1007/s10623-012-9760-9},
+ author = {Yongqiang Li and Mingsheng Wang},
+ title = {{Constructing Differentially 4-Uniform Permutations over {{GF}}(22m )
+     from Quadratic {{APN}} Permutations over {{GF}}(22m+1)}},
+ year = 2014,
+ month = aug,
+ journal = {{Designs, Codes and Cryptography}},
+ volume = 72,
+ number = 2,
+ pages = {249--264},
+}
+
+@article{Yu_201411,
+ doi = {10.1007/s10623-014-9955-3},
+ author = {Yuyin Yu and Mingsheng Wang and Yongqiang Li},
+ title = {{A Matrix Approach for Constructing Quadratic {{APN}} Functions}},
+ year = 2014,
+ month = nov,
+ journal = {{Designs, Codes and Cryptography}},
+ volume = 73,
+ number = 2,
+ pages = {587--600},
+}
+
+@article{Tang_201510,
+ doi = {10.1007/s10623-014-9992-y},
+ author = {Deng Tang and Claude Carlet and Xiaohu Tang},
+ title = {{Differentially 4-Uniform Bijections by Permuting the Inverse
+     Function}},
+ year = 2015,
+ month = oct,
+ journal = {{Designs, Codes and Cryptography}},
+ volume = 77,
+ number = 1,
+ pages = {117--141},
+}
+
+@book{Wu_201600,
+ doi = {10.1007/978-3-662-48865-2},
+ isbn = {978-3-662-48863-8 978-3-662-48865-2},
+ author = {Chuan-Kun Wu and Dengguo Feng},
+ title = {{Boolean {{Functions}} and {{Their Applications}} in
+     {{Cryptography}}}},
+ year = 2016,
+ series = {Advances in {{Computer Science}} and {{Technology}}},
+ publisher = {Springer Berlin Heidelberg},
+}
+
+@article{Collberg_201600,
+ doi = {10.1145/2812803},
+ author = {Christian Collberg and Todd A. Proebsting},
+ title = {{Repeatability in Computer Systems Research}},
+ year = 2016,
+ journal = {{Communications of the {ACM}}},
+ volume = 59,
+ number = 3,
+ pages = {62--69},
+}
+
+@inproceedings{Fieker_201700,
+ doi = {10.1145/3087604.3087611},
+ author = {Claus Fieker and William Hart and Tommy Hofmann and Fredrik
+     Johansson},
+ title = {{Nemo/Hecke: Computer Algebra and Number Theory Packages for the Julia
+     Programming Language}},
+ year = 2017,
+ series = {ISSAC '17},
+ booktitle = {{Proceedings of the 2017 ACM on International Symposium on
+     Symbolic and Algebraic Computation}},
+ pages = {157--164},
+ publisher = {ACM},
+}
+
+@article{Bezanson_201700,
+ author = {Jeff Bezanson and Alan Edelman and Stefan Karpinski and Viral B
+     Shah},
+ title = {{Julia: A fresh approach to numerical computing}},
+ year = 2017,
+ journal = {{SIAM review}},
+ volume = 59,
+ number = 1,
+ pages = {65--98},
+ publisher = {SIAM},
+}
+
+@incollection{Dinur_201800,
+ doi = {10.1007/978-3-319-78381-9_16},
+ isbn = {978-3-319-78380-2 978-3-319-78381-9},
+ author = {Itai Dinur},
+ title = {{An {{Improved Affine Equivalence Algorithm}} for {{Random
+     Permutations}}}},
+ year = 2018,
+ volume = 10820,
+ booktitle = {{Advances in {{Cryptology}} -- {{EUROCRYPT}} 2018}},
+ editor = {Jesper Buus Nielsen and Vincent Rijmen},
+ pages = {413--442},
+ publisher = {Springer International Publishing},
+}
+
+@article{Canteaut_201906,
+ doi = {10.1007/s12095-019-00361-x},
+ author = {Anne Canteaut and Léo Perrin and Shizhu Tian},
+ title = {{If a Generalised Butterfly Is {{APN}} then It Operates on 6 Bits}},
+ year = 2019,
+ month = jun,
+ journal = {{Cryptography and Communications}},
+ volume = 11,
+ number = 6,
+ pages = {1147--1164},
+}
+
+@article{Taniguchi_201909,
+ doi = {10.1007/s10623-018-00598-2},
+ author = {Hiroaki Taniguchi},
+ title = {{On Some Quadratic {{APN}} Functions}},
+ year = 2019,
+ month = sep,
+ journal = {{Designs, Codes and Cryptography}},
+ volume = 87,
+ number = 9,
+ pages = {1973--1983},
+}
+
+@article{Kaleyski_201911,
+ doi = {10.1007/s12095-019-00366-6},
+ author = {Nikolay Kaleyski},
+ title = {{Changing {{APN}} Functions at Two Points}},
+ year = 2019,
+ month = nov,
+ journal = {{Cryptography and Communications}},
+ volume = 11,
+ number = 6,
+ pages = {1165--1184},
+}
+
+@misc{Kalgin_202000,
+ author = {Konstantin Kalgin and Valeriya Idrisova},
+ title = {{The classification of quadratic {APN} functions in 7 variables}},
+ year = 2020,
+ howpublished = {Cryptology {ePrint} Archive, Paper 2020/1515},
+}
+
+@misc{AssociationforComputingMachinery_202000,
+ author = {Association for Computing Machinery},
+ title = {{Artifact Review and Badging Policy}},
+ year = 2020,
+}
+
+@article{Budaghyan_202008,
+ doi = {10.1109/TIT.2020.2974471},
+ author = {Lilya Budaghyan and Marco Calderini and Claude Carlet and Robert S.
+     Coulter and Irene Villa},
+ title = {{Constructing {{APN Functions Through Isotopic Shifts}}}},
+ year = 2020,
+ month = aug,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 66,
+ number = 8,
+ pages = {5299--5309},
+}
+
+@article{Budaghyan_202009,
+ doi = {10.1109/TIT.2020.2983684},
+ author = {Lilya Budaghyan and Claude Carlet and Tor Helleseth and Nikolay
+     Kaleyski},
+ title = {{On the {{Distance Between APN Functions}}}},
+ year = 2020,
+ month = sep,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 66,
+ number = 9,
+ pages = {5742--5753},
+}
+
+@article{Calderini_202009,
+ doi = {10.1007/s12095-020-00426-2},
+ author = {Marco Calderini},
+ title = {{On the {{EA-classes}} of Known {{APN}} Functions in Small
+     Dimensions}},
+ year = 2020,
+ month = sep,
+ journal = {{Cryptography and Communications}},
+ volume = 12,
+ number = 5,
+ pages = {821--840},
+}
+
+@article{Budaghyan_202011,
+ doi = {10.1109/TIT.2020.3007513},
+ author = {Lilya Budaghyan and Tor Helleseth and Nikolay Kaleyski},
+ title = {{A {{New Family}} of {{APN Quadrinomials}}}},
+ year = 2020,
+ month = nov,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 66,
+ number = 11,
+ pages = {7081--7087},
+}
+
+@book{Carlet_202011,
+ doi = {10.1017/9781108606806},
+ isbn = {978-1-108-60680-6 978-1-108-47380-4},
+ author = {Claude Carlet},
+ title = {{Boolean {{Functions}} for {{Cryptography}} and {{Coding Theory}}}},
+ year = 2020,
+ month = nov,
+ edition = 1,
+ publisher = {Cambridge University Press},
+}
+
+@article{Yu_202012,
+ doi = {10.1016/j.ffa.2020.101733},
+ author = {Yuyin Yu and Nikolay Kaleyski and Lilya Budaghyan and Yongqiang Li},
+ title = {{Classification of Quadratic {{APN}} Functions with Coefficients in
+     {{F}} 2 for Dimensions up to 9}},
+ year = 2020,
+ month = dec,
+ journal = {{Finite Fields and Their Applications}},
+ volume = 68,
+ pages = 101733,
+}
+
+@article{Calderini_202100,
+ doi = {10.21857/ygjwrcdkgy},
+ author = {Marco Calderini and Lilya Budaghyan and Claude Carlet},
+ title = {{On Known Constructions of {{APN}} and {{AB}} Functions and Their
+     Relation to Each Other}},
+ year = 2021,
+ journal = {{Rad Hrvatske akademije znanosti i umjetnosti Matemati\v cke
+     znanosti}},
+ volume = {25(60)},
+ pages = {79--105},
+}
+
+@article{Budaghyan_202101,
+ doi = {10.1007/s10623-020-00803-1},
+ author = {Lilya Budaghyan and Marco Calderini and Claude Carlet and Robert
+     Coulter and Irene Villa},
+ title = {{Generalized Isotopic Shift Construction for {{APN}} Functions}},
+ year = 2021,
+ month = jan,
+ journal = {{Designs, Codes and Cryptography}},
+ volume = 89,
+ number = 1,
+ pages = {19--32},
+}
+
+@article{Beierle_202107,
+ doi = {10.1109/TIT.2021.3071533},
+ author = {Christof Beierle and Marcus Brinkmann and Gregor Leander},
+ title = {{Linearly {{Self-Equivalent APN Permutations}} in {{Small
+     Dimension}}}},
+ year = 2021,
+ month = jul,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 67,
+ number = 7,
+ pages = {4863--4875},
+}
+
+@misc{Chase_202110,
+ doi = {10.48550/arXiv.2110.15582},
+ author = {Benjamin Chase and Petr Lisonek},
+ title = {{Construction of {{APN}} Permutations via {{Walsh}} Zero Spaces}},
+ year = 2021,
+ month = oct,
+ number = {arXiv:2110.15582},
+ publisher = {arXiv},
+ note = {Comment: 17 pages},
+}
+
+@article{Kaleyski_202200,
+ author = {Nikolay Kaleyski and Kjetil Nesheim and Pantelimon Stănică},
+ title = {{A doubly-infinite family of 0-APN monomials}},
+ year = 2022,
+ journal = {{ArXiv}},
+ volume = {abs/2211.13485},
+}
+
+@article{Frachtenberg_202200,
+ doi = {10.7717/peerj-cs.887},
+ author = {Eitan Frachtenberg},
+ title = {{Research artifacts and citations in computer systems papers}},
+ year = 2022,
+ journal = {{PeerJ Computer Science}},
+ volume = 8,
+ pages = {e887},
+ publisher = {PeerJ},
+}
+
+@article{Beierle_202201,
+ doi = {10.1109/TIT.2021.3120698},
+ author = {Christof Beierle and Gregor Leander},
+ title = {{New {{Instances}} of {{Quadratic APN Functions}}}},
+ year = 2022,
+ month = jan,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 68,
+ number = 1,
+ pages = {670--678},
+}
+
+@article{Kaleyski_202203,
+ doi = {10.1007/s12095-021-00513-y},
+ author = {Nikolay Kaleyski},
+ title = {{Deciding {{EA-equivalence}} via Invariants}},
+ year = 2022,
+ month = mar,
+ journal = {{Cryptography and Communications}},
+ volume = 14,
+ number = 2,
+ pages = {271--290},
+}
+
+@misc{Canteaut_202205,
+ doi = {10.48550/arXiv.2103.00078},
+ author = {Anne Canteaut and Alain Couvreur and Léo Perrin},
+ title = {{Recovering or {{Testing Extended-Affine Equivalence}}}},
+ year = 2022,
+ month = may,
+ number = {arXiv:2103.00078},
+ publisher = {arXiv},
+}
+
+@article{Gologlu_202207,
+ doi = {10.1109/TIT.2022.3157798},
+ author = {Faruk Gologlu},
+ title = {{Biprojective {{Almost Perfect Nonlinear Functions}}}},
+ year = 2022,
+ month = jul,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 68,
+ number = 7,
+ pages = {4750--4760},
+}
+
+@article{Li_202207,
+ doi = {10.1109/TIT.2022.3157810},
+ author = {Kangquan Li and Yue Zhou and Chunlei Li and Longjiang Qu},
+ title = {{Two {{New Families}} of {{Quadratic APN Functions}}}},
+ year = 2022,
+ month = jul,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 68,
+ number = 7,
+ pages = {4761--4769},
+}
+
+@article{Yu_202211,
+ doi = {10.1007/s12095-022-00598-z},
+ author = {Yuyin Yu and Léo Perrin},
+ title = {{Constructing More Quadratic {{APN}} Functions with the {{QAM}}
+     Method}},
+ year = 2022,
+ month = nov,
+ journal = {{Cryptography and Communications}},
+ volume = 14,
+ number = 6,
+ pages = {1359--1369},
+}
+
+@article{Zheng_202211,
+ doi = {10.1109/TIT.2022.3186899},
+ author = {Lijing Zheng and Haibin Kan and Yanjun Li and Jie Peng and Deng
+     Tang},
+ title = {{Constructing {{New APN Functions Through Relative Trace
+     Functions}}}},
+ year = 2022,
+ month = nov,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 68,
+ number = 11,
+ pages = {7528--7537},
+}
+
+@misc{Hernández_202300,
+ author = {José Armando Hernández and Miguel Colom},
+ title = {{Repeatability, Reproducibility, Replicability, Reusability (4R) in
+     Journals' Policies and Software/Data Management in Scientific Publications:
+     A Survey, Discussion, and Perspectives}},
+ year = 2023,
+}
+
+@article{Calderini_202306,
+ doi = {10.1016/j.ffa.2023.102190},
+ author = {Marco Calderini and Kangquan Li and Irene Villa},
+ title = {{Extending Two Families of Bivariate {{APN}} Functions}},
+ year = 2023,
+ month = jun,
+ journal = {{Finite Fields and Their Applications}},
+ volume = 88,
+ pages = 102190,
+}
+
+@misc{Ichanska_202400,
+ author = {Nadiia Ichanska and Simon Berg and Nikolay S. Kaleyski and Yuyin Yu},
+ title = {{Pushing the {QAM} method for finding {APN} functions further}},
+ year = 2024,
+ howpublished = {Cryptology {ePrint} Archive, Paper 2024/1838},
+}
+
+@misc{SATCompetitionOrganizers_202400,
+ author = {SAT Competition Organizers},
+ title = {{The International SAT Competition: Benchmarks and Solver
+     Evaluation}},
+ year = 2024,
+}
+
+@article{Li_202402,
+ doi = {10.1109/TIT.2023.3313148},
+ author = {Kangquan Li and Nikolay Kaleyski},
+ title = {{Two {{New Infinite Families}} of {{APN Functions}} in {{Trivariate
+     Form}}}},
+ year = 2024,
+ month = feb,
+ journal = {{IEEE Transactions on Information Theory}},
+ volume = 70,
+ number = 2,
+ pages = {1436--1452},
+}
+
+@misc{Taniguchi_202501,
+ doi = {10.48550/arXiv.2501.03922},
+ author = {Hiroaki Taniguchi and Alexandr Polujan and Alexander Pott and Razi
+     Arshad},
+ title = {{Changing Almost Perfect Nonlinear Functions on Affine Subspaces of
+     Small Codimensions}},
+ year = 2025,
+ month = jan,
+ number = {arXiv:2501.03922},
+ publisher = {arXiv},
+}
+
+@misc{Göloğlu_202503,
+ doi = {10.48550/arXiv.2111.04197},
+ author = {Faruk Göloğlu and Lukas Kölsch},
+ title = {{Equivalences of Biprojective Almost Perfect Nonlinear Functions}},
+ year = 2025,
+ month = mar,
+ number = {arXiv:2111.04197},
+ publisher = {arXiv},
+}
+
+@misc{Beierle_202508,
+ doi = {10.48550/arXiv.2508.04644},
+ author = {Christof Beierle and Philippe Langevin and Gregor Leander and
+     Alexandr Polujan and Shahram Rasoolzadeh},
+ title = {{Millions of Inequivalent Quadratic {{APN}} Functions in Eight
+     Variables}},
+ year = 2025,
+ month = aug,
+ number = {arXiv:2508.04644},
+ publisher = {arXiv},
+}
+
+@article{Yu_202512,
+ doi = {10.1007/s00200-025-00711-8},
+ author = {Yuyin Yu and Jingchen Li and Nadiia Ichanska and Nikolay Kaleyski},
+ title = {{Classification of Quadratic {{APN}} Functions with Coefficients in
+     \$\$\textbackslash mathbb \textbraceleft{{F}}\textbraceright\_2\$\$ in
+     Dimension 10}},
+ year = 2025,
+ month = dec,
+ journal = {{Applicable Algebra in Engineering, Communication and Computing}},
+}
+
+@manual{TheSageDevelopers_202600,
+ author = {The Sage Developers},
+ title = {{SageMath, the Sage Mathematics Software System}},
+ year = 2026,
+ note = {DOI 10.5281/zenodo.6259615},
+}
+
+@inproceedings{WengTanGong_201300,
     author    = {Weng, Guobiao and Tan, Yin and Gong, Guang},
     title     = {On quadratic almost perfect nonlinear functions and their related algebraic object},
     booktitle = {Workshop on Coding and Cryptography (WCC 2013)},
     year      = {2013}
-}
-
-@article{Taniguchi2019,
-    author  = {Taniguchi, Hiroaki},
-    title   = {On some quadratic {APN} functions},
-    journal = {Designs, Codes and Cryptography},
-    volume  = {87},
-    number  = {9},
-    pages   = {1973--1983},
-    year    = {2019}
-}
-
-@article{BeierleLeander2022,
-    author  = {Beierle, Christof and Leander, Gregor},
-    title   = {New Instances of Quadratic {APN} Functions},
-    journal = {{IEEE} Transactions on Information Theory},
-    volume  = {68},
-    number  = {1},
-    pages   = {670--678},
-    year    = {2022}
-}
-
-@article{YuPerrin2022QAM,
-    author  = {Yu, Yuyin and Perrin, L{\'{e}}o},
-    title   = {Constructing more quadratic {APN} functions with the {QAM} method},
-    journal = {Cryptography and Communications},
-    volume  = {14},
-    pages   = {1359--1369},
-    year    = {2022}
-}
-
-@article{BeierleLeanderPerrin2022Trims,
-    author  = {Beierle, Christof and Leander, Gregor and Perrin, L{\'{e}}o},
-    title   = {Trims and extensions of quadratic {APN} functions},
-    journal = {Designs, Codes and Cryptography},
-    volume  = {90},
-    pages   = {1009--1036},
-    year    = {2022}
-}
-
-@book{Budaghyan2014,
-    author    = {Budaghyan, Lilya},
-    title     = {Construction and Analysis of Cryptographic Functions},
-    publisher = {Springer},
-    year      = {2014}
-}
-
-@inproceedings{BrowningDillonMcQuistanWolfe2010,
-    author    = {Browning, K. A. and Dillon, J. F. and McQuistan, M. T. and Wolfe, A. J.},
-    title     = {An {APN} permutation in dimension six},
-    booktitle = {Finite Fields: Theory and Applications},
-    series    = {Contemporary Mathematics},
-    volume    = {518},
-    pages     = {33--42},
-    publisher = {American Mathematical Society},
-    year      = {2010}
-}
-
-@inproceedings{PerrinUdovenkoBiryukov2016,
-    author    = {Perrin, L{\'{e}}o and Udovenko, Aleksei and Biryukov, Alex},
-    title     = {Cryptanalysis of a Theorem: Decomposing the Only Known Solution to the Big {APN} Problem},
-    booktitle = {Advances in Cryptology -- {CRYPTO} 2016},
-    series    = {Lecture Notes in Computer Science},
-    volume    = {9815},
-    pages     = {93--122},
-    publisher = {Springer},
-    year      = {2016}
-}
-
-@article{BeierleLangevinLeanderPolujanRasoolzadeh2025,
-    author  = {Beierle, Christof and Langevin, Philippe and Leander, Gregor and Polujan, Alexandr and Rasoolzadeh, Shahram},
-    title   = {Millions of Inequivalent Quadratic {APN} Functions in Eight Variables},
-    journal = {arXiv preprint arXiv:2508.04644},
-    year    = {2025}
-}
-
-% --- Equivalence theory, ortho-derivatives, and constructions cited by the algorithms ---
-
-@article{CarletCharpinZinoviev1998,
-    author  = {Carlet, Claude and Charpin, Pascale and Zinoviev, Victor},
-    title   = {Codes, bent functions and permutations suitable for {DES}-like cryptosystems},
-    journal = {Designs, Codes and Cryptography},
-    volume  = {15},
-    number  = {2},
-    pages   = {125--156},
-    year    = {1998}
-}
-
-@article{Yoshiara2012,
-    author  = {Yoshiara, Satoshi},
-    title   = {Equivalences of quadratic {APN} functions},
-    journal = {Journal of Algebraic Combinatorics},
-    volume  = {35},
-    number  = {3},
-    pages   = {461--475},
-    year    = {2012}
-}
-
-@article{BudaghyanCarletPott2006,
-    author  = {Budaghyan, Lilya and Carlet, Claude and Pott, Alexander},
-    title   = {New Classes of Almost Bent and Almost Perfect Nonlinear Polynomials},
-    journal = {IEEE Transactions on Information Theory},
-    volume  = {52},
-    number  = {3},
-    pages   = {1141--1152},
-    year    = {2006}
-}
-
-@article{BudaghyanCarletLeander2008,
-    author  = {Budaghyan, Lilya and Carlet, Claude and Leander, Gregor},
-    title   = {Two Classes of Quadratic {APN} Binomials Inequivalent to Power Functions},
-    journal = {IEEE Transactions on Information Theory},
-    volume  = {54},
-    number  = {9},
-    pages   = {4218--4229},
-    year    = {2008}
-}
-
-@article{BudaghyanIvkovicKaleyski2023,
-    author  = {Budaghyan, Lilya and Ivkovic, Ivana and Kaleyski, Nikolay S.},
-    title   = {Triplicate functions},
-    journal = {Cryptography and Communications},
-    volume  = {15},
-    number  = {1},
-    pages   = {35--83},
-    year    = {2023}
-}
-
-@misc{IvkovicKaleyski2022,
-    author       = {Ivkovic, Ivana and Kaleyski, Nikolay S.},
-    title        = {Deciding and reconstructing linear equivalence of uniformly distributed functions},
-    howpublished = {Cryptology ePrint Archive, Paper 2022/666},
-    year         = {2022},
-    url          = {https://eprint.iacr.org/2022/666}
-}
-
-@article{IchanskaBergKaleyskiYu2025,
-    author  = {Ichanska, Nadiia and Berg, Simon and Kaleyski, Nikolay S. and Yu, Yuyin},
-    title   = {Pushing the {QAM} method for finding {APN} functions further},
-    journal = {Cryptography and Communications},
-    year    = {2025}
-}
-
-% --- Upstream implementations and data reimplemented natively (no runtime dependency) ---
-
-@misc{sboxU,
-    author       = {Perrin, L{\'{e}}o and Baudrin, Jules and Boeuf, Aur{\'{e}}lien and Bonnetain, Xavier and Couvreur, Alain and Fruchon, Merlin and Joly, Mathias and Galissant, Pierre and Stennes, Lukas},
-    title        = {sbox{U}: black-box analysis of discrete functions},
-    howpublished = {GitHub repository},
-    year         = {2025},
-    url          = {https://github.com/lpp-crypto/sboxU}
-}
-
-@misc{HeggebakkEAEquivalence,
-    author       = {Heggebakk, Marie},
-    title        = {Computationally testing {EA}- and affine equivalence of vectorial Boolean functions},
-    howpublished = {GitHub repository},
-    year         = {2021},
-    url          = {https://github.com/heggebakk/ea-equivalence}
-}
-
-@misc{BeierleSelfEquivalentAPN,
-    author       = {Beierle, Christof},
-    title        = {Searching for {APN} permutations with non-trivial linear self-equivalences},
-    howpublished = {GitHub repository},
-    year         = {2020},
-    url          = {https://github.com/cbe90/self_equivalent_apn}
-}
-
-@misc{BeierleQuadraticAPN,
-    author       = {Beierle, Christof},
-    title        = {Randomized tree search for quadratic {APN} functions},
-    howpublished = {GitHub repository},
-    year         = {2020},
-    url          = {https://github.com/cbe90/quadratic_apn}
-}
-
-@misc{BeierleTrimsExtensions,
-    author       = {Beierle, Christof},
-    title        = {Supplementary code to ``Trims and extensions of quadratic {APN} functions''},
-    howpublished = {GitHub repository},
-    year         = {2022},
-    url          = {https://github.com/cbe90/Supplementary-code-to-Trims-and-extensions-of-quadratic-APN-functions}
-}
-
-@misc{IvkovicTriplicateCode,
-    author       = {Ivkovic, Ivana},
-    title        = {Deciding linear equivalence of {3}-to-{1} vectorial Boolean functions},
-    howpublished = {GitHub repository},
-    year         = {2024},
-    url          = {https://github.com/telegrin/3to1_vbf_equivalence}
-}
-
-@misc{IchanskaQAMCode,
-    author       = {Ichanska, Nadiia},
-    title        = {The {QAM} method for finding {APN} functions},
-    howpublished = {GitHub repository},
-    year         = {2025},
-    url          = {https://github.com/NIchanska/QAM}
-}
-
-@misc{AndersenAPNRepository,
-    author       = {Andersen, Christian},
-    title        = {{APN}-Repository: a unified repository and tool for {APN} functions},
-    howpublished = {GitHub repository},
-    year         = {2025},
-    url          = {https://github.com/cma029/APN-Repository}
-}
-
-@misc{XanaduAPNCCZGraph,
-    author       = {{Xanadu-ins}},
-    title        = {Equivalence Determination of {APN} Functions Based on the {I/R} Algorithm},
-    howpublished = {GitHub repository},
-    year         = {2026},
-    url          = {https://github.com/Xanadu-ins/apn-ccz-graph-framework}
-}
-
-@mastersthesis{Berg2023Thesis,
-    author = {Berg, Simon},
-    title  = {Computational classification and investigation of cryptographically strong functions},
-    school = {University of Bergen},
-    year   = {2023}
-}
-
-@mastersthesis{Heggebakk2022Thesis,
-    author = {Heggebakk, Marie},
-    title  = {An efficient implementation of a test for {EA}-equivalence},
-    school = {University of Bergen},
-    year   = {2022}
 }

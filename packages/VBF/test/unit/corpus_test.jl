@@ -53,13 +53,14 @@ end
     db = load_catalog()
     # bib_key => member_count, the quadratic-APN families forming the pre-3.4 GB landscape (firstQAM stores 8179: its single non-quadratic member is excluded)
     expected = Dict(
-        "edelpott2009_n8"             => ("EdelPott2009", 22),
-        "wengtangong2013_n8"          => ("WengTanGong2013", 10),
-        "yuwangli2014_qam_n8"         => ("YuWangLi2014QAM", 8179),
-        "taniguchi2019_n8"            => ("Taniguchi2019", 2),
-        "beierleleander2022_n8"       => ("BeierleLeander2022", 12923),
-        "yuperrin2022_qam_n8"         => ("YuPerrin2022QAM", 5412),
-        "beierleleanderperrin2022_n8" => ("BeierleLeanderPerrin2022Trims", 6368),
+        "edelpott2009_n8"               => ("Edel_200900", 22),
+        "wengtangong2013_n8"            => ("WengTanGong_201300", 10),
+        "yuwangli2014_qam_n8"           => ("Yu_201411", 8179),
+        "taniguchi2019_n8"              => ("Taniguchi_201909", 2),
+        "beierleleander2022_n8"         => ("Beierle_202201", 12923),
+        "beierleleanderperrin2022_n8"   => ("Beierle_202201", 6368),
+        "beierlelangevinleander2025_n8" => ("Beierle_202508", 3775599),
+        "yuperrin2022_qam_n8"           => ("Yu_202211", 5412),
     )
     corpora = list_corpora(db)
     total = 0

@@ -2,6 +2,7 @@ using VBF
 using VBFCatalog
 import SQLite
 import DBInterface
+import Downloads
 
 include(joinpath(@__DIR__, "load_sources.jl"))
 
@@ -16,9 +17,14 @@ characters) is correctly skipped.
 
 `max_luts` caps the number of LUTs returned (useful for testing or
 sampling). `nothing` means "all".
+
+If `zenodo_record` is provided and `path` is missing, download `basename(path)`
+from that Zenodo record into a temporary directory before parsing.
 """
-function parse_apn_lut_file(path::AbstractString; max_luts::Union{Nothing, Integer} = nothing)
-    text = read(path, String)
+function parse_apn_lut_file(path::AbstractString;
+                            max_luts::Union{Nothing, Integer} = nothing,
+                            zenodo_record::Union{Nothing, AbstractString} = nothing)
+    text = _read_apn_lut_file(path; zenodo_record = zenodo_record)
     luts = Vector{Int}[]
     pattern = r"\[((?:\s*(?:0[xX][0-9a-fA-F]+|\d+)\s*,?\s*)+)\]"
     for m in eachmatch(pattern, text)
@@ -29,6 +35,44 @@ function parse_apn_lut_file(path::AbstractString; max_luts::Union{Nothing, Integ
         max_luts !== nothing && length(luts) ≥ Int(max_luts) && break
     end
     luts
+end
+
+function _read_apn_lut_file(path::AbstractString;
+                            zenodo_record::Union{Nothing, AbstractString} = nothing)
+    isfile(path) && return read(path, String)
+    zenodo_record === nothing && return read(path, String)
+
+    filename = basename(path)
+    url = _zenodo_file_url(zenodo_record, filename)
+    @info "BFA: APN LUT file missing locally; downloading from Zenodo" file=filename url=url
+    return mktempdir() do tmpdir
+        downloaded = joinpath(tmpdir, filename)
+        Downloads.download(url, downloaded)
+        read(downloaded, String)
+    end
+end
+
+function _zenodo_file_url(record::AbstractString, filename::AbstractString)
+    base = String(strip(String(record)))
+    occursin("/files/", base) && return base
+    base = replace(base, r"[?#].*$" => "")
+    base = replace(base, r"/+$" => "")
+    isempty(base) && error("BFA: empty Zenodo record URL for '$filename'")
+    base * "/files/" * _url_path_segment(filename) * "?download=1"
+end
+
+function _url_path_segment(s::AbstractString)
+    io = IOBuffer()
+    for b in codeunits(String(s))
+        c = Char(b)
+        if ('A' <= c <= 'Z') || ('a' <= c <= 'z') || ('0' <= c <= '9') ||
+           c in ('-', '.', '_', '~')
+            write(io, b)
+        else
+            print(io, "%", uppercase(string(b; base = 16, pad = 2)))
+        end
+    end
+    String(take!(io))
 end
 
 function _parse_integer_literal(s::AbstractString)
