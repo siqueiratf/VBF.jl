@@ -4,7 +4,7 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../..)
 JULIA_PROJECT := --project=$(ROOT)
 
-.PHONY: help test theorem1 algorithm1 search run exhaustive_search compare_results report clean_results
+.PHONY: help test theorem1 algorithm1 search run n6 n7 n8 exhaustive_search compare_results report clean_results
 
 save_results    ?= false
 n               ?= 5
@@ -36,6 +36,42 @@ gpu_pipeline_depth ?= 3
 gpu_suffix_entries ?= nothing
 gpu_result_capacity ?= 1048576
 
+n6_expected_classes ?= 13
+n6_result_file ?= $(MAKEFILE_DIR)results/qam_full_n6_gpu.toml
+n6_resume ?= true
+n6_threads ?= 1
+n6_threaded ?= false
+n6_GPU ?= true
+n6_gpu_device ?= $(gpu_device)
+n6_gpu_batch_size ?= 16777216
+n6_gpu_pipeline_depth ?= 3
+n6_gpu_suffix_entries ?= nothing
+n6_gpu_result_capacity ?= 1048576
+
+n7_expected_classes ?= 490
+n7_result_file ?= $(MAKEFILE_DIR)results/qam_full_n7_gpu.toml
+n7_resume ?= true
+n7_threads ?= 1
+n7_threaded ?= false
+n7_GPU ?= true
+n7_gpu_device ?= $(gpu_device)
+n7_gpu_batch_size ?= 16777216
+n7_gpu_pipeline_depth ?= 3
+n7_gpu_suffix_entries ?= nothing
+n7_gpu_result_capacity ?= 1048576
+
+n8_expected_classes ?= nothing
+n8_result_file ?= $(MAKEFILE_DIR)results/qam_full_n8_gpu.toml
+n8_resume ?= true
+n8_threads ?= 1
+n8_threaded ?= false
+n8_GPU ?= true
+n8_gpu_device ?= $(gpu_device)
+n8_gpu_batch_size ?= 16777216
+n8_gpu_pipeline_depth ?= 3
+n8_gpu_suffix_entries ?= nothing
+n8_gpu_result_capacity ?= 1048576
+
 GPU_RUN_ENV :=
 ifeq ($(GPU),true)
 GPU_RUN_ENV := LD_LIBRARY_PATH=
@@ -64,6 +100,51 @@ search:
 
 run: exhaustive_search
 
+n6:
+	$(MAKE) exhaustive_search \
+		n=6 \
+		expected_classes=$(n6_expected_classes) \
+		result_file="$(n6_result_file)" \
+		resume=$(n6_resume) \
+		threads=$(n6_threads) \
+		threaded=$(n6_threaded) \
+		GPU=$(n6_GPU) \
+		gpu_device=$(n6_gpu_device) \
+		gpu_batch_size=$(n6_gpu_batch_size) \
+		gpu_pipeline_depth=$(n6_gpu_pipeline_depth) \
+		gpu_suffix_entries=$(n6_gpu_suffix_entries) \
+		gpu_result_capacity=$(n6_gpu_result_capacity)
+
+n7:
+	$(MAKE) exhaustive_search \
+		n=7 \
+		expected_classes=$(n7_expected_classes) \
+		result_file="$(n7_result_file)" \
+		resume=$(n7_resume) \
+		threads=$(n7_threads) \
+		threaded=$(n7_threaded) \
+		GPU=$(n7_GPU) \
+		gpu_device=$(n7_gpu_device) \
+		gpu_batch_size=$(n7_gpu_batch_size) \
+		gpu_pipeline_depth=$(n7_gpu_pipeline_depth) \
+		gpu_suffix_entries=$(n7_gpu_suffix_entries) \
+		gpu_result_capacity=$(n7_gpu_result_capacity)
+
+n8:
+	$(MAKE) exhaustive_search \
+		n=8 \
+		expected_classes=$(n8_expected_classes) \
+		result_file="$(n8_result_file)" \
+		resume=$(n8_resume) \
+		threads=$(n8_threads) \
+		threaded=$(n8_threaded) \
+		GPU=$(n8_GPU) \
+		gpu_device=$(n8_gpu_device) \
+		gpu_batch_size=$(n8_gpu_batch_size) \
+		gpu_pipeline_depth=$(n8_gpu_pipeline_depth) \
+		gpu_suffix_entries=$(n8_gpu_suffix_entries) \
+		gpu_result_capacity=$(n8_gpu_result_capacity)
+
 exhaustive_search:
 	@echo "ROOT=$(ROOT)"
 	@echo "Long-running full QAM search: n=$(n), threads=$(threads), GPU=$(GPU), gpu_device=$(gpu_device), gpu_batch_size=$(gpu_batch_size), gpu_pipeline_depth=$(gpu_pipeline_depth), gpu_suffix_entries=$(gpu_suffix_entries), gpu_result_capacity=$(gpu_result_capacity), result_file=$(result_file)"
@@ -90,6 +171,9 @@ help:
 	@echo '  algorithm1     Algorithm 1 GenerateQAM only (bounded by limit/max_nodes)'
 	@echo '  search         Algorithm 1 plus optional full n=5/n=6 QAM searches'
 	@echo '  run            Alias for exhaustive_search'
+	@echo '  n6             CUDA exhaustive search for n=6 using n6_* Makefile defaults'
+	@echo '  n7             CUDA exhaustive search for n=7 using n7_* Makefile defaults'
+	@echo '  n8             CUDA exhaustive search for n=8 using n8_* Makefile defaults'
 	@echo '  exhaustive_search  Long-running resumable full QAM search'
 	@echo '  compare_results    Compare persisted search results with imported published reps'
 	@echo '  report         Default aggregate report'
@@ -123,6 +207,6 @@ help:
 	@echo '  gpu_device=$(gpu_device)      (CUDA.device! index for GPU=true)'
 	@echo '  gpu_batch_size=$(gpu_batch_size)'
 	@echo '  gpu_pipeline_depth=$(gpu_pipeline_depth)'
-	@echo '  gpu_suffix_entries=$(gpu_suffix_entries)  (nothing = maximum UInt64 suffix width)'
+	@echo '  gpu_suffix_entries=$(gpu_suffix_entries)  (nothing = final column, n-1 entries)'
 	@echo '  gpu_result_capacity=$(gpu_result_capacity)'
 	@echo '  save_results=$(save_results)'

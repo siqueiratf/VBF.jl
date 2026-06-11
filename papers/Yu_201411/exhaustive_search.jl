@@ -750,19 +750,91 @@ function _proper_leading_submatrix(M, c::Int, n::Int, vecbuf::Vector{UInt})
     true
 end
 
-function _search_chunk!(
-    ::CPUQAMBackend,
+"""
+    _span_at_least!(basis, vecbuf, c, need) -> Bool
+
+GF(2) span-dimension test by streaming Gaussian elimination: returns whether
+`dim span{vecbuf[1..c]} >= need`, exiting as soon as more than `c - need`
+elements have reduced to zero against the partial basis. `basis` is a scratch
+vector of length >= the bit-width of the entries, indexed by leading-bit
+position.
+"""
+function _span_at_least!(basis::Vector{UInt}, vecbuf::Vector{UInt}, c::Int, need::Int)
+    need <= 0 && return true
+    fill!(basis, UInt(0))
+    allowed = c - need
+    allowed < 0 && return false
+    fails = 0
+    @inbounds for i = 1:c
+        v = vecbuf[i]
+        while v != UInt(0)
+            t = 8 * sizeof(UInt) - leading_zeros(v)
+            b = basis[t]
+            if b == UInt(0)
+                basis[t] = v
+                break
+            end
+            v ⊻= b
+        end
+        if v == UInt(0)
+            fails += 1
+            fails > allowed && return false
+        end
+    end
+    true
+end
+
+"""
+    _proper_subsets_containing(M, pivot, c, n, vecbuf, basis) -> Bool
+
+Checks the QAM properness condition `dim span >= c - 1` over the leading `c`
+entries for every row subset of `{1..pivot}` that contains row `pivot`
+(Yu-Wang-Li 2014, Theorem 2 applied incrementally). Calling this after entry
+`(pivot, c)` is filled covers each subset exactly once per column: subsets are
+tested at the moment their highest row's column-`c` entry becomes known, and
+the `pivot == c` call covers the subsets containing the diagonal row.
+"""
+function _proper_subsets_containing(
+    M,
+    pivot::Int,
+    c::Int,
+    n::Int,
+    vecbuf::Vector{UInt},
+    basis::Vector{UInt},
+)
+    pivotbit = 1 << (pivot - 1)
+    @inbounds for sub = 0:((1 << (pivot - 1)) - 1)
+        mask = sub | pivotbit
+        for i = 1:c
+            v = UInt(0)
+            s = mask
+            while s != 0
+                r = trailing_zeros(s) + 1
+                v ⊻= UInt(M[r][i])
+                s &= s - 1
+            end
+            vecbuf[i] = v
+        end
+        _span_at_least!(basis, vecbuf, c, c - 1) || return false
+    end
+    true
+end
+
+function _cpu_chunk_worker!(
     register_candidate!::Function,
     n::Int,
-    h12::Int;
-    max_evaluations_per_chunk::Integer = typemax(Int),
-    should_stop::Function = () -> false,
+    h12::Int,
+    next_root::Threads.Atomic{Int},
+    evaluated::Threads.Atomic{Int},
+    max_evaluations_per_chunk::Integer,
+    should_stop::Function,
 )
+    q = 1 << n
     M = [zeros(Int, n) for _ = 1:n]
     M[1][2] = h12
     M[2][1] = h12
     vecbuf = zeros(UInt, n)
-    evaluated = Ref(0)
+    basis = zeros(UInt, n)
 
     function materialize_matrix()
         Mat = Matrix{Int}(undef, n, n)
@@ -777,13 +849,14 @@ function _search_chunk!(
         should_stop() && return
         evaluated[] >= max_evaluations_per_chunk && return
         if r == c
-            _proper_leading_submatrix(M, c, n, vecbuf) && fill_col(c + 1)
+            _proper_subsets_containing(M, c, c, n, vecbuf, basis) && fill_col(c + 1)
             return
         end
-        @inbounds for v = 0:((1 << n) - 1)
+        @inbounds for v = 0:(q - 1)
             M[r][c] = v
             M[c][r] = v
-            fill_entry(c, r + 1)
+            _proper_subsets_containing(M, r, c, n, vecbuf, basis) &&
+                fill_entry(c, r + 1)
             should_stop() && return
             evaluated[] >= max_evaluations_per_chunk && return
         end
@@ -793,7 +866,7 @@ function _search_chunk!(
         should_stop() && return
         evaluated[] >= max_evaluations_per_chunk && return
         if c > n
-            evaluated[] += 1
+            Threads.atomic_add!(evaluated, 1)
             Mat = materialize_matrix()
             is_qam(Mat) && register_candidate!(qam_to_sbox(Mat), Mat, h12)
             return
@@ -801,8 +874,82 @@ function _search_chunk!(
         fill_entry(c, 1)
     end
 
-    _proper_leading_submatrix(M, 2, n, vecbuf) && fill_col(3)
-    (chunk = h12, evaluated = evaluated[], complete = evaluated[] < max_evaluations_per_chunk)
+    while true
+        root = Threads.atomic_add!(next_root, 1)
+        root >= q * q && break
+        should_stop() && break
+        evaluated[] >= max_evaluations_per_chunk && break
+        v1 = root >> n
+        v2 = root & (q - 1)
+        M[1][3] = v1
+        M[3][1] = v1
+        _proper_subsets_containing(M, 1, 3, n, vecbuf, basis) || continue
+        M[2][3] = v2
+        M[3][2] = v2
+        _proper_subsets_containing(M, 2, 3, n, vecbuf, basis) || continue
+        fill_entry(3, 3)
+    end
+    nothing
+end
+
+function _search_chunk!(
+    ::CPUQAMBackend,
+    register_candidate!::Function,
+    n::Int,
+    h12::Int;
+    max_evaluations_per_chunk::Integer = typemax(Int),
+    should_stop::Function = () -> false,
+    progress_callback::Function = _ -> nothing,
+    dfs_threads::Int = 1,
+)
+    evaluated = Threads.Atomic{Int}(0)
+    vecbuf = zeros(UInt, n)
+    M0 = [zeros(Int, n) for _ = 1:n]
+    M0[1][2] = h12
+    M0[2][1] = h12
+    if !_proper_leading_submatrix(M0, 2, n, vecbuf)
+        return (chunk = h12, evaluated = 0, complete = true)
+    end
+    if n < 3
+        Threads.atomic_add!(evaluated, 1)
+        Mat = Matrix{Int}(undef, n, n)
+        @inbounds for i = 1:n, j = 1:n
+            Mat[i, j] = M0[i][j]
+        end
+        is_qam(Mat) && register_candidate!(qam_to_sbox(Mat), Mat, h12)
+        return (chunk = h12, evaluated = evaluated[], complete = true)
+    end
+    next_root = Threads.Atomic{Int}(0)
+    nworkers = clamp(dfs_threads, 1, (1 << n)^2)
+    if nworkers == 1
+        _cpu_chunk_worker!(
+            register_candidate!,
+            n,
+            h12,
+            next_root,
+            evaluated,
+            max_evaluations_per_chunk,
+            should_stop,
+        )
+    else
+        tasks = [
+            Threads.@spawn _cpu_chunk_worker!(
+                register_candidate!,
+                n,
+                h12,
+                next_root,
+                evaluated,
+                max_evaluations_per_chunk,
+                should_stop,
+            ) for _ = 1:nworkers
+        ]
+        foreach(wait, tasks)
+    end
+    (
+        chunk = h12,
+        evaluated = evaluated[],
+        complete = evaluated[] < max_evaluations_per_chunk,
+    )
 end
 
 _search_chunk!(
@@ -842,6 +989,7 @@ function exhaustive_qam_search(;
     result_file::AbstractString = paper_results_path("qam_full_n$(n).toml"),
     resume::Bool = true,
     threaded::Bool = Threads.nthreads() > 1,
+    dfs_threads::Integer = threaded ? Threads.nthreads() : 1,
     dedup::Symbol = :ea,
     limit_classes::Integer = typemax(Int),
     max_chunks::Integer = typemax(Int),
@@ -857,6 +1005,7 @@ function exhaustive_qam_search(;
 )
     dedup in (:mugshot, :ea) ||
         throw(ArgumentError("dedup must be :mugshot or :ea"))
+    dfs_threads >= 1 || throw(ArgumentError("dfs_threads must be positive, got $dfs_threads"))
     search_backend = _make_search_backend(
         n;
         use_gpu,
@@ -866,7 +1015,9 @@ function exhaustive_qam_search(;
         gpu_suffix_entries,
         gpu_result_capacity,
     )
-    effective_threaded = threaded && search_backend isa CPUQAMBackend
+    effective_dfs_threads = min(Int(dfs_threads), Threads.nthreads())
+    effective_threaded =
+        threaded && search_backend isa CPUQAMBackend && effective_dfs_threads == 1
     modulus = _resolve_modulus(n, modulus)
     generator = Int(generator)
     field_validation = validate_field ?
@@ -884,6 +1035,8 @@ function exhaustive_qam_search(;
     seen = _rebuild_seen(classes, reps)
     lock_obj = ReentrantLock()
     chunks_done_since_checkpoint = Ref(0)
+    gpu_progress_next_ns = Ref(UInt64(0))
+    gpu_progress_interval_ns = UInt64(10_000_000_000)
     checkpoint_writer = _start_async_checkpoint_writer()
     run_started_ns = time_ns()
     class_discovery_times = NamedTuple{(:index, :chunk, :elapsed_seconds),Tuple{Int,Int,Float64}}[]
@@ -914,7 +1067,7 @@ function exhaustive_qam_search(;
             generator_symbol,
             variable_symbol,
             dedup,
-            threaded = effective_threaded,
+            threaded = effective_threaded || effective_dfs_threads > 1,
             classes,
             completed_chunks,
             chunks = chunk_records,
@@ -963,27 +1116,59 @@ function exhaustive_qam_search(;
         end
     end
 
+    function report_gpu_progress!(stats)
+        search_backend isa CPUQAMBackend && return nothing
+        now_ns = UInt64(time_ns())
+        phase = String(stats.phase)
+        if phase != "start" && now_ns < gpu_progress_next_ns[]
+            return nothing
+        end
+        gpu_progress_next_ns[] = now_ns + gpu_progress_interval_ns
+        print_kv(
+            "GPU chunk progress",
+            "h12=$(Int(stats.chunk)), phase=$(phase), " *
+            "prefixes=$(Int(stats.prefixes)), queued=$(Int(stats.queued_prefixes)), " *
+            "evaluated=$(Int(stats.evaluated)), gpu_batches=$(Int(stats.gpu_batches)), " *
+            "dfs_nodes=$(Int(stats.dfs_nodes)), rank_checks=$(Int(stats.rank_checks))",
+            io,
+        )
+        flush(io)
+        nothing
+    end
+
     function finish_chunk!(stats)
         lock(lock_obj)
         try
             Bool(stats.complete) && push!(completed_chunks, Int(stats.chunk))
+            chunk_record = Dict{String,Any}(
+                "h12" => Int(stats.chunk),
+                "evaluated" => Int(stats.evaluated),
+                "complete" => Bool(stats.complete),
+                "completed_at" => Dates.format(now(), dateformat"yyyy-mm-ddTHH:MM:SS"),
+            )
+            for field in (:prefixes, :gpu_batches, :dfs_nodes, :rank_checks, :suffix_entries)
+                if field in propertynames(stats)
+                    chunk_record[String(field)] = Int(getproperty(stats, field))
+                end
+            end
             push!(
                 chunk_records,
-                Dict{String,Any}(
-                    "h12" => Int(stats.chunk),
-                    "evaluated" => Int(stats.evaluated),
-                    "complete" => Bool(stats.complete),
-                    "completed_at" => Dates.format(now(), dateformat"yyyy-mm-ddTHH:MM:SS"),
-                ),
+                chunk_record,
             )
             chunks_done_since_checkpoint[] += 1
             processed_this_run = length(chunk_records) - initial_chunk_records
+            gpu_tail = if :prefixes in propertynames(stats)
+                ", prefixes=$(Int(stats.prefixes)), gpu_batches=$(Int(stats.gpu_batches)), " *
+                "dfs_nodes=$(Int(stats.dfs_nodes)), rank_checks=$(Int(stats.rank_checks))"
+            else
+                ""
+            end
             print_kv(
                 "chunk progress",
                 "$(length(completed_chunks))/$(length(all_chunks)) completed; " *
                 "$(processed_this_run)/$(length(todo)) processed this run; " *
                 "last h12=$(Int(stats.chunk)), complete=$(Bool(stats.complete)), " *
-                "evaluated=$(Int(stats.evaluated))",
+                "evaluated=$(Int(stats.evaluated))$(gpu_tail)",
                 io,
             )
             flush(io)
@@ -1005,7 +1190,22 @@ function exhaustive_qam_search(;
     print_check("generator primitive", field_validation.generator_primitive, io)
     print_kv("expected classes", expected_classes === nothing ? "unknown" : expected_classes, io)
     print_kv("dedup", dedup, io)
+    if search_backend isa CPUQAMBackend
+        print_kv("backend", "CPU", io)
+    else
+        print_kv("backend", "CUDA", io)
+        backend_props = propertynames(search_backend)
+        :active_device in backend_props && print_kv("CUDA device", search_backend.active_device, io)
+        :batch_size in backend_props && print_kv("CUDA batch size", search_backend.batch_size, io)
+        :pipeline_depth in backend_props &&
+            print_kv("CUDA pipeline depth", search_backend.pipeline_depth, io)
+        :suffix_entries in backend_props &&
+            print_kv("CUDA suffix entries", search_backend.suffix_entries, io)
+        :prefix_batch_capacity in backend_props &&
+            print_kv("CUDA prefix batch capacity", search_backend.prefix_batch_capacity, io)
+    end
     print_kv("Julia threads", Threads.nthreads(), io)
+    print_kv("DFS workers per chunk", effective_dfs_threads, io)
     print_kv("chunks pending this run", length(todo), io)
     print_kv("classes already loaded", length(classes), io)
 
@@ -1020,6 +1220,8 @@ function exhaustive_qam_search(;
                     todo[idx];
                     max_evaluations_per_chunk,
                     should_stop,
+                    progress_callback = report_gpu_progress!,
+                    dfs_threads = effective_dfs_threads,
                 )
                 finish_chunk!(stats)
             end
@@ -1033,6 +1235,8 @@ function exhaustive_qam_search(;
                     h12;
                     max_evaluations_per_chunk,
                     should_stop,
+                    progress_callback = report_gpu_progress!,
+                    dfs_threads = effective_dfs_threads,
                 )
                 finish_chunk!(stats)
             end
