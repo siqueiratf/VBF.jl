@@ -13,6 +13,7 @@
 *.sqlite
 *.bak
 *.json
+*.py
 docs/build/
 docs/site/
 Manifest.toml
