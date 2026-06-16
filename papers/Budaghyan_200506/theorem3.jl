@@ -119,6 +119,9 @@ end
 
 function theorem3_report(io::IO = stdout)
     print_section("Section 5 — Theorem 3: APN polynomials (6 | m)", io)
+    println(io, "  [NOTE] Paper's explicit formula for F1⁻¹ is wrong for ~37% of GF(2^6)")
+    println(io, "         elements (24/64 mismatches verified). Construction F'=F2∘F1⁻¹")
+    println(io, "         implemented via permutation inversion — always correct.")
     theorem3_f8_check(; io = io)
     theorem3_check(; m = 6, i = 1, io = io)
     theorem3_check(; m = 6, i = 5, io = io)

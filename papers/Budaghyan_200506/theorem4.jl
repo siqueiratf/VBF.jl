@@ -87,9 +87,12 @@ end
 
 function theorem4_report(io::IO = stdout)
     print_section("Section 5 — Theorem 4: AB polynomials (m odd, n|m)", io)
+    println(io, "  [NOTE] Paper's explicit formula for F' (via closed-form F1⁻¹) is wrong")
+    println(io, "         for some i: e.g., i=2 on GF(2^9) gives differential uniformity 14.")
+    println(io, "         Construction F'=F2∘F1⁻¹ via permutation inversion always correct.")
     theorem4_check(; m = 9, n = 3, i = 1, io = io)
     theorem4_check(; m = 9, n = 3, i = 2, io = io)
-    print_kv("note", "m=15 omitted (APN check O(4^15) ~ 10^9 ops)", io)
+    print_kv("note", "m=15 omitted (AB/APN check O(N²) for N=2^15 is slow)", io)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
