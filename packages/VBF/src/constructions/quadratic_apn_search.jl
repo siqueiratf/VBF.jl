@@ -1,5 +1,5 @@
 """
-Tree search for quadratic APN functions ([Beierle and Leander, 2022](@cite BeierleLeander2022)).
+Tree search for quadratic APN functions ([Beierle and Leander, 2022](@cite Beierle_202201)).
 
 [`search_quadratic_apn`](@ref) constructs APN functions `F : F₂ⁿ → F₂ⁿ` of
 algebraic degree ≤ 2 by depth-first backtracking over the lookup table. The
@@ -145,7 +145,7 @@ end
     search_quadratic_apn(::Val{N}; limit=1, rng=nothing) -> Vector{SBox{N}}
 
 Search for quadratic APN functions of dimension `N` (with `F(0) = 0`) by the
-degree- and DDT-pruned backtracking of [Beierle and Leander (2022)](@cite BeierleLeander2022),
+degree- and DDT-pruned backtracking of [Beierle and Leander (2022)](@cite Beierle_202201),
 returning up to `limit` of them. The search is deterministic by default; pass an
 `AbstractRNG` as `rng` to draw a reproducible random per-position value order
 (the upstream's restart-style diversification) instead of the natural order.

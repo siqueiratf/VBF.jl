@@ -3,7 +3,7 @@ APN-EA mugshot — a fingerprint built from EA-invariant spectra.
 
 For a quadratic APN function `F`, the **linear-equivalence class of
 its ortho-derivative `π_F`** is an EA-equivalence-class invariant
-([Canteaut, Couvreur and Perrin, 2022](@cite CanteautCouvreurPerrin2022EA)). The
+([Canteaut, Couvreur and Perrin, 2022](@cite Canteaut_202205)). The
 mugshot exploits this by hashing the easily-
 computed spectra of `π_F` — the signed Walsh spectrum and the DDT
 spectrum — into a comparable tuple.

@@ -60,7 +60,7 @@ using Test
                                                           (perm_lit + perm_apn + reps_perm + gf4_perm)
 
     # By bib_key
-    serpents = list_functions(db; bib_key = "AndersonBihamKnudsen1998Serpent")
+    serpents = list_functions(db; bib_key = "Anderson_199800")
     @test length(serpents) == 8
 end
 
@@ -81,7 +81,7 @@ end
     @test aes !== nothing
     @test aes.canonical_name == "AES"
     @test aes.n == 8
-    @test aes.bib_key == "FIPS197"
+    @test aes.bib_key == "NIST_200111"
 
     # by id
     by_id = find_function(db; id = aes.id)

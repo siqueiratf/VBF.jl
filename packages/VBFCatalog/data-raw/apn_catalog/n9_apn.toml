@@ -9,7 +9,7 @@ n                 = 9
 m                 = 9
 is_permutation    = true
 algebraic_form    = "x^3 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key           = "Gold1968"
+bib_key = "Gold_196801"
 source            = "Gold, IEEE Trans. Inf. Theory 1968."
 monomial_exponent = 3
 
@@ -20,7 +20,7 @@ n                 = 9
 m                 = 9
 is_permutation    = true
 algebraic_form    = "x^5 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key           = "Gold1968"
+bib_key = "Gold_196801"
 source            = "Gold, IEEE Trans. Inf. Theory 1968."
 monomial_exponent = 5
 
@@ -31,7 +31,7 @@ n                 = 9
 m                 = 9
 is_permutation    = true
 algebraic_form    = "x^17 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key           = "Gold1968"
+bib_key = "Gold_196801"
 source            = "Gold, IEEE Trans. Inf. Theory 1968."
 monomial_exponent = 17
 
@@ -44,7 +44,7 @@ n                 = 9
 m                 = 9
 is_permutation    = true
 algebraic_form    = "x^13 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Nyberg, EUROCRYPT 1994; Kasami exponent family."
 monomial_exponent = 13
 
@@ -55,7 +55,7 @@ n                 = 9
 m                 = 9
 is_permutation    = true
 algebraic_form    = "x^241 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Nyberg, EUROCRYPT 1994."
 monomial_exponent = 241
 
@@ -68,7 +68,7 @@ n                 = 9
 m                 = 9
 is_permutation    = true
 algebraic_form    = "x^19 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Welch x^(2^t + 3); Niho x^(2^t + 2^(t/2) - 1) for t even; equal for n=9. APN-ness per Canteaut-Charpin-Dobbertin and Hollmann-Xiang."
 monomial_exponent = 19
 
@@ -81,6 +81,6 @@ n                 = 9
 m                 = 9
 is_permutation    = true
 algebraic_form    = "x^510 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Nyberg, EUROCRYPT 1994 — inverse function is APN for odd n."
 monomial_exponent = 510

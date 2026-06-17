@@ -12,8 +12,8 @@ vector `π_F(a)` with `⟨π_F(a), v⟩ = 1` for every `v ∈ H_a`.
 The function `π_F : a ↦ π_F(a)` (with `π_F(0) := 0` by convention) is
 the **ortho-derivative** of `F`. The linear-equivalence class of `π_F`
 is an **EA-equivalence invariant** of quadratic APN `F`
-([Canteaut, Couvreur and Perrin, 2022](@cite CanteautCouvreurPerrin2022EA); the
-quadratic CCZ ⟺ EA fact it builds on is [Yoshiara, 2012](@cite Yoshiara2012)).
+([Canteaut, Couvreur and Perrin, 2022](@cite Canteaut_202205); the
+quadratic CCZ ⟺ EA fact it builds on is [Yoshiara, 2012](@cite Yoshiara_201200)).
 This makes `π_F` an extremely
 fast CCZ/EA-distinguisher for quadratic APN, including the monomial
 APN where the k=4 multiplicity partition is degenerate.

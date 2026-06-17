@@ -7,7 +7,7 @@ n                 = 6
 m                 = 6
 is_permutation    = false
 algebraic_form    = "x^3 in GF(2^6), modulus x^6 + x + 1"
-bib_key           = "Gold1968"
+bib_key = "Gold_196801"
 source            = "Gold, IEEE Trans. Inf. Theory 1968; APN property per Nyberg EUROCRYPT 1994."
 monomial_exponent = 3
 
@@ -18,6 +18,6 @@ n                 = 6
 m                 = 6
 is_permutation    = false
 algebraic_form    = "x^48 in GF(2^6), modulus x^6 + x + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Nyberg, EUROCRYPT 1994 (general APN treatment); Kasami exponent family."
 monomial_exponent = 48

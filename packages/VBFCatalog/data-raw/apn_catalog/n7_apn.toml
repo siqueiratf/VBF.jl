@@ -9,7 +9,7 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^3 in GF(2^7), modulus x^7 + x + 1"
-bib_key           = "Gold1968"
+bib_key = "Gold_196801"
 source            = "Gold, IEEE Trans. Inf. Theory 1968; APN property per Nyberg EUROCRYPT 1994."
 monomial_exponent = 3
 
@@ -20,7 +20,7 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^5 in GF(2^7), modulus x^7 + x + 1"
-bib_key           = "Gold1968"
+bib_key = "Gold_196801"
 source            = "Gold, IEEE Trans. Inf. Theory 1968."
 monomial_exponent = 5
 
@@ -31,7 +31,7 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^9 in GF(2^7), modulus x^7 + x + 1"
-bib_key           = "Gold1968"
+bib_key = "Gold_196801"
 source            = "Gold, IEEE Trans. Inf. Theory 1968."
 monomial_exponent = 9
 
@@ -44,7 +44,7 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^13 in GF(2^7), modulus x^7 + x + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Nyberg, EUROCRYPT 1994."
 monomial_exponent = 13
 
@@ -55,7 +55,7 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^57 in GF(2^7), modulus x^7 + x + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Nyberg, EUROCRYPT 1994."
 monomial_exponent = 57
 
@@ -68,7 +68,7 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^11 in GF(2^7), modulus x^7 + x + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Welch exponent x^(2^t + 3) for n = 2t+1. APN-ness for n=7 confirmed numerically; full proof by Canteaut-Charpin-Dobbertin (2000)."
 monomial_exponent = 11
 
@@ -81,7 +81,7 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^39 in GF(2^7), modulus x^7 + x + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Niho exponent (1972 thesis); APN-ness per Hollmann-Xiang / Dobbertin."
 monomial_exponent = 39
 
@@ -94,6 +94,6 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^126 in GF(2^7), modulus x^7 + x + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Nyberg, EUROCRYPT 1994 — inverse function is APN for odd n."
 monomial_exponent = 126

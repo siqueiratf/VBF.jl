@@ -7,7 +7,7 @@ n              = 5
 m              = 5
 is_permutation = true
 algebraic_form = "x^3 in GF(2^5), modulus x^5 + x^2 + 1"
-bib_key        = "Gold1968"
+bib_key = "Gold_196801"
 source         = "Gold, 'Maximal Recursive Sequences with 3-Valued Recursive Cross-Correlation Functions', IEEE Trans. Inf. Theory 1968; APN property per Nyberg EUROCRYPT 1994."
 lut            = [0, 1, 8, 15, 10, 31, 23, 4, 26, 25, 3, 6, 9, 30, 5, 20, 14, 18, 22, 12, 24, 16, 21, 27, 2, 28, 11, 19, 13, 7, 17, 29]
 
@@ -18,7 +18,7 @@ n              = 5
 m              = 5
 is_permutation = true
 algebraic_form = "x^5 in GF(2^5), modulus x^5 + x^2 + 1"
-bib_key        = "Gold1968"
+bib_key = "Gold_196801"
 source         = "Gold, IEEE Trans. Inf. Theory 1968; APN property per Nyberg EUROCRYPT 1994."
 lut            = [0, 1, 5, 22, 17, 25, 4, 30, 31, 24, 18, 7, 20, 26, 9, 21, 12, 6, 23, 15, 16, 19, 27, 10, 14, 2, 29, 3, 8, 13, 11, 28]
 
@@ -29,6 +29,6 @@ n              = 5
 m              = 5
 is_permutation = true
 algebraic_form = "x^15 in GF(2^5), modulus x^5 + x^2 + 1"
-bib_key        = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source         = "Kasami exponents and APN property per Nyberg EUROCRYPT 1994."
 lut            = [0, 1, 31, 21, 18, 28, 10, 17, 29, 2, 22, 4, 24, 11, 25, 16, 9, 23, 27, 20, 14, 12, 19, 3, 5, 8, 7, 15, 26, 30, 6, 13]

@@ -8,7 +8,7 @@ For a function `F : F₂ⁿ → F₂ⁿ`, the **graph** is the subset
 Two functions `F, G : F₂ⁿ → F₂ⁿ` are **CCZ-equivalent** iff there
 exists an invertible F₂-affine map `L : F₂²ⁿ → F₂²ⁿ` such that
 `L(Γ_F) = Γ_G` as sets — this is the **Carlet-Charpin-Zinoviev**
-equivalence ([Carlet, Charpin and Zinoviev, 1998](@cite CarletCharpinZinoviev1998)),
+equivalence ([Carlet, Charpin and Zinoviev, 1998](@cite Carlet_199811)),
 strictly broader than EA-equivalence (which lives inside
 the subgroup of CCZ-mappings of "block-triangular" form).
 

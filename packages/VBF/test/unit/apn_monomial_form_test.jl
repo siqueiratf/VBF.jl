@@ -37,7 +37,7 @@ end
     m = 4
     is_permutation = false
     monomial_exponent = 3
-    bib_key = "Gold1968"
+    bib_key = "Gold_196801"
     source = "tests"
     """
     data = TOML.parse(s)
@@ -57,7 +57,7 @@ end
     is_permutation = false
     monomial_exponent = 3
     modulus = 19              # x⁴ + x + 1 — same as the default for n=4
-    bib_key = "Gold1968"
+    bib_key = "Gold_196801"
     source = "tests"
     """
     data = TOML.parse(s)
@@ -76,7 +76,7 @@ end
     is_permutation = false
     monomial_exponent = 3
     lut = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    bib_key = "Gold1968"
+    bib_key = "Gold_196801"
     source = "tests"
     """
     data = TOML.parse(s)
@@ -93,7 +93,7 @@ end
     m = 4
     is_permutation = false
     lut = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    bib_key = "Gold1968"
+    bib_key = "Gold_196801"
     source = "tests"
     """
     data = TOML.parse(s)

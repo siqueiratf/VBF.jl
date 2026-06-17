@@ -4,7 +4,7 @@ Public CCZ-equivalence API.
 Two SBoxes `F, G : F₂ⁿ → F₂ⁿ` are **CCZ-equivalent** iff there exists
 an invertible F₂-affine map `L : F₂²ⁿ → F₂²ⁿ` with `L(Γ_F) = Γ_G`,
 where `Γ_F = {(x, F(x)) : x ∈ F₂ⁿ}` is the graph of `F` (the equivalence
-introduced by [Carlet, Charpin and Zinoviev, 1998](@cite CarletCharpinZinoviev1998)).
+introduced by [Carlet, Charpin and Zinoviev, 1998](@cite Carlet_199811)).
 CCZ strictly
 contains EA-equivalence, which strictly contains affine equivalence,
 which contains linear equivalence.
@@ -15,7 +15,7 @@ which contains linear equivalence.
 # Strategy
 
 The only strategy at v0.1 is `:canteaut_perrin`, based on the framework
-of [Canteaut and Perrin (2019)](@cite CanteautPerrin2019CCZ):
+of [Canteaut and Perrin (2019)](@cite Canteaut_201906):
 
   1. **Necessary conditions** — both `walsh_zeroes_size(F) ==
      walsh_zeroes_size(G)` and `sort(vec(ddt(F))) == sort(vec(ddt(G)))`
@@ -31,7 +31,7 @@ of [Canteaut and Perrin (2019)](@cite CanteautPerrin2019CCZ):
 # Decision coverage
 
 - **Both quadratic APN** — decided exactly via the ortho-derivative EA test
-  (CCZ = EA on this class, [Yoshiara, 2012](@cite Yoshiara2012)).
+  (CCZ = EA on this class, [Yoshiara, 2012](@cite Yoshiara_201200)).
 - **Exactly one quadratic APN** (e.g. the Kim function vs the Dillon
   permutation, a quadratic and a degree-4 permutation in one CCZ-class) —
   decided by enumerating the other side's CCZ-class and EA-testing its

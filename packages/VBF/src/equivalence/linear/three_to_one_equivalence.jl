@@ -1,6 +1,6 @@
 """
 Linear equivalence of **canonical 3-to-1 (triplicate) functions**
-([Ivković and Kaleyski, 2022](@cite IvkovicKaleyski2022)). A canonical triplicate
+([Ivković and Kaleyski, 2022](@cite Ivkovic_202200)). A canonical triplicate
 has `F(0)=0` and every fibre equal to
 an `F₄`-line `{i, βi, β²i}` (β the order-3 element of `GF(2ⁿ)`), all three mapping
 to the same value — so `x³` is the prototypical example.

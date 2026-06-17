@@ -7,6 +7,6 @@ n              = 4
 m              = 4
 is_permutation = false
 algebraic_form = "x^3 in GF(2^4), modulus x^4 + x + 1"
-bib_key        = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source         = "Nyberg, 'Differentially uniform mappings for cryptography', EUROCRYPT 1994 (APN definition); Gold APN family from Gold, IEEE Trans. Inform. Theory, 1968."
 lut            = [0, 1, 8, 15, 12, 10, 1, 1, 10, 15, 15, 12, 8, 10, 8, 12]

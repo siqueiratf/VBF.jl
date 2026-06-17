@@ -47,7 +47,7 @@ end
         @test r.linearity == 32
         @test r.algebraic_degree == 7
         @test r.boomerang_uniformity == 6
-        @test r.bib_key == "FIPS197"
+        @test r.bib_key == "NIST_200111"
         @test occursin("AES", r.notes)
 
         # LUT round-trip

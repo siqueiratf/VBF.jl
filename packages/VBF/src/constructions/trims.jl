@@ -1,5 +1,5 @@
 """
-Trims of a vectorial Boolean function ([Beierle, Leander and Perrin, 2022](@cite BeierleLeanderPerrin2022Trims),
+Trims of a vectorial Boolean function ([Beierle, Leander and Perrin, 2022](@cite Beierle_202200),
 "Trims and extensions of quadratic APN functions").
 
 A **trim** of `F : F₂ⁿ → F₂ⁿ` is an `(n-1)`-bit function obtained by

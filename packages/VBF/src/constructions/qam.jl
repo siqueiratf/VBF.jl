@@ -1,6 +1,6 @@
 """
-Quadratic APN Matrices (QAM) — [Yu, Wang and Li (2014)](@cite YuWangLi2014QAM), as
-used by the QAM search method of [Ichanska, Berg, Kaleyski and Yu (2025)](@cite IchanskaBergKaleyskiYu2025).
+Quadratic APN Matrices (QAM) — [Yu, Wang and Li (2014)](@cite Yu_201411), as
+used by the QAM search method of [Ichanska, Berg, Kaleyski and Yu (2025)](@cite Ichanska_202400).
 
 A quadratic homogeneous function `F : F₂ⁿ → F₂ⁿ` (degree 2, `F(0)=0`, no linear or
 constant part) is captured by its **derivative matrix** `M` over `GF(2ⁿ)`:

@@ -1,5 +1,5 @@
 """
-Taniguchi's family of quadratic APN functions — [Taniguchi (2019)](@cite Taniguchi2019),
+Taniguchi's family of quadratic APN functions — [Taniguchi (2019)](@cite Taniguchi_201909),
 "On some quadratic APN functions".
 
 Carlet's construction `F(x, y) = (B(x, y), G(x, y))` with the bent function

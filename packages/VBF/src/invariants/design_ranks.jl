@@ -1,5 +1,5 @@
 """
-Design 2-ranks of APN functions — the Γ-rank and Δ-rank ([Edel and Pott, 2009](@cite EdelPott2009)).
+Design 2-ranks of APN functions — the Γ-rank and Δ-rank ([Edel and Pott, 2009](@cite Edel_200900)).
 
 For an APN function `F : F₂ⁿ → F₂ⁿ`, two CCZ-invariant integers come from the
 `F₂`-rank of the incidence matrices of designs developed from its graph:

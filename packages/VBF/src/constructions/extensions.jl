@@ -1,5 +1,5 @@
 """
-Extensions of quadratic APN functions ([Beierle, Leander and Perrin, 2022](@cite BeierleLeanderPerrin2022Trims),
+Extensions of quadratic APN functions ([Beierle, Leander and Perrin, 2022](@cite Beierle_202200),
 "Trims and extensions of quadratic APN functions").
 
 An **extension** of an `(n-1)`-bit quadratic APN function `G` is an `n`-bit
@@ -131,7 +131,7 @@ end
     extend_quadratic_apn(G::SBox{M}; limit=1, rng=nothing) -> Vector{SBox{M+1}}
 
 Search for `(M+1)`-bit quadratic APN extensions of the `M`-bit quadratic APN
-function `G` ([Beierle, Leander and Perrin, 2022](@cite BeierleLeanderPerrin2022Trims)),
+function `G` ([Beierle, Leander and Perrin, 2022](@cite Beierle_202200)),
 returning up to `limit` of
 them. Deterministic by default (top coordinate `c = 0`, natural `L` order);
 pass an `AbstractRNG` for a reproducible randomised top coordinate and `L` order.

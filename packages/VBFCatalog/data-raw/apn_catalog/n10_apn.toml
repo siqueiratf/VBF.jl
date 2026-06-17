@@ -7,7 +7,7 @@ n                 = 10
 m                 = 10
 is_permutation    = false
 algebraic_form    = "x^3 in GF(2^10), modulus x^10 + x^3 + 1"
-bib_key           = "Gold1968"
+bib_key = "Gold_196801"
 source            = "Gold, IEEE Trans. Inf. Theory 1968."
 monomial_exponent = 3
 
@@ -18,7 +18,7 @@ n                 = 10
 m                 = 10
 is_permutation    = false
 algebraic_form    = "x^9 in GF(2^10), modulus x^10 + x^3 + 1"
-bib_key           = "Gold1968"
+bib_key = "Gold_196801"
 source            = "Gold, IEEE Trans. Inf. Theory 1968."
 monomial_exponent = 9
 
@@ -29,7 +29,7 @@ n                 = 10
 m                 = 10
 is_permutation    = false
 algebraic_form    = "x^57 in GF(2^10), modulus x^10 + x^3 + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Nyberg, EUROCRYPT 1994; Kasami exponent family."
 monomial_exponent = 57
 
@@ -40,6 +40,6 @@ n                 = 10
 m                 = 10
 is_permutation    = false
 algebraic_form    = "x^339 in GF(2^10), modulus x^10 + x^3 + 1"
-bib_key           = "Nyberg1994"
+bib_key = "Nyberg_199400"
 source            = "Dobbertin's APN power function (Dobbertin 1999, IEEE Trans. Inf. Theory); listed by Nyberg EUROCRYPT 1994."
 monomial_exponent = 339

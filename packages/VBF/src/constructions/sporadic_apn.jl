@@ -74,7 +74,7 @@ const _DILLON_N6_PERMUTATION = Int[
 """
     dillon_apn_permutation() -> SBox{6}
 
-The [Browning–Dillon–McQuistan–Wolfe (2010)](@cite BrowningDillonMcQuistanWolfe2010)
+The [Browning–Dillon–McQuistan–Wolfe (2010)](@cite Browning_201000)
 APN permutation on `GF(2⁶)` — the
 **only known APN permutation in even dimension** (the "big APN problem": whether
 even-dimension APN permutations exist for `n ≠ 6` is open). It has algebraic
@@ -96,13 +96,13 @@ dillon_apn_permutation() = SBox{6}(copy(_DILLON_N6_PERMUTATION))
     kim_apn() -> SBox{6}
 
 The **Kim function** `κ(x) = x³ + x¹⁰ + u·x²⁴` over `GF(2⁶)`
-([Browning, Dillon, McQuistan and Wolfe, 2010](@cite BrowningDillonMcQuistanWolfe2010)),
+([Browning, Dillon, McQuistan and Wolfe, 2010](@cite Browning_201000)),
 with `u` the generator under the Conway polynomial `x⁶+x⁴+x³+x+1` (MAGMA's
 default primitive element). It is a **quadratic** APN function that is
 CCZ-equivalent to [`dillon_apn_permutation`](@ref): the quadratic source from
 which the only known even-dimension APN permutation was obtained. The name and
 the butterfly decomposition that explains this CCZ-equivalence are due to
-[Perrin, Udovenko and Biryukov (2016)](@cite PerrinUdovenkoBiryukov2016).
+[Perrin, Udovenko and Biryukov (2016)](@cite Perrin_201608).
 (APN-ness depends on this specific field: under a different `GF(2⁶)`
 representation the same coefficients are not APN.)
 

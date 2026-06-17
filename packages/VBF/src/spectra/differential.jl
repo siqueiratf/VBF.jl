@@ -12,7 +12,7 @@ row/column `a = b = 0` and bounds the success probability of any
 single-round differential attack. A function whose differential
 uniformity equals `2` (the minimum for even `N`) is called *almost
 perfect nonlinear* (APN); the notion is due to
-[Nyberg (1994)](@cite Nyberg1994).
+[Nyberg (1994)](@cite Nyberg_199400).
 
 # Public surface
 - [`ddt`](@ref) — the table.

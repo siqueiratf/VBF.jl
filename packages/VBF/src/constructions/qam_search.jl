@@ -1,6 +1,6 @@
 """
 The QAM construction method — searching for quadratic APN functions with
-coefficients in a subfield ([Ichanska, Berg, Kaleyski and Yu, 2025](@cite IchanskaBergKaleyskiYu2025)).
+coefficients in a subfield ([Ichanska, Berg, Kaleyski and Yu, 2025](@cite Ichanska_202400)).
 
 Quadratic APN functions over `GF(2ⁿ)` whose univariate coefficients lie in the
 subfield `GF(2ᵐ)` (`m ∣ n`) have a **cyclic derivative matrix**: in a normal
@@ -251,7 +251,7 @@ end
                     modulus=conway_polynomial(n)) -> Vector{SBox{n}}
 
 Construct quadratic APN functions on `F₂ⁿ` by the "guess and determine" search of
-[Yu, Wang and Li (2014)](@cite YuWangLi2014QAM) over the **full** symmetric QAM
+[Yu, Wang and Li (2014)](@cite Yu_201411) over the **full** symmetric QAM
 space (their Algorithm 1) — distinct from [`search_qam`](@ref), which only sweeps
 the much narrower cyclic subspace.
 The strictly upper-triangular entries of the symmetric, zero-diagonal matrix are

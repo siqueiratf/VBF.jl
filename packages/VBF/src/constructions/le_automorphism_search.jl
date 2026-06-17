@@ -1,6 +1,6 @@
 """
 LE-automorphism-constrained search for quadratic APN functions
-([Beierle and Leander, 2022](@cite BeierleLeander2022), "New Instances of
+([Beierle and Leander, 2022](@cite Beierle_202201), "New Instances of
 Quadratic APN Functions").
 
 The plain tree search [`search_quadratic_apn`](@ref) explodes past `n ≈ 6`. BL22's

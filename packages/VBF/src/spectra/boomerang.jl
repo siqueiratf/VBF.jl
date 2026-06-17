@@ -2,7 +2,7 @@
 Boomerang cryptanalysis primitives.
 
 For a permutation `F : F₂ᴺ → F₂ᴺ`, the **Boomerang Connectivity Table**
-(BCT) of [Cid, Huang, Peyrin, Sasaki and Song (2018)](@cite CidEtAl2018BCT) records the
+(BCT) of [Cid, Huang, Peyrin, Sasaki and Song (2018)](@cite Cid_201804) records the
 joint probability of two complementary differentials in a boomerang
 distinguisher:
 

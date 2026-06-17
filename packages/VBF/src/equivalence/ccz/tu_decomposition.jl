@@ -1,7 +1,7 @@
 """
 TU-decompositions of vectorial Boolean functions, the structural view
 behind CCZ-equivalence and function twisting
-([Canteaut and Perrin, 2019](@cite CanteautPerrin2019CCZ)).
+([Canteaut and Perrin, 2019](@cite Canteaut_201906)).
 
 A `TU_t` decomposition of an `n`-bit function `s` writes it, up to outer
 linear maps `A`, `B` and a linear "drift" `C`, as two keyed mini-block

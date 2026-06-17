@@ -222,7 +222,7 @@ end
 
 Length-`2ⁿ` lookup table of `x ↦ xᵈ` in `GF(2ⁿ)`, indexed by `x` in
 `0:2ⁿ - 1`. Useful for instantiating monomial S-boxes from the Gold
-([Gold, 1968](@cite Gold1968)), Kasami, Welch, Niho, and Dobbertin families.
+([Gold, 1968](@cite Gold_196801)), Kasami, Welch, Niho, and Dobbertin families.
 
 # Examples
 ```jldoctest

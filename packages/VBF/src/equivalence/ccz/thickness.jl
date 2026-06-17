@@ -10,7 +10,7 @@ onto the low n bits:
 where `mask = 2ⁿ - 1`. The thickness ranges over `0:N`; thickness `N`
 corresponds to subspaces that yield **permutations** in the CCZ-class
 of F (per the Canteaut-Perrin framework,
-[Canteaut and Perrin, 2019](@cite CanteautPerrin2019CCZ)).
+[Canteaut and Perrin, 2019](@cite Canteaut_201906)).
 
 The **thickness spectrum** is the multiset of thicknesses over all
 n-dim subspaces of `Z(F)`. It is a CCZ-invariant.
@@ -79,7 +79,7 @@ end
     is_ccz_equivalent_to_permutation(F::SBox{N}) -> Bool
 
 True iff the APN function `F` is CCZ-equivalent to a permutation. By
-[Canteaut and Perrin (2019)](@cite CanteautPerrin2019CCZ) this holds iff the
+[Canteaut and Perrin (2019)](@cite Canteaut_201906) this holds iff the
 Walsh-zero set `Z(F)` contains two
 **complementary** `n`-dimensional subspaces `V₁, V₂` (i.e. `V₁ ⊕ V₂ = F₂^{2n}`).
 
@@ -126,7 +126,7 @@ Enumerate CCZ-equivalent representatives of `F` — at least one per
 EA-class in F's CCZ-class.
 
 For each `N`-dim subspace `V₁` of `Z(F)`, builds a CCZ mapping `L`
-(per [Canteaut and Perrin, 2019](@cite CanteautPerrin2019CCZ)) and applies it to the graph of `F` via
+(per [Canteaut and Perrin, 2019](@cite Canteaut_201906)) and applies it to the graph of `F` via
 [`ccz_equivalent_function`](@ref). `V₁` is completed to a basis of
 `F₂²ⁿ` by a **complementary Walsh-zero subspace** `V₂ ⊆ Z(F)` whenever
 one exists — the completion that keeps `L` admissible *and* recovers the

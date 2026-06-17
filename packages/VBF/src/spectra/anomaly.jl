@@ -1,12 +1,12 @@
 """
-Anomaly framework — [Bonnetain, Perrin and Tian (2019)](@cite BonnetainPerrinTian2019Anomaly).
+Anomaly framework — [Bonnetain, Perrin and Tian (2019)](@cite Bonnetain_201912).
 
 Given an S-box `F`, the *anomaly* quantifies how unlikely the observed
 maximum entry of its DDT / LAT / BCT is under the null hypothesis "F is
 a uniformly random permutation of F₂ⁿ". The original derivations of the
 per-coefficient probability mass functions for DDT and LAT are from
-[Daemen and Rijmen (2007)](@cite DaemenRijmen2007Probability); the BCT formula is
-from [Bonnetain, Perrin and Tian (2019)](@cite BonnetainPerrinTian2019Anomaly).
+[Daemen and Rijmen (2007)](@cite Daemen_200700); the BCT formula is
+from [Bonnetain, Perrin and Tian (2019)](@cite Bonnetain_201912).
 
 All routines work in arbitrary-precision arithmetic via stdlib
 `BigFloat`. The `precision` kwarg (in bits) controls `setprecision`

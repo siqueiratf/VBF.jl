@@ -22,7 +22,7 @@ whose ortho-derivatives are themselves permutations route to
 `:ortho_derivative`; everything else routes to `:heggebakk`.
 
 - `:ortho_derivative` — for quadratic APN. By
-  [Canteaut, Couvreur and Perrin (2022)](@cite CanteautCouvreurPerrin2022EA), the
+  [Canteaut, Couvreur and Perrin (2022)](@cite Canteaut_202205), the
   linear-equivalence class of the ortho-derivative
   `π_F` is an EA-invariant of F. The decision reduces to a single call
   to [`are_linear_equivalent`](@ref) on the ortho-derivatives — orders
@@ -30,7 +30,7 @@ whose ortho-derivatives are themselves permutations route to
   APN where `:heggebakk` degenerates**.
 
 - `:heggebakk` — Heggebakk's partition-respecting algorithm
-  ([Heggebakk, 2022](@cite Heggebakk2022Thesis)):
+  ([Heggebakk, 2022](@cite Heggebakk_202200)):
 
   1. Compute the k-multiplicity partition of `F` and `G`
      ([`ea_partition`](@ref)). If their bucket-size multisets differ,

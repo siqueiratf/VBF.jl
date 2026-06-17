@@ -3,9 +3,9 @@ Reconciliation across multiple S-box/APN databases.
 
 The BFA catalog's `reconciliation_disagreements` table records every
 case where the same abstract function appears differently across the
-upstream sources we cross-check against ([sboxU](@cite sboxU),
-[Xanadu's apn-ccz-graph-framework](@cite XanaduAPNCCZGraph),
-[`APN-Repository`](@cite AndersenAPNRepository), …). This module is the
+upstream sources we cross-check against ([sboxU](@cite Perrin_202500),
+[Xanadu's apn-ccz-graph-framework](@cite Xanadu_202600),
+[`APN-Repository`](@cite Andersen_202500), …). This module is the
 read/write API over that table; the actual import scripts live under
 `data-build/import_*_apn.jl`.
 

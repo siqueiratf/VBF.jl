@@ -110,7 +110,7 @@ db = load_catalog()
 list_functions(db; family = "Literature")           # all literature S-boxes
 list_functions(db; n = 4)                           # every 4-bit entry
 list_functions(db; is_apn = true)                   # APN-only
-list_functions(db; bib_key = "AndersonBihamKnudsen1998Serpent")
+list_functions(db; bib_key = "Anderson_199800")
 ```
 """
 function list_functions(
