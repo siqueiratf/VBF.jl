@@ -9,10 +9,8 @@
 #   F2(x) = x^{2^i+1}                     (Gold power function)
 #   F'  = F2 ∘ F1^{-1}                    (Theorem 3 construction)
 #
-#   NOTE: The explicit formula for F' given in the paper's theorem statement
-#   and in the proof's derivation of F1^{-1} is incorrect for some elements
-#   (the formula for F1^5 does not match the true F1^{-1} for ≈ 37% of inputs).
-#   The paper's CONSTRUCTION (F' = F2 ∘ F1^{-1}) is correct; we implement it
+#   NOTE: The theorem-statement formula for F1^{-1} is checked exhaustively
+#   over GF(2^6) below. The construction F' = F2 ∘ F1^{-1} is implemented
 #   directly by permutation inversion.
 #
 #   F_8 computer check (Theorem 3 proof, p. 771):
@@ -35,7 +33,7 @@ and F₁⁻¹ is obtained by permutation inversion.
 
 Requires 6 | m and gcd(i, m) = 1.
 """
-function theorem3_lut(m::Int, i::Int; modulus::Int = primitive_polynomial(m))
+function theorem3_f1_lut(m::Int, i::Int; modulus::Int = primitive_polynomial(m))
     m % 6 == 0 || throw(ArgumentError("theorem3_lut: 6 must divide m, got m=$m"))
     gcd(i, m) == 1 || throw(ArgumentError("theorem3_lut: need gcd(i,m)=1, got i=$i, m=$m"))
     gold_exp = (1 << i) + 1
@@ -46,16 +44,74 @@ function theorem3_lut(m::Int, i::Int; modulus::Int = primitive_polynomial(m))
         tx = T(x)
         x ⊻ gf_pow(tx, 2, m; modulus = modulus) ⊻ gf_pow(tx, 4, m; modulus = modulus)
     end
-    F2(x) = gf_pow(x, gold_exp, m; modulus = modulus)
 
-    # Build F1 LUT and invert
-    lut_F1 = [F1(x) for x in 0:N-1]
-    lut_F1inv = Vector{Int}(undef, N)
-    for x in 0:N-1
-        lut_F1inv[lut_F1[x+1]+1] = x
+    [F1(x) for x in 0:N-1]
+end
+
+function theorem3_paper_f1_inverse_lut(m::Int, i::Int; modulus::Int = primitive_polynomial(m))
+    m % 6 == 0 || throw(ArgumentError("theorem3_lut: 6 must divide m, got m=$m"))
+    gcd(i, m) == 1 || throw(ArgumentError("theorem3_lut: need gcd(i,m)=1, got i=$i, m=$m"))
+    gold_exp = (1 << i) + 1
+    N = 1 << m
+    s = i % 3
+
+    T(x) = gf_relative_trace(gf_pow(x, gold_exp, m; modulus = modulus), m, 3; modulus = modulus)
+    paper_F1inv(x) = begin
+        tx = T(x)
+        tr_term = gf_trace(x, m; modulus = modulus) == 0 ? 0 : tx ⊻ gf_pow(tx, 1 << (2s), m; modulus = modulus)
+        x ⊻ gf_pow(tx, 2, m; modulus = modulus) ⊻ gf_pow(tx, 4, m; modulus = modulus) ⊻ tr_term
     end
 
+    [paper_F1inv(x) for x in 0:N-1]
+end
+
+function inverse_permutation_lut(lut::Vector{Int})
+    N = length(lut)
+    lut_inv = fill(-1, N)
+    for x in 0:N-1
+        y = lut[x+1]
+        0 <= y < N || throw(ArgumentError("permutation value $y outside 0:$(N-1)"))
+        lut_inv[y+1] == -1 || throw(ArgumentError("duplicate permutation value $y"))
+        lut_inv[y+1] = x
+    end
+    all(!=(-1), lut_inv) || throw(ArgumentError("LUT is not a permutation"))
+    lut_inv
+end
+
+function theorem3_lut(m::Int, i::Int; modulus::Int = primitive_polynomial(m))
+    gold_exp = (1 << i) + 1
+    N = 1 << m
+    F2(x) = gf_pow(x, gold_exp, m; modulus = modulus)
+
+    lut_F1inv = inverse_permutation_lut(theorem3_f1_lut(m, i; modulus = modulus))
     [F2(lut_F1inv[x+1]) for x in 0:N-1]
+end
+
+"""
+    theorem3_f1_inverse_formula_check(; m, i, io) -> NamedTuple
+
+Compare the paper's closed formula for F₁⁻¹ against the inverse permutation
+obtained from the F₁ LUT. The report uses `m = 6`, so this checks all 64 field
+elements.
+"""
+function theorem3_f1_inverse_formula_check(; m::Int = 6, i::Int = 1, io::IO = devnull)
+    modulus = primitive_polynomial(m)
+    true_inv = inverse_permutation_lut(theorem3_f1_lut(m, i; modulus = modulus))
+    formula_inv = theorem3_paper_f1_inverse_lut(m, i; modulus = modulus)
+    N = length(true_inv)
+    mismatches = [(x, true_inv[x+1], formula_inv[x+1]) for x in 0:N-1 if true_inv[x+1] != formula_inv[x+1]]
+    sample_x = min(32, N - 1)
+    sample_inverse = true_inv[sample_x+1]
+    sample_formula = formula_inv[sample_x+1]
+    ok = isempty(mismatches)
+
+    print_section("Theorem 3 — F1⁻¹ formula check (GF(2^$m), i=$i)", io)
+    print_kv("elements checked", N, io)
+    print_check("paper formula matches permutation inverse (mismatches=$(length(mismatches)))", ok, io)
+    print_kv("sample x=$sample_x", "inverse=$sample_inverse, formula=$sample_formula", io)
+    print_kv("completeness", "exhaustive", io)
+
+    (; ok, checked = N, mismatch_count = length(mismatches), mismatches, sample_x, sample_inverse, sample_formula)
 end
 
 """
@@ -119,9 +175,11 @@ end
 
 function theorem3_report(io::IO = stdout)
     print_section("Section 5 — Theorem 3: APN polynomials (6 | m)", io)
-    println(io, "  [NOTE] Paper's explicit formula for F1⁻¹ is wrong for ~37% of GF(2^6)")
-    println(io, "         elements (24/64 mismatches verified). Construction F'=F2∘F1⁻¹")
-    println(io, "         implemented via permutation inversion — always correct.")
+    println(io, "  [NOTE] F1⁻¹ formula checked by exhaustive comparison with")
+    println(io, "         the permutation inverse; F'=F2∘F1⁻¹ is still implemented")
+    println(io, "         via permutation inversion.")
+    theorem3_f1_inverse_formula_check(; m = 6, i = 1, io = io)
+    theorem3_f1_inverse_formula_check(; m = 6, i = 5, io = io)
     theorem3_f8_check(; io = io)
     theorem3_check(; m = 6, i = 1, io = io)
     theorem3_check(; m = 6, i = 5, io = io)
