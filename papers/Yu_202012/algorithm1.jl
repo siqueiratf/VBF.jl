@@ -45,6 +45,8 @@ function algorithm1_report(
     print_kv(io, "completeness", "exhaustive (n=$n_demo search space ≤ 2^15)")
     print_kv(io, "expected (Table 1)", 1)
     all_apn = all(differential_uniformity(F) == 2 for F in result)
+    print(result);
+    print(typeof(result));
     print_check(io, "all found functions are APN", all_apn)
     (; n_demo, n_classes = length(result), exhaustive = true)
 end
