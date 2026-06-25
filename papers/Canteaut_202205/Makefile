@@ -4,7 +4,7 @@ ROOT := $(abspath $(MAKEFILE_DIR)/../..)
 JULIA_PROJECT := --project=$(ROOT)
 
 .PHONY: help test report clean_results \
-        proposition3_5 proposition3_7 proposition3_12 corollary3_14 \
+        proposition14 section3_2 proposition22 corollary24 \
         algorithm1 section4_3
 
 default: help
@@ -16,17 +16,17 @@ test:
 report:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/report.jl
 
-proposition3_5:
-	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/proposition3_5.jl
+proposition14:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/proposition14.jl
 
-proposition3_7:
-	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/proposition3_7.jl
+section3_2:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/section3_2.jl
 
-proposition3_12:
-	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/proposition3_12.jl
+proposition22:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/proposition22.jl
 
-corollary3_14:
-	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/corollary3_14.jl
+corollary24:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/corollary24.jl
 
 algorithm1:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/algorithm1.jl
@@ -39,5 +39,5 @@ clean_results:
 
 help:
 	@echo 'Paper: Canteaut–Couvreur–Perrin (2022) — Recovering or Testing EA Equivalence'
-	@echo 'Targets: test  report  proposition3_5  proposition3_7  proposition3_12'
-	@echo '         corollary3_14  algorithm1  section4_3  clean_results'
+	@echo 'Targets: test  report  proposition14  section3_2  proposition22'
+	@echo '         corollary24  algorithm1  section4_3  clean_results'

@@ -8,7 +8,7 @@
 # Output: (A₀, B₀, C₀, a) such that G(x) = A₀ F(B₀ x) ⊕ C₀ x ⊕ a, or nothing.
 #
 # Key idea: The linear parts of A, B can be found by solving a GF(2) linear
-# system derived from Proposition 3.7: Jac_lin G(v) = A₀ · Jac_lin F(B₀v) · B₀.
+# system derived from Section 3.2: Jac_lin G(v) = A₀ · Jac_lin F(B₀v) · B₀.
 # Setting X = A₀⁻¹, Y = B₀, and using rank-matching pairs (v_i, w_i) with B₀v_i = w_i:
 #   X · Jac_lin G(v_i) = Jac_lin F(w_i) · Y,   Y · v_i = w_i.
 # Concatenating s=3 such systems yields (generically) a unique solution.

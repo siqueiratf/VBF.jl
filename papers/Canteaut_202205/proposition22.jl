@@ -7,13 +7,12 @@
 #   ℛ_dist(F)[r] = 2^{-r} · 𝒟_dist(F)[2^{n-r}]   for all r = 0,...,n.
 #
 # where:
-#   ℛ_dist(F)[r] = #{a ∈ F₂ⁿ \ {0} : rank(Jac_lin F(a)) = r}
 #   𝒟_dist(F)[k] = #{(a,b) ∈ (F₂ⁿ)² : a ≠ 0, δ_F(a,b) = k}
+#   ℛ_dist(F)[r] = #{a ∈ F₂ⁿ \ {0} : rank(Jac_lin F(a)) = r}
 #
 # Proof sketch: rank(Jac_lin F(a)) = r iff the right kernel has dimension n-r,
 # iff the DDT row for a consists only of 0 and 2^{n-r}; each such row has
-# exactly 2^r entries equal to 2^{n-r}. Hence:
-#   ℛ_dist(F)[r] · 2^r = 𝒟_dist(F)[2^{n-r}].
+# exactly 2^r entries equal to 2^{n-r}. Hence: ℛ_dist(F)[r] · 2^r = 𝒟_dist(F)[2^{n-r}].
 #
 # Pseudocode:
 #   1. Compute rank_table(F): rank_table[a+1] = rank(Jac_lin F(a))
@@ -43,11 +42,11 @@ function ddt_distribution(F::SBox{N,T}) where {N,T}
 end
 
 """
-    verify_proposition3_12(F::SBox{N,T}) -> Bool
+    verify_proposition22(F::SBox{N,T}) -> Bool
 
 Check ℛ_dist(F)[r] = 𝒟_dist(F)[2^{n-r}] / 2^r for all ranks r.
 """
-function verify_proposition3_12(F::SBox{N,T}) where {N,T}
+function verify_proposition22(F::SBox{N,T}) where {N,T}
     rt = rank_table(F)
     rdist = rank_distribution(rt, N)
     ddist = ddt_distribution(F)
@@ -59,12 +58,12 @@ function verify_proposition3_12(F::SBox{N,T}) where {N,T}
 end
 
 """
-    proposition3_12_report(; io, n_values) -> NamedTuple
+    proposition22_report(; io, n_values) -> NamedTuple
 
 Verify Proposition 3.12 on Gold x^3 and Kasami APN for multiple n.
 Also prints the rank distribution as an illustration.
 """
-function proposition3_12_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6])
+function proposition22_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6])
     print_section(
         "Proposition 3.12: ℛ_dist(F)[r] = 𝒟_dist(F)[2^{n-r}] / 2^r",
         io,
@@ -72,7 +71,7 @@ function proposition3_12_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6
     results = Dict{Int,Bool}()
     for N in n_values
         F = gold_apn(N)
-        ok = verify_proposition3_12(F)
+        ok = verify_proposition22(F)
         results[N] = ok
 
         rt = rank_table(F)
@@ -86,5 +85,5 @@ function proposition3_12_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    proposition3_12_report()
+    proposition22_report()
 end

@@ -1,9 +1,9 @@
-# Implements Proposition 3.5 from Canteaut–Couvreur–Perrin (2022).
+# Implements Proposition 14 from Canteaut–Couvreur–Perrin (2022).
 # Paper: Canteaut, Couvreur, Perrin (2022),
 #        "Recovering or Testing Extended-Affine Equivalence"
 # Section: 3.3 — The Jacobian Matrix of a Quadratic Function
 #
-# Proposition 3.5: For any quadratic F : F₂ⁿ → F₂ⁿ and any a, x ∈ F₂ⁿ,
+# Proposition 14: For any quadratic F : F₂ⁿ → F₂ⁿ and any a, x ∈ F₂ⁿ,
 #   Δ_a F(x) + Δ_a F(0) = Jac_lin F(x) · a = Jac_lin F(a) · x.
 #
 # Equivalently: F(x⊕a) ⊕ F(x) ⊕ F(a) ⊕ F(0) = Jac_lin F(a) · x
@@ -18,11 +18,11 @@
 include(joinpath(@__DIR__, "helpers.jl"))
 
 """
-    verify_proposition3_5(F::SBox{N,T}) -> Bool
+    verify_proposition14(F::SBox{N,T}) -> Bool
 
 Check Δ_a F(x) ⊕ Δ_a F(0) == Jac_lin F(a) · x for all (a, x).
 """
-function verify_proposition3_5(F::SBox{N,T}) where {N,T}
+function verify_proposition14(F::SBox{N,T}) where {N,T}
     n_size = 1 << N
     F0 = F.lut[1]
     @inbounds for a in 1:(n_size-1)
@@ -38,24 +38,24 @@ function verify_proposition3_5(F::SBox{N,T}) where {N,T}
 end
 
 """
-    proposition3_5_report(; io, n_values) -> NamedTuple
+    proposition14_report(; io, n_values) -> NamedTuple
 
-Verify Proposition 3.5 on Gold x^3 APN for multiple dimensions.
+Verify Proposition 14 on Gold x^3 APN for multiple dimensions.
 """
-function proposition3_5_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6])
-    print_section("Proposition 3.5: Δ_a F(x) ⊕ Δ_a F(0) = Jac_lin F(a)·x", io)
+function proposition14_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6])
+    print_section("Proposition 14: Δ_a F(x) ⊕ Δ_a F(0) = Jac_lin F(a)·x", io)
     results = Dict{Int,Bool}()
     for N in n_values
         F = gold_apn(N)
-        ok = verify_proposition3_5(F)
+        ok = verify_proposition14(F)
         results[N] = ok
-        print_check("Gold x^3 n=$N: all (a,x) verify Prop 3.5", ok, io)
+        print_check("Gold x^3 n=$N: all (a,x) verify Prop 14", ok, io)
     end
     all_ok = all(values(results))
-    print_check("Proposition 3.5 overall", all_ok, io)
+    print_check("Proposition 14 overall", all_ok, io)
     return (; results, all_ok)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    proposition3_5_report()
+    proposition14_report()
 end

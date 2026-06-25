@@ -8,7 +8,7 @@
 #     col j = F(a ⊕ eⱼ) ⊕ F(a) ⊕ F(eⱼ) ⊕ F(0)   [Def. 3.3, Eq. 3]
 #   rank_table(F):
 #     for each a ≠ 0: rank of the linear map x ↦ Jac_lin F(a) · x
-#   Jac_lin F(a) · x = F(x⊕a) ⊕ F(x) ⊕ F(a) ⊕ F(0)  [Prop. 3.5]
+#   Jac_lin F(a) · x = F(x⊕a) ⊕ F(x) ⊕ F(a) ⊕ F(0)  [Prop. 14]
 # VBF API used: SBox, F2LinearMap, rank_f2, gf_monomial_lut
 
 using VBF
@@ -56,7 +56,7 @@ end
 
 Rank of Jac_lin F(a) over F₂.
 
-Uses Proposition 3.5: Jac_lin F(a) · x = F(x⊕a) ⊕ F(x) ⊕ F(a) ⊕ F(0),
+Uses Proposition 14: Jac_lin F(a) · x = F(x⊕a) ⊕ F(x) ⊕ F(a) ⊕ F(0),
 so the image is the span of {F(x⊕a) ⊕ F(x) ⊕ F(a) ⊕ F(0) : x ∈ F₂ⁿ}.
 Rank = dimension of this span.
 """

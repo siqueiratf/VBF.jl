@@ -1,13 +1,13 @@
-# Implements Corollary 3.14 from Canteaut–Couvreur–Perrin (2022).
+# Implements Corollary 24 from Canteaut–Couvreur–Perrin (2022).
 # Paper: Canteaut, Couvreur, Perrin (2022),
 #        "Recovering or Testing Extended-Affine Equivalence"
 # Section: 3.4.2 — Rank Table and Connection with the Differential Spectrum
 #
-# Corollary 3.14: A quadratic function F : F₂ⁿ → F₂ⁿ is APN if and only if
+# Corollary 24: A quadratic function F : F₂ⁿ → F₂ⁿ is APN if and only if
 #   rank(Jac_lin F(a)) = n - 1 for all nonzero a ∈ F₂ⁿ.
 #
 # Proof: F APN ⟺ δ_F(a,b) ∈ {0,2} for all a ≠ 0, b ∈ F₂ⁿ.
-# By Proposition 3.12: ℛ_dist(F)[r] = 𝒟_dist(F)[2^{n-r}] / 2^r.
+# By Proposition 22: ℛ_dist(F)[r] = 𝒟_dist(F)[2^{n-r}] / 2^r.
 # APN ⟹ 𝒟_dist(F)[2] = #{a≠0} · 2^{n-1} nonzero entries, 𝒟_dist(F)[k]=0 for k≠0,2.
 # The only nonzero rank is r = n-1 (since 2^{n-r} = 2 ⟹ r = n-1). QED.
 #
@@ -21,11 +21,11 @@
 include(joinpath(@__DIR__, "helpers.jl"))
 
 """
-    verify_corollary3_14_apn(F::SBox{N,T}) -> Bool
+    verify_corollary24_apn(F::SBox{N,T}) -> Bool
 
 For an APN function F, verify rank(Jac_lin F(a)) = N-1 for all nonzero a.
 """
-function verify_corollary3_14_apn(F::SBox{N,T}) where {N,T}
+function verify_corollary24_apn(F::SBox{N,T}) where {N,T}
     target = N - 1
     for a in 1:((1<<N)-1)
         jac_lin_rank(F, a) == target || return false
@@ -34,11 +34,11 @@ function verify_corollary3_14_apn(F::SBox{N,T}) where {N,T}
 end
 
 """
-    verify_corollary3_14_non_apn(G::SBox{N,T}) -> Bool
+    verify_corollary24_non_apn(G::SBox{N,T}) -> Bool
 
 For a non-APN quadratic function G, verify some nonzero a has rank < N-1.
 """
-function verify_corollary3_14_non_apn(G::SBox{N,T}) where {N,T}
+function verify_corollary24_non_apn(G::SBox{N,T}) where {N,T}
     target = N - 1
     for a in 1:((1<<N)-1)
         jac_lin_rank(G, a) < target && return true
@@ -47,15 +47,15 @@ function verify_corollary3_14_non_apn(G::SBox{N,T}) where {N,T}
 end
 
 """
-    corollary3_14_report(; io, n_values) -> NamedTuple
+    corollary24_report(; io, n_values) -> NamedTuple
 
-Verify Corollary 3.14:
+Verify Corollary 24:
 - APN functions have rank n-1 at all nonzero inputs.
 - A non-APN quadratic (same input/output) has some rank < n-1.
 """
-function corollary3_14_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6])
+function corollary24_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6])
     print_section(
-        "Corollary 3.14: F APN ⟺ rank(Jac_lin F(a)) = n-1 for all nonzero a",
+        "corollary 24: F APN ⟺ rank(Jac_lin F(a)) = n-1 for all nonzero a",
         io,
     )
     results = Dict{Int,Bool}()
@@ -63,7 +63,7 @@ function corollary3_14_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6])
         T = N ≤ 8 ? UInt8 : UInt16
         F = gold_apn(N)
 
-        ok_apn = verify_corollary3_14_apn(F)
+        ok_apn = verify_corollary24_apn(F)
         print_check("Gold x^3 n=$N (APN): rank = $(N-1) for all a≠0", ok_apn, io)
 
         # Build a non-APN quadratic: use the identity function (degree 1, but linear part rank 1)
@@ -80,11 +80,11 @@ function corollary3_14_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6])
 
         if differential_uniformity(G) == 2
             # x^5 is APN on n=5 (it's Gold with i=2): verify it also has rank n-1
-            ok_non = verify_corollary3_14_apn(G)
+            ok_non = verify_corollary24_apn(G)
             print_check("x^5 n=$N (also APN): rank = $(N-1) for all a≠0", ok_non, io)
             results[N] = ok_apn && ok_non
         else
-            ok_non = verify_corollary3_14_non_apn(G)
+            ok_non = verify_corollary24_non_apn(G)
             print_check(
                 "x^5 n=$N (non-APN): some a≠0 has rank < $(N-1)",
                 ok_non,
@@ -96,10 +96,10 @@ function corollary3_14_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6])
         end
     end
     all_ok = all(values(results))
-    print_check("Corollary 3.14 overall", all_ok, io)
+    print_check("Corollary 24 overall", all_ok, io)
     return (; results, all_ok)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    corollary3_14_report()
+    corollary24_report()
 end

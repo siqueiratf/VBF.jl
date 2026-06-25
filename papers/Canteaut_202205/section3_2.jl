@@ -1,9 +1,9 @@
-# Implements Proposition 3.7 from Canteaut–Couvreur–Perrin (2022).
+# Implements Section 3.2 from Canteaut–Couvreur–Perrin (2022).
 # Paper: Canteaut, Couvreur, Perrin (2022),
 #        "Recovering or Testing Extended-Affine Equivalence"
 # Section: 3.2 — The Jacobian Matrices of EA-equivalent Functions
 #
-# Proposition 3.7: If G = A ∘ F ∘ B + C with A, B affine permutations and C
+# Section 3.2: If G = A ∘ F ∘ B + C with A, B affine permutations and C
 #   affine, and A₀, B₀ their linear parts, then for all x ∈ F₂ⁿ:
 #   Jac_lin G(x) = A₀ · Jac_lin F(B₀ x) · B₀.
 #
@@ -21,12 +21,12 @@
 include(joinpath(@__DIR__, "helpers.jl"))
 
 """
-    verify_proposition3_7(F::SBox{N,T}, A0::F2LinearMap, B0::F2LinearMap) -> Bool
+    verify_section3_2(F::SBox{N,T}, A0::F2LinearMap, B0::F2LinearMap) -> Bool
 
 Verify Jac_lin G(x) = A₀ · Jac_lin F(B₀ x) · B₀ for G = A₀ ∘ F ∘ B₀.
 Checks all x ∈ F₂ⁿ.
 """
-function verify_proposition3_7(
+function verify_section3_2(
     F::SBox{N,T},
     A0::F2LinearMap{N,T},
     B0::F2LinearMap{N,T},
@@ -54,14 +54,14 @@ function verify_proposition3_7(
 end
 
 """
-    proposition3_7_report(; io, n_values) -> NamedTuple
+    section3_2_report(; io, n_values) -> NamedTuple
 
-Verify Proposition 3.7 on Gold x^3 with explicit EA triples for n=5, 6.
+Verify Section 3.2 on Gold x^3 with explicit EA triples for n=5, 6.
 Uses two different invertible (A₀, B₀) pairs per dimension.
 """
-function proposition3_7_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6])
+function section3_2_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6])
     print_section(
-        "Proposition 3.7: Jac_lin G(x) = A₀·Jac_lin F(B₀x)·B₀ for EA-equiv F,G",
+        "Section 3.2: Jac_lin G(x) = A₀·Jac_lin F(B₀x)·B₀ for EA-equiv F,G",
         io,
     )
 
@@ -83,15 +83,15 @@ function proposition3_7_report(; io::IO = stdout, n_values::Vector{Int} = [5, 6]
         for j in 0:(N-1); B0_cols[j+1] = T(1) << ((j+1) % N); end
         B0 = F2LinearMap{N,T}(B0_cols)
 
-        ok = verify_proposition3_7(F, A0, B0)
+        ok = verify_section3_2(F, A0, B0)
         results[N] = ok
-        print_check("Gold x^3 n=$N: Prop 3.7 holds for (A₀, B₀)", ok, io)
+        print_check("Gold x^3 n=$N: Section 3.2 holds for (A₀, B₀)", ok, io)
     end
     all_ok = all(values(results))
-    print_check("Proposition 3.7 overall", all_ok, io)
+    print_check("Section 3.2 overall", all_ok, io)
     return (; results, all_ok)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    proposition3_7_report()
+    section3_2_report()
 end
