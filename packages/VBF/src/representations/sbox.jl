@@ -150,6 +150,26 @@ function is_permutation(s::SBox{N,T}) where {N,T}
 end
 
 """
+    compositional_inverse(s::SBox) -> SBox
+
+The functional inverse `s⁻¹`, i.e. the unique S-box with
+`s⁻¹(s(x)) = s(s⁻¹(x)) = x`. Requires `s` to be a permutation
+(see [`is_permutation`](@ref)); throws `ArgumentError` otherwise. Distinct
+from [`inverse_apn`](@ref), which is the monomial *inverse function*
+`x ↦ x^{2ⁿ−2}`.
+"""
+function compositional_inverse(s::SBox{N,T}) where {N,T}
+    is_permutation(s) ||
+        throw(ArgumentError("compositional_inverse: s must be a permutation"))
+    n = 1 << N
+    inv_lut = Vector{T}(undef, n)
+    @inbounds for x = 0:(n-1)
+        inv_lut[Int(s.lut[x+1])+1] = T(x)
+    end
+    SBox{N,T}(inv_lut)
+end
+
+"""
     is_linear(s::SBox) -> Bool
 
 `true` iff `s` is an F₂-linear function: `s(0) = 0` and

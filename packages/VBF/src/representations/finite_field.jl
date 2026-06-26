@@ -353,3 +353,37 @@ function subfield_elements(
     frobenius = 1 << k
     [x for x = 0:((1 << n) - 1) if gf_pow(x, frobenius, n; modulus = modulus) == x]
 end
+
+"""
+    gf_is_dth_power(x::Integer, d::Integer, n::Integer; modulus = primitive_polynomial(n)) -> Bool
+
+Whether `x` is a `d`-th power in `GF(2ⁿ)`, i.e. `x = yᵈ` for some `y`. By
+convention `0` is a `d`-th power.
+
+The `d`-th powers of the cyclic group `GF(2ⁿ)*` form the subgroup of index
+`g = gcd(d, 2ⁿ − 1)`, so a nonzero `x` is a `d`-th power iff
+`x^{(2ⁿ − 1)/g} = 1`. When `g = 1` the map `y ↦ yᵈ` is a bijection and every
+element qualifies; this covers, e.g., cubes when `3 ∤ 2ⁿ − 1`.
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> gf_is_dth_power(0, 3, 6)
+true
+
+julia> count(x -> gf_is_dth_power(x, 3, 6), 1:62)  # cubes in GF(2⁶)*: (2⁶−1)/3 = 21
+21
+```
+"""
+function gf_is_dth_power(
+    x::Integer,
+    d::Integer,
+    n::Integer;
+    modulus::Integer = primitive_polynomial(n),
+)
+    Int(x) == 0 && return true
+    order = (1 << n) - 1
+    g = gcd(Int(d), order)
+    gf_pow(Int(x), order ÷ g, n; modulus = modulus) == 1
+end
