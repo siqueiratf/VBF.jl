@@ -26,17 +26,6 @@ function print_header(io::IO = stdout)
 end
 
 """
-    gf_in_subfield(x, n, k; modulus) -> Bool
-
-True if x ∈ GF(2^k) ⊆ GF(2^n), tested via x^{2^k} = x.
-Requires k | n.
-"""
-function gf_in_subfield(x::Int, n::Int, k::Int;
-                         modulus::Int = primitive_polynomial(n))::Bool
-    gf_pow(x, 1 << k, n; modulus) == x
-end
-
-"""
     gf_is_cube(x, n; modulus) -> Bool
 
 True if x is a cube in GF(2^n)*. By convention, 0 is a cube.
@@ -67,17 +56,6 @@ function gf_is_seventh_power(x::Int, n::Int;
 end
 
 """
-    gf_absolute_trace(y, N; modulus) -> Int
-
-Absolute trace Tr: GF(2^N) → F₂.
-Tr(y) = y ⊕ y² ⊕ y⁴ ⊕ … ⊕ y^{2^{N−1}} ∈ {0, 1}.
-"""
-function gf_absolute_trace(y::Int, N::Int;
-                             modulus::Int = primitive_polynomial(N))::Int
-    reduce(⊻, (gf_pow(y, 1 << j, N; modulus) for j in 0:N-1))
-end
-
-"""
     trace_component_is_bent(F, v; modulus) -> Bool
 
 True if x ↦ Tr(v·F(x)) is a bent Boolean function (N even),
@@ -87,7 +65,7 @@ function trace_component_is_bent(F::SBox, v::Int;
                                    modulus::Int = primitive_polynomial(trailing_zeros(length(F.lut))))::Bool
     N = trailing_zeros(length(F.lut))
     n = 1 << N
-    g = [gf_absolute_trace(gf_mul(v, F.lut[x+1], N; modulus), N; modulus)
+    g = [gf_trace(gf_mul(v, F.lut[x+1], N; modulus), N; modulus)
          for x in 0:n-1]
     wt = walsh_transform(g)
     all(w^2 == n for w in wt)

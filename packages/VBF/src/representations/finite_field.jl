@@ -249,3 +249,107 @@ function gf_monomial_lut(
     end
     out
 end
+
+# Traces and subfields
+
+"""
+    gf_trace(x::Integer, n::Integer; modulus = primitive_polynomial(n)) -> Int
+
+Absolute trace `Tr_{GF(2ⁿ)/GF(2)}(x) = x ⊕ x² ⊕ x⁴ ⊕ … ⊕ x^{2ⁿ⁻¹}`, an
+element of `GF(2)`, so the result is `0` or `1`. Computed by `n` repeated
+squarings; `O(n²)`.
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> gf_trace(0, 4)
+0
+
+julia> sum(gf_trace(x, 4) for x = 0:15)  # the trace is balanced on GF(2ⁿ)
+8
+```
+"""
+function gf_trace(x::Integer, n::Integer; modulus::Integer = primitive_polynomial(n))
+    n ≥ 1 || throw(ArgumentError("gf_trace: n must be ≥ 1, got $n"))
+    acc = 0
+    t = Int(x)
+    @inbounds for _ = 1:n
+        acc ⊻= t
+        t = gf_mul(t, t, n; modulus = modulus)
+    end
+    acc
+end
+
+"""
+    gf_relative_trace(x::Integer, n::Integer, k::Integer; modulus = primitive_polynomial(n)) -> Int
+
+Relative trace `Tr_{GF(2ⁿ)/GF(2ᵏ)}(x) = x ⊕ x^{2ᵏ} ⊕ x^{2^{2k}} ⊕ … ⊕
+x^{2^{(n/k − 1)k}}`. Requires `k ∣ n`; the result lies in the subfield
+`GF(2ᵏ) ⊆ GF(2ⁿ)` (see [`in_subfield`](@ref)).
+"""
+function gf_relative_trace(
+    x::Integer,
+    n::Integer,
+    k::Integer;
+    modulus::Integer = primitive_polynomial(n),
+)
+    (n ≥ 1 && k ≥ 1) ||
+        throw(ArgumentError("gf_relative_trace: need n,k ≥ 1, got n=$n, k=$k"))
+    n % k == 0 || throw(ArgumentError("gf_relative_trace: k=$k must divide n=$n"))
+    steps = n ÷ k
+    frobenius = 1 << k
+    acc = 0
+    t = Int(x)
+    @inbounds for _ = 1:steps
+        acc ⊻= t
+        t = gf_pow(t, frobenius, n; modulus = modulus)
+    end
+    acc
+end
+
+"""
+    in_subfield(x::Integer, k::Integer, n::Integer; modulus = primitive_polynomial(n)) -> Bool
+
+Whether `x` lies in the subfield `GF(2ᵏ) ⊆ GF(2ⁿ)`, tested by the Frobenius
+fixed-point condition `x^{2ᵏ} = x`. Requires `k ∣ n`.
+"""
+function in_subfield(
+    x::Integer,
+    k::Integer,
+    n::Integer;
+    modulus::Integer = primitive_polynomial(n),
+)
+    n % k == 0 || throw(ArgumentError("in_subfield: k=$k must divide n=$n"))
+    gf_pow(Int(x), 1 << k, n; modulus = modulus) == Int(x)
+end
+
+"""
+    subfield_elements(n::Integer, k::Integer; modulus = primitive_polynomial(n)) -> Vector{Int}
+
+The `2ᵏ` elements of the subfield `GF(2ᵏ) ⊆ GF(2ⁿ)` (including `0`), in
+ascending order. Requires `k ∣ n`. Selected by the Frobenius fixed-point test
+of [`in_subfield`](@ref), so the result is independent of which primitive
+element the modulus encodes.
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> subfield_elements(4, 2)  # GF(2²) inside GF(2⁴), default modulus
+4-element Vector{Int64}:
+ 0
+ 1
+ 6
+ 7
+```
+"""
+function subfield_elements(
+    n::Integer,
+    k::Integer;
+    modulus::Integer = primitive_polynomial(n),
+)
+    n % k == 0 || throw(ArgumentError("subfield_elements: k=$k must divide n=$n"))
+    frobenius = 1 << k
+    [x for x = 0:((1 << n) - 1) if gf_pow(x, frobenius, n; modulus = modulus) == x]
+end

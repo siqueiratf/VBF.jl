@@ -22,5 +22,5 @@
     @test all(trace_component_is_bent(F2, v; modulus) for v in subf)
 
     # Sanity: Tr maps to {0,1} for all field elements
-    @test all(gf_absolute_trace(x, n; modulus) ∈ (0, 1) for x in 0:(1<<n)-1)
+    @test all(gf_trace(x, n; modulus) ∈ (0, 1) for x in 0:(1<<n)-1)
 end

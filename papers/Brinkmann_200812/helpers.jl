@@ -18,21 +18,6 @@ using VBF
 using Dates
 
 """
-    gf_trace(x, n; modulus) -> Int
-
-Absolute trace Tr_{GF(2ⁿ)/GF(2)}(x) = x ⊕ x² ⊕ x⁴ ⊕ … ⊕ x^{2^{n-1}} ∈ {0, 1}.
-"""
-function gf_trace(x::Integer, n::Int; modulus::Int = primitive_polynomial(n))
-    acc = 0
-    xi = Int(x)
-    for _ in 1:n
-        acc ⊻= xi
-        xi = gf_mul(xi, xi, n; modulus = modulus)
-    end
-    acc
-end
-
-"""
     power_sbox(n, d; modulus) -> SBox{n}
 
 x ↦ xᵈ over GF(2ⁿ) with the canonical primitive polynomial modulus.

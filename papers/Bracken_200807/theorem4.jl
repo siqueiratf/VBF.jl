@@ -9,7 +9,7 @@
 #     1. Compute g(x) = Tr(F(x)) = F(x) ⊕ F(x)^2 ⊕ ... ⊕ F(x)^{2^{2k−1}} ∈ {0,1}
 #     2. Verify g is a bent Boolean function (all |Walsh coeff|^2 = 2^{2k})
 #     3. For all v ∈ GF(2^k)*, verify x ↦ Tr(v·F(x)) is also bent
-# VBF API used: SBox, walsh_transform, gf_mul, gf_absolute_trace, trace_component_is_bent
+# VBF API used: SBox, walsh_transform, gf_mul, gf_trace, trace_component_is_bent
 
 include(joinpath(@__DIR__, "theorem1.jl"))
 

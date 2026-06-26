@@ -15,45 +15,6 @@ using VBF
 using Dates
 
 """
-    gf_trace(x, n; modulus) -> Int
-
-Absolute trace Tr_{GF(2^n)/GF(2)}(x) = x ⊕ x² ⊕ x⁴ ⊕ … ⊕ x^{2^{n-1}} ∈ {0, 1}.
-"""
-function gf_trace(x::Integer, n::Int; modulus::Int = primitive_polynomial(n))
-    acc = 0
-    xi = Int(x)
-    for _ in 1:n
-        acc ⊻= xi
-        xi = gf_mul(xi, xi, n; modulus = modulus)
-    end
-    acc
-end
-
-"""
-    gf_relative_trace(x, m, n; modulus) -> Int
-
-Relative trace Tr_{GF(2^m)/GF(2^n)}(x) = x + x^{2^n} + x^{2^{2n}} + … + x^{2^{(m/n−1)n}}.
-Requires n | m. Result lies in the subfield GF(2^n) ⊂ GF(2^m).
-"""
-function gf_relative_trace(
-    x::Integer,
-    m::Int,
-    n::Int;
-    modulus::Int = primitive_polynomial(m),
-)
-    m % n == 0 || throw(ArgumentError("gf_relative_trace: n=$n must divide m=$m"))
-    steps = m ÷ n
-    acc = 0
-    xi = Int(x)
-    frob_exp = 1 << n
-    for _ in 1:steps
-        acc ⊻= xi
-        xi = gf_pow(xi, frob_exp, m; modulus = modulus)
-    end
-    acc
-end
-
-"""
     gold_lut(n, i; modulus) -> Vector{Int}
 
 LUT for Gold function x^{2^i+1} over GF(2^n). Requires gcd(i, n) = 1.

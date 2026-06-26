@@ -106,21 +106,6 @@ is_zero_map(lut::Vector{<:Integer}) = all(==(0), lut)
 # ── GF arithmetic helpers ─────────────────────────────────────────────────────
 
 """
-    gf_trace(x, n; modulus) -> Int
-
-Absolute trace Tr(x) = x ⊕ x² ⊕ x⁴ ⊕ … ⊕ x^{2^{n-1}} ∈ {0, 1}.
-"""
-function gf_trace(x::Integer, n::Int; modulus::Int = primitive_polynomial(n))
-    acc = 0
-    t = Int(x)
-    for _ in 1:n
-        acc ⊻= t
-        t = gf_mul(t, t, n; modulus = modulus)
-    end
-    acc
-end
-
-"""
     find_c_for_d(d, n; modulus) -> Int
 
 Return any c ∈ GF(2^n) with c² ⊕ c = d (Artin–Schreier equation).

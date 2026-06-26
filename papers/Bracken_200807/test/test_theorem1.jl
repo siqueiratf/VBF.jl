@@ -11,7 +11,7 @@
     @test !gf_is_cube(b, n; modulus)
 
     # c not in GF(8): c^{2^3} ≠ c (i.e., ω^2 has order 63 which does not divide 7)
-    @test !gf_in_subfield(c, n, k; modulus)
+    @test !in_subfield(c, k, n; modulus)
 
     # Trinomial (r=[0,0]): b·x^3 + b^8·x^{24} + c·x^9
     F_tri = theorem1_sbox(k, s, [0, 0]; modulus)

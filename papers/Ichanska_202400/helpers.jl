@@ -20,12 +20,6 @@ function odds(F::SBox)
     differential_spectrum(π)
 end
 
-function subfield_elements(n::Int, m::Int; modulus::Int = conway_polynomial(n))
-    @assert m <= n && rem(n, m) == 0 "m must divide n"
-    step = (1 << n - 1) ÷ (1 << m - 1)
-    vcat([0], [gf_pow(2, k * step, n; modulus = modulus) for k in 0:(1<<m)-2])
-end
-
 function is_in_cat1(α::Int, n::Int, m::Int; modulus::Int = conway_polynomial(n))
     α == 0 && return false
     α ⊻ gf_pow(α, 1 << m, n; modulus = modulus) == 0

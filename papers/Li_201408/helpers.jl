@@ -19,45 +19,6 @@ using VBF
 using Dates
 
 """
-    gf_trace(x, n; modulus) -> Int
-
-Absolute trace Tr_{GF(2^n)/GF(2)}(x) = x ⊕ x^2 ⊕ x^4 ⊕ … ⊕ x^{2^{n-1}} ∈ {0,1}.
-"""
-function gf_trace(x::Integer, n::Int; modulus::Int = primitive_polynomial(n))
-    acc = 0
-    xi = Int(x)
-    for _ in 1:n
-        acc ⊻= xi
-        xi = gf_mul(xi, xi, n; modulus = modulus)
-    end
-    acc
-end
-
-"""
-    gf_relative_trace(x, m, k; modulus) -> Int
-
-Relative trace Tr_{GF(2^m)/GF(2^k)}(x) = x ⊕ x^{2^k} ⊕ x^{2^{2k}} ⊕ … ⊕ x^{2^{(m/k-1)k}}.
-Requires k | m. Result lies in the subfield GF(2^k) ⊆ GF(2^m).
-"""
-function gf_relative_trace(
-    x::Integer,
-    m::Int,
-    k::Int;
-    modulus::Int = primitive_polynomial(m),
-)
-    m % k == 0 || throw(ArgumentError("gf_relative_trace: k=$k must divide m=$m"))
-    steps = m ÷ k
-    acc = 0
-    xi = Int(x)
-    frob_exp = 1 << k
-    for _ in 1:steps
-        acc ⊻= xi
-        xi = gf_pow(xi, frob_exp, m; modulus = modulus)
-    end
-    acc
-end
-
-"""
     make_nbit_lut(G_lut, H_sorted) -> Vector{Int}
 
 Restrict G: GF(2^N) → GF(2^N) to the subspace H_sorted (sorted 2^n elements),

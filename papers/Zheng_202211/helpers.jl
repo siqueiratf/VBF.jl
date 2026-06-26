@@ -20,15 +20,6 @@ function print_header(io::IO = stdout)
 end
 
 """
-    in_subfield(x, m, n; modulus) -> Bool
-
-True iff x ∈ F_{2^m} (subfield of F_{2^n}), i.e. x^{2^m} = x.
-"""
-function in_subfield(x::Int, m::Int, n::Int; modulus::Int = primitive_polynomial(n))
-    gf_pow(x, 1 << m, n; modulus) == x
-end
-
-"""
     is_cube(b, n; modulus) -> Bool
 
 True iff b is a cube in F_{2^n}*, i.e. b^{(2^n-1)/3} = 1.
