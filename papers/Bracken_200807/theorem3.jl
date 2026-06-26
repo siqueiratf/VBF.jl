@@ -17,7 +17,7 @@
 #     (ii) u primitive in GF(2^{3k}) → u is NOT a 7th power
 #     (iii) u^{2^k−1} is NOT a 7th power in GF(2^{3k})
 #     (iv) θ^{2^t−1} IS a 7th power in GF(2^{3k}) when 3∣t
-# VBF API used: SBox, differential_uniformity, gf_pow, gf_is_seventh_power
+# VBF API used: SBox, differential_uniformity, gf_pow, gf_is_dth_power
 
 include(joinpath(@__DIR__, "helpers.jl"))
 
@@ -57,27 +57,27 @@ function lemma2_report(io::IO = stdout)
     subf    = gf_subfield_nonzero_elements(n, k; modulus)   # GF(4)* in GF(64)
 
     # (i) Every θ ∈ GF(2^k)* is a 7th power in GF(2^k): since 3∤k=2, 7∤(2^k−1)=3
-    all_in_k_are_7th = all(gf_is_seventh_power(θ, n; modulus) for θ in subf)
+    all_in_k_are_7th = all(gf_is_dth_power(θ, 7, n; modulus) for θ in subf)
     print_check("(i)  all θ ∈ GF(4)* are 7th powers in GF(4) [7∤(2^2−1)=3]",
                 all_in_k_are_7th, io)
 
     # (ii) u=2 primitive in GF(64) is NOT a 7th power [7|(2^6−1)=63]
     u = 2
     print_check("(ii) u=2 primitive in GF(64) is not a 7th power [7|63]",
-                !gf_is_seventh_power(u, n; modulus), io)
+                !gf_is_dth_power(u, 7, n; modulus), io)
 
     # (iii) u^{2^k−1} = u^3 is NOT a 7th power in GF(64)
     u3 = gf_pow(u, (1 << k) - 1, n; modulus)
     print_check("(iii) u^{2^k−1}=u^3 is not a 7th power in GF(64)",
-                !gf_is_seventh_power(u3, n; modulus), io)
+                !gf_is_dth_power(u3, 7, n; modulus), io)
 
     # (iv) θ^{2^t−1} is a 7th power for 3∣t: check t=3 and t=6
     t3 = gf_pow(u, (1 << 3) - 1, n; modulus)   # u^7
     t6 = gf_pow(u, (1 << 6) - 1, n; modulus)   # u^63 = 1
     print_check("(iv) u^{2^3−1}=u^7 is a 7th power in GF(64) [3|3]",
-                gf_is_seventh_power(t3, n; modulus), io)
+                gf_is_dth_power(t3, 7, n; modulus), io)
     print_check("(iv) u^{2^6−1}=1 is a 7th power in GF(64) [3|6]",
-                gf_is_seventh_power(t6, n; modulus), io)
+                gf_is_dth_power(t6, 7, n; modulus), io)
     println(io)
 end
 

@@ -18,7 +18,7 @@
     @test !are_ea_equivalent(K, D)
 
     # perm_inverse round-trip
-    Dinv = perm_inverse(D)
+    Dinv = compositional_inverse(D)
     @test is_permutation(Dinv)
     n_size = 64
     @test all(D.lut[Dinv.lut[y + 1] + 1] == y for y = 0:63)

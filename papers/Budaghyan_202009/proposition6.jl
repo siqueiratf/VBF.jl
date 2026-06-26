@@ -11,7 +11,7 @@
 #     elif n/2 odd and b+β³ not cube:        |Π_F^β(b)| = 2^{n-1} - 2^{n/2-1} - 1
 #     elif n/2 even and b+β³ is cube:        |Π_F^β(b)| = 2^{n-1} - 2^{n/2} - 1
 #     else (n/2 even, not cube):             |Π_F^β(b)| = 2^{n-1} + 2^{n/2} - 1
-# VBF API used: SBox, pi_multiset, sorted_pairs, gf_pow, is_cube_gf, compute_m_F
+# VBF API used: SBox, pi_multiset, sorted_pairs, gf_pow, gf_is_dth_power, compute_m_F
 
 include(joinpath(@__DIR__, "helpers.jl"))
 
@@ -44,7 +44,7 @@ function pi_formula_gold(
 
     # N even
     diff = Int(b) ⊻ β3  # b + β³ in GF(2^N)
-    cube = is_cube_gf(N, diff; modulus = Int(modulus))
+    cube = gf_is_dth_power(diff, 3, N; modulus = Int(modulus))
     half_n = N ÷ 2
 
     if half_n % 2 == 1  # N/2 odd (paper typo in cube branch: 2^{N/2-1} → 2^{N/2})

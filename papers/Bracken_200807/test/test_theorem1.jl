@@ -8,7 +8,7 @@
     c = gf_pow(2, 2, n; modulus)   # ω^2
 
     # b not a cube in GF(64): b^{(64−1)/3} = b^{21} ≠ 1
-    @test !gf_is_cube(b, n; modulus)
+    @test !gf_is_dth_power(b, 3, n; modulus)
 
     # c not in GF(8): c^{2^3} ≠ c (i.e., ω^2 has order 63 which does not divide 7)
     @test !in_subfield(c, k, n; modulus)

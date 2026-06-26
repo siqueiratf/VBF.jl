@@ -28,7 +28,7 @@ function section3_report(io::IO = stdout)
     all_pass = true
     for (k, s, label, du, streaming) in SECTION3_CASES
         F   = bracken_binomial_sbox(k, s)
-        got = streaming ? differential_uniformity_rowwise(F) : differential_uniformity(F)
+        got = differential_uniformity(F)
         ok  = got == du
         all_pass &= ok
         print_check(label * "  [got $got]", ok, io)

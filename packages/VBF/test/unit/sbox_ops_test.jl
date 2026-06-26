@@ -9,6 +9,26 @@ using Test
     @test !is_permutation(SBox(UInt8[1, 1, 1, 1]))   # constant
 end
 
+@testset "compositional_inverse" begin
+    # round-trip: s⁻¹∘s = s∘s⁻¹ = id, and the inverse is an involution under inversion
+    for n in (3, 5, 7)
+        s = gold_apn(n, 1)               # x³ is a permutation for odd n
+        @test is_permutation(s)
+        inv = compositional_inverse(s)
+        @test all(inv(s(x)) == x for x = 0:((1 << n) - 1))
+        @test all(s(inv(x)) == x for x = 0:((1 << n) - 1))
+        @test compositional_inverse(inv) == s
+        @test typeof(inv) == typeof(s)   # preserves {N,T}
+    end
+    # a known permutation S-box inverts to its functional inverse
+    aes = load_literature_sbox("AES")
+    ainv = compositional_inverse(aes)
+    @test all(ainv(aes(x)) == x for x = 0:255)
+    # non-permutations are rejected
+    @test_throws ArgumentError compositional_inverse(gold_apn(6, 1))   # even n → 2-to-1
+    @test_throws ArgumentError compositional_inverse(SBox(UInt8[0, 0, 2, 3]))
+end
+
 @testset "is_permutation: literature catalog" begin
     for name in literature_sbox_names()
         meta = literature_sbox_metadata(name)

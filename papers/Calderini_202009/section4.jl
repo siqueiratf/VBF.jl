@@ -50,7 +50,7 @@ and C₄(F₁⁻¹+b) are inequivalent for all b). Also verify C₄ has correct 
 """
 function theorem6_demo(io::IO = stdout)
     F1 = dillon_apn_permutation()
-    F1inv = perm_inverse(F1)
+    F1inv = compositional_inverse(F1)
 
     print_check(io, "Dillon: is APN permutation", is_permutation(F1) && differential_uniformity(F1) == 2)
     print_check(io, "Dillon⁻¹: is APN permutation", is_permutation(F1inv) && differential_uniformity(F1inv) == 2)

@@ -10,16 +10,16 @@
     subf = gf_subfield_nonzero_elements(n, k; modulus)   # GF(4)* in GF(64)
 
     # (i) all GF(4)* elements are 7th powers in GF(4) [7 ∤ (2^2−1)=3]
-    @test all(gf_is_seventh_power(θ, n; modulus) for θ in subf)
+    @test all(gf_is_dth_power(θ, 7, n; modulus) for θ in subf)
 
     # (ii) u=2 (primitive in GF(64)) is NOT a 7th power [7 | 63]
-    @test !gf_is_seventh_power(u, n; modulus)
+    @test !gf_is_dth_power(u, 7, n; modulus)
 
     # (iii) u^{2^k−1} = u^3 is NOT a 7th power
-    @test !gf_is_seventh_power(gf_pow(u, (1 << k) - 1, n; modulus), n; modulus)
+    @test !gf_is_dth_power(gf_pow(u, (1 << k) - 1, n; modulus), 7, n; modulus)
 
     # (iv) u^{2^t−1} IS a 7th power when 3∣t (check t=3)
-    @test gf_is_seventh_power(gf_pow(u, (1 << 3) - 1, n; modulus), n; modulus)
+    @test gf_is_dth_power(gf_pow(u, (1 << 3) - 1, n; modulus), 7, n; modulus)
 
     # Theorem 3: Family 2 APN checks (n=6)
     # v=0 → binomial

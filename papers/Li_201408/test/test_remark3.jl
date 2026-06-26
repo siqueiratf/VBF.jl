@@ -17,8 +17,8 @@
     @test are_ccz_equivalent(Fu1, Fu2)
 
     # RDF sets n=8 i=1 (Theorem 5 and Theorem 6 inverses)
-    Fu5_inv = sbox_inverse(theorem5_build(8, 1; u = 1))
-    Fp6_inv = sbox_inverse(theorem6_build(9, 1))
+    Fu5_inv = compositional_inverse(theorem5_build(8, 1; u = 1))
+    Fp6_inv = compositional_inverse(theorem6_build(9, 1))
     @test rdf_set(Fu5_inv) == Set([13,14,15,16,17,18,19,20,23])
     @test rdf_set(Fp6_inv) == Set([11,12,13,14,15,16,17,18,19,21,22,23,28])
 end

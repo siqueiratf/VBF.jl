@@ -26,36 +26,6 @@ function print_header(io::IO = stdout)
 end
 
 """
-    gf_is_cube(x, n; modulus) -> Bool
-
-True if x is a cube in GF(2^n)*. By convention, 0 is a cube.
-Requires 3 | (2^n − 1), i.e. n even.
-Tests x^{(2^n−1)/3} == 1.
-"""
-function gf_is_cube(x::Int, n::Int;
-                     modulus::Int = primitive_polynomial(n))::Bool
-    x == 0 && return true
-    m = (1 << n) - 1
-    m % 3 == 0 ||
-        throw(ArgumentError("gf_is_cube: 3 must divide 2^n−1; need n even, got n=$n"))
-    gf_pow(x, m ÷ 3, n; modulus) == 1
-end
-
-"""
-    gf_is_seventh_power(x, n; modulus) -> Bool
-
-True if x is a seventh power in GF(2^n)*. By convention, 0 is a seventh power.
-When 7 ∤ (2^n−1) the 7th-power map is bijective, so every element is a seventh power.
-"""
-function gf_is_seventh_power(x::Int, n::Int;
-                               modulus::Int = primitive_polynomial(n))::Bool
-    x == 0 && return true
-    m = (1 << n) - 1
-    m % 7 != 0 && return true   # 7∤(2^n−1) → bijective → all elements are 7th powers
-    gf_pow(x, m ÷ 7, n; modulus) == 1
-end
-
-"""
     trace_component_is_bent(F, v; modulus) -> Bool
 
 True if x ↦ Tr(v·F(x)) is a bent Boolean function (N even),

@@ -56,29 +56,6 @@ function bracken_binomial_sbox(k::Int, s::Int;
 end
 
 """
-    differential_uniformity_rowwise(F::SBox) -> Int
-
-Streaming differential uniformity: iterates over all nonzero input differences a
-one at a time, reusing a single counts vector. O(2^n) memory vs O(2^{2n}) for the
-full DDT matrix. Required for n≥13 where the full DDT exceeds available RAM.
-"""
-function differential_uniformity_rowwise(F::SBox)
-    lut = F.lut
-    n   = length(lut)
-    counts = zeros(Int, n)
-    max_du = 0
-    @inbounds for a in 1:(n - 1)
-        fill!(counts, 0)
-        for x in 0:(n - 1)
-            counts[(lut[x + 1] ⊻ lut[(x ⊻ a) + 1]) + 1] += 1
-        end
-        local_max = maximum(counts)
-        local_max > max_du && (max_du = local_max)
-    end
-    max_du
-end
-
-"""
     linearity_rowwise(F::SBox) -> Int
 
 Streaming linearity (max |LAT[a,b]| outside (0,0)): computes one LAT column at a

@@ -11,8 +11,8 @@
 #     2. differential_uniformity(F15) == 2 (APN).  n=10: full DDT; n=14: streaming.
 #     3. EA-mugshot ≠ mugshot of any catalog APN function at n=10 (CCZ-inequivalence proxy).
 # VBF API used: gf_pow, gf_mul, primitive_polynomial, SBox, differential_uniformity,
-#               apn_ea_mugshot, in_subfield, is_cube, f15_sbox,
-#               differential_uniformity_rowwise
+#               apn_ea_mugshot, in_subfield, gf_is_dth_power, f15_sbox,
+#               differential_uniformity (streaming, VBF core)
 
 include(joinpath(@__DIR__, "helpers.jl"))
 using VBF
@@ -35,7 +35,7 @@ function verify_f15_conditions(m::Int, a::Int, b::Int;
     cond_m_odd    = isodd(m)
     cond_gcd3m    = gcd(3, m) == 1
     cond_a_not_sf = !in_subfield(a, m, n; modulus)
-    cond_b_noncube = !is_cube(b, n; modulus)
+    cond_b_noncube = !gf_is_dth_power(b, 3, n; modulus)
     # c/b³ = 1 by construction; verify 1 ∈ F*_{2^m}
     cond_ratio_sf = in_subfield(1, m, n; modulus)
     all_ok = cond_m_odd & cond_gcd3m & cond_a_not_sf & cond_b_noncube & cond_ratio_sf
@@ -56,7 +56,7 @@ function theorem3_3_apn_check(m::Int;
     n       = 2m
     modulus = primitive_polynomial(n)
     F       = f15_sbox(m; a, b, modulus)
-    du = streaming ? differential_uniformity_rowwise(F) : differential_uniformity(F)
+    du = differential_uniformity(F)
     method_tag = streaming ? "streaming row-by-row DDT" : "full DDT"
     is_apn = du == 2
     print_kv("n=$(n) differential_uniformity [$(method_tag)]", du, io)
