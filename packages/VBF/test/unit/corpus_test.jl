@@ -59,8 +59,7 @@ end
         "taniguchi2019_n8"              => ("Taniguchi_201909", 2),
         "beierleleander2022_n8"         => ("Beierle_202201", 12923),
         "beierleleanderperrin2022_n8"   => ("Beierle_202201", 6368),
-        "beierlelangevinleander2025_n8" => ("Beierle_202508", 3775599),
-        "yuperrin2022_qam_n8"           => ("Yu_202211", 5412),
+            "yuperrin2022_qam_n8"           => ("Yu_202211", 5412),
     )
     corpora = list_corpora(db)
     total = 0
