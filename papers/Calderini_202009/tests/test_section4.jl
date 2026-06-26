@@ -24,6 +24,6 @@
     @test_throws ArgumentError c4_matrix(kim_apn())
 
     # VBF's dillon_apn_permutation() is AE to its own inverse (it is F₂/F₃ in paper's notation)
-    Dinv = perm_inverse(D)
+    Dinv = compositional_inverse(D)
     @test are_affine_equivalent(D, Dinv)   # Remark 4: F₂ (and F₃) are AE to their inverses
 end

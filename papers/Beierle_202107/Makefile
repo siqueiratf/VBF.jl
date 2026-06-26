@@ -35,6 +35,15 @@ algorithm1:
 	$(JULIA) $(JULIA_PROJECT) -e 'filename = joinpath("$(MAKEFILE_DIR)", "tuples", "AllTuplesMatrices$(n_value).toml"); if !isfile(filename) println(stderr, "please generate the precomputed matrices using `make corollary1_n6n7n8 n=$(n_value)`"); exit(1); end'
 	$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "algorithm1.jl")); APNSearchClasses($(n_value), "$(class_indices)"; save_results=$(save_results), max_solutions=$(max_solutions), timeout_seconds=$(timeout_seconds), tuples_dir = joinpath("$(MAKEFILE_DIR)", "tuples"))'
 
+#proposition4:
+#...
+
+#proposition5:
+#...
+
+#report:
+#...
+
 help:
 	@echo 'Available commands:'
 	@echo '  test            Run tests'

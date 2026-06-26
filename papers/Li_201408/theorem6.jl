@@ -109,7 +109,7 @@ function theorem6_report(; io::IO = stdout)
     print_check("F' (n=$n): d°(F') = $deg_expected (got $deg_fwd)", deg_fwd == deg_expected, io)
 
     # Remark 2: d°(F'^{-1}) = 5 for m=9 (Magma verified; ≤7 proven)
-    F_prime_inv = sbox_inverse(F_prime)
+    F_prime_inv = compositional_inverse(F_prime)
     deg_inv = algebraic_degree(F_prime_inv)
     print_check("Remark 2: d°(F'^{-1}) = 5 for m=9 (got $deg_inv)", deg_inv == 5, io)
     print_check("Theorem 6.3: d°(F'^{-1}) ≤ 7 (got $deg_inv)", deg_inv <= 7, io)

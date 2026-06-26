@@ -4,7 +4,7 @@
 
     for (n, i) in [(4, 1), (4, 2), (6, 1)]
         Fu_prime = theorem5_build(n, i; u = 1)
-        Fu_prime_inv = sbox_inverse(Fu_prime)
+        Fu_prime_inv = compositional_inverse(Fu_prime)
         deg_expected = (n + 2) ÷ 2
 
         @test is_permutation(Fu_prime)

@@ -68,17 +68,3 @@ Lower bound d(F, G) ≥ ⌈m_F/3⌉ + 1 from Corollary 2.
 """
 lower_bound_distance(m_F::Int) = (m_F + 2) ÷ 3 + 1
 
-"""
-    is_cube_gf(N, c) -> Bool
-
-True iff c is a perfect cube in GF(2^N). 0 is always a cube.
-For N odd: every element is a cube (gcd(3, 2^N-1) = 1).
-For N even: check c^((2^N-1)/3) == 1.
-"""
-function is_cube_gf(N::Int, c::Integer; modulus::Integer = primitive_polynomial(N))
-    Int(c) == 0 && return true
-    ord = (1 << N) - 1  # |GF(2^N)*|
-    g = gcd(3, ord)
-    g == 1 && return true  # N odd: all elements are cubes
-    gf_pow(Int(c), ord ÷ g, N; modulus = Int(modulus)) == 1
-end

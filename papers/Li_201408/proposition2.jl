@@ -27,7 +27,7 @@ function proposition2_report(; io::IO = stdout)
         F = gold_apn(N, i)
         fu_lut, _ = build_fu(F.lut, 1, N)
         Fu = SBox{n}(fu_lut)
-        Fu_inv = sbox_inverse(Fu)
+        Fu_inv = compositional_inverse(Fu)
         got = algebraic_degree(Fu_inv)
         ok = got <= 3
         print_check("n=$n i=$i: d°(F_u^{-1}) ≤ 3 (got $got)", ok, io)

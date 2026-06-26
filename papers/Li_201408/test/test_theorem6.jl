@@ -13,5 +13,5 @@
     @test differential_uniformity(F_prime) == 4
 
     # Remark 2: d°(F'^{-1}) = 5 for m=9
-    @test algebraic_degree(sbox_inverse(F_prime)) == 5
+    @test algebraic_degree(compositional_inverse(F_prime)) == 5
 end

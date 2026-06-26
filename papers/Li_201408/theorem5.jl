@@ -42,7 +42,7 @@ function theorem5_report(; io::IO = stdout)
         F = gold_apn(N, i)
         fu_prime_lut, _ = build_fu_prime(F.lut, 1, N)
         Fu_prime = SBox{n}(fu_prime_lut)
-        Fu_prime_inv = sbox_inverse(Fu_prime)
+        Fu_prime_inv = compositional_inverse(Fu_prime)
 
         perm = is_permutation(Fu_prime)
         du   = differential_uniformity(Fu_prime)

@@ -60,6 +60,28 @@ end
     end
 end
 
+@testset "gf_is_dth_power: cubes, bijective case, subgroup count" begin
+    for n in 2:8
+        mod = primitive_polynomial(n)
+        m = (1 << n) - 1
+        # 0 is a d-th power for every d
+        @test gf_is_dth_power(0, 3, n; modulus = mod)
+        # parity with the index-(2ⁿ-1, d) subgroup test on nonzero elements
+        for x = 1:m
+            g = gcd(3, m)
+            @test gf_is_dth_power(x, 3, n; modulus = mod) == (gf_pow(x, m ÷ g, n; modulus = mod) == 1)
+        end
+        # the d-th powers of GF(2ⁿ)* number exactly (2ⁿ-1)/gcd(d, 2ⁿ-1)
+        for d in (3, 5, 7)
+            cnt = count(x -> gf_is_dth_power(x, d, n; modulus = mod), 1:m)
+            @test cnt == m ÷ gcd(d, m)
+        end
+    end
+    # gcd(d, 2ⁿ-1) = 1 ⇒ y↦yᵈ is a bijection ⇒ everything is a d-th power
+    @test all(gf_is_dth_power(x, 7, 4) for x = 0:15)   # 7 ∤ 15
+    @test all(gf_is_dth_power(x, 3, 5) for x = 0:31)   # 3 ∤ 31 (n odd)
+end
+
 @testset "argument validation" begin
     @test_throws ArgumentError gf_relative_trace(1, 6, 4)   # 4 ∤ 6
     @test_throws ArgumentError in_subfield(1, 4, 6)         # 4 ∤ 6

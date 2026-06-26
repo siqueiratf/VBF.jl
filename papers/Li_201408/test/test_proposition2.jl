@@ -6,7 +6,7 @@
         F = gold_apn(N, i)
         fu_lut, _ = build_fu(F.lut, 1, N)
         Fu = SBox{n}(fu_lut)
-        Fu_inv = sbox_inverse(Fu)
+        Fu_inv = compositional_inverse(Fu)
         @test algebraic_degree(Fu_inv) <= 3
     end
 end

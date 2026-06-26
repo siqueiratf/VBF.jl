@@ -79,7 +79,7 @@ Returns key results for testing.
 function section5_1_analysis(; limit::Int = 32, io::IO = stdout)
     K = kim_apn()
     D = dillon_apn_permutation()
-    Dinv = perm_inverse(D)
+    Dinv = compositional_inverse(D)
 
     print_section(io, "Basic properties of Kim and Dillon functions")
     kim_quad = algebraic_degree(K) == 2
@@ -135,8 +135,8 @@ function section5_1_analysis(; limit::Int = 32, io::IO = stdout)
     print_check(io, "VBF Dillon (= F₂/F₃ type) is AE to its inverse (Remark 4)", dillon_ae_inv)
 
     # Among affine-class reps, count those AE to their own inverse
-    ae_inv_reps = filter(r -> are_affine_equivalent(r, perm_inverse(r)), perm_ae_classes)
-    not_ae_inv_reps = filter(r -> !are_affine_equivalent(r, perm_inverse(r)), perm_ae_classes)
+    ae_inv_reps = filter(r -> are_affine_equivalent(r, compositional_inverse(r)), perm_ae_classes)
+    not_ae_inv_reps = filter(r -> !are_affine_equivalent(r, compositional_inverse(r)), perm_ae_classes)
     print_kv(io, "Perm affine-class reps AE to their own inverse (F₂/F₃ types)", length(ae_inv_reps))
     print_kv(io, "Perm affine-class reps NOT AE to own inverse (F₁/F₁⁻¹ types)", length(not_ae_inv_reps))
     println(io, "  Paper expects: 2 of each type (total 4 perm affine-classes)")

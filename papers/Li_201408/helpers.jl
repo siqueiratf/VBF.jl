@@ -11,7 +11,7 @@
 #   4. build_fu(F, u, N)         = Theorem 2: F_u = L_u∘F^{-1} restricted to H_u
 #   5. build_fu_prime(F, u, N)   = Theorem 5: F_u' = F_u + id restricted to H_u
 #   6. tr0_subspace(m)           = {x ∈ GF(2^m) | Tr_m(x) = 0}, sorted
-#   7. sbox_inverse(s)           = compositional inverse LUT
+#   7. compositional_inverse(s)  = functional inverse of a permutation SBox (VBF core)
 #   8. rdf_set(F)                = {RD_F(a,4) | a ∈ F*} (EA-invariant)
 # VBF API used: gf_mul, gf_pow, primitive_polynomial, SBox, ddt
 
@@ -119,20 +119,6 @@ Has 2^{m-1} elements.
 """
 function tr0_subspace(m::Int; modulus::Int = primitive_polynomial(m))
     sort([x for x in 0:(1<<m)-1 if gf_trace(x, m; modulus = modulus) == 0])
-end
-
-"""
-    sbox_inverse(s::SBox{N}) -> SBox{N}
-
-Compositional inverse: result.lut[s.lut[x+1]+1] = x for all x.
-"""
-function sbox_inverse(s::SBox{N}) where {N}
-    q = 1 << N
-    inv_lut = Vector{Int}(undef, q)
-    for x in 0:q-1
-        inv_lut[s.lut[x+1]+1] = x
-    end
-    SBox{N}(inv_lut)
 end
 
 """

@@ -7,7 +7,7 @@
 #   2. C₄(F): code for affine equivalence of permutations (Theorem 6)
 #   3. ZW(λ): zero-Walsh set for component λ (Section 3, before eq. 4)
 #   4. S_F: support set for Procedure 2 (Section 3, eq. 4)
-#   5. Utilities: power_sbox, perm_inverse, component_degrees
+#   5. Utilities: power_sbox, compositional_inverse, component_degrees
 # VBF API used: lat, ccz_matrix, ea_matrix, conway_polynomial, gf_pow, algebraic_degree
 
 using VBF
@@ -99,21 +99,6 @@ function sf_set(F::SBox{N,T}) where {N,T}
         end
     end
     return S
-end
-
-"""
-    perm_inverse(F) -> SBox
-
-Functional inverse of a permutation SBox.
-"""
-function perm_inverse(F::SBox{N,T}) where {N,T}
-    is_permutation(F) || throw(ArgumentError("perm_inverse: F must be a permutation"))
-    n_size = 1 << N
-    inv_lut = Vector{T}(undef, n_size)
-    for x = 0:(n_size - 1)
-        inv_lut[F.lut[x + 1] + 1] = T(x)
-    end
-    return SBox{N,T}(inv_lut)
 end
 
 """

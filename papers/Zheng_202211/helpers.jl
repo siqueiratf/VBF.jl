@@ -20,18 +20,6 @@ function print_header(io::IO = stdout)
 end
 
 """
-    is_cube(b, n; modulus) -> Bool
-
-True iff b is a cube in F_{2^n}*, i.e. b^{(2^n-1)/3} = 1.
-Requires 3 | 2^n-1.
-"""
-function is_cube(b::Int, n::Int; modulus::Int = primitive_polynomial(n))
-    ord = (1 << n) - 1
-    @assert mod(ord, 3) == 0 "3 must divide 2^n-1 for cube check"
-    gf_pow(b, ord ÷ 3, n; modulus) == 1
-end
-
-"""
     zheng_lut(m, s, a, b, c; modulus) -> Vector{Int}
 
 LUT for the Zheng et al. trace-form quadrinomial over GF(2^{2m}):
@@ -79,24 +67,3 @@ function f15_sbox(m::Int; a::Int = 2, b::Int = 2,
     SBox(zheng_lut(m, 3, a, b, c; modulus))
 end
 
-"""
-    differential_uniformity_rowwise(F::SBox) -> Int
-
-Streaming differential uniformity: one input-difference at a time, O(2^n) memory.
-Required for n≥13 where the full DDT matrix (2^n × 2^n × 8 bytes) exceeds RAM.
-"""
-function differential_uniformity_rowwise(F::SBox)
-    lut = F.lut
-    n   = length(lut)
-    counts = zeros(Int, n)
-    max_du = 0
-    @inbounds for a in 1:(n - 1)
-        fill!(counts, 0)
-        for x in 0:(n - 1)
-            counts[(lut[x + 1] ⊻ lut[(x ⊻ a) + 1]) + 1] += 1
-        end
-        local_max = maximum(counts)
-        local_max > max_du && (max_du = local_max)
-    end
-    max_du
-end

@@ -11,7 +11,7 @@
 #     3. r_i ← subfield elements in GF(2^k) (including zero for the pure trinomial)
 #     4. F ← family1_lut(k, s, b, c, r)
 #     5. assert differential_uniformity(SBox(F)) == 2
-# VBF API used: SBox, differential_uniformity, gf_pow, gf_is_cube, in_subfield
+# VBF API used: SBox, differential_uniformity, gf_pow, gf_is_dth_power, in_subfield
 
 include(joinpath(@__DIR__, "helpers.jl"))
 
@@ -61,7 +61,7 @@ function theorem1_report(io::IO = stdout)
         n       = 2k
         b, c    = 2, gf_pow(2, 2, n; modulus)
         # verify parameter conditions
-        @assert !gf_is_cube(b, n; modulus)       "b=$b must not be a cube in GF(2^$n)"
+        @assert !gf_is_dth_power(b, 3, n; modulus)       "b=$b must not be a cube in GF(2^$n)"
         @assert !in_subfield(c, k, n; modulus) "c=$c must not lie in GF(2^$k)"
         F   = theorem1_sbox(k, s, ridx; modulus)
         apn = differential_uniformity(F) == 2
