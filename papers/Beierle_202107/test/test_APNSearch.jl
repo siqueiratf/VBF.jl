@@ -93,6 +93,14 @@ end
     @test format_sbox_polynomial(identity_lut, 3) == "x^1"
 end
 
+# The n=3 tuple/matrix constants are a generated, git-ignored artifact
+# (`make corollary1_n6n7n8 n=3`). Skip the search tests that need them when absent.
+_TUPLES3_FILE = joinpath(dirname(@__DIR__), "tuples", "AllTuplesMatrices3.toml")
+if !isfile(_TUPLES3_FILE)
+    @testset "APN Search (n=3 tuple constants absent)" begin
+        @test_skip "generate papers/Beierle_202107/tuples/AllTuplesMatrices3.toml"
+    end
+else
 @testset "APN Search Class Selection" begin
     @test all_precomputed_tuple_class_indices(3) == [1, 2, 3, 4]
     @test normalize_precomputed_tuple_classes(3, "all") == [1, 2, 3, 4]
