@@ -69,11 +69,15 @@ end
 """
     differential_uniformity(s::SBox) -> Int
 
-Largest entry of `ddt(s)` outside row `0`. Equivalently, the smallest
-`δ` for which `s` is *differentially δ-uniform*: for every non-zero
-input difference `a` and every output difference `b`, the equation
-`F(x ⊕ a) ⊕ F(x) = b` has at most `δ` solutions `x`. The minimum `δ = 2`
-(for even `N`) characterises an APN function.
+Largest DDT entry outside row `0`: the smallest `δ` for which `s` is
+*differentially δ-uniform*, i.e. for every non-zero input difference `a` and
+every output difference `b` the equation `F(x ⊕ a) ⊕ F(x) = b` has at most
+`δ` solutions `x`. The minimum `δ = 2` (for even `N`) characterises an APN
+function.
+
+Computed one input difference at a time, so it uses `O(2ᴺ)` memory instead of
+materialising the full `2ᴺ × 2ᴺ` DDT — usable for large `N` where [`ddt`](@ref)
+would exhaust memory.
 
 # Examples
 ```jldoctest
@@ -90,11 +94,17 @@ julia> differential_uniformity(load_literature_sbox("GIFT"))
 ```
 """
 function differential_uniformity(s::SBox)
-    d = ddt(s)
-    n = size(d, 1)
+    lut = s.lut
+    fieldsize = length(lut)
+    counts = zeros(Int, fieldsize)
     u = 0
-    @inbounds for a = 2:n, b = 1:n
-        d[a, b] > u && (u = d[a, b])
+    @inbounds for a = 1:(fieldsize-1)
+        fill!(counts, 0)
+        for x = 0:(fieldsize-1)
+            counts[(Int(lut[x+1]) ⊻ Int(lut[(x⊻a)+1]))+1] += 1
+        end
+        m = maximum(counts)
+        m > u && (u = m)
     end
     u
 end
