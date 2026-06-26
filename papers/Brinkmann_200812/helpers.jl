@@ -112,6 +112,3 @@ function n5_all_seven()
     vcat(powers, nonpow)
 end
 
-print_section(io::IO, s) = println(io, "\n## $s")
-print_check(io::IO, desc, pass::Bool) = println(io, "  [$(pass ? "PASS" : "FAIL")] $desc")
-print_kv(io::IO, k, v) = println(io, "  $k: $v")

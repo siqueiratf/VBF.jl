@@ -156,17 +156,9 @@ function print_header(io::IO, title::String, n::Int, mod::Int)
     println(io, "=" ^ 64)
 end
 
-function print_section(io::IO, title::String)
-    println(io)
-    println(io, "## $title")
-end
-
 function print_check(io::IO, desc::String, passed::Bool)
     tag = passed ? "[PASS]" : "[FAIL]"
     println(io, "  $tag $desc")
     passed || error("Check failed: $desc")
 end
 
-function print_kv(io::IO, k::String, v)
-    println(io, "  $k: $v")
-end

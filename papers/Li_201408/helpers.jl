@@ -191,7 +191,6 @@ function rdf_set(F::SBox{N}) where {N}
     result
 end
 
-
 function print_header(io::IO = stdout)
     println(io, "=" ^ 72)
     println(io, "Li, Wang (2014): Constructing Differentially 4-Uniform Permutations")
@@ -201,14 +200,3 @@ function print_header(io::IO = stdout)
     println(io, "=" ^ 72)
 end
 
-function print_section(title::AbstractString, io::IO = stdout)
-    println(io, "\n── ", title, " ", "─" ^ max(0, 68 - length(title)))
-end
-
-function print_check(label::AbstractString, ok::Bool, io::IO = stdout)
-    println(io, "  ", ok ? "[ OK ]" : "[FAIL]", " ", label)
-end
-
-function print_kv(label::AbstractString, value, io::IO = stdout)
-    println(io, "  ", label, ": ", value)
-end

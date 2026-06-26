@@ -195,22 +195,6 @@ function print_header(io::IO = stdout)
     println(io)
 end
 
-function print_section(title::AbstractString, io::IO = stdout)
-    println(io, "\n## ", title)
-end
-
-function status_str(ok::Bool)
-    ok ? "PASS" : "FAIL"
-end
-
-function print_check(label::AbstractString, ok::Bool, io::IO = stdout)
-    println(io, "  [", status_str(ok), "] ", label)
-end
-
-function print_kv(label::AbstractString, value, io::IO = stdout)
-    println(io, "  ", label, ": ", value)
-end
-
 function search_completeness_label(exhaustive::Bool, evaluated::Int, budget::Int)
     if exhaustive
         "exhaustive ($(evaluated) candidates evaluated)"

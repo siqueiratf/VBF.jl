@@ -14,26 +14,12 @@
 
 using VBF
 
-
 function print_header(io::IO = stdout)
     println(io, "=" ^ 72)
     println(io, "Bracken, Byrne, Markin, McGuire (2011): A Few More Quadratic APN Functions")
     println(io, "Cryptography and Communications 3:43–53, 2011")
     println(io, "=" ^ 72)
 end
-
-function print_section(title::AbstractString, io::IO = stdout)
-    println(io, "\n── ", title, " ", "─" ^ max(0, 70 - length(title) - 4))
-end
-
-function print_check(label::AbstractString, ok::Bool, io::IO = stdout)
-    println(io, "  ", ok ? "[ OK ]" : "[FAIL]", " ", label)
-end
-
-function print_kv(label::AbstractString, value, io::IO = stdout)
-    println(io, "  ", label, ": ", value)
-end
-
 
 """
     bracken_lut(k, s, u, v, w; modulus) -> Vector{Int}
@@ -70,7 +56,6 @@ function bracken_lut(k::Int, s::Int, u::Int, v::Int, w::Int;
      gf_mul(c4, gf_pow(x, e4, n; modulus), n; modulus)
      for x in 0:(1<<n)-1]
 end
-
 
 """
     gf_subfield_elem(n, k, i; modulus) -> Int

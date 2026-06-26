@@ -36,15 +36,3 @@ function has_f2_cyclic_structure(M::Matrix{Int}, n::Int)
     true
 end
 
-function print_section(io::IO, title::String)
-    println(io, "\n## $title")
-end
-
-function print_check(io::IO, desc::String, ok::Bool)
-    tag = ok ? "PASS" : "FAIL"
-    println(io, "  [$tag] $desc")
-end
-
-function print_kv(io::IO, key, value)
-    println(io, "  $key: $value")
-end

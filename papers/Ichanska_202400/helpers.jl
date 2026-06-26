@@ -119,14 +119,3 @@ function orbit_partition(elements::AbstractVector{Int},
     orbits
 end
 
-function print_section(io::IO, title::String)
-    println(io, "\n## ", title)
-end
-
-function print_check(io::IO, desc::String, pass::Bool = true)
-    println(io, "  [", pass ? "PASS" : "FAIL", "] ", desc)
-end
-
-function print_kv(io::IO, key::String, val)
-    println(io, "  ", key, ": ", val)
-end

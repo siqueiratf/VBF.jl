@@ -54,15 +54,3 @@ function print_header(io::IO = stdout)
     println(io)
 end
 
-function print_section(io::IO, title::String)
-    println(io, "\n## $title")
-end
-
-function print_check(io::IO, label::String, ok::Bool)
-    status = ok ? "PASS" : "FAIL"
-    println(io, "  [$status] $label")
-end
-
-function print_kv(io::IO, key::String, val)
-    println(io, "  $key: $val")
-end

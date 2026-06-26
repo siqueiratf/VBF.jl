@@ -16,19 +16,6 @@ function print_header(io::IO = stdout)
     println(io, "=" ^ 72)
 end
 
-function print_section(title::AbstractString, io::IO = stdout)
-    println(io, "\n── ", title, " ", "─" ^ max(0, 70 - length(title) - 4))
-end
-
-function print_check(label::AbstractString, ok::Bool, io::IO = stdout)
-    tag = ok ? "[ OK ]" : "[FAIL]"
-    println(io, "  ", tag, " ", label)
-end
-
-function print_kv(label::AbstractString, value, io::IO = stdout)
-    println(io, "  ", label, ": ", value)
-end
-
 # ── Quadratic-part extraction ────────────────────────────────────────────────
 
 """

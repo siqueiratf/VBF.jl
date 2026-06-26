@@ -7,7 +7,6 @@
 
 using VBF
 
-
 """Print paper title, author, venue."""
 function print_header(io::IO = stdout)
     println(io, "=" ^ 72)
@@ -15,22 +14,6 @@ function print_header(io::IO = stdout)
     println(io, "arXiv:1911.02608 / Des. Codes Cryptogr. 88(8):1387–1416")
     println(io, "=" ^ 72)
 end
-
-"""Print a titled section separator."""
-function print_section(title::AbstractString, io::IO = stdout)
-    println(io, "\n── ", title, " ", "─" ^ max(0, 70 - length(title) - 4))
-end
-
-"""Print pass/fail indicator with label."""
-function print_check(label::AbstractString, ok::Bool, io::IO = stdout)
-    println(io, "  ", ok ? "[ OK ]" : "[FAIL]", " ", label)
-end
-
-"""Print a key–value pair."""
-function print_kv(label::AbstractString, value, io::IO = stdout)
-    println(io, "  ", label, ": ", value)
-end
-
 
 """
     normalize_apn(s::SBox{N}) -> SBox{N}
@@ -54,7 +37,6 @@ function normalize_apn(s::SBox{N}) where {N}
     return SBox(lut)
 end
 
-
 """
     compute_s1(s::SBox{N}) -> Int
 
@@ -71,7 +53,6 @@ function compute_s1(s::SBox{N}) where {N}
     end
     return total
 end
-
 
 """
     compute_s2(s::SBox{N}) -> Int
@@ -90,7 +71,6 @@ function compute_s2(s::SBox{N}) where {N}
     end
     return total
 end
-
 
 """
     theorem17_holds(s::SBox{N}) -> (s1, s2, dd10, holds)

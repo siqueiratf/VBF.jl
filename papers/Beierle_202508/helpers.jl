@@ -38,21 +38,6 @@ function print_header(io::IO = stdout)
     println(io)
 end
 
-function print_section(title::AbstractString, io::IO = stdout)
-    println(io)
-    println(io, "## ", title)
-end
-
-status_str(ok::Bool) = ok ? "PASS" : "FAIL"
-
-function print_check(label::AbstractString, ok::Bool, io::IO = stdout)
-    println(io, "  [", status_str(ok), "] ", label)
-end
-
-function print_kv(label::AbstractString, value, io::IO = stdout)
-    println(io, "  ", label, ": ", value)
-end
-
 function completeness_label(exhaustive::Bool, evaluated::Integer, budget::Integer)
     exhaustive ? "exhaustive ($(evaluated) evaluated)" :
     "budget-limited ($(evaluated)/$(budget) evaluated)"

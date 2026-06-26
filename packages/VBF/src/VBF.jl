@@ -113,6 +113,7 @@ include("random/random_objects.jl")
 
 # 8. presentation
 include("io/display.jl")
+include("io/report.jl")
 
 include("exports.jl")
 

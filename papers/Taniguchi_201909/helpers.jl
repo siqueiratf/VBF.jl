@@ -17,16 +17,3 @@ function print_header(io::IO = stdout)
     println(io)
 end
 
-function print_section(io::IO, title::String)
-    println(io)
-    println(io, "## $title")
-end
-
-function print_check(io::IO, desc::String, pass::Bool)
-    tag = pass ? "[PASS]" : "[FAIL]"
-    println(io, "  $tag $desc")
-end
-
-function print_kv(io::IO, key::String, value)
-    println(io, "  $(rpad(key * ":", 30)) $value")
-end

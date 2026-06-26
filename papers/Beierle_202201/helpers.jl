@@ -17,22 +17,6 @@ function print_header(io::IO = stdout)
     println(io, "=" ^ 72)
 end
 
-"""Print a titled section separator."""
-function print_section(title::AbstractString, io::IO = stdout)
-    println(io, "\n── ", title, " ", "─" ^ max(0, 70 - length(title) - 4))
-end
-
-"""Print pass/fail indicator with label."""
-function print_check(label::AbstractString, ok::Bool, io::IO = stdout)
-    tag = ok ? "[ OK ]" : "[FAIL]"
-    println(io, "  ", tag, " ", label)
-end
-
-"""Print a key–value pair."""
-function print_kv(label::AbstractString, value, io::IO = stdout)
-    println(io, "  ", label, ": ", value)
-end
-
 # ── Dataset I/O ──────────────────────────────────────────────────────────────
 
 """
