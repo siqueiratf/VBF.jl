@@ -1,6 +1,6 @@
 @testitem "papers" begin
 using Test
-using Logging
+using Base.CoreLogging: with_logger, NullLogger
 
 const PAPERS_DIR = normpath(joinpath(@__DIR__, "../../../../papers"))
 
