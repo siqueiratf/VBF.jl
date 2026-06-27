@@ -1,6 +1,8 @@
 [deps]
 DBInterface = "a10d1c49-ce27-4219-8d33-6db1a4562965"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 GaloisFields = "8d0d7f98-d412-5cd4-8397-071c807280aa"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
 SQLite = "0aa819cd-b072-5ff4-a722-6bc24af294d9"
