@@ -10,6 +10,6 @@
 
     # All 6 conjectured CCZ-reps are quadratic APN over GF(2^11)
     for (i, F) in enumerate(boxes)
-        @test is_quadratic_apn(F)  "Table 3 F$i failed APN check (n=11)"
+        @test is_quadratic_apn(F)  # Table 3 F$i (n=11)
     end
 end
