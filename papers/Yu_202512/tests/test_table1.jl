@@ -5,7 +5,7 @@
 
     # All 3 CCZ-reps are quadratic APN over GF(2^10)
     for (i, F) in enumerate(boxes)
-        @test is_quadratic_apn(F)  "Table 1 F$i failed APN check"
+        @test is_quadratic_apn(F)  # Table 1 F$i
     end
 
     # Pairwise CCZ-inequivalence: ortho-derivative differential spectra must differ
