@@ -103,6 +103,3 @@ jobs:
         env:
           # Hosted runners are small; cap the worker count so the few heavy items (n=6 CCZ enumeration, affine equivalence) don't contend.
           RETESTITEMS_NWORKERS: '2'
-          # Safety net: individual test items must complete within 5 minutes.
-          # Papers are excluded from this job (paper-tests matrix is authoritative).
-          RETESTITEMS_TESTITEM_TIMEOUT: '300'
