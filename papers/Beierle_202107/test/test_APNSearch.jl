@@ -168,3 +168,4 @@ end
         write(constants_filename, original_text)
     end
 end
+end  # if isfile(_TUPLES3_FILE)

@@ -98,17 +98,26 @@ function import_one_class!(db::SQLite.DB, path::AbstractString, class::Int;
     rep = SBox{n}(terms_to_lut(rep_terms, n, modulus; powtab = powtab))
     differential_uniformity(rep) == 2 || error("simonberg: class $class representative not APN")
     rep_sha = lut_sha256_hex(rep)
+    notes_str = "Simon-Berg thesis: representative of CCZ class $(class) of " *
+                "GF(2²)-coefficient quadratic APN over GF(2⁸); $(length(polys)) members " *
+                "(full membership in bulk corpus simonberg_gf4_n8)"
     rep_inserted = false
     if haskey(existing, rep_sha)
-        merge_source_repo!(db, existing[rep_sha], source_tag)   # rep already present → tag it
+        row_id = existing[rep_sha]
+        merge_source_repo!(db, row_id, bfa_repo)
+        merge_source_repo!(db, row_id, source_tag)
+        # Promote the existing row to CCZ-rep-GF4 so it appears in family queries.
+        SQLite.execute(db,
+            "UPDATE functions SET family = " * VBFCatalog._sql_quote("CCZ-rep-GF4") *
+            ", canonical_name = " * VBFCatalog._sql_quote("SimonBerg_GF4_n8_class_$(class)") *
+            ", notes = " * VBFCatalog._sql_quote(notes_str) *
+            " WHERE id = $(row_id) AND family != " * VBFCatalog._sql_quote("CCZ-rep-GF4"))
     else
         _insert_ccz_rep_row!(db, rep;
             canonical_name = "SimonBerg_GF4_n8_class_$(class)",
             source_repo = bfa_repo * "|" * source_tag,
             contributor = contributor, added_date = added_date,
-            notes = "Simon-Berg thesis: representative of CCZ class $(class) of " *
-                    "GF(2²)-coefficient quadratic APN over GF(2⁸); $(length(polys)) members " *
-                    "(full membership in bulk corpus simonberg_gf4_n8)")
+            notes = notes_str)
         rep_inserted = true
     end
 
