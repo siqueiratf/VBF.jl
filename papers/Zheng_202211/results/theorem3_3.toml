@@ -1,0 +1,7 @@
+# Theorem 3.3 Case iii (F15) results
+all_conditions_ok = true
+all_apn_ok = true
+n10_du = 2
+n10_is_apn = true
+n14_du = 2
+n14_is_apn = true
