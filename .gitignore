@@ -6,8 +6,6 @@
 *.dll
 *.o
 *.a
-*.pdf
-*.md
 *.tex
 *.txt
 *.sqlite
@@ -32,5 +30,8 @@ docs/src/api/
 # Source PDFs of cited papers are copyrighted and never committed.
 papers/*.pdf
 /apn-lib/
+
+# Local planning notes, never committed.
+**/PLAN.md
 
 
