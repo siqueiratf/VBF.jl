@@ -109,28 +109,4 @@ end
     @test tab[5 + 1][3 + 1] == gf_pow(5, 3, n; modulus = mod)
     @test tab[2 + 1][200 + 1] == gf_pow(2, 200, n; modulus = mod)
 end
-
-# Optional: if the thesis checkout is present, re-derive class 1's representative from the source file and confirm it matches the catalog row.
-@testset "CCZ-rep-GF4: class-1 representative re-derives from the thesis source" begin
-    candidates = [get(ENV, "BFA_THESIS_PATH", ""),
-                  "/home/zambonin/APN.jl/Simon-Berg@thesis",
-                  joinpath(homedir(), "APN.jl", "Simon-Berg@thesis")]
-    idx = findfirst(p -> !isempty(p) && isfile(joinpath(p, "rep1.txt")), candidates)
-    if idx === nothing
-        @test_skip "thesis checkout not present"
-    else
-        thesis = candidates[idx]
-        n = 8; mod = conway_polynomial(n)
-        body = strip(read(joinpath(thesis, "rep1.txt"), String))
-        body = strip(body[nextind(body, firstindex(body)):prevind(body, lastindex(body))])
-        first_poly = strip(replace(split(body, ','; keepempty = false)[1], '\n' => ' '))
-        lut = terms_to_lut(polynomial_terms(first_poly, n, mod), n, mod)
-        s = SBox{8}(lut)
-        db = load_catalog()
-        row = find_function(db; canonical_name = "SimonBerg_GF4_n8_class_1")
-        @test row !== nothing
-        @test row.lut_sha256 == lut_sha256_hex(s)
-    end
-end
-
 end

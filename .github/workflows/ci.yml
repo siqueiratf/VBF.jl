@@ -18,8 +18,59 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  paper-tests:
+    name: Paper • ${{ matrix.paper }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      matrix:
+        paper:
+          - Beierle_202107
+          - Beierle_202201
+          - Beierle_202508
+          - Biryukov_200300
+          - Bracken_200807
+          - Bracken_201103
+          - Bracken_201205
+          - Brinkmann_200812
+          - Budaghyan_200506
+          - Budaghyan_202008
+          - Budaghyan_202009
+          - Budaghyan_202011
+          - Calderini_202009
+          - Canteaut_202205
+          - Gologlu_202207
+          - Ichanska_202400
+          - Kaleyski_201911
+          - Kaleyski_202203
+          - Kalgin_202000
+          - Kuznetsov_202606
+          - Li_201408
+          - Li_202402
+          - Taniguchi_201909
+          - Yu_202012
+          - Yu_202211d
+          - Yu_202512
+          - Zheng_202211
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Install Julia 1.12
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+
+      - name: Cache Julia depot
+        uses: julia-actions/cache@v2
+
+      - name: Run paper tests
+        run: make -C papers/${{ matrix.paper }} test
+
   test:
     name: Test • Julia ${{ matrix.julia }} • ${{ matrix.os }}
+    needs: [paper-tests]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
