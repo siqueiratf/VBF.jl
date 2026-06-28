@@ -4,5 +4,6 @@ projects = ["packages/VBF", "packages/VBFCatalog"]
 [deps]
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Nemo = "2edaba10-b0f1-5616-af89-8c11ac63239a"
 VBF = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
 VBFCatalog = "806e9246-bd0c-40c6-b7ea-7b2eabc2fba0"

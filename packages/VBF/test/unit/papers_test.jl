@@ -2,6 +2,11 @@
 using Test
 using Base.CoreLogging: with_logger, NullLogger
 
+if get(ENV, "RUN_PAPER_TESTS", "false") != "true"
+    @test_skip "paper integration tests skipped (set RUN_PAPER_TESTS=true to enable)"
+    return
+end
+
 const PAPERS_DIR = normpath(joinpath(@__DIR__, "../../../../papers"))
 
 function _paper_runtests(dir::String)
