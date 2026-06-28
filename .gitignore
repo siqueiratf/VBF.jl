@@ -6,8 +6,6 @@
 *.dll
 *.o
 *.a
-*.pdf
-*.md
 *.tex
 *.txt
 *.sqlite
@@ -32,5 +30,12 @@ docs/src/api/
 # Source PDFs of cited papers are copyrighted and never committed.
 papers/*.pdf
 /apn-lib/
+
+# Claude Code — session-local, never committed.
+CLAUDE.md
+.claude/settings.local.json
+
+# Claude Code planning files — ephemeral, never committed.
+**/PLAN.md
 
 
