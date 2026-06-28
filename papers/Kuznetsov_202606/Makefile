@@ -3,7 +3,7 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../..)
 JULIA_PROJECT := --project=$(ROOT)
 
-.PHONY: help test report section4 algorithm1 theorem4 table2 table3 clean_results
+.PHONY: help test report section4 algorithm1 theorem4 table2 table3 phase2 clean_results
 
 # Overridable parameters
 sample_size ?= 100
@@ -40,10 +40,14 @@ table3:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "table3.jl")); table3_report()'
 
+phase2:
+	$(JULIA) $(JULIA_PROJECT) -e \
+	  'include(joinpath("$(MAKEFILE_DIR)", "report.jl")); phase2_report()'
+
 clean_results:
 	rm -rf "$(MAKEFILE_DIR)/results"
 
 help:
 	@echo 'Paper: Kuznetsov (2026) — Quadratic APN Functions via Gröbner Basis Search'
-	@echo 'Targets:  test  report  section4  algorithm1  theorem4  table2  table3  clean_results'
+	@echo 'Targets:  test  report  section4  algorithm1  theorem4  table2  table3  phase2  clean_results'
 	@echo 'Params:   sample_size=$(sample_size)  seed=$(seed)'
