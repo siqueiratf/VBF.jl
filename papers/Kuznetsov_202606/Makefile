@@ -66,20 +66,20 @@ survey:
 basis:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/generate_rows.jl $(n) $(class)
 
-# build the GPU searchers + CPU classifier
-searchers: apn_search_ultra apn_search_n7 fast_checker
+# build the GPU searcher (one source, -DDIM_N per dimension) + CPU classifier
+searchers: apn_search_n8 apn_search_n7 fast_checker
 
-apn_search_ultra: apn_search_ultra.cpp
-	$(HIPCC) $(HIPFLAGS) -o $@ $<
+apn_search_n8: apn_search.cpp
+	$(HIPCC) $(HIPFLAGS) -DDIM_N=8 -o $@ $<
 
-apn_search_n7: apn_search_n7.cpp
-	$(HIPCC) $(HIPFLAGS) -o $@ $<
+apn_search_n7: apn_search.cpp
+	$(HIPCC) $(HIPFLAGS) -DDIM_N=7 -o $@ $<
 
 fast_checker: fast_checker.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 clean_build:
-	rm -f apn_search_ultra apn_search_n7 fast_checker
+	rm -f apn_search_n8 apn_search_n7 fast_checker
 
 help:
 	@echo 'Paper: Kuznetsov (2026) — Quadratic APN Functions via Gröbner Basis Search'
