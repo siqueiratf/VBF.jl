@@ -40,6 +40,22 @@ curl -fsSL "https://zenodo.org/api/records/4738942/files/apn_9bit.txt/content"  
 curl -fsSL "https://zenodo.org/api/records/4738942/files/apn_10bit.txt/content" -o catalogs/bl2021_10bit.txt
 echo "wrote catalogs/bl2021_8bit.txt : $(wc -l < catalogs/bl2021_8bit.txt) LUTs (+ dim-9/10)"
 
+echo "fetching dim-7 known APN reps (sboxU reprs7)"
+TMP7="$(mktemp)"
+curl -fsSL "https://raw.githubusercontent.com/lpp-crypto/sboxU/main/sboxU/scripts/apnDB/reprs7.py" -o "$TMP7"
+python3 - "$TMP7" <<'PY'
+import sys, re, json
+src = re.sub(r'^from .*$', '', open(sys.argv[1]).read(), flags=re.M)
+ns = {'get_sbox': (lambda x: x)}
+exec(src, ns)
+reps = ns['ccz_class_representatives']
+assert all(len(r) == 128 for r in reps), "expected 128-entry dim-7 LUTs"
+json.dump({"source": "sboxU reprs7 ccz_class_representatives (known dim-7 APN)",
+           "n": 7, "count": len(reps), "luts": reps}, open("catalogs/apn7_known.json", "w"))
+print(f"wrote catalogs/apn7_known.json : {len(reps)} dim-7 APN reps")
+PY
+rm -f "$TMP7"
+
 if [[ "${1:-}" == "--full" || "${1:-}" == "--25" ]]; then
     URL25="https://zenodo.org/api/records/16752428/files/new_apns.txt/content"
     echo "fetching BLP25 (~3.4 GB): $URL25"

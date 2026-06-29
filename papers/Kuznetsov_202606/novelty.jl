@@ -35,6 +35,7 @@ const BL2021    = joinpath(CAT_DIR, "bl2021_8bit.txt")    # Beierle–Leander 20
 const BL2021_ANF = joinpath(CAT_DIR, "bl2021_8bit.anf")   # ANF-packed (preferred)
 const APN_ALL   = joinpath(@__DIR__, "codes_mencioned_in_original_paper", "apn_all.json")
 const SIG_CACHE = joinpath(CAT_DIR, "sigma_index_n8.bin")
+const APN7      = joinpath(CAT_DIR, "apn7_known.json")    # 488 known dim-7 quadratic APN reps
 
 # CCZ-invariant signature hashed to a stable 128-bit key.
 function sig_hash(F::SBox)::UInt128
@@ -153,3 +154,14 @@ end
 # σ-absence is a certain proof of a new CCZ class; σ-presence ⇒ :known.
 classify_against_catalog(F::SBox, index::AbstractSet{UInt128}) =
     (sig_hash(F) in index) ? :known : :new
+
+# build a σ-index from a JSON {"luts":[...]} catalog of n-bit LUTs (n via Val(N)).
+# Generic over dimension — used for the dim-7 known catalog (apn7_known.json).
+function known_sigma_index(json_path::AbstractString, ::Val{N}) where {N}
+    s = Set{UInt128}()
+    isfile(json_path) || return s
+    for l in JSON3.read(read(json_path, String)).luts
+        try push!(s, sig_hash(SBox{N}(UInt8.(collect(l))))) catch end
+    end
+    s
+end
