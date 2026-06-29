@@ -3,11 +3,21 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../..)
 JULIA_PROJECT := --project=$(ROOT)
 
-.PHONY: help test report section4 algorithm1 theorem4 table2 table3 phase2 clean_results
+.PHONY: help test report section4 algorithm1 theorem4 table2 table3 phase2 clean_results \
+        survey basis searchers clean_build
 
 # Overridable parameters
 sample_size ?= 100
 seed        ?= 42
+
+# GPGPU extension parameters / toolchain
+n        ?= 8
+class    ?= 22
+HIPCC    ?= /opt/rocm/bin/hipcc
+GPU_ARCH ?= native
+HIPFLAGS ?= -O3 -munsafe-fp-atomics --offload-arch=$(GPU_ARCH)
+CXX      ?= g++
+CXXFLAGS ?= -O3 -fopenmp
 
 default: help
 
@@ -47,7 +57,32 @@ phase2:
 clean_results:
 	rm -rf "$(MAKEFILE_DIR)/results"
 
+# ── GPGPU extension (BBL2021 class census) ────────────────────────────────────
+# dim(V_A) feasibility map across all classes
+survey:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/survey.jl
+
+# generate bilinear-row basis for (n, class): basis_n<n>_c<class>_rows.bin
+basis:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/generate_rows.jl $(n) $(class)
+
+# build the GPU searchers + CPU classifier
+searchers: apn_search_ultra apn_search_n7 fast_checker
+
+apn_search_ultra: apn_search_ultra.cpp
+	$(HIPCC) $(HIPFLAGS) -o $@ $<
+
+apn_search_n7: apn_search_n7.cpp
+	$(HIPCC) $(HIPFLAGS) -o $@ $<
+
+fast_checker: fast_checker.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+clean_build:
+	rm -f apn_search_ultra apn_search_n7 fast_checker
+
 help:
 	@echo 'Paper: Kuznetsov (2026) — Quadratic APN Functions via Gröbner Basis Search'
-	@echo 'Targets:  test  report  section4  algorithm1  theorem4  table2  table3  phase2  clean_results'
-	@echo 'Params:   sample_size=$(sample_size)  seed=$(seed)'
+	@echo 'Paper targets:  test  report  section4  algorithm1  theorem4  table2  table3  phase2  clean_results'
+	@echo 'GPGPU targets:  survey  basis  searchers  clean_build'
+	@echo 'Params:         sample_size=$(sample_size)  seed=$(seed)  n=$(n)  class=$(class)  GPU_ARCH=$(GPU_ARCH)'
