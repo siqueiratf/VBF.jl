@@ -90,6 +90,11 @@ catalog:
 novelty:
 	$(JULIA) $(JULIA_PROJECT) -t auto $(MAKEFILE_DIR)/novelty_report.jl
 
+# pack a large decimal-text catalog into compact lossless .anf (~24× smaller).
+# usage: make pack in=catalogs/apn8_blp2025.txt [out=catalogs/apn8_blp2025.anf]
+pack:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/pack_catalog.jl $(in) $(out)
+
 help:
 	@echo 'Paper: Kuznetsov (2026) — Quadratic APN Functions via Gröbner Basis Search'
 	@echo 'Paper targets:  test  report  section4  algorithm1  theorem4  table2  table3  phase2  clean_results'

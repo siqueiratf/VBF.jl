@@ -23,9 +23,10 @@ function novelty_report(io::IO = stdout)
     reps = representative_sboxes()
     classes = (:class_a, :class_b, :class_c, :class_d, :class_e, :class_f)
 
-    # (2) pre-Kuznetsov = BLP22 ∪ Gold
+    # (2) pre-Kuznetsov known = BLP22 ∪ BL2021 ∪ Gold (the complete pre-2025 set)
     pre = sigma_index(load_catalog(blp22=true, gold=true, paper=false, reps=false))
-    print_kv("pre-Kuznetsov σ-index (BLP22 ∪ Gold)", string(length(pre)), io)
+    add_sigmas_source!(pre, BL2021_ANF, BL2021)
+    print_kv("pre-Kuznetsov σ-index (BLP22 ∪ BL2021 ∪ Gold)", string(length(pre)), io)
     for nm in classes
         print_kv("paper $(uppercase(String(nm))) vs pre-Kuznetsov",
                  String(classify_against_catalog(getfield(reps, nm), pre)), io)
@@ -34,17 +35,18 @@ function novelty_report(io::IO = stdout)
         all(classify_against_catalog(getfield(reps, nm), pre) == :new for nm in classes[1:4]), io)
 
     # (3) BLP25 (2025, 3.78M) — the headline check + full oracle cache
-    if isfile(BLP25)
-        print_kv("BLP25 catalog", "streaming $(BLP25) … (threads=$(Threads.nthreads()))", io)
+    if isfile(BLP25_ANF) || isfile(BLP25)
+        print_kv("BLP25 catalog", "streaming (threads=$(Threads.nthreads()))", io)
         s = sigma_index(load_catalog(blp22=true, gold=true, paper=false, reps=false))
-        add_sigmas_file!(s, BLP25)
-        print_kv("known σ-index (BLP25 ∪ BLP22 ∪ Gold)", string(length(s)), io)
+        add_sigmas_source!(s, BL2021_ANF, BL2021)
+        add_sigmas_source!(s, BLP25_ANF, BLP25)
+        print_kv("known σ-index (BLP22 ∪ BL2021 ∪ Gold ∪ 2025)", string(length(s)), io)
         for nm in classes[1:4]
-            print_kv("paper $(uppercase(String(nm))) vs Beierle-et-al-2025",
+            print_kv("paper $(uppercase(String(nm))) vs all-known(≤2025)",
                      String(classify_against_catalog(getfield(reps, nm), s)), io)
         end
         nnew = count(nm -> classify_against_catalog(getfield(reps, nm), s) == :new, classes[1:4])
-        print_kv("paper classes A–D still novel vs 2025", "$nnew / 4", io)
+        print_kv("paper classes A–D novel vs all known ≤2025", "$nnew / 4", io)
         # full Phase-3 oracle index = known ∪ paper ∪ reps, cached
         add_sigmas!(s, load_catalog(blp22=false, gold=false, paper=true, reps=true))
         save_index(s, SIG_CACHE)
