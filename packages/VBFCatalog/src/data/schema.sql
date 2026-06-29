@@ -108,19 +108,9 @@ CREATE TABLE IF NOT EXISTS bulk_corpora (
     notes            TEXT
 );
 
--- σ-signature novelty index. The ortho-derivative CCZ-invariant
--- σ(F) = (diff-spectrum(π_F), abs-Walsh-spectrum(π_F)) hashed to a hex string; a
--- σ mismatch certifies CCZ-inequivalence for quadratic APN (Yoshiara + Canteaut).
--- Covers BOTH the `functions` rows (is_quadratic APN) and every bulk-corpus member,
--- so a candidate's novelty can be decided against the entire catalog by σ lookup.
--- `source` = "functions" or a bulk-corpus name; `member_idx` = functions.id or the
--- corpus member idx.
-CREATE TABLE IF NOT EXISTS ccz_sigma_index (
-    sigma_hash  TEXT    NOT NULL,
-    n           INTEGER NOT NULL,
-    source      TEXT    NOT NULL,
-    member_idx  INTEGER NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_ccz_sigma_hash ON ccz_sigma_index(sigma_hash, n);
-CREATE INDEX IF NOT EXISTS idx_ccz_sigma_src  ON ccz_sigma_index(source);
+-- NOTE: the σ-signature novelty index (ccz_sigma_index) is NOT part of the
+-- committed catalog. It is large (one row per catalogued function — millions)
+-- and fully regenerable from the corpora + functions table, so — like the
+-- bulk-corpus LUT stores — it lives in its own side store under
+-- corpora/ccz_sigma_index.sqlite (build with `build_sigma_index!`, query with
+-- `classify_ccz`/`is_novel`; see src/data/sigma.jl).
