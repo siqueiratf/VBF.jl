@@ -1,0 +1,6 @@
+# build products (regenerate: make searchers)
+apn_search_ultra
+apn_search_n7
+fast_checker
+# generated basis files (regenerate: make basis n=.. class=..)
+*.bin
