@@ -22,12 +22,17 @@
 #   • gold  : Gold monomials x³, x⁹
 # Run ./fetch_catalog.sh (and ./fetch_catalog.sh --full for BLP25) to populate.
 include(joinpath(@__DIR__, "table2.jl"))   # sigma_key, representative_sboxes, VBF, gold_apn
+include(joinpath(@__DIR__, "anf.jl"))      # ANF: compact .anf catalog storage
+using .ANF
 import JSON3
 using SHA
 
 const CAT_DIR   = joinpath(@__DIR__, "catalogs")
 const BLP22     = joinpath(CAT_DIR, "apn8_blp22.json")
-const BLP25     = joinpath(CAT_DIR, "apn8_blp2025.txt")
+const BLP25     = joinpath(CAT_DIR, "apn8_blp2025.txt")   # 3.4 GB decimal text (raw download)
+const BLP25_ANF = joinpath(CAT_DIR, "apn8_blp2025.anf")   # 139 MB ANF-packed (preferred)
+const BL2021    = joinpath(CAT_DIR, "bl2021_8bit.txt")    # Beierle–Leander 2021, 12921 LUTs
+const BL2021_ANF = joinpath(CAT_DIR, "bl2021_8bit.anf")   # ANF-packed (preferred)
 const APN_ALL   = joinpath(@__DIR__, "codes_mencioned_in_original_paper", "apn_all.json")
 const SIG_CACHE = joinpath(CAT_DIR, "sigma_index_n8.bin")
 
@@ -36,9 +41,7 @@ function sig_hash(F::SBox)::UInt128
     h = sha256(string(sigma_key(F)))
     reinterpret(UInt128, view(h, 1:16))[1]
 end
-
-parse_lut_line(ln::AbstractString) =
-    UInt8.(parse.(Int, split(strip(ln, ['[', ']', ' ', '\n', '\r', ',']), ',')))
+# parse_lut_line provided by the ANF module (delimiter-agnostic)
 
 # add σ of an in-memory SBox collection (skips entries with no ortho-derivative)
 function add_sigmas!(s::Set{UInt128}, sboxes)
@@ -64,6 +67,27 @@ function add_sigmas_file!(s::Set{UInt128}, path::AbstractString; batch::Int = 50
     for ln in eachline(path)
         isempty(strip(ln)) && continue
         push!(buf, ln)
+        length(buf) >= batch && flush_buf!()
+    end
+    flush_buf!()
+    s
+end
+
+# stream an ANF-packed .anf catalog, σ computed threaded over batches
+function add_sigmas_anf!(s::Set{UInt128}, path::AbstractString; batch::Int = 50_000)
+    isfile(path) || return s
+    buf = Vector{Vector{UInt8}}()
+    function flush_buf!()
+        isempty(buf) && return
+        hs = Vector{UInt128}(undef, length(buf)); ok = trues(length(buf))
+        Threads.@threads for i in eachindex(buf)
+            try hs[i] = sig_hash(SBox{8}(buf[i])) catch; ok[i] = false end
+        end
+        @inbounds for i in eachindex(buf); ok[i] && push!(s, hs[i]); end
+        empty!(buf)
+    end
+    ANF.foreach_anf_lut(path) do lut
+        push!(buf, lut)
         length(buf) >= batch && flush_buf!()
     end
     flush_buf!()
@@ -102,9 +126,16 @@ function build_sigma_index(; cache=SIG_CACHE, rebuild=false, blp25=true, kwargs.
         return load_index(cache)
     end
     s = sigma_index(load_catalog(; kwargs...))
-    blp25 && add_sigmas_file!(s, BLP25)
+    add_sigmas_source!(s, BL2021_ANF, BL2021)          # Beierle–Leander 2021 (12921)
+    blp25 && add_sigmas_source!(s, BLP25_ANF, BLP25)   # Beierle et al. 2025 (3.78M)
     mkpath(CAT_DIR); save_index(s, cache)
     s
+end
+
+# add a catalog's σ, preferring the compact .anf over the raw decimal text
+function add_sigmas_source!(s::Set{UInt128}, anf_path, txt_path)
+    isfile(anf_path) ? add_sigmas_anf!(s, anf_path) :
+    isfile(txt_path) ? add_sigmas_file!(s, txt_path) : s
 end
 
 function save_index(s::Set{UInt128}, path)
