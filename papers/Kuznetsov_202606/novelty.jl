@@ -33,6 +33,8 @@ const BLP25     = joinpath(CAT_DIR, "apn8_blp2025.txt")   # 3.4 GB decimal text 
 const BLP25_ANF = joinpath(CAT_DIR, "apn8_blp2025.anf")   # 139 MB ANF-packed (preferred)
 const BL2021    = joinpath(CAT_DIR, "bl2021_8bit.txt")    # Beierle–Leander 2021, 12921 LUTs
 const BL2021_ANF = joinpath(CAT_DIR, "bl2021_8bit.anf")   # ANF-packed (preferred)
+const PRE2025   = joinpath(CAT_DIR, "known_pre2025_qam.txt")  # sboxU pre-2025: BeierleLeander
+                                                              # + first/second QAM + WengTanGon (26524)
 const APN_ALL   = joinpath(@__DIR__, "codes_mencioned_in_original_paper", "apn_all.json")
 const SIG_CACHE = joinpath(CAT_DIR, "sigma_index_n8.bin")
 const APN7      = joinpath(CAT_DIR, "apn7_known.json")    # 488 known dim-7 quadratic APN reps
@@ -128,6 +130,7 @@ function build_sigma_index(; cache=SIG_CACHE, rebuild=false, blp25=true, kwargs.
     end
     s = sigma_index(load_catalog(; kwargs...))
     add_sigmas_source!(s, BL2021_ANF, BL2021)          # Beierle–Leander 2021 (12921)
+    add_sigmas_file!(s, PRE2025)                        # pre-2025 QAM/BeierleLeander/WTG (26524)
     blp25 && add_sigmas_source!(s, BLP25_ANF, BLP25)   # Beierle et al. 2025 (3.78M)
     mkpath(CAT_DIR); save_index(s, cache)
     s
