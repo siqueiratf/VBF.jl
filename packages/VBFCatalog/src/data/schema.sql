@@ -107,3 +107,20 @@ CREATE TABLE IF NOT EXISTS bulk_corpora (
     added_date       TEXT    NOT NULL,
     notes            TEXT
 );
+
+-- σ-signature novelty index. The ortho-derivative CCZ-invariant
+-- σ(F) = (diff-spectrum(π_F), abs-Walsh-spectrum(π_F)) hashed to a hex string; a
+-- σ mismatch certifies CCZ-inequivalence for quadratic APN (Yoshiara + Canteaut).
+-- Covers BOTH the `functions` rows (is_quadratic APN) and every bulk-corpus member,
+-- so a candidate's novelty can be decided against the entire catalog by σ lookup.
+-- `source` = "functions" or a bulk-corpus name; `member_idx` = functions.id or the
+-- corpus member idx.
+CREATE TABLE IF NOT EXISTS ccz_sigma_index (
+    sigma_hash  TEXT    NOT NULL,
+    n           INTEGER NOT NULL,
+    source      TEXT    NOT NULL,
+    member_idx  INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_ccz_sigma_hash ON ccz_sigma_index(sigma_hash, n);
+CREATE INDEX IF NOT EXISTS idx_ccz_sigma_src  ON ccz_sigma_index(source);

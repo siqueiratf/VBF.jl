@@ -29,3 +29,7 @@ export BibEntry, load_bibliography, parse_bibtex, bibliography_path
 export list_corpora, corpus_info, corpus_length, corpus_function
 export corpus_coefficients, corpus_store_path, materialize_corpus_luts
 export build_corpus_store!, register_corpus!
+
+# σ-signature CCZ classification + novelty oracle
+export sigma_key, sigma_hash, build_sigma_index!, classify_ccz, is_novel
+export populate_ccz_equivalence_classes!
