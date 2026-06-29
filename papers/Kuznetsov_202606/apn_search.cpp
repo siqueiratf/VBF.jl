@@ -54,6 +54,7 @@ __device__ __forceinline__ bool check_rank(uint64_t M) {
 }
 
 __global__ void apn_kernel(const uint64_t* __restrict__ basis,
+                           const uint64_t* __restrict__ center,
                            uint64_t* results, uint32_t* counter,
                            uint64_t start_prefix, uint32_t num_gray_bits,
                            uint32_t total_basis_size) {
@@ -68,9 +69,12 @@ __global__ void apn_kernel(const uint64_t* __restrict__ basis,
 
     uint64_t prefix_val = start_prefix + global_id;
 
+    // affine slice: row = center ⊕ span(selected free generators). center=0 ⇒ the
+    // homogeneous subspace search; center=F0's bilinear matrix ⇒ a full-space slice
+    // through F0 that reaches outside V_A (the gateway exploration).
     uint64_t row[N];
     #pragma unroll
-    for (int r = 0; r < N; r++) row[r] = 0;
+    for (int r = 0; r < N; r++) row[r] = center[r];
 
     // apply the prefix bits (the non-Gray free coordinates)
     for (uint32_t i = 1; i <= (total_basis_size - num_gray_bits); i++) {
@@ -109,7 +113,8 @@ __global__ void apn_kernel(const uint64_t* __restrict__ basis,
 int main(int argc, char** argv) {
     if (argc < 4) {
         std::cerr << "Usage: " << argv[0]
-                  << " <basis_rows.bin> <n_free> <total_space_pow2> [start_batch end_batch] [out_file]"
+                  << " <basis_rows.bin> <n_free> <total_space_pow2> [start_batch end_batch]"
+                     " [out_file] [center_rows.bin]"
                   << std::endl;
         return 1;
     }
@@ -123,13 +128,24 @@ int main(int argc, char** argv) {
     if (!in) { std::cerr << "cannot open basis: " << basis_file << std::endl; return 1; }
     in.read((char*)h_basis.data(), (std::streamsize)n_free * N * sizeof(uint64_t));
 
-    uint64_t *d_basis, *d_results;
+    uint64_t *d_basis, *d_results, *d_center;
     uint32_t *d_counter;
     (void)hipMalloc(&d_basis, n_free * N * sizeof(uint64_t));
     (void)hipMemcpy(d_basis, h_basis.data(), n_free * N * sizeof(uint64_t), hipMemcpyHostToDevice);
     (void)hipMalloc(&d_results, (size_t)RESULTS_CAP * sizeof(uint64_t));
     (void)hipMalloc(&d_counter, sizeof(uint32_t));
     (void)hipMemset(d_counter, 0, sizeof(uint32_t));
+
+    // optional center (argv[7]): F0's N-row bilinear matrix; default 0 (homogeneous)
+    std::vector<uint64_t> h_center(N, 0);
+    std::string center_file = (argc >= 8) ? argv[7] : "";
+    if (!center_file.empty()) {
+        std::ifstream cin_(center_file, std::ios::binary);
+        if (!cin_) { std::cerr << "cannot open center: " << center_file << std::endl; return 1; }
+        cin_.read((char*)h_center.data(), (std::streamsize)N * sizeof(uint64_t));
+    }
+    (void)hipMalloc(&d_center, N * sizeof(uint64_t));
+    (void)hipMemcpy(d_center, h_center.data(), N * sizeof(uint64_t), hipMemcpyHostToDevice);
 
     uint32_t gray_bits = 8;
     if (n_free < 8) gray_bits = n_free;
@@ -168,7 +184,7 @@ int main(int argc, char** argv) {
 
         auto tb = std::chrono::high_resolution_clock::now();
         apn_kernel<<<num_groups, group_size, shared_mem_size>>>(
-            d_basis, d_results, d_counter, start_prefix, gray_bits, n_free);
+            d_basis, d_center, d_results, d_counter, start_prefix, gray_bits, n_free);
         (void)hipDeviceSynchronize();
         auto te = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double>(te - tb).count();
