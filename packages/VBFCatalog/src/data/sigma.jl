@@ -41,6 +41,36 @@ Equal hash ⇔ equal σ; different hash ⇒ provably CCZ-inequivalent.
 """
 sigma_hash(F::SBox) = bytes2hex(SHA.sha256(string(sigma_key(F))))
 
+# --- side store -------------------------------------------------------------
+# The σ index is large (one row per catalogued function — millions) and fully
+# regenerable from the corpora + functions table, so — like the bulk-corpus LUT
+# stores — it is kept OUT of the committed main catalog in its own side store
+# under corpora/, never committed (see .gitignore). Build it with
+# `build_sigma_index!`; the oracle (`classify_ccz`/`is_novel`) reads it.
+
+const _SIGMA_INDEX_DDL =
+    "CREATE TABLE IF NOT EXISTS ccz_sigma_index " *
+    "(sigma_hash TEXT NOT NULL, n INTEGER NOT NULL, source TEXT NOT NULL, member_idx INTEGER)"
+
+"""
+    sigma_index_path() -> String
+
+Path to the σ-index side store `corpora/ccz_sigma_index.sqlite` (regenerable, not
+committed).
+"""
+sigma_index_path() = joinpath(_corpora_dir(), "ccz_sigma_index.sqlite")
+
+function _open_sigma_index(; create::Bool = false)
+    p = sigma_index_path()
+    if !isfile(p) && !create
+        error("σ-index side store not found at $p; build it with build_sigma_index!(load_catalog())")
+    end
+    create && mkpath(_corpora_dir())
+    s = SQLite.DB(p)
+    create && SQLite.execute(s, _SIGMA_INDEX_DDL)
+    s
+end
+
 # --- decoding helpers -------------------------------------------------------
 
 # SBox from a `functions.lut_blob` (cld(n,8) LE bytes per entry, input order).
@@ -75,9 +105,11 @@ function build_sigma_index!(
     include_functions::Bool = true,
     batch::Int = 20_000,
 )
-    rebuild && SQLite.execute(db, "DELETE FROM ccz_sigma_index")
+    idx = _open_sigma_index(create = true)              # the regenerable side store
+    rebuild && SQLite.execute(idx, "DROP INDEX IF EXISTS ix_sigma_hash")
+    rebuild && SQLite.execute(idx, "DELETE FROM ccz_sigma_index")
     stmt = DBInterface.prepare(
-        db,
+        idx,
         "INSERT INTO ccz_sigma_index (sigma_hash, n, source, member_idx) VALUES (?,?,?,?)",
     )
     nfun = 0
@@ -92,7 +124,7 @@ function build_sigma_index!(
             id, n, blob = rows[i]
             hashes[i] = sigma_hash(_sbox_from_blob(blob, n))
         end
-        SQLite.transaction(db) do
+        SQLite.transaction(idx) do
             for (i, (id, n, _)) in enumerate(rows)
                 DBInterface.execute(stmt, (hashes[i], n, "functions", id))
             end
@@ -122,7 +154,7 @@ function build_sigma_index!(
                         hs[j] = nothing      # skip degenerate member (not quadratic APN)
                     end
                 end
-                SQLite.transaction(db) do
+                SQLite.transaction(idx) do
                     for j in eachindex(batch_idx)
                         hs[j] === nothing && continue
                         DBInterface.execute(stmt, (hs[j], n, name, batch_idx[j]))
@@ -142,27 +174,29 @@ function build_sigma_index!(
         end
     end
 
+    SQLite.execute(idx, "CREATE INDEX IF NOT EXISTS ix_sigma_hash ON ccz_sigma_index(sigma_hash)")
     total = nfun + ncorp
     distinct = 0
-    for r in DBInterface.execute(db, "SELECT COUNT(DISTINCT sigma_hash) c FROM ccz_sigma_index")
+    for r in DBInterface.execute(idx, "SELECT COUNT(DISTINCT sigma_hash) c FROM ccz_sigma_index")
         distinct = Int(r.c)
     end
+    close(idx)
     (; functions = nfun, corpus_members = ncorp, total = total, distinct = distinct)
 end
 
 # --- novelty oracle ---------------------------------------------------------
 
 """
-    classify_ccz(F::SBox; db) -> (status, source, member_idx)
+    classify_ccz(F::SBox; index) -> (status, source, member_idx)
 
-Look up `σ(F)` in `ccz_sigma_index`. Returns `(:known, source, member_idx)` for
+Look up `σ(F)` in the `ccz_sigma_index` side store (see [`sigma_index_path`](@ref)). Returns `(:known, source, member_idx)` for
 the first catalog match, or `(:new, nothing, nothing)` if σ is absent (a rigorous
 CCZ-inequivalence certificate against the entire indexed catalog).
 """
-function classify_ccz(F::SBox; db::SQLite.DB = load_catalog())
+function classify_ccz(F::SBox; index::SQLite.DB = _open_sigma_index())
     h = sigma_hash(F)
     for r in DBInterface.execute(
-        db,
+        index,
         "SELECT source, member_idx FROM ccz_sigma_index WHERE sigma_hash = " *
         _sql_quote(h) * " LIMIT 1",
     )
@@ -172,12 +206,12 @@ function classify_ccz(F::SBox; db::SQLite.DB = load_catalog())
 end
 
 """
-    is_novel(F::SBox; db) -> Bool
+    is_novel(F::SBox; index) -> Bool
 
-`true` iff `σ(F)` is absent from `ccz_sigma_index` — i.e. `F` is CCZ-inequivalent
+`true` iff `σ(F)` is absent from the `ccz_sigma_index` side store — i.e. `F` is CCZ-inequivalent
 to every function in the indexed catalog (a new quadratic-APN CCZ class).
 """
-is_novel(F::SBox; db::SQLite.DB = load_catalog()) = classify_ccz(F; db = db)[1] === :new
+is_novel(F::SBox; index::SQLite.DB = _open_sigma_index()) = classify_ccz(F; index = index)[1] === :new
 
 # --- equivalence_classes population (functions-table reps) ------------------
 
