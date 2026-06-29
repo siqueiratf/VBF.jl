@@ -81,8 +81,18 @@ fast_checker: fast_checker.cpp
 clean_build:
 	rm -f apn_search_n8 apn_search_n7 fast_checker
 
+# ── Phase 2: novelty oracle ───────────────────────────────────────────────────
+# fetch known dim-8 quadratic-APN catalogs (BLP22; add full=1 for the 2025 3.78M set)
+catalog:
+	./fetch_catalog.sh $(if $(filter 1,$(full)),--full,)
+
+# representation sanity + paper-novelty validation + build/cache the σ-index oracle
+novelty:
+	$(JULIA) $(JULIA_PROJECT) -t auto $(MAKEFILE_DIR)/novelty_report.jl
+
 help:
 	@echo 'Paper: Kuznetsov (2026) — Quadratic APN Functions via Gröbner Basis Search'
 	@echo 'Paper targets:  test  report  section4  algorithm1  theorem4  table2  table3  phase2  clean_results'
 	@echo 'GPGPU targets:  survey  basis  searchers  clean_build'
+	@echo 'Phase-2 targets: catalog [full=1]  novelty'
 	@echo 'Params:         sample_size=$(sample_size)  seed=$(seed)  n=$(n)  class=$(class)  GPU_ARCH=$(GPU_ARCH)'
