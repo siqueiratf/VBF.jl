@@ -1,0 +1,873 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage{bbold}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=magenta, urlcolor=cyan,}
+\urlstyle{same}
+\usepackage{caption}
+
+\title{Extending two families of bivariate APN functions }
+
+\author{Marco Calderini ${ }^{\text {a }}$, Kangquan Li ${ }^{\text {b }, *}$, Irene Villa ${ }^{\text {a }}$\\
+${ }^{\mathrm{a}}$ Dipartimento di Matematica, Università degli studi di Trento, Italy\\
+${ }^{\mathrm{b}}$ College of Science, National University of Defense Technology, Changsha, 410073, China}
+\date{}
+
+
+%New command to display footnote whose markers will always be hidden
+\let\svthefootnote\thefootnote
+\newcommand\blfootnotetext[1]{%
+  \let\thefootnote\relax\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \let\thefootnote\svthefootnote%
+}
+
+%Overriding the \footnotetext command to hide the marker if its value is `0`
+\let\svfootnotetext\footnotetext
+\renewcommand\footnotetext[2][?]{%
+  \if\relax#1\relax%
+    \ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+  \else%
+    \if?#1\ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+    \else\svfootnotetext[#1]{#2}\fi%
+  \fi
+}
+
+\begin{document}
+\maketitle
+\captionsetup{singlelinecheck=false}
+
+
+\section*{ARTICLE INFO}
+\section*{Article history:}
+Received 2 July 2022\\
+Received in revised form 23\\
+November 2022\\
+Accepted 22 January 2023\\
+Available online 8 March 2023\\
+Communicated by Gary L. Mullen
+
+\section*{$M S C$ :}
+94A60\\
+06E30\\
+11T06
+
+\begin{abstract}
+In this work, we present two families of quadratic APN functions. The first one (F1) is constructed via biprojective polynomials. This family extends one of the two APN families introduced by Göloǧlu in 2022. Then, following a similar approach as in Li et al. (2022) [28], we give another family (F2) obtained by adding certain terms to F1. As a byproduct, this second family extends one of the two families introduced by Li et al. (2022) [28]. Moreover, we show that for $n=12$, from our constructions, we can obtain APN functions which are CCZ-inequivalent to any other known APN function over $\mathbb{F}_{2^{12}}$.
+\end{abstract}
+
+© 2023 Elsevier Inc. All rights reserved.
+
+\section*{Keywords:}
+Index terms: APN family\\
+Biprojective polynomial\\
+Adding term\\
+CCZ-inequivalent
+
+\section*{1. Introduction}
+Given two positive integers $n$ and $m$, set $\mathbb{F}_{2^{n}}$ and $\mathbb{F}_{2^{m}}$ be the finite fields with $2^{n}$ and $2^{m}$ elements respectively. A function from $\mathbb{F}_{2^{n}}$ to $\mathbb{F}_{2^{m}}$ is called vectorial Boolean function
+
+\footnotetext{\begin{itemize}
+  \item Corresponding author.
+\end{itemize}
+
+E-mail addresses: \href{mailto:marco.calderini@unitn.it}{marco.calderini@unitn.it} (M. Calderini), \href{mailto:likangquan11@nudt.edu.cn}{likangquan11@nudt.edu.cn} (K. Li), \href{mailto:irene.villa@unitn.it}{irene.villa@unitn.it} (I. Villa).
+}
+or $(n, m)$-function. Vectorial Boolean functions play an important role in many different areas of mathematics, computer science and engineering. In the field of cryptography, and particularly in the design of block ciphers, $(n, m)$-functions are of critical importance, as these are usually the only nonlinear components, and as such, the security of the encryption directly depends on the properties of the $(n, m)$-functions.
+
+One of the most efficient attacks that can be employed against block ciphers, is the differential cryptanalysis [1]. This attack is based on the study of how differences in input can affect the resultant difference at the output. The resistance to differential cryptanalysis for a function $F$ from $\mathbb{F}_{2^{n}}$ to $\mathbb{F}_{2^{m}}$, used as an S -box in a cipher, is high when the value
+
+$$
+\delta_{F}=\max _{a \in \mathbb{F}_{2^{n}}^{*}, b \in \mathbb{F}_{2^{m}}}\left|\left\{x \in \mathbb{F}_{2^{n}}: F(x+a)+F(x)=b\right\}\right|,
+$$
+
+is small $\left(\mathbb{F}_{2^{n}}^{*}=\mathbb{F}_{2^{n}} \backslash\{0\}\right)$. The differential uniformity of any $(n, m)$-function is at least 2. Functions meeting this bound are called almost perfect nonlinear (APN).
+
+Discovering new examples and constructions of APN families is thus a matter of significant practical importance in cryptography. Moreover, APN functions are also interesting from a theoretical point of view since there are several known connections between APN functions and other combinatorial and geometrical objects like semi-biplanes, difference sets, distance-regular graphs or dimensional dual hyperovals (see [16-19]).
+
+The APNness of functions is preserved by some equivalence relations. Among these relations we have the so-called CCZ- and EA-equivalences, and it is important when several functions are considered, to determine whether they correspond to each other by such equivalences. CCZ-equivalence is the most general known equivalence relation preserving the APN property [15].
+
+To date, only six infinite families of APN monomials and more or less 15 (depending on how we count) infinite families of quadratic APN polynomials are known (for a list of known APN families see [13]).
+
+Recently, Göloǧlu introduced the framework of ( $q, r$ )-biprojective functions [21]. He showed that roughly half of the families of quadratic APN functions defined over an extension of even degree fall into this framework. Moreover, Göloğlu introduced two new infinite families of APN functions defined over $n=2 m$ with $\operatorname{gcd}(3, m)=1$. Another family, coming from the framework of biprojective functions, has been determined also in [23] for the case $m \equiv 2 \bmod 4$.
+
+One of the families given in [21], which is reported here in Theorem 1 and corresponds to the construction $\mathcal{F}_{1}$, includes the $\mathcal{B} \mathcal{H} \mathcal{K}$ family of quadrinomial APN functions introduced in [12]. More precisely, $\mathcal{F}_{1}$ includes the cases for which $\mathcal{B} \mathcal{H} \mathcal{K}$ family can produce functions inequivalent to APN mappings from other known families. Moreover, Göloǧlu showed that from family $\mathcal{F}_{1}$ we can obtain more functions than those coming from the quadrinomials given in [12]. Both the constructions require that the functions are defined over $\mathbb{F}_{2^{n}}$ with $n=2 m$, and $3 \nmid m$.
+
+Later, Li et al. [28], inspired by Dillon's method [5], obtained a new family of APN functions by adding some terms of the form $\sum_{i}\left(a_{i} x^{2^{i}} y^{2^{i}}, b_{i} x^{2^{i}} y^{2^{i}}\right)$ to family $\mathcal{F}_{1}$. Also in this case, it is needed the restriction $3 \nmid m$.
+
+In this work, we introduce two families of quadratic APN functions. The first one is based on biprojective polynomials. This family can be defined for any value of $m$ and we have also that our construction extends Göloğlu's family $\mathcal{F}_{1}$. The second family is obtained by using a similar approach as in [28], that is adding certain terms of type $\sum_{i}\left(a_{i} x^{2^{i}} y^{2^{i}}, b_{i} x^{2^{i}} y^{2^{i}}\right)$ to our first family. This family extends the one obtained in [28]. To verify the APN property of our two constructions, we adapt the proofs used in [21] and [28] to our cases.
+
+Moreover, from our constructions we can obtain new APN functions, that is, functions which are CCZ-inequivalent to those belonging to any other known family.
+
+\section*{2. Preliminaries}
+Let $n$ be a positive integer. We denote by $\mathbb{F}_{2^{n}}$ the finite field with $2^{n}$ elements, and by $\mathbb{F}_{2^{n}}^{*}$ the set of its non-zero elements, i.e. its multiplicative group.
+
+Any $(n, n)$-function $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ can be expressed as a polynomial of the form
+
+$$
+F(x)=\sum_{i=0}^{2^{n}-1} a_{i} x^{i}
+$$
+
+for $a_{i} \in \mathbb{F}_{2^{n}}$. This is called the univariate representation of $F$, and it is unique.\\
+The algebraic degree of $F$, denoted by $\operatorname{deg}(F)$, is the largest binary weight of an exponent $i$ with $a_{i} \neq 0$ in the univariate representation of $F$, where the binary weight of an integer is the number of ones in its binary representation. Functions of algebraic degree 1 , resp, 2 are called affine, resp. quadratic. An affine function $F$ satisfying $F(0)=0$ is called linear.
+
+For $m \mid n$, we denote by $\operatorname{tr}_{m}^{n}: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{m}}$ the trace function $\operatorname{tr}_{m}^{n}(x)=\sum_{i=0}^{n / m-1} x^{2^{m i}}$. If $m=1$ we denote $\operatorname{tr}_{1}^{n}$ by $\operatorname{tr}_{n}$.
+
+The Walsh transform of $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ is defined as
+
+$$
+W_{F}(a, b)=\sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{\operatorname{tr}_{n}(a x+b F(x))}
+$$
+
+for $a, b \in \mathbb{F}_{2^{n}}$. The Boolean function $F_{b}(x)=\operatorname{tr}_{n}(b F(x))$, for $b \in \mathbb{F}_{2^{n}}^{*}$, is called a component function of $F$. A component function $F_{b}$ satisfying $\left|W_{F}(a, b)\right|=2^{n / 2}$ for any $a \in \mathbb{F}_{2^{n}}$ is called bent. Bent functions are defined only for $n$ even.
+
+Two $(n, n)$-functions $F$ and $G$ are said to be EA-equivalent if $G=A_{1} \circ F \circ A_{2}+A$ for affine $A_{1}, A_{2}, A: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ with $A_{1}, A_{2}$ bijective.
+
+We say that two $(n, n)$-functions $F$ and $G$ are CCZ-equivalent if there is an affine permutation $\mathcal{L}$ of $\mathbb{F}_{2^{n}}^{2}$ which maps the graph $\Gamma_{F}=\left\{(x, F(x)): x \in \mathbb{F}_{2^{n}}\right\}$ of $F$ to the graph $\Gamma_{G}$ of $G$. EA-equivalence is a special case of CCZ-equivalence, and CCZ-equivalence is more general than EA-equivalence [11]. However, when we restrict to quadratic APN functions, we have that EA-equivalence coincides with CCZ-equivalence [32].
+
+To prove that a family of APN functions is new, it is necessary to show that we can obtain instances of APN functions which are CCZ-inequivalent to those of the currently known APN families. A common approach is to compare some invariants, i.e. properties that are preserved under certain equivalence relations.
+
+For a given map $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ we define the set
+
+$$
+\mathrm{NB}_{F}=\left\{b \in \mathbb{F}_{2^{n}}: W_{F}(a, b)=0 \text { for some } a \in \mathbb{F}_{2^{n}}\right\}
+$$
+
+and the sequence
+
+$$
+N_{F}=\left[n_{i}\left(\mathrm{NB}_{F}\right): 1 \leq i \leq n\right],
+$$
+
+where $n_{i}(S)$ is the number of $\mathbb{F}_{2}$-vector spaces of dimension $i$ in $S$.\\
+For a quadratic APN function $F$, we have that $\mathrm{NB}_{F}$ is the set of non-bent components, that is,
+
+$$
+\mathrm{NB}_{F}=\left\{b \in \mathbb{F}_{2^{n}}:\left|W_{F}(0, b)\right| \neq 2^{n / 2}\right\} .
+$$
+
+The sequence $N_{F}$ has been shown to be an EA-invariant [6,24].\\
+When $n=2 m$, we can identify $\mathbb{F}_{2^{n}}$ with $\mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}$. In this case a function $F$ : $\mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ can be represented as a (univariate) polynomial in $\mathbb{F}_{2^{n}}[X]$, or a (bivariate) polynomial in $\mathbb{F}_{2^{m}}[x, y] \times \mathbb{F}_{2^{m}}[x, y]$.
+
+The idea of considering a bivariate form for constructing APN functions was firstly considered in [14]. Here, Carlet considered functions $F$ defined over $\mathbb{F}_{2^{2 m}}$ given by $F(x, y)=(f(x, y), g(x, y))$, with $f$ the Maiorana-McFarland bent function $x y$ from $\mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}$ to $\mathbb{F}_{2^{m}}$. Using this framework, Carlet introduced a family of APN functions that, as shown in [13], coincides with the family of hexanomial APN functions given in [7]. Other two families, which consider $f(x, y)=x y$, have been introduced later in [29,31].
+
+The aforementioned construction has been extended, recently, by Göloǧlu in [21], where the author introduced the framework of biprojective polynomials.
+
+In particular, let $q=2^{k}$, we call a polynomial of type $a x^{q+1}+b x^{q}+c x+d \in \mathbb{F}_{2^{m}}[x]$ projective, and $a x^{q+1}+b x^{q} y+c x y^{q}+d y^{q+1} \in \mathbb{F}_{2^{m}}[x, y]$ a bivariate projective (or biprojective) polynomial.
+
+Göloğlu, in his work, introduced the following two families of APN functions using biprojective polynomials.
+
+Theorem 1 ([21]). The following functions are $A P N$ on $\mathbb{F}_{2^{2 m}}$ :\\
+$\mathcal{F}_{1}:$ If $\operatorname{gcd}(3 k, m)=1$, let $q=2^{k}$
+
+$$
+F(x, y)=\left(x^{q+1}+x y^{q}+y^{q+1}, x^{q^{2}+1}+x^{q^{2}} y+y^{q^{2}+1}\right)
+$$
+
+$\mathcal{F}_{2}:$ If $\operatorname{gcd}(3 k, m)=1, m$ odd, let $q=2^{k}$
+
+$$
+F(x, y)=\left(x^{q+1}+x y^{q}+y^{q+1}, x^{q^{3}} y+x y^{q^{3}}\right)
+$$
+
+Later in [28], the authors considered family $\mathcal{F}_{1}$, with $k=1$, and showed that by adding the term ( $x y, x y+x^{2} y^{2}$ ) to it, we can obtain another family of APN functions. The resulting family is the following.
+
+Theorem 2 ([28]). Let $m>0$ such that $\operatorname{gcd}(3, m)=1$. Then, the function
+
+$$
+F(x, y)=\left(x^{3}+x y+x y^{2}+y^{3}, x^{5}+x y+x^{2} y^{2}+x^{4} y+y^{5}\right)
+$$
+
+is $A P N$.
+
+In the following section we introduce two families constructed using biprojective polynomials and, thereafter, by adding certain quadratic terms to it. These two families can be defined for any value $m$. Our constructions extend family $\mathcal{F}_{1}$ and the family in Theorem 2.
+
+\section*{3. A family of biprojective APN functions over $\mathbb{F}_{\mathbf{2}^{2 m}}$}
+In the following lemma we give some properties on projective polynomials that we use along the paper. Some of these facts can be found also in [21], we report the proof for completeness.
+
+Lemma 1. Let $k, m>0$ with $\operatorname{gcd}(k, m)=1, q=2^{k}$ and $\alpha \in \mathbb{F}_{2^{m}}$. Let us denote by $\phi_{q, \alpha}(x)=x^{q+1}+x+\alpha$.\\
+(i) $\phi_{q, \alpha}(x)$ has no root over $\mathbb{F}_{2^{m}}$ if and only if $\phi_{q, \alpha^{2}}(x)$ has no root over $\mathbb{F}_{2^{m}}$. The same is verified also for $\alpha^{q} x^{q+1}+x+\alpha$.\\
+(ii) $a x^{q+1}+b x+c$ has no root over $\mathbb{F}_{2^{m}}$ if and only if $a x^{q^{2}}+b x^{q}+c x$ is a permutation.\\
+(iii) Let $a, b, c, d \in \mathbb{F}_{2^{m}}$. Suppose that $\phi_{q, \alpha}(x)$ has no root over $\mathbb{F}_{2^{m}}$. Then, if $a d-b c \neq 0$,
+
+$$
+\phi(x)=(a x+b)^{q+1} \phi_{q, \alpha}\left(\frac{c x+d}{a x+b}\right)
+$$
+
+has no root over $\mathbb{F}_{2^{m}}$.
+
+\section*{Proof. (i):}
+We have immediately that
+
+$$
+\phi_{q, \alpha}\left(x^{2^{m-1}}\right)^{2}=\phi_{q, \alpha^{2}}(x) .
+$$
+
+So, $\phi_{q, \alpha}(x)$ admits roots in $\mathbb{F}_{2^{m}}$ if and only if $\phi_{q, \alpha^{2}}(x)$ does.\\
+Similar, we have $1 / \alpha \phi_{q, \alpha^{2}}(\alpha x)=\alpha^{q} x^{q+1}+x+\alpha$.\\
+(ii):
+
+Since $\operatorname{gcd}(k, m)=1$, we have that $x^{q-1}$ permutes $\mathbb{F}_{2^{m}}$. Let $p(x)=a x^{q+1}+b x+c$, then
+
+$$
+x p\left(x^{q-1}\right)=a x^{q^{2}}+b x^{q}+c x .
+$$
+
+So there is a 1 -to- 1 correspondence between the roots of $p$ and the nonzero elements in the kernel of $a x^{q^{2}}+b x^{q}+c x$.\\
+(iii): We can note that $\phi$ is a polynomial,
+
+$$
+\phi(x)=(c x+d)^{q+1}+(c x+d)(a x+b)^{q}+\alpha(a x+b)^{q+1} \text {. }
+$$
+
+If $a x+b \neq 0$, then $\phi$ is the product of two nonzero elements.\\
+For $a x+b=0$, that is $x=\frac{b}{a}$, we have that $\phi(x)=(c x+d)^{q+1}=\left(c \frac{b}{a}+d\right)^{q+1}$, which is different from zero.
+
+Notice that condition (iii) corresponds to the linear fractional transformation used by Göloğlu in [21]. Indeed, in our analysis we use the same idea but we are able to simplify the computations.
+
+We present now the main result of this section, which extends the mentioned family $\mathcal{F}_{1}$.
+
+Theorem 3 (Family F1). Let $k, m>0$, with $\operatorname{gcd}(k, m)=1$. Let $q=2^{k}$, and let $F$ : $\mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}} \rightarrow \mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}$ given by
+
+$$
+\begin{aligned}
+F(x, y) & =(f(x, y), g(x, y)) \\
+& =\left(x^{q+1}+x y^{q}+\alpha y^{q+1}, x^{q^{2}+1}+\alpha x^{q^{2}} y+(1+\alpha)^{q} x y^{q^{2}}+\alpha y^{q^{2}+1}\right)
+\end{aligned}
+$$
+
+with $\alpha \in \mathbb{F}_{2^{m}}$ such that $x^{q+1}+x+\alpha$ has no root in $\mathbb{F}_{2^{m}}$. Then, $F$ is $A P N$.
+
+Proof. First of all, notice that from the restriction on $\alpha$ we easily deduce that $\alpha \neq 0$. Since $F$ is quadratic, we need to check the number of solutions of the equation
+
+
+\begin{equation*}
+F(x+v, y+w)+F(x, y)+F(v, w)=0 \tag{1}
+\end{equation*}
+
+
+for any $(v, w) \in \mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}} \backslash\{(0,0)\}$. Let $D_{f}^{[v, w]}(x, y)=f(x+v, y+w)+f(x, y)+f(v, w)$ and $D_{g}^{[v, w]}=g(x+v, y+w)+g(x, y)+g(v, w)$. As in [21], we can define
+
+$$
+\begin{aligned}
+E_{f}^{0}(x, y) & =\frac{D_{f}^{[0, w]}(w x, w y)}{w^{q+1}}=x+\alpha\left(y^{q}+y\right), \\
+E_{g}^{0}(x, y) & =\frac{D_{g}^{[0, w]}(w x, w y)}{w^{q^{2}+1}}=\alpha x^{q^{2}}+(\alpha+1)^{q} x+\alpha\left(y^{q^{2}}+y\right), \\
+E_{f}^{\infty}(x, y) & =\frac{D_{f}^{[v, 0]}(v x, v y)}{v^{q+1}}=x^{q}+x+y^{q}, \\
+E_{g}^{\infty}(x, y) & =\frac{D_{g}^{[v, 0]}(v x, v y)}{v^{q^{2}+1}}=x^{q^{2}}+x+(\alpha+1)^{q} y^{q^{2}}+\alpha y,
+\end{aligned}
+$$
+
+and for the case $v w \neq 0$, denoting by $u=v / w$,
+
+$$
+\begin{aligned}
+& E_{f}^{u}(x, y)=\frac{D_{f}^{[v, w]}(v x, w y+w x)}{w^{q+1}}=f(u, 1)\left(x^{q}+x\right)+(u+\alpha) y^{q}+\alpha y \\
+& E_{g}^{u}(x, y)=\frac{D_{g}^{[v, w]}(v x, w y+w x)}{w^{q^{2}+1}}=g(u, 1)\left(x^{q^{2}}+x\right)+\left((\alpha+1)^{q} u+\alpha\right) y^{q^{2}}+\alpha(u+1)^{q^{2}} y
+\end{aligned}
+$$
+
+As shown in [21], checking the number of solutions of (1) is equivalent to checking the number of solutions of $E_{f}^{0}(x, y)=E_{g}^{0}(x, y)=0, E_{f}^{\infty}(x, y)=E_{g}^{\infty}(x, y)=0$, and $E_{f}^{u}(x, y)=E_{g}^{u}(x, y)=0$, depending on the values of $v$ and $w$.
+
+Let us consider the first case, that is, $E_{f}^{0}(x, y)=E_{g}^{0}(x, y)=0$. In this case we have
+
+$$
+\begin{gathered}
+\frac{x}{\alpha}=y^{q}+y \\
+\alpha x^{q^{2}}+(\alpha+1)^{q} x+\alpha\left(y^{q^{2}}+y\right)=\alpha x^{q^{2}}+(\alpha+1)^{q} x+\alpha\left[\left(y^{q}+y\right)^{q}+\left(y^{q}+y\right)\right]=0
+\end{gathered}
+$$
+
+Therefore,
+
+$$
+\begin{aligned}
+0 & =\alpha x^{q^{2}}+(\alpha+1)^{q} x+\alpha\left(y^{q^{2}}+y\right) \\
+& =\alpha x^{q^{2}}+\frac{x^{q}}{\alpha^{q-1}}+\alpha^{q} x
+\end{aligned}
+$$
+
+Substituting $x \mapsto \alpha x$ we get
+
+$$
+\begin{aligned}
+0 & =\alpha^{q^{2}+1} x^{q^{2}}+\alpha x^{q}+\alpha^{q+1} x \\
+& =\alpha\left(\alpha^{q^{2}} x^{q^{2}}+x^{q}+\alpha^{q} x\right)
+\end{aligned}
+$$
+
+From Lemma 1, we have that $\alpha^{q^{2}} x^{q^{2}}+x^{q}+\alpha^{q} x$ permutes $\mathbb{F}_{2^{m}}$. Then, $x=0$, implying $y^{q}+y=0$, and thus $y \in \mathbb{F}_{2}$. So, in this case we have two solutions in $\{0\} \times \mathbb{F}_{2}$.
+
+Consider now the case $E_{f}^{\infty}(x, y)=E_{g}^{\infty}(x, y)=0$. Then,
+
+$$
+y^{q}=x^{q}+x
+$$
+
+and
+
+$$
+0=x^{q^{2}}+x+(\alpha+1)^{q} y^{q^{2}}+\alpha y
+$$
+
+Therefore,
+
+$$
+\begin{aligned}
+0 & =y^{q^{2}}+y^{q}+(\alpha+1)^{q} y^{q^{2}}+\alpha y \\
+& =\alpha^{q} y^{q^{2}}+y^{q}+\alpha y
+\end{aligned}
+$$
+
+Applying Lemma 1 we have that $\alpha^{q} y^{q^{2}}+y^{q}+\alpha y$ is a permutation. Therefore, we have two solutions $(x, y) \in \mathbb{F}_{2} \times\{0\}$.
+
+Now, we consider the general case $v w \neq 0$ and thus the case $E_{f}^{u}(x, y)=E_{g}^{u}(x, y)=0$, with $u \neq 0$. In the following, we will denote by $f_{u}=f(u, 1)=u^{q+1}+u+\alpha$ and by $g_{u}=g(u, 1)=u^{q^{2}+1}+\alpha u^{q^{2}}+u+\alpha^{q} u+\alpha$. From the restriction on $\alpha$ we have $f_{u} \neq 0$ for any $u$.
+
+We report equations $E_{f}^{u}(x, y)=0$ and $E_{g}^{u}(x, y)=0$.
+
+$$
+\begin{aligned}
+f_{u}\left(x^{q}+x\right) & =(u+\alpha) y^{q}+\alpha y \\
+& =\left(f_{u}+u^{q+1}\right) y^{q}+\left(f_{u}+u(u+1)^{q}\right) y
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+g_{u}\left(x^{q^{2}}+x\right) & =\left((1+\alpha)^{q} u+\alpha\right) y^{q^{2}}+\alpha\left(u^{q^{2}}+1\right) y \\
+& =\left(g_{u}+u^{q^{2}}(u+\alpha)\right) y^{q^{2}}+\left(g_{u}+u\left(u^{q^{2}}+1+\alpha^{q}\right)\right) y
+\end{aligned}
+$$
+
+We perform a change of variables. First we substitute $x \mapsto x+y$, then we substitute $y \mapsto u^{-1} y$. Therefore, we obtain
+
+
+\begin{align*}
+f_{u}\left(x^{q}+x\right) & =u y^{q}+(u+1)^{q} y  \tag{2}\\
+g_{u}\left(x^{q^{2}}+x\right) & =(u+\alpha) y^{q^{2}}+\left(u^{q^{2}}+1+\alpha^{q}\right) y \tag{3}
+\end{align*}
+
+
+Since $x^{q^{2}}+x=\left(x^{q}+x\right)^{q}+\left(x^{q}+x\right)$, then $f_{u}^{q+1} g_{u}\left(x^{q^{2}}+x\right)=f_{u} g_{u}\left(f_{u}\left(x^{q}+x\right)\right)^{q}+ f_{u}^{q} g_{u}\left(f_{u}\left(x^{q}+x\right)\right)$. Thus, using Eqs. (2) and (3), we obtain the following:
+
+$$
+\begin{aligned}
+0= & f_{u}^{q+1}\left((u+\alpha) y^{q^{2}}+\left(u^{q^{2}}+1+\alpha^{q}\right) y\right)+f_{u} g_{u}\left(u y^{q}+(u+1)^{q} y\right)^{q} \\
+& +f_{u}^{q} g_{u}\left(u y^{q}+(u+1)^{q} y\right) \\
+= & f_{u} y^{q^{2}}\left(f_{u}^{q}(u+\alpha)+g_{u} u^{q}\right)+g_{u} y^{q}\left(f_{u}(u+1)^{q^{2}}+f_{u}^{q} u\right) \\
+& +f_{u}^{q} y\left(f_{u}\left(u^{q^{2}}+1+\alpha^{q}\right)+g_{u}(u+1)^{q}\right)
+\end{aligned}
+$$
+
+By explicitly computing $f_{u}$ and $g_{u}$, we obtain the following equalities.
+
+$$
+\begin{aligned}
+& f_{u}^{q}(u+\alpha)+g_{u} u^{q} \\
+&=\left(u^{q^{2}+q}+u^{q}+\alpha^{q}\right)(u+\alpha)+\left(u^{q^{2}+1}+u^{q^{2}} \alpha+u \alpha^{q}+u+\alpha\right) u^{q} \\
+&= u^{q^{2}+q+1}+u^{q+1}+\alpha^{q} u+\alpha u^{q^{2}+q}+\alpha u^{q}+\alpha^{q+1}+ \\
+&+u^{q^{2}+q+1}+\alpha u^{q^{2}+q}+\alpha^{q} u^{q+1}+u^{q+1}+\alpha u^{q} \\
+&= \alpha^{q}\left(u^{q+1}+u+\alpha\right)=\alpha^{q} f_{u} \\
+& f_{u}(u+1)^{q^{2}}+f_{u}^{q} u \\
+&=\left(u^{q+1}+u+\alpha\right)\left(u^{q^{2}}+1\right)+\left(u^{q^{2}+q}+u^{q}+\alpha^{q}\right) u \\
+&= u^{q^{2}+q+1}+u^{q^{2}+1}+\alpha u^{q^{2}}+u^{q+1}+u+\alpha+u^{q^{2}+q+1}+u^{q+1}+\alpha^{q} u \\
+&= u^{q^{2}+1}+u^{q^{2}} \alpha+u \alpha^{q}+u+\alpha=g_{u} \\
+& f_{u}\left(u^{q^{2}}+1+\alpha^{q}\right)+g_{u}(u+1)^{q} \\
+&=\left(u^{q+1}+u+\alpha\right)\left(u^{q^{2}}+1+\alpha^{q}\right)+\left(u^{q^{2}+1}+u^{q^{2}} \alpha+u \alpha^{q}+u+\alpha\right)\left(u^{q}+1\right) \\
+&= u^{q^{2}+q+1}+u^{q^{2}+1}+\alpha u^{q^{2}}+u^{q+1}+u+\alpha+\alpha^{q} u^{q+1}+\alpha^{q} u+\alpha^{q+1}+ \\
+&+u^{q^{2}+q+1}+\alpha u^{q^{2}+q}+\alpha^{q} u^{q+1}+u^{q+1}+\alpha u^{q}+u^{q^{2}+1}+\alpha u^{q^{2}}+\alpha^{q} u+u+\alpha \\
+&= \alpha\left(u^{q^{2}+q}+u^{q}+\alpha^{q}\right)=\alpha f_{u}^{q} .
+\end{aligned}
+$$
+
+Therefore, we obtain the equation
+
+
+\begin{equation*}
+\alpha^{q} f_{u}^{2} y^{q^{2}}+g_{u}^{2} y^{q}+\alpha f_{u}^{2 q} y=0 \tag{4}
+\end{equation*}
+
+
+We will show that
+
+$$
+L(y)=\alpha^{q} f_{u}^{2} y^{q^{2}}+g_{u}^{2} y^{q}+\alpha f_{u}^{2 q} y
+$$
+
+is a permutation. This is equivalent (see Lemma 1) to show that we have no root in $\mathbb{F}_{2^{m}}$ for
+
+$$
+\phi(y)=\alpha^{q} f_{u}^{2} y^{q+1}+g_{u}^{2} y+\alpha f_{u}^{2 q}
+$$
+
+Now, we have
+
+$$
+\phi^{\prime}(y)=\phi\left(y^{2}\right)^{2^{m-1}}=\alpha^{q 2^{m-1}} f_{u} y^{q+1}+g_{u} y+\alpha^{2^{m-1}} f_{u}^{q},
+$$
+
+substituting $y \mapsto y / \alpha^{2^{m-1}}$ and multiplying by $\alpha^{2^{m-1}}$ we get
+
+$$
+\phi^{\prime \prime}(y)=f_{u} y^{q+1}+g_{u} y+\alpha f_{u}^{q}
+$$
+
+By computation, we have that
+
+$$
+\phi^{\prime \prime}(y)=\left(y+(u+1)^{q}\right)^{q+1} \phi_{q, \alpha}\left(\frac{u y+\alpha}{y+(u+1)^{q}}\right) .
+$$
+
+Since
+
+$$
+\left|\begin{array}{cc}
+1 & (u+1)^{q} \\
+u & \alpha
+\end{array}\right|=f_{u} \neq 0
+$$
+
+from Lemma 1, we obtain that $\phi^{\prime \prime}(y)$ has no root in $\mathbb{F}_{2^{m}}$.\\
+Therefore, the only solution of (4) is $y=0$ and from Eq. (2) we obtain two solutions $(x, y) \in \mathbb{F}_{2} \times\{0\}$.
+
+Notice that in our analysis, for $u \in \mathbb{F}_{2^{m}}^{*}$, we do not need to consider separately the cases $g_{u}=0$ and $g_{u} \neq 0$. Whereas, in [21], the author considered separately the cases $u \in \mathbb{F}_{4} \backslash \mathbb{F}_{2}$ and $u \in \mathbb{F}_{2^{m}} \backslash \mathbb{F}_{4}$, using two different linear fractional transformations for proving the APN property. In our proof we show that it is possible to define just one transformation.
+
+The existence of our functions is based on the existence of elements $\alpha$ for which the projective polynomial $\phi_{q, \alpha}(x)$ has no roots.
+
+Projective polynomials and their roots have been studied in several works. Bluher's paper [2] has become a standard reference on this topic. In particular, from the results in [2], we have that for any $m$ and $k$, with $\operatorname{gcd}(k, m)=1$, there exists $\alpha \in \mathbb{F}_{2^{m}}$ such that $x^{2^{k}+1}+x+\alpha$ has no root in $\mathbb{F}_{2^{m}}$ (see also [25] for existence of these elements).
+
+Family F1 defined in Theorem 3 contains family $\mathcal{F}_{1}$ given in Theorem 1. Indeed, the projective polynomial $x^{2^{k}+1}+x+1$ has no root over $\mathbb{F}_{2^{m}}$ if and only if $\operatorname{gcd}(3, m)=1$. Therefore, our family generalizes family $\mathcal{F}_{1}$, since our construction does not require any restriction on $m$.
+
+\section*{4. A family of APN function from Dillon's method}
+In this section we show that, as for the case of family $\mathcal{F}_{1}$, adding certain quadratic terms to our functions, we can obtain another family of APN functions. Before that, we first give two useful lemmas.
+
+Lemma 2 ([30]). Let $a, b \in \mathbb{F}_{2^{m}}, b \neq 0$ and define
+
+$$
+f(z)=z^{3}+a z+b, \quad h(t)=t^{2}+b t+a^{3}
+$$
+
+Let $t_{1}, t_{2}$ be two solutions of $h(t)=0$ in $\mathbb{F}_{2^{2 m}}$. Then:\\
+(1) $f$ has three zeros in $\mathbb{F}_{2^{m}}$ if and only if $\operatorname{tr}_{m}\left(\frac{a^{3}}{b^{2}}\right)=\operatorname{tr}_{m}(1)$ and $t_{1}$, t ${ }_{2}$ are cubes in $\mathbb{F}_{2^{m}}$ (resp. $\mathbb{F}_{2^{2 m}}$ ) when $m$ is even (resp. odd);\\
+(2) $f$ has exactly one zero in $\mathbb{F}_{2^{m}}$ if and only if $\operatorname{tr}_{m}\left(\frac{a^{3}}{b^{2}}\right) \neq \operatorname{tr}_{m}(1)$;\\
+(3) $f$ has no zeros in $\mathbb{F}_{2^{m}}$ if and only if $\operatorname{tr}_{m}\left(\frac{a^{3}}{b^{2}}\right)=\operatorname{tr}_{m}(1)$ and $t_{1}, t_{2}$ are not cubes in $\mathbb{F}_{2^{m}}$ (resp. $\mathbb{F}_{2^{2 m}}$ ) when $m$ is even (resp. odd).
+
+The following lemma is a generalization of Lemma 2 in [28].
+
+Lemma 3. Let $\alpha \in \mathbb{F}_{2^{m}}$ such that $x^{3}+x+\alpha$ has no root in $\mathbb{F}_{2^{m}}$. Then\\
+(1) $\alpha \neq 0, \operatorname{tr}_{m}\left(\frac{1}{\alpha^{2}}\right)=\operatorname{tr}_{m}(1)$ and there exists some $\beta \in \mathbb{F}_{2^{m}}$ such that $\alpha(\beta+\omega)$ is not a cube in $\mathbb{F}_{2^{m}}$ (resp. $\mathbb{F}_{2^{2 m}}$ ) when $m$ is even (resp. odd) and such that $\frac{1}{\alpha^{2}}=\beta+\beta^{2}+1$, where $\omega \in \mathbb{F}_{2^{2}} \backslash \mathbb{F}_{2}$;\\
+(2) the equation
+
+
+\begin{equation*}
+a^{3}+\alpha b a^{2}+\left(\alpha^{2} b^{2}+b^{2}+1\right) a+\alpha^{3} b^{3}+\alpha b^{2}+\alpha=0 \tag{5}
+\end{equation*}
+
+
+has only one solution $(a, b)=(\alpha, 1)$ in $\mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}$.\\
+Proof. (1) First, it is trivial that $\alpha \neq 0$. Then since $x^{3}+x+\alpha$ has no root in $\mathbb{F}_{2^{m}}$, by Lemma 2, we have $\operatorname{tr}_{m}\left(\frac{1}{\alpha^{2}}\right)=\operatorname{tr}_{m}$ (1) and $t_{1}$ is not cubic in $\mathbb{F}_{2^{m}}$ (resp. $\mathbb{F}_{2^{2 m}}$ ) when $m$ is even (resp. odd), where $t_{1}$ is a solution of the equation $t^{2}+\alpha t+1=0$. Finally, it is easy to obtain that $\alpha(\beta+\omega)$ is a solution of $t^{2}+\alpha t+1=0$ and thus the statement holds.\\
+(2) Let $a_{1}=a+\alpha b$. Then by simplifying, Eq. (5) becomes
+
+$$
+a_{1}^{3}+\left(b^{2}+1\right) a_{1}+\alpha(b+1)^{3}=0 .
+$$
+
+If $b=1$, then $a_{1}=0$ and thus $a=\alpha$. If $b \neq 1$, then
+
+$$
+\left(\frac{a_{1}}{b+1}\right)^{3}+\frac{a_{1}}{b+1}+\alpha=0
+$$
+
+has no solution in $\mathbb{F}_{2^{m}}$ thanks to the condition that $x^{3}+x+\alpha$ has no root in $\mathbb{F}_{2^{m}}$. Therefore, Eq. (5) has only one solution $(a, b)=(\alpha, 1)$ in $\mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}$.
+
+Since the resultant of polynomials will be used in our proof, we now recall some basic facts about it. Given two polynomials $u(x)=a_{m} x^{m}+a_{m-1} x^{m-1}+\cdots+a_{0}$ and $v(x)=b_{n} x^{n}+b_{n-1} x^{n-1}+\cdots+b_{0}$ over a field $K$ with degrees $m$ and $n$, respectively, their resultant $\operatorname{Res}(u, v) \in K$ is the determinant of the following square matrix of order $n+m$ :
+
+$$
+\left(\begin{array}{cccccccc}
+a_{m} & a_{m-1} & \cdots & a_{0} & 0 & & \cdots & 0 \\
+0 & a_{m} & a_{m-1} & \cdots & a_{0} & 0 & \cdots & 0 \\
+\vdots & & \ddots & & & & & \vdots \\
+0 & \cdots & 0 & a_{m} & a_{m-1} & & \cdots & a_{0} \\
+b_{n} & b_{n-1} & \cdots & & b_{0} & 0 & \cdots & 0 \\
+0 & b_{n} & b_{n-1} & \cdots & & b_{0} & \cdots & 0 \\
+\vdots & & \ddots & & & & \ddots & \vdots \\
+0 & \cdots & 0 & b_{n} & b_{n-1} & & \cdots & b_{0}
+\end{array}\right) .
+$$
+
+For a field $K$ and two polynomials $F(x, y), G(x, y) \in K[x, y]$, we use $\operatorname{Res}_{y}(F, G)$ to denote the resultant of $F$ and $G$ with respect to $y$, which is the resultant of $F$ and $G$ when considered as polynomials in the single variable $y$. In this case, $\operatorname{Res}_{y}(F, G) \in K[x]$ belongs\\
+to the ideal generated by $F$ and $G$. It is well known that $F(x, y)=0$ and $G(x, y)=0$ has a common solution ( $x, y$ ) if and only if $x$ is a solution of $\operatorname{Res}_{y}(F, G)(x)=0$.
+
+Theorem 4 (Family F2). Let $F: \mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}} \rightarrow \mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}$ given by
+
+$$
+\begin{aligned}
+F(x, y) & =(f(x, y), g(x, y)) \\
+& =\left(x^{3}+x y+x y^{2}+\alpha y^{3}, x^{5}+x y+\alpha x^{2} y^{2}+\alpha x^{4} y+(1+\alpha)^{2} x y^{4}+\alpha y^{5}\right)
+\end{aligned}
+$$
+
+with $\alpha \in \mathbb{F}_{2^{m}}$ such that $x^{3}+x+\alpha$ has no root in $\mathbb{F}_{2^{m}}$. Then, $F$ is APN.
+
+Proof. Since $F$ is a quadratic function with $F(0,0)=(0,0)$, it suffices to show that for any $(a, b) \neq(0,0) \in \mathbb{F}_{2^{m}}^{2}$, the equation
+
+
+\begin{equation*}
+F(x+a, y+b)+F(x, y)+F(a, b)=0 \tag{6}
+\end{equation*}
+
+
+has exactly two solutions $(x, y) \in\{(0,0),(a, b)\}$ in $\mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}$. By a simple calculation, Eq. (6) is equivalent to the following equation system:
+
+\[
+\left\{\begin{array}{l}
+G(x, y)=a x^{2}+\left(a^{2}+b^{2}+b\right) x+(\alpha b+a) y^{2}+\left(\alpha b^{2}+a\right) y=0  \tag{7.1}\\
+H(x, y)=(\alpha b+a) x^{4}+\alpha b^{2} x^{2}+\left(\alpha^{2} b^{4}+a^{4}+b^{4}+b\right) x+ \\
+\left(\alpha^{2} a+\alpha b+a\right) y^{4}+\alpha a^{2} y^{2}+\left(\alpha a^{4}+\alpha b^{4}+a\right) y=0
+\end{array}\right.
+\]
+
+First of all, we consider the case $(a, b)=(\alpha, 1)$. In this case, Eqs. (7) become
+
+\[
+\left\{\begin{array}{l}
+\alpha x^{2}+\alpha^{2} x=0  \tag{8.1}\\
+\alpha x^{2}+\left(\alpha^{4}+\alpha^{2}\right) x+\alpha^{3} y^{4}+\alpha^{3} y^{2}+\alpha^{5} y=0
+\end{array}\right.
+\]
+
+From Eq. (8.1), we know $x \in\{0, \alpha\}$. If $x=0$, plugging it into Eq. (8.2), we have $\alpha^{3} y^{4}+\alpha^{3} y^{2}+\alpha^{5} y=0$, i.e., $y\left(y^{3}+y+\alpha^{2}\right)=0$. Thus $y=0$ since $y^{3}+y+\alpha^{2}=0$ has no solution in $\mathbb{F}_{2^{m}}$ according to Lemma 1 , condition $(i)$. If $x=\alpha$, together with Eq. (8.2), we get $\alpha^{3} y^{4}+\alpha^{3} y^{2}+\alpha^{5} y+\alpha^{5}=0$, i.e., $(y+1)\left(y^{3}+y^{2}+\alpha^{2}\right)=0$. Hence $y=1$ or $y^{3}+y^{2}+\alpha^{2}=0$. Let $Y=y+1$. Then the equation $y^{3}+y^{2}+\alpha^{2}=0$ becomes $Y^{3}+Y+\alpha^{2}=0$, which has no solution in $\mathbb{F}_{2^{m}}$. Therefore in this case, Eqs. (7) have only $(x, y) \in\{(0,0),(\alpha, 1)\}$ as solutions in $\mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}$.
+
+In the following, we always assume that $(a, b) \neq(\alpha, 1)$. Note that we can see $G, H$ be polynomials in $\mathbb{F}_{2}[x, y, \alpha, a, b]$. Then with the help of MAGMA, we obtain the resultant of $G$ and $H$ with respect to $y$ as follows
+
+
+\begin{equation*}
+\operatorname{Res}_{y}(G, H)(x)=\left(a^{3}+a b^{2}+\alpha b^{3}\right)^{2} x(x+a) R(x, a, b) R(x+a, a, b), \tag{9}
+\end{equation*}
+
+
+where
+
+$$
+\begin{aligned}
+R(x, a, b)= & \alpha^{2} x^{3}+\left(a^{2}+(\alpha b+\alpha) a+b^{2}+\alpha^{2} b+1\right) x+ \\
+& a^{3}+\alpha b a^{2}+\left(\alpha^{2} b^{2}+b^{2}+1\right) a+\alpha^{3} b^{3}+\alpha b^{2}+\alpha
+\end{aligned}
+$$
+
+In the sequel we shall show that $\operatorname{Res}_{y}(G, H)(x)=0$ is equivalent to $x(x+a)=0$.\\
+Firstly, we have $a^{3}+a b^{2}+\alpha b^{3} \neq 0$ for any $(a, b) \neq(0,0) \in \mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}$. Otherwise, for some element $(a, b) \neq(0,0) \in \mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}, a^{3}+a b^{2}+\alpha b^{3}=0$. If $b=0$, then the above equation becomes $a^{3}=0$, which contradicts the assumption $(a, b) \neq(0,0)$. If $b \neq 0$, then we have $c^{3}+c+\alpha=0$, where $c=\frac{a}{b} \in \mathbb{F}_{2^{m}}$, which contradicts the condition that $x^{3}+x+\alpha$ has no root in $\mathbb{F}_{2^{m}}$.
+
+In addition, we need to show $R(x, a, b) R(x+a, a, b) \neq 0$. Note that $R(x, a, b)=0$ has the same number of solutions in $\mathbb{F}_{2^{m}}$ as $R(x+a, a, b)=0$. It suffices to show that the equation $R(x, a, b)=0$ has no solution in $\mathbb{F}_{2^{m}}$.
+
+Now we consider the equation $R(x, a, b)=0$, i.e.,
+
+
+\begin{equation*}
+X^{3}+A X+\alpha B=0 \tag{10}
+\end{equation*}
+
+
+where $X=\alpha x, A=a^{2}+(\alpha b+\alpha) a+b^{2}+\alpha^{2} b+1$ and $B=a^{3}+\alpha b a^{2}+\left(\alpha^{2} b^{2}+b^{2}+\right.$ 1) $a+\alpha^{3} b^{3}+\alpha b^{2}+\alpha$.
+
+By Lemma 3, $B \neq 0$ holds under the case $(a, b) \neq(\alpha, 1)$. Let $h(t)=t^{2}+\alpha B t+A^{3}$. By computation, we have
+
+$$
+\frac{A^{3}}{\alpha^{2} B^{2}}=\frac{C}{\alpha B}+\frac{C^{2}}{\alpha^{2} B^{2}}+\frac{1}{\alpha^{2}}
+$$
+
+where
+
+$$
+C=(b+1)\left(a^{2}+\alpha(b+1) a+\left(\alpha^{2}+1\right) b^{2}+\alpha^{2}(b+1)+1\right) .
+$$
+
+Thus
+
+$$
+\operatorname{tr}_{m}\left(\frac{A^{3}}{\alpha^{2} B^{2}}\right)=\operatorname{tr}_{m}\left(\frac{1}{\alpha^{2}}\right)=\operatorname{tr}_{m}(1)
+$$
+
+by Lemma 3. Let $\frac{1}{\alpha^{2}}=\beta+\beta^{2}+1$ with $\beta \in \mathbb{F}_{2^{m}}$. Then also by Lemma 3, we know that $\alpha(\beta+\omega)$ is not cubic, where $\omega \in \mathbb{F}_{2^{2}} \backslash \mathbb{F}_{2}$. Note that
+
+$$
+(\beta+\omega)\left(\beta+\omega^{2}\right)=\beta^{2}+\beta+1=\frac{1}{\alpha^{2}}
+$$
+
+and thus
+
+
+\begin{equation*}
+(\beta+\omega)^{-1}=\left(\beta+\omega^{2}\right) \alpha^{2} \tag{11}
+\end{equation*}
+
+
+Moreover, the equation $h(t)=0$ has two solutions $t_{1}=C+(\beta+\omega) \alpha B$ and $t_{2}= C+\left(\beta+\omega^{2}\right) \alpha B$ in $\mathbb{F}_{2^{m}}$ (resp. $\mathbb{F}_{2^{2 m}}$ ) if $m$ is even (resp. odd). We now show that $t_{1}$ and $t_{2}$ are not cubic. Let $\hat{a}=\frac{a}{\alpha}$. Then
+
+$$
+\begin{aligned}
+C & =\alpha^{2}(b+1)\left(\hat{a}^{2}+(b+1) \hat{a}+\left(1+\frac{1}{\alpha^{2}}\right) b^{2}+(b+1)+\frac{1}{\alpha^{2}}\right) \\
+& =\alpha^{2}(b+1)\left(\hat{a}^{2}+(b+1) \hat{a}+\left(\beta+\beta^{2}\right) b^{2}+b+\beta+\beta^{2}\right) \triangleq \alpha^{2} C_{1}
+\end{aligned}
+$$
+
+and
+
+$$
+\begin{aligned}
+B & =\alpha^{3}\left(\hat{a}^{3}+b \hat{a}^{2}+\left(b^{2}+\frac{b^{2}+1}{\alpha^{2}}\right) \hat{a}+b^{3}+\frac{b^{2}+1}{\alpha^{2}}\right) \\
+& =\alpha^{3}\left(\hat{a}^{3}+b \hat{a}^{2}+\left(b^{2}+\left(b^{2}+1\right)\left(\beta+\beta^{2}+1\right)\right) \hat{a}+b^{3}+\left(b^{2}+1\right)\left(\beta+\beta^{2}+1\right)\right) \triangleq \alpha^{3} B_{1}
+\end{aligned}
+$$
+
+Moreover,
+
+$$
+\begin{aligned}
+t_{1} & =C+(\beta+\omega) \alpha B \\
+& =(\beta+\omega) \alpha^{4}\left((\beta+\omega)^{-1} \alpha^{-4} \alpha^{2} C_{1}+B_{1}\right) \\
+& =(\beta+\omega) \alpha^{4}\left(\left(\beta+\omega^{2}\right) C_{1}+B_{1}\right)
+\end{aligned}
+$$
+
+where the last equality holds due to Eq. (11). Furthermore, by computing directly, we can find that
+
+$$
+\left(\beta+\omega^{2}\right) C_{1}+B_{1}=\left(\hat{a}+(\beta+\omega) b+\beta+\omega^{2}\right)^{3}
+$$
+
+Note that by Lemma 3, $(\beta+\omega) \alpha^{4}$ is not cubic. Therefore, $t_{1}$ is not cubic. Similarly, $t_{2}$ is not cubic, either. Then by Lemma 2, the equation $x^{3}+A x+\alpha B=0$ has no solution in $\mathbb{F}_{2^{m}}$.
+
+Hence from Eq. (9), we have $x=0$ or $x=a$. Next, we show that Eqs. (7) have only $(x, y) \in\{(0,0),(a, b)\}$ as solutions.
+
+If $a=0$, then $x=0$. Moreover, Eq. (7.1) and Eq. (7.2) become $\alpha b y^{2}+\alpha b^{2} y=0$ and $\alpha b y^{4}+\alpha b^{4} y=0$, respectively. Thus $y=0$ or $y=b$. In the following, we assume that $a \neq 0$.
+
+Case 1: $x=0$. In this case Eqs. (7) become
+
+\[
+\left\{\begin{array}{l}
+(\alpha b+a) y^{2}+\left(\alpha b^{2}+a\right) y=0  \tag{12.1}\\
+\left(\alpha^{2} a+\alpha b+a\right) y^{4}+\alpha a^{2} y^{2}+\left(\alpha a^{4}+\alpha b^{4}+a\right) y=0
+\end{array}\right.
+\]
+
+We now show that Eqs. (12) have only one solution $y=0$ for any $(a, b) \in \mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}} \backslash\{(0,0),(\alpha, 1)\}$. If $a=\alpha b \neq \alpha$, then $b \neq 0,1$ and by Eq. (12.1), we get $\alpha\left(b^{2}+b\right) y=0$, i.e., $y=0$. If $a \neq \alpha b$ and $\alpha b^{2}+a=0$, then by Eq. (12.1), $y=0$ clearly. Now we consider the subcase $(\alpha b+a)\left(\alpha b^{2}+a\right) \neq 0$. In this subcase, from Eq. (12.1), we have $y=\frac{\alpha b^{2}+a}{\alpha b+a}$. Plugging it into Eq. (12.2) and simplifying, we obtain
+
+$$
+\left(\alpha b^{3}+a^{3}+a b^{2}\right)\left(a^{3}+\alpha b a^{2}+\left(\alpha^{2} b^{2}+b^{2}+1\right) a+\alpha^{3} b^{3}+\alpha b^{2}+\alpha\right)=0
+$$
+
+which contradicts the condition that $x^{3}+x+\alpha$ has no root in $\mathbb{F}_{2^{m}}$ and Lemma 3. Therefore Eqs. (12) have only one solution $y=0$.
+
+Case 2: $x=a$. In this case Eqs. (7) become
+
+\[
+\left\{\begin{array}{l}
+(\alpha b+a)(y+b)^{2}+\left(\alpha b^{2}+a\right)(y+b)=0  \tag{13.1}\\
+\left(\alpha^{2} a+\alpha b+a\right)(y+b)^{4}+\alpha a^{2}(y+b)^{2}+\left(\alpha a^{4}+\alpha b^{4}+a\right)(y+b)=0
+\end{array}\right.
+\]
+
+It is clear that $y=b$ is the unique solution of Eqs. (13) by the discussions of the case when $x=0$.
+
+To summarize, Eqs. (7) have only $(x, y) \in\{(0,0),(a, b)\}$ as solutions in $\mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}$ for any $(a, b) \in \mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}} \backslash\{(0,0)\}$. Therefore, $F$ is APN over $\mathbb{F}_{2^{m}} \times \mathbb{F}_{2^{m}}$.
+
+As for the case of family $\mathcal{F}_{1}$, family F2 generalizes the one given in Theorem 2. Indeed, our family includes this one and can be defined also over $\mathbb{F}_{2^{2 m}}$, with $m \equiv 0 \bmod 3$.
+
+\subsection*{4.1. New APN functions from our families}
+In this section we show that our constructions can produce new instances of APN functions. In particular, for $n=12(m=6)$, we obtain APN functions that are inequivalent to any APN function belonging to an already known family.
+
+For this dimension, we consider the EA-invariant $N_{F}$ for all known APN functions, that is, functions belonging to a known family. ${ }^{1}$
+
+\footnotetext{${ }^{1}$ Due to the hardness of checking the APNness condition for the functions obtained via the generalized isotopic shift (GIS) construction, presented in [6], we do not consider these maps. Moreover, if we restrict the coefficients of the polynomials to the subfield $\mathbb{F}_{2^{4}}$, following the approach done in [6] for $n=9$, then all the functions obtained (for $n=12$ ) from the GIS construction are equivalent to a Gold map. It is not known whether this is true also for unrestricted coefficients.
+}\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{Table 1\\
+Known APN families in univariate form over $\mathbb{F}_{2^{n}}$ that can be defined over $\mathbb{F}_{2^{12}}$.}
+\begin{tabular}{|l|l|l|l|}
+\hline
+$N^{\circ}$ & Functions & Conditions & In \\
+\hline
+1 & $x^{2^{i}+1}$ & \begin{tabular}{l}
+$\operatorname{gcd}(i, n)=1$ \\
+$n=3 k, \operatorname{gcd}(k, 3)=\operatorname{gcd}(s, 3 k)=1$, \\
+\end{tabular} & [20] \\
+\hline
+2 & $x^{2^{s}+1}+u^{2^{k}-1} x^{2^{i k}+2^{m k+s}}$ & \begin{tabular}{l}
+$i=s k \bmod 3, m=3-i$, \\
+$n \geq 12, u$ primitive in $\mathbb{F}_{2^{n}}^{*}$ \\
+$n=3 k, \operatorname{gcd}(k, 3)=\operatorname{gcd}(s, 3 k)=1$, \\
+\end{tabular} & [8] \\
+\hline
+3 & \( \begin{aligned} & u x^{2^{s}+1}+u^{2^{k}} x^{2^{-k}+2^{k+s}}+ \\ & v x^{2^{-k}+1}+w u^{2^{k}+1} x^{2^{s}+2^{k+s}} \end{aligned} \) & \begin{tabular}{l}
+$v, w \in \mathbb{F}_{2^{k}}, v w \neq 1$, \\
+$3 \mid(k+s) u$ primitive in $\mathbb{F}_{2^{n}}^{*}$ \( n=3 m, \operatorname{gcd}(s, m)=1, v \in \mathbb{F}_{2^{m}}^{*} \) \\
+\end{tabular} & [3,4] \\
+\hline
+4 & $L(x)^{2^{m}+1}+v x^{2^{m}+1}$ & $\mu \in \mathbb{F}_{2^{3 m}}$ with $\mu^{2^{2 m}+2^{m}+1} \neq 1$ and $L(x)=x^{2^{m+s}}+\mu x^{2^{s}}+x$ permutation $q=2^{m}, n=2 m, \operatorname{gcd}(i, m)=1$, & [28] \\
+\hline
+5 & \( \begin{aligned} & s x^{q+1}+x^{2^{i}+1}+x^{q\left(2^{i}+1\right)} \\ & +c x^{2^{i} q+1}+c^{q} x^{2^{i}+q} \end{aligned} \) & \( \begin{aligned} & c \in \mathbb{F}_{2^{n}}, s \in \mathbb{F}_{2^{n}} \backslash \mathbb{F}_{q} \\ & z^{2^{i}+1}+c z^{2^{i}}+c^{q} z+1 \\ & \text { has no solution } x \text { such that } x^{q+1}=1 \end{aligned} \) & [7] \\
+\hline
+6 & $x^{3}+a^{-1} \operatorname{tr}_{n}\left(a^{3} x^{9}\right)$ & $a \neq 0$ & [9] \\
+\hline
+7 & $x^{3}+a^{-1} \operatorname{tr}_{3}^{n}\left(a^{3} x^{9}+a^{6} x^{18}\right)$ & $3 \mid n, a \neq 0$ & [10] \\
+\hline
+8 & $x^{3}+a^{-1} \operatorname{tr}_{3}^{n}\left(a^{6} x^{18}+a^{12} x^{36}\right)$ & $3 \mid n, a \neq 0$ & [10] \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{Table 2\\
+Known APN families in bivariate forms over $\mathbb{F}_{2^{2 m}}$ that can be defined over $\mathbb{F}_{2^{12}}$.}
+\begin{tabular}{|l|l|l|l|}
+\hline
+$N^{\circ}$ & Functions & Conditions & In \\
+\hline
+9 & $\left(x y, x^{2^{k}+1}+\alpha x^{\left(2^{k}+1\right) 2^{i}}\right)$ & $m$ even, $\operatorname{gcd}(k, m)=1$, $\alpha$ not a cube & [31] \\
+\hline
+10 & $\left(x y, x^{2^{3 k}+2^{2 k}}+a x^{2^{2 k}} y^{2^{k}}+b y^{2^{k}+1}\right)$ & \( \begin{aligned} & \operatorname{gcd}(k, m)=1 \\ & z^{2^{k}+1}+a z+b \\ & \text { has no root in } \mathbb{F}_{2^{m}} \end{aligned} \) & [29] \\
+\hline
+11 & $\left(x y, x^{2^{i}+1}+x^{2^{i+m / 2}} y^{2^{m / 2}}+b x y^{2^{i}}+c y^{2^{i}+1}\right)$ & \begin{tabular}{l}
+\( \begin{aligned} & m \text { even }, \operatorname{gcd}(i, m)=1 \\ & \left(c z^{2^{i}+1}+b z^{2^{i}}+1\right)^{2^{m / 2}}+1 \\ & e^{2^{m / 2}+1} \end{aligned} \) \\
+has no root in $\mathbb{F}_{2^{m}}$ \\
+\end{tabular} & [13] \\
+\hline
+12 & $\left(x^{2^{i}+1}+B y^{2^{i}+1}, x^{2^{k+m / 2}} y+\frac{a}{B} x y^{2^{k+m / 2}}\right)$ & \begin{tabular}{l}
+\( m \equiv 2(\bmod 4), \operatorname{gcd}(k, m)=1 \) \\
+$B$ not a cube, \( a \in \mathbb{F}_{2^{m / 2}}^{*}, B^{2^{k}+2^{k+m / 2}} \neq a^{2^{k}+1} . \) \\
+\end{tabular} & [23] \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+In Tables 1 and 2, we report all the known families of APN functions that can be defined over $\mathbb{F}_{2^{12}}$. We divide the families based on whether they are presented in univariate representation or in bivariate representation. Moreover, among the monomial APN functions we report only the Gold APN function since, from the results in [33], we have that any quadratic APN function equivalent to a power function is equivalent to a Gold function.
+
+In Table 3, we report the values obtained for the invariant $N_{F}$ and the corresponding family.
+
+Due to the result of Yoshiara [32], CCZ-equivalence between quadratic APN functions coincides with EA-equivalence. Therefore, the invariant $N_{F}$ tells us that our construction is not included in any known family. Hence, we obtained two new families of APN functions.
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{Table 3\\
+EA-invariant $N_{F}$ for the known APN families in $\mathbb{F}_{2^{12}}$.}
+\begin{tabular}{|l|l|}
+\hline
+$N_{F}$ & $N^{\circ}$ in Table 1 or 2 \\
+\hline
+[ $n_{1}=1365, n_{2}=100100, n_{3}=99840, n_{4}=91$ ] & family n. 1 (Gold) \\
+\hline
+[ $n_{1}=1365, n_{2}=100100, n_{3}=141700$ ] & families n. 2, 3 \\
+\hline
+$\left[n_{1}=1365, n_{2}=100100, n_{3}=144010, n_{4}=140\right]$ & and 4 \\
+\hline
+[ $n_{1}=1365, n_{2}=100100, n_{3}=142932$ ] & families n. 5, 9, 10 and 11 \\
+\hline
+[ $n_{1}=1365, n_{2}=100100, n_{3}=139980, n_{4}=152$ ] & family n . 6 \\
+\hline
+[ $n_{1}=1365, n_{2}=100100, n_{3}=138918, n_{4}=103$ ] &  \\
+\hline
+[ $n_{1}=1365, n_{2}=100100, n_{3}=144728, n_{4}=184$ ] &  \\
+\hline
+[ $n_{1}=1365, n_{2}=100100, n_{3}=143502, n_{4}=198$ ] & families n. 7 and 8 \\
+\hline
+[ $n_{1}=1365, n_{2}=100100, n_{3}=144584, n_{4}=229$ ] &  \\
+\hline
+$\left[n_{1}=1365, n_{2}=100100, n_{3}=143286, n_{4}=155\right]$ &  \\
+\hline
+[ $n_{1}=1365, n_{2}=100100, n_{3}=144759, n_{4}=126$ ] & family n. 12 \\
+\hline
+[ $n_{1}=1365, n_{2}=100100, n_{3}=140664$ ] & family F1 from Theorem 3 \\
+\hline
+[ $n_{1}=1365, n_{2}=100100, n_{3}=144198, n_{4}=192$ ] & family F2 from Theorem 4 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+Remark 1. Note that, in lower dimensions, in particular 8 and 10, the functions obtained from Theorems 3 and 4 result CCZ-equivalent to the ones that we generalized (Theorems 1 and 2).
+
+Recently, Kölsh [26] proved that, for functions from Theorem 3, all choices of the coefficient $\alpha$ yield the same equivalence class. Therefore, when $3 \nmid m$ family F1 coincides with $\mathcal{F}_{1}$.
+
+\section*{5. Concluding remarks}
+We have introduced two new families of APN quadratic functions using biprojective polynomials and the Dillon's method. These constructions include two other families, family $\mathcal{F}_{1}$ in [21] and the first family in [28]. Our constructions extend these families in the sense that they allow to obtain APN functions over $\mathbb{F}_{2^{2 m}}$ also for the case $3 \mid m$.
+
+Recall that in [23], the authors have investigated the equivalence between APN functions obtained from the biprojective framework. In particular, from family $\mathcal{F}_{1}$ we can get $\varphi(m) / 2$ inequivalent functions ( $\varphi$ is the Euler's function), one for each $k \leq m / 2$ coprime with $m$.
+
+From the result of Kölsh [26], this is the same also for functions defined in Theorem 3 with $3 \mid m$.
+
+It would be interesting to extend this analysis also to the functions of Theorem 4. We leave this as an open problem.
+
+Problem 1. Study the equivalence problem between APN functions obtainedfrom Theorem 4.
+
+Another interesting problem is determining the Walsh spectra of our functions, that is the set $\left\{W_{F}(a, b): a, b \in \mathbb{F}_{2^{n}}\right\}$. For the case of family $\mathcal{F}_{1}$, we have a Gold-like Walsh spectrum [27]. This has been determined showing that the functions in $\mathcal{F}_{1}$ are 3 -to- 1 . Indeed, for quadratic APN functions we have the following property.
+
+Theorem 5 ([27]). Let $n$ even and $F$ be a quadratic APN function over $\mathbb{F}_{2^{n}}$. If $F(0)=0$ and for any $b \neq 0$ in the image of $F$ we have at least three pre-images, then $F$ is 3-to-1, that is, we have $\left|F^{-1}(0)\right|=1$ and for all other $b \in \operatorname{Im}(F) \backslash\{0\}$ we have $\left|F^{-1}(b)\right|=3$. Moreover, $F$ has a Gold-like Walsh spectrum, i.e. $\left\{\left|W_{F}(a, b)\right|: a, b \in\right. \left.\mathbb{F}_{2^{n}}\right\}=\left\{0,2^{n / 2}, 2^{n / 2+1}\right\}$.
+
+As a consequence of the results obtained in [26], we have that all the APN functions obtained from Theorem 3 are 3 -to- 1 and thus they have Gold-like Walsh spectra.
+
+From computational result we have that APN functions from Theorem 4 have Goldlike Walsh spectra, as well. However, these functions are not 3 -to- 1 . So, another open question is:
+
+Problem 2. Prove that APN functions from family F2 have Gold-like Walsh spectra.\\
+A last problem to investigate is whether also family $\mathcal{F}_{2}$ can be extended in way to include the case $3 \mid m$. More in general, it would be interesting to determine if other APN families can be constructed from biprojective polynomials.
+
+When $n \leq 10$, all APN functions coming from this approach are equivalent to families defined in [21], to Gold APN functions, or are sporadic cases, as for the Kim function in the dimension 6 (see [22]). However, for $n \geq 12$ other families can be determined, see for instance family N. 12 in Table 2.
+
+\section*{Data availability}
+No data was used for the research described in the article.
+
+\section*{Acknowledgment}
+The authors would like to thank deeply the anonymous referees for their valuable comments and suggestions that highly improved both the technical and the editorial qualities of this article. The work of Kangquan Li is supported by the National Natural Science Foundation of China under Grant 62202476 and 62172427 and the Research Fund of National University of Defense Technology under Grant ZK22-14.
+
+\section*{References}
+[1] E. Biham, A. Shamir, Differential cryptanalysis of DES-like cryptosystems, J. Cryptol. 4 (1991) 3-72.\\[0pt]
+[2] A.W. Bluher, On $x^{q+1}+a x+b$, Finite Fields Appl. 10 (3) (2004) 285-305.\\[0pt]
+[3] C. Bracken, E. Byrne, N. Markin, G. McGuire, New families of quadratic almost perfect nonlinear trinomials and multinomials, Finite Fields Appl. 14 (3) (2008) 703-714.\\[0pt]
+[4] C. Bracken, E. Byrne, N. Markin, G. McGuire, A few more quadratic APN functions, Cryptogr. Commun. 3 (2011) 43-53.\\[0pt]
+[5] K.A. Browning, J.F. Dillon, R.E. Kibler, M.T. McQuistan, APN polynomials and related codes, J. Comb. Inf. Syst. Sci. 34 (1-4) (2009) 135-159, special issue in honor of Prof. D.K. Ray-Chaudhuri on the occasion of his 75th birthday.\\[0pt]
+[6] L. Budaghyan, M. Calderini, C. Carlet, R. Coulter, I. Villa, Generalized isotopic shift construction for APN functions, Des. Codes Cryptogr. 89 (2020) 19-32.\\[0pt]
+[7] L. Budaghyan, C. Carlet, Classes of quadratic APN trinomials and hexanomials and related structures, IEEE Trans. Inf. Theory 54 (5) (2008) 2354-2357.\\[0pt]
+[8] L. Budaghyan, C. Carlet, G. Leander, Two classes of quadratic APN binomials inequivalent to power functions, IEEE Trans. Inf. Theory 54 (9) (2008) 4218-4229.\\[0pt]
+[9] L. Budaghyan, C. Carlet, G. Leander, Constructing new APN functions from known ones, Finite Fields Appl. 15 (2) (2009) 150-159.\\[0pt]
+[10] L. Budaghyan, C. Carlet, G. Leander, On a construction of quadratic APN functions, in: Proceedings of IEEE Information Theory Workshop ITW'09, 2009, pp. 374-378.\\[0pt]
+[11] L. Budaghyan, C. Carlet, A. Pott, New classes of almost bent and almost perfect nonlinear functions, IEEE Trans. Inf. Theory 52 (3) (2006) 1141-1152.\\[0pt]
+[12] L. Budaghyan, T. Helleseth, N. Kaleyski, A new family of APN quadrinomials, IEEE Trans. Inf. Theory 66 (11) (2020) 7081-7087.\\[0pt]
+[13] M. Calderini, L. Budaghyan, C. Carlet, On known constructions of APN and AB functions and their relation to each other, Rad Hrvat. Akad. Znan. Umjet., Mat. Znan. 25 (546) (2021) 79-105.\\[0pt]
+[14] C. Carlet, Relating three nonlinearity parameters of vectorial functions and building APN functions from bent functions, Des. Codes Cryptogr. 59 (2011) 89-109.\\[0pt]
+[15] C. Carlet, P. Charpin, V. Zinoviev, Codes, bent functions and permutations suitable for DES-like cryptosystems, Des. Codes Cryptogr. 15 (2) (1998) 125-156.\\[0pt]
+[16] C. Carlet, G. Gong, Y. Tan, Quadratic zero-difference balanced functions, APN functions and strongly regular graphs, Des. Codes Cryptogr. 78 (3) (2016) 629-654.\\[0pt]
+[17] R.S. Coulter, M. Henderson, A class of functions and their application in constructing semi-biplanes and association schemes, Discrete Math. 202 (1-3) (1999) 21-31.\\[0pt]
+[18] P. Dembowski, T.G. Ostrom, Planes of order $n$ with collineation groups of order $n^{2}$, Math. Z. 103 (3) (1968) 239-258.\\[0pt]
+[19] U. Dempwolff, Y. Edel, Dimensional dual hyperovals and APN functions with translation groups, J. Algebraic Comb. 39 (2) (2014) 457-496.\\[0pt]
+[20] R. Gold, Maximal recursive sequences with 3 -valued recursive cross-correlation functions, IEEE Trans. Inf. Theory 14 (1968) 154-156.\\[0pt]
+[21] F. Göloǧlu, Biprojective almost perfect nonlinear functions, IEEE Trans. Inf. Theory 68 (7) (2022) 4750-4760.\\[0pt]
+[22] F. Göloğlu, Classification of ( $q, q$ )-biprojective APN functions, IEEE Trans. Inf. Theory (2022).\\[0pt]
+[23] F. Göloğlu, L. Kölsch, Equivalences of biprojective almost perfect nonlinear functions, arXiv preprint, arXiv:2111.04197, 2021.\\[0pt]
+[24] F. Göloğlu, J. Pavlủ, On CCZ-inequivalence of some families of almost perfect nonlinear functions to permutations, Cryptogr. Commun. 13 (3) (2021) 377-391.\\[0pt]
+[25] T. Helleseth, A. Kholosha, On the equation $x^{2^{l}+1}+x+a=0$ over $G F\left(2^{k}\right)$, Finite Fields Appl. 14 (2008) 159-176.\\[0pt]
+[26] L. Kölsch, Private communication\\[0pt]
+[27] L. Kölsch, B. Kriepke, K.G. Kyureghyan, Image sets of perfectly nonlinear maps, Des. Codes Cryptogr. (2022).\\[0pt]
+[28] K. Li, Y. Zhou, C. Li, L. Qu, Two new families of quadratic APN functions, IEEE Trans. Inf. Theory 68 (7) (2022) 4761-4769.\\[0pt]
+[29] H. Taniguchi, On some quadratic APN functions, Des. Codes Cryptogr. 87 (2019) 1973-1983.\\[0pt]
+[30] K.S. Williams, Note on cubics over $\mathrm{GF}\left(2^{n}\right)$ and $\mathrm{GF}\left(3^{n}\right)$, J. Number Theory 7 (4) (1975) 361-365.\\[0pt]
+[31] Y. Zhou, A. Pott, A new family of semifields with 2 parameters, Adv. Math. 234 (2013) 43-60.\\[0pt]
+[32] S. Yoshiara, Equivalences of quadratic APN functions, J. Algebraic Comb. 35 (3) (2012) 461-475.\\[0pt]
+[33] S. Yoshiara, Equivalences of power APN functions with power or quadratic APN functions, J. Algebraic Comb. 44 (2016) 561-585.
+
+\begin{itemize}
+  \item 
+\end{itemize}
+
+
+\end{document}

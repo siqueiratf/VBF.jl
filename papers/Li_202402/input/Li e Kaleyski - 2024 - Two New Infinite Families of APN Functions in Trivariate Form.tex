@@ -1,0 +1,1437 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage{bbold}
+\usepackage{caption}
+\usepackage{multirow}
+
+\title{Two new infinite families of APN functions in trivariate form }
+
+\author{Kangquan $\mathrm{Li}^{1}$, Nikolay Kaleyski ${ }^{2}$\\
+${ }^{1}$ National University of Defense Technology, China;\\
+likangquan11@nudt.edu.cn\\
+${ }^{2}$ University of Bergen, Norway;\\
+nikolay.kaleyski@uib.no}
+\date{}
+
+
+\begin{document}
+\maketitle
+\captionsetup{singlelinecheck=false}
+
+
+\begin{abstract}
+We present two infinite families of APN functions in triviariate form over finite fields of the form $\mathbb{F}_{2^{3 m}}$. We show that the functions from both families are permutations when $m$ is odd, and are 3-to-1 functions when $m$ is even. In particular, our functions are AB permutations for $m$ odd. Furthermore, we observe that for $m=3$, i.e. for $\mathbb{F}_{2^{9}}$, the functions from our families are CCZ-equivalent to the two bijective sporadic APN instances discovered by Beierle and Leander. We also perform an exhaustive computational search for quadratic APN functions with binary coefficients in trivariate form over $\mathbb{F}_{2^{3 m}}$ with $m \leq 5$ and report on the results.
+\end{abstract}
+
+\section*{1. Introduction}
+We consider $(n, n)$-functions, that is, mappings over the finite field $\mathbb{F}_{2^{n}}$ or, equivalently, over the vector space $\mathbb{F}_{2}^{n}$. Such functions play an important role in i.a. symmetric cryptography where they are used as substitution boxes, or S-boxes, in practically all modern block ciphers. Since the S-boxes are typically the only nonlinear components of the cipher, its resistance to various kinds of cryptanalytic attacks directly depends on the properties of its S-boxes. For this reason, it is necessary for the design of secure ciphers to find $(n, n)$-functions with good cryptographic properties.
+
+One of the most important such properties is the differential uniformity which measures the resistance of a function to differential cryptanalysis. The differential uniformity should be as low as possible in order to provide good resistance against this type of attack, and its lowest possible value is equal to 2 . The ( $n, n$ )functions attaining this optimal bound are called almost perfect nonlinear (APN), and have been the subject of multiple studies since their introduction in the early 90's. APN functions are also of interest due to their correspondence with optimal objects in coding theory, combinatorics, and other areas of mathematics and computer science.
+
+Kangquan Li is supported by the National Natural Science Foundation of China (NSFC) under Grant 62202476 and 62172427 and the Research Fund of National University of Defense Technology under Grant ZK22-14.
+
+Unfortunately, very few constructions of APN functions are known to date; these include six infinite families of APN monomials, and around 20 (depending on how one counts and classifies them) infinite families of APN polynomials (here "infinite" refers to the fact that these constructions provide APN functions over $\mathbb{F}_{2^{n}}$ for infinitely many values of $n$ ). Furthermore, it is clear that this small number of known constructions covers only a tiny portion of what is possible: we are aware of thousands of distinct APN instances in dimensions $n$ as low as $n=8$, and only a handful of these are explained by the known infinite families. Constructing APN functions is thus a very difficult problem, especially when APN-ness is combined with other desirable properties such as bijectivity.
+
+In this paper, we introduce two new infinite families of APN functions for dimensions of the form $n=3 m$. We identify the finite field $\mathbb{F}_{2^{3 m}}$ with the vector space $\mathbb{F}_{2^{m}}^{3}$ which lets us represent the functions in "trivariate form". This, in turn, allows us to express the families of functions in a simple and tractable way. We also show that the constructed functions are almost bent permutations in the case of odd dimensions, and are 3-to-1 in the case of even dimensions. We note that while APN permutations are of particular interest (since they combine two desirable properties), very few constructions of APN permutations are known at present. To the authors' knowledge, besides the infinite APN monomial families over $\mathbb{F}_{2^{n}}$ with $n$ odd, there is only one infinite family of APN permutations, namely the one given in [10, Corollary 1].
+
+Even in the case of sporadic instances (as opposed to infinite families), few APN permutations are known. In [3], Beierle and Leander presented 35 new instances of APN functions over $\mathbb{F}_{2^{9}}$. Two of these instances are permutations, and are thus of particular interest. A triviariate representation of these two APN permutations as $f(x, y, z)=\left(x^{3}+u y^{2} z, y^{3}+u x z^{2}, z^{3}+u x^{2} y\right)$ was given and further studied in [2] in the hope that it could lead to further instances of APN permutations in higher dimensions. However, in [1], Bartoli and Timpanella proved that the above trivariate representation does not contain any other APN permutation for larger dimensions.
+
+Remarkably, the APN permutations arising from the families that we introduce in this paper over $\mathbb{F}_{2^{9}}$ are CCZ-equivalent to the two APN permutations found by Beierle and Leander in [3]. We have thus not only provided two new infinite constructions of APN permutations, but also classified the aforementioned two instances (up to CCZ-equivalence) into infinite families.
+
+The rest of the paper is organized as follows. In Section 2, we provide the necessary background used in the rest of our work. In Sections 3 and 4 we introduce two new infinite families of APN functions which are bijective in odd dimensions. In Section 5 we present some computational data that demonstrates, among other things, that the our new infinite families give rise to functions CCZ-inequivalent to any of the previously known constructions. Section 6 concludes the paper.
+
+\section*{2. Preliminaries}
+Let $n, k$ be natural numbers. We denote by $\mathbb{F}_{2^{n}}$ the finite field of extension degree $n$ over $\mathbb{F}_{2}$, and by $\mathbb{F}_{2^{n}}^{k}$ the $k$-dimensional vector space over $\mathbb{F}_{2^{n}}$; in particular, $\mathbb{F}_{2}^{n}$ is the vector space of dimension $n$ over the prime field $\mathbb{F}_{2}$, which can be naturally identified with $\mathbb{F}_{2^{n}}$. An $(n, m)$-function is any mapping $F$ from $\mathbb{F}_{2}^{n}$\\
+to $\mathbb{F}_{2}^{m}$. When $m=1$, we call such functions Boolean functions. For values of $m$ greater than 1 , we refer to $(n, m)$-functions as vectorial Boolean functions. This name is due to the fact that any $(n, m)$-function $F$ can be represented as a vector $F=\left(f_{1}, f_{2}, \ldots, f_{m}\right)$ of Boolean functions $f_{1}, f_{2}, \ldots, f_{m}: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}$. These Boolean functions are called the coordinate functions of $F$. The component functions of $F$ are all nonzero linear combinations of its coordinate functions, i.e. all Boolean functions of the form $F_{c}=\sum_{i=1}^{m} c_{i} f_{i}$ for $c=\left(c_{1}, c_{2}, \ldots, c_{m}\right) \in \mathbb{F}_{2}^{m}$ with $c \neq 0$.
+
+We will mostly concentrate on the case when $m=n$. While by definition $(n, n)$-functions are mappings from $\mathbb{F}_{2}^{n}$ to $\mathbb{F}_{2}^{n}$, they can equivalently be seen as functions from $\mathbb{F}_{2^{n}}$ to $\mathbb{F}_{2^{n}}$. Any such function has a unique representation as a univariate polynomial of the form
+
+$$
+F(x)=\sum_{i=0}^{2^{n}-1} a_{i} x^{i}
+$$
+
+with $a_{i} \in \mathbb{F}_{2^{n}}$. The algebraic degree $\operatorname{deg}(F)$ of $F$ is defined as the largest binary weight of any exponent $i$ with $a_{i} \neq 0$, i.e.
+
+$$
+\operatorname{deg}(F)=\max \left\{\operatorname{wt}_{2}(i): 0 \leq i \leq 2^{n}-1 \mid a_{i} \neq 0\right\} .
+$$
+
+A function of algebraic degree at most 1 is called affine, and an affine function mapping 0 to 0 is called linear. Functions of algebraic degree exactly 2 are called quadratic.
+
+In the case when $n=3 m$ for some natural number $m$, we can also represent an $(n, n)$-function $F$ as a triple $F=(f, g, h)$ of $(3 m, m)$-functions $f, g, h$ so that
+
+$$
+F(x, y, z)=(f(x, y, z), g(x, y, z), h(x, y, z))
+$$
+
+for any $x, y, z \in \mathbb{F}_{2^{m}}$. We will refer to this representation as the trivariate representation of $F$. We note that bivariate representations (when the dimension $n$ is divisible by 2 ) have been used in some constructions of infinite families before (see Table III) since some functions having a complex univariate representation can be expressed more simply in bivariate form. In the sequel, we follow a similar rationale and consider APN functions with a succinct representation in trivariate form. To the best of our knowledge, no infinite families of APN functions in triviariate form are given in the literature at the time of writing.
+
+The differential uniformity $\Delta(F)$ of $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ is the maximum number of solutions $x$ to any equation of the form $F(a+x)+F(x)=b$, i.e.
+
+$$
+\Delta(F)=\max \left\{\#\left\{x \in \mathbb{F}_{2^{n}} \mid F(a+x)+F(x)=b\right\}: a, b \in \mathbb{F}_{2^{n}} \mid a \neq 0\right\}
+$$
+
+The function $D_{a} F(x)=F(a+x)+F(x)$ is called the derivative of $F$ in direction $a \in \mathbb{F}_{2^{n}}$. Intuitively, it expresses the difference between two outputs $F(x)$ and $F(a+x)$ of the function when we know that the difference between their corresponding inputs is $a \in \mathbb{F}_{2^{n}}$. Roughly speaking, differential cryptanalysis exploits dependencies between the input and output of a function [6], which is why the differential uniformity should be kept as low as possible in order to prevent this. Clearly, $\Delta(F) \geq 2$ for any $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$, and\\
+if $\Delta(F)=2$, then we say that $F$ is almost perfect nonlinear (APN).\\
+The multiset of all values $\delta_{F}(a, b)$ for all $0 \neq a \in \mathbb{F}_{2^{n}}$ and $b \in \mathbb{F}_{2^{n}}$ is called the differential spectrum of $F$. In particular, the differential uniformity of $F$ is the largest element in its differential spectrum.
+
+Another important property of vectorial Boolean functions is the nonlinearity which measures their resistance to linear cryptanalysis [32]. Intuitively speaking, the nonlinearity $F$ is the distance between any component function of $F$ and any affine Boolean function. Recall that the Hamming distance $d_{H}(f, g)$ between two Boolean functions $f, g: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}$ is defined as the number of inputs on which $f$ and $g$ disagree, i.e. $d_{H}(f, g)=\#\left\{x \in \mathbb{F}_{2}^{n} \mid f(x) \neq g(x)\right\}$. The nonlinearity of an $(n, n)$-function $F$ is then defined as
+
+$$
+\mathcal{N} \mathcal{L}(F)=\min _{c \in \mathbb{F}_{2^{n}}^{*}, a \text { affine }} d_{H}\left(F_{c}, a\right),
+$$
+
+where $a$ goes through all affine ( $n, 1$ )-functions.\\
+The nonlinearity is desired to be high, and its value for any $(n, n)$-function can be upper bounded by $2^{n-1}-2^{(n-1) / 2}$ [20]. The functions that attain this upper bound with equality are called almost bent (AB). Any AB function is APN , but the converse is not true; however, we know that any quadratic APN function over $\mathbb{F}_{2^{n}}$ with $n$ odd is AB [18].
+
+Due to the large number of $(n, n)$-functions, they are usually considered up to some notion of equivalence. At present, the most general notion of equivalence used in practice is that of CCZ-equivalence. We say that $F, G: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{n}$ are $\mathbf{C C Z}$-equivalent if there exists an affine permutation $A: \mathbb{F}_{2}^{2 n} \rightarrow \mathbb{F}_{2}^{2 n}$ mapping the graph $\Gamma_{F}=\left\{(x, F(x)): x \in \mathbb{F}_{2}^{n}\right\}$ of $F$ to the graph $\Gamma_{G}$ of $G$.
+
+While the definition of CCZ-equivalence is straightforward, deciding whether two given $(n, n)$-functions are CCZ-equivalent is a hard computational problem. However, since APN functions are classified up to CCZ-equivalence, being able to demonstrate that the functions arising from some new construction are inequivalent to the previously known ones is a crucial part of showing that a given construction is new.
+
+Fortunately, justifying the CCZ-inequivalence of two quadratic APN functions can almost always be done very easily by means of their so-called orthoderivatives. An orthoderivative of an ( $n, n$ )-function $F$ is an $(n, n)$-function $\pi_{F}$ such that $\pi_{F}(0)=0$ and for any $0 \neq a \in \mathbb{F}_{2^{n}}$, we have $\pi_{F}(a) \cdot(F(x)+F(a+x)+ F(a)+F(0))=0$ for all $x \in \mathbb{F}_{2^{n}}$, where "." denotes some scalar product over $\mathbb{F}_{2}^{n}$. It is known that any quadratic APN function has a uniquely defined orthoderivative [17].
+
+Refuting CCZ-equivalence through the orthoderivatives involves going through some notions of equivalence less general than CCZ-equivalence, which we define now. Let $F, G$ be ( $n, n$ )-functions and suppose that $A_{1} \circ F \circ A_{2}+A=G$ for some affine functions $A_{1}, A_{2}, A$, where $A_{1}, A_{2}$ are permutations. Then we say that $F$ and $G$ are extended affine ( $\mathbf{E A}$ ) equivalent. If $A=0$, then we say that $F$ and $G$ are affine equivalent. If, in addition, $A_{1}(0)=A_{2}(0)=0$, we say that $F$ and $G$ are linear equivalent.
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{TABLE I\\
+Known infinite families of APN power Functions over $\mathbb{F}_{2}{ }^{n}$}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Family & Exponent & Conditions & Algebraic degree & Source \\
+\hline
+Gold & $2^{i}+1$ & $\operatorname{gcd}(i, n)=1$ & 2 & [25, 33] \\
+\hline
+Kasami & $2^{2 i}-2^{i}+1$ & $\operatorname{gcd}(i, n)=1$ & $i+1$ & [28, 29] \\
+\hline
+Welch & $2^{t}+3$ & $n=2 t+1$ & 3 & [22] \\
+\hline
+Niho & \( \begin{gathered} 2^{t}+2^{t / 2}-1, t \text { even } \\ 2^{t}+2^{(3 t+1) / 2}-1, t \text { odd } \end{gathered} \) & $n=2 t+1$ & \( \begin{gathered} (t+2) / 2 \\ t+1 \end{gathered} \) & [21] \\
+\hline
+Inverse & $2^{2 t}-1$ & $n=2 t+1$ & $n-1$ & [5, 33] \\
+\hline
+Dobbertin & $2^{4 i}+2^{3 i}+2^{2 i}+2^{i}-1$ & $n=5 i$ & $i+3$ & [23] \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{TABLE II\\
+Known infinite FAMILIES OF QUADRATIC APN POLYNOMIALS OVER $\mathbb{F}_{2}{ }^{n}$ IN UNIVARIATE FORM}
+\begin{tabular}{|l|l|l|l|}
+\hline
+ID & Functions & Conditions & Source \\
+\hline
+F1F2 & $x^{2^{s}+1}+u^{2^{k}-1} x^{2^{i k}+2^{m k+s}}$ & $n=p k, \operatorname{gcd}(k, 3)=\operatorname{gcd}(s, 3 k)=1, p \in \{3,4\}, i=s k \bmod p, m=p-i, n \geq 12, u$ primitive in $\mathbb{F}_{2^{n}}^{*}$ & [10] \\
+\hline
+F3 & \( \begin{aligned} & s x^{q+1}+x^{2^{i}+1}+x^{q\left(2^{i}+1\right)}+c x^{2^{i} q+1}+ \\ & c^{q} x^{2^{i}+q} \end{aligned} \) & \( \begin{aligned} & q=2^{m}, n=2 m, \operatorname{gcd}(i, m)=1, c \in \\ & \mathbb{F}_{2^{n}, s \in} \in \mathbb{F}_{2^{n}} \backslash \mathbb{F}_{q}, X^{2^{i}+1}+c X^{2^{i}}+c^{q} X+ \\ & 1 \text { has no solution } x \text { s.t. } x^{q+1}=1 \end{aligned} \) & [9] \\
+\hline
+F4 & $x^{3}+a^{-1} \operatorname{Tr}_{n}\left(a^{3} x^{9}\right)$ & $a \neq 0$ & [11] \\
+\hline
+F5 & $x^{3}+a^{-1} \operatorname{Tr}_{3}^{n}\left(a^{3} x^{9}+a^{6} x^{18}\right)$ & $3 \mid n, a \neq 0$ & [12] \\
+\hline
+F6 & $x^{3}+a^{-1} \operatorname{Tr}_{3}^{n}\left(a^{6} x^{18}+a^{12} x^{36}\right)$ & $3 \mid n, a \neq 0$ & [12] \\
+\hline
+F7F9 & \( \begin{aligned} & u x^{2^{s}+1}+u^{2^{k}} x^{2^{-k}+2^{k+s}}+v x^{2^{-k}+1}+ \\ & w u^{2^{k}+1} x^{2^{s}+2^{k+s}} \end{aligned} \) & \( \begin{aligned} & n=3 k, \operatorname{gcd}(k, 3)=\operatorname{gcd}(s, 3 k)=1, v, w \in \\ & \mathbb{F}_{2^{k}}, v w \neq 1,3 \mid(k+s), u \text { primitive in } \mathbb{F}_{2^{n}}^{*} \end{aligned} \) & [7] \\
+\hline
+F10 & \( \begin{aligned} & a^{2} x^{2^{2 m+1}+1}+b^{2} x^{2^{m+1}+1}+ \\ & a x^{2^{2 m}+2}+b x^{2^{m}+2}+\left(c^{2}+c\right) x^{3} \end{aligned} \) & \begin{tabular}{l}
+\( n=3 m, m \text { odd, } L(x)=a x^{2^{2 m}}+b x^{2^{m}}+c x \) \\
+satisfies the conditions of Lemma 8 of [8] \\
+\end{tabular} & [8] \\
+\hline
+F11 & \( \begin{aligned} & x^{3}+a\left(x^{2^{i}+1}\right)^{2^{k}}+b x^{3 \cdot 2^{m}}+ \\ & c\left(x^{2^{i+m}+2^{m}}\right)^{2^{k}} \end{aligned} \) & \( \begin{aligned} & n=2 m=10,(a, b, c)=(\beta, 1,0,0), i=3, \\ & k=2, \beta \text { primitive in } \mathbb{F}_{2^{2}} \\ & n=2 m, m \text { odd, } 3 \nmid m,(a, b, c)=\left(\beta, \beta^{2}, 1\right), \\ & \beta \text { primitive in } \mathbb{F}_{2^{2}}, i \in\{m-2, m, 2 m- \\ & \left.1,(m-2)^{-1} \bmod n\right\} \end{aligned} \) & [13] \\
+\hline
+F12 & $a \operatorname{Tr}_{m}^{n}\left(b x^{2^{i}+1}\right)+a^{q} \operatorname{Tr}_{m}^{n}\left(c x^{2^{s}+1}\right)$ & \begin{tabular}{l}
+\( n=2 m, m \text { odd, } q=2^{m}, a \notin \mathbb{F}_{q}, \operatorname{gcd}(i, n)= \) \\
+$1, i, s, b, c$ satisfy the conditions of Theorem 2 \\
+\end{tabular} & [37] \\
+\hline
+F13 & $L(z)^{2^{m}+1}+v z^{2^{m}+1}$ & \( \begin{aligned} & \operatorname{gcd}(s, m)=1, v \in \mathbb{F}_{2^{m}}^{*}, \mu \in \mathbb{F}_{2^{3 m}}^{*}, L(z)= \\ & z^{2^{m+s}}+\mu z^{2^{s}}+z \text { permutes } \mathbb{F}_{2^{3 m}} \end{aligned} \) & [30] \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+We know that two quadratic APN functions are CCZ-equivalent if and only if they are EA-equivalent [35]; and that if $F$ and $G$ are EA-equivalent, then $\pi_{F}$ and $\pi_{G}$ are affine equivalent. This means that any property that is invariant under affine equivalence, when applied to $\pi_{F}$ and $\pi_{G}$, can be used to distinguish between CCZ-inequivalent quadratic APN functions. In particular, it is known that the differential spectrum is invariant under affine equivalence (and, more generally, under CCZ-equivalence), and it is observed in
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{TABLE III\\
+Known infinite families of QUADRATIC APN polynomials over $\mathbb{F}_{2^{2 m}}$ IN BIVARIATE FORM}
+\begin{tabular}{|l|l|l|l|}
+\hline
+ID & Functions & Conditions & Source \\
+\hline
+F14 & $\left(x y, x^{2^{k}+1}+\alpha y^{\left(2^{k}+1\right) 2^{i}}\right)$ & $\operatorname{gcd}(k, m)=1, m$ even, $\alpha$ not a cube & [38] \\
+\hline
+F15 & \( \begin{aligned} & \left(x y, x^{2^{2 m}+2^{3 m}}\right. \\ & \left.a x^{2^{2 m}} y^{2^{m}}+b y^{2^{m}+1}\right) \end{aligned}+ \) & $x^{2^{m}+1}+a x+b$ has no root in $\mathbb{F}_{2^{m}}$ & [34] \\
+\hline
+F16 & \( \begin{array}{ll} \left(x y, x^{2^{i}+1}\right. & + \\ x^{2^{i+m / 2}} y^{2^{m / 2}}+b x y^{2^{i}}+ \\ \left.c y^{2^{i}+1}\right) & + \end{array} \) & $\left(c x^{2^{i}+1}+b x^{2^{i}}+1\right)^{2^{m / 2}+1}+x^{2^{m / 2}+1}$ has no roots in $\mathbb{F}_{2^{m}}$ & [15] \\
+\hline
+F17 & \( \begin{aligned} & \left(x^{2^{i}+1}+x y^{2 i}+\right. \\ & y^{2^{i}+1}, x^{2^{2 i}+1}+x^{2^{2 i}} y+ \\ & \left.y^{2^{2 i}+1}\right) \end{aligned} \) & $\operatorname{gcd}(3 i, m)=1$ & [26] \\
+\hline
+F18 & \( \begin{aligned} & \left(x^{2^{i}+1}+x y^{2^{i}}+\right. \\ & \left.y^{2^{i}+1}, x^{2^{3 i}} y+x y^{2^{3 i}}\right) \end{aligned}+ \) & $\operatorname{gcd}(3 i, m)=1, m$ odd & [26] \\
+\hline
+F19 & \( \begin{aligned} & \left(x^{3}+x y^{2}+y^{3}+x y, x^{5}+\right. \\ & \left.x^{4} y+y^{5}+x y+x^{2} y^{2}\right) \end{aligned} \) & $\operatorname{gcd}(3, m)=1$ & [30] \\
+\hline
+F20 & \( \begin{aligned} & \left(x^{q+1}+B y^{q+1}, x^{r} y+\right. \\ & \left.\frac{a}{B} x y^{r}\right) \end{aligned} \) & $0<k<m, q=2^{k}, r=2^{k+m / 2}$, $m \equiv 2(\bmod 4), \operatorname{gcd}(k, m)=1$, $a \in \mathbb{F}_{2^{m / 2}}^{*}, B \in \mathbb{F}_{2^{m}}, B$ not a cube, $B^{q+r} \neq a^{q+1}$ & [27] \\
+\hline
+F21 & \( \begin{aligned} & \left(x^{q+1}+x y^{q}+\right. \\ & \alpha y^{q+1}, x^{q^{2}+1}+\alpha x^{q^{2}} y+ \\ & \left.(1+\alpha)^{q} x y^{q^{2}}+\alpha y^{q^{2}+1}\right) \end{aligned} \) & $k, m>0, \operatorname{gcd}(k, m)=1, q=2^{k}$, $\alpha \in \mathbb{F}_{2^{m}}, x^{q+1}+x+\alpha$ has no roots in $\mathbb{F}_{2^{m}}$ & [16] \\
+\hline
+F22 & \( \begin{aligned} & \left(x^{3}+x y+x y^{2}+\alpha y^{3}, x^{5}+\right. \\ & x y+\alpha x^{2} y^{2}+\alpha x^{4} y+(1+ \\ & \left.\alpha)^{2} x y^{4}+\alpha y^{5}\right) \end{aligned} \) & $\alpha \in \mathbb{F}_{2^{m}}, x^{3}+x+\alpha$ has no roots in $\mathbb{F}_{2^{m}}$ & [16] \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+[17] that computing the differential spectra of the orthoderivatives is almost always sufficient to distinguish between CCZ-inequivalent APN functions. There are some rare cases in which CCZ-inequivalent functions have orthoderivatives with the same differential spectrum, in which case other invariants such as the Walsh spectrum can be applied to the orthoderivatives. In our case, the differential spectra of the orthoderivatives of the functions that we construct are already distinct from those of all known quadratic APN functions, and so we do not need to take any further steps like this.
+
+Despite the large number of known APN instances over $\mathbb{F}_{2^{n}}$ for e.g. $n=8$, see e.g. [3, 36], very few of them have been generalized into infinite families. Table I lists the known infinite families of APN monomials, while Tables II and III list the known non-monomial families. The former lists the families given in univariate form, while the latter lists those given in bivariate form.
+
+\section*{3. An INFINITE FAMILY OF APN FUNCTIONS OVER $\mathbb{F}_{2^{m}}^{3}$}
+Theorem 1. Let $\operatorname{gcd}(i, m)=k, q=2^{i}$ and
+
+$$
+F(x, y, z)=\left(x^{q+1}+x^{q} z+y z^{q}, x^{q} z+y^{q+1}, x y^{q}+y^{q} z+z^{q+1}\right) .
+$$
+
+Assume that the polynomials $X^{q^{2}+q+1}+X+1, X^{q^{2}+q+1}+X^{q^{2}}+1$ and $X^{q^{2}+q+1}+X^{q^{2}+1}+X^{q+1}+X+1$ have no roots in $\mathbb{F}_{2^{m}}$, and the polynomial
+
+$$
+X^{q^{2}+q+1}+X Y^{q^{2}+q}+X Y^{q}+X^{q^{2}+q}+X^{q} Y^{q^{2}}+X^{q^{2}} Y+Y^{q^{2}+q+1}+Y^{q^{2}+q}+Y^{q^{2}}+Y^{q}+1
+$$
+
+has no roots in $\mathbb{F}_{2^{m}}^{2}$. Then the differential uniformity of $F$ is $2^{k}$.\\
+Proof. Since $F$ is quadratic and $F(0,0,0)=(0,0,0)$, it suffices to show that the equation
+
+
+\begin{equation*}
+F(x+a, y+b, z+c)+F(x, y, z)+F(a, b, c)=(0,0,0) \tag{1}
+\end{equation*}
+
+
+has exactly $2^{k}$ solutions in $\mathbb{F}_{2^{m}}^{3}$ for any $(a, b, c) \in \mathbb{F}_{2^{m}}^{3} \backslash\{(0,0,0)\}$. By simplifying, Eq. (1) is equivalent to the following equation system:
+
+\[
+\left\{\begin{array}{l}
+(a+c) x^{q}+a^{q} x+c^{q} y+b z^{q}+a^{q} z=0  \tag{2.1}\\
+c x^{q}+b y^{q}+b^{q} y+a^{q} z=0 \\
+b^{q} x+(a+c) y^{q}+c z^{q}+\left(b^{q}+c^{q}\right) z=0
+\end{array}\right.
+\]
+
+Next we divide the proof into several cases and sub-cases depending on whether the elements $a, b, c$ are zero or non-zero.
+
+Case (I): $a=0$. In this case, Eqs. (2) become
+
+\[
+\left\{\begin{array}{l}
+c x^{q}+c^{q} y+b z^{q}=0  \tag{3.1}\\
+c x^{q}+b y^{q}+b^{q} y=0 \\
+b^{q} x+c y^{q}+c z^{q}+\left(b^{q}+c^{q}\right) z=0
+\end{array}\right.
+\]
+
+Subcase (I.1): $b=0, c \neq 0$. In this subcase, by Eq. (3.2), we have $x=0$ and then $y=0$ from Eq. (3.1). Together with $x=y=0$ and Eq. (3.3), we know that $c z^{q}+c^{q} z=0$, i.e., $(z / c)^{q}=z / c$, implying that $z / c \in \mathbb{F}_{2^{k}}$ since $\operatorname{gcd}(i, m)=k$. Thus Eqs. (2) have exactly $2^{k}$ solutions in this subcase.
+
+Subcase (I.2): $b \neq 0, c=0$. In this subcase, from Eq. (3.1) and Eq. (3.2), we can get $z=0$ and $b y^{q}+b^{q} y=0$, respectively. Thus i.e., $(y / b)^{q}=y / b$, implying that $y / b \in \mathbb{F}_{2^{k}}$. Moreover, by Eq. (3.3), we have $x=0$. Therefore Eqs. (2) have exactly $2^{k}$ solutions in this subcase.
+
+Subcase (I.3): $b c \neq 0$. In this subcase, we replace $x, y, z$ by $c x, b y, c z$, respectively in Eqs. (3) and get
+
+\[
+\left\{\begin{array}{l}
+c^{q+1} x^{q}+b c^{q} y+b c^{q} z^{q}=0  \tag{4.1}\\
+c^{q+1} x^{q}+b^{q+1} y^{q}+b^{q+1} y=0 \\
+b^{q} c x+b^{q} c y^{q}+c^{q+1} z^{q}+\left(b^{q} c+c^{q+1}\right) z=0 .
+\end{array}\right.
+\]
+
+It is clear that the numbers of solutions of Eqs. (3) and Eqs. (4) are the same. After multiplying $\frac{1}{b c^{q}}$ (resp. $\frac{1}{b^{q+1}}, \frac{1}{b^{q} c}$ ) into the two parts of Eq. (4.1) (resp. Eq. (4.2), Eq. (4.3)), we obtain
+
+\[
+\left\{\begin{array}{l}
+\Delta x^{q}+y+z^{q}=0  \tag{5.1}\\
+\Delta^{q+1} x^{q}+y^{q}+y=0 \\
+x+y^{q}+\Delta^{q} z^{q}+\left(\Delta^{q}+1\right) z=0
+\end{array}\right.
+\]
+
+where $\Delta=\frac{c}{b}$. By Eq. (5.1), we have $y=\Delta x^{q}+z^{q}$ and then plugging it into Eq. (5.2) and (5.3), we obtain
+
+
+\begin{equation*}
+\Delta^{q} x^{q^{2}}+\Delta\left(\Delta^{q}+1\right) x^{q}+z^{q^{2}}+z^{q}=0 \tag{6}
+\end{equation*}
+
+
+and
+
+
+\begin{equation*}
+\Delta^{q} x^{q^{2}}+x+z^{q^{2}}+\Delta^{q} z^{q}+\left(\Delta^{q}+1\right) z=0, \tag{7}
+\end{equation*}
+
+
+respectively. After summing Eqs. (6) and (7), we get
+
+
+\begin{equation*}
+\Delta\left(\Delta^{q}+1\right) x^{q}+x+\left(\Delta^{q}+1\right)\left(z^{q}+z\right)=0 . \tag{8}
+\end{equation*}
+
+
+Raising Eq. (8) into its $q$-th power and plugging $z^{q^{2}}+z^{q}=\Delta^{q} x^{q^{2}}+\Delta\left(\Delta^{q}+1\right) x^{q}$ from Eq. (6) into it, we acquire
+
+$$
+\Delta^{q}\left(\Delta^{q^{2}}+1\right) x^{q^{2}}+x^{q}+\left(\Delta^{q^{2}}+1\right)\left(\Delta^{q} x^{q^{2}}+\Delta\left(\Delta^{q}+1\right) x^{q}\right)=0,
+$$
+
+i.e.,
+
+
+\begin{equation*}
+\left(\Delta^{q^{2}+q+1}+\Delta^{q^{2}+1}+\Delta^{q+1}+\Delta+1\right) x^{q}=0 . \tag{9}
+\end{equation*}
+
+
+According to the condition that polynomial $X^{q^{2}+q+1}+X^{q^{2}+1}+X^{q+1}+X+1$ has no roots in $\mathbb{F}_{2^{m}}$, we have $x^{q}=0$, i.e., $x=0$. Plugging it into Eq. (6) and $y=\Delta x^{q}+z^{q}$ (from (5.1)), we get $z^{q^{2}}+z^{q}=0$ and $y=z^{q}$, respectively. Thus $z \in \mathbb{F}_{2^{k}}$ and $y=z^{q}$. Namely, Eqs. (2) have exactly $2^{k}$ solutions in this subcase.
+
+Case (II): $a \neq 0$.\\
+Subcase (II.1): $b=c=0$. In this subcase, from Eqs. (2), we obtain $a x^{q}+a^{q} x=0, a^{q} z=0$ and $a y^{q}=0$, respectively. Thus it is trivial that Eqs. (2) have exactly $2^{k}$ solutions in this subcase.
+
+Subcase (II.2): $b=0, c \neq 0$. In this subcase, Eqs. (2) become
+
+\[
+\left\{\begin{array}{l}
+(a+c) x^{q}+a^{q} x+c^{q} y+a^{q} z=0  \tag{10.1}\\
+c x^{q}+a^{q} z=0 \\
+(a+c) y^{q}+c z^{q}+c^{q} z=0
+\end{array}\right.
+\]
+
+We replace $x, z$ by $a x, c z$, respectively in Eqs. (10) and get
+
+\[
+\left\{\begin{array}{l}
+(a+c) a^{q} x^{q}+a^{q+1} x+c^{q} y+a^{q} c z=0  \tag{11.1}\\
+a^{q} c x^{q}+a^{q} c z=0 \\
+(a+c) y^{q}+c^{q+1}\left(z^{q}+z\right)=0
+\end{array}\right.
+\]
+
+From Eq. (11.2), we have $z=x^{q}$ and then plugging it into Eq. (11.1) and Eq. (11.3), we obtain
+
+
+\begin{equation*}
+a^{q+1}\left(x^{q}+x\right)+c^{q} y=0 \tag{12}
+\end{equation*}
+
+
+and
+
+
+\begin{equation*}
+(a+c) y^{q}+c^{q+1}\left(x^{q^{2}}+x^{q}\right)=0 \tag{13}
+\end{equation*}
+
+
+respectively. Summing the $q$-th power of Eq. (12) multiplied by $c^{q+1}$ and Eq. (13) multiplied by $a^{q^{2}+q}$, we obtain
+
+$$
+\left(a^{q^{2}+q+1}+a^{q^{2}+q} c+c^{q^{2}+q+1}\right) y^{q}=0
+$$
+
+If $a^{q^{2}+q+1}+a^{q^{2}+q} c+c^{q^{2}+q+1}=0$, then $(c / a)^{q^{2}+q+1}+c / a+1=0$, which contradicts the hypothesis. Thus $y=0$. Plugging $y=0$ into Eq. (12), we have $a^{q+1}\left(x^{q}+x\right)=0$, implying $x \in \mathbb{F}_{2^{k}}$. Therefore, Eqs. (2) have exactly $2^{k}$ solutions in this subcase.
+
+Subcase (II.3): $b \neq 0, c=0$. In this subcase, Eqs. (2) become
+
+\[
+\left\{\begin{array}{l}
+a x^{q}+a^{q} x+b z^{q}+a^{q} z=0  \tag{14.1}\\
+b y^{q}+b^{q} y+a^{q} z=0 \\
+b^{q} x+a y^{q}+b^{q} z=0
+\end{array}\right.
+\]
+
+We replace $x, y, z$ by $a x, b y, a z$, respectively in Eqs. (14) and get
+
+\[
+\left\{\begin{array}{l}
+a^{q+1} x^{q}+a^{q+1} x+a^{q} b z^{q}+a^{q+1} z=0  \tag{15.1}\\
+b^{q+1} y^{q}+b^{q+1} y+a^{q+1} z=0 \\
+a b^{q} x+a b^{q} y^{q}+a b^{q} z=0
+\end{array}\right.
+\]
+
+Let $\Delta=\frac{b}{a}$. Then we obtain $x^{q}+x+\Delta z^{q}+z=0, z=\Delta^{q+1}\left(y^{q}+y\right)$ and $z=x+y^{q}$, respectively, from Eqs. (15). From the last two equations, we have $x=\left(1+\Delta^{q+1}\right) y^{q}+\Delta^{q+1} y$. Plugging it and $z=\Delta^{q+1}\left(y^{q}+y\right)$\\
+into $x^{q}+x+\Delta z^{q}+z=0$, we acquire
+
+$$
+\left(1+\Delta^{q^{2}+q}+\Delta^{q^{2}+q+1}\right)\left(y^{q^{2}}+y^{q}\right)=0
+$$
+
+By the condition that the polynomial $X^{q^{2}+q+1}+X+1$ has no roots in $\mathbb{F}_{2^{m}}$, we easily know that $1+ \Delta^{q^{2}+q}+\Delta^{q^{2}+q+1} \neq 0$ and thus $y^{q^{2}}+y^{q}=0$, i.e., $y \in \mathbb{F}_{2^{k}}$. Therefore, Eqs. (2) have exactly $2^{k}$ solutions in this subcase.
+
+Subcase (II.4): $b c \neq 0$. In this subcase, we replace $x, y, z$ by $a x, b y, c z$, respectively in Eqs. (2) and get
+
+\[
+\left\{\begin{array}{l}
+\left(a^{q+1}+a^{q} c\right) x^{q}+a^{q+1} x+b c^{q} y+b c^{q} z^{q}+a^{q} c z=0  \tag{16.1}\\
+a^{q} c x^{q}+b^{q+1} y^{q}+b^{q+1} y+a^{q} c z=0 \\
+a b^{q} x+\left(a b^{q}+b^{q} c\right) y^{q}+c^{q+1} z^{q}+\left(b^{q} c+c^{q+1}\right) z=0
+\end{array}\right.
+\]
+
+By Eq. (16.2), we have
+
+
+\begin{equation*}
+z=x^{q}+\frac{b^{q+1}}{a^{q} c} y^{q}+\frac{b^{q+1}}{a^{q} c} y \tag{17}
+\end{equation*}
+
+
+After plugging Eq. (17) into Eq. (16.1) and multiplying it by $a^{q^{2}}$, we obtain
+
+
+\begin{equation*}
+a^{q^{2}} b c^{q} x^{q^{2}}+a^{q^{2}+q+1} x^{q}+a^{q^{2}+q+1} x+b^{q^{2}+q+1} y^{q^{2}}+b^{q+1}\left(a^{q^{2}}+b^{q^{2}}\right) y^{q}+a^{q^{2}} b\left(b^{q}+c^{q}\right) y=0 \tag{18}
+\end{equation*}
+
+
+After plugging Eq. (17) into Eq. (16.3) and multiplying it by $a^{q^{2}+q}$, we acquire
+
+
+\begin{align*}
+& a^{q^{2}+q} c^{q+1} x^{q^{2}}+a^{q^{2}+q} c\left(b^{q}+c^{q}\right) x^{q}+a^{q^{2}+q+1} b^{q} x+a^{q} b^{q^{2}+q} c y^{q^{2}}+ \\
+& b^{q}\left(a^{q^{2}+q+1}+a^{q^{2}+q} c+a^{q} b^{q^{2}} c+a^{q^{2}} b^{q+1}+a^{q^{2}} b c^{q}\right) y^{q}+a^{q^{2}} b^{q+1}\left(b^{q}+c^{q}\right) y=0 \tag{19}
+\end{align*}
+
+
+Summing the left-hand side of Eq. (18) multiplied by $a^{q} c$ and that of Eq. (19) multiplied by $b$, we get after dividing by $a q^{2}$
+
+
+\begin{align*}
+& a^{q} c\left(a^{q+1}+b^{q+1}+b c^{q}\right) x^{q}+a^{q+1}\left(a^{q} c+b^{q+1}\right) x+b^{q+1}\left(a^{q+1}+b^{q+1}+b c^{q}\right) y^{q}+ \\
+& \left(a^{q} c+b^{q+1}\right)\left(b^{q+1}+b c^{q}\right) y=0 \tag{20}
+\end{align*}
+
+
+Raising Eq. (20) into its $q$-th power, we have
+
+
+\begin{align*}
+& a^{q^{2}} c^{q}\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) x^{q^{2}}+a^{q^{2}+q}\left(a^{q^{2}} c^{q}+b^{q^{2}+q}\right) x^{q}+b^{q^{2}+q}\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) y^{q^{2}}+ \\
+& \left(a^{q^{2}} c^{q}+b^{q^{2}+q}\right)\left(b^{q^{2}+q}+b^{q} c^{q^{2}}\right) y^{q}=0 \tag{21}
+\end{align*}
+
+
+Summing the left-hand side of Eq. (21) multiplied by $b$ with that of Eq. (18) multiplied by $a^{q^{2}+q}+b^{q^{2}+q}+ b^{q} c^{q^{2}}$, we obtain after dividing by $a^{q^{2}}$
+
+
+\begin{align*}
+& a^{q}\left(a^{q^{2}+q+1}+a b^{q^{2}+q}+a b^{q} c^{q^{2}}+a^{q^{2}} b c^{q}+b^{q^{2}+q+1}\right) x^{q}+a^{q+1}\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) x+ \\
+& b^{q+1}\left(a^{q^{2}+q}+a^{q} b^{q^{2}}+b^{q^{2}+q}+b^{q} c^{q^{2}}+b^{q^{2}} c^{q}+c^{q^{2}+q}\right) y^{q}+b\left(b^{q}+c^{q}\right)\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) y=\emptyset \tag{Q22}
+\end{align*}
+
+
+Summing the left-hand side of Eq. (21) multiplied by $a^{q} c$ and that of Eq. (19) multiplied by $a^{q^{2}+q}+b^{q^{2}+q}+ b^{q} c^{q^{2}}$, we obtain after dividing by $a^{q^{2}} b^{q}$
+
+
+\begin{align*}
+& a^{q} c\left(a^{q^{2}+q}+a^{q} b^{q^{2}}+b^{q^{2}+q}+b^{q} c^{q^{2}}+b^{q^{2}} c^{q}+c^{q^{2}+q}\right) x^{q}+a^{q+1}\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) x+ \\
+& S y^{q}+b\left(b^{q}+c^{q}\right)\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) y=0 \tag{23}
+\end{align*}
+
+
+where
+
+$$
+\begin{aligned}
+S= & a^{q^{2}+2 q+1}+a^{q+1} b^{q^{2}+q}+a^{q+1} b^{q} c^{q^{2}}+a^{q^{2}+2 q} c+a^{2 q} b^{q^{2}} c+a^{q^{2}+q} b^{q+1}+a^{q^{2}+q} b c^{q}+a^{q} b^{q^{2}+q} c+ \\
+& a^{q} b^{q} c^{q^{2}+1}+a^{q} b^{q^{2}} c^{q+1}+a^{q} c^{q^{2}+q+1}+b^{q^{2}+2 q+1}+b^{2 q+1} c^{q^{2}}+b^{q^{2}+q+1} c^{q}+b^{q+1} c^{q^{2}+q}
+\end{aligned}
+$$
+
+Adding Eq. (22) and Eq. (23), we can find that
+
+
+\begin{equation*}
+a^{q} T\left(x^{q}+y^{q}\right)=0 \tag{24}
+\end{equation*}
+
+
+where\\
+$T=a^{q^{2}+q+1}+a b^{q^{2}+q}+a b^{q} c^{q^{2}}+a^{q^{2}+q} c+a^{q} b^{q^{2}} c+a^{q^{2}} b c^{q}+b^{q^{2}+q+1}+b^{q^{2}+q} c+b^{q} c^{q^{2}+1}+b^{q^{2}} c^{q+1}+c^{q^{2}+q+1}$.\\
+If $T=0$, let $A=\frac{a}{c}$ and $B=\frac{b}{c}$. Then we have\\
+$\frac{T}{c^{q^{2}+q+1}}=A^{q^{2}+q+1}+A B^{q^{2}+q}+A B^{q}+A^{q^{2}+q}+A^{q} B^{q^{2}}+A^{q^{2}} B+B^{q^{2}+q+1}+B^{q^{2}+q}+B^{q^{2}}+B^{q}+1=0$,\\
+which contradicts the condition that the polynomial
+
+$$
+X^{q^{2}+q+1}+X Y^{q^{2}+q}+X Y^{q}+X^{q^{2}+q}+X^{q} Y^{q^{2}}+X^{q^{2}} Y+Y^{q^{2}+q+1}+Y^{q^{2}+q}+Y^{q^{2}}+Y^{q}+1
+$$
+
+has no roots in $\mathbb{F}_{2^{m}}^{2}$. Thus we get $x=y$ by Eq. (24). Now we plug $x=y$ into Eq. (20) and get
+
+
+\begin{equation*}
+\left(a^{q} c+b^{q+1}\right)\left(a^{q+1}+b^{q+1}+b c^{q}\right)\left(x+x^{q}\right)=0 . \tag{25}
+\end{equation*}
+
+
+If $a^{q} c+b^{q+1}=0$, plugging $c=\frac{b^{q+1}}{a^{q}}$ and $x=y$ into Eq. (18), we obtain
+
+$$
+a^{q^{2}+q+1} x^{q}+a^{q^{2}+q+1} x+\left(a^{q^{2}} b^{q+1}+b^{q^{2}+q+1}\right) x^{q}+\left(a^{q^{2}} b^{q+1}+b^{q^{2}+q+1}\right) x=0
+$$
+
+i.e.,
+
+$$
+\left(a^{q^{2}+q+1}+a^{q^{2}} b^{q+1}+b^{q^{2}+q+1}\right)\left(x^{q}+x\right)=0
+$$
+
+Since $a^{q^{2}+q+1}+a^{q^{2}} b^{q+1}+b^{q^{2}+q+1} \neq 0$ thanks to the condition that $X^{q^{2}+q+1}+X^{q^{2}}+1$ has no roots in $\mathbb{F}_{2^{m}}$, we have $x^{q}+x=0$, i.e, $x \in\{0,1\}$. Thus Eqs. (2) have exactly two solutions when $a^{q} c+b^{q+1}=0$.
+
+If $a^{q+1}+b^{q+1}+b c^{q}=0$, plugging $b c^{q}=a^{q+1}+b^{q+1}$ and $x=y$ into Eq. (18), we can get
+
+$$
+\begin{aligned}
+& \left(a^{q^{2}+q+1}+a^{q^{2}} b^{q+1}\right) x^{q^{2}}+a^{q^{2}+q+1} x^{q}+a^{q^{2}+q+1} x+b^{q^{2}+q+1} x^{q^{2}}+ \\
+& b^{q+1}\left(a^{q^{2}}+b^{q^{2}}\right) x^{q}+\left(a^{q^{2}} b^{q+1}+a^{q^{2}+q+1}+a^{q^{2}} b^{q+1}\right) x=0,
+\end{aligned}
+$$
+
+i.e.,
+
+$$
+\left(a^{q^{2}+q+1}+a^{q^{2}} b^{q+1}+b^{q^{2}+q+1}\right)\left(x^{q^{2}}+x^{q}\right)=0
+$$
+
+Clearly, we have $x^{q^{2}}+x^{q}=0$, implying $x \in \mathbb{F}_{2^{k}}$. Thus Eqs. (2) have exactly $2^{k}$ solutions when $a^{q} c+b^{q+1}=$ 0 .
+
+If $\left(a^{q} c+b^{q+1}\right)\left(a^{q+1}+b^{q+1}+b c^{q}\right) \neq 0$, then by Eq. (25), we have $x^{q}+x=0$, and then $x \in \mathbb{F}_{2^{k}}$. Thus Eqs. (2) have exactly $2^{k}$ solutions when $\left(a^{q} c+b^{q+1}\right)\left(a^{q+1}+b^{q+1}+b c^{q}\right) \neq 0$.
+
+In conclusion, Eqs. (2) have exactly $2^{k}$ solutions in this subcase.\\
+Together with the above two cases, we can conclude that Eqs. (2) have exactly $2^{k}$ solutions in $\mathbb{F}_{2^{m}}^{3}$ and thus the differential uniformity of $F$ is $2^{k}$.
+
+We now show that when $m$ and $i$ satisfy an additional condition, the functions described in Theorem 1 are permutations. Before proving that, we first introduce a useful lemma.
+
+Lemma 2. [31, Lemma IV.6] Suppose $\operatorname{gcd}(i, m)=k$ and $\alpha \in \mathbb{F}_{2^{k}}^{*}$. Then the equation $x^{2^{i}}+x=\alpha$ has no solution in $\mathbb{F}_{2^{m}}$ if and only if $\frac{m}{k}$ is odd.
+
+Theorem 3. Let $\frac{m}{\operatorname{gcd}(i, m)}$ be odd, $q=2^{i}$ and
+
+$$
+F(x, y, z)=\left(x^{q+1}+x^{q} z+y z^{q}, x^{q} z+y^{q+1}, x y^{q}+y^{q} z+z^{q+1}\right) .
+$$
+
+Assume that the polynomials $X^{q^{2}+q+1}+X+1, X^{q^{2}+q+1}+X^{q^{2}}+1$ and $X^{q^{2}+q+1}+X^{q^{2}+1}+X^{q+1}+X+1$ have no roots in $\mathbb{F}_{2^{m}}$, and the polynomial
+
+$$
+X^{q^{2}+q+1}+X Y^{q^{2}+q}+X Y^{q}+X^{q^{2}+q}+X^{q} Y^{q^{2}}+X^{q^{2}} Y+Y^{q^{2}+q+1}+Y^{q^{2}+q}+Y^{q^{2}}+Y^{q}+1
+$$
+
+has no roots in $\mathbb{F}_{2^{m}}^{2}$. Then $F$ is a permutation over $\mathbb{F}_{2^{m}}^{3}$.\\
+Proof. It suffices to show that the equation
+
+
+\begin{equation*}
+F(x+a, y+b, z+c)+F(x, y, z)=(0,0,0) \tag{26}
+\end{equation*}
+
+
+has no solutions in $\mathbb{F}_{2^{m}}^{3}$ for any $(a, b, c) \in \mathbb{F}_{2^{m}}^{3} \backslash\{(0,0,0)\}$. By simplifying, Eq. (26) is equivalent to the following equation system:
+
+\[
+\left\{\begin{array}{l}
+(a+c) x^{q}+a^{q} x+c^{q} y+b z^{q}+a^{q} z=a^{q+1}+a^{q} c+b c^{q}  \tag{27.1}\\
+c x^{q}+b y^{q}+b^{q} y+a^{q} z=a^{q} c+b^{q+1} \\
+b^{q} x+(a+c) y^{q}+c z^{q}+\left(b^{q}+c^{q}\right) z=a b^{q}+b^{q} c+c^{q+1}
+\end{array}\right.
+\]
+
+Next, we divide the proof into two cases depending on whether $a=0$ or $a \neq 0$. For each case, we consider several sub-cases depending on whether the elements $a, b, c$ are zero or not.
+
+Case (I): $a=0$. In this case, Eqs. (27) become
+
+\[
+\left\{\begin{array}{l}
+c x^{q}+c^{q} y+b z^{q}=b c^{q}  \tag{28.1}\\
+c x^{q}+b y^{q}+b^{q} y=b^{q+1} \\
+b^{q} x+c y^{q}+c z^{q}+\left(b^{q}+c^{q}\right) z=b^{q} c+c^{q+1}
+\end{array}\right.
+\]
+
+Subcase (II.1): $b=0, c \neq 0$. In this subcase, by Eqs. (28), we get $c x^{q}+c^{q} y=0, c x^{q}=0$ and $c y^{q}+c z^{q}+ c^{q} z=c^{q+1}$, respectively. Thus it is clear that $x=y=0$ and $c z^{q}+c^{q} z=c^{q+1}$, which implies $\left(\frac{z}{c}\right)^{q}+\frac{z}{c}=1$. We thus obtain a contradiction by Lemma 2 and the assumption that $\frac{m}{\operatorname{gcd}(i, m)}$ is odd. Therefore Eqs. (27) do not have a solution.
+
+Subcase (II.2): $b \neq 0, c=0$. In this subcase, from Eqs. (28), we obtain $b z^{q}=0, b y^{q}+b^{q} y=b^{q+1}$ and $b^{q} x+b^{q} z=0$, respectively. Similarly to the proof of Subcase (II.1), we can conclude that Eqs. (27) have no solutions in this subcase.
+
+Subcase (II.3): $b c \neq 0$. After replacing $x, y, z$ by $c x, b y, c z$ in Eqs. (28) and simplifying, we get
+
+\[
+\left\{\begin{array}{l}
+\Delta x^{q}+y+z^{q}+1=0  \tag{29.1}\\
+\Delta^{q+1} x^{q}+y^{q}+y+1=0 \\
+x+y^{q}+\Delta^{q} z^{q}+\left(1+\Delta^{q}\right) z+1+\Delta^{q}=0
+\end{array}\right.
+\]
+
+where $\Delta=\frac{c}{b}$. From Eq. (29.1), we have $y=\Delta x^{q}+z^{q}+1$. Plugging it into Eq. (29.2) and Eq. (29.3), we get
+
+
+\begin{equation*}
+\Delta^{q} x^{q^{2}}+\left(\Delta^{q+1}+\Delta\right) x^{q}+z^{q^{2}}+z^{q}+1=0 \tag{30}
+\end{equation*}
+
+
+and
+
+
+\begin{equation*}
+\Delta^{q} x^{q^{2}}+x+z^{q^{2}}+\Delta^{q} z^{q}+\left(1+\Delta^{q}\right) z+\Delta^{q}=0 \tag{31}
+\end{equation*}
+
+
+respectively. Summing Eqs. (30) and (31), we obtain
+
+
+\begin{equation*}
+\left(\Delta^{q+1}+\Delta\right) x^{q}+x+\left(\Delta^{q}+1\right)\left(z^{q}+z+1\right)=0 \tag{32}
+\end{equation*}
+
+
+Raising Eq. (32) into its $q$-th power, we get
+
+
+\begin{equation*}
+\left(\Delta^{q^{2}+q}+\Delta^{q}\right) x^{q^{2}}+x^{q}+\left(\Delta^{q^{2}}+1\right)\left(z^{q^{2}}+z^{q}+1\right)=0 \tag{33}
+\end{equation*}
+
+
+Adding the left-hand side of Eq. (30) multiplied by $\Delta^{q^{2}}+1$ and that of Eq. (33), we acquire
+
+
+\begin{equation*}
+\left(\Delta^{q^{2}+q+1}+\Delta^{q^{2}+1}+\Delta^{q+1}+\Delta+1\right) x^{q}=0 \tag{34}
+\end{equation*}
+
+
+From the fact that the polynomial $X^{q^{2}+q+1}+X^{q^{2}+1}+X^{q+1}+X+1$ has no roots in $\mathbb{F}_{2^{m}}$ and Eq. (34), we know that $x=0$. Plugging it into Eq. (30), we get $z^{q^{2}}+z+1=0$. Since $\frac{m}{\operatorname{gcd}(i, m)}$ is odd, it is clear that $\frac{m}{\operatorname{gcd}(2 i, m)}$ is also odd. Then by Lemma 2, the equation $z^{q^{2}}+z+1=0$ has no solution and thus Eqs.\\
+(27) do not have a solution.
+
+Case (II): $a \neq 0$.\\
+Subcase (II.1): $b=0, c=0$. In this subcase, from Eqs. (27), we have $a x^{q}+a^{q} x+a^{q} z=a^{q+1}, a^{q} z=0$ and $a y^{q}=0$, respectively. Similar to the proof of Subcase (II.1), we can conclude that Eqs. (27) do not have a solution.
+
+Subcase (II.2): $b=0, c \neq 0$. In this subcase, Eqs. (27) become
+
+\[
+\left\{\begin{array}{l}
+(a+c) x^{q}+a^{q} x+c^{q} y+a^{q} z=a^{q+1}+a^{q} c  \tag{35.1}\\
+c x^{q}+a^{q} z=a^{q} c \\
+(a+c) y^{q}+c z^{q}+c^{q} z=c^{q+1}
+\end{array}\right.
+\]
+
+By replacing $x, y, z$ by $a x, c y, c z$, respectively, and simplifying, we get
+
+\[
+\left\{\begin{array}{l}
+\left(\Delta^{q+1}+\Delta^{q}\right) x^{q}+\Delta^{q+1} x+y+\Delta^{q} z+\Delta^{q+1}+\Delta^{q}=0  \tag{36.1}\\
+x^{q}+z+1=0 \\
+(\Delta+1) y^{q}+z^{q}+z+1=0
+\end{array}\right.
+\]
+
+where $\Delta=\frac{a}{c}$. From Eq. (36.2), we get $z=x^{q}+1$. Plugging it into Eq. (36.1), we have
+
+
+\begin{equation*}
+y=\Delta^{q+1}\left(x^{q}+x+1\right) \tag{37}
+\end{equation*}
+
+
+After plugging $z=x^{q}+1$ and Eq. (37) into Eq. (36.3) and simplifying, we can obtain
+
+$$
+\left(\Delta^{q^{2}+q+1}+\Delta^{q^{2}+q}+1\right)\left(x^{q^{2}}+x^{q}+1\right)=0
+$$
+
+According to the condition that $X^{q^{2}+q+1}+X+1$ has no roots in $\mathbb{F}_{2^{m}}$, we know that $\Delta^{q^{2}+q+1}+\Delta^{q^{2}+q}+1 \neq 0$ and thus $x^{q^{2}}+x^{q}+1=0$, similarly, which implies a contradiction by Lemma 2 and the assumption that $\frac{m}{\operatorname{gcd}(i, m)}$ is odd. Therefore Eqs. (27) have no solutions in this subcase either.
+
+Subcase (II.3): $b \neq 0, c=0$. In this subcase, Eqs. (27) become
+
+\[
+\left\{\begin{array}{l}
+a x^{q}+a^{q} x+b z^{q}+a^{q} z=a^{q+1}  \tag{38.1}\\
+b y^{q}+b^{q} y+a^{q} z=b^{q+1} \\
+b^{q} x+a y^{q}+b^{q} z=a b^{q}
+\end{array}\right.
+\]
+
+After replacing $x, y, z$ by $a x, b y, a z$, respectively, we get
+
+\[
+\left\{\begin{array}{l}
+x^{q}+x+\Delta z^{q}+z+1=0  \tag{39.1}\\
+\Delta^{q+1} y^{q}+\Delta^{q+1} y+z+\Delta^{q+1}=0 \\
+x+y^{q}+z+1=0
+\end{array}\right.
+\]
+
+where $\Delta=\frac{b}{a}$. From Eq. (39.2), we have $z=\Delta^{q+1}\left(y^{q}+y+1\right)$. Summing Eqs. (39.2) and (39.3), we get
+
+
+\begin{equation*}
+x=\left(1+\Delta^{q+1}\right) y^{q}+\Delta^{q+1} y+\Delta^{q+1}+1 . \tag{40}
+\end{equation*}
+
+
+Plugging Eq. (40) and $z=\Delta^{q+1}\left(y^{q}+y+1\right)$ into Eq. (39.1), we can obtain
+
+$$
+\left(\Delta^{q^{2}+q+1}+\Delta^{q^{2}+q}+1\right)\left(y^{q^{2}}+y^{q}+1\right)=0
+$$
+
+Similarly to the proof of Subcase (II.2), we can conclude that Eqs. (27) have no solutions in this subcase.\\
+Subcase (II.4): $b c \neq 0$. After replacing $x, y, z$ by $a x, b y, c z$, respectively in Eqs. (27) and simplifying, we have
+
+\[
+\left\{\begin{array}{l}
+\left(a^{q+1}+a^{q} c\right) x^{q}+a^{q+1} x+b c^{q} y+b c^{q} z^{q}+a^{q} c z=a^{q+1}+a^{q} c+b c^{q}  \tag{41.1}\\
+a^{q} c x^{q}+b^{q+1} y^{q}+b^{q+1} y+a^{q} c z=a^{q} c+b^{q+1} \\
+a b^{q} x+\left(a b^{q}+b^{q} c\right) y^{q}+c^{q+1} z^{q}+\left(b^{q} c+c^{q+1}\right) z=a b^{q}+b^{q} c+c^{q+1}
+\end{array}\right.
+\]
+
+By Eq. (41.2), we have
+
+
+\begin{equation*}
+z=x^{q}+\frac{b^{q+1}}{a^{q} c} y^{q}+\frac{b^{q+1}}{a^{q} c} y+\frac{b^{q+1}}{a^{q} c}+1 \tag{42}
+\end{equation*}
+
+
+After plugging Eq. (42) into Eq. (41.1) and multiplying it by $a^{q^{2}}$, we obtain
+
+
+\begin{align*}
+& a^{q^{2}} b c^{q} x^{q^{2}}+a^{q^{2}+q+1} x^{q}+a^{q^{2}+q+1} x+b^{q^{2}+q+1} y^{q^{2}}+b^{q+1}\left(a^{q^{2}}+b^{q^{2}}\right) y^{q}+ \\
+& a^{q^{2}} b\left(b^{q}+c^{q}\right) y+a^{q^{2}+q+1}+a^{q^{2}} b^{q+1}+b^{q^{2}+q+1}=0 \tag{43}
+\end{align*}
+
+
+Next, we plug Eq. (42) into Eq. (41.3), multiply it by $a^{q^{2}+q}$, and get
+
+
+\begin{align*}
+& a^{q^{2}+q} c^{q+1} x^{q^{2}}+a^{q^{2}+q} c\left(b^{q}+c^{q}\right) x^{q}+a^{q^{2}+q+1} b^{q} x+a^{q} b^{q^{2}+q} c y^{q^{2}}+b^{q}\left(a^{q^{2}+q+1}+a^{q^{2}+q} c+a^{q} b^{q^{2}} c+a^{q^{2}} b^{q+1}+\right. \\
+& \left.a^{q^{2}} b c^{q}\right) y^{q}+a^{q^{2}} b^{q+1}\left(b^{q}+c^{q}\right) y+a^{q^{2}+q+1} b^{q}+a^{q^{2}+q} c^{q+1}+a^{q^{2}} b^{2 q+1}+a^{q^{2}} b^{q+1} c^{q}+a^{q} b^{q^{2}+q} c=0 \tag{44}
+\end{align*}
+
+
+Summing the left-hand side of Eq. (43) multiplied by $a^{q} c$ and that of Eq. (44) multiplied by $b$, and dividing by $a^{q^{2}}$, we get
+
+
+\begin{align*}
+& a^{q} c\left(a^{q+1}+b^{q+1}+b c^{q}\right) x^{q}+a^{q+1}\left(a^{q} c+b^{q+1}\right) x+b^{q+1}\left(a^{q+1}+b^{q+1}+b c^{q}\right) y^{q}+ \\
+& \left(a^{q} c+b^{q+1}\right)\left(b^{q+1}+b c^{q}\right) y+\left(a^{q} c+b^{q+1}\right)\left(a^{q+1}+b^{q+1}+b c^{q}\right)=0 \tag{45}
+\end{align*}
+
+
+Raising Eq. (45) into its $q$-th power, we have
+
+
+\begin{align*}
+& a^{q^{2}} c^{q}\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) x^{q^{2}}+a^{q^{2}+q}\left(a^{q^{2}} c^{q}+b^{q^{2}+q}\right) x^{q}+b^{q^{2}+q}\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) y^{q^{2}}+ \\
+& \left(a^{q^{2}} c^{q}+b^{q^{2}+q}\right)\left(b^{q^{2}+q}+b^{q} c^{q^{2}}\right) y^{q}+\left(a^{q^{2}} c^{q}+b^{q^{2}+q}\right)\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right)=0 \tag{46}
+\end{align*}
+
+
+Summing the left-hand side of Eq. (46) multiplied by $b$ and that of Eq. (43) multiplied by $a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}$,\\
+and dividing by $a^{q^{2}}$, we obtain
+
+
+\begin{align*}
+& a^{q}\left(a^{q^{2}+q+1}+a b^{q^{2}+q}+a b^{q} c^{q^{2}}+a^{q^{2}} b c^{q}+b^{q^{2}+q+1}\right) x^{q}+a^{q+1}\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) x+ \\
+& b^{q+1}\left(a^{q^{2}+q}+a^{q} b^{q^{2}}+b^{q^{2}+q}+b^{q} c^{q^{2}}+b^{q^{2}} c^{q}+c^{q^{2}+q}\right) y^{q}+b\left(b^{q}+c^{q}\right)\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) y+ \\
+& \left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right)\left(a^{q+1}+b^{q+1}+b c^{q}\right)=0 \tag{47}
+\end{align*}
+
+
+Summing the left-hand side of Eq. (46) multiplied by $a^{q} c$ and that of Eq. (44) multiplied by $a^{q^{2}+q}+b^{q^{2}+q}+ b^{q} c^{q^{2}}$, and dividing by $a^{q^{2}} b^{q}$, we obtain
+
+
+\begin{align*}
+& a^{q} c\left(a^{q^{2}+q}+a^{q} b^{q^{2}}+b^{q^{2}+q}+b^{q} c^{q^{2}}+b^{q^{2}} c^{q}+c^{q^{2}+q}\right) x^{q}+a^{q+1}\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) x+ \\
+& S y^{q}+b\left(b^{q}+c^{q}\right)\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right) y+\left(a^{q^{2}+q}+b^{q^{2}+q}+b^{q} c^{q^{2}}\right)\left(a^{q+1}+b^{q+1}+b c^{q}\right)=0, \tag{48}
+\end{align*}
+
+
+where
+
+$$
+\begin{aligned}
+S= & a^{q^{2}+2 q+1}+a^{q+1} b^{q^{2}+q}+a^{q+1} b^{q} c^{q^{2}}+a^{q^{2}+2 q} c+a^{2 q} b^{q^{2}} c+a^{q^{2}+q} b^{q+1}+a^{q^{2}+q} b c^{q}+a^{q} b^{q^{2}+q} c+ \\
+& a^{q} b^{q} c^{q^{2}+1}+a^{q} b^{q^{2}} c^{q+1}+a^{q} c^{q^{2}+q+1}+b^{q^{2}+2 q+1}+b^{2 q+1} c^{q^{2}}+b^{q^{2}+q+1} c^{q}+b^{q+1} c^{q^{2}+q}
+\end{aligned}
+$$
+
+Summing Eqs. (47) and (48), we get
+
+
+\begin{equation*}
+a^{q} T\left(x^{q}+y^{q}\right)=0 \tag{49}
+\end{equation*}
+
+
+where\\
+$T=a^{q^{2}+q+1}+a b^{q^{2}+q}+a b^{q} c^{q^{2}}+a^{q^{2}+q} c+a^{q} b^{q^{2}} c+a^{q^{2}} b c^{q}+b^{q^{2}+q+1}+b^{q^{2}+q} c+b^{q} c^{q^{2}+1}+b^{q^{2}} c^{q+1}+c^{q^{2}+q+1}$.\\
+Similarly to the proof of Theorem 1, we have $T \neq 0$ due to the condition that the polynomial
+
+$$
+X^{q^{2}+q+1}+X Y^{q^{2}+q}+X Y^{q}+X^{q^{2}+q}+X^{q} Y^{q^{2}}+X^{q^{2}} Y+Y^{q^{2}+q+1}+Y^{q^{2}+q}+Y^{q^{2}}+Y^{q}+1
+$$
+
+has no roots in $\mathbb{F}_{2}^{2}$. Therefore by Eq. (49), we see that we must have $x=y$. Now we plug $x=y$ into Eq. (45) and get
+
+
+\begin{equation*}
+\left(a^{q} c+b^{q+1}\right)\left(a^{q+1}+b^{q+1}+b c^{q}\right)\left(x^{q}+x+1\right)=0 . \tag{50}
+\end{equation*}
+
+
+If $a^{q} c+b^{q+1}=0$, plugging $c=\frac{b^{q+1}}{a^{q}}$ and $x=y$ into Eq. (43), we obtain\\
+$a^{q^{2}+q+1} x^{q}+a^{q^{2}+q+1} x+\left(a^{q^{2}} b^{q+1}+b^{q^{2}+q+1}\right) x^{q}+\left(a^{q^{2}} b^{q+1}+b^{q^{2}+q+1}\right) x+a^{q^{2}+q+1}+a^{q^{2}} b^{q+1}+b^{q^{2}+q+1}=0$, i.e.,
+
+$$
+\left(a^{q^{2}+q+1}+a^{q^{2}} b^{q+1}+b^{q^{2}+q+1}\right)\left(x^{q}+x+1\right)=0
+$$
+
+Since $a^{q^{2}+q+1}+a^{q^{2}} b^{q+1}+b^{q^{2}+q+1} \neq 0$ thanks to the condition that $X^{q^{2}+q+1}+X^{q^{2}}+1$ has no roots in $\mathbb{F}_{2^{m}}$, we have $x^{q}+x+1=0$, which has no solutions in $\mathbb{F}_{2^{m}}$ since $m$ is odd. Thus $a^{q} c+b^{q+1} \neq 0$.
+
+If $a^{q+1}+b^{q+1}+b c^{q}=0$, plugging $b c^{q}=a^{q+1}+b^{q+1}$ and $x=y$ into Eq. (43), we can get
+
+$$
+\left(a^{q^{2}+q+1}+a^{q^{2}} b^{q+1}+b^{q^{2}+q+1}\right)\left(x^{q^{2}}+x^{q}+1\right)=0 .
+$$
+
+It is clear that we have $x^{q^{2}}+x^{q}+1=0$, which has no solutions in $\mathbb{F}_{2^{m}}$, either. Thus $a^{q+1}+b^{q+1}+b c^{q} \neq 0$.\\
+Therefore, Eq. (50) implies $x^{q}+x+1=0$ which once again leads to contradiction.\\
+We have thus shown that Eqs. (27) have no solutions in $\mathbb{F}_{2^{m}}^{3}$, and thus $F$ is a permutation as claimed.\\
+The APN-ness and bijectivity of the functions described above depend on several polynomials not having roots. In the following proposition, we use Theorems 1 and 3 to give a direct construction of APN functions over $\mathbb{F}_{2^{3 m}}$ which are bijective for odd values of $m$.
+
+Proposition 4. Let $\operatorname{gcd}(m, 7)=1$,
+
+$$
+F(x, y, z)=\left(x^{3}+x^{2} z+y z^{2}, x^{2} z+y^{3}, x y^{2}+y^{2} z+z^{3}\right) .
+$$
+
+Then $F$ is APN over $\mathbb{F}_{2^{m}}^{3}$. In particular, when $m$ is odd, $F$ is $A B$ and is also a permutation over $\mathbb{F}_{2^{m}}^{3}$.\\
+Proof. In Theorem 1, let $i=1$ and $q=2$. Then it can be easily verified that $X^{q^{2}+q+1}+X+1=X^{7}+X+1$, $X^{q^{2}+q+1}+X^{q^{2}}+1=X^{7}+X^{4}+1$ and $X^{q^{2}+q+1}+X^{q^{2}+1}+X^{q+1}+X+1=X^{7}+X^{5}+X^{3}+X+1$ are irreducible over $\mathbb{F}_{2}$. Since $\operatorname{gcd}(m, 7)=1$, the polynomials $X^{7}+X+1, X^{7}+X^{4}+1, X^{7}+X^{5}+X^{3}+X+1$ are also irreducible over $\mathbb{F}_{2^{m}}$ and then clearly have no roots in $\mathbb{F}_{2^{m}}$.
+
+Now it suffices to show that the polynomial
+
+$$
+\begin{aligned}
+f(X, Y) & =X^{q^{2}+q+1}+X Y^{q^{2}+q}+X Y^{q}+X^{q^{2}+q}+X^{q} Y^{q^{2}}+X^{q^{2}} Y+Y^{q^{2}+q+1}+Y^{q^{2}+q}+Y^{q^{2}}+Y^{q}+1 \\
+& =X^{7}+X Y^{6}+X Y^{2}+X^{6}+X^{2} Y^{4}+X^{4} Y+Y^{7}+Y^{6}+Y^{4}+Y^{2}+1
+\end{aligned}
+$$
+
+has no roots in $\mathbb{F}_{2^{m}}^{2}$ when $\operatorname{gcd}(m, 7)=1$. Let $\omega$ be a primitive element of $\mathbb{F}_{2^{7}}$. Then it is easy to check that
+
+$$
+f(X, Y)=\prod_{i=0}^{6}\left(X+\omega^{2^{i}} Y+\omega^{63 \cdot 2^{i}}\right)
+$$
+
+Thus, if $f(X, Y)$ has a root $\left(x_{0}, y_{0}\right)$ in $\mathbb{F}_{2^{m}}^{2}$, then there must exist some $0 \leq i \leq 6$ such that $x_{0}+\omega^{2^{i}} y_{0}+ \omega^{63 \cdot 2^{i}}=0$. Hence $x_{0}$ or $y_{0}$ is in $\mathbb{F}_{2^{7}}$ and then $\mathbb{F}_{2^{7}} \subseteq \mathbb{F}_{2^{m}}$, which contradicts $\operatorname{gcd}(m, 7)=1$.
+
+Since $\frac{m}{\operatorname{gcd}(i, m)}=m$ is odd, then the bijectivity of $F$ follows directly from Theorem 3.\\
+Remark 5. In the case of even dimensions, it is easy to see that the functions from Theorem 1 are 3-to-1. Indeed, if $n=3 m$ is even, then $m$ bust be even as well, and the condition $\operatorname{gcd}(i, m)=1$ implies that $i$ must be odd. Then $q+1=2^{m}+1$ is divisible by 3 . We can readily verify that the (multivariate) degree of all terms in the trivariate expression of $F(x, y, z)$ from Theorem 1 is precisely $q+1$. Therefore, denoting by $\omega$ a primitive element of $\mathbb{F}_{4}$, we have $F\left(\omega^{i} x, \omega^{i} y, \omega^{i} z\right)=F(x, y, z)$ for any $i \in\{0,1,2\}$. Consequently, the exponents of the univariate representation of $F$ must be multiples of 3, and by [19], $F$ is 3-to-1.
+
+This has two immediate but important consequences. As shown in [19], we can see that in the case of even dimensions, $F$ has a Gold-like Walsh spectrum. On the other hand, as proven in [14], in the case of doubly even $n$, we know that $F$ cannot be CCZ-equivalent to a permutation.
+
+We computationally verify that the Walsh spectrum is also Gold-like for $n=9$. We observe that F is $C C Z$-equivalent to the Gold function $x^{3}$ for $n=6$, and so it cannot be $C C Z$-equivalent to a permutation. We leave the computation of the Walsh spectrum of the family from Theorem 1 and the question of whether it can be CCZ-equivalent to a permutation over singly-even dimensions as problems for future work.
+
+\section*{4. Another infinite family of APN functions over $\mathbb{F}_{2^{m}}^{3}$}
+In this section, we introduce a second family of APN functions over $\mathbb{F}_{2^{3 m}}$. Once again, we express this family using the trivariate representation. In Theorem 6 we show that the family consists of APN functions, while in Theorem 7 we show that the functions are permutations over odd dimensions.
+
+Theorem 6. Let $\operatorname{gcd}(i, m)=k, q=2^{i}$ and
+
+$$
+F(x, y, z)=\left(x^{q+1}+x y^{q}+y z^{q}, x y^{q}+z^{q+1}, x^{q} z+y^{q+1}+y^{q} z\right) .
+$$
+
+Assume that the polynomials $X^{q^{2}+q+1}+X^{q+1}+X^{q}+X+1, X^{q^{2}+q+1}+X^{q^{2}}+1, X^{q^{2}+q+1}+X+1$ have no roots in $\mathbb{F}_{2^{m}}$, and the polynomial
+
+$$
+X^{q^{2}+q+1}+X^{q+1} Y^{q^{2}}+X Y^{q}+X^{q} Y^{q^{2}}+X^{q^{2}} Y+X^{q^{2}}+Y^{q^{2}+q+1}+Y^{q^{2}+1}+Y^{q^{2}+q}+Y^{q^{2}}+1
+$$
+
+has no roots in $\mathbb{F}_{2^{m}}^{2}$. Then the differential uniformity of $F$ is $2^{k}$.\\
+Proof. Since $F$ is quadratic and $F(0,0,0)=(0,0,0)$, it suffices to show that the equation
+
+
+\begin{equation*}
+F(x+a, y+b, z+c)+F(x, y, z)+F(a, b, c)=(0,0,0) \tag{51}
+\end{equation*}
+
+
+has exactly $2^{k}$ solutions in $\mathbb{F}_{2^{m}}^{3}$ for any $(a, b, c) \in \mathbb{F}_{2^{m}}^{3} \backslash\{(0,0,0)\}$. By simplifying, Eq. (51) is equivalent to the following equation system:
+
+\[
+\left\{\begin{array}{l}
+a x^{q}+\left(a^{q}+b^{q}\right) x+a y^{q}+c^{q} y+b z^{q}=0  \tag{52.1}\\
+b^{q} x+a y^{q}+c z^{q}+c^{q} z=0 \\
+c x^{q}+(b+c) y^{q}+b^{q} y+\left(a^{q}+b^{q}\right) z=0
+\end{array}\right.
+\]
+
+Now we divide the proof into several cases and subcases depending on whether the elements $a, b, c$ are zero or non-zero.
+
+Case (I): $a=0$. In this case, Eqs. (52) become
+
+\[
+\left\{\begin{array}{l}
+b^{q} x+c^{q} y+b z^{q}=0  \tag{53.1}\\
+b^{q} x+c z^{q}+c^{q} z=0 \\
+c x^{q}+(b+c) y^{q}+b^{q} y+b^{q} z=0
+\end{array}\right.
+\]
+
+Subcase (I.1): $b=0, c \neq 0$. In this subcase, by Eqs. (53), we get $c^{q} y=0, c z^{q}+c^{q} z=0$ and $c x^{q}+c y^{q}=0$, respectively. Thus $x=y=0$ and $z / c \in \mathbb{F}_{2^{k}}$. In other words, Eqs. (52) have exactly $2^{k}$ solutions in this subcase.
+
+Subcase (I.2): $b \neq 0, c=0$. In this subcase, by Eqs. (53), we have $b^{q} x+b z^{q}=0, b^{q} x=0$ and $b y^{q}+b^{q} y+b^{q} z=0$, respectively. It is easy to get $x=z=0$ and $y / b \in \mathbb{F}_{2^{k}}$. Thus Eqs. (52) have exactly $2^{k}$ solutions $(x, y, z) \in\{(0,0,0),(0, b, 0)\}$ in this subcase.
+
+Subcase (I.3): $b c \neq 0$. In this subcase, we replace $x, y, z$ by $b x, b y, c z$, respectively in Eqs. (53), simplify, and obtain
+
+\[
+\left\{\begin{array}{l}
+x+\Delta^{q} y+\Delta^{q} z^{q}=0  \tag{54.1}\\
+x+\Delta^{q+1} z^{q}+\Delta^{q+1} z=0 \\
+\Delta x^{q}+(1+\Delta) y^{q}+y+\Delta z=0
+\end{array}\right.
+\]
+
+where $\Delta=\frac{c}{b}$. Adding Eq. (54.1) and Eq. (54.2) and dividing by $\Delta^{q}$, we get
+
+
+\begin{equation*}
+y=(1+\Delta) z^{q}+\Delta z \tag{55}
+\end{equation*}
+
+
+Summing the $q$-th power of Eq. (54.1) multiplied by $\Delta$ with Eq. (54.3), we obtain
+
+
+\begin{equation*}
+\left(\Delta^{q^{2}+1}+\Delta+1\right) y^{q}+y+\Delta^{q^{2}+1} z^{q^{2}}+\Delta z=0 \tag{56}
+\end{equation*}
+
+
+We now compute the summation of the $q$-th power of Eq. (55) multiplied by $\Delta^{q^{2}+1}+\Delta+1$, Eq. (55) and Eq. (56), and obtain
+
+$$
+\left(\Delta^{q^{2}+q+1}+\Delta^{q+1}+\Delta^{q}+\Delta+1\right)\left(z^{q^{2}}+z^{q}\right)=0
+$$
+
+Since $\Delta^{q^{2}+q+1}+\Delta^{q+1}+\Delta^{q}+\Delta+1 \neq 0$ according to the condition, we have $z^{q^{2}}+z^{q}=0$, i.e., $z \in \mathbb{F}_{2^{k}}$. Then we can see that Eqs. (52) have exactly $2^{k}$ solutions in this subcase.
+
+Case (II): $a \neq 0$.\\
+Subcase (II.1): $b=c=0$. From Eqs. (52), we get $a x^{q}+a^{q} x+a y^{q}=0, a y^{q}=0, a^{q} z=0$, respectively. Then it is trivial that $x / a \in \mathbb{F}_{2^{k}}, y=z=0$. Consequently, Eqs. (52) have exactly $2^{k}$ solutions $(x, y, z) \in \{(0,0,0),(a, 0,0)\}$ in this subcase.
+
+Subcase (II.2): $b=0, c \neq 0$. In this subcase, Eqs. (52) become
+
+\[
+\left\{\begin{array}{l}
+a x^{q}+a^{q} x+a y^{q}+c^{q} y=0  \tag{57.1}\\
+a y^{q}+c z^{q}+c^{q} z=0 \\
+c x^{q}+c y^{q}+a^{q} z=0
+\end{array}\right.
+\]
+
+We replace $x, y, z$ by $a x, a y, c z$, respectively in Eqs. (57), simplify, and get
+
+\[
+\left\{\begin{array}{l}
+x^{q}+x+y^{q}+\Delta^{q} y=0  \tag{58.1}\\
+y^{q}+\Delta^{q+1}\left(z^{q}+z\right)=0 \\
+x^{q}+y^{q}+z=0
+\end{array}\right.
+\]
+
+where $\Delta=c / a$. From Eq. (58.3), we get $z=x^{q}+y^{q}$ and thus
+
+
+\begin{equation*}
+z^{q}+z=x^{q^{2}}+x^{q}+y^{q^{2}}+y^{q}=\left(\Delta^{q^{2}}+1\right) y^{q} \tag{59}
+\end{equation*}
+
+
+where the second equality is due to Eq. (58.1). Plugging Eq. (59) into Eq. (58.2), we obtain
+
+$$
+\left(\Delta^{q^{2}+q+1}+\Delta^{q+1}+1\right) y^{q}=0
+$$
+
+According to the condition that the polynomial $X^{q^{2}+q+1}+X^{q^{2}}+1$ has no roots in $\mathbb{F}_{2^{m}}$, we know that $\Delta^{q^{2}+q+1}+\Delta^{q+1}+1 \neq 0$ and then $y=0$. Moreover, from Eq. (58.1) and Eq. (58.3), we have $x^{q}+x=0$ and $z=x^{q}$, respectively. Thus $x \in \mathbb{F}_{2^{k}}$ and then Eqs. (52) have exactly $2^{k}$ solutions in this subcase.
+
+Subcase (II.3): $b \neq 0, c=0$. In this subcase, Eqs. (52) become
+
+\[
+\left\{\begin{array}{l}
+a x^{q}+\left(a^{q}+b^{q}\right) x+a y^{q}+b z^{q}=0  \tag{60.1}\\
+b^{q} x+a y^{q}=0 \\
+b y^{q}+b^{q} y+\left(a^{q}+b^{q}\right) z=0
+\end{array}\right.
+\]
+
+Replacing $x, y, z$ by $a x, b y, b z$ in Eqs. (60) and simplifying, we get
+
+\[
+\left\{\begin{array}{l}
+\Delta^{q+1} x^{q}+\left(\Delta^{q+1}+\Delta\right) x+\Delta y^{q}+z^{q}=0  \tag{61.1}\\
+x+y^{q}=0 \\
+y^{q}+y+\left(\Delta^{q}+1\right) z=0
+\end{array}\right.
+\]
+
+where $\Delta=\frac{a}{b}$. From Eq. (61.2), we have $x=y^{q}$. Plugging it into Eq. (61.1) and simplifying, we obtain $z^{q}=\Delta^{q+1} y^{q^{2}}+\Delta^{q+1} y^{q}$. Raising Eq. (61.3) into its $q$-th power and plugging $z^{q}=\Delta^{q+1} y^{q^{2}}+\Delta^{q+1} y^{q}$ into it, we acquire
+
+$$
+\left(\Delta^{q^{2}+q+1}+\Delta^{q+1}+1\right)\left(y^{q^{2}}+y^{q}\right)=0
+$$
+
+Again, $\Delta^{q^{2}+q+1}+\Delta^{q+1}+1 \neq 0$ according to the hypothesis. Thus $y^{q^{2}}+y^{q}=0$, i.e., $y \in \mathbb{F}_{2^{k}}$ and then\\
+$z=0$. In particular, Eqs. (52) have exactly $2^{k}$ solutions in this subcase.\\
+Subcase (II.4): $b c \neq 0$. In this subcase, we replace $x, y, z$ by $a x, b y, c z$, respectively in Eqs. (52) and get
+
+\[
+\left\{\begin{array}{l}
+a^{q+1} x^{q}+\left(a^{q+1}+a b^{q}\right) x+a b^{q} y^{q}+b c^{q} y+b c^{q} z^{q}=0  \tag{62.1}\\
+a b^{q} x+a b^{q} y^{q}+c^{q+1} z^{q}+c^{q+1} z=0 \\
+a^{q} c x^{q}+\left(b^{q+1}+b^{q} c\right) y^{q}+b^{q+1} y+\left(a^{q} c+b^{q} c\right) z=0
+\end{array}\right.
+\]
+
+By Eq. (62.2), we have
+
+
+\begin{equation*}
+x=y^{q}+\frac{c^{q+1}}{a b^{q}} z^{q}+\frac{c^{q+1}}{a b^{q}} z \tag{63}
+\end{equation*}
+
+
+After plugging Eq. (63) into Eq. (62.1) and multiplying it by $b^{q^{2}+q}$, we obtain
+
+
+\begin{align*}
+& a^{q+1} b^{q^{2}+q} y^{q^{2}}+a^{q+1} b^{q^{2}+q} y^{q}+b^{q^{2}+q+1} c^{q} y+a b^{q} c^{q^{2}+q} z^{q^{2}}+\left(a b^{q} c^{q^{2}+q}+b^{q^{2}+q} c^{q+1}+\right. \\
+& \left.a^{q} b^{q^{2}} c^{q+1}+b^{q^{2}+q+1} c^{q}\right) z^{q}+\left(a^{q} b^{q^{2}} c^{q+1}+b^{q^{2}+q} c^{q+1}\right) z=0 \tag{64}
+\end{align*}
+
+
+Further, we plug Eq. (63) into Eq. (62.3) and multiply it by $b^{q^{2}}$, obtaining
+
+
+\begin{equation*}
+a^{q} b^{q^{2}} c y^{q^{2}}+\left(b^{q^{2}+q+1}+b^{q^{2}+q} c\right) y^{q}+b^{q^{2}+q+1} y+c^{q^{2}+q+1} z^{q^{2}}+c^{q^{2}+q+1} z^{q}+\left(a^{q} b^{q^{2}} c+b^{q^{2}+q} c\right) z=0 \tag{65}
+\end{equation*}
+
+
+After summing the left-hand part of Eq. (64) multiplied by $c$ with that of Eq. (65) multiplied by $a b^{q}$, and dividing by $b^{q^{2}}$, we get
+
+
+\begin{align*}
+& a b^{q}\left(a^{q} c+b^{q+1}+b^{q} c\right) y^{q}+b^{q+1}\left(a b^{q}+c^{q+1}\right) y+c^{q+1}\left(a^{q} c+b^{q+1}+b^{q} c\right) z^{q}+ \\
+& c\left(a^{q}+b^{q}\right)\left(a b^{q}+c^{q+1}\right) z=0 \tag{66}
+\end{align*}
+
+
+Raising Eq. (66) into its $q$-th power, we get
+
+
+\begin{align*}
+& a^{q} b^{q^{2}}\left(a^{q^{2}} c^{q}+b^{q^{2}+q}+b^{q^{2}} c^{q}\right) y^{q^{2}}+b^{q^{2}+q}\left(a^{q} b^{q^{2}}+c^{q^{2}+q}\right) y^{q}+c^{q^{2}+q}\left(a^{q^{2}} c^{q}+b^{q^{2}+q}+b^{q^{2}} c^{q}\right) z^{q^{2}}+ \\
+& c^{q}\left(a^{q^{2}}+b^{q^{2}}\right)\left(a^{q} b^{q^{2}}+c^{q^{2}+q}\right) z^{q}=0 \tag{67}
+\end{align*}
+
+
+After summing the left-hand side of Eq. (64) multiplied by $a^{q^{2}} c^{q}+b^{q^{2}+q}+b^{q^{2}} c^{q}$ with that of Eq. (67) multiplied by $a b^{q}$ and dividing by $b^{q^{2}} c^{q}$, we obtain
+
+
+\begin{align*}
+& a b^{q}\left(a^{q^{2}+q}+a^{q} b^{q^{2}}+b^{q} c^{q^{2}}\right) y^{q}+b^{q+1}\left(a^{q^{2}} c^{q}+b^{q^{2}+q}+b^{q^{2}} c^{q}\right) y+ \\
+& S z^{q}+c\left(a^{q}+b^{q}\right)\left(a^{q^{2}} c^{q}+b^{q^{2}+q}+b^{q^{2}} c^{q}\right) z=0 \tag{68}
+\end{align*}
+
+
+where
+
+$$
+\begin{aligned}
+S= & a^{q^{2}+q+1} b^{q}+a^{q+1} b^{q^{2}+q}+a b^{2 q} c^{q^{2}}+a^{q^{2}+q} c^{q+1}+a^{q} b^{q^{2}+q} c+a^{q} b^{q^{2}} c^{q+1}+a^{q^{2}} b^{q+1} c^{q}+ \\
+& a^{q^{2}} b^{q} c^{q+1}+b^{q^{2}+2 q+1}+b^{q^{2}+q+1} c^{q}+b^{q^{2}+2 q} c+b^{q^{2}+q} c^{q+1}
+\end{aligned}
+$$
+
+Further, summing the left-hand side of Eq. (65) multiplied by $a^{q^{2}} c^{q}+b^{q^{2}+q}+b^{q^{2}} c^{q}$ with that of Eq. (67) multiplied by $c$ and dividing by $b^{q^{2}}$, we obtain
+
+
+\begin{align*}
+& b^{q}\left(a^{q} b^{q^{2}} c+a^{q^{2}} b c^{q}+a^{q^{2}} c^{q+1}+b^{q^{2}+q+1}+b^{q^{2}+1} c^{q}+b^{q^{2}+q} c+b^{q^{2}} c^{q+1}+c^{q^{2}+q+1}\right) y^{q}+b^{q+1}\left(a^{q^{2}} c^{q}+\right. \\
+& \left.b^{q^{2}+q}+b^{q^{2}} c^{q}\right) y+c^{q+1}\left(a^{q^{2}+q}+a^{q} b^{q^{2}}+b^{q} c^{q^{2}}\right) z^{q}+c\left(a^{q}+b^{q}\right)\left(a^{q^{2}} c^{q}+b^{q^{2}+q}+b^{q^{2}} c^{q}\right) z=0 \tag{69}
+\end{align*}
+
+
+Now we sum Eqs. (68) and (69), and get
+
+
+\begin{equation*}
+b^{q} T\left(y^{q}+z^{q}\right)=0 \tag{70}
+\end{equation*}
+
+
+where\\
+$T=a^{q^{2}+q+1}+a^{q+1} b^{q^{2}}+a b^{q} c^{q^{2}}+a^{q} b^{q^{2}} c+a^{q^{2}} b c^{q}+a^{q^{2}} c^{q+1}+b^{q^{2}+q+1}+b^{q^{2}+1} c^{q}+b^{q^{2}+q} c+b^{q^{2}} c^{q+1}+c^{q^{2}+q+1}$.\\
+If $T=0$, let $A=\frac{a}{c}$ and $B=\frac{b}{c}$. Then we have\\
+$\frac{T}{c^{q^{2}+q+1}}=A^{q^{2}+q+1}+A^{q+1} B^{q^{2}}+A B^{q}+A^{q} B^{q^{2}}+A^{q^{2}} B+A^{q^{2}}+B^{q^{2}+q+1}+B^{q^{2}+1}+B^{q^{2}+q}+B^{q^{2}}+1=0$,\\
+which contradicts the condition that the polynomial
+
+$$
+X^{q^{2}+q+1}+X^{q+1} Y^{q^{2}}+X Y^{q}+X^{q} Y^{q^{2}}+X^{q^{2}} Y+X^{q^{2}}+Y^{q^{2}+q+1}+Y^{q^{2}+1}+Y^{q^{2}+q}+Y^{q^{2}}+1
+$$
+
+has no roots in $\mathbb{F}_{2^{m}}^{2}$. Thus $T \neq 0$ and then $y=z$ by Eq. (70). Furthermore, plugging $y=z$ into Eq. (66) yields
+
+
+\begin{equation*}
+\left(a b^{q}+c^{q+1}\right)\left(a^{q} c+b^{q+1}+b^{q} c\right)\left(y^{q}+y\right)=0 \tag{71}
+\end{equation*}
+
+
+If $a b^{q}+c^{q+1}=0$, after plugging $a b^{q}=c^{q+1}$ and $y=z$ into Eq. (65), we have
+
+$$
+\left(b^{q^{2}+q+1}+b^{q^{2}+q} c+c^{q^{2}+q+1}\right)\left(y^{q}+y\right)=0
+$$
+
+Since $b^{q^{2}+q+1}+b^{q^{2}+q} c+c^{q^{2}+q+1} \neq 0$ due to the condition that $X^{q^{2}+q+1}+X+1$ has no roots in $\mathbb{F}_{2^{m}}$, we can see that $y^{q}+y=0$, i.e., $y \in\{0,1\}$. Together with $z=y$ and Eq. (63), we know that Eqs. (52) have exactly two solutions when $a b^{q}+c^{q+1}=0$.
+
+If $a^{q} c+b^{q+1}+b^{q} c=0$, after plugging $a^{q} c=b^{q+1}+b^{q} c$ and $y=z$ into Eq. (65), we get
+
+$$
+\left(b^{q^{2}+q+1}+b^{q^{2}+q} c+c^{q^{2}+q+1}\right)\left(y^{q^{2}}+y^{q}\right)=0
+$$
+
+We thus have $y^{q^{2}}+y^{q}=0$, i.e., $y \in\{0,1\}$, and Eqs. (52) have exactly two solutions when $a^{q} c+b^{q+1}+b^{q} c=$ 0 .
+
+If $\left(a b^{q}+c^{q+1}\right)\left(a^{q} c+b^{q+1}+b^{q} c\right) \neq 0$, then by Eq. (71), we can see that $y^{q}+y=0$, i.e., $y \in \mathbb{F}_{2^{k}}$. Thus Eqs. (52) have exactly $2^{k}$ solutions in this case as well.
+
+We thus see that $F(x+a, y+b, z+c)+F(x, y, z)+F(a, b, c)=(0,0,0)$ has at most $2^{k}$ solutions in all cases, and therefore $F$ is APN as claimed.
+
+As mentioned previously, the functions from Theorem 6 are permutations over fields of odd degree. We formalize this in the following theorem.
+
+Theorem 7. Let $\frac{m}{\operatorname{gcd}(i, m)}$ be odd, $q=2^{i}$ and
+
+$$
+F(x, y, z)=\left(x^{q+1}+x y^{q}+y z^{q}, x y^{q}+z^{q+1}, x^{q} z+y^{q+1}+y^{q} z\right)
+$$
+
+Assume that the polynomials $X^{q^{2}+q+1}+X^{q+1}+X^{q}+X+1, X^{q^{2}+q+1}+X^{q^{2}}+1, X^{q^{2}+q+1}+X+1$ have no roots in $\mathbb{F}_{2^{m}}$, and the polynomial
+
+$$
+X^{q^{2}+q+1}+X^{q+1} Y^{q^{2}}+X Y^{q}+X^{q} Y^{q^{2}}+X^{q^{2}} Y+X^{q^{2}}+Y^{q^{2}+q+1}+Y^{q^{2}+1}+Y^{q^{2}+q}+Y^{q^{2}}+1
+$$
+
+has no roots in $\mathbb{F}_{2^{m}}^{2}$, then $F$ is a permutation over $\mathbb{F}_{2^{m}}^{3}$.\\
+Proof. It suffices to show that the equation
+
+
+\begin{equation*}
+F(x+a, y+b, z+c)+F(x, y, z)=(0,0,0) \tag{72}
+\end{equation*}
+
+
+has no solutions in $\mathbb{F}_{2^{m}}^{3}$ for any $(a, b, c) \in \mathbb{F}_{2^{m}}^{3} \backslash\{(0,0,0)\}$. By simplifying, Eq. (72) is equivalent to the following equation system:
+
+\[
+\left\{\begin{array}{l}
+a x^{q}+\left(a^{q}+b^{q}\right) x+a y^{q}+c^{q} y+b z^{q}=a^{q+1}+a b^{q}+b c^{q}  \tag{73.1}\\
+b^{q} x+a y^{q}+c z^{q}+c^{q} z=a b^{q}+c^{q+1} \\
+c x^{q}+(b+c) y^{q}+b^{q} y+\left(a^{q}+b^{q}\right) z=a^{q} c+b^{q+1}+b^{q} c
+\end{array}\right.
+\]
+
+The proof is similar to that of Theorem 6 and we omit it here.\\
+As in the previous section, we now use Theorems 6 and 7 to give a direct construction of APN functions over $\mathbb{F}_{2^{3 m}}$.
+
+Proposition 8. Let $\operatorname{gcd}(m, 7)=1$,
+
+$$
+F(x, y, z)=\left(x^{3}+x y^{2}+y z^{2}, x y^{2}+z^{3}, x^{2} z+y^{3}+y^{2} z\right)
+$$
+
+Then $F$ is APN over $\mathbb{F}_{2^{m}}^{3}$. In particular, $F$ is $A B$ and is also a permutation over $\mathbb{F}_{2^{m}}^{3}$ when $m$ is odd.\\
+Proof. In Theorem 6, let $i=1$ and $q=2$. Then it is clear that $X^{q^{2}+q+1}+X+1=X^{7}+X+1$, $X^{q^{2}+q+1}+X^{q^{2}}+1=X^{7}+X^{4}+1$ and $X^{q^{2}+q+1}+X^{q^{2}+1}+X^{q+1}+X+1=X^{7}+X^{5}+X^{3}+X+1$ are irreducible over $\mathbb{F}_{2}$. Since $\operatorname{gcd}(m, 7)=1$, the polynomials $X^{7}+X+1, X^{7}+X^{4}+1, X^{7}+X^{5}+X^{3}+X+1$ are also irreducible over $\mathbb{F}_{2^{m}}$ and then clearly have no roots in $\mathbb{F}_{2^{m}}$.
+
+Let $\omega$ be a primitive element of $\mathbb{F}_{2^{7}}$. Then it is easy to check that
+
+$$
+\begin{aligned}
+& X^{q^{2}+q+1}+X^{q+1} Y^{q^{2}}+X Y^{q}+X^{q} Y^{q^{2}}+X^{q^{2}} Y+X^{q^{2}}+Y^{q^{2}+q+1}+Y^{q^{2}+1}+Y^{q^{2}+q}+Y^{q^{2}}+1 \\
+= & X^{7}+X^{3} Y^{4}+X Y^{2}+X^{2} Y^{4}+X^{4} Y+X^{4}+Y^{7}+Y^{5}+Y^{6}+Y^{4}+1 \\
+= & \prod_{i=0}^{6}\left(X+\omega^{11 \cdot 2^{i}} Y+\omega^{58 \cdot 2^{i}}\right)
+\end{aligned}
+$$
+
+Thus, if $f(X, Y)$ has a root $\left(x_{0}, y_{0}\right)$ in $\mathbb{F}_{2^{m}}^{2}$, then there must exist some $0 \leq i \leq 6$ such that $x_{0}+\omega^{11 \cdot 2^{i}} y_{0}+ \omega^{58 \cdot 2^{i}}=0$. Hence $x_{0}$ or $y_{0}$ is in $\mathbb{F}_{2^{7}}$ and then $\mathbb{F}_{2^{7}} \subseteq \mathbb{F}_{2^{m}}$, which contradicts $\operatorname{gcd}(m, 7)=1$.
+
+Since $\frac{m}{\operatorname{gcd}(i, m)}=m$ is odd, the permutation property of $F$ then follows immediately from Theorem 7.
+
+Remark 9. We can make similar observations to those in Remark 5. More precisely, it is easy to observe that the functions from Theorem 6 are 3-to-1, and so have a Gold-like Walsh spectrum for even dimensions, and cannot be CCZ-equivalence to permutations for doubly-even dimensions. We also computationally verify that these functions have a Gold-like Walsh spectrum for odd dimensions, and that for $n=6$ they are equivalent to $x^{3}$ and thus cannot be CCZ-equivalent to a permutation. We leave the computation of the Walsh spectrum for odd dimensions and that of their potential CCZ-equivalent to permutations as problems for future work.
+
+\section*{5. Computational results}
+\section*{A. CCZ-inequivalence of the new constructions to the known families}
+It remains to show that the functions arising from Theorems 1 and 6 are CCZ-inequivalent to representatives from the known infinite families. We recall that two quadratic APN functions are CCZ-equivalent if and only if they are EA-equivalent [35], and so it suffices to consider EA-equivalence. In the case of quadratic APN functions, the most efficient and convenient way to show inequivalence is via e.g. the differential spectrum of their associated orthoderivatives [17].
+
+In Table IV, we list the differential spectra of the orthoderivatives of all functions from the known infinite families in Tables I and II. We note that since 9 is odd, none of the functions from Table III are defined over this dimension. Similarly, families F1-F2, F7-F9, F11, and F12 are not defined for dimension 9. Out of the monomial functions in Table I, only the Gold functions are relevant, since the remaining families consist of functions of algebraic degree greater than 2 .
+
+We now proceed to computing the differential spectra of the orthoderivatives of the functions from Theorems 1 and 6. The function from Theorem 1 for $n=9$ is
+
+$$
+F_{1}(x, y, z)=\left(x^{3}+x^{2} z+y z^{2}, x^{2} z+y^{3}, x y^{2}+y^{2} z+z^{3}\right)
+$$
+
+or
+
+$$
+F_{1}(x)=\alpha^{373} x^{192}+\alpha^{492} x^{136}+\alpha^{414} x^{129}+\alpha^{98} x^{80}+\alpha^{503} x^{66}+\alpha^{488} x^{24}+\alpha^{464} x^{17}+\alpha^{405} x^{10}+\alpha^{428} x^{3}
+$$
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{TABLE IV\\
+ORTHODERIVATIVE DIFFERENTIAL SPECTRA OF ALL PREVIOUSLY KNOWN QUADRATIC APN FUNCTIONS OVER $\mathbb{F}_{2}{ }^{9}$}
+\begin{tabular}{|l|l|}
+\hline
+Family & Orthoderivative differential spectra \\
+\hline
+Gold & \( \begin{aligned} & 0 \times 153811,2 \times 96579,6 \times 10731,8 \times 511 \\ & 0 \times 159943,2 \times 78183,4 \times 18396,6 \times 4599,8 \times 511 \end{aligned} \) \\
+\hline
+F4 & $0 \times 159016,2 \times 79389,4 \times 19089,6 \times 3483,8 \times 493,10 \times 144,12 \times 18$ \\
+\hline
+F5 & $0 \times 159226,2 \times 78813,4 \times 19683,6 \times 3201,8 \times 529,10 \times 162,12 \times 18$ \\
+\hline
+F6 & \( \begin{aligned} & 0 \times 160525,2 \times 77058,4 \times 19467,6 \times 3792,8 \times 598,10 \times 126,12 \times 45,14 \times 12,16 \times \\ & 9 \end{aligned} \) \\
+\hline
+F10 & $0 \times 160097,2 \times 79128,4 \times 17808,6 \times 3269,8 \times 700,10 \times 357,12 \times 231,14 \times 42$ \\
+\hline
+F13 & \( \begin{aligned} & 0 \times 168994,2 \times 68712,4 \times 15141,6 \times 6279,8 \times 1659,10 \times 336,12 \times 21,14 \times 21,16 \\ & \times 105,18 \times 147,20 \times 189,24 \times 21,26 \times 7 \\ & 0 \times 169022,2 \times 68341,4 \times 16093,6 \times 5621,8 \times 1561,10 \times 364,12 \times 91,14 \times 63,16 \\ & \times 140,18 \times 196,20 \times 84,22 \times 35,24 \times 7,26 \times 14 \\ & 0 \times 169428,2 \times 68040,4 \times 15561,6 \times 6034,8 \times 1533,10 \times 420,12 \times 126,14 \times 21,16 \\ & \times 84,18 \times 189,20 \times 126,22 \times 63,26 \times 7 \\ & 0 \times 169484,2 \times 68159,4 \times 15463,6 \times 5719,8 \times 1736,10 \times 420,12 \times 105,14 \times 63,16 \\ & \times 133,18 \times 175,20 \times 126,22 \times 28,24 \times 21 \\ & 0 \times 170079,2 \times 66297,4 \times 16737,6 \times 6160,8 \times 1407,10 \times 420,12 \times 21,14 \times 42,16 \\ & \times 63,18 \times 210,20 \times 133,22 \times 63, \\ & 0 \times 170100,2 \times 67592,4 \times 15232,6 \times 5628,8 \times 1848,10 \times 553,12 \times 98,14 \times 98,16 \\ & \times 126,18 \times 189,20 \times 126,22 \times 28,24 \times 14 \\ & 0 \times 170667,2 \times 66297,4 \times 15911,6 \times 5705,8 \times 1974,10 \times 385,12 \times 140,14 \times 84,16 \\ & \times 168,18 \times 147,20 \times 63,22 \times 63,24 \times 21,26 \times 7 \\ & 0 \times 171430,2 \times 64617,4 \times 16842,6 \times 5733,8 \times 1932,10 \times 483,12 \times 105,14 \times 21,16 \\ & \times 147,18 \times 105,20 \times 154,22 \times 21,24 \times 42 \end{aligned} \) \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+in univariate form (where $\alpha$ is a primitive element of $\mathbb{F}_{2^{9}}$ ), and its orthoderivative has the differential spectrum
+
+$$
+0 \times 164199,2 \times 76734,4 \times 13524,6 \times 4312,8 \times 2205,12 \times 147,16 \times 294,18 \times 147,20 \times 49,22 \times 21 \text {. }
+$$
+
+The function from Theorem 6 for $n=9$ is
+
+$$
+F_{2}(x, y, z)=\left(x^{3}+x y^{2}+y z^{2}, x y^{2}+z^{3}, x^{2} z+y^{3}+y^{2} z\right),
+$$
+
+or
+
+$$
+F_{2}(x)=\alpha^{32} x^{192}+\alpha^{222} x^{136}+\alpha^{147} x^{129}+\alpha^{426} x^{80}+\alpha^{469} x^{66}+\alpha^{435} x^{24}+\alpha^{352} x^{17}+\alpha^{499} x^{10}+\alpha^{349} x^{3}
+$$
+
+in univariate form (where $\alpha$ is a primitive element of $\mathbb{F}_{2^{9}}$ ), and its orthoderivative has the differential spectrum
+
+$$
+\begin{aligned}
+& 0 \times 172557,2 \times 68355,4 \times 12201,6 \times 3871,8 \times 1638,10 \times 735,12 \times 1470,14 \times 49, \\
+& 16 \times 147,18 \times 441,20 \times 147,42 \times 21 .
+\end{aligned}
+$$
+
+One can easily verify that the above differential spectra do not appear among the ones given in Table IV, and therefore our construction produces APN functions inequivalent to the known ones in dimension 9.
+
+While the functions do not intersect any of the known families, they are equivalent to sporadic instances documented in [3]. More precisely, the differential spectra of the orthoderivatives match those of representatives nos. 34, and 35 from the representatives listed in the dataset [4]. Using the linear code equivalence test [24], we can verify that our functions are, in fact, CCZ-equivalent to the representatives from [3]. We note that these are precisely the two instances that were observed to be bijective in [3].
+
+\section*{B. Other functions from the main theorems}
+In Propositions 4 and 8 we have given an explicit constructions of APN functions from Theorems 1 and 6, respectively, for the case $i=1$. While giving such an explicit construction appears to be more difficult for $i>1$, in this section we computationally demonstrate that we can obtain functions CCZ-inequivalent to the ones from Propositions 4 and 8 by considering values of $i$ other than 1 . More precisely, we generate all functions from Theorem 1 for $1 \leq i \leq m-1$ and small values of $m$, and compute their differential uniformity and differential spectrum of the orthoderivative.
+
+For $m=3$ (hence $n=9$ ), we obtain APN functions for both $i=1$ and $i=2$. According to their orthoderivatives, the function for $i=2$ appear to be equivalent to the one from Theorem 6 for $i=1$. We confirm this equivalence using the linear code test.
+
+For $m=4$ (hence $n=12$ ), we obtain APN functions for $i=1$ and $i=3$, and a differentially 4-uniform function for $i=2$. It is worth noting that the differential spectrum of this function consists entirely of the two values 0 and 4 .
+
+For $m=5$ (hence $n=15$ ), we obtain APN functions for all choices of $i<m$. The differential spectra of the orthoderivatives for $i=1$ and $i=4$ are the same as those of functions from Family F1-F2 from Table II, which are also known to be permutations over fields of even dimension. We note that F1-F2 is not defined for $n=9$, and so the two APN permutations over $\mathbb{F}_{2^{9}}$ that we generalize above could not be expressed as functions from this family. We leave open the question of the exact form of the equivalence between F1-F2 from Table II and the functions that we construct.
+
+The orthoderivative differential spectra that we observe are given in Table V below. Since the differential spectra of the orthoderivatives of the functions from Theorem 6 are the same as those from Theorem 1 in all observed cases, we do not explicitly list them. More precisely, we observe that the function from Theorem 1 with parameter $i$ corresponds to the function from 6 with parameter $m-i$.
+
+For dimension $n=15$, we can observe that the four distinct orthoderivative differential spectra of the functions from Theorems 1 and 6 match those of functions from family F1-F2 in Table II over the same dimension.
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{TABLE V\\
+Behavior of Theorem 1 For various values of $i$ and $m$}
+\begin{tabular}{|l|l|l|l|}
+\hline
+$n$ & $i$ & differential spectrum & orthoderivative differential spectrum \\
+\hline
+\multirow[t]{3}{*}{12} & 1 & 0, 2 & $0 \times 10149615,2 \times 5124105,4 \times 1267560,6 \times 201285,8 \times 29295,10 \times 1260$ \\
+\hline
+ & 2 & 0,4 & - \\
+\hline
+ & 3 & 0, 2 & $0 \times 10118010,2 \times 5186790,4 \times 1238265,6 \times 200130,8 \times 26775,10 \times 3150$ \\
+\hline
+15 & 1 & 0,2 & $0 \times 651223944,2 \times 325713745,4 \times 81339195,6 \times 13470275,8 \times 1778532,10 \times 162750,12 \times 20615$ \\
+\hline
+ & 2 & 0,2 & $0 \times 651182497,2 \times 325717000,4 \times 81356555,6 \times 13582030,8 \times 1693902,10 \times 159712,12 \times 17360$ \\
+\hline
+ & 3 & 0,2 & $0 \times 651347634,2 \times 325457685,4 \times 81454205,6 \times 13551650,8 \times 1681967,10 \times 190960,12 \times 23870,14 \times 1085$ \\
+\hline
+ & 4 & 0,2 & $0 \times 651430745,2 \times 325262385,4 \times 81497605,6 \times 13657980,8 \times 1697157,10 \times 146909,12 \times 14105,14 \times 2170$ \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\section*{C. Further computational searches}
+We can observe that the trivariate form of the functions from Theorems 1 and 6 are particularly pleasant because all coefficients belong to the prime field $\mathbb{F}_{2}$. We now consider whether other CCZ-classes (distinct from those of the functions originating from the two theorems) can be expressed in a similar way. In order to do this, we perform an exhaustive search over all $(3 m, 3 m)$-functions of the form
+
+$$
+F(x, y, z)=\left(f_{1}(x, y, z), f_{2}(x, y, z), f_{3}(x, y, z)\right)
+$$
+
+with
+
+$$
+\begin{aligned}
+& f_{1}(x, y, z)=x^{q+1}+c_{11} x^{q} y+c_{12} x^{q} z+c_{13} x y^{q}+c_{14} y^{q+1}+c_{15} y^{q} z+c_{16} x z^{q}+c_{17} y z^{q}+c_{18} z^{q+1}, \\
+& f_{2}(x, y, z)=c_{21} x^{q} y+c_{22} x^{q} z+c_{23} x y^{q}+c_{24} y^{q+1}+c_{25} y^{q} z+c_{26} x z^{q}+c_{27} y z^{q}+c_{28} z^{q+1}, \\
+& f_{3}(x, y, z)=c_{31} x^{q} z+c_{32} x y^{q}+c_{33} y^{q+1}+c_{34} y^{q} z+c_{35} x z^{q}+c_{36} y z^{q}+c_{37} z^{q+1},
+\end{aligned}
+$$
+
+for small values of $m$, where $c_{i j} \in \mathbb{F}_{2}$ and $q=2^{i}$. We note that when $\operatorname{gcd}(i, m)=1$, any function with $i=k$ for some $k$ is clearly equivalent to a function with $i=m-k$ (by raising all three components $f_{1}, f_{2}, f_{3}$ of $F$ to the power $2^{-k}$ ). Thus, we only consider values of $i$ less than $m / 2$ when $\operatorname{gcd}(i, m)=1$.
+
+For $m=2$ (and hence $n=6$ ), we find 49152 APN functions for $i=1$. All of these functions are equivalent to the Gold function $x^{3}$. For $i=2$, there are no APN functions of the considered form.
+
+For $m=3$ (and hence $n=9$ ), we find 2880 such APN functions in total for $i=1$, and compute the differential spectra of their orthoderivatives. Out of these, 320 functions have the same differential spectrum as $F_{1}$, and 320 functions have the same differential spectrum as $F_{2}$. The remaining 2240 functions have the differential spectrum
+
+$$
+0 \times 160391,2 \times 78204,4 \times 18606,6 \times 3017,8 \times 966,10 \times 294,12 \times 105,14 \times 35,20 \times 14,
+$$
+
+which coincides with that of representative number 30 from the list of 35 sporadic instances over $\mathbb{F}_{2^{9}}$ given in [3]. A representative from this class is
+
+$$
+F(x, y, z)=\left(x^{3}+x z^{2}+y z^{2}+z^{3}, x^{2} y+x^{2} z+z^{3}, x^{2} z+y^{3}\right) .
+$$
+
+We leave its potential generalization into an infinite family as a problem for future work. We note that, unlike representatives nos. 34 and 35 from [3] which we generalize in Theorems 1 and 6, this one is not a permutation (and is not CCZ-equivalent to one either).
+
+For $m=4$ (and hence $n=12$ ), we find 768 APN functions for $i=1$, and compute the differential spectra of their orthoderivatives. We obtain four distinct differential spectra; 64 functions have differential spectrum
+
+$$
+0 \times 10077795,2 \times 5225220,4 \times 1253070,6 \times 212940,8 \times 4095
+$$
+
+and
+
+$$
+0 \times 9832095,2 \times 6220305,6 \times 716625,8 \times 4095
+$$
+
+while 320 functions have differential spectrum
+
+$$
+0 \times 10118010,2 \times 5186790,4 \times 1238265,6 \times 200130,8 \times 26775,10 \times 3150
+$$
+
+and
+
+$$
+0 \times 10149615,2 \times 5124105,4 \times 1267560,6 \times 201285,8 \times 29295,10 \times 1260 .
+$$
+
+We note that the spectra with multiplicity 9832095 and 10077795 of the number zero correspond to the Gold functions $x^{3}$ and $x^{33}$, respectively, while the remaining two spectra correspond to functions from Theorems 1 and 6, cf. Table V in the previous section.
+
+For $m=4$ and $i=2$, we do not find any APN functions of the prescribed form.\\
+For $m=5$ and $i=1$, we find, once again, 768 APN functions of the considered form. According to the differential spectra of their orthoderivatives, 64 of these functions are equivalent to the Gold function $x^{3}$, while another 64 are equivalent to $x^{17}$. The remaining functions fall into two classes of 320 functions each, and are equivalent to functions are equivalent to the functions arising from Propositions 4 and 8; equivalently, the functiions are equivalent to the ones from Table V for $i=1$ and $i=4$.
+
+For $m=5$ and $i=2$, we find 768 APN functions as well, out of which 64 are equivalent to $x^{3}$ and 64 are equivalent to $x^{5}$. The remaining functions fall into classes of 320 functions each, one of which corresponds to $i=2$ in Table V , while the other corresponds to $i=3$.
+
+We can thus conclude that for $m \leq 5$, the functions from Theorems 1 and 6 exhaust all APN functions of the prescribed form up to equivalence.
+
+For values of $m$ greater than 5 , the time necessary to perform an exhaustive search becomes prohibitive, and a computational effort in that direction would have to be the subject of a separate work. The same applies to performing a search for functions with a trivariate representation and coefficients from outside\\
+the prime field $\mathbb{F}_{2}$.
+
+\section*{6. Conclusion}
+We have described two new infinite families of APN functions over $\mathbb{F}_{2^{3 m}}$ in trivariate form. We have shown that these functions are AB permutations whenever $m$ is odd, and that they are 3-to-1 functions whenever $m$ is even. We have computed the differential spectra of the orthoderivatives of these functions over $\mathbb{F}_{2^{9}}$, and have computationally verified that they are equivalent to the sporadic APN permutations of Beierle and Leander discovered in [3]; we have thus generalized these sporadic instances into infinite families. We have conducted exhaustive computational searches for functions with a similar trivariate representation with coefficients in $\mathbb{F}_{2}$ for $m \leq 5$, and have reported on the results; in particular, we observe that with the exception of functions CCZ-equivalent to a sporadic instance over $\mathbb{F}_{2^{9}}$, all such functions can be expressed using the construction in Theorems 1 and 6 up to CCZ-equivalence.
+
+\section*{Acknowledgements}
+The authors would like to thank Lilya Budaghyan and Christof Beierle for their valuable advice, suggestions, and support, which has greatly contributed towards the quality and content of our work.
+
+\section*{References}
+[1] Daniele Bartoli and Marco Timpanella. On a conjecture on APN permutations. Cryptography and Communications, 14(4):925-931, 2022.\\[0pt]
+[2] Christof Beierle, Claude Carlet, Gregor Leander, and Léo Perrin. A further study of quadratic APN permutations in dimension nine. Finite Fields and Their Applications, 81:102049, 2022.\\[0pt]
+[3] Christof Beierle and Gregor Leander. New instances of quadratic APN functions. IEEE Transactions on Information Theory, 68(1):670-678, 2021.\\[0pt]
+[4] Christof Beierle and Gregor Leander. New instances of quadratic APN functions in small dimension, May 2021.\\[0pt]
+[5] Thomas Beth and Cunsheng Ding. On almost perfect nonlinear permutations. In Workshop on the Theory and Application of Cryptographic Techniques, pages 65-76. Springer, 1993.\\[0pt]
+[6] Eli Biham and Adi Shamir. Differential cryptanalysis of the data encryption standard. Springer Science \& Business Media, 2012.\\[0pt]
+[7] Carl Bracken, Eimear Byrne, Nadya Markin, and Gary McGuire. A few more quadratic APN functions. Cryptography and Communications, 3(1):43-53, 2011.\\[0pt]
+[8] Lilya Budaghyan, Marco Calderini, Claude Carlet, Robert S Coulter, and Irene Villa. Constructing APN functions through isotopic shifts. IEEE Transactions on Information Theory, 66(8):5299-5309, 2020.\\[0pt]
+[9] Lilya Budaghyan and Claude Carlet. Classes of quadratic APN trinomials and hexanomials and related structures. IEEE Transactions on Information Theory, 54(5):2354-2357, 2008.\\[0pt]
+[10] Lilya Budaghyan, Claude Carlet, and Gregor Leander. Two classes of quadratic APN binomials inequivalent to power functions. IEEE Transactions on Information Theory, 54(9):4218-4229, 2008.\\[0pt]
+[11] Lilya Budaghyan, Claude Carlet, and Gregor Leander. Constructing new APN functions from known ones. Finite Fields and Their Applications, 15(2):150-159, 2009.\\[0pt]
+[12] Lilya Budaghyan, Claude Carlet, and Gregor Leander. On a construction of quadratic APN functions. In 2009 IEEE Information Theory Workshop, pages 374-378. IEEE, 2009.\\[0pt]
+[13] Lilya Budaghyan, Tor Helleseth, and Nikolay Kaleyski. A new family of APN quadrinomials. IEEE Transactions on Information Theory, 66(11):7081-7087, 2020.\\[0pt]
+[14] Lilya Budaghyan, Ivana Ivkovic, and Nikolay Kaleyski. Triplicate functions. Cryptography and Communications, pages 1-49, 2022.\\[0pt]
+[15] Marco Calderini, Lilya Budaghyan, and Claude Carlet. On known constructions of APN and AB functions and their relation to each other. Rad Hrvatske akademije znanosti i umjetnosti: Matematičke znanosti, (546= 25):79-105, 2021.\\[0pt]
+[16] Marco Calderini, Kangquan Li, and Irene Villa. Two new families of bivariate APN functions. arXiv preprint arXiv:2204.07462, 2022.\\[0pt]
+[17] Anne Canteaut, Alain Couvreur, and Léo Perrin. Recovering or testing extended-affine equivalence. IEEE Transactions on Information Theory, 2022.\\[0pt]
+[18] Claude Carlet, Pascale Charpin, and Victor Zinoviev. Codes, bent functions and permutations suitable for DES-like cryptosystems. Designs, Codes and Cryptography, 15(2):125-156, 1998.\\[0pt]
+[19] Claude Carlet, Guang Gong, and Yin Tan. Quadratic zero-difference balanced functions, APN functions and strongly regular graphs. Designs, Codes and Cryptography, 78(3):629-654, 2016.\\[0pt]
+[20] Florent Chabaud and Serge Vaudenay. Links between differential and linear cryptanalysis. In Workshop on the Theory and Application of of Cryptographic Techniques, pages 356-365. Springer, 1994.\\[0pt]
+[21] Hans Dobbertin. Almost perfect nonlinear power functions on $\operatorname{GF}\left(2^{n}\right)$ : the Niho case. Information \& Computation, 151(1):57-72, 1999.\\[0pt]
+[22] Hans Dobbertin. Almost perfect nonlinear power functions on $\mathrm{GF}\left(2^{n}\right)$ : the Welch case. IEEE Transactions on Information Theory, 45(4):1271-1275, 1999.\\[0pt]
+[23] Hans Dobbertin. Almost perfect nonlinear power functions on $\mathrm{GF}\left(2^{n}\right)$ : A new case for $n$ divisible by 5. International Conference on Finite Fields and Applications, pages 113-121, 2001.\\[0pt]
+[24] Yves Edel and Alexander Pott. On the equivalence of nonlinear functions. In Enhancing cryptographic primitives with techniques from error correcting codes, pages 87-103. IOS Press, 2009.\\[0pt]
+[25] Robert Gold. Maximal recursive sequences with 3 -valued recursive cross-correlation functions (corresp.). IEEE Transactions on Information Theory, 14(1):154-156, 1968.\\[0pt]
+[26] Faruk Göloğlu. Biprojective almost perfect nonlinear functions. IEEE Transactions on Information Theory, 2022.\\[0pt]
+[27] Faruk Göloğlu and Lukas Kölsch. Equivalences of biprojective almost perfect nonlinear functions. arXiv preprint arXiv:2111.04197, 2021.\\[0pt]
+[28] Heeralal Janwa and Richard M Wilson. Hyperplane sections of Fermat varieties in $P^{3}$ in char. 2 and some applications to cyclic codes. In International Symposium on Applied Algebra, Algebraic Algorithms, and Error-Correcting Codes, pages 180-194. Springer, 1993.\\[0pt]
+[29] Tadao Kasami. The weight enumerators for several classes of subcodes of the 2nd order binary reedmuller codes. Information \& Computation, 18(4):369-394, 1971.\\[0pt]
+[30] Kangquan Li, Yue Zhou, Chunlei Li, and Longjiang Qu. Two new families of quadratic APN functions. IEEE Transactions on Information Theory, 2022.\\[0pt]
+[31] Shuxing Li, Wilfried Meidl, Alexandr Polujan, Alexander Pott, Constanza Riera, and Pantelimon Stănică. Vanishing flats: A combinatorial viewpoint on the planarity of functions and their application. IEEE Transactions on Information Theory, 66(11):7101-7112, 2020.\\[0pt]
+[32] Mitsuru Matsui. Linear cryptanalysis method for DES cipher. In Workshop on the Theory and Application of of Cryptographic Techniques, pages 386-397. Springer, 1993.\\[0pt]
+[33] Kaisa Nyberg. Differentially uniform mappings for cryptography. Lecture Notes in Computer Science, 765:55-64, 1994.\\[0pt]
+[34] Hiroaki Taniguchi. On some quadratic APN functions. Designs, Codes and Cryptography, 87(9):19731983, 2019.\\[0pt]
+[35] Satoshi Yoshiara. Equivalences of quadratic APN functions. Journal of Algebraic Combinatorics, 35(3):461-475, 2012.\\[0pt]
+[36] Yuyin Yu, Mingsheng Wang, and Yongqiang Li. A matrix approach for constructing quadratic APN functions. Designs, codes and cryptography, 73(2):587-600, 2014.\\[0pt]
+[37] Lijing Zheng, Haibin Kan, Yanjun Li, Jie Peng, and Deng Tang. Constructing new APN functions through relative trace functions. IEEE Transactions on Information Theory, 2022.\\[0pt]
+[38] Yue Zhou and Alexander Pott. A new family of semifields with 2 parameters. Advances in Mathematics, 234:43-60, 2013.
+
+
+\end{document}

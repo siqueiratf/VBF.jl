@@ -1,0 +1,583 @@
+\documentclass[10pt]{article}
+\usepackage[polish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage{bbold}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=magenta, urlcolor=cyan,}
+\urlstyle{same}
+\usepackage{mathrsfs}
+
+\title{New families of quadratic almost perfect nonlinear trinomials and multinomials }
+
+\author{Carl Bracken ${ }^{1}$, Eimear Byrne ${ }^{2}$, Nadya Markin ${ }^{3}$, Gary McGuire ${ }^{*, 2}$\\
+School of Mathematical Sciences, University College Dublin, Ireland\\
+Received 6 May 2007; revised 1 November 2007\\
+Available online 20 February 2008\\
+Communicated by Gary L. Mullen}
+\date{}
+
+
+%New command to display footnote whose markers will always be hidden
+\let\svthefootnote\thefootnote
+\newcommand\blfootnotetext[1]{%
+  \let\thefootnote\relax\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \let\thefootnote\svthefootnote%
+}
+
+%Overriding the \footnotetext command to hide the marker if its value is `0`
+\let\svfootnotetext\footnotetext
+\renewcommand\footnotetext[2][?]{%
+  \if\relax#1\relax%
+    \ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+  \else%
+    \if?#1\ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+    \else\svfootnotetext[#1]{#2}\fi%
+  \fi
+}
+
+\begin{document}
+\maketitle
+
+
+\begin{abstract}
+We introduce two new infinite families of APN functions, one on fields of order $2^{2 k}$ for $k$ not divisible by 2 , and the other on fields of order $2^{3 k}$ for $k$ not divisible by 3 . The polynomials in the first family have between three and $k+2$ terms, the second family's polynomials have three terms.
+\end{abstract}
+
+© 2007 Elsevier Inc. All rights reserved.\\
+Keywords: Almost perfect nonlinear; APN; Bent function; CCZ equivalence; Fourier spectrum
+
+\section*{1. Introduction}
+Let $L=\mathbb{F}_{2^{n}}$, the finite field with $2^{n}$ elements for some positive integer $n$. A function $f: L \rightarrow L$ is said to be almost perfect nonlinear (APN) if the number of roots in $L$ of the polynomial
+
+$$
+f(x+a)+f(x)+b
+$$
+
+\footnotetext{\begin{itemize}
+  \item Corresponding author.
+\end{itemize}
+
+E-mail addresses: \href{mailto:carl.bracken@ucd.ie}{carl.bracken@ucd.ie} (C. Bracken), \href{mailto:ebyrne@ucd.ie}{ebyrne@ucd.ie} (E. Byrne), \href{mailto:nadya.markin@ucd.ie}{nadya.markin@ucd.ie} (N. Markin), \href{mailto:gary.mcguire@ucd.ie}{gary.mcguire@ucd.ie} (G. McGuire).\\
+${ }^{1}$ Research supported by Irish Research Council for Science, Engineering and Technology Postdoctoral Fellowship.\\
+${ }^{2}$ Research supported by the Claude Shannon Institute, Science Foundation Ireland Grant 06/MI/006.\\
+${ }^{3}$ Postdoctoral fellow funded by the Claude Shannon Institute.
+}
+is at most 2 , for all $a, b \in L, a \neq 0$. If the number of roots in $L$ is at most $\delta$, we say $f$ is differentially $\delta$-uniform. Thus APN is the same as differentially 2 -uniform. A differentially 1 -uniform function is also called a perfect nonlinear function; these do not exist in characteristic 2.
+
+APN functions were introduced in [9] by Nyberg, who defined them as the mappings with highest resistance to differential cryptanalysis. Since then many papers have been written on APN functions, although not many different families of such functions are known. Indeed, a recent result of Voloch [11] shows that APN functions asymptotically have density 0 in the set of all functions, in a certain sense.
+
+Two functions $f, g: L \rightarrow L$ are called extended affine (EA) equivalent if there exist affine permutations $A_{1}, A_{2}$ and an affine map $A$ such that $g=A_{1} \circ f \circ A_{2}+A$. The differential uniformity of a function is an invariant of EA equivalence. However, a bijective function is not necessarily EA equivalent to its inverse, even though they have the same differential uniformity.
+
+Until recently, all known APN functions were EA equivalent to one of a short list of monomial functions, namely the Gold, Kasami-Welch, inverse, Welch, Niho and Dobbertin functions. For some time it was conjectured that this list was the complete list of APN functions up to EA equivalence.
+
+A more general notion of equivalence has been suggested in [6], which is referred to as Carlet-Charpin-Zinoviev (CCZ) equivalence. Two functions are called CCZ equivalent if the graph of one can be obtained from the graph of the other by an affine permutation of the product space (see Section 5 for details). Differential uniformity and resistance to linear and differential attacks are invariants of CCZ equivalence, and as opposed to EA equivalence, any permutation is always CCZ equivalent to its inverse.
+
+EA equivalence is a special case of CCZ equivalence. In [4, Proposition 3], the authors express necessary and sufficient conditions for EA equivalence of functions in terms of CCZ equivalence and use this to construct several examples of APN functions that are CCZ equivalent to the Gold functions, but not EA equivalent to any monomial function. This showed that the original conjecture is false. The new question was whether all APN functions are CCZ equivalent to one on the list.
+
+In 2006 a sporadic example of a binomial APN function that is not CCZ equivalent to any power mapping was given in [8]. A family of APN binomials on fields $\mathbb{F}_{2^{n}}$, where $n$ is divisible by 3 but not 9, was presented in [2]. In [3] these have been shown to be EA inequivalent to any monomial function, and CCZ inequivalent to the Gold, Kasami-Welch, inverse or Dobbertin functions. For the case $n=6$, in [7] Dillon presented a list of inequivalent APN functions on $\mathbb{F}_{2^{n}}$. Motivated by these works, in this paper we introduce new classes of APN functions on fields of order $2^{2 k}$ where $k$ is not divisible by 2 , and on fields of order $2^{3 k}$ where $k$ is not divisible by 3 . Our new polynomials generalize some of the previously known polynomials.
+
+Let $k$ and $s$ be a pair of odd coprime integers. The first family of polynomials we consider has the form
+
+
+\begin{equation*}
+b x^{2^{s}+1}+b^{2^{k}} x^{2^{k+s}+2^{k}}+c x^{2^{k}+1}+\sum_{i=1}^{k-1} r_{i} x^{2^{i+k}+2^{i}} \tag{1}
+\end{equation*}
+
+
+where $b, c \in \mathbb{F}_{2^{2 k}}$, and $r_{i} \in \mathbb{F}_{2^{k}}$ for each $i$. These polynomials have up to $k+2$ nonzero coefficients, depending on the choice of the $r_{i}$, some or all of which could be 0 . When we impose the conditions that $c \notin \mathbb{F}_{2^{k}}$, and $b$ is not a cube, then the family turns out to be a set of APN polynomials.
+
+The second family consists of trinomials over $\mathbb{F}_{2^{3 k}}$ of the form
+
+
+\begin{equation*}
+u x^{2^{-k}+2^{k+s}}+u^{2^{k}} x^{2^{s}+1}+v x^{2^{k+s}+2^{s}} \tag{2}
+\end{equation*}
+
+
+where $u$ is primitive in $\mathbb{F}_{2^{3 k}}$ and $v \in \mathbb{F}_{2^{k}} .(s, 3 k)=1,(3, k)=1$, and 3 divides $k+s$. If $v=0$ then these are the binomial APN functions found in [2].
+
+Let $\operatorname{Tr}$ denote the trace map from $L$ to $\mathbb{F}_{2}$. The Fourier transform of any real-valued function $F$ defined on $L$ is the function $\widehat{F}$ defined by
+
+$$
+\widehat{F}(a)=\sum_{x \in L} F(x)(-1)^{\operatorname{Tr}(a x)}
+$$
+
+for $a \in L$. The Fourier spectrum of $F$ is the set $\{\widehat{F}(a): a \in L\}$ of values of $\widehat{F}$.\\
+To a Boolean function $g: L \rightarrow \mathbb{F}_{2}$ we associate the real-valued function $G=(-1)^{g}$. When we refer to the Fourier spectrum of $g$, we mean the Fourier spectrum of the associated function $G=(-1)^{g}$. For arbitrary $g$, computing its Fourier spectrum is often difficult.
+
+For a pair of CCZ-equivalent functions $g_{1}, g_{2}: L \rightarrow L$, the Fourier spectra of the Boolean functions $\operatorname{Tr}\left(g_{1}\right)$ and $\operatorname{Tr}\left(g_{2}\right)$ may still be different. However, given a function $f: L \rightarrow L$, the set $\left\{W_{f}(a, b): a, b \in L\right\}$, where
+
+$$
+W_{f}(a, b)=\sum_{x \in L}(-1)^{\operatorname{Tr}(a x+b f(x))}
+$$
+
+is an invariant under CCZ equivalence. We will refer to this set as the Walsh spectrum. The Walsh spectra of the new functions in this paper are the same as that of the Gold function $x^{3}$, at least for $\mathbb{F}_{64}$.
+
+Bent functions were introduced in [10] by Rothaus in 1976 as Boolean functions having maximal distance to the set of all affine functions (the first order Reed-Muller code). Equivalently, the bent functions on $L$ are precisely those whose Fourier spectrum is $\{ \pm \sqrt{|L|}\}$.
+
+The paper is organised as follows. In Sections 2 and 3 we establish the APN property of both families of polynomials. In Section 4 we prove that the trace of (1) is a bent function. Finally, in Section 5 we prove a connection between CCZ and code equivalence, and use this observation to show that these polynomials in general are not CCZ equivalent to any monomial functions, or the binomials in [2].
+
+Notation. For the remainder, let $n$ be a positive integer. Let $k$ and $s$ be relatively prime integers. Let $L, K$ and $F$ be the finite fields of orders $2^{n}, 2^{2 k}$ and $2^{3 k}$, respectively.
+
+\section*{2. Proof of APN property for family (1)}
+We shall now prove that the polynomials (1) are APN under certain conditions. To establish the APN property of a function $f$ on $L$ we must show that the equation
+
+
+\begin{equation*}
+f(x)+f(x+q)=p \tag{3}
+\end{equation*}
+
+
+has at most two solutions in $L$ for all $p \in L$ and all $q \in L^{*}$. If $f$ is quadratic, then the number of solutions is zero, or has the same size as the kernel of the $\mathbb{F}_{2}$-linear map
+
+$$
+\Delta_{f, q}(x):=f(x)+f(x+q)+f(q) .
+$$
+
+In the following, we will show that the families of functions (1) and (2) are APN by showing that the kernel of $\Delta_{f, q}$ has size 2 for each nonzero $q$ in the underlying field.
+
+Recall our notation that $K=\mathbb{F}_{2^{2 k}}$.\\
+Theorem 1. Suppose that the integers $k$ and $s$ are both odd, with $(k, s)=1$. Let $f$ be the function on $K$ defined by
+
+$$
+f(x)=b x^{2^{s}+1}+b^{2^{k}} x^{2^{k+s}+2^{k}}+c x^{2^{k}+1}+\sum_{i=1}^{k-1} r_{i} x^{2^{i+k}+2^{i}}
+$$
+
+where $c \notin \mathbb{F}_{2^{k}}, b \in K$ is not a cube, and $r_{i} \in \mathbb{F}_{2^{k}}$ for each $i$. Then $f$ is APN on $K$.\\
+Proof. Let $q \in K^{*}$. Then
+
+$$
+\begin{aligned}
+\Delta_{f, q}(x)= & b\left(x^{2^{s}} q+x q^{2^{s}}\right)+b^{2^{k}}\left(x^{s^{s+k}} q^{2^{k}}+x^{2^{k}} q^{2^{s+k}}\right)+c\left(x^{2^{k}} q+x q^{2^{k}}\right) \\
+& +\sum_{i=1}^{k-1} r_{i}\left(x^{2^{i+k}} q^{2^{i}}+x^{2^{i}} q^{2^{i+k}}\right)
+\end{aligned}
+$$
+
+Clearly the number of solutions in $x$ to the equation $\Delta_{f, q}(x)=0$ is the same as the number of solutions in $x$ to the equation $\Delta_{f, q}(x q)=0$, so we replace $x$ with $x q$ in the above to obtain
+
+$$
+\begin{aligned}
+\Delta_{f, q}(x q)= & b q^{2^{s}+1}\left(x^{2^{s}}+x\right)+b^{2^{k}} q^{2^{k}+2^{s+k}}\left(x^{2^{s+k}}+x^{2^{k}}\right)+c q^{2^{k}+1}\left(x^{2^{k}}+x\right) \\
+& +\sum_{i=1}^{k-1} r_{i} q^{2^{i}+2^{i+k}}\left(x^{2^{i+k}}+x^{2^{i}}\right)
+\end{aligned}
+$$
+
+If $\Delta_{f, q}(x)=0$, then, rearranging the previous equation, we get
+
+
+\begin{equation*}
+\Delta_{f, q}(x q)=A x+B x^{2^{k}}+C x^{2^{s}}+D x^{2^{k+s}}+\sum_{j=1}^{k-1} R_{j}\left(x^{2^{k+j}}+x^{2^{j}}\right)=0 \tag{4}
+\end{equation*}
+
+
+where
+
+$$
+\begin{gathered}
+A=c q^{2^{k}+1}+b q^{2^{s}+1}, \quad B=c q^{2^{k}+1}+b^{2^{k}} q^{2^{k+s}+2^{k}}, \quad C=b q^{2^{s}+1} \\
+D=b^{2^{k}} q^{2^{k+s}+2^{k}}, \quad \text { and } \quad R_{j}=r_{j} q^{2^{k+j}+2^{j}}
+\end{gathered}
+$$
+
+for each $j$.
+
+For ease of notation, denote $\Delta_{f, q}(x q)$ by $\Delta(x)$. The function $f$ is APN on $K$ if and only if the equation $\Delta(x)=0$ has at most two solutions in $K$. Obviously 0 is a solution of $\Delta(x)=0$, and 1 is a solution of $\Delta(x)=0$ because $\Delta(1)=A+B+C+D=0$. We will now show there are no other solutions in $K$.
+
+Consider
+
+$$
+\Delta(x)+(\Delta(x))^{2^{k}}=\left(A+B^{2^{k}}\right)\left(x+x^{2^{k}}\right)=\left(c+c^{2^{k}}\right) q^{2^{k}+1}\left(x+x^{2^{k}}\right) .
+$$
+
+As $q \neq 0$ and $c \notin \mathbb{F}_{2^{k}}$, the above expression with $\Delta(x)=0$ implies $x+x^{2^{k}}=0$, which means $x \in \mathbb{F}_{2^{k}}$. We can now write
+
+$$
+\Delta(x)=(A+B) x+(C+D) x^{2^{s}}=(A+B)\left(x+x^{2^{s}}\right)=0 .
+$$
+
+Since $(2 k, s)=1$ it remains to show that $A+B \neq 0$. Suppose that $A+B=0$. Then
+
+$$
+b q^{2^{s}+1}+b^{2^{k}} q^{2^{k+s}+2^{k}}=0,
+$$
+
+which implies
+
+$$
+b^{2^{k}-1}=q^{\left(2^{k+s}-1\right)\left(2^{k}-1\right)} .
+$$
+
+Using the fact that 3 divides $2^{t}-1$ if and only if $t$ is even, and recalling that we chose $b$ not to be a cube, we see that the left-hand side of this equation is not a cube. On the other hand, as $k+s$ is even, the right-hand side of this expression is a cube. Hence $A+B \neq 0$.
+
+\section*{3. Proof of APN property for family (2)}
+In this section we prove Theorem 3, which will construct quadratic trinomial APN functions over $\mathbb{F}_{2^{n}}$ whenever $n$ is divisible by 3 but not 9 . We use the following easy result in its proof.
+
+Lemma 2. Let $k$ and $t$ be positive integers. The following hold.\\
+(i) If $3 \nmid k$ and $\theta \in \mathbb{F}_{2^{k}}$ then $\theta$ is a 7th power in $\mathbb{F}_{2^{k}}$.\\
+(ii) If $\theta$ is primitive in $\mathbb{F}_{2^{3 k}}$ then $\theta$ is not a 7 th power in $\mathbb{F}_{2^{3 k}}$.\\
+(iii) If $3 \nmid k$, and $\theta$ is primitive in $\mathbb{F}_{2^{3 k}}$, then $\theta^{2^{k}-1}$ is not a 7 th power in $\mathbb{F}_{2^{3 k}}$.\\
+(iv) If $3 \mid t$ and $\theta \in \mathbb{F}_{2^{3 k}}$, then $\theta^{2^{t}-1}$ is a 7 th power in $\mathbb{F}_{2^{3 k}}$.
+
+Proof. Let $r$ be a positive integer. First observe that 7 divides $2^{r}-1$ if and only if 3 divides $r$. Equivalently, the homomorphism $x \mapsto x^{7}$ on $\mathbb{F}_{2^{r}}^{*}$ is a bijection if and only if 3 does not divide $r$. This proves (i) and (ii). If $\theta$ is primitive in $\mathbb{F}_{2^{3 k}}$ and $\theta^{2^{k}-1}=\beta^{7}$ for some $\beta \in \mathbb{F}_{2^{3 k}}$, then $\theta^{2^{k}-1}= \theta^{7 \ell}$ for some integer $\ell$, which means that $3 \mid k$. This proves (iii). The proof of (iv) is clear because $2^{t}-1=7 t^{\prime}$ for some $t^{\prime}$.
+
+Recall our notation that $F=\mathbb{F}_{2^{3 k}}$.
+
+Theorem 3. Suppose that $s$ and $k$ are integers satisfying $(s, 3 k)=1, k \not \equiv 0 \bmod 3$, and $k+s \equiv 0 \bmod 3$. Let $f(x)$ be the function on $F$ defined by
+
+$$
+f(x)=u x^{2^{-k}+2^{k+s}}+u^{2^{k}} x^{2^{s}+1}+v x^{2^{k+s}+2^{s}}
+$$
+
+where $u$ is primitive in $F$ and $v \in \mathbb{F}_{2^{k}}$. Then $f$ is APN on $F$.\\
+Proof. Let $q$ be a nonzero element of $F$. We count the number of solutions to the equation $\Delta_{f, q}(x)=0$. Suppose that
+
+$$
+\Delta_{f, q}(x)=u\left(x^{2^{k+s}} q^{2^{-k}}+q^{2^{k+s}} x^{2^{-k}}\right)+u^{2^{k}}\left(x^{2^{s}} q+q^{2^{s}} x\right)+v\left(x^{2^{k+s}} q^{2^{s}}+q^{2^{k+s}} x^{2^{s}}\right)=0 .
+$$
+
+As before, replace $x$ with $x q$ to obtain
+
+$$
+\Delta_{f, q}(x q)=u q^{2^{-k}+2^{k+s}}\left(x^{2^{k+s}}+x^{2^{-k}}\right)+u^{2^{k}} q^{2^{s}+1}\left(x^{2^{s}}+x\right)+v q^{2^{k+s}+2^{s}}\left(x^{2^{k+s}}+x^{2^{s}}\right)=0 .
+$$
+
+Now divide by $u^{2^{k}} q^{2^{s}+1}$ to get
+
+$$
+u^{1-2^{k}} q^{2^{-k}+2^{k+s}-2^{s}-1}\left(x^{2^{k+s}}+x^{2^{-k}}\right)+x^{2^{s}}+x+v u^{-2^{k}} q^{2^{k+s}-1}\left(x^{2^{s}}+x^{2^{k+s}}\right)=0 .
+$$
+
+Let $a:=u^{1-2^{k}} q^{2^{-k}+2^{k+s}-2^{s}-1}, \alpha:=u^{-2^{k}} v q^{2^{k+s}-1}$ and define
+
+
+\begin{equation*}
+\Delta(x):=(a+\alpha) x^{2^{k+s}}+(1+\alpha) x^{2^{s}}+x+a x^{2^{-k}} \tag{5}
+\end{equation*}
+
+
+Note that for $v \neq 0, a=\alpha^{1-2^{-k}}$ and hence $a^{2^{-k}+2^{k}+1}=1$. We claim that for $v \neq 0$ neither $a$ nor $\alpha$ is a 7th power. We will use this fact to show that the equation $\Delta(x)=0$ has just two solutions.
+
+Since $(3, k)=1$, from Lemma 2(i) every element of $\mathbb{F}_{2^{k}}$, and in particular $v$, can be expressed as a 7th power in $\mathbb{F}_{2^{k}}$. By hypothesis, the integers $k, s$ have been chosen such that 3 divides $s+k$, so from Lemma 2(iv), $q^{2^{k+s}-1}$ is a 7th power. Since $u$ is primitive in $F$, from Lemma 2(ii) $u$ is not a 7th power in $F$. Then $u^{-2^{k}}$ is not a 7th power, so finally we deduce that $\alpha=u^{-2^{k}} v q^{2^{k+s}}-1$ is not a 7th power in $F$.
+
+Now
+
+$$
+a=u^{1-2^{k}} q^{2^{-k}+2^{k+s}-2^{s}-1}=u^{1-2^{k}} q^{\left(1-2^{-k}\right)\left(2^{k+s}-1\right)},
+$$
+
+which is a 7 th power if and only if $u^{1-2^{k}}$ is a 7 th power. Since $(3, k)=1$, from Lemma 2(iii), $u^{1-2^{k}}$ is not a 7th power and hence $a$ is not a 7th power.
+
+Recall that if we show that $\Delta(x)=0$ permits only 0 and 1 as solutions for $x$ then $f(x)$ is APN on $F$. We define a linearized mapping,
+
+$$
+L_{\theta}(T):=T+\theta T^{2^{k}}+\theta^{2^{k}+1} T^{2^{-k}}
+$$
+
+If $\theta$ is a $\left(2^{k}-1\right)$ th power in $F$, then a straightforward calculation verifies that $L_{\theta}\left(x+\theta x^{2^{k}}\right)=0$ for all $x \in F$.
+
+Consider the following equation:
+
+
+\begin{equation*}
+0=a^{-2^{k}} \Delta(x)^{2^{k}}=x+a^{-2^{k}} x^{2^{k}}+a^{-2^{k}}(1+\alpha)^{2^{k}} x^{2^{k+s}}+\left(1+\alpha a^{-1}\right)^{2^{k}} x^{2^{-k+s}} . \tag{6}
+\end{equation*}
+
+
+Clearly $a^{-2^{k}}=\alpha^{-\left(2^{k}-1\right)}$ is a $\left(2^{k}-1\right)$ th power, so that $L_{a^{-2}}\left(x+a^{-2^{k}} x^{2^{k}}\right)=0$ for all $x \in F$, and then applying $L_{a^{-2^{k}}}$ to (6) implies
+
+
+\begin{equation*}
+L_{a^{-2^{k}}}\left(a^{-2^{k}}(1+\alpha)^{2^{k}} x^{2^{k+s}}+\left(1+\alpha a^{-1}\right)^{2^{k}} x^{2^{-k+s}}\right)=0 . \tag{7}
+\end{equation*}
+
+
+Recall the relations $a^{2^{-k}+2^{k}+1}=1$ and $a^{-1}=a^{2^{-k}+2^{k}}=\alpha^{2^{-k}-1}$. We compute (7) as
+
+$$
+\begin{aligned}
+& a^{-2^{k}}(1+\alpha)^{2^{k}} x^{2^{k+s}}+\left(1+\alpha a^{-1}\right)^{2^{k}} x^{2^{-k+s}} \\
+& \quad+a^{-2^{k}}\left(a^{-2^{-k}}(1+\alpha)^{2^{-k}} x^{2^{-k+s}}+\left(1+\alpha a^{-1}\right)^{2^{-k}} x^{2^{s}}\right) \\
+& \quad+a\left(a^{-1}(1+\alpha) x^{2^{s}}+\left(1+\alpha a^{-1}\right) x^{2^{k+s}}\right)=0
+\end{aligned}
+$$
+
+Gathering terms and taking the ( $2^{-s}$ )th power of the result we get
+
+
+\begin{equation*}
+\left(1+a^{-2^{k-s}}\right) x+\left(a^{2^{-s}}+a^{-2^{k-s}}\right) x^{2^{k}}+\left(1+a^{2^{-s}}\right) x^{2^{-k}}=0 \tag{8}
+\end{equation*}
+
+
+We shall return to this equation later.\\
+Since $\alpha+1 \neq 0$, we divide (5) by $1+\alpha$ to get
+
+
+\begin{equation*}
+\frac{1}{1+\alpha} \Delta(x)=\left(\frac{1}{1+\alpha}\right) x+\left(\frac{a}{1+\alpha}\right) x^{2^{-k}}+x^{2^{s}}+\left(\frac{a+\alpha}{1+\alpha}\right) x^{2^{k+s}}=0 . \tag{9}
+\end{equation*}
+
+
+Now write
+
+$$
+A:=\frac{a+\alpha}{1+\alpha}=\frac{a\left(1+\alpha a^{-1}\right)}{1+\alpha}=\frac{a\left(1+\alpha^{2^{-k}}\right)}{1+\alpha}=a(1+\alpha)^{2^{-k}-1} .
+$$
+
+Then $A$ is a ( $2^{k}-1$ )th power, because $a$ is, so
+
+$$
+L_{A}\left(x^{2^{s}}+A x^{2^{k+s}}\right)=0
+$$
+
+for all $x \in F$. Applying $L_{A}$ to (9) then gives
+
+$$
+L_{A}\left(\frac{1}{1+\alpha} x+\frac{a}{1+\alpha} x^{2^{-k}}\right)=0
+$$
+
+Performing this substitution gives
+
+$$
+\begin{aligned}
+& (1+\alpha)^{-1} x+a(1+\alpha)^{-1} x^{2^{-k}}+a(1+\alpha)^{2^{-k}-1}\left((1+\alpha)^{-2^{k}} x^{2^{k}}+a^{2^{k}}(1+\alpha)^{-2^{k}} x\right) \\
+& \quad+a^{2^{k}+1}(1+\alpha)^{\left(2^{-k}-1\right)\left(2^{k}+1\right)}\left((1+\alpha)^{-2^{-k}} x^{2^{-k}}+a^{2^{-k}}(1+\alpha)^{-2^{-k}} x^{2^{k}}\right)=0
+\end{aligned}
+$$
+
+Collecting terms in $x$ we get
+
+$$
+\begin{aligned}
+& \left((1+\alpha)^{-1}+a^{2^{k}+1}(1+\alpha)^{2^{-k}-2^{k}-1}\right) x+\left(a(1+\alpha)^{2^{-k}-2^{k}-1}+(1+\alpha)^{-2^{k}}\right) x^{2^{k}} \\
+& \quad+\left(a(1+\alpha)^{-1}+a^{2^{k}+1}(1+\alpha)^{-2^{k}}\right) x^{2^{-k}}=0
+\end{aligned}
+$$
+
+Now multiply by $(1+\alpha)^{2^{k}+1}$ to obtain:
+
+$$
+\begin{aligned}
+& \left((1+\alpha)^{2^{k}}+a^{2^{k}+1}(1+\alpha)^{2^{-k}}\right) x+\left(a(1+\alpha)^{2^{-k}}+(1+\alpha)\right) x^{2^{k}} \\
+& \quad+\left(a(1+\alpha)^{2^{k}}+a^{2^{k}+1}(1+\alpha)\right) x^{2^{-k}}=0
+\end{aligned}
+$$
+
+Substitute $\alpha^{1-2^{-k}}$ for $a$ in this equation to obtain the following:
+
+
+\begin{equation*}
+\left(1+a^{-2^{-k}}\right) x+(1+a) x^{2^{k}}+\left(a+a^{-2^{-k}}\right) x^{2^{-k}}=0 \tag{10}
+\end{equation*}
+
+
+Now we combine Eqs. (8) and (10) to eliminate the terms in $x^{2^{-k}}$. Note that $a+a^{-2^{-k}} \neq 0$ and $1+a^{2^{-s}} \neq 0$ since $a \neq 1$. (To verify that $a+a^{-2^{-k}} \neq 0$, note that $a+a^{-2^{-k}}=0$ implies $a^{2^{k}+1}=1$, and also note that $a^{2^{k}+1}=a^{-2^{2 k}}$ because $a$ is a (2k-1)-power.)
+
+We simplify
+
+$$
+\begin{aligned}
+& \left(\left(1+a^{-2^{k-s}}\right)\left(a+a^{-2^{-k}}\right)+\left(1+a^{-2^{-k}}\right)\left(1+a^{2^{-s}}\right)\right) x \\
+& \quad+\left(\left(a^{2^{-s}}+a^{-2^{k-s}}\right)\left(a+a^{-2^{-k}}\right)+(1+a)\left(1+a^{2^{-s}}\right)\right) x^{2^{k}}=0
+\end{aligned}
+$$
+
+to obtain
+
+$$
+\left(\left(1+a^{-2^{k-s}}\right)\left(a+a^{-2^{-k}}\right)+\left(1+a^{-2^{-k}}\right)\left(1+a^{2^{-s}}\right)\right)\left(x+x^{2^{k}}\right)=0 .
+$$
+
+If we show that $\left(1+a^{-2^{k-s}}\right)\left(a+a^{-2^{-k}}\right)+\left(1+a^{-2^{-k}}\right)\left(1+a^{2^{-s}}\right) \neq 0$ for all possible values of $a$, then we may conclude that $x \in \mathbb{F}_{2^{k}}$. To this end, we consider the expression
+
+$$
+a\left(1+a^{-2^{k-s}}\right)\left(1+a^{-2^{-k}-1}\right)=\left(1+a^{-2^{-k}}\right)\left(1+a^{2^{-s}}\right)
+$$
+
+Rearranging and using the fact that $a^{-2^{-k}-1}=a^{2^{k}}$, we obtain
+
+$$
+a=\frac{\left(1+a^{-1}\right)^{2^{-k}}(1+a)^{2^{-s}}}{\left(1+a^{-1}\right)^{2^{k-s}}(1+a)^{2^{k}}}=\left(1+a^{-1}\right)^{2^{-k}-2^{k-s}}(1+a)^{2^{-s}-2^{k}}
+$$
+
+Then
+
+$$
+a^{2^{s}}=\left(1+a^{-1}\right)^{\left(2^{k+s}-1\right) 2^{k}}(1+a)^{-\left(2^{s+k}-1\right)}
+$$
+
+so that $a^{2^{s}}$ (and hence $a$ ) is a ( $2^{k+s}-1$ )th power, which in turn implies that $a$ is a 7th power, contradicting a previous claim.
+
+We now return to our original expression for $\Delta(x)$. We have shown that any solution to $\Delta(x)=0$ must satisfy $x=x^{2^{k}}$. Substituting into (5) we get
+
+$$
+(a+1)\left(x+x^{2^{s}}\right)=0
+$$
+
+which implies $x=0$ or 1 since $(s, 3 k)=1$.
+
+\section*{4. Proof of bent property}
+In [5] it is noted that $\operatorname{Tr}(v f(x))$ will be bent for at least $\frac{2}{3}\left(2^{n}-1\right)$ values of $v$ for any quadratic APN function $f$ on $L$. An interesting property of the polynomials
+
+$$
+f(x)=b x^{2^{s}+1}+b^{2^{k}} x^{2^{k+s}+2^{k}}+c x^{2^{k}+1}+\sum_{i=1}^{k-1} r_{i} x^{2^{i+k}+2^{i}}
+$$
+
+is that $\operatorname{Tr}(f(x))$ is a bent function on $K$. We include a proof below using standard techniques. We remark that the same argument as in the proof of the next theorem shows that $\operatorname{Tr}(v f(x))$ is bent for $v \in \mathbb{F}_{2^{k}}$.
+
+Theorem 4. Let
+
+$$
+f(x)=b x^{2^{s}+1}+b^{2^{k}} x^{2^{k+s}+2^{k}}+c x^{2^{k}+1}+\sum_{j=1}^{k-1} r_{j} x^{2^{k+j}+2^{j}}
+$$
+
+be a function on $K$ with $c \notin \mathbb{F}_{2^{k}}$ and $r_{j} \in \mathbb{F}_{2^{k}}$ for each $j$. Then the Boolean function $\operatorname{Tr}(f(x))$ is bent.
+
+Proof. We need to show that the Fourier transform $\widehat{F}(r)$, of $F(x)=\operatorname{Tr}(f(x))$, is limited to the two values $\pm 2^{k}$.
+
+By definition
+
+$$
+\widehat{F}(r)=\sum_{x \in K}(-1)^{\operatorname{Tr}(r x+f(x))}
+$$
+
+Squaring gives
+
+$$
+\widehat{F}(r)^{2}=\sum_{y} \sum_{x}(-1)^{\operatorname{Tr}(r x+f(x)+r y+f(y))} .
+$$
+
+Replacing $y$ with $x+u$ we have
+
+$$
+\widehat{F}(r)^{2}=\sum_{u} \sum_{x}(-1)^{\operatorname{Tr}(r u+f(x)+f(x+u))}=\sum_{u}(-1)^{\operatorname{Tr}(r u+f(u))} \sum_{x}(-1)^{\operatorname{Tr}\left(\Delta_{u}(x)\right)}
+$$
+
+where $\Delta_{u}(x)=f(u)+f(x)+f(x+u)$.\\
+Since $r_{j}^{2^{k}}=r_{j}$ for each $j$, we may write
+
+$$
+\begin{aligned}
+\Delta_{u}(x)= & c\left(x^{2^{k}} u+x u^{2^{k}}\right)+b\left(x^{2^{s}} u+x u^{2^{s}}\right)+\left(b\left(x^{2^{s}} u+x u^{2^{s}}\right)\right)^{2^{k}} \\
+& +\sum_{j=1}^{k-1}\left(r_{j} x^{2^{j+k}} u^{2^{j}}+\left(r_{j} x^{2^{j+k}} u^{2^{j}}\right)^{2^{k}}\right)
+\end{aligned}
+$$
+
+so taking trace gives the simplification
+
+$$
+\operatorname{Tr}\left(\Delta_{u}(x)\right)=\operatorname{Tr}\left(c\left(x^{2^{k}} u+x u^{2^{k}}\right)\right) .
+$$
+
+Simplifying gives
+
+$$
+\widehat{F}(r)^{2}=\sum_{u}(-1)^{\operatorname{Tr}\left(r u+A u^{2^{k}+1}\right)}\left(\sum_{x}(-1)^{\operatorname{Tr}(x L(u))}\right)
+$$
+
+where $A=c+\sum_{j=1}^{k-1} r_{j}^{2^{-j}}, L(u)=\left(c+c^{2^{k}}\right) u^{2^{k}}$. Since $c \notin \mathbb{F}_{2^{k}}, L(u) \neq 0$ except when $u=0$. This means that the inner sum is 0 except when $u=0$. Hence $\widehat{F}(r)^{2}=2^{2 k}$ and the proof is complete.
+
+\section*{5. CCZ equivalence and coding theory}
+Proving CCZ inequivalence of functions can be difficult. In this section we will show a correspondence between CCZ equivalence and code equivalence. This indicates the potential for the use of techniques from coding theory to establish CCZ equivalence or inequivalence of functions.
+
+Recall that $L=\mathbb{F}_{2^{n}}$. For a map $f: L \rightarrow L$, let $G_{f}=\{(x, f(x)) \mid x \in L\} \subseteq L \times L$ denote the graph of $f$.
+
+Definition 5. Two maps $f, g$ on $L$ are said to be $C C Z$ equivalent (denoted $f \sim g$ ) if there exists an affine $\mathbb{F}_{2}$-automorphism $\mathfrak{L}: L \times L \rightarrow L \times L$ such that $\mathfrak{L}\left(G_{f}\right)=G_{g}$.
+
+Equivalently, write $\mathfrak{L}$ as $\left(L_{1}, L_{2}\right):(x, y) \mapsto\left(L_{1}(x, y), L_{2}(x, y)\right)$ for a pair of affine maps $L_{1}, L_{2}$ from $L \times L$ to $L$. With respect to this notation, $\mathfrak{L}\left(G_{f}\right)$ is a graph if and only if $L_{1}(x, f(x))$ is a bijection, and saying that $\mathfrak{L}\left(G_{f}\right)$ is the graph of $g$ means that $g$ maps $L_{1}(x, f(x))$ to $L_{2}(x, f(x))$ for each $x$.
+
+Fix a basis of $L$ over $\mathbb{F}_{2}$. For each element $x \in L$ we write $\mathbf{x}=\left(x_{1}, \ldots, x_{n}\right)$ to denote the vector of coefficients of $x$ with respect to this basis. Given a map $f$ on $L$, we write $f(\mathbf{x})$ to denote the representation of $f(x) \in L$ as a vector in $\mathbb{F}_{2}^{n}$ and we let $\widehat{H}_{f}$ to denote a $(2 n+1) \times 2^{n}$ binary matrix whose columns have the form $(1, \mathbf{x}, f(\mathbf{x}))_{x \in \mathbb{F}_{2}^{n}}^{T}$ for some ordering of the elements of $\mathbb{F}_{2}^{n}$. We write $\left[\widehat{H}_{f}\right]$ to denote the set of all such matrices with respect to all possible orderings, so that any two elements in $\left[\widehat{H}_{f}\right]$ differ by a permutation of columns.
+
+We now define $\left[\widehat{C}_{f}\right]$ to be the set $\left\{\operatorname{Null}(H) \mid H \in\left[\widehat{H}_{f}\right]\right\}$. Here $\operatorname{Null}(H)$ denotes the $\mathbb{F}_{2}$ nullspace of the matrix $H$. In coding theory, two codes are said to be equivalent if one can be obtained from the other by a permutation of coordinates, so the set $\left[\widehat{C}_{f}\right]$ is a set of equivalent codes.
+
+Dillon stated the following result in [7]. We include a proof for completeness (and we are not aware of one in the literature).
+
+Theorem 6. Let $f, g$ be maps $L \rightarrow L$. Then $f$ is CCZ-equivalent to $g$ if and only if $\left[\widehat{C}_{f}\right]=\left[\widehat{C}_{g}\right]$.\\
+Proof. The functions $f$ and $g$ are CCZ-equivalent if and only if there exists an affine permutation $\mathfrak{L}=\left(L_{1}, L_{2}\right)$ on $L \times L$ such that
+
+$$
+\{\mathfrak{L}(x, f(x)): x \in L\}=\{(x, g(x)): x \in L\}
+$$
+
+(in which case $L_{1}(x, f(x))$ is a bijection). Then $f \sim g$ if and only if the matrix with columns $(1, \mathbf{x}, g(\mathbf{x}))^{T}$ is a column permutation of the matrix with columns $(1, \mathscr{L}(\mathbf{x}, f(\mathbf{x})))^{T}= \left(1, L_{1}(x, f(x)), L_{2}(x, f(x))\right)$.
+
+If $f \sim g$ and $\mathfrak{L}$ is the corresponding affine permutation with $\mathfrak{L}\left(G_{f}\right)=G_{g}$, then there is an invertible binary $2 n \times 2 n$ matrix $M$ and $\gamma \in\left(\mathbb{F}_{2}\right)^{2 n}$ such that
+
+$$
+\mathfrak{L}:(\mathbf{x}, f(\mathbf{x})) \mapsto M(\mathbf{x}, f(\mathbf{x}))^{T}+\gamma .
+$$
+
+Let
+
+$$
+X=\left[\begin{array}{cc}
+1 & \mathbf{0} \\
+\gamma & M
+\end{array}\right]
+$$
+
+Then $X(1, \mathbf{x}, f(\mathbf{x}))^{T}=(1, \mathfrak{L}(\mathbf{x}, f(\mathbf{x})))^{T}$, and as $X$ is an invertible matrix, the matrices with columns $(1, \mathbf{x}, f(\mathbf{x}))^{T}$ and $(1, \mathcal{L}(\mathbf{x}, f(\mathbf{x})))^{T}$ (with the same ordering) have the same nullspace. Therefore $\left[\widehat{C}_{f}\right]=\left[\widehat{C}_{g}\right]$.
+
+Conversely, suppose that $\left[\widehat{C}_{f}\right]=\left[\widehat{C}_{g}\right]$. Choose any $C \in\left[\widehat{C}_{f}\right]$. We may choose particular matrices $A \in\left[\widehat{H}_{f}\right]$ and $B \in\left[\widehat{H}_{g}\right]$ both having nullspace $C$. This means there exists an invertible binary matrix $X$ such that $A=X B$. The columns of $A$ are $(1, \mathbf{x}, f(\mathbf{x}))_{x \in \mathbb{F}_{2}^{n}}^{T}$ in some order, and the columns of $B$ are $(1, \mathbf{x}, g(\mathbf{x}))_{x \in \mathbb{F}_{2}^{n}}^{T}$ in some (possibly different) order, so the matrix $X$ has the form
+
+$$
+X=\left[\begin{array}{cc}
+1 & \mathbf{0} \\
+\gamma_{1} & M_{1} \\
+\gamma_{2} & M_{2}
+\end{array}\right]
+$$
+
+for some $n \times 2 n$ binary matrices $M_{i}$ and $\gamma_{i} \in \mathbb{F}_{2}^{n}$. Each $M_{i}(\mathbf{x}, f(\mathbf{x}))^{T}+\gamma_{i}$ defines an affine map $L_{i}(x, f(x))$. Moreover, since $\mathbf{x}$ ranges over all elements of $\mathbb{F}_{2}^{n}$ in both $A$ and $B$, the set of columns of each are in 1-1 correspondence with the graphs of $G_{f}$ and $G_{g}$, respectively. Then $\mathfrak{L}=\left(L_{1}, L_{2}\right)$ gives the required affine permutation on $L \times L$ that maps $G_{f}$ onto $G_{g}$.
+
+In [7] Dillon gave a list of some mutually CCZ-inequivalent APN polynomials on $\mathbb{F}_{64}$. We have checked by computer for any CCZ-equivalence of the families discovered here and this list. This was done using MAGMA to test for code equivalence of the extended codes associated with the functions, which is necessary and sufficient by Theorem 6.
+
+We remark that the weight distributions of the codes for our new APN functions proved to be the same as that of the code for the function $x^{3}$ on $\mathbb{F}_{64}(k=3$ for family (1) and $k=2$ for family (2)). The weight distribution is the same thing as the Walsh spectrum defined in the introduction (see, for example, the proof of Theorem 5 in [6]).
+
+It was found that for the case $n=2 k=6$, all the polynomials of the form (1) are CCZequivalent to the trinomial
+
+$$
+x^{3}+\theta^{11} x^{6}+\theta x^{9}
+$$
+
+( $\theta$ primitive) which was listed by Dillon. In particular, the polynomials in this family are not CCZ-equivalent to any power mapping. We may say that family (1) generalizes Dillon's example to an infinite family.
+
+For the case $n=3 k=6$, it was found that all the polynomials of the form (2) with $v \neq 0$ are CCZ-equivalent to
+
+$$
+x^{3}+\theta x^{24}+x^{10}
+$$
+
+which is a different (CCZ-inequivalent) trinomial also listed by Dillon. We may say that family (2) generalizes this example to an infinite family. If $v=0$ then family (2) are the binomial APN functions found in [2], which are CCZ-equivalent to $x^{3}$ when $n=6$. Therefore our trinomials (2) also generalize some of the binomials in [2] to an inequivalent family.
+
+Remark. The preprint [1] appeared simultaneously with this article, where families of functions on fields of even degree over $G F(2)$ are shown to have the APN property. We cannot say at this time whether these families are CCZ-inequivalent to the first family (1) in this article.
+
+\section*{Acknowledgments}
+We thank John Dillon for sharing the slides from his talk at Banff and helpful discussions. We thank Gregor Leander for help with MAGMA and also for helpful discussions. We are indebted to the referees for their careful reading of this article. In particular, the proof of Theorem 3 was improved following comments made by one referee.
+
+\section*{References}
+[1] L. Budaghyan, C. Carlet, Classes of quadratic APN trinomials and hexanomials and related structures, preprint, available at \href{http://eprint.iacr.org/}{http://eprint.iacr.org/}.\\[0pt]
+[2] L. Budaghyan, C. Carlet, P. Felke, G. Leander, An infinite class of quadratic APN functions which are not equivalent to power mappings, in: Proceedings of ISIT 2006, Seattle, USA, IEEE, 2006.\\[0pt]
+[3] L. Budaghyan, C. Carlet, G. Leander, A class of quadratic APN binomials inequivalent to power functions, preprint.\\[0pt]
+[4] L. Budaghyan, C. Carlet, A. Pott, New constructions of almost bent and almost perfect nonlinear functions, IEEE Trans. Inform. Theory 52 (3) (2006) 1141-1152.\\[0pt]
+[5] C. Carlet, Boolean functions for cryptography and error correcting codes, in: P. Hammer, Y. Crama (Eds.), Boolean Methods and Models, Cambridge Univ. Press, a chapter of the monography, in press.\\[0pt]
+[6] C. Carlet, P. Charpin, V. Zinoviev, Codes, bent functions and permutations suitable for DES-like cryptosystems, Des. Codes Cryptogr. 15 (2) (1998) 125-156.\\[0pt]
+[7] J. Dillon, Slides from talk given at "Polynomials over Finite Fields and Applications," held at Banff International Research station, November 2006.\\[0pt]
+[8] Y. Edel, G. Kyureghyan, A. Pott, A new APN function which is not equivalent to a power mapping, IEEE Trans. Inform. Theory 52 (2) (2006) 744-747.\\[0pt]
+[9] K. Nyberg, Differentially uniform mappings for cryptography, in: Advances in Cryptology-EUROCRYPT 93, in: Lecture Notes in Comput. Sci., Springer-Verlag, 1994, pp. 55-64.\\[0pt]
+[10] O. Rothaus, On bent functions, J. Combin. Theory Ser. A 20 (1976) 181-199.\\[0pt]
+[11] J.F. Voloch, Symmetric cryptography and algebraic curves, preprint.
+
+\begin{itemize}
+  \item 
+\end{itemize}
+
+
+\end{document}

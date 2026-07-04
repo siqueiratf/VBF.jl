@@ -1,0 +1,669 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage{bbold}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=magenta, urlcolor=cyan,}
+\urlstyle{same}
+\usepackage{caption}
+
+\title{Changing almost perfect nonlinear functions on affine subspaces of small codimensions }
+
+\author{Hiroaki Taniguchi ${ }^{\mathrm{a}}$, Alexandr Polujan ${ }^{\mathrm{b}}$, Alexander Pott ${ }^{\mathrm{b}}$, Razi Arshad ${ }^{\mathrm{c}}$\\
+${ }^{a}$ Yamato University, Department of Education, 2-5-1, Katayamacho, Suita City, 564-0082, Japan\\
+${ }^{b}$ Otto von Guericke University, Universitätsplatz 2, Magdeburg, 39106, Germany\\
+${ }^{c}$ School of Computer Science and Mathematics, Kingston University, London, KT12EE, UK}
+\date{}
+
+
+%New command to display footnote whose markers will always be hidden
+\let\svthefootnote\thefootnote
+\newcommand\blfootnotetext[1]{%
+  \let\thefootnote\relax\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \let\thefootnote\svthefootnote%
+}
+
+%Overriding the \footnotetext command to hide the marker if its value is `0`
+\let\svfootnotetext\footnotetext
+\renewcommand\footnotetext[2][?]{%
+  \if\relax#1\relax%
+    \ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+  \else%
+    \if?#1\ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+    \else\svfootnotetext[#1]{#2}\fi%
+  \fi
+}
+
+\begin{document}
+\maketitle
+\captionsetup{singlelinecheck=false}
+
+
+\begin{abstract}
+In this article, we study algebraic decompositions and secondary constructions of almost perfect nonlinear (APN) functions. In many cases, we establish precise criteria which characterize when certain modifications of a given APN function yield new ones. Furthermore, we show that some of the newly constructed functions are extended-affine inequivalent to the original ones.
+\end{abstract}
+
+Keywords: APN function, Equivalence, Secondary construction, Exponential sum\\
+2010 MSC: 06E30, 11T06, 94A60
+
+\section*{1. Introduction}
+Let $\mathbb{F}_{2}^{n}$ be the $n$-dimensional vector space over the finite field with two elements $\mathbb{F}_{2}$. A mapping $F: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$ is called an ( $n, m$ )-function. Almost perfect nonlinear (APN) functions are $(n, m)$-functions $F$ with optimal differential properties. Formally, it means that the cardinality of the set $\left\{x \in \mathbb{F}_{2}^{n}: F(x+a)+F(x)=b\right\}$, which is always even due to the parity of solutions $x$ and $x+a$, is less than or equal to 2 , for any nonzero $a \in \mathbb{F}_{2}^{n}$ and for any $b \in \mathbb{F}_{2}^{m}$. Originally introduced in the $(n, n)$-case, APN functions are valuable primitives in cryptographic applications, especially in the design of S-Boxes [11]. Due to their correspondence to certain optimal codes with minimum distance five [10] and the possibility of constructing from them difference sets [14, 15] and large Sidon sets [13], they play a significant role in coding theory and, in general, discrete mathematics and combinatorics [17]. Recently, there
+
+\footnotetext{Email addresses: \href{mailto:taniguchi.hiroaki@yamato-u.ac.jp}{taniguchi.hiroaki@yamato-u.ac.jp} (Hiroaki Taniguchi),\\
+\href{mailto:alexandr.polujan@gmail.com}{alexandr.polujan@gmail.com} (Alexandr Polujan), \href{mailto:alexander.pott@ovgu.de}{alexander.pott@ovgu.de} (Alexander Pott), \href{mailto:r.arshad@kingston.ac.uk}{r.arshad@kingston.ac.uk} (Razi Arshad)
+}
+has been an increasing interest in studying $(n, m)$-APN functions for the case $m>n$; for the recent works on the topic, we refer to $[1,22]$.
+
+One of the central problems in the research on APN functions lies in discovering new constructions of these mappings. The known construction methods of such functions can be classified into primary and secondary. Primary constructions aim to provide new infinite families of APN functions "from scratch" (for the summary of the known infinite families, we refer to the recent article [19]), while secondary constructions aim to construct new functions from the known ones. Some of the well-known secondary construction methods of APN functions (we briefly explain them further) include the switching construction (and its various generalizations), modifications by applying functions of a special shape, and isotopic shift construction, to name a few.
+
+For a given $(n, n)$-APN function $F$, represented as a vector of coordinate singleoutput functions $F(x)=\left(f_{1}(x), f_{2}(x), \ldots, f_{n}(x)\right)$, the switching construction aims at constructing a new APN function of the form $F^{\prime}(x)=\left(f_{1}(x), f_{2}(x), \ldots, f_{n}^{\prime}(x)\right)$, i.e., by modifying a single coordinate function of a given APN function (w.l.o.g, the last one). An advantage of this approach is that it preserves much of the information from the original function $F$, allowing room to demonstrate the APN property of a new function $F^{\prime}$; see, e.g., [8, 16]. Note that switching [16] and several related methods [26, 18], which can be viewed as its generalizations, can be used both for generating numerous new examples through computer searches in fixed dimensions and constructing new infinite families of APN functions [8]. In the latter case, one obtains APN functions of the form $G(x)=F(x)+\operatorname{Tr}(H(x))$ defined on the finite field $\mathbb{F}_{2^{n}}$, which gives the motivation to study further generalization in polynomial form. For example, in [9, 24], the authors studied the APN-ness of mappings $\mathbb{F}_{2^{n}} \ni x \mapsto L_{1}\left(x^{3}\right)+L_{2}\left(x^{9}\right)$ where $L_{1}$ and $L_{2}$ are linear. In [12], the authors investigated APN-ness of mappings of the form $G(x)=F(x)+\operatorname{Tr}(x) L(x)$, which corresponds to modifications by linear functions on hyperplanes. The studies [7,6] provide an analysis of the APN property of mappings defined as $G(x)=x L_{1}^{2^{i}}(x)+x^{2^{i}} L_{2}(x)$ on $\mathbb{F}_{2^{n}}$. This approach to constructing APN functions is called the (generalized) isotopic shift method.
+
+While the previously discussed constructions focus on modifying a single APN function, another possible approach is to combine several given APN functions to build a new one. For example, the idea of constructing an APN function in $n+1$ variables from two APN functions in $n$ variables has been studied in [18] and later extended in [3, 4]. These results, in turn, stimulate further investigations of various algebraic decompositions of APN functions. For example, the connection between different APN functions was shown useful, when certain decompositions of $(n, n)$ -
+
+APN functions helped to characterize the structure of quadratic APN functions with the maximum linearity [4].
+
+These findings motivate our further investigation of variations of the known secondary constructions of APN functions, their algebraic decompositions, and, in particular, modifications of APN functions on affine subspaces with small codimensions. This approach preserves much of the structure of the original APN function enabling the verification of the APN property for a modified function and, in many cases, allowing for an explicit characterization of this property.
+
+Our contribution and the structure of the paper. The paper is organized as follows. In Subsection 1.1 we give a necessary background on APN functions. In Section 2, we consider construction methods of $(n, m)$-APN functions. In Subsection 2.1, we consider the switching construction for $(n, m)$-APN functions, and in Section 2.2, we investigate the question of constructing an $(n, m)$-APN function $F$ from two $(n-1, m)$-APN functions $f$ and $g$ defined on complementary hyperplanes of $\mathbb{F}_{2}^{n}$. Notably, we uncover structural connections between such mappings and present a necessary and sufficient condition on the functions $f$ and $g$ to ensure that $F$ is APN (Theorem 2.10), along with a simplified condition for the case when both $f$ and $g$ are quadratic (Proposition 2.11). In the remaining sections, we concentrate solely on the construction methods of $(n, n)$-APN functions. In Section 3, we investigate how to construct a new quadratic APN function $G$ from a given quadratic APN function $F$ on $\mathbb{F}_{2}^{n}$ by adding to it a linear function defined on a hyperplane. Identifying $\mathbb{F}_{2}^{n}$ with the finite field $\mathbb{F}_{2^{n}}$, this question can be interpreted as finding APN functions on $\mathbb{F}_{2^{n}}$ of the form $G(x)=F(x)+\operatorname{Tr}(x) L(x)$, where $F$ is a quadratic APN function and $L$ is a linear mapping on $\mathbb{F}_{2^{n}}$. In Subsection 3.1, we provide a complete characterization of the APN property of such modifications (Theorem 3.2) and call such APN functions $G$ and $F$ "hyperplane-equivalent" or $H$-equivalent, for short (Definition 3.4). Remarkably, we indicate that all extended-affine equivalence classes of quadratic APN functions on $\mathbb{F}_{2^{6}}$ have a representative of the form $G(x)=x^{3}+\operatorname{Tr}(x) L(x)$, which is $H$-equivalent to $F(x)=x^{3}$ (Theorem 3.5). Thus, we provide a new unifying approach to describe quadratic APN functions on $\mathbb{F}_{2^{6}}$. Motivated by these observations, in Subsection 3.2, we further investigate the APN property for quadratic APN functions that are $H$-equivalent to $x^{3}$. Particularly, we provide a necessary and sufficient condition for the APN-ness of mappings $\mathbb{F}_{2^{n}} \ni x \mapsto x^{3}+\operatorname{Tr}(x) L(x)$ using certain exponential sums (Theorem 3.7). Finally, in Section 4, we present a necessary and sufficient condition (Theorem 4.1) for constructing new APN functions from a given one by adding constant functions defined on complementary affine subspaces of codimension two. We indicate in Example 4.2 that the proposed construction method yields extended-affine inequivalent functions. The paper is concluded in Section 5.
+
+\subsection*{1.1. Preliminaries}
+Let $\mathbb{F}_{2^{n}}$ be the finite field of $2^{n}$ elements. We sometimes identify $\mathbb{F}_{2^{n}}$ with $\mathbb{F}_{2}^{n}$ as an $\mathbb{F}_{2}$-vector space. We denote the sets $\mathbb{F}_{2^{n}} \backslash\{0\}$ by $\mathbb{F}_{2^{n}}^{\times}$and $\mathbb{F}_{2}^{n} \backslash\{0\}$ by $\left(\mathbb{F}_{2}^{n}\right)^{\times}$. For the finite fields $K \supset F$ of characteristic 2, we denote the trace function from $K$ to $F$ by $\operatorname{Tr}_{F}^{K}$. We denote $\operatorname{Tr}_{\mathbb{F}_{2}}^{K}$ by $\operatorname{Tr}$ and call it the absolute trace of $K$. The mappings $\mathbb{F}_{2^{n}} \ni x \mapsto \sum_{i=0}^{n-1} a_{i} x^{2^{i}}$, where all $a_{i} \in \mathbb{F}_{2^{n}}$, are called linearized polynomials; these are linear mappings defined on the finite field $\mathbb{F}_{2^{n}}$.
+
+A function $F: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$ is called an almost perfect nonlinear (APN) ( $n, m$ )function if the cardinality of the set $\left\{x \in \mathbb{F}_{2}^{n}: F(x+a)+F(x)=b\right\}$ is less than or equal to 2 for any nonzero $a \in \mathbb{F}_{2}^{n}$ and for any $b \in \mathbb{F}_{2}^{m}$. Sometimes we omit the specification of $n$ and $m$, when they are clear from the context. A function $F: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$ is called quadratic if the mapping $\mathbb{F}_{2}^{m} \times \mathbb{F}_{2}^{m} \ni(x, y) \mapsto F(x+y)+F(x)+F(y)+F(0)$ is $\mathbb{F}_{2}$-bilinear.
+
+On the set of all $(n, m)$-functions we introduce the following equivalence relations that preserve the APN property. The functions $F_{1}$ and $F_{2}$ from $\mathbb{F}_{2}^{n}$ to $\mathbb{F}_{2}^{m}$ are called Carlet-Charpin-Zinoviev equivalent (CCZ-equivalent, for short) if the graphs $G_{F_{1}}:=\left\{\left(x, F_{1}(x)\right): x \in \mathbb{F}_{2}^{n}\right\}$ and $G_{F_{2}}:=\left\{\left(x, F_{2}(x)\right): x \in \mathbb{F}_{2}^{n}\right\}$ in $\mathbb{F}_{2}^{n} \oplus \mathbb{F}_{2}^{m}$ are affine equivalent [10], that is, if there exists an $\mathbb{F}_{2}$-linear isomorphism $l \in G L_{2}\left(\mathbb{F}_{2}^{n} \oplus \mathbb{F}_{2}^{m}\right)$ and an element $v \in \mathbb{F}_{2}^{n} \oplus \mathbb{F}_{2}^{m}$ such that $l\left(G_{F_{1}}\right)+v=G_{F_{2}}$. We say that ( $n, m$ )-functions $F$ and $F^{\prime}$ are extended-affine equivalent ( $E A$-equivalent), if there exist two affine permutations $A_{1}: \mathbb{F}_{2}^{m} \rightarrow \mathbb{F}_{2}^{m}, A_{2}: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{n}$ and an affine function $A_{3}: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$ such that $A_{1} \circ F \circ A_{2}+A_{3}=F^{\prime}$. We note that in general, CCZ-equivalence is coarser than EAequivalence, and that EA-equivalent functions are also CCZ-equivalent. However, in the case of quadratic APN functions, they coincide, as shown in [25].
+
+Finally, we define the following invariant that will be used later to distinguish inequivalent functions. The $\Gamma$-rank of a function $F: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$ is the rank of the incidence matrix over $\mathbb{F}_{2}$ of the incidence structure $\{\mathcal{P}, \mathcal{B}, I\}$, where $\mathcal{P}=\mathbb{F}_{2}^{n} \oplus \mathbb{F}_{2}^{m}$, $\mathcal{B}=\mathbb{F}_{2}^{n} \oplus \mathbb{F}_{2}^{m}$ and $(a, b) I(u, v)$ for $(a, b) \in \mathcal{P}$ and $(u, v) \in \mathcal{B}$ if and only if $F(a+u)= b+v$. It is well-known that if two functions $F_{1}$ and $F_{2}$ from $\mathbb{F}_{2}^{n}$ to $\mathbb{F}_{2}^{m}$ are CCZequivalent, then they have the same $\Gamma$-rank, see [16].
+
+\section*{2. Constructing ( $n, m$ )-APN functions}
+In this section, we study construction methods of $(n, m)$-APN functions using two different approaches. The first one is based on the well-known switching construction introduced for the case of $(n, n)$-APN functions, and the second one is based on the concatenation of two $(n-1, m)$-APN functions defined on complementary hyperplanes in $\mathbb{F}_{2}^{n}$.
+
+\subsection*{2.1. Revisiting the switching construction for $(n, m)-A P N$ functions}
+For a function $f: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$, we define the mapping $B_{f}(x, t):=f(x+t)+f(x)+ f(t)+f(0)$, for $x, t \in \mathbb{F}_{2}^{n}$. Recall the following definition and lemmas in [22].\\[0pt]
+Definition 2.1 (Definition 1 of [22]). For a function $f: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$, let us define the subsets $D_{f}\left(\mathbb{F}_{2}^{n}\right)$ and $D_{f}^{*}\left(\mathbb{F}_{2}^{n}\right)$ of $\mathbb{F}_{2}^{m}$ as
+
+$$
+\begin{aligned}
+D_{f}\left(\mathbb{F}_{2}^{n}\right) & :=\left\{B_{f}(x, t)+B_{f}(y, t) \mid x, y, t \in \mathbb{F}_{2}^{n}\right\} \text { and } \\
+D_{f}^{*}\left(\mathbb{F}_{2}^{n}\right) & :=\left\{B_{f}(x, t)+B_{f}(y, t) \mid x, y, t \in \mathbb{F}_{2}^{n} \text { with } x \neq y, t \neq 0 \text { and } x \neq y+t\right\}
+\end{aligned}
+$$
+
+We denote by $\pi \circ f$ the composition mapping defined by $(\pi \circ f)(x):=\pi(f(x))$.\\[0pt]
+Lemma 2.2 (Lemma 2 of [22]). Let $f: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$ be an APN function. Let $l<m$ be a positive integer and let $\pi: \mathbb{F}_{2}^{m} \rightarrow \mathbb{F}_{2}^{l}$ be an $\mathbb{F}_{2}$-linear surjection. Then, $\pi \circ f$ is an APN function if and only if $D_{f}^{*}\left(\mathbb{F}_{2}^{n}\right) \cap \operatorname{ker}(\pi)=\emptyset$.
+
+Recall that a function $f: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$ is called a differentially 4-uniform function if $\left|\left\{x \in \mathbb{F}_{2}^{n}: f(x+a)+f(x)=b\right\}\right| \leq 4$ for any nonzero $a \in \mathbb{F}_{2}^{n}$ and for any $b \in \mathbb{F}_{2}^{m}$.\\[0pt]
+Lemma 2.3 (Lemma 3 of [22]). Let $f: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$ be an APN function. Let $\pi: \mathbb{F}_{2}^{m} \rightarrow \mathbb{F}_{2}^{m-1}$ be an $\mathbb{F}_{2}$-linear surjection such that $D_{f}^{*}\left(\mathbb{F}_{2}^{n}\right) \cap \operatorname{ker}(\pi) \neq \emptyset$. Then, $\pi \circ f: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m-1}$ is a differentially 4-uniform function.
+
+The following proposition is a slight generalization of the switching construction (Theorem 3 of [16]).
+
+Proposition 2.4. Let $f: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$ be a function and $g: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}$ a Boolean function such that $F: \mathbb{F}_{2}^{n} \ni x \mapsto(f(x), g(x)) \in \mathbb{F}_{2}^{m} \oplus \mathbb{F}_{2}$ is an APN ( $n, m+1$ )-function. Let $u$ be a nonzero element of $\mathbb{F}_{2}^{m}$. Then, $f(x)+u g(x)$ is an $A P N(n, m)$-function if and only if $f(x+t)+f(x)+f(y+t)+f(y)=u$ implies $g(x+t)+g(x)+g(y+t)+g(y)=0$.
+
+Proof. Let $\pi: \mathbb{F}_{2}^{m} \oplus \mathbb{F}_{2} \ni(x, y) \mapsto x+u y \in \mathbb{F}_{2}^{m}$ be an $\mathbb{F}_{2}$-linear surjection with $\operatorname{ker}(\pi)=\langle(u, 1)\rangle$. Then, $(\pi \circ F)(x)=f(x)+u g(x)$. By Lemma 2.2, $\pi \circ F$ is an APN function if and only if $(u, 1) \notin D_{F}^{*}\left(\mathbb{F}_{2}^{n}\right)$, which is equivalent to the condition " $B_{f}(x, t)+B_{f}(y, t)=f(x+t)+f(x)+f(y+t)+f(y)=u$ implies $B_{g}(x, t)+B_{g}(y, t)= g(x+t)+g(x)+g(y+t)+g(y)=0^{\prime \prime}$, because $B_{F}(x, t)+B_{F}(y, t)=\left(B_{f}(x, t)+\right. \left.B_{f}(y, t), B_{g}(x, t)+B_{g}(y, t)\right)$.\\
+Remark 2.5. If $f$ in Proposition 2.4 is not an APN function, then $f$ is a differentially 4 -uniform function by Lemma 2.3. Let $f$ be a differentially 4 -uniform function. Thus, $F: \mathbb{F}_{2}^{n} \ni x \mapsto(f(x), g(x)) \in \mathbb{F}_{2}^{m} \oplus \mathbb{F}_{2}$ is an APN $(n, m+1)$-function if and only if the following conditions are satisfied: for $x \neq y, x \neq y+t$ and $t \neq 0$, $f(x+t)+f(x)+f(y+t)+f(y)=0$ implies $g(x+t)+g(x)+g(y+t)+g(y)=1$.
+
+Lemma 2.6 (See [20]). Let $n=2 k$ be an even integer with $k>1$. Then, for any $a \in \mathbb{F}_{2^{n}}^{\times}$and $b \in \mathbb{F}_{2^{n}}$, the following statements hold.
+
+\begin{enumerate}
+  \item $x^{-1}+(x+a)^{-1}=b$ has no root in $\mathbb{F}_{2^{n}}$ if and only if $\operatorname{Tr}\left(\frac{1}{a b}\right)=1$.
+  \item $x^{-1}+(x+a)^{-1}=b$ has 2 root in $\mathbb{F}_{2^{n}}$ if and only if $a b \neq 1$ and $\operatorname{Tr}\left(\frac{1}{a b}\right)=0$.
+  \item $x^{-1}+(x+a)^{-1}=b$ has 4 root in $\mathbb{F}_{2^{n}}$ if and only if $b=a^{-1}$. Furthermore, when $b=a^{-1}$ the 4 root of the above equation in $\mathbb{F}_{2^{n}}$ are $\left\{0, a, \omega a, \omega^{2} a\right\}$, where $\omega \in \mathbb{F}_{2^{2}} \backslash \mathbb{F}_{2}$.
+\end{enumerate}
+
+Now, we give an example of a differentially 4-uniform function $f$ on $\mathbb{F}_{2^{n}}$ and a Boolean function $g: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$ such that $F(x)=(f(x), g(x))$ is an ( $n, n+1$ )-APN function.
+
+Example 2.7. Let $n=2 k$ be an even integer with $k>1$. Then, the inverse function $f(x)=x^{2^{n}-2}$ is a differentially 4-uniform function on $\mathbb{F}_{2^{n}}$. By Lemma 2.6, we see that $f(x+a)+f(x)+f(y+a)+f(y)=0$ with $x \neq y, x \neq y+a$ and $a \neq 0$ implies $\{x, x+a, y, y+a\}=\left\{0, a, \omega a, \omega^{2} a\right\}$. Hence, for a Boolean function $g: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$, we see that $F: \mathbb{F}_{2^{n}} \ni x \rightarrow(f(x), g(x)) \in \mathbb{F}_{2^{n}} \oplus \mathbb{F}_{2}$ is an ( $n, n+1$ )-APN function if and only if $g(0)+g(a)+g(\omega a)+g\left(\omega^{2} a\right)=1$ for any $a \in \mathbb{F}_{2^{n}}^{\times}$.
+
+Let $A:=\left\{x^{3} \mid x \in \mathbb{F}_{2^{n}}^{\times}\right\}$. Then, $\mathbb{F}_{2^{n}}^{\times}=A \cup \omega A \cup \omega^{2} A$, where $\omega A=\{\omega a \mid a \in A\}$ and $\omega^{2} A=\left\{\omega^{2} a \mid a \in A\right\}$. Let us define $g$ by $\left\{g(a), g(\omega a), g\left(\omega^{2} a\right)\right\}=\{0,0,1\}$ or $\{1,1,1\}$ for $a \in A$, and $g(0)=0$. Then, we see that $g(0)+g(a)+g(\omega a)+g\left(\omega^{2} a\right)=1$ for any $a \in \mathbb{F}_{2^{n}}^{\times}$by definition. Hence, $F: \mathbb{F}_{2^{n}} \ni x \rightarrow(f(x), g(x)) \in \mathbb{F}_{2^{n}} \oplus \mathbb{F}_{2}$ is an ( $n, n+1$ )-APN function.
+
+In the following proposition, we show that every APN function on $\mathbb{F}_{2^{n}}$ can be obtained from a differentially 4 -uniform function using the switching construction in Proposition 2.4. While most of the secondary constructions of new APN functions are based on constructing them from the known APN functions, this result provides a strategy for finding new APN functions from suitably chosen differentially 4-uniform functions. The proof of this statement is not difficult to see, nevertheless, we give it for the reader's convenience.
+
+Proposition 2.8. Let $f$ be an APN function on $\mathbb{F}_{2^{n}}$. Then, there exist a differentially 4-uniform function $f_{1}$ on $\mathbb{F}_{2^{n}}$, a Boolean function $g: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$ and an element $u \in \mathbb{F}_{2^{n}}^{\times}$, such that $f(x)=f_{1}(x)+u g(x)$ holds for all $x \in \mathbb{F}_{2^{n}}$.
+
+Proof. Let $f$ be any APN function on $\mathbb{F}_{2^{n}}$ and $g: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$ be a Boolean function. Then, $F(x):=(f(x), g(x))$ is an APN $(n, n+1)$-function. Moreover, we assume that $g$ satisfies, for some $x, y, t \in \mathbb{F}_{2^{n}}, B_{g}(x, t)+B_{g}(y, t)=g(x)+g(x+t)+g(y)+g(y+t)=1$. (Obviously, we have that $x \neq y, t \neq 0$ and $x \neq y+t$ for this $x, y, t$.) We note that\\
+$D_{f}^{*}\left(\mathbb{F}_{2}^{n}\right)=\mathbb{F}_{2^{n}}^{\times}$since $f$ is an $(n, n)$-APN function. (It is the "Dillon's observation"; see p. 381 of [11]). Since $D_{F}^{*}\left(\mathbb{F}_{2^{n}}\right)=\left\{\left(B_{f}(x, t)+B_{f}(y, t), B_{g}(x, t)+B_{g}(y, t)\right) \mid x, y, t \in\right. \mathbb{F}_{2}^{n}$ with $x \neq y, t \neq 0$ and $\left.x \neq y+t\right\}$, there exists $(u, 1) \in D_{F}^{*}\left(\mathbb{F}_{2^{n}}\right)$ for some $u \in \mathbb{F}_{2^{n}}^{\times}$. Let $\pi: \mathbb{F}_{2^{n}} \oplus \mathbb{F}_{2} \ni(x, y) \mapsto x+u y \in \mathbb{F}_{2^{n}}$ be a surjective linear mapping with the kernel $\langle(u, 1)\rangle$. Then, $f_{1}(x):=\pi(F(x))=f(x)+u g(x)$ is a differentially 4-uniform function on $\mathbb{F}_{2^{n}}$ by Lemma 2.3. Thus, the APN function $f$ can be expressed as $f(x)=f_{1}(x)+u g(x)$ using a differentially 4-uniform function $f_{1}$, a Boolean function $g$ and an element $u \in \mathbb{F}_{2^{n}}^{\times}$.
+
+Remark 2.9. The discussion in [11, p. 407] explains that for an APN function $f_{1}$, a Boolean function $g$ and an element $u \in \mathbb{F}_{2^{n}}^{\times}$, the function $f:=f_{1}+u g$ is differentially 4 -uniform in general, and APN in rare cases. Note that this reasoning can also be extended to the case where $f_{1}$ is differentially $\delta$-uniform. Proposition 2.8, on the other hand, states that for any APN function $f$, there exists a differentially 4-uniform function $f_{1}$, a Boolean function $g$ and an element $u \in \mathbb{F}_{2^{n}}^{\times}$, such that $f$ can be expressed as $f:=f_{1}+u g$. This latter expression, although trivial, expresses our point of view: we want to firstly construct a differentially 4 uniform function and then secondly modify this to transform it into an APN function.
+
+\subsection*{2.2. Constructing ( $n, m$ )-APN functions from ( $n-1, m$ )-APN functions}
+Let $n \geq 3$ and $m \geq n$. Let $F$ be an APN function from $\mathbb{F}_{2}^{n}$ to $\mathbb{F}_{2}^{m}$. We identify $\mathbb{F}_{2}^{n-1}$ as an ( $n-1$ )-dimensional subspace (a hyperplane) of $\mathbb{F}_{2}^{n}$. Let $e_{0} \in \mathbb{F}_{2}^{n}$ with $e_{0} \notin \mathbb{F}_{2}^{n-1}$. Then, the complement of $\mathbb{F}_{2}^{n-1}$ can be expressed as $\mathbb{F}_{2}^{n-1}+e_{0}:=\left\{x+e_{0}: x \in \mathbb{F}_{2}^{n-1}\right\}$. Moreover, we have $\mathbb{F}_{2}^{n}=\mathbb{F}_{2}^{n-1} \cup\left(\mathbb{F}_{2}^{n-1}+e_{0}\right)$. Let us define $f(x):=F(x)$ for $x \in \mathbb{F}_{2}^{n-1}$, and $g(x):=F\left(x+e_{0}\right)$ for $x \in \mathbb{F}_{2}^{n-1}$. Then, the functions $f, g$ from $\mathbb{F}_{2}^{n-1}$ to $\mathbb{F}_{2}^{m}$ are APN. In this section, we investigate under which conditions one can "concatenate" two APN functions $f, g$ from $\mathbb{F}_{2}^{n-1}$ to $\mathbb{F}_{2}^{m}$ in order to get an APN mapping $F$ from $\mathbb{F}_{2}^{n}=\mathbb{F}_{2}^{n-1} \cup\left(\mathbb{F}_{2}^{n-1}+e_{0}\right)$ to $\mathbb{F}_{2}^{m}$ defined by $F(x)=f(x)$ and $F\left(x+e_{0}\right)=g(x)$, for $x \in \mathbb{F}_{2}^{n-1}$. In the following theorem, we provide a necessary and sufficient condition for $F: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$ to be APN under this construction.
+
+Theorem 2.10. Let $f, g$ be functions from $\mathbb{F}_{2}^{n-1}$ to $\mathbb{F}_{2}^{m}$. Let $e_{0} \in \mathbb{F}_{2}^{n} \backslash \mathbb{F}_{2}^{n-1}$. Let us define $F$ from $\mathbb{F}_{2}^{n}$ to $\mathbb{F}_{2}^{m}$ by $F(x):=f(x)$ and $F\left(x+e_{0}\right):=g(x)$ for $x \in \mathbb{F}_{2}^{n}$. Then, $F$ is an APN function if and only if the following conditions hold:\\
+(1) $f$ and $g$ are $A P N$ functions from $\mathbb{F}_{2}^{n-1}$ to $\mathbb{F}_{2}^{m}$,\\
+(2) $f(x+a)+f(x)+g(y+a)+g(y) \neq 0$ holds for any $x, y \in \mathbb{F}_{2}^{n-1}$ and for any nonzero a $\in \mathbb{F}_{2}^{n-1}$.
+
+Proof. Recall that $F$ is an APN function if and only if, for any nonzero $A \in \mathbb{F}_{2}^{n}$ and for $X, Y \in \mathbb{F}_{2}^{n}, F(X+A)+F(X)=F(Y+A)+F(Y)$ implies $X=Y$ or $X=Y+A$. Note that condition (2) means: If $f(x)+f(y)+g(u)+g(v) \neq 0$ if $u, v, x, y$ are four different elements in $\mathbb{F}_{2}^{n-1}$ with $u+v+x+y=0$.
+
+Firstly, assume that $F$ is an APN function. We will show that $f$ and $g$ must satisfy the conditions (1) and (2).
+
+Let $A=a \in\left(\mathbb{F}_{2}^{n-1}\right)^{\times}$. For any $Y=y \in \mathbb{F}_{2}^{n-1}$, we must have $X=y \in \mathbb{F}_{2}^{n-1}$ or $X=y+a \in \mathbb{F}_{2}^{n-1}$ from $F(X+a)+F(X)=F(y+a)+F(y)$. Since $X \in \mathbb{F}_{2}^{n-1}$, we have $f(X+a)+f(X)=f(y+a)+f(y)$ from $F(X+a)+F(X)=F(y+a)+F(y)$. Thus, $f$ must be an APN function. Next, for any $Y=y+e_{0}$ with $y \in \mathbb{F}_{2}^{n-1}$ we must have $X=y+e_{0}$ or $X=y+a+e_{0}$ from $F(X+a)+F(X)=F\left(y+e_{0}+a\right)+F\left(y+e_{0}\right)$. Since $X=x+e_{0}$ for some $x \in \mathbb{F}_{2}^{n-1}$, we have $g(x+a)+g(x)=g(y+a)+g(y)$ from $F(X+a)+F(X)=F\left(y+e_{0}+a\right)+F\left(y+e_{0}\right)$. Hence, $g$ must be an APN function. Thus, the condition (1) must be satisfied.
+
+Let $A=a \in\left(\mathbb{F}_{2}^{n-1}\right)^{\times}$. For any $Y=y \in \mathbb{F}_{2}^{n-1}$, since $X=y$ or $X=y+a$, $F(X+a)+F(X)=F(y+a)+F(y)$ does not have a solution $X=x+e_{0}$ for $x \in \mathbb{F}_{2}^{n-1}$. Thus, $F\left(x+e_{0}+a\right)+F\left(x+e_{0}\right) \neq F(y+a)+F(y)$ holds for any $x, y \in \mathbb{F}_{2}^{n-1}$, therefore we must have $g(x+a)+g(x) \neq f(y+a)+f(y)$ for any $x, y \in \mathbb{F}_{2}^{n-1}$. Thus, the condition (2) must be satisfied.
+
+Conversely, let us assume that the conditions (1) and (2) hold. Assume $F(X+ A)+F(X)=F(Y+A)+F(Y)$ with $A \neq 0$. We will prove that $X=Y$ or $X=Y+A$. We divide this into the following four cases:\\
+(i) $A=a \in\left(\mathbb{F}_{2}^{n-1}\right)^{\times}$and $Y=y \in \mathbb{F}_{2}^{n-1}$,\\
+(ii) $A=a \in\left(\mathbb{F}_{2}^{n-1}\right)^{\times}$and $Y=y+e_{0}$ with $y \in \mathbb{F}_{2}^{n-1}$,\\
+(iii) $A=a+e_{0}$ with $a \in \mathbb{F}_{2}^{n-1}$ and $Y=y$ with $y \in \mathbb{F}_{2}^{n-1}$,\\
+(iv) $A=a+e_{0}$ with $a \in \mathbb{F}_{2}^{n-1}$ and $Y=y+e_{0}$ with $y \in \mathbb{F}_{2}^{n-1}$.
+
+Firstly, let us consider the case (i). If $X=x \in \mathbb{F}_{2}^{n-1}$, then we have $f(x+a)+ f(x)=f(y+a)+f(y)$, hence $x=y$ or $x=y+a$ by (1). Let $X=x+e_{0}$ with $x \in \mathbb{F}_{2}^{n-1}$, then we have $g(x+a)+g(x)=f(y+a)+f(y)$ which has no solution by (2). Therefore, $X=Y$ or $X=Y+A$ in case (i).
+
+Next, we consider the case (ii). Assume $X=x \in \mathbb{F}_{2}^{n-1}$. Then, we have $f(x+ a)+f(x)=g(y+a)+g(y)$ which has no solution by (2). If $X=x+e_{0}$ with $x \in \mathbb{F}_{2}^{n-1}$, then we have $g(x+a)+g(x)=g(y+a)+g(y)$, hence $x+e_{0}=y+e_{0}$ or $x+e_{0}=y+e_{0}+a$ by (1). Thus, we have $X=Y$ or $X=Y+A$ in case (ii).
+
+Let us consider the case (iii). If $X=x \in \mathbb{F}_{2}^{n-1}$, then we have $g(x+a)+f(x)+ g(y+a)+f(y)=0$, hence $x=y$. If $X=x+e_{0}$ with $x \in \mathbb{F}_{2}^{n-1}$, then we have, again, $f(x+a)+g(x)+g(y+a)+f(y)=0$. For the same reason as above, we have $x+e_{0}=y+\left(a+e_{0}\right)$. Therefore we have $x=y$ or $x+e_{0}=y+\left(a+e_{0}\right)$. Thus, we have $X=Y$ or $X=Y+A$ in case (iii).
+
+Lastly, we consider the case (iv). If $X=x \in \mathbb{F}_{2}^{n-1}$, then we have $g(x+a)+f(x)+ f(y+a)+g(y)=0$, hence $x=\left(y+e_{0}\right)+\left(a+e_{0}\right)$. If $X=x+e_{0}$ with $x \in \mathbb{F}_{2}^{n-1}$, then we have $f(x+a)+g(x)+f(y+a)+g(y)=0$. For the same reason as above, we have $x+e_{0}=y+e_{0}$. Thus, we also have $X=Y$ or $X=Y+A$ in case (iv).
+
+Hence, $F$ must be an APN function under the conditions (1) and (2).\\
+Now, let $F$ be a quadratic APN function from $\mathbb{F}_{2}^{n}$ to $\mathbb{F}_{2}^{m}$. As before, for an element $e_{0} \notin \mathbb{F}_{2}^{n-1}$, we define $f(x):=F(x)$ for $x \in \mathbb{F}_{2}^{n-1}$, and $g(x):=F\left(x+e_{0}\right)$ for $x \in \mathbb{F}_{2}^{n-1}$. In this case, we get two quadratic APN functions $f, g$ from $\mathbb{F}_{2}^{n-1}$ to $\mathbb{F}_{2}^{m}$, where $g(x)=f(x)+L(x)+c$ for an element $c:=F\left(e_{0}\right)+F(0)$ and a linear mapping $L(x):=B_{F}\left(x, e_{0}\right)$ with $B_{F}\left(x, e_{0}\right):=F\left(x+e_{0}\right)+F(x)+F\left(e_{0}\right)+F(0)$. In the following statement, we provide a necessary and sufficient condition that characterizes the APN-ness of the quadratic function $F$ defined by $F(x):=f(x)$ and $F\left(x+e_{0}\right):=g(x)$, for $x \in \mathbb{F}_{2}^{n-1}$.
+
+Proposition 2.11. Let $f, g$ be quadratic APN functions from $\mathbb{F}_{2}^{n-1}$ to $\mathbb{F}_{2}^{m}$ such that $g(x)=f(x)+L(x)+c$, where $L$ is an $\mathbb{F}_{2}$-linear mapping from $\mathbb{F}_{2}^{n-1}$ to $\mathbb{F}_{2}^{m}$ and $c \in \mathbb{F}_{2}^{m}$. Let $F$ be a function from $\mathbb{F}_{2}^{n}$ to $\mathbb{F}_{2}^{m}$ defined by $F(x):=f(x)$ and $F\left(x+e_{0}\right):= f(x)+L(x)+c$ for some fixed $e_{0} \in \mathbb{F}_{2}^{n} \backslash \mathbb{F}_{2}^{n-1}$, for $x \in \mathbb{F}_{2}^{n-1}$. Then, $F$ is a quadratic $A P N$ function if and only if
+
+
+\begin{equation*}
+\mathbb{F}_{2}^{n-1} \ni x \mapsto L(x)+B_{f}(x, A) \in \mathbb{F}_{2}^{m} \tag{2.1}
+\end{equation*}
+
+
+are one-to-one mappings, for any $A \in \mathbb{F}_{2}^{n-1}$.\\
+Proof. We will check the conditions (1) and (2) in Theorem 2.10.\\
+Since $f$ and $g=f+L+c$ are APN functions, the condition (1) is satisfied.\\
+The condition (2) is equivalent to $f(x+a)+f(x) \neq g(y+a)+g(y)=f(y+a)+ f(y)+L(a)$ for any $x, y \in \mathbb{F}_{2}^{n-1}$ if $a \neq 0$, that is, $L(a)+(f(x+a)+f(x))+(f(y+ a)+f(y)) \neq 0$ for any $x, y \in \mathbb{F}_{2}^{n-1}$ if $a \neq 0$, which means $L(a)+B_{f}(a, x+y) \neq 0$ if $a \neq 0, a \in \mathbb{F}_{2}^{n-1}$. Note that $f(x+a)+f(x)+f(y+a)+f(y)=B_{f}(a, x)+B_{f}(a, y)= B_{f}(a, x+y)$, where the second equality holds since $f$ is quadratic. We put $A:=x+y$ and think of $a$ as the variable $x$ in the linear equation defined by Eq. (2.1). Using the fact that Eq. (2.1) describes a linear function, we see that $L(a)+B_{f}(a, x+y) \neq 0$ if $a \neq 0$ is exactly the condition in Eq. (2.1).
+
+\section*{3. Modifying quadratic APN functions on hyperplanes}
+In the previous section, we considered a method for constructing APN functions by concatenating two APN functions defined on complementary hyperplanes. An alternative approach to constructing new APN functions involves modifying a single given APN function on a hyperplane. In this case, the APN property is characterized as follows:
+
+Corollary 3.1. [12, Corollary 1] Let $T_{0}=\{x: \operatorname{Tr}(x)=0\}$ and $G: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ be defined by
+
+$$
+G(x)=F(x)+\operatorname{Tr}(x) L(x)
+$$
+
+where $F$ and $L$ are arbitrary mappings on $\mathbb{F}_{2^{n}}$ (where $L$ is not necessarily linear). Then, for every $a \in T_{0}$ we have
+
+$$
+D_{a} G(x)=(F(x)+F(x+a))+\operatorname{Tr}(x)(L(x)+L(x+a)) .
+$$
+
+Suppose that the mappings $F(x)$ and $F^{\prime}(x):=F(x)+L(x)$ are APN. Set $I_{a}= \operatorname{Im}\left(D_{a} F\right) \cap \operatorname{Im}\left(D_{a} F^{\prime}\right)$. Then, $G$ is APN if and only if for any nonzero $a \in T_{0}$ and every $b \in I_{a}$ there is $x \in \mathbb{F}_{2^{n}}$ with
+
+$$
+D_{a} F(x)=b \text { and } \operatorname{Tr}(x)=1, \text { or } D_{a} F^{\prime}(x)=b \text { and } \operatorname{Tr}(x)=0 .
+$$
+
+In this section, we consider in detail a particular case when $F$ is quadratic $A P N$ and $L$ is linear.\\
+3.1. A characterization for the quadratic case and the notion of $H$-equivalence
+
+First, we derive a necessary and sufficient condition for the APN-ness of the functions $F(x)+\operatorname{Tr}(x) L(x)$ on $\mathbb{F}_{2^{n}}$, where $F$ is a quadratic APN function and $L$ is a linear mapping on $\mathbb{F}_{2^{n}}$.
+
+Theorem 3.2. Let $F$ be a quadratic $A P N$ function on $\mathbb{F}_{2^{n}}$ and $L$ an $\mathbb{F}_{2^{2}}$-linear mapping on $\mathbb{F}_{2^{n}}$. Let $e_{0} \in \mathbb{F}_{2^{n}}$ with $\operatorname{Tr}\left(e_{0}\right)=1$. Then, the mapping
+
+$$
+G(x)=F(x)+\operatorname{Tr}(x) L(x), \quad \text { for } \quad x \in \mathbb{F}_{2^{n}},
+$$
+
+is a quadratic $A P N$ function on $\mathbb{F}_{2^{n}}$ if and only if $L_{a}: T_{0} \ni x \mapsto L(x)+B_{F}\left(x, a+e_{0}\right) \in \mathbb{F}_{2^{n}}$ are one-to-one mappings from $T_{0}$ to $\mathbb{F}_{2^{n}}$ for any $a \in T_{0}$. (Hence, $G(x)= F(x)+\operatorname{Tr}(x) L(x)$ is a quadratic APN function on $\mathbb{F}_{2^{n}}$ if, and only if, $L_{a}(x)=0$ implies $x=0$ for any $a \in T_{0}$ ).
+
+Proof. Let $f:=\left.F\right|_{T_{0}}$ be the restriction of $F$ to $T_{0} ; f$ is a quadratic APN function from $T_{0}$ to $\mathbb{F}_{2^{n}}$. For $x \in T_{0}$, we have $F(x)+\operatorname{Tr}(x) L(x)=f(x)$ and $F\left(x+e_{0}\right)+ \operatorname{Tr}\left(x+e_{0}\right) L\left(x+e_{0}\right)=f(x)+L(x)+B_{F}\left(x, e_{0}\right)+L\left(e_{0}\right)+F\left(e_{0}\right)+F(0)$. Let $G^{\prime}$ be a function on $\mathbb{F}_{2^{n}}$ defined by $G^{\prime}(x):=f(x)$ and $G^{\prime}\left(x+e_{0}\right):=f(x)+L(x)+B_{F}\left(e_{0}, x\right)$ for $x \in T_{0}$, then $G^{\prime}(x)=F(x)+\operatorname{Tr}(x)\left(L(x)+L\left(e_{0}\right)+F\left(e_{0}\right)+F(0)\right)$ for $x \in \mathbb{F}_{2^{n}}$, which is EA-equivalent to $G(x)=F(x)+\operatorname{Tr}(x) L(x)$. By Proposition 2.11, $G^{\prime}$ is an APN function if and only if $T_{0} \ni x \mapsto L(x)+B_{F}\left(x, e_{0}\right)+B_{F}(x, a) \in \mathbb{F}_{2^{n}}$ are one-to-one mappings for any $a \in T_{0}$. Thus, $G(x)=F(x)+\operatorname{Tr}(x) L(x)$ is a quadratic APN function on $\mathbb{F}_{2^{n}}$ if and only if $L_{a}: T_{0} \ni x \mapsto L(x)+B_{F}\left(x, a+e_{0}\right) \in \mathbb{F}_{2^{n}}$ are one-to-one mappings from $T_{0}$ to $\mathbb{F}_{2^{n}}$ for any $a \in T_{0}$.
+
+Example 3.3. Let $e_{0}$ be a fixed element of $\mathbb{F}_{2^{n}}$ such that $\operatorname{Tr}\left(e_{0}\right)=1$. For the quadratic function $F(x)=x^{3}$ on $\mathbb{F}_{2}^{n}$, we consider (for different values of $n$ ) linear mappings $L$ on $\mathbb{F}_{2^{n}}$ with $L\left(e_{0}\right)=0$ satisfying the conditions of Theorem 3.2. For $F(x)=x^{3}$ on $\mathbb{F}_{2^{4}}$, there are 448 such mappings $L$; for $F(x)=x^{3}$ on $\mathbb{F}_{2^{5}}$, there are 4608 such mappings $L$; and for $F(x)=x^{3}$ on $\mathbb{F}_{2^{6}}$, we found about 40000 such mappings $L$.
+
+As the previous example indicates, it is possible to obtain many APN functions by modifying the values of a given APN function on a hyperplane using an affine function. This observation essentially leads to the following notion of equivalence.
+
+Definition 3.4. Let $H$ be a hyperplane of $\mathbb{F}_{2}^{n}$. Let $F$ and $G$ be APN functions on $\mathbb{F}_{2}^{n}$. We say that functions $F$ and $G$ are $H$-equivalent if there exists an affine function $L: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{n}$ s.t. for all $x \in \mathbb{F}_{2^{n}}$ it holds that $G(x)=F(x)$ if $x \in H$, and $G(x)=F(x)+L(x)$ if $x \notin H$.
+
+The following result demonstrates that $H$-equivalence can be used to derive not only numerous APN functions from a single one but also many that are EAinequivalent.
+
+Theorem 3.5. Up to EA-equivalence, every quadratic APN function on $\mathbb{F}_{2^{6}}$ has the form $\mathbb{F}_{2^{6}} \ni x \mapsto x^{3}+\operatorname{Tr}(x) L(x)$, where $L$ is a linearized polynomial on $\mathbb{F}_{2^{6}}$.
+
+Proof. First, we observe $H$-equivalence can be studied in the representatives of EAequivalence classes. Let $G$ be an APN function on $\mathbb{F}_{2^{n}}$ defined by $G(x)=F(x)+ 1_{H}(x) L(x)$, for $x \in \mathbb{F}_{2}^{n}$, where $H$ is a hyperplane given by $H=\left\{x \in \mathbb{F}_{2}^{n}: a \cdot x=\beta\right\}$, for some $a \in \mathbb{F}_{2}^{n}$ and $\beta \in \mathbb{F}_{2}$. Consider the function $G^{\prime}=A \circ G \circ B+C$ which is EAequivalent to $G$, i.e., $A, B: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{n}$ are affine invertible mappings and $C: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{n}$\\
+is affine. Denote by $1_{H}: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}$ the indicator function of $H \subset \mathbb{F}_{2}^{n}$, i.e., $1_{H}(x)=1$ if $x \in H$ and $1_{H}(x)=0$ if $x \notin H$. By definition of $G^{\prime}$, we have
+
+$$
+\begin{aligned}
+G^{\prime}(x) & =A\left(F(B(x))+C(x)+A\left(1_{H}(B(x)) L(B(x))\right)\right) \\
+& =F^{\prime}(x)+1_{H}(B(x)) L^{\prime}(x) \\
+& =F^{\prime}(x)+1_{H^{\prime}}(x) L^{\prime}(x)
+\end{aligned}
+$$
+
+where $F^{\prime}=A \circ F \circ B+C, L^{\prime}=A \circ L \circ B$ and the hyperplane $H^{\prime}$ is defined by $H^{\prime}=\left\{x \in \mathbb{F}_{2}^{n}: a \cdot B(x)=\beta\right\}$. In this way, it is enough to show that a representative of every EA-equivalence class of quadratic APN functions on $\mathbb{F}_{2}^{6}$ can be obtained from $\mathbb{F}_{2^{6}} \ni x \mapsto x^{3}$ using $H$-equivalence.
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{Table 3.1: APN functions $G_{i}(x)=x^{3}+\operatorname{Tr}(x) L_{i}(x)$ on $\mathbb{F}_{2^{6}}$ and their EA-equivalence to Dillon's quadratic APN functions $D_{k}(x)$.}
+\begin{tabular}{|l|l|l|}
+\hline
+$G_{i}$ & $L_{i}(x)$ & $D_{k}$ \\
+\hline
+$G_{1}$ & $L_{1}(x)=0$ & $D_{1}$ \\
+\hline
+$G_{2}$ & $L_{2}(x)=\alpha^{42} x+\alpha^{3} x^{2}+\alpha^{34} x^{2}+\alpha^{59} x^{23}+\alpha^{59} x^{2}+\alpha^{12} x^{25}$ & $D_{10}$ \\
+\hline
+$G_{3}$ & $L_{3}(x)=\alpha^{18} x+\alpha^{60} x^{2}+\alpha^{17} x^{2^{2}}+\alpha^{4} x^{2^{3}}+\alpha^{17} x^{2^{4}}+\alpha^{4} x^{2^{5}}$ & $D_{2}$ \\
+\hline
+$G_{4}$ & $L_{4}(x)=\alpha^{18} x+\alpha^{60} x^{2}+\alpha^{57} x^{2^{2}}+\alpha^{7} x^{2^{3}}+\alpha^{32} x^{2}+\alpha^{62} x^{2^{5}}$ & $D_{3}$ \\
+\hline
+$G_{5}$ & $L_{5}(x)=\alpha^{42} x+\alpha x^{2}+\alpha^{29} x^{2^{2}}+\alpha^{55} x^{2^{3}}+\alpha^{9} x^{2^{4}}+\alpha^{56} x^{2^{5}}$ & $D_{5}$ \\
+\hline
+$G_{6}$ & $L_{6}(x)=\alpha^{42} x+\alpha^{21} x^{2}+\alpha^{4} x^{2^{3}}+\alpha^{48} x^{2^{4}}+\alpha^{16} x^{2^{5}}$ & $D_{6}$ \\
+\hline
+$G_{7}$ & $L_{7}(x)=\alpha^{42} x+\alpha^{19} x^{2}+\alpha^{51} x^{2^{2}}+\alpha^{59} x^{2^{3}}+\alpha^{26} x^{2^{4}}+\alpha^{38} x^{2^{5}}$ & $D_{7}$ \\
+\hline
+$G_{8}$ & $L_{8}(x)=\alpha^{42} x+\alpha^{19} x^{2}+\alpha^{60} x^{2^{2}}+\alpha^{11} x^{2^{3}}+\alpha^{25} x^{2^{4}}+\alpha^{13} x^{2^{5}}$ & $D_{12}$ \\
+\hline
+$G_{9}$ & $L_{9}(x)=\alpha^{42} x+\alpha^{21} x^{2}+\alpha^{22} x^{2^{2}}+\alpha^{31} x^{2^{3}}+\alpha^{15} x^{2^{4}}+\alpha^{61} x^{2^{5}}$ & $D_{13}$ \\
+\hline
+$G_{10}$ & $L_{10}(x)=\alpha^{42} x+\alpha^{47} x^{2}+\alpha^{35} x^{2}+\alpha^{54} x^{23}+\alpha^{23} x^{24}+\alpha^{27} x^{25}$ & $D_{8}$ \\
+\hline
+$G_{11}$ & $L_{11}(x)=\alpha^{42} x+\alpha^{21} x^{2}+\alpha^{23} x^{2^{2}}+\alpha^{32} x^{23}+\alpha^{14} x^{24}+\alpha^{51} x^{2^{5}}$ & $D_{11}$ \\
+\hline
+$G_{12}$ & $L_{12}(x)=\alpha^{42} x+\alpha^{21} x^{2}+\alpha^{4} x^{2^{2}}+\alpha^{56} x^{2^{3}}+\alpha^{17} x^{2^{4}}+\alpha^{20} x^{2^{5}}$ & $D_{4}$ \\
+\hline
+$G_{13}$ & $L_{13}(x)=\alpha^{42} x+\alpha^{21} x^{2}+\alpha^{27} x^{2^{3}}+\alpha^{34} x^{2^{4}}+\alpha^{52} x^{2^{5}}$ & $D_{9}$ \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+Let the multiplicative group of $\mathbb{F}_{2^{6}}$ be defined by $\left(\mathbb{F}_{2^{6}}\right)^{*}=\langle a\rangle$, where $\alpha^{6}+\alpha^{4}+ \alpha^{3}+\alpha+1=0$. In Table 3.1, we give the linearized polynomials $L_{i}: \mathbb{F}_{2^{6}} \rightarrow \mathbb{F}_{2^{6}}$ that define quadratic APN functions $G_{i}(x)=F(x)+\operatorname{Tr}(x) L_{i}(x)$. We also indicate, which of these functions are EA-equivalent to the $k$-th Dillon APN function, whose univariate representations can be found in [21, Table 4]. The EA-equivalence was verified using Magma [5]. \(\square\)
+
+Remark 3.6. 1. In [16], it was shown that switching cannot be used to obtain representatives of all EA-equivalence classes of quadratic APN functions starting from a single class. However, this can be achieved using $H$-equivalence with\\
+the hyperplane $H=\left\{x \in \mathbb{F}_{2^{n}}: \operatorname{Tr}(x)=0\right\}$. Indeed, by Theorem 3.2, two EAinequivalent quadratic APN functions on $\mathbb{F}_{2^{6}}$ have the form $F(x)=x^{3}+\operatorname{Tr}(x) L(x)$ and $F^{\prime}(x)=x^{3}+\operatorname{Tr}(x) L^{\prime}(x)$, from what follows that $F^{\prime}(x)=F(x)+\operatorname{Tr}(x) L^{\prime \prime}(x)$, where $L^{\prime \prime}:=L+L^{\prime}$ is a linear mapping on $\mathbb{F}_{2^{6}}$.\\
+2. For an ( $n, n$ )-function $F$, the mapping $W_{F}: \mathbb{F}_{2^{n}} \times \mathbb{F}_{2^{n}} \rightarrow \mathbb{Z}$ defined by $W_{F}(a, b)= \sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{\operatorname{Tr}(b F(x)+a x)}$, where $a, b \in \mathbb{F}_{2^{n}}, b \in \mathbb{F}_{2^{n}}^{\times}$, is called the Walsh transform of $F$. The multiset $\mathcal{W}_{F}=\left\{* W_{F}(a, b): a \in \mathbb{F}_{2^{n}}, b \in \mathbb{F}_{2^{n}}^{\times} *\right\}$ is called the Walsh spectrum of $F$. If $n$ is even, an APN function $F$ on $\mathbb{F}_{2^{n}}$ is said to have the the classical Walsh spectrum if
+
+$$
+\begin{gathered}
+\mathcal{W}_{F}=\left\{* 0\left[2^{n-2} \cdot\left(2^{n}-1\right)\right], \pm 2^{\frac{n+2}{2}}\left[\frac{1}{3}\left(2^{n}-1\right) \cdot\left(2^{n-3} \pm 2^{\frac{n-4}{2}}\right)\right]\right. \\
+\left. \pm 2^{\frac{n}{2}}\left[\frac{2}{3}\left(2^{n}-1\right) \cdot\left(2^{n-1} \pm 2^{\frac{n}{2}-1}\right)\right] *\right\}
+\end{gathered}
+$$
+
+Otherwise, $F$ is said to have a non-classical Walsh spectrum; see [21]. Note that most of the known examples and constructions of quadratic APN functions on $\mathbb{F}_{2^{n}}$ have the classical Walsh spectrum and only a few sporadic examples with a nonclassical spectrum are known; for the recent advances in such functions, we refer to [4]. Note that, up to EA-equivalence, the function $G_{7}$ in Table 3.1 is the only quadratic APN function on $\mathbb{F}_{2^{6}}$ with a non-classical Walsh spectrum since its Walsh transform takes the values in the set $\{0, \pm 8, \pm 16, \pm 32\}$. Remarkably, this function can be constructed via $H$-equivalence from the Gold APN function $\mathbb{F}_{2^{6}} \ni x \mapsto x^{3}$ with the classical Walsh spectrum.\\
+3.2. A necessary and sufficient condition for the APN-ness of $G(x)=x^{3}+\operatorname{Tr}(x) L(x)$
+
+In the previous subsection, we showed that one can obtain many EA-inequivalent APN functions by modifying the mapping $x \in \mathbb{F}_{2^{n}} \mapsto x^{3}$ on the "trace-one" hyperplane. In this regard, it is natural to ask: When does the mapping $G(x)= x^{3}+\operatorname{Tr}(x) L(x)$ define an APN function $G$ on $\mathbb{F}_{2^{n}}$ ? In the following theorem, we provide an answer to this question using certain exponential sums.
+
+Theorem 3.7. Let $G$ be a function from $\mathbb{F}_{2^{n}}$ to $\mathbb{F}_{2^{n}}$ defined as
+
+$$
+G(x)=x^{3}+\operatorname{Tr}(x) L(x)
+$$
+
+Then, $G$ is APN if and only if
+
+
+\begin{equation*}
+\sum_{x \in \mathbb{F}_{2^{n}} \backslash\{0,1\}}(-1)^{\operatorname{Tr}\left(\frac{x^{2} L\left(x^{2}+x\right)}{\left(x^{2}+x\right)^{3}}\right)}-\frac{1}{2} \sum_{x \in \mathbb{F}_{2^{n} \backslash\{0,1\}}}(-1)^{\operatorname{Tr}\left(\frac{L\left(x^{2}+x\right)}{\left(x^{2}+x\right)^{3}}\right)}=2^{n-1}-1 . \tag{3.1}
+\end{equation*}
+
+
+Proof. Assume that for every $a, b \in \mathbb{F}_{2^{n}}$ with $a \neq 0$, the equation $G(x+a)+G(x)=b$ has at most two solutions. Since $G(x)$ is a quadratic function, we just count the number of solutions of the equation $G(x+a)+G(x)+G(a)=0$. This gives
+
+$$
+\begin{aligned}
+G(x+a)+G(x)+G(a) & =(x+a)^{3}+\operatorname{Tr}(x+a) L(x+a) \\
+& +x^{3}+\operatorname{Tr}(x) L(x)+a^{3}+\operatorname{Tr}(a) L(a)=0
+\end{aligned}
+$$
+
+After simplification, we have
+
+
+\begin{equation*}
+x^{2} a+a^{2} x+\operatorname{Tr}(x) L(a)+\operatorname{Tr}(a) L(x)=0 \tag{3.2}
+\end{equation*}
+
+
+We have to show that this equation has only two solutions for $a \neq 0$. Note that we can see immediately two solutions, namely $x=0$ and $x=a$.\\
+I. Consider the case $\operatorname{Tr}(a)=0$. Then, Eq. (3.2) becomes
+
+
+\begin{equation*}
+x^{2} a+a^{2} x+\operatorname{Tr}(x) L(a)=0 \tag{3.3}
+\end{equation*}
+
+
+We show that this equation has exactly two solutions if and only if the condition in Eq. (3.1) holds. Assume that $\operatorname{Tr}(x)=0$. Then, Eq. (3.3) becomes
+
+$$
+x^{2} a+a^{2} x=0
+$$
+
+The above equation has exactly two solutions $x \in\{0, a\}$. Now, we show that the case $\operatorname{Tr}(x)=1$ gives no solutions if and only if Eq. (3.1) holds. Assume that $\operatorname{Tr}(x)=1$. Then, Eq. (3.3) becomes
+
+
+\begin{equation*}
+x^{2} a+a^{2} x+L(a)=0 \tag{3.4}
+\end{equation*}
+
+
+Let $H=\left\{x \in \mathbb{F}_{2^{n}}: \operatorname{Tr}(x)=0\right\}, \hat{H}=\mathbb{F}_{2^{n}} \backslash H$ and $H^{\times}=H \backslash\{0\}$. Let
+
+$$
+\begin{aligned}
+& t_{0}=\#\left\{x \in H, a \in H^{\times}: x^{2} a+a^{2} x+L(a)=0\right\}, \text { and } \\
+& t_{1}=\#\left\{x \in \hat{H}, a \in H^{\times}: x^{2} a+a^{2} x+L(a)=0\right\} .
+\end{aligned}
+$$
+
+Then, we define
+
+$$
+\begin{aligned}
+& s_{0}=\sum_{\beta \in \mathbb{F}_{2^{n}}, a \in H^{\times}, x \in H}(-1)^{\operatorname{Tr}\left(\beta\left(x^{2} a+a^{2} x+L(a)\right)\right)}=2^{n} t_{0}, \\
+& s_{1}=\sum_{\beta \in \mathbb{F}_{2^{n}}, a \in H^{\times}, x \in \mathbb{F}_{2^{n}}}(-1)^{\operatorname{Tr}\left(\beta\left(x^{2} a+a^{2} x+L(a)\right)\right)}=2^{n}\left(t_{0}+t_{1}\right) .
+\end{aligned}
+$$
+
+In this way, the value of $t_{1}$ is given by
+
+$$
+t_{1}=\frac{s_{1}-s_{0}}{2^{n}}
+$$
+
+First, we consider the expressions of $s_{1}$ and $s_{0}$ :
+
+
+\begin{align*}
+s_{1} & =\sum_{\beta \in \mathbb{F}_{2^{n}}, a \in H^{\times}}(-1)^{\operatorname{Tr}(\beta L(a))} \sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{\operatorname{Tr}\left(\beta\left(x^{2} a+a^{2} x\right)\right)} \\
+& =\sum_{\beta \in \mathbb{F}_{2^{n}}, a \in H^{\times}}(-1)^{\operatorname{Tr}(\beta L(a))} \sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{\operatorname{Tr}\left(\beta a^{3}\left(\left(\frac{x}{a}\right)^{2}+\left(\frac{x}{a}\right)\right)\right)}, \tag{3.5}
+\end{align*}
+
+
+and similarly
+
+
+\begin{align*}
+s_{0} & =\sum_{\beta \in \mathbb{F}_{2^{n}, a \in H^{\times}}}(-1)^{\operatorname{Tr}(\beta L(a))} \sum_{x \in H}(-1)^{\operatorname{Tr}\left(\beta\left(x^{2} a+a^{2} x\right)\right)} \\
+& =\sum_{\beta \in \mathbb{F}_{2^{n}, a \in H^{\times}}}(-1)^{\operatorname{Tr}(\beta L(a))} \sum_{x \in H}(-1)^{\operatorname{Tr}\left(\beta a^{3}\left(\left(\frac{x}{a}\right)^{2}+\left(\frac{x}{a}\right)\right)\right)} . \tag{3.6}
+\end{align*}
+
+
+Since both expressions depend on the evaluation of $\operatorname{Tr}\left(\beta a^{3}\left(\left(\frac{x}{a}\right)^{2}+\left(\frac{x}{a}\right)\right)\right)$, let us consider the solutions of the equation $\operatorname{Tr}\left(\beta a^{3}\left(\left(\frac{x}{a}\right)^{2}+\left(\frac{x}{a}\right)\right)\right)=0$. Note that for $\beta \in \mathbb{F}_{2^{n}}$ and a fixed $a \in \mathbb{F}_{2^{n}}$ with $\operatorname{Tr}(a)=0$ we have that
+
+$$
+\operatorname{Tr}\left(\beta a^{3}\left(\left(\frac{x}{a}\right)^{2}+\left(\frac{x}{a}\right)\right)\right)=0
+$$
+
+holds for all $x \in H$ if and only if
+
+$$
+\operatorname{Tr}\left(x^{2}\left(\frac{\beta a^{3}}{a^{2}}+\frac{\beta^{2} a^{6}}{a^{2}}\right)\right)=0 \Longleftrightarrow\left(\frac{\beta a^{3}}{a^{2}}+\frac{\beta^{2} a^{6}}{a^{2}}\right)=0 \text { or } 1 .
+$$
+
+First, we consider
+
+$$
+\left(\frac{\beta a^{3}}{a^{2}}+\frac{\beta^{2} a^{6}}{a^{2}}\right)=0
+$$
+
+Then, we have the following cases:\\
+(1) $\beta=0$,\\
+(2) $\beta a^{3}+\beta^{2} a^{6}=0$ if and only if $\beta=\frac{1}{a^{3}}($ provided $\beta \neq 0)$.
+
+Now, we consider the case when
+
+$$
+\left(\frac{\beta a^{3}}{a^{2}}+\frac{\beta^{2} a^{6}}{a^{2}}\right)=1
+$$
+
+In this case, $\operatorname{Tr}\left(\beta a^{3}\left(\left(\frac{x}{a}\right)^{2}+\left(\frac{x}{a}\right)\right)\right)=0$ holds for all $x \in H$, but not for all $x \in \mathbb{F}_{2^{n}}$, hence this case occurs just in Eq. (3.6), but not in Eq. (3.5). The latter corresponds to the following case\\
+(3) $\beta a^{3}+\beta^{2} a^{6}=a^{2}$.
+
+Considering these cases, we can now compute the values of $s_{1}$ and $s_{0}$. With the first two cases, Eq. (3.5) becomes
+
+
+\begin{align*}
+s_{1} & =\sum_{\beta \in \mathbb{F}_{2^{n}, a \in H^{\times}}}(-1)^{\operatorname{Tr}(\beta L(a))} \sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{\operatorname{Tr}\left(\beta a^{3}\left(\left(\frac{x}{a}\right)^{2}+\left(\frac{x}{a}\right)\right)\right)} \\
+& =2^{n}\left(2^{n-1}-1\right)+2^{n}\left(\sum_{a \in H^{\times}}(-1)^{\operatorname{Tr}\left(\frac{L(a)}{a^{3}}\right)}\right) \tag{3.7}
+\end{align*}
+
+
+where the first term corresponds to case (1) $\beta=0$, while the second term corresponds to case (2) $\beta a^{3}=1$. Consider now Eq. (3.6). Let $\gamma=\beta a^{3}$. Then, we have $\beta=\frac{\gamma}{a^{3}}$. From case (3), we have that $\gamma+\gamma^{2}=a^{2}$. Therefore, we obtain
+
+$$
+\begin{aligned}
+s_{0} & =2^{n-1}\left(2^{n-1}-1\right)+2^{n-1} \sum_{a \in H^{\times}}(-1)^{\operatorname{Tr}\left(\frac{L(a)}{a^{3}}\right)} \\
+& +2^{n-1}\left(\sum_{\substack{a \in H^{\times} \text {s.t. } a^{2}=\gamma+\gamma^{2} \\
+\text { for } \gamma \in \mathbb{F}_{2} n \backslash\{0,1\}}}(-1)^{\operatorname{Tr}\left(\gamma \frac{L(a)}{a^{3}}\right)}\right),
+\end{aligned}
+$$
+
+where the first two terms are again obtained as in Eq. (3.7). Now, substitute $a= \sqrt{\gamma+\gamma^{2}}$, the above equation becomes
+
+
+\begin{align*}
+s_{0} & =2^{n-1}\left(2^{n-1}-1\right)+2^{n-1} \sum_{a \in H^{\times}}(-1)^{\operatorname{Tr}\left(\frac{L(a)}{a^{3}}\right)} \\
+& +2^{n-1}\left(\sum_{\gamma \in \mathbb{F}_{2^{n}} \backslash\{0,1\}}(-1)^{\operatorname{Tr}\left(\frac{\gamma L\left(\sqrt{\gamma+\gamma^{2}}\right)}{\left(\sqrt{\gamma+\gamma^{2}}\right)^{3}}\right)}\right)  \tag{3.8}\\
+& =\frac{s_{1}}{2}+2^{n-1}\left(\sum_{\gamma \in \mathbb{F}_{2^{n}} \backslash\{0,1\}}(-1)^{\operatorname{Tr}\left(\frac{\gamma L\left(\sqrt{\gamma+\gamma^{2}}\right)}{\left(\sqrt{\gamma+\gamma^{2}}\right)^{3}}\right)}\right) .
+\end{align*}
+
+
+Eq. (3.3) has exactly two solutions for $a \neq 0$ with $\operatorname{Tr}(a)=0$ if and only if $t_{1}= s_{1}-s_{0}=0$, hence $s_{0}=s_{1}$. Substituting $s_{0}=s_{1}$ in Eq. (3.8) and replacing $\gamma$ with $x^{2}$, we get
+
+
+\begin{equation*}
+s_{1}=2^{n} \sum_{x \in \mathbb{F}_{2^{n}} \backslash\{0,1\}}(-1)^{\operatorname{Tr}\left(\frac{x^{2} L\left(x^{2}+x\right)}{\left(x^{2}+x\right)^{3}}\right)} . \tag{3.9}
+\end{equation*}
+
+
+Substituting the obtained above value of $s_{1}$ in Eq. (3.7), we get
+
+$$
+\sum_{x \in \mathbb{F}_{2^{n}} \backslash\{0,1\}}(-1)^{\operatorname{Tr}\left(\frac{x^{2} L\left(x^{2}+x\right)}{\left(x^{2}+x\right)^{3}}\right)}-\sum_{a \in H^{\times}}(-1)^{\operatorname{Tr}\left(\frac{L(a)}{a^{3}}\right)}=2^{n-1}-1,
+$$
+
+which is equivalent to the original condition in Eq. (3.1) since
+
+$$
+\sum_{a \in H^{\times}}(-1)^{\operatorname{Tr}\left(\frac{L(a)}{a^{3}}\right)}=\frac{1}{2} \sum_{x \in \mathbb{F}_{2} n \backslash\{0,1\}}(-1)^{\operatorname{Tr}\left(\frac{L\left(x^{2}+x\right)}{\left(x^{2}+x\right)^{3}}\right)},
+$$
+
+because $x^{2}+x$ runs through all the elements in $H^{\times}$twice if $x \in \mathbb{F}_{2^{n}} \backslash\{0,1\}$. This completes the proof of the first case $\operatorname{Tr}(a)=0$.\\
+II. Consider the case $\operatorname{Tr}(a)=1$. Then, Eq. (3.2) becomes
+
+
+\begin{equation*}
+x^{2} a+a^{2} x+\operatorname{Tr}(x) L(a)+L(x)=0 \tag{3.10}
+\end{equation*}
+
+
+Assume that $\operatorname{Tr}(x)=0$. Then, Eq. (3.10) becomes
+
+$$
+x^{2} a+a^{2} x+L(x)=0
+$$
+
+which is symmetric to Eq. (3.4) w.r.t. a change of the variables. Assuming that there is a solution $x \neq 0$ with $\operatorname{Tr}(x)=0$, one can find $a \in \mathbb{F}_{2^{n}}$ s.t. it satisfies Eq. (3.4). Case $\mathbf{I}$ shows that $\operatorname{Tr}(a)=0$, a contradiction.
+
+Assume now that $\operatorname{Tr}(x)=1$. In this case,
+
+$$
+x^{2} a+a^{2} x+L(a)+L(x)=0
+$$
+
+or, putting $y=x+a$,
+
+
+\begin{equation*}
+y^{2} a+a^{2} y+L(y)=0 \tag{3.11}
+\end{equation*}
+
+
+One solution is $y=0$, hence $x=a$. But for a given $y \neq 0$ with $\operatorname{Tr}(y)=0$, there is no $a$ with $\operatorname{Tr}(a)=1$ which satisfies Eq. (3.11), as in case $\mathbf{I}$, hence also for $\operatorname{Tr}(a)=1$ we have the only two solutions $x \in\{0, a\}$ for Eq. (3.2).
+
+In this way, we conclude that $G$ is APN if and only if the condition in Eq. (3.1) holds.
+
+Remark 3.8. One can check with a computer algebra system that linearized polynomials in Table 3.1 indeed satisfy the APN condition given in Theorem 3.7.
+
+\section*{4. Modifying APN functions on affine subspaces of codimension two}
+In the previous section, we showed that it is possible to construct a new APN function from a given one by adding a linear function defined on a hyperplane. In this section, we show that new APN functions can be obtained by adding carefully selected constant functions on disjoint affine subspaces of codimension two. The following theorem provides a complete characterization of the APN property for such modifications.
+
+Theorem 4.1. Let $F$ be an $A P N$ function from $\mathbb{F}_{2}^{n}$ to $\mathbb{F}_{2}^{n}$. Let $U$ be an ( $n-2$ )dimensional subspace of $\mathbb{F}_{2}^{n}$ and let $U_{1}=U+u_{1}, U_{2}=U+u_{2}, U_{3}=U+u_{3}$ and $U_{4}=U+u_{4}$ be the four cosets of $U$ such that $\mathbb{F}_{2}^{n}=U_{1} \cup U_{2} \cup U_{3} \cup U_{4}$, where $u_{1}=0$ and $u_{2}, u_{3}, u_{4} \in \mathbb{F}_{2}^{n}$. Define the function $G: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{n}$ as follows
+
+\[
+G(x)= \begin{cases}F(x)+a_{1}, & \text { for } x \in U_{1},  \tag{4.1}\\ F(x)+a_{2}, & \text { for } x \in U_{2}, \\ F(x)+a_{3}, & \text { for } x \in U_{3}, \\ F(x)+a_{4}, & \text { for } x \in U_{4},\end{cases}
+\]
+
+where $a_{1}, a_{2}, a_{3}, a_{4} \in \mathbb{F}_{2}^{n}$. Then, the function $G$ is $A P N$ if and only if the condition
+
+$$
+F\left(x_{1}\right)+F\left(x_{2}\right)+F\left(x_{3}\right)+F\left(x_{4}\right) \neq a_{1}+a_{2}+a_{3}+a_{4}
+$$
+
+holds for all 2-dimensional affine subspaces $\left\{x_{1}, x_{2}, x_{3}, x_{4}\right\}$ of $\mathbb{F}_{2}^{n}$ with $\mid\left\{x_{1}, x_{2}, x_{3}, x_{4}\right\} \cap U_{i} \mid=1$, for all $i=1,2,3,4$.
+
+Proof. Let $U$ be an ( $n-2$ )-dimensional linear subspace of $\mathbb{F}_{2}^{n}$. We decompose $\mathbb{F}_{2}^{n}$ into four cosets of $U$ such that $\mathbb{F}_{2}^{n}=U_{1} \cup U_{2} \cup U_{3} \cup U_{4}$, where $U_{1}=U+u_{1}=U, U_{2}=U+u_{2}$, $U_{3}=U+u_{3}$ and $U_{4}=U+u_{4}$, where $u_{1}=0$ and $u_{2}, u_{3}, u_{4} \in \mathbb{F}_{2}^{n}$. Since $F$ is an APN function, we have that the condition
+
+$$
+F\left(x_{1}\right)+F\left(x_{2}\right)+F\left(x_{3}\right)+F\left(x_{4}\right) \neq 0
+$$
+
+holds for all 2 -dimensional affine subspaces $\left\{x_{1}, x_{2}, x_{3}, x_{4}\right\}$ of $\mathbb{F}_{2}^{n}$. Now, we consider the distribution of affine 2 -dimensional subspaces $\left\{x_{1}, x_{2}, x_{3}, x_{4}\right\}$ in the subspaces $U_{1}, U_{2}, U_{3}, U_{4}$.
+
+Recall that the set $\left\{x_{1}, x_{2}, x_{3}, x_{4}\right\}$ is an affine 2 -dimensional subspace of $\mathbb{F}_{2}^{n}$ if $x_{1}, x_{2}, x_{3}, x_{4}$ are pairwise different and $x_{1}+x_{2}+x_{3}+x_{4}=0$. Assume that $x_{1}, x_{2} \in U_{i}$, $x_{3} \in U_{j}$ and $x_{4} \in U_{k}$, where $i, j, k$ are pairwise different. Then, $x_{1}+x_{2} \in U_{1}$ and $x_{3}+x_{4} \notin U_{1}$. Therefore, $x_{1}+x_{2}+x_{3}+x_{4}=0 \in U_{1}$ is not possible. The only possible distributions of $x_{1}, x_{2}, x_{3}, x_{4}$ between $U_{i}$ are either:
+
+\begin{enumerate}
+  \item $x_{1}, x_{2}, x_{3}, x_{4} \in U_{i}$, for some $i$,
+  \item $x_{1}, x_{2} \in U_{i}$ and $x_{3}, x_{4} \in U_{j}$, for some $i \neq j$,
+  \item $x_{1} \in U_{i}, x_{2} \in U_{j}, x_{3} \in U_{k}, x_{4} \in U_{l}$, for $i \neq j \neq k \neq l$ (equivalently, the condition $\left|\left\{x_{1}, x_{2}, x_{3}, x_{4}\right\} \cap U_{i}\right|=1$ holds for all $\left.i=1,2,3,4\right)$.
+\end{enumerate}
+
+In order to derive a necessary and sufficient condition for the APN-ness of the function $G$ defined in Eq. (4.1), we need to verify that $G\left(x_{1}\right)+G\left(x_{2}\right)+G\left(x_{3}\right)+G\left(x_{4}\right) \neq 0$ holds for all 2 -dimensional flats $\left\{x_{1}, x_{2}, x_{3}, x_{4}\right\}$. To do so, we consider three possible distributions of the elements $x_{i}$ between the subspaces $U_{j}$.
+
+In the first case, we have that $x_{1}, x_{2}, x_{3}, x_{4} \in U_{i}$, for some $i$. Then,
+
+$$
+\begin{aligned}
+& G\left(x_{1}\right)+G\left(x_{2}\right)+G\left(x_{3}\right)+G\left(x_{4}\right) \\
+= & \left(F\left(x_{1}\right)+a_{i}\right)+\left(F\left(x_{2}\right)+a_{i}\right)+\left(F\left(x_{3}\right)+a_{i}\right)+\left(F\left(x_{4}\right)+a_{i}\right) \neq 0
+\end{aligned}
+$$
+
+due to the APN property of $F$.\\
+In the second case, we have that $x_{1}, x_{2} \in U_{i}$ and $x_{3}, x_{4} \in U_{j}$, for some $i \neq j$. Consequently,
+
+$$
+\begin{aligned}
+& G\left(x_{1}\right)+G\left(x_{2}\right)+G\left(x_{3}\right)+G\left(x_{4}\right) \\
+= & \left(F\left(x_{1}\right)+a_{i}\right)+\left(F\left(x_{2}\right)+a_{i}\right)+\left(F\left(x_{3}\right)+a_{j}\right)+\left(F\left(x_{4}\right)+a_{j}\right) \neq 0
+\end{aligned}
+$$
+
+again due to the APN property of $F$.\\
+In the third case, we have that the condition $\left|\left\{x_{1}, x_{2}, x_{3}, x_{4}\right\} \cap U_{i}\right|=1$ holds for all $i=1,2,3,4$. W.l.o.g, we assume that $x_{i} \in U_{i}$. Then, we have
+
+$$
+\begin{aligned}
+& G\left(x_{1}\right)+G\left(x_{2}\right)+G\left(x_{3}\right)+G\left(x_{4}\right) \\
+= & \left(F\left(x_{1}\right)+a_{1}\right)+\left(F\left(x_{2}\right)+a_{2}\right)+\left(F\left(x_{3}\right)+a_{3}\right)+\left(F\left(x_{4}\right)+a_{4}\right) \\
+= & F\left(x_{1}\right)+F\left(x_{2}\right)+F\left(x_{3}\right)+F\left(x_{4}\right)+\left(a_{1}+a_{2}+a_{3}+a_{4}\right) .
+\end{aligned}
+$$
+
+In this way, the function $G$ is APN if and only if the condition
+
+$$
+F\left(x_{1}\right)+F\left(x_{2}\right)+F\left(x_{3}\right)+F\left(x_{4}\right) \neq a_{1}+a_{2}+a_{3}+a_{4}
+$$
+
+holds for all 2 -dimensional affine subspaces $\left\{x_{1}, x_{2}, x_{3}, x_{4}\right\}$ of $\mathbb{F}_{2}^{n}$ with the property $\left|\left\{x_{1}, x_{2}, x_{3}, x_{4}\right\} \cap U_{i}\right|=1$ for all $i=1,2,3,4$.
+
+In the following example, we indicate that using Theorem 4.1 one construct an APN function, that is EA-inequivalent to a given one.
+
+Example 4.2. Let $F$ be an APN function from $\mathbb{F}_{2^{8}}$ to $\mathbb{F}_{2^{8}}$ defined as $F(x)=x^{3}$. Let the multiplicative group of $\mathbb{F}_{2^{8}}$ be defined by $\left(\mathbb{F}_{2^{8}}\right)^{*}=\langle a\rangle$, where $\alpha^{8}+\alpha^{4}+\alpha^{3}+\alpha^{2}+1=$ 0 . First, we decompose $\mathbb{F}_{2^{8}}$ into four cosets $U_{1}, U_{2}, U_{3}, U_{4}$ defined by
+
+$$
+\begin{aligned}
+& U_{1}=\left\{x \in \mathbb{F}_{2^{8}}: \operatorname{Tr}_{2}^{8}(x)=0\right\}, \\
+& U_{2}=\left\{x \in \mathbb{F}_{2^{8}}: \operatorname{Tr}_{2}^{8}(x)=1\right\}, \\
+& U_{3}=\left\{x \in \mathbb{F}_{2^{8}}: \operatorname{Tr}_{2}^{8}(x)=\beta\right\}, \\
+& U_{4}=\left\{x \in \mathbb{F}_{2^{8}}: \operatorname{Tr}_{2}^{8}(x)=\beta^{2}\right\},
+\end{aligned}
+$$
+
+where $\beta$ is a root of $x^{2}+x+1$; in the defined above field $\mathbb{F}_{2^{8}}$, we have that $\beta \in \left\{\alpha^{85}, \alpha^{170}\right\}$. Compute the set
+
+$$
+\begin{aligned}
+A & =\mathbb{F}_{2^{8}} \backslash\left\{\sum_{i=1}^{4} F\left(x_{i}\right): \sum_{i=1}^{4} x_{i}=0 \text { and } x_{i} \in U_{i}, \text { for } i=1,2,3,4\right\} \\
+& =\left\{0,1, \alpha^{85}, \alpha^{170}\right\} .
+\end{aligned}
+$$
+
+We can choose $a_{1}, a_{2}, a_{3}, a_{4} \in \mathbb{F}_{2^{8}}$ such that $a_{1}+a_{2}+a_{3}+a_{4} \in A$. Setting $a_{1}= a_{2}=0, a_{3}=\alpha^{85} \beta, a_{4}=\alpha^{85} \beta^{2}$, we have that $a_{1}+a_{2}+a_{3}+a_{4}=\alpha^{85} \in A$. Define the function $G: \mathbb{F}_{2^{8}} \rightarrow \mathbb{F}_{2^{8}}$ as in Eq. (4.1), that is
+
+$$
+G(x)=\left\{\begin{array}{ll}
+F(x)+a_{1}, & \text { for } x \in U_{1}, \\
+F(x)+a_{2}, & \text { for } x \in U_{2}, \\
+F(x)+a_{3}, & \text { for } x \in U_{3}, \\
+F(x)+a_{4}, & \text { for } x \in U_{4},
+\end{array}=\left\{\begin{array}{cl}
+F(x), & \text { if } \operatorname{Tr}_{2}^{8}(x)=0, \\
+F(x), & \text { if } \operatorname{Tr}_{2}^{8}(x)=1, \\
+F(x)+\alpha^{85} \beta, & \text { if } \operatorname{Tr}_{2}^{8}(x)=\beta, \\
+F(x)+\alpha^{85} \beta^{2}, & \text { if } \operatorname{Tr}_{2}^{8}(x)=\beta^{2} .
+\end{array}\right.\right.
+$$
+
+Then, the function $G$ is APN by Theorem 4.1. For the constructed function $G$, we give a "simplified" finite filed representation. To do so, we recall that the polynomial representation of the trace function from $\mathbb{F}_{2^{n}}$ to its subfield $\mathbb{F}_{2^{m}}$ is given by $\operatorname{Tr}_{m}^{n}(x)= \sum_{i=0}^{\frac{n}{m}-1} x^{2^{i \cdot m}}$. First, we observe that $\operatorname{Tr}_{1}^{8}(x)=\operatorname{Tr}_{1}^{2}\left(\operatorname{Tr}_{2}^{8}(x)\right)=\operatorname{Tr}_{2}^{8}(x)+\left(\operatorname{Tr}_{2}^{8}(x)\right)^{2}$. In this way, we have that if $\operatorname{Tr}_{2}^{8}(x) \in\{0,1\}$ then $\operatorname{Tr}_{1}^{8}(x)=0$. On the other hand, if $\operatorname{Tr}_{2}^{8}(x) \in\left\{\beta, \beta^{2}\right\}$ then $\operatorname{Tr}_{1}^{8}(x)=1$. In this way, the APN function $G: \mathbb{F}_{2^{8}} \rightarrow \mathbb{F}_{2^{8}}$ can be written as
+
+$$
+G(x)=x^{3}+\alpha^{85} \operatorname{Tr}_{1}^{8}(x) \operatorname{Tr}_{2}^{8}(x) .
+$$
+
+Finally, we notice that $G$ is EA-inequivalent to $F(x)=x^{3}$ on $\mathbb{F}_{2^{8}}$, since $\Gamma$-rank $(G)= 13842 \neq \Gamma-\operatorname{rank}(F)=11818$.
+
+\section*{5. Conclusion and open problems}
+In this paper, we consider further secondary constructions of APN functions. The following questions related to the computational results obtained in Section 3 deserve further theoretical investigations:
+
+\begin{enumerate}
+  \item As we show in Remark 3.5, every quadratic APN function in dimension 6 can be written (up to EA-equivalence) as a univariate polynomial $G_{i}(x)= x^{3}+\operatorname{Tr}(x) L_{i}(x)$, for $x \in \mathbb{F}_{2^{6}}$, where $L_{i}: \mathbb{F}_{2^{6}} \rightarrow \mathbb{F}_{2^{6}}$ is a suitable linear mapping. Alternatively, as shown in [7], each quadratic APN function in dimension 6 can also be characterized (up to EA-equivalence) through the isotopic shift construction. We believe it would be valuable to explore these two approaches further and gain a deeper understanding of their connections.
+  \item As we indicate in Remark 3.5, it is possible to construct APN functions with the non-classical spectrum from those with the classical one by modifying them on hyperplanes using suitable linear functions. Find more such examples in higher dimensions and analyze whether infinite families of APN functions with the non-classical Walsh spectrum of the form $\mathbb{F}_{2^{n}} \ni x \mapsto x^{3}+\operatorname{Tr}(x) L(x)$ exist.
+  \item More general, find linearized polynomials satisfying the APN condition given in Eq. (3.1), which inevitably lead to quadratic APN functions of the form $\mathbb{F}_{2^{n}} \ni x \mapsto x^{3}+\operatorname{Tr}(x) L(x)$. Is it possible to obtain APN functions of the form $\mathbb{F}_{2^{n}} \ni x \mapsto x^{3}+\operatorname{Tr}(x) Q(x)$, where $Q$ is quadratic, or more general, nonlinear?
+\end{enumerate}
+
+\section*{Acknowledgments}
+The authors express their gratitude to Faruk Göloğlu for providing the initial version of the proof for Theorem 3.7 and for granting permission to develop these ideas further and publish it. In fact, Section 3.2 is based on several discussions with him concerning the APN-ness of the functions of the form $F(x)+\operatorname{Tr}(x) L(x)$. Parts of this work were presented in "The 8th International Workshop on Boolean Functions and Their Applications, BFA 2023" by the first author [23], and in the PhD thesis [2] of the last author.
+
+Hiroaki Taniguchi is partly supported by JSPS KAKENHI Grant No. JP21K03343. Part of the research of the third author has been funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) - Project No. 541511634.
+
+\section*{References}
+[1] M. Abbondati, M. Calderini, and I. Villa, "On Dillon's property of ( $n, m$ )functions," Cryptography and Communications, vol. 16, no. 6, pp. 1449-1473, Nov 2024. (Cited on page 2.)\\[0pt]
+[2] R. Arshad, "Contributions to the theory of almost perfect nonlinear functions," Ph.D. dissertation, Otto-von-Guericke-Universität Magdeburg, Fakultät für Mathematik, 2018. [Online]. Available: \href{http://dx.doi.org/10.25673/13406}{http://dx.doi.org/10.25673/13406} (Cited on page 21.)\\[0pt]
+[3] C. Beierle and C. Carlet, "Gold functions and switched cube functions are not 0-extendable in dimension $n>5$," Des. Codes Cryptogr., vol. 91, no. 2, pp. 433-449, 2023. (Cited on page 2.)\\[0pt]
+[4] C. Beierle, G. Leander, and L. Perrin, "Trims and extensions of quadratic APN functions," Des. Codes Cryptogr., vol. 90, no. 4, pp. 1009-1036, 2022. (Cited on pages 2, 3, and 13.)\\[0pt]
+[5] W. Bosma, J. Cannon, and C. Playoust, "The Magma algebra system. I. The user language," Journal of Symbolic Computation, vol. 24, no. 3-4, pp. 235-265, 1997. (Cited on page 12.)\\[0pt]
+[6] L. Budaghyan, M. Calderini, C. Carlet, R. Coulter, and I. Villa, "Generalized isotopic shift construction for APN functions," Designs, Codes and Cryptography, vol. 89, no. 1, pp. 19-32, Jan 2021. (Cited on page 2.)\\[0pt]
+[7] L. Budaghyan, M. Calderini, C. Carlet, R. S. Coulter, and I. Villa, "Constructing APN functions through isotopic shifts," IEEE Transactions on Information Theory, vol. 66, no. 8, pp. 5299-5309, 2020. (Cited on pages 2 and 21.)\\[0pt]
+[8] L. Budaghyan, C. Carlet, and G. Leander, "Constructing new APN functions from known ones," Finite Fields and Their Applications, vol. 15, no. 2, pp. 150-159, 2009. (Cited on page 2.)\\[0pt]
+[9] L. Budaghyan, C. Carlet, and G. Leander, "On a construction of quadratic APN functions," in 2009 IEEE Information Theory Workshop, 2009, pp. 374378. (Cited on page 2.)\\[0pt]
+[10] C. Carlet, P. Charpin, and V. Zinoviev, "Codes, bent functions and permutations suitable for DES-like cryptosystems," Design Codes Cryptography, vol. 15, no. 2, pp. 125-156, 1998. (Cited on pages 1 and 4.)\\[0pt]
+[11] C. Carlet, Boolean Functions for Cryptography and Coding Theory. Cambridge University Press, 2021. (Cited on pages 1 and 7.)\\[0pt]
+[12] P. Charpin and G. M. Kyureghyan, "On sets determining the differential spectrum of mappings," Int. J. Inf. Coding Theory, vol. 4, no. 2/3, pp. 170-184, 2017. (Cited on pages 2 and 10.)\\[0pt]
+[13] I. Czerwinski and A. Pott, "On large Sidon sets," 2024. [Online]. Available: \href{https://arxiv.org/abs/2411.12911}{https://arxiv.org/abs/2411.12911} (Cited on page 1.)\\[0pt]
+[14] J. F. Dillon, "Multiplicative difference sets via additive characters," Designs, Codes and Cryptography, vol. 17, no. 1, pp. 225-235, Sep 1999. (Cited on page 1.)\\[0pt]
+[15] J. F. Dillon and H. Dobbertin, "New cyclic difference sets with Singer parameters," Finite Fields and Their Applications, vol. 10, no. 3, pp. 342-389, 2004. (Cited on page 1.)\\[0pt]
+[16] Y. Edel and A. Pott, "A new almost perfect nonlinear function which is not quadratic," Advances in Mathematics of Communications, vol. 3, no. 1, pp. 59-81, 2009. (Cited on pages 2, 4, 5, and 12.)\\[0pt]
+[17] F. Göloğlu, "Projective polynomials over finite fields and their applications in cryptography and combinatorics," Habilitation Thesis, 2023. [Online]. Available: \href{https://chres.is.cuni.cz/media/documents/2023/03/27/FG_short.pdf}{https://chres.is.cuni.cz/media/documents/2023/03/27/FG\_short.pdf} (Cited on page 1.)\\[0pt]
+[18] K. Kalgin and V. Idrisova, "The classification of quadratic APN functions in 7 variables and combinatorial approaches to search for APN functions," Cryptography and Communications, vol. 15, no. 2, pp. 239-256, Mar 2023. (Cited on page 2.)\\[0pt]
+[19] K. Li and N. Kaleyski, "Two new infinite families of APN functions in trivariate form," IEEE Transactions on Information Theory, vol. 70, no. 2, pp. 1436-1452, 2024. (Cited on page 2.)\\[0pt]
+[20] K. Nyberg, "Differentially uniform mappings for cryptography," in Advances in Cryptology - EUROCRYPT '93, T. Helleseth, Ed. Berlin, Heidelberg: Springer Berlin Heidelberg, 1994, pp. 55-64. (Cited on page 6.)\\[0pt]
+[21] A. Pott, "Almost perfect and planar functions," Designs, Codes and Cryptography, vol. 78, no. 1, pp. 141-195, Jan 2016. (Cited on pages 12 and 13.)\\[0pt]
+[22] H. Taniguchi, "D-property for APN functions from $\mathbb{F}_{2}^{n}$ to $\mathbb{F}_{2}^{n+1}$," Cryptography and Communications, vol. 15, no. 3, pp. 627-647, May 2023. (Cited on pages 2 and 5.)\\[0pt]
+[23] H. Taniguchi, "On quadratic APN functions $F(x)+\operatorname{Tr}(x) L(x)$," in The 8th International Workshop on Boolean Functions and their Applications, 2023, pp. 123-127. [Online]. Available: \href{http://boolean.w.uib.no/files/2023/09/}{http://boolean.w.uib.no/files/2023/09/} book\_of\_abstracts.pdf (Cited on page 21.)\\[0pt]
+[24] I. Villa, "On APN functions $L_{1}\left(x^{3}\right)+L_{2}\left(x^{9}\right)$ with linear $L_{1}$ and $L_{2}$," Cryptography and Communications, vol. 11, no. 1, pp. 3-20, Jan 2019. (Cited on page 2.)\\[0pt]
+[25] S. Yoshiara, "Equivalences of quadratic APN functions," Journal of Algebraic Combinatorics, vol. 35, no. 3, pp. 461-475, May 2012. (Cited on page 4.)\\[0pt]
+[26] Y. Yu, M. Wang, and Y. Li, "A matrix approach for constructing quadratic APN functions," Designs, Codes and Cryptography, vol. 73, no. 2, pp. 587-600, Nov 2014. (Cited on page 2.)
+
+
+\end{document}

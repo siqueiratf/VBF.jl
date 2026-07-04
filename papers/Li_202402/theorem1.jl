@@ -89,7 +89,7 @@ function theorem1_report(; m::Int = 3, i::Int = 1, io::IO = stdout)
     c1, c2, c3 = theorem1_root_conditions(m, i)
     print_check("X^{q²+q+1}+X+1  no roots in GF(2^$m)", c1, io)
     print_check("X^{q²+q+1}+X^{q²}+1  no roots in GF(2^$m)", c2, io)
-    print_check("X^{q²+q+1}+X^{q²+q}+1  no roots in GF(2^$m)", c3, io)
+    print_check("X^{q²+q+1}+X^{q²+1}+X^{q+1)+1  no roots in GF(2^$m)", c3, io)
     print_kv("bivariate condition", "verified implicitly by APN check below", io)
 
     lut = family1_lut(m, i)

@@ -1,0 +1,278 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage{bbold}
+\usepackage{fvextra, csquotes}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=magenta, urlcolor=cyan,}
+\urlstyle{same}
+
+\title{MILLIONS OF INEQUIVALENT QUADRATIC APN FUNCTIONS IN EIGHT VARIABLES }
+
+\author{CHRISTOF BEIERLE, PHILIPPE LANGEVIN, GREGOR LEANDER, ALEXANDR POLUJAN, AND SHAHRAM RASOOLZADEH}
+\date{}
+
+
+%New command to display footnote whose markers will always be hidden
+\let\svthefootnote\thefootnote
+\newcommand\blfootnotetext[1]{%
+  \let\thefootnote\relax\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \let\thefootnote\svthefootnote%
+}
+
+%Overriding the \footnotetext command to hide the marker if its value is `0`
+\let\svfootnotetext\footnotetext
+\renewcommand\footnotetext[2][?]{%
+  \if\relax#1\relax%
+    \ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+  \else%
+    \if?#1\ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+    \else\svfootnotetext[#1]{#2}\fi%
+  \fi
+}
+
+\begin{document}
+\maketitle
+
+
+\begin{abstract}
+The only known example of an almost perfect nonlinear (APN) permutation in even dimension was obtained by applying CCZ-equivalence to a specific quadratic APN function. Motivated by this result, there have been numerous recent attempts to construct new quadratic APN functions. Currently, 32,892 quadratic APN functions in dimension 8 are known and two recent conjectures address their possible total number. The first, proposed by Y. Yu and L. Perrin (Cryptogr. Commun. 14(6): 1359-1369, 2022), suggests that there are more than 50,000 such functions. The second, by A. Polujan and A. Pott (Proc. 7th Int. Workshop on Boolean Functions and Their Applications, 2022), argues that their number exceeds that of inequivalent quadratic ( 8,4 )-bent functions, which is 92,515 . We computationally construct $3,775,599$ inequivalent quadratic APN functions in dimension 8 and estimate the total number to be about 6 million.
+\end{abstract}
+
+\section*{1. Introduction}
+In order to solve the long-standing open problem of finding APN permutations in an even dimension greater than 6 , one approach has been to mimic the procedure by which the only known APN permutation in an even dimension was found: take a quadratic APN function and try to find a CCZ-equivalent permutation. This approach-if viable at all-clearly benefits from generating many quadratic APN functions. The most interesting case is dimension 8, and this is what this work focuses on. Indeed, we present two ways of generating a large number-much larger than previously possible and predicted to exist-of quadratic APN functions. In total, we generated, using substantial computational power, more than 3.5 million inequivalent APN functions. As it turns out, none of these is CCZ-equivalent to an APN permutation. However, this result still makes us the first APN millionaires worldwide.
+
+The two approaches to generating quadratic APN functions follow a common principle: start with partial functions and extend them to larger ones step by step. However, the ways this is done are fully orthogonal.
+
+In the first, and by far more successful, method, we generate the functions by extending a function mapping from 8 bits to $m$ bits to a function mapping to $m+1$ bits, i.e., by adding a coordinate function. The important starting point here is that we begin with a vectorial bent function mapping to 4 bits and extend successively to 5,6 , and finally 8 bits. This is made possible by the recent classification of all (8,4)-bent functions given in [13].
+
+The second approach extends the function by starting with a function mapping from $m$ bits to 8 bits and turning it into a function mapping from $m+1$ bits to 8 bits, i.e., by extending the input space one dimension at a time. The advantage of this approach is that it is arguably more random and does not rely on the hypothesis that any quadratic APN is an extension of an (8, 4)-bent mapping. The downside is that it is even more computationally heavy, and thus only a small fraction of the 3.5 million APN functions were generated that way.
+
+\section*{2. Preliminaries}
+Let $n, m$ be positive integers. An $(n, m)$-function $F$ is a mapping from $\mathbb{F}_{2}^{n}$ into $\mathbb{F}_{2}^{m}$, in particular, ( $n, 1$ )-functions are referred to as Boolean functions, while ( $n, m$ )-functions with $m \geq 2$ are referred to as vectorial functions. For an $(n, m)$-function $F$, we define for each $b \in \mathbb{F}_{2}^{m}$ a Boolean function $F_{b}: x \mapsto b \cdot F(x)$, which is called a component function of $F$; here "." denotes the standard dot
+
+\footnotetext{Date: August 2025.
+}
+product on $\mathbb{F}_{2}^{m}$. We define the space of components of $F$ as the set $\operatorname{Comp}(F):=\left\{F_{b} \mid b \in \mathbb{F}_{2}^{m}\right\}$. For $a \in \mathbb{F}_{2}^{n}$ and $b \in \mathbb{F}_{2}^{m}$, the Walsh transform $\hat{\chi}_{F}: \mathbb{F}_{2}^{n} \times \mathbb{F}_{2}^{m} \rightarrow \mathbb{Z}$ is defined by $\hat{\chi}_{F}(a, b):=\hat{\chi}_{F_{b}}(a)$, where $\hat{\chi}_{F_{b}}(a):=\sum_{x \in \mathbb{F}_{2}^{n}}(-1)^{F_{b}(x)+a \cdot x}$. Every Boolean function $f$ on $\mathbb{F}_{2}^{n}$ has a unique representation
+$$
+f\left(x_{1}, x_{2}, \ldots, x_{n}\right)=f(x)=\sum_{S \subseteq\{1,2, \ldots, n\}} a_{S} X_{S}, \quad \text { with } a_{S} \in \mathbb{F}_{2}, X_{S}=\prod_{s \in S} x_{s}
+$$
+which is called the algebraic normal form ( $A N F$ ). The degree of a non-zero function $f$, denoted by $\operatorname{deg}(f)$, is the maximal cardinality of $S$ with $a_{S}=1$ in the ANF of $f$. We have $\operatorname{deg}(0):=-\infty$ by convention. Every vectorial $(n, m)$-function $F$ can be written as $F(x)=\left(f_{1}(x), \ldots, f_{m}(x)\right)$, for all $x \in \mathbb{F}_{2}^{n}$, where each Boolean function $f_{i}$ on $\mathbb{F}_{2}^{n}$ is called a coordinate function. In turn, the ANF of a vectorial $(n, m)$-function $F$ is defined coordinate-wise. Consequently, the degree of $F$ is the maximum degree among its coordinate functions. Functions of degree at most one are called affine, and those of degree two are quadratic. In the following, we deal with two important classes of $(n, m)$-functions: bent functions and APN functions, which are defined in the following way:
+
+Definition 2.1. An ( $n, m$ )-function $F$ is called bent if the Walsh transform of $F$ satisfies $\hat{\chi}_{F}(a, b)= \pm 2^{n / 2}$, for all $a \in \mathbb{F}_{2}^{n}$ and for all $b \in \mathbb{F}_{2}^{m} \backslash\{0\}$.
+
+Bent functions exist if and only if $n$ is even [8, 14], and vectorial bent functions exist only if $m \leq n / 2$, this fact is also known as the Nyberg bound, see [11]. It is well known that $(n, m)$ bent functions are exactly $(n, m)$-functions $F$ with the minimum possible differential uniformity $\delta_{F}=2^{n-m}$; the latter is defined as $\delta_{F}=\max _{a \in \mathbb{F}_{2}^{n} \backslash\{0\}, b \in \mathbb{F}_{2}^{m}}\left|\left\{x \in \mathbb{F}_{2}^{n}: F(x+a)+F(x)=b\right\}\right|$.\\
+Definition 2.2. An $(n, n)$-function is called almost perfect nonlinear $(A P N)$ if $\delta_{F}=2$.\\
+For a Boolean function $f$ on $\mathbb{F}_{2}^{n}$, define the normalized fourth power moment of the Walsh transform $\alpha(f)$ as:
+
+
+\begin{equation*}
+\alpha(f):=\frac{1}{2^{3 n}} \sum_{u \in \mathbb{F}_{2}^{n}}\left(\hat{\chi}_{f}(u)\right)^{4} \tag{2.1}
+\end{equation*}
+
+
+With this notion, APN functions are characterized in the following way [6]:\\
+Theorem 2.3. An (n,n)-function $F$ is APN if and only if $\sum_{0 \neq f \in \operatorname{Comp}(F)} \alpha(f)=2^{n+1}-2$.\\
+Remark 2.4. Note that if $f$ is bent on $\mathbb{F}_{2}^{n}$ if and only if $\alpha(f)=1$. A quadratic function $f$ on $\mathbb{F}_{2}^{n}$ given by $f(x)=x U x^{T}+l(x)$, where $U$ is an upper triangular $n \times n$-matrix with zero diagonal and $l$ is an affine function on $\mathbb{F}_{2}^{n}$, satisfies: $\alpha(f)=2^{n-\operatorname{rank}(f)}$, where $\operatorname{rank}(f):=\operatorname{rank}_{\mathbb{F}_{2}}\left(U+U^{T}\right)$.
+
+We say that $(n, m)$-functions $F$ and $F^{\prime}$ are $C C Z$-equivalent if there exists an affine permutation $\mathcal{L}$ on $\mathbb{F}_{2}^{n} \times \mathbb{F}_{2}^{m}$ s.t. $\mathcal{L}\left(\mathcal{G}_{F}\right)=\mathcal{G}_{F^{\prime}}$, where $\mathcal{G}_{F}=\left\{(x, F(x)): x \in \mathbb{F}_{2}^{n}\right\}$ is the graph of $F$. We say that $(n, m)$-functions $F$ and $F^{\prime}$ are $E A$-equivalent if there exist affine permutations $A$ and $B$ of $\mathbb{F}_{2}^{m}$ and $\mathbb{F}_{2}^{n}$, respectively, and an affine ( $n, m$ )-function $C$, s.t. $F^{\prime}=A \circ F \circ B+C$. Let $F$ be a quadratic APN function on $\mathbb{F}_{2}^{n}$. Then, there exists a unique function $\pi_{F}$ on $\mathbb{F}_{2}^{n}$ such that $\pi_{F}(0)=0, \pi_{F}(a) \neq 0$ for $a \neq 0$, and for any $(a, x) \in\left(\mathbb{F}_{2}^{n}\right)^{2}$, it holds that $\pi_{F}(a) \cdot(F(x)+F(x+a)+F(0)+F(a))=0$. Such a function $\pi_{F}$ is called in [5] the ortho-derivative of $F$. The ortho-derivative is known as one of the most precise instruments to establish inequivalence of quadratic APN functions, as indicated in [3, 17]. We note that for quadratic APN functions CCZ- and EA-equivalence coincide [16].
+
+\section*{3. Working Hypothesis}
+We focus on constructing $(n, n)$-APN functions by extending known vectorial $(n, s)$-functions with $s<n$, through the addition of new coordinate functions. To formalize this construction process, we introduce the following notion of extension.
+
+Definition 3.1. An extension of an ( $n, k$ )-function $F$ is an ( $n, r$ )-function $G$ such that $\operatorname{Comp}(F)$ is a subspace of $\operatorname{Comp}(G)$.
+
+For $n=4$ variables, there exists a unique (up to EA-equivalence) quadratic ( 4,2 )-bent function, which can be extended to a unique (up to EA-equivalence) quadratic APN function, namely the function $x \mapsto x^{3}$ over $\mathbb{F}_{2^{4}}$. For $n=6$, there are three EA-inequivalent quadratic (6, 3)-bent functions, each of which can be extended to multiple members among the 13 known EA-inequivalent quadratic APN functions on $\mathbb{F}_{2}^{6}$ (in many different ways). These results in small dimensions motivate the following working hypothesis in dimension eight:
+
+\begin{displayquote}
+A quadratic APN function on $\mathbb{F}_{2}^{8}$ is an extension of an (8,4)-bent function.
+\end{displayquote}
+
+To challenge this hypothesis, we confirmed that the 32,892 known quadratic APN functions in dimension 8 (prior to this work; see the list and references in [4, Sec. 4]) contain a bent space of dimension 4. To do so, one can use, for instance, the approach described in [10] to check for large vector spaces contained in a given set.
+
+\section*{4. Construction Methods}
+In this section, we propose two efficient construction methods for quadratic APN functions in dimension eight. The first is based on extending quadratic vectorial bent functions (according to the working hypothesis), and the second employs a more randomized search strategy.\\
+4.1. Extending quadratic vectorial bent functions. Let $\mathrm{Q}(n)$ denote the space of quadratic forms on $\mathbb{F}_{2}^{n}$. Quadratic vectorial $(n, m)$-bent functions are precisely the $m$-dimensional subspaces of $\mathrm{Q}(n)$ such that every non-zero element has rank $n$. Recently, all 92,515 quadratic (8, 4)-bent functions were classified in [13] by successively extending ( 8,2 )-bent functions to ( 8,3 )-bent functions, and then to $(8,4)$-bent functions. However, further extension to $(8,8)$-APN functions using the "bent-template" is impossible due to the Nyberg bound. That is, for each additional coordinate function, only a subset of all component functions will be bent. To capture these differences, we introduce the notion of the profile of a vectorial function.
+
+Definition 4.1. For a subspace $V \subset \mathrm{Q}(n)$, define the pair $\operatorname{BS}(V)=(b, K(V))$ where $b$ is the number of bent functions in $V$ and $K(V):=\sum_{0 \neq s \in V} \alpha(s)$. The profile $\mathrm{P}_{k}(F)$ of a quadratic $(n, m)$-function $F$ is the lexicographically greatest tuple
+
+
+\begin{equation*}
+\mathrm{P}_{k}(F)=\left[\mathrm{BS}\left(V_{0}\right), \mathrm{BS}\left(V_{1}\right), \mathrm{BS}\left(V_{2}\right), \ldots, \mathrm{BS}\left(V_{k}\right)\right] \tag{4.1}
+\end{equation*}
+
+
+where ( $V_{0} \subset V_{1} \subset \cdots \subset V_{k}$ ) ranges over flags of $\operatorname{Comp}(F)$ satisfying $\operatorname{dim}\left(V_{i}\right)=i$.\\
+Remark 4.2. It turns out that the 32,892 known quadratic APN functions (prior to this work) share relatively few distinct $P_{6}$ profiles, which we describe in Table 4.1. As pointed out in the previous section, each of them can be derived from a quadratic ( 8,4 )-bent function, which profile is described by the sequence $[(0,0),(1,1),(3,3),(7,7),(15,15)]$.
+
+Table 4.1. Profiles $P_{6}(F)$ of 32,892 known APN functions $F$ on $\mathbb{F}_{2}^{8}$
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\#APN & Profile Sequence \\
+\hline
+9 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(28,40),(50,102)]$ \\
+\hline
+468 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(28,40),(52,96)]$ \\
+\hline
+90 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(28,40),(54,90)]$ \\
+\hline
+32 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),(50,102)]$ \\
+\hline
+3,128 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),(52,96)]$ \\
+\hline
+7 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),(54,102)]$ \\
+\hline
+13,480 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),(54,90)]$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\#APN & Profile Sequence \\
+\hline
+2 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),(56,108)]$ \\
+\hline
+7,549 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),(56,84)]$ \\
+\hline
+49 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),(56,96)]$ \\
+\hline
+7,008 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),(58,78)]$ \\
+\hline
+80 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),(58,90)]$ \\
+\hline
+923 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),(60,72)]$ \\
+\hline
+67 & $[(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),(60,84)]$ \\
+\hline
+\end{tabular}
+\end{center}
+
+At certain steps, we need to distinguish between different extensions using invariants for EAequivalence, since full classification is too time- and resource-consuming due to a large number of functions involved. The following invariant has proven to be highly efficient in terms of both efficient discrimination and computational cost.
+
+Definition 4.3. Let $\mathrm{Q}_{2}(n) \subset \mathrm{Q}(n)$ be the set of all quadratic forms of rank 2 in $n$ variables. For a subspace $S$ of quadratic forms, define the multiset $J_{2}(S):=\left[\operatorname{rank}(f+s): f \in \mathrm{Q}_{2}(n), s \in S\right]$, i.e., the distribution of ranks in all translates $f+S$.
+
+We omit the proof that $J_{2}$ is an invariant under equivalence for quadratic APN functions; it is similar to the one given in [13].\\
+Remark 4.4. The number of $J_{2}$ classes of ( 8,5 )-quadratic functions having 28 bent components is large, we identified a set of $3,747,371,328$ functions, but we did not try to construct directly functions sharing profiles like at the top of Table 4.1.
+
+Using the ideas above, we can describe the extension procedure of quadratic vectorial bent functions used to obtain APNs having a given profile
+
+
+\begin{equation*}
+(0,0),(1,1),(3,3),(7,7),(15,15),(30,34),\left(B_{6}, S_{6}\right), \quad \text { with } \quad B_{6} \geq 54 \tag{4.2}
+\end{equation*}
+
+
+in the following way.\\
+Input: List $L$ of all quadratic bent spaces [13].\\
+Step 1: Compute all extensions with 30 bent functions.\\
+Step 2: Apply the $J_{2}$-invariant to the obtained extensions. (This yields a set containing 2,403,534 functions.)\\
+Step 3: Compute all extensions with $B_{6}$ bent functions satisfying Profile 4.2.\\
+(1) Apply $J_{2}$ classification.\\
+(2) Use Lemma 4.6 to check differential uniformity and eliminate bad candidates.\\
+(3) Use Lemma 4.7 to obtain ( 8,8 )-APNs.
+
+Remark 4.5. The above procedure is efficient when $B_{6}>54$, in the case of $B_{6}=54$, we extend only half of the (6,5)-functions. Yet, the direction of Profile (4.2) provides almost all the APNs we computed.\\
+Lemma 4.6. An $(n, m)$-function $F$ having differential uniformity greater than $2^{n-m+1}$ does not have any APN extension.
+
+Consider $\mathrm{Q}(n)$ as the space of quadratic forms in $n$ variables, equipped with the dot product "." relative to the basis $\left\{x_{i} x_{j} \mid 1 \leq i<j \leq n\right\}$. By definition,
+
+$$
+x_{i} x_{j} \cdot\left(\sum_{r, s} a_{r s} x_{r} x_{s}\right)=a_{i j}
+$$
+
+Using Poisson's summation formula, one can prove the following characterization of quadratic APNs.\\
+Lemma 4.7. A quadratic $(n, n)$-function is APN if and only if $\operatorname{Comp}(F)^{\perp}$ does not contain any quadratic form of rank 2.\\[0pt]
+Proof. A proof of this result in the context of quadratic forms can be found in [9].\\
+Lemma 4.7 can be used to determine all the APN extensions of a given ( $n, n-2$ ) quadratic function $F$. To do this, let us denote $W:=\operatorname{Comp}(F)^{\perp}$. We must choose a subspace $T$ of codimension 2 in $W$ that does not intersect the set of quadratic forms of rank 2 . To proceed, we equip $W$ with any scalar product $(x, y) \mapsto x . y$ and, for a subspace $T$ of $W$, we denote by $T^{\star}$ the orthogonal of $T$ w.r.t. this scalar product. We then consider the Fourier coefficient of the restriction of $\mathfrak{f}$ to $W$ :
+
+$$
+\mathfrak{f}^{\dagger}(t)=\sum_{w \in W} \mathfrak{f}(w)(-1)^{t . w}
+$$
+
+The extension problem then reduces to finding a subspace $T$ of codimension 2 in $W$ such that
+
+
+\begin{equation*}
+\sum_{t \in T} \mathfrak{f}^{\dagger}(t)=0 \tag{4.3}
+\end{equation*}
+
+
+Finding $T$ satisfying Eq. (4.3) is feasible when the dimension of $W$ is relatively small. We have to find all the pairs $\{u, v\}$ such that $\mathfrak{f}^{\dagger}(0)+\mathfrak{f}^{\dagger}(u)+\mathfrak{f}^{\dagger}(v)+\mathfrak{f}^{\dagger}(u+v)=0$. We may assume that $\mathfrak{f}^{\dagger}(u) \leq \mathfrak{f}^{\dagger}(v) \leq \mathfrak{f}^{\dagger}(u+v)$, in particular:
+
+$$
+\mathfrak{f}^{\dagger}(u) \leq-\frac{1}{3} \mathfrak{f}^{\dagger}(0), \quad 2 \mathfrak{f}^{\dagger}(v) \leq-\mathfrak{f}^{\dagger}(0)+\mathfrak{f}^{\dagger}(u)
+$$
+
+Remark 4.8. Using the above method, one can determine APN extensions of a ( 8,6 )-quadratic form in 0.05 seconds on a usual computer.\\
+4.2. Random search. For this, we first classify quadratic ( $n, 8$ )-functions with differential uniformity 2 for $n \leq 6$, up to the EA-equivalence. To do so, we use the following theorem.\\[0pt]
+Theorem 4.9 (Prop. 2.11 of [15]). Let $F$ be a quadratic $(n, m)$-function with differential uniformity 2 and $L$ be a linear $(n, m)$-function. Then,
+
+$$
+G\left(x, x_{n}\right)=F(x)+x_{n} L(x), \quad \text { for } x \in \mathbb{F}_{2}^{n} \text { and } x_{n} \in \mathbb{F}_{2}
+$$
+
+is a quadratic $(n+1, m)$-function with differential uniformity 2 if and only if, for every non-zero $\alpha \in \mathbb{F}_{2}^{n}$, we have
+
+$$
+L(\alpha) \neq F(x+\alpha)+F(x)+F(\alpha)+F(0), \quad \forall x \in \mathbb{F}_{2}^{n}
+$$
+
+Based on this theorem, it is possible to classify quadratic $(n+1, m)$-functions with differential uniformity 2 (up to equivalence), by using quadratic ( $n, m$ )-functions with differential uniformity 2 , reduced up to equivalence, and going through all possible choices for the linear function $L$. We used an algorithm that, for the given quadratic $(n, m)$-function $F$, gradually chooses the function values of $L$ that still meet the condition described in Theorem 4.9. We also applied several techniques to speed up the algorithm by not considering redundant equivalent functions. However, we were able to classify $(n, 8)$-quadratic functions with differential uniformity 2 only for $n \leq 6$, with the result that there are 866,470 of such $(6,8)$-functions.
+
+After this step, for each of these 866,470 functions, for $2^{8}$ times, we step by step tried to build up a (6, 8)-linear function $L$ randomly that satisfies the conditions. In this approach, we choose $L(1)$ randomly, from the possible choices based on the conditions for $L(1)$. Then, we choose $L(2)$ randomly, from the possible choices based on the conditions for $L(2)$ and $L(3)$ and so on. If any of these $2^{8}$ attempts successfully yields a ( 7,8 )-quadratic function with differential uniformity 2 , then we search through all proper ( 7,8 )-linear functions to build the possible ( 8,8 )-quadratic APN function(s). Using this approach, we were able to generate 92,955 quadratic ( 8,8 )-APN functions. This construction method is not relying on our working hypothesis. Still, we confirmed that all of the found functions are extensions of ( 8,4 )-bent functions.
+
+\section*{5. Results}
+Using (parallel) implementations of both approaches, we obtain the main result of this paper:\\
+Theorem 5.1. On $\mathbb{F}_{2}^{8}$, there exist at least 3,808,491 $C C Z$-inequivalent quadratic $A P N$ functions.\\
+In other words, we found $3,775,599$ new CCZ-equivalence classes of quadratic APN functions. ${ }^{1}$ See also the data from the project's web page [1]. We used ortho-derivatives to establish the CCZinequivalence of our found functions. Notably, the majority of these functions (millions) were obtained using the approach described in Section 4.1. None of our found functions is CCZ-equivalent to a permutation. For establishing the inequivalence using ortho-derivatives and verifying the inequivalence to a permutation, we used the sboxU tool [12].
+
+Finally, we would like to estimate the total number of inequivalent quadratic ( 8,8 )-APN functions. To do so, we assume that the 92,955 functions generated by the method described in Section 4.2 constitutes a uniformly random sample (chosen with replacement) of all EA-equivalence classes of quadratic APN functions in 8 variables. Let us denote this latter quantity by $N$. Estimating $N$ then boils down to an inverse coupon collector's problem: Suppose we have a uniform sample of $t$ objects (here APN functions) from $N$ objects, chosen with replacement. Suppose we have $\ell$ distinct objects (here distinct ortho-derivative labels to indicate EA-inequivalent functions) in our sample. As explained in [7], the maximum-likelihood estimator for $N$ is given by $\operatorname{argmax}_{N>\ell-1}\left\{\binom{N}{\ell} / N^{t}\right\}$, and the function $\mathbb{R} \rightarrow \mathbb{R}, N \mapsto\binom{N}{\ell} / N^{t}$ has a unique local maximum for $N>\ell-1$. In our case, we have $(t, \ell)=(92955,92253)$ and a local maximum for $N$ around $N=6,123,206$.
+
+To obtain another estimate for $N$, we checked how many of the $t$ functions belong to one of the $M=3,776,451$ equivalence classes known before or found with the approach explained in Section 4.1. In our case, $t^{\prime}=32286$ out of the $t$ functions do not belong to any of those $M$ equivalence classes. The expected value for $t^{\prime}$ is given by $(1-M / N) t$, so an estimate for $N$ is calculated as $N=t M /\left(t-t^{\prime}\right) \approx 5,786,151$.
+
+\footnotetext{${ }^{1}$ The list can be found here [2].
+}\section*{Acknowledgments}
+We thank Nikolay Kaleyski for the useful information provided in the first stages of the project. Philippe Langevin is partially supported by the French Agence Nationale de la Recherche through the SWAP project under the Contract ANR-21-CE39-0012. Shahram Rasoolzadeh is funded by the ERC project 101097056 (SYMTRUST).
+
+\section*{References}
+[1] C. Beierle, P. Langevin, G. Leander, A. Polujan, and S. Rasoolzadeh, "Quadratic APN functions in dimension 8." \href{https://langevin.univ-tln.fr/data/apns/}{https://langevin.univ-tln.fr/data/apns/} p. 5.\\[0pt]
+[2] C. Beierle, P. Langevin, G. Leander, A. Polujan, and S. Rasoolzadeh, "Millions of inequivalent quadratic APN functions in eight variables," Zenodo, 2025. \href{https://doi.org/10.5281/zenodo.16752428}{https://doi.org/10.5281/zenodo.16752428} p. 5.\\[0pt]
+[3] C. Beierle and G. Leander, "New instances of quadratic APN functions," IEEE Trans. Inf. Theory, vol. 68, no. 1, pp. 670-678, 2022. p. 2.\\[0pt]
+[4] C. Beierle, G. Leander, and L. Perrin, "Trims and extensions of quadratic APN functions," Des. Codes Cryptogr., vol. 90, no. 4, pp. 1009-1036, 2022. p. 3.\\[0pt]
+[5] A. Canteaut, A. Couvreur, and L. Perrin, "Recovering or testing extended-affine equivalence," IEEE Transactions on Information Theory, vol. 68, no. 9, pp. 6187-6206, 2022. p. 2.\\[0pt]
+[6] C. Carlet, Boolean Functions for Cryptography and Coding Theory. Cambridge University Press, 2021. p. 2.\\[0pt]
+[7] B. Dawkins, "Siobhan's problem: The coupon collector revisited," The American Statistician, vol. 45, no. 1, pp. 76-82, 1991. \href{http://www.jstor.org/stable/2685247}{http://www.jstor.org/stable/2685247} p. 5.\\[0pt]
+[8] J. F. Dillon, "Elementary Hadamard difference sets," Ph.D. dissertation, University of Maryland, 1974. \href{https://doi.org/10.13016/M2MS3K194}{https://doi.org/10.13016/M2MS3K194} p. 2.\\[0pt]
+[9] Y. Edel, "Quadratic APN functions as subspaces of alternating bilinear forms," in Proceedings of the Contact Forum Coding Theory and Cryptography III at The Royal Flemish Academy of Belgium for Science and the Arts 2009, 2011, pp. 11-24. \href{http://www.yvesedel.de/Papers/ContactForum09.html}{http://www.yvesedel.de/Papers/ContactForum09.html} p. 4.\\[0pt]
+[10] F. Göloğlu and J. Pavlu, "On CCZ-inequivalence of some families of almost perfect nonlinear functions to permutations," Cryptography and Communications, vol. 13, no. 3, pp. 377-391, 2021. p. 3.\\[0pt]
+[11] K. Nyberg, "Constructions of bent functions and difference sets," in Advances in Cryptology - EUROCRYPT '90, I. B. Damgård, Ed. Berlin, Heidelberg: Springer Berlin Heidelberg, 1991, pp. 151-160. p. 2.\\[0pt]
+[12] L. Perrin, "sboxU," GitHub repository, 2025, v1.3.1 availabe via \href{https://github.com/lpp-crypto/sboxU}{https://github.com/lpp-crypto/sboxU}. p. 5.\\[0pt]
+[13] A. Polujan and A. Pott, "Towards the classification of quadratic vectorial bent functions in 8 variables," https: \href{//boolean.w.uib.no/bfa-2022/}{//boolean.w.uib.no/bfa-2022/}, 2022, paper 12. pp. 1, 3, and 4.\\[0pt]
+[14] O. S. Rothaus, "On "bent" functions," Journal of Combinatorial Theory, Series A, vol. 20, no. 3, pp. 300-305, 1976. \href{https://doi.org/10.1016/0097-3165(76)90024-8}{https://doi.org/10.1016/0097-3165(76)90024-8} p. 2.\\[0pt]
+[15] H. Taniguchi, A. Polujan, A. Pott, and R. Arshad, "Changing almost perfect nonlinear functions on affine subspaces of small codimensions," CoRR, vol. abs/2501.03922, 2025. \href{https://doi.org/10.48550/arXiv.2501.03922}{https://doi.org/10.48550/arXiv.2501.03922} p. 5.\\[0pt]
+[16] S. Yoshiara, "Dimensional dual hyperovals associated with quadratic APN functions," Innovations in Incidence Geometry: Algebraic, Topological and Combinatorial, vol. 8, no. 1, pp. 147-169, 2008. p. 2.\\[0pt]
+[17] Y. Yu and L. Perrin, "Constructing more quadratic APN functions with the QAM method," Cryptography and Communications, vol. 14, no. 6, pp. 1359-1369, 2022. p. 2.
+
+Ruhr University Bochum\\
+Email address: \href{mailto:christof.beierle@rub.de}{christof.beierle@rub.de}\\
+Imath, university of Toulon\\
+Email address: \href{mailto:philippe.langevin@univ-tln.fr}{philippe.langevin@univ-tln.fr}\\
+Ruhr University Bochum\\
+Email address: \href{mailto:gregor.leander@rub.de}{gregor.leander@rub.de}\\
+Otto-von-Guericke-Universität\\
+Email address: \href{mailto:alexandr.polujan@gmail.com}{alexandr.polujan@gmail.com}\\
+Ruhr University Bochum\\
+Email address: \href{mailto:shahram.rasoolzadeh@rub.de}{shahram.rasoolzadeh@rub.de}
+
+
+\end{document}
