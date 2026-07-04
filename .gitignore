@@ -6,7 +6,6 @@
 *.dll
 *.o
 *.a
-*.tex
 *.txt
 *.sqlite
 *.bak

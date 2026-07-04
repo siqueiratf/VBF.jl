@@ -1,0 +1,931 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage{bbold}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=magenta, urlcolor=cyan,}
+\urlstyle{same}
+\usepackage{caption}
+
+\title{On the Distance Between APN Functions }
+
+\author{Lilya Budaghyan, Claude Carlet ${ }^{(1)}$, Tor Helleseth, Fellow, IEEE, and Nikolay Kaleyski ${ }^{(1)}$}
+\date{}
+
+
+%New command to display footnote whose markers will always be hidden
+\let\svthefootnote\thefootnote
+\newcommand\blfootnotetext[1]{%
+  \let\thefootnote\relax\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \let\thefootnote\svthefootnote%
+}
+
+%Overriding the \footnotetext command to hide the marker if its value is `0`
+\let\svfootnotetext\footnotetext
+\renewcommand\footnotetext[2][?]{%
+  \if\relax#1\relax%
+    \ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+  \else%
+    \if?#1\ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+    \else\svfootnotetext[#1]{#2}\fi%
+  \fi
+}
+
+\begin{document}
+\maketitle
+\captionsetup{singlelinecheck=false}
+
+
+\begin{abstract}
+We investigate the differential properties of a vectorial Boolean function $G$ obtained by modifying an APN function $F$. This generalizes previous constructions where a function is modified at a few points. We characterize the APN-ness of $G$ via the derivatives of $F$, and deduce an algorithm for searching for APN functions whose values differ from those of $F$ only on a given set $U \subseteq \mathbb{F}_{2^{n}}$. We introduce a value $\Pi_{F}$ associated with any $F$, which is invariant under CCZ-equivalence. We express a lower bound on the distance between a given APN function $F$ and the closest APN function in terms of $\Pi_{F}$. We show how $\Pi_{F}$ can be computed efficiently for $F$ quadratic. We compute $\Pi_{F}$ for all known APN functions over $\mathbb{F}_{2^{n}}$ up to $n \leq 8$. This is the first new CCZ-invariant for APN functions to be introduced within the last ten years. We derive a mathematical formula for this lower bound for the Gold function $F(x)=x^{3}$, and observe that it tends to infinity with $n$. Finally, we describe how to efficiently find all sets $U$ such that, taking $G(x)=F(x)+v$ for $x \in U$ and $G(x)=F(x)$ for $x \notin U, G(x)$ is APN.\\
+Index Terms-Boolean functions, differential uniformity, almost perfect nonlinear (APN), nonlinearity.
+\end{abstract}
+
+\section*{I. Introduction}
+AVECTORIAL $(n, m)$-Boolean function is any mapping $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{m}}$, where $\mathbb{F}_{2^{n}}$ is the finite field with $2^{n}$ elements. Such a function can also be seen as mapping sequences of $n$ bits (zeros and ones) to sequences of $m$ bits, which more clearly reveals their practical importance. Vectorial Boolean functions are of central interest in cryptography since they can be used to represent virtually all components of a block cipher; in particular, its non-linear components (whose cryptographic properties directly influence the cipher's security) can be expressed as vectorial Boolean functions. For instance, the Advanced Encryption Standard (AES) and algorithms based on Feistel networks such as the Data Encryption Standard (DES), all utilize vectorial Boolean functions in the role of so-called "substitution boxes". The resistance of the encryption to various categories of cryptanalytic attacks then directly depends on the properties of the underlying Boolean functions (see e.g. [22] for basic background on cryptography and encryption schemes).
+
+\footnotetext{Manuscript received June 24, 2019; revised January 5, 2020; accepted March 10, 2020. Date of publication March 27, 2020; date of current version August 18, 2020. This work was supported in part by the Trond Mohn Foundation and in part by the Research Council of Norway under Contract 247742/O70. This article was presented in part at the Third International Workshop on Boolean Functions and Their Applications (BFA-2018). (Corresponding author: Nikolay Kaleyski.)
+
+Lilya Budaghyan, Tor Helleseth, and Nikolay Kaleyski are with the Department of Informatics, University of Bergen, 5020 Bergen, Norway (e-mail: \href{mailto:nikolay.kaleyski@uib.no}{nikolay.kaleyski@uib.no}).
+
+Claude Carlet is with the Department of Informatics, University of Bergen, 5020 Bergen, Norway, also with the Department of Mathematics, University of Paris VIII, 93526 Saint-Denis, France, and also with the LAGA laboratory, France.
+
+Communicated by S. Fehr, Associate Editor for Cryptography.\\
+Digital Object Identifier 10.1109/TIT.2020.2983684
+}Almost Perfect Nonlinear (APN) functions were introduced by Nyberg [20] as the functions that provide optimal resistance to the so-called differential attack invented by Biham and Shamir [2]. More precisely, we say that a function $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ is APN if the equation $F(x)+F(x+a)=b$ in $x$ has at most 2 solutions for any $a \in \mathbb{F}_{2^{n}}^{*}$ and any $b \in \mathbb{F}_{2^{n}}$. Despite the simplicity of this definition, finding and investigating the properties of APN functions, even in finite fields of relatively low dimension, is a challenging task. For this reason, various methods of constructing such functions have been considered by researchers.
+
+In [6], a construction in which a function $G: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ is obtained from a given function $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ by modifying one of its values is introduced in an attempt to resolve the open problem of the existence of APN functions over $\mathbb{F}_{2^{n}}$ of algebraic degree $n$. A number of nonexistence results are obtained in the paper, which support the conjecture that this is impossible. The idea of the construction is interesting in its own right, however, and it can naturally be generalized to the modification of more than one point.
+
+The particular case of swapping two points of a given function is studied [24] in the context of constructing differentially 4-uniform permutations, and the more general question of arbitrarily modifying the values of a given function at two points, as well as swapping two points in a more general context, is investigated in [17].
+
+In this paper, we consider the general case of arbitrarily changing $K$ points. To be more accurate, given a function $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$, some $K$ distinct field elements $u_{1}, \ldots, u_{K} \in \mathbb{F}_{2^{n}}$ and some $K$ elements $v_{1}, v_{2}, \ldots, v_{K} \in \mathbb{F}_{2^{n}}^{*}$, we define $G$ as
+
+$$
+G(x)= \begin{cases}F\left(u_{i}\right)+v_{i} & x=u_{i} \\ F(x) & x \notin\left\{u_{1}, u_{2}, \ldots, u_{K}\right\}\end{cases}
+$$
+
+and try to find some correlation between the properties of $F$ and those of $G$. We derive sufficient and necessary conditions that the derivatives of $F$ must satisfy in order for $G$ to be APN, and obtain an efficient filtering procedure for finding all possible values of $v_{1}, v_{2}, \ldots, v_{K}$ in the case that $u_{1}, u_{2}, \ldots, u_{K}$ are known. In the case when $F$ is itself APN , we define the values $\Pi_{F}$ and $m_{F}$, which count the number of derivatives of $F$ satisfying a certain condition, and express a lower bound on the distance between $F$ and the closest APN function in terms of $m_{F}$. We further demonstrate that these values are invariant under CCZ-equivalence and that their computation is particularly efficient when $F$ is quadratic. In addition, we show how an exact formula for $m_{F}$ can be computed in the case of $F(x)=x^{3}$.
+
+We experimentally compute $\Pi_{F}$ and $m_{F}$ for all known APN functions over $\mathbb{F}_{2^{n}}$ for $n \leq 8$. We notice that over fields of odd dimension, this new invariant tends to take the same value for all known APN functions except the inverse function, but for fields of even dimension, it can take a large number of distinct values which make it a useful tool for disproving CCZ-equivalence between a given pair of functions. These experimental results are summarized in Section IV and Table II, and a detailed table of the computational results can be found online at \href{https://boolean.h.uib.no/mediawiki/}{https://boolean.h.uib.no/mediawiki/}.
+
+In the case when $v_{1}=v_{2}=\cdots=v_{K}$, we show how all possible combinations of points $u_{1}, u_{2}, \ldots, u_{K}$ can be found (for all values of $K$ ) by solving a system of linear equations. We note that constructions of the form $G(x)=F(x)+v f(x)$ for $f: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$ have been investigated in [7], [16].
+
+\section*{II. Preliminaries}
+\section*{A. Basic Notation}
+Let $n$ be a positive integer. We denote by $\mathbb{F}_{2^{n}}$ the finite field with $2^{n}$ elements; in particular, $\mathbb{F}_{2}$ is the field with two elements. For any positive integer $m, \mathbb{F}_{2}^{m}$ is the vector space of dimension $m$ over $\mathbb{F}_{2}$. Given any set $S$, we denote by $S^{*}$ the set $S \backslash\{0\}$; in particular, $\mathbb{F}_{2^{n}}^{*}$ is the multiplicative group of $\mathbb{F}_{2^{n}}$.
+
+The characteristic function of the set $S$ is denoted by $1_{S}(x)$ and is defined as
+
+$$
+1_{S}(x)= \begin{cases}1 & x \in S \\ 0 & x \notin S\end{cases}
+$$
+
+For a finite set $S=\left\{s_{1}, s_{2}, \ldots, s_{k}\right\}$ we will use $1_{s_{1}, s_{2}, \ldots, s_{k}}(x)$ as shorthand for $1_{\left\{s_{1}, s_{2}, \ldots, s_{k}\right\}}(x)$.
+
+\section*{B. Representation of Vectorial Functions}
+Given two positive integers $n$ and $m$, a vectorial Boolean ( $n, m$ )-function, or simply ( $n, m$ )-function, is any function $F: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$. It can be uniquely expressed in the so-called algebraic normal form (ANF) as follows [10]:
+
+$$
+\begin{aligned}
+F\left(x_{1}, x_{2}, \ldots, x_{n}\right) & =\sum_{I \subseteq\{1,2, \ldots, n\}} a_{I}\left(\prod_{i \in I} x_{i}\right) \\
+& =\sum_{I \subseteq\{1,2, \ldots, n\}} a_{I} x^{I}, a_{I} \in \mathbb{F}_{2}^{m} .
+\end{aligned}
+$$
+
+The algebraic degree of $F\left(x_{1}, x_{2}, \ldots, x_{n}\right)$ is defined as the degree of its ANF, namely\\
+$\operatorname{deg}(F)=\max \left\{|I|: a_{I} \neq(0,0, \ldots, 0), I \subseteq\{1,2, \ldots, n\}\right\}$.\\
+Clearly, $\operatorname{deg}(F) \leq n$.\\
+Vectorial Boolean ( $n, 1$ )-functions, i.e. functions of the form $f: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$, are referred to as Boolean functions.
+
+When $m=n$, one can identify the vector space $\mathbb{F}_{2}^{n}$ with the finite field $\mathbb{F}_{2^{n}}$. Note that any basis $\left\{e_{1}, e_{2}, \ldots, e_{n}\right\}$ for $\mathbb{F}_{2^{n}}$, viewed as a vector space over $\mathbb{F}_{2}$, determines a correspondence between $\mathbb{F}_{2^{n}}$ and $\mathbb{F}_{2}^{n}$ via $x=\sum_{i=1}^{n} x_{i} e_{i}$. The algebraic degree does not depend on the choice of the basis since any change\\
+of basis corresponds to a linear permutation. Then any $(n, n)$ function has a unique representation as a univariate polynomial over $\mathbb{F}_{2^{n}}$ of the form
+
+$$
+F(x)=\sum_{i=0}^{2^{n}-1} a_{i} x^{i}, a_{i} \in \mathbb{F}_{2^{n}}
+$$
+
+Let $x=\sum_{i=1}^{n} x_{i} e_{i}$ and $i=\sum_{s=0}^{n-1} i_{s} 2^{s}$ where $i_{s} \in\{0,1\}$. Then $F$ can be rewritten as\\
+$F(x)=\sum_{i=0}^{2^{n}-1} a_{i}\left(\sum_{i=1}^{n} x_{i} e_{i}\right)^{i}=\sum_{i=0}^{2^{n}-1} a_{i} \prod_{s=0}^{n-1}\left(\sum_{i=1}^{n} x_{i} e_{i}^{2^{s}}\right)^{i_{s}}$ which, after expansion, gives the ANF of $F$. Moreover, let $w_{2}(i)=\sum_{s=0}^{n-1} i_{s}$ denote the 2 -weight of $i$, where $0 \leq i \leq 2^{n}-1$ has binary expansion $i=\sum_{s=0}^{n-1} 2^{s} i_{s}$. Then the algebraic degree of $F$ in univariate polynomial form is equal to
+
+$$
+\operatorname{deg}(F)=\max \left\{w_{2}(i): a_{i} \neq 0,0 \leq i \leq 2^{n}-1\right\} .
+$$
+
+Given two functions $F, G: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$, the Hamming distance $d(F, G)$ is defined as the number of points $x \in \mathbb{F}_{2^{n}}$ on which the values of $F$ and $G$ differ, i.e.
+
+$$
+d(F, G)=\left|\left\{x \in \mathbb{F}_{2^{n}}: F(x) \neq G(x)\right\}\right|
+$$
+
+\section*{C. Almost Perfect Nonlinear Functions and Bent Functions}
+Let $F$ be a function from $\mathbb{F}_{2^{n}}$ to itself. The derivative of $F$ in direction $a$ for any $a \in \mathbb{F}_{2^{n}}$ is the function $D_{a} F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ defined as
+
+$$
+D_{a} F(x)=F(x)+F(a+x) .
+$$
+
+The differential sets $H_{a} F$ are the image sets of the derivatives of $F$, i.e. the sets\\
+$H_{a} F=\left\{D_{a} F(x): x \in \mathbb{F}_{2^{n}}\right\}=\left\{F(x)+F(a+x): x \in \mathbb{F}_{2^{n}}\right\}$.\\
+Alongside the derivatives $D_{a} F$, we define the shifted derivative $D_{a}^{\beta} F$ of $F$ in direction a with shift $\beta$, which is a function over $\mathbb{F}_{2^{n}}$ defined as\\
+$D_{a}^{\beta} F(x)=D_{a} F(x)+F(a+\beta)=F(x)+F(a+x)+F(a+\beta)$\\
+for any fixed $a, \beta \in \mathbb{F}_{2^{n}}$. The shifted differential sets $H_{a}^{\beta} F$ are then the image sets of the shifted derivatives, i.e.
+
+$$
+\begin{aligned}
+H_{a}^{\beta} F & =\left\{D_{a}^{\beta} F(x): x \in \mathbb{F}_{2^{n}}\right\}= \\
+& \left\{F(x)+F(a+x)+F(a+\beta): x \in \mathbb{F}_{2^{n}}\right\}
+\end{aligned}
+$$
+
+For any $a, b \in \mathbb{F}_{2^{n}}$, define $\Delta_{F}(a, b)=\mid\left\{x \in \mathbb{F}_{2^{n}}: F(x+\right. a)+F(x)=b\} \mid ;$ that is, $\Delta_{F}(a, b)$ is the number of solutions $x$ of the equation $D_{a} F(x)=b$ for some given $a$ and $b$. Then the differential uniformity of $F$ is defined as
+
+$$
+\Delta_{F}=\max \left\{\Delta_{F}(a, b): a, b \in \mathbb{F}_{2^{n}}, a \neq 0\right\} .
+$$
+
+A function $F$ from $\mathbb{F}_{2^{n}}$ to itself is called differentially $\delta$-uniform if $\Delta_{F} \leq \delta$. If $\delta=2$, then $F$ is called almost perfect nonlinear (APN). Note that this is optimal in the case of a finite field of characteristic two, since if some $x$ solves $F(x)+F(a+x)=b$, then so does $(a+x)$, and thus $\Delta_{F}(a, b)$ is always even.
+
+Note that the definition of differential uniformity can be extended to functions $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{m}}$ between fields of different dimensions. A perfect nonlinear (PN) function is one whose differential uniformity is $2^{n-m}$; as observed above, for $n=m$ such functions cannot exist. In fact, PN functions are the same as bent functions (briefly discussed below) and do not exist whenever $m>n / 2$ [19].
+
+A number of useful characterizations of APN functions can be given in terms of the so-called Walsh transform. The Walsh transform of a Boolean function $f: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$ is defined as
+
+$$
+W_{f}(a)=\sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{f(x)+\operatorname{Tr}_{1}^{n}(a x)}, \quad a \in \mathbb{F}_{2},
+$$
+
+where $\operatorname{Tr}_{k}^{n}(x)=\sum_{i=0}^{n-1} x^{2^{k i}}$ is the trace function from $\mathbb{F}_{2^{n}}$ to its subfield $\mathbb{F}_{2^{k}}$, for $k \mid n$. We will also use the inverse Walsh transform formula, defined as
+
+$$
+\sum_{a \in \mathbb{F}_{2^{n}}} W_{f}(a)=2^{n}(-1)^{f(0)} .
+$$
+
+The Walsh transform of an ( $n, m$ )-function is defined in terms of the Walsh transform of its component functions $\operatorname{Tr}_{1}^{m}(b F(x))$ for $b \in \mathbb{F}_{2^{m}}^{*}$ as
+
+$$
+W_{F}(a, u)=\sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{\operatorname{Tr}_{1}^{m}(u F(x))+\operatorname{Tr}_{1}^{n}(a x)} .
+$$
+
+If the Walsh transform of a Boolean function $f: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$ satisfies $W_{f}(a) \in\{0, \pm \mu\}$ for all $a \in \mathbb{F}_{2^{n}}$, then $f$ is called a plateaued function with amplitude $\mu$. An $(n, n)$-function $F$ is called plateaued if all of its component functions are plateaued (possibly with different amplitudes). If all of the component functions of $F$ are plateaued with the same amplitude, then $F$ is called plateaued with single amplitude. Plateaued functions are an important class of vectorial Boolean functions since their additional structure makes them more tractable than the general case.
+
+The following characterizations of APN functions by means of the power moments of their Walsh transform are often very useful in the investigation of APN functions.
+
+Lemma 1 [14]: Let $F$ be an ( $n, n$ )-function. Then $F$ is APN if and only if
+
+$$
+\sum_{a \in \mathbb{F}_{2^{n}}} \sum_{u \in \mathbb{F}_{2^{n}}^{*}} W_{F}^{4}(a, u)=2^{3 n+1}\left(2^{n}-1\right) .
+$$
+
+Lemma 2 [10]: Let $F$ be an APN function over $\mathbb{F}_{2^{n}}$ satisfying $F(0)=0$. Then
+
+$$
+\sum_{a, b \in \mathbb{F}_{2^{n}}} W_{F}^{3}(a, b)=3 \cdot 2^{3 n}-2^{2 n+1}
+$$
+
+Note that while Lemma 2 expresses only a necessary condition for $F$ to be APN in the general case, in the case of a plateaued function $F$ this condition becomes necessary and sufficient [11].
+
+The following lemma provides an alternative characterization of the APN-ness of a vectorial Boolean function in terms of the second power moments of its derivatives.
+
+Lemma 3 [1], [21]: A function $F$ over $\mathbb{F}_{2^{n}}$ is APN if and only if for all $a \in \mathbb{F}_{2^{n}}^{*}$ we have
+
+$$
+\sum_{b \in \mathbb{F}_{2^{n}}} W_{D_{a} F}(0, b)^{2}=2^{2 n+1}
+$$
+
+The nonlinearity $\mathcal{N} \mathcal{L}_{F}$ of an $(n, m)$-function $F$ is the minimum Hamming distance between its component functions and the affine functions. The nonlinearity of any $(n, m)$ function satisfies the so-called covering radius bound $\mathcal{N} \mathcal{L}_{F} \leq 2^{n-1}-2^{n / 2-1}$. The nonlinearity can be expressed as
+
+$$
+\mathcal{N} \mathcal{L}_{F}=2^{n-1}-\frac{1}{2} \max _{a \in \mathbb{F}_{2^{m}, u \in \mathbb{F}_{2^{n}}^{*}}}\left|W_{F}(a, u)\right|
+$$
+
+Functions meeting this bound are called bent. These coincide with the class of PN functions and exist only for $m \leq n / 2$ [21]. In particular, for $m=n$, which is our case of interest, bent functions do not exist.
+
+When $n$ is odd, the optimal $(n, n)$-functions from the point of view of nonlinearity are the almost bent functions. An ( $n, n$ )-function $F$ is called almost bent (AB) if it satisfies $W_{F}(a, u) \in\left\{0, \pm 2^{(n+1) / 2}\right\}$ for all $a \in \mathbb{F}_{2^{n}}$ and nonzero $u \in \mathbb{F}_{2^{n}}^{*}$. Any AB function is APN , but not vice versa. However, for $n$ odd, every quadratic APN function is also AB [12]. An $(n, n)$-function $F$ is AB if and only if all the values $W_{F}(u, v)$ in its Walsh spectrum are divisible by $2^{\frac{n+1}{2}}$ [9].
+
+\section*{D. Equivalence Relations of Functions}
+There are several equivalence relations of functions for which differential uniformity and nonlinearity are invariant. Due to these equivalence relations, having only one APN (respectively, AB ) function, one can generate a huge class of APN (respectively, AB ) functions.
+
+Two functions $F$ and $F^{\prime}$ from $\mathbb{F}_{2^{n}}$ to $\mathbb{F}_{2^{n}}$ are called
+
+\begin{itemize}
+  \item affine equivalent (linear equivalent) if $F^{\prime}=A_{1} \circ F \circ A_{2}$, where the mappings $A_{1}$ and $A_{2}$ are affine (linear) permutations of $\mathbb{F}_{2^{n}}$;
+  \item extended affine equivalent (EA-equivalent) if $F^{\prime}=A_{1} \circ F \circ A_{2}+A$, where the mappings $A, A_{1}, A_{2}: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ are affine, and $A_{1}, A_{2}$ are permutations;
+  \item Carlet-Charpin-Zinoviev equivalent (CCZ-equivalent) if for some affine permutation $\mathcal{L}$ of $\mathbb{F}_{2^{n}} \times \mathbb{F}_{2^{n}}$ the image of the graph of $F$ is the graph of $F^{\prime}$, that is, $\mathcal{L}\left(G_{F}\right)= G_{F^{\prime}}$ where $G_{F}=\left\{(x, F(x)): x \in \mathbb{F}_{2^{n}}\right\}$ and $G_{F^{\prime}}= \left\{\left(x, F^{\prime}(x)\right): x \in \mathbb{F}_{2^{n}}\right\}$.\\[0pt]
+Although different, these equivalence relations are related. It is obvious that linear equivalence is a particular case of affine equivalence, and that affine equivalence is a particular case of EA-equivalence. As shown in [12], EA-equivalence is a particular case of CCZ-equivalence and every permutation is CCZ-equivalent to its inverse. The algebraic degree of a function (if it is not affine) is invariant under EA-equivalence but, in general, it is not preserved by CCZ-equivalence. Let us recall why the structure of CCZ-equivalence implies this: for a function $F$ from $\mathbb{F}_{2^{n}}$ to $\mathbb{F}_{2^{n}}$ and an affine permutation $\mathcal{L}(x, y)=\left(L_{1}(x, y), L_{2}(x, y)\right)$ of $\mathbb{F}_{2^{n}} \times \mathbb{F}_{2^{n}}$, where $L_{1}, L_{2}$ : $\mathbb{F}_{2^{n}} \times \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$, we have
+\end{itemize}
+
+
+\begin{equation*}
+\mathcal{L}\left(G_{F}\right)=\left\{\left(F_{1}(x), F_{2}(x)\right): x \in \mathbb{F}_{2^{n}}\right\} \tag{1}
+\end{equation*}
+
+
+where $F_{1}(x)=L_{1}(x, F(x))$ and $F_{2}(x)=L_{2}(x, F(x))$.
+
+Note that $\mathcal{L}\left(G_{F}\right)$ is the graph of a function if and only if $F_{1}$ is a permutation. The function CCZ-equivalent to $F$ whose graph equals $\mathcal{L}\left(G_{F}\right)$ is then $F^{\prime}=F_{2} \circ F_{1}^{-1}$. The composition by the inverse of $F_{1}$ modifies the algebraic degree in general, except, for instance, when $L_{1}(x, y)$ depends only on $x$, which corresponds to EA-equivalence of $F$ and $F^{\prime}$ [8]. It is also proven in [8] that CCZ-equivalence is strictly more general that EA-equivalence combined with taking inverses of permutations.
+
+Proposition 1 [8]: Let $F$ and $F^{\prime}$ be functions from $\mathbb{F}_{2}^{n}$ to itself. The function $F^{\prime}$ is EA-equivalent to the function $F$ or to the inverse of $F$ (if it exists) if and only if there exists an affine permutation $\mathcal{L}=\left(L_{1}, L_{2}\right)$ on $\mathbb{F}_{2}^{2 n}$ such that $\mathcal{L}\left(G_{F}\right)=G_{F^{\prime}}$ and $L_{1}$ depends only on one variable, i.e. $L_{1}(x, y)=L(x)$ or $L_{1}(x, y)=L(y)$.
+
+It is worth listing some properties that remain invariant under CCZ-equivalence. Let the functions $F$ and $F^{\prime}$ be CCZ-equivalent. Then
+
+\begin{itemize}
+  \item $\left\{\Delta_{F}(a, b): a, b \in \mathbb{F}_{2^{n}}, a \neq 0\right\}=\left\{\Delta_{F^{\prime}}(a, b): a\right.$, $\left.b \in \mathbb{F}_{2^{n}}, a \neq 0\right\}$ [4], [8];
+  \item if $F$ is APN then $F^{\prime}$ is APN too;
+  \item $\mathcal{N} \mathcal{L}_{F}=\mathcal{N} \mathcal{L}_{F^{\prime}}$ [12];
+  \item if $F$ is AB then $F^{\prime}$ is AB too.
+\end{itemize}
+
+\section*{III. Changing Points in General}
+A construction in which an ( $n, n$ )-function $G$ is obtained by changing a single value of a given $(n, n)$-function $F$ is investigated in [6]. More precisely, given a function $F$ over $\mathbb{F}_{2^{n}}$, the construction is performed by defining a function $G$ over the same field by
+
+$$
+G(x)= \begin{cases}F(x) & x \neq u \\ v & x=u\end{cases}
+$$
+
+for some fixed elements $u, v \in \mathbb{F}_{2^{n}}$. Since $G$ can be written as $G(x)=F(x)+(F(u)+v)\left(1+(x+u)^{2^{n}-1}\right)$, it is easy to see that the algebraic degree of at least one of $F$ and $G$ must be equal to $n$; furthermore, any function $G$ of algebraic degree $n$ can be written in this form for some $F$ of algebraic degree less than $n$. Indeed, the motivation behind the study of this construction is the unresolved question of whether APN functions of algebraic degree $n$ can exist over $\mathbb{F}_{2^{n}}$; the authors investigate the possibility of obtaining an APN function $G$ using the construction, with particular attention being paid to the case when $F$ is itself APN. Two main characterizations of the APN-ness of $G$ are obtained in [6], one involving the Walsh coefficients of $F$, and one based on the properties of the derivatives $D_{a} F$. These characterizations are then applied in order to conclude that no function $G$ obtained by such a one-point change from a given $F$ which is a power, plateaued, quadratic or almost bent function can be APN, except possibly for $n \leq 2$ in the case of plateaued functions. For instance, $F(x)=x$ is plateaued and $G(x)=F(x)+x^{2^{n}-1}=x^{3}+x$ is APN over $\mathbb{F}_{2^{2}}$; in the case of power, quadratic and almost bent functions, we only have trivial examples over $\mathbb{F}_{2}$, e.g. when $F$ is the identity function $F(x)=x$ and $G$ is the constant zero function $G(x)=0$. A number of additional non-existence results are also shown, which support the conjecture that no
+
+APN function of algebraic degree $n$ may exist over $\mathbb{F}_{2^{n}}$; nonetheless, the question in general remains open.
+
+Some properties of the special case when the values of $F$ at two given points are swapped have previously been investigated in [24], and the general case of changing the values of $F$ at two points has been considered in [17]. The authors of the former article have generalized their method to changing points lying on a cycle [18], and have been able to construct involutions over $\mathbb{F}_{2^{n}}$ using this method [15]. In [17], two main characterizations of the APN-ness of a new function $G$ obtained by modifying two values of a given $F$ are obtained, one in terms of the power moments of the Walsh transform, and one in terms of the differential properties $F$. We observed that if $F$ and $G$ are at distance two, then at most one of $F$ and $G$ can be AB , and at most one of them can be plateaued; furthermore, if the algebraic degree of $F$ is less than $n-1$, then $G$ can be neither AB nor plateaued for any $n \geq 3$. In the case of swapping the values of a function at 0 and 1 , we obtained a sufficient condition for disproving the APN-ness of $G$ by computing a lower bound on the sum $\sum_{y \in \mathbb{F}_{2^{n}}} \Delta_{F}(y, F(y)+1)+\Delta_{F}(y+1, F(y))$. We also showed how to compute a lower bound on this quantity in the case of power functions by finding multiple solutions to the equation $F(x)+F(a+x)+F(a)=1$ when $F$ is a power function.
+
+The idea of investigating pairs of functions at a small distance to one another is interesting per se, and the aforementioned construction can be naturally extended so that the value of $F$ is changed at more than one point. In the following, we investigate whether, and under what conditions, it is possible to obtain an APN function by changing the values of multiple points in a given APN function $F$. More precisely, given $K$ distinct elements $u_{1}, u_{2}, \ldots, u_{K}$ from $\mathbb{F}_{2^{n}}$ (referred to as points) and $K$ arbitrary elements $v_{1}, v_{2}, \ldots, v_{K}$ from $\mathbb{F}_{2^{n}}$ (referred to as shifts), we are interested in the APN-ness of the function
+
+
+\begin{equation*}
+G(x)=F(x)+\sum_{i=1}^{K} 1_{u_{i}}(x) v_{i}=F(x)+\sum_{i=1}^{K}\left(1+\left(x+u_{i}\right)^{2^{n}}-1\right) v_{i} \tag{2}
+\end{equation*}
+
+
+whose value coincides with the value of $F$ on all points $x \notin\left\{u_{1}, u_{2}, \ldots, u_{K}\right\}$ and satisfies $G\left(u_{i}\right)=F\left(u_{i}\right)+v_{i}$ for $i \in\{1,2, \ldots, K\}$.
+
+In order to facilitate the following discussion, we introduce some notation related to the construction. We denote by $U$ the set $U=\left\{u_{1}, u_{2}, \ldots, u_{K}\right\}$ of points whose value will change. For a given element $a \in \mathbb{F}_{2^{n}}$, we denote by $a+U$ the set $\{a+u: u \in U\}$. For any given natural number $n$, we write $[n]=\{1,2, \ldots, n\}$; in particular, $[K]$ is the set of indices of the points from $U$. For any given $a \in \mathbb{F}_{2^{n}}^{*}$ we define the set $U_{a}=\{u \in U: a+u \in U\}$, and $\overline{U_{a}}=U \backslash U_{a}$. In addition, we define a function $p_{a}$ on the indices $\left\{i \in[K]: u_{i} \in U_{a}\right\}$ by the prescription $p_{a}(i)=j$ where $j$ is such that $u_{i}+a=u_{j}$. Since the definition of an APN function is given in terms of differential equations, a natural way to investigate the properties of $G$ is to examine the derivatives $D_{a} G$ and their relation to the derivatives $D_{a} F$ of $F$. From the definition of $G$ in (2) we can immediately see\\
+that for any $a \in \mathbb{F}_{2^{n}}^{*}$, the derivative $D_{a} G$ takes the form
+
+
+\begin{equation*}
+D_{a} G(x)=D_{a} F(x)+\sum_{i=1}^{K} 1_{u_{i}, a+u_{i}}(x) v_{i} \tag{3}
+\end{equation*}
+
+
+Although all the points $u_{i}$ are assumed distinct, it is possible that for some $i \neq j$ we have $a+u_{i}=u_{j}$ and the sets $\left\{u_{i}, a+u_{i}\right\}$ and $\left\{u_{j}, a+u_{j}\right\}$ will coincide. This can be seen more easily if (3) is written in the form
+
+
+\begin{align*}
+D_{a} G(x)= & D_{a} F(x)+\sum_{i \in U_{a}: i<p_{a}(i)} 1_{u_{i}, u_{p_{a}(i)}}(x)\left(v_{i}+v_{p_{a}(i)}\right)+ \\
+& \sum_{i \in \overline{U_{a}}} 1_{u_{i}, a+u_{i}}(x) v_{i} . \tag{4}
+\end{align*}
+
+
+A characterization of the conditions under which $G$ is APN can be derived immediately from (3) and the definition of an APN function by examining under what conditions a triple of elements $(a, x, y) \in \mathbb{F}_{2^{n}}^{3}$ with $a \neq 0, D_{a} G(x)=D_{a} G(y)$ and $x+y \notin\{0, a\}$ may exist.
+
+Proposition 2: Let $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$, let $u_{1}, u_{2}, \ldots, u_{K}$ be $K$ distinct points from $\mathbb{F}_{2^{n}}$ and let $v_{1}, v_{2}, \ldots, v_{K}$ be $K$ arbitrary elements from $\mathbb{F}_{2^{n}}$. Then the function $G$ defined by (2) is APN if and only if all of the following conditions are satisfied for every derivative direction $a \in \mathbb{F}_{2^{n}}^{*}$ :\\
+(i) $D_{a} F$ is 2-to-1 on $\mathbb{F}_{2^{n}} \backslash(U \cup a+U)$;\\
+(ii) $D_{a} F\left(u_{i}\right)+D_{a} F\left(u_{j}\right) \neq v_{i}+v_{j}+v_{p_{a}(i)}+v_{p_{a}(j)}$ for $u_{i}, u_{j} \in U_{a}$ unless $u_{i}=u_{j}$ or $u_{i}+u_{j}=a$;\\
+(iii) $D_{a} F\left(u_{i}\right)+D_{a} F\left(u_{j}\right) \neq v_{i}+v_{j}+v_{p_{a}(i)}$ for $u_{i} \in U_{a}$, $u_{j} \in \overline{U_{a}}$;\\
+(iv) $D_{a} F\left(u_{i}\right)+D_{a} F\left(u_{j}\right) \neq v_{i}+v_{j}$ for $u_{i}, u_{j} \in \overline{U_{a}}$ unless $u_{i}=u_{j}$;\\
+(v) $D_{a} F\left(u_{i}\right)+D_{a} F(x) \neq v_{i}+v_{p_{a}(i)}$ for $u_{i} \in U_{a}$, $x \notin(U \cup a+U) ;$\\
+(vi) $D_{a} F\left(u_{i}\right)+D_{a} F(x) \neq v_{i}$ for $u_{i} \in \overline{U_{a}}, x \notin(U \cup a+U)$.
+
+Proof: Recall that $G$ is APN if and only if there does not exist a triple $(a, \bar{x}, \bar{y}) \in \mathbb{F}_{2^{n}}^{3}$ such that $D_{a} G(\bar{x})=D_{a} G(\bar{y})$ with $a \neq 0$ and $\bar{x} \notin\{\bar{y}, a+\bar{y}\}$. Suppose that such a triple does exist. We will now go through several possible cases, depending on whether $\bar{x}$ and $\bar{y}$ are in ( $U \cup a+U$ ) or not. In the first case, we will assume that neither $\bar{x}$ nor $\bar{y}$ is in $(U \cup a+U)$; in the second case, we will assume that both $\bar{x}$ and $\bar{y}$ are in ( $U \cup a+U$ ); and in the third case, we will assume that precisely one of $\bar{x}$ and $\bar{y}$ is in $(U \cup a+U)$ :
+
+\begin{enumerate}
+  \item If neither $\bar{x}$ nor $\bar{y}$ belong to $(U \cup a+U)$, then $D_{a} G(\bar{x})= D_{a} F(\bar{x})$ and $D_{a} G(\bar{y})=D_{a} F(\bar{y})$ so that $D_{a} G(\bar{x})= D_{a} G(\bar{y})$ implies $D_{a} F(\bar{x})=D_{a} F(\bar{y})$. Thus $D_{a} F$ cannot be 2-to-1 over $\mathbb{F}_{2^{n}} \backslash(U \cup a+U)$. Conversely, if $D_{a} F$ is 2-to-1 over $\mathbb{F}_{2^{n}} \backslash(U \cup a+U)$, this guarantees that no such triple can exist with $\bar{x}, \bar{y} \notin(U \cup a+U)$. This leads to the first condition.
+  \item If both $\bar{x}$ and $\bar{y}$ are points from $U$ or $a+U$, say $\bar{x}=u_{i}$ and $\bar{y}=u_{j}$, then we have $D_{a} G\left(u_{i}\right)=D_{a} G\left(u_{j}\right)$. We now examine three cases depending on whether one, both or none of $u_{i}$ and $u_{j}$ are in $U_{a}$ :\\
+a) If $D_{a} G\left(u_{i}\right)=D_{a} G\left(u_{j}\right)$ with $u_{i}, u_{j} \in U_{a}$, then we have $D_{a} F\left(u_{i}\right)+v_{i}+v_{p_{a}(i)}=D_{a} F\left(u_{j}\right)+v_{j}+v_{p_{a}(j)}$ from the definition of $G$ (2). If $G$ is APN, this is\\
+possible only if $u_{i}=u_{j}$ or $u_{i}=a+u_{j}$, which leads to the second condition.\\
+b) If say $u_{i}$ is in $U_{a}$ but $u_{j}$ is not, then $D_{a} G\left(u_{i}\right)= D_{a} G\left(u_{j}\right)$ becomes $D_{a} F\left(u_{i}\right)+D_{a} F\left(u_{j}\right)=v_{i}+v_{j}+ v_{p_{a}(i)}$. Note that we can have neither $u_{i}=u_{j}$, nor $u_{i}+ a=u_{j}$ since $u_{i}$ is in $U_{a}$ and $u_{j}$ is in its complement. This leads to the third condition.\\
+c) If neither $u_{i}$ nor $u_{j}$ is in $U_{a}$, then $D_{a} G\left(u_{i}\right)= D_{a} G\left(u_{j}\right)$ becomes $D_{a} F\left(u_{i}\right)+D_{a} F\left(u_{j}\right)=v_{i}+v_{j}$; this can occur if $u_{i}=u_{j}$, but $u_{i}=a+u_{j}$ is impossible due to $u_{j} \notin U$. This gives the fourth condition.
+  \item In the remaining case, we assume that we have $\bar{x}=u_{i}$ (or $\bar{x}=a+u_{i}$ ) but $\bar{y} \notin(U \cup a+U)$, so that we have $D_{a} G\left(u_{i}\right)=D_{a} F(\bar{y})$. We examine two sub-cases:\\
+a) If $D_{a} G\left(u_{i}\right)=D_{a} G(\bar{y})$ with $u_{i} \in U_{a}$, then $D_{a} F\left(u_{i}\right)+ D_{a} F(\bar{y})=v_{i}+v_{p_{a}(i)}$. Since both $u_{i}$ and $u_{i}+a$ are in $U$, we cannot have $u_{i} \in\{y, a+y\}$. This gives the fifth condition.\\
+b) If, conversely, $D_{a} G\left(u_{i}\right)=D_{a} G(\bar{y})$ but $u_{i} \in \overline{U_{a}}$, then we have $D_{a} F\left(u_{i}\right)+D_{a} F(\bar{y})=v_{i}$. As before, we cannot have $u_{i} \in\{\bar{y}, a+\bar{y}\}$. This gives the sixth and final condition.\\
+The above conditions are clearly necessary for $G$ to be APN, and they are also sufficient since if we have $D_{a} G(\bar{x})= D_{a} G(\bar{y})$ then one of these conditions implies $\bar{x}=\bar{y}$ or $\bar{x}=a+\bar{y}$.
+\end{enumerate}
+
+The following observation shows how condition (vi) of Proposition 2 can be equivalently expressed in terms of the shifted derivatives of $F$. This is slightly more intuitive in the sense that it allows us to consider the image of a single shifted derivative (instead of the sum of two derivatives as in the original formulation) and is used throughout the next section.
+
+Observation 1: Assume the same notation as in Proposition 2. If $G$ is APN, then for any $a \in \mathbb{F}_{2^{n}}^{*}$ for which there exists an $i \in[K]$ such that $D_{a}^{u_{i}} F$ maps to $F\left(u_{i}\right)+v_{i}$ and $a+u_{i} \notin U$ we must have
+
+$$
+D_{a}^{u_{i}} F\left(u_{j}\right)+F\left(u_{i}\right)=v_{i}
+$$
+
+for some $i \neq j \in[K]$.\\
+Characterizing the APN-ness of $G$ is difficult in the general case due to the large number of choices for the points $u_{1}, u_{2}, \ldots, u_{K}$ and shifts $v_{1}, v_{2}, \ldots, v_{K}$. For this reason, in the following sections we concentrate on various simplifications of this problem, e.g. by assuming that the points $u_{1}, u_{2}, \ldots, u_{K}$ or the number $K$ are fixed.
+
+\section*{IV. The Case of FIXED $u_{1}, u_{2}, \ldots, u_{K}$}
+If we fix the set $U$ of points to change, we can use Observation 1 to dramatically reduce the number of potential candidate values for the shifts $v_{1}, v_{2}, \ldots, v_{K}$. Besides filtering out impossible candidates for the shifts $v_{i}$, this allows us to obtain a lower bound on the distance between a given APN function $F$ and its closest APN neighbor. This lower bound is given in terms of the number of shifted derivatives of $F$ that map to the elements of $\mathbb{F}_{2^{n}}$. This quantity can be computed efficiently in practice and can be used to bound from below the number of points $K$ that need to be changed in order to\\
+obtain an APN function $G$. Finally, we observe that this lower bound is invariant under CCZ-equivalence.
+
+\section*{A. Filtering Out Shift Candidates}
+We can immediately apply Observation 1 in practice by fixing some function $F$ over $\mathbb{F}_{2^{n}}$ along with $K$ points $u_{1}, u_{2}, \ldots, u_{K}$ and then, for every $i \in[K]$, making a list of all values $\bar{v} \in \mathbb{F}_{2^{n}}$ for which setting $v_{i}=\bar{v}$ violates the necessary condition from Proposition 2. Then only values $v_{i}$ which are not in this list have to be examined, and their number is typically much smaller than the number $2^{n}$ of all possible values. In many cases, no values at all are left for some $v_{i}$, which then immediately indicates that no APN functions can be obtained by shifting the points in $U$.
+
+A more precise description of this procedure is given as Algorithm 1.
+
+\begin{verbatim}
+Algorithm 1 Reducing the Domains of $v_{i}$ Using
+Observation 1
+    Data: A function $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ and a set of $K$ distinct
+            points $U=\left\{u_{1}, u_{2}, \ldots, u_{K}\right\} \subseteq \mathbb{F}_{2^{n}}$.
+    Result: A domain $D_{i} \subseteq \mathbb{F}_{2^{n}}$ for every $v_{i}$ such that if
+                $G(x)$ is APN, then $v_{i} \in D_{i}$ for every $i \in[K]$.
+    begin
+        for every $i \in[K]$ do
+            set $D_{i} \leftarrow \mathbb{F}_{2^{n}}$
+            compute $A \leftarrow\left\{D_{a}^{u_{i}} F(x)+F\left(u_{i}\right): x, a \in\right.$
+            $\left.\mathbb{F}_{2^{n}}, a \neq 0, a+u_{i} \notin U, x \notin(U \cup a+U)\right\}$
+            update $D_{i} \leftarrow D_{i} \backslash A$
+\end{verbatim}
+
+As already mentioned, the efficiency of this method is particularly prominent in cases when the points $u_{1}, u_{2}, \ldots, u_{K}$ cannot be shifted into an APN function (in the sense that $G$ is never APN regardless of the choice of $v_{1}, v_{2}, \ldots, v_{K}$ ). For example, given the function $F(x)=x^{3}$ over $\mathbb{F}_{2^{5}}$ and the set of points $U=\left\{\alpha^{i}: i \in\{0\} \cup[5]\right\}$, where $\alpha$ is a primitive element of $\mathbb{F}_{2^{5}}$, checking every combination of shifts $\left(v_{1}, \ldots, v_{K}\right) \in \mathbb{F}_{2^{5}}^{6}$ using an exhaustive search (that is, generating $G$ as defined in (2) and testing whether it is APN for every such combination of shifts) is estimated to take about 75 hours; using the filtering approach described above, however, we can conclude that no APN function $G$ can be obtained by any combination of shifts after only about 0.140 seconds of computation. These experiments were performed on our department server, with the search procedures implemented in the Magma programming language.
+
+On the contrary, in some situations (especially when the set of points $U$ can be shifted into an APN function) the filtering procedure may leave rather large domains for the shift candidates, which necessitates long computations. As two contrasting examples, we examine the function $x^{3}$ over $\mathbb{F}_{2^{5}}$ and over $\mathbb{F}_{2^{6}}$. In the case of $\mathbb{F}_{2^{5}}$, taking the set $U$ of the eight points generated (in the sense of additive closure) by $\left\{\alpha^{i}: i \in\{0\} \cup[2]\right\}$ leaves the singleton domain $\left\{\alpha^{25}\right\}$ for all $v_{i}$; indeed, the function $G$ obtained by shifting every point from $U$ by $\alpha^{25}$ is APN and is CCZ-equivalent to $x^{5}$. However, when we take $F(x)=x^{3}$ over $\mathbb{F}_{2^{6}}$ with $U$ being generated by\\
+$\left\{1, \beta, \beta^{4}, \beta^{21}\right\}$ (with $\beta$ primitive in $\mathbb{F}_{2^{n}}$ ), the domains for each $v_{i}$ after filtering become $D=\left\{\beta^{7}, \beta^{14}, \beta^{28}, \beta^{35}, \beta^{49}, \beta^{56}\right\}$. Taking $v_{1}=v_{2}=\cdots=v_{16}=v$ for any $v \in D$ then yields an APN function $G$ that is CCZ-equivalent to $x^{6}+x^{9}+\beta^{7} x^{48}$. Conversely, if at least two different values are selected for the shifts, the resulting function is not APN; thus, there are only $|D|=6$ possible shift combinations that lead to an APN function, but $6^{16}$ potential combinations that are left after filtering and need to be "manually" checked. Therefore, although our method reduces the size of the domains from $2^{6}=64$ to just 6 , the resulting search space is still quite large and requires a significant amount of time in order to be completely explored.
+
+However, additional restrictions may be imposed on the values of $v_{i}$ by applying conditions (i)-(v) from Proposition 2 which allow the search to be performed more efficiently. More precisely, condition (iv) allows us to remove pairs, condition (iii) allows us to remove triples and condition (ii) allows us to remove quadruples of incompatible elements from the domains. Condition (i) depends entirely on the function $F$ and the set $U$ and can be used to reject a given set $U$ entirely, although it cannot be used for filtering the domains.
+
+These conditions do not allow us to remove any values from the domains of $v_{i}$ directly, but they do make it possible to restrict some domains after a first few initial choices. For example, having selected a concrete value $\bar{v}_{i}$ for $v_{i}$ from its domain, we can, for all $j \neq i$, remove values $\overline{v_{j}}$ from the domain of $v_{j}$ for which condition (iv) is violated. It is worth noting that this is the most useful of the three conditions given above in the case that the number of points $U$ is relatively small, since it encompasses the greatest number of derivative directions; as $K$ increases, the latter two conditions become more useful. In any case, ensuring that all the conditions from Proposition 2 are satisfied is sufficient to ensure that $G$ is APN.
+
+Coming back to the example of $F(x)=x^{3}$ over $\mathbb{F}_{2^{6}}$ discussed above, we can see how much this improves the search efficiency: evaluating all combinations of shifts from the domains (without any filtering) would require approximately 110 years; applying conditions (i)-(iv) from Proposition 2 as described, however, finds all six possibilities in about two seconds.
+
+\section*{B. Lower Bound on the Distance Between APN Functions}
+Note that in the statement of Observation 1, we assume that the resulting function $G$ is APN but we do not make any assumptions about $F$. If, in addition to the hypothesis of the theorem, we assume that $F$ is itself APN, we can obtain the following corollary which gives a lower bound on the Hamming distance between a given APN function and its nearest APN "neighbor".
+
+Corollary 1: Let $F$ and $G$ be as in the statement of Observation 1 with $v_{i} \neq 0$ for $i \in[K]$, and assume, in addition, that $F$ is APN; consider some fixed $i \in[K]$. Then no more than $3(K-1)$ derivatives of the form $D_{a}^{u_{i}} F$ map to $G\left(u_{i}\right)$.
+
+Proof: First, consider all derivative directions $a \in \mathbb{F}_{2^{n}}^{*}$ with $a+u_{i} \notin U$. By Observation 1 we must have
+
+$$
+D_{a}^{u_{i}} F\left(u_{j}\right)=G\left(u_{i}\right)
+$$
+
+for some $j \neq i$ if $D_{a}^{u_{i}} F$ maps to $G\left(u_{i}\right)$. We now determine for how many $a \in \mathbb{F}_{2^{n}}$ we may have $D_{a}^{u_{i}} F\left(u_{j}\right)=G\left(u_{i}\right)$ for fixed $i$ and $j$. Suppose that we have both $D_{a}^{u_{i}} F\left(u_{j}\right)=G\left(u_{i}\right)$ and $D_{a^{\prime}}^{u_{i}} F\left(u_{j}\right)=G\left(u_{i}\right)$ for some $a \neq a^{\prime}$. Then $D_{a}^{u_{i}} F\left(u_{j}\right)= D_{a^{\prime}}^{u_{i}} F\left(u_{j}\right)$ can be rewritten as $F\left(u_{j}\right)+F\left(a+u_{j}\right)+F(a+ \left.u_{i}\right)=F\left(u_{j}\right)+F\left(a^{\prime}+u_{j}\right)+F\left(a^{\prime}+u_{i}\right)$ so that we have $D_{u_{i}+u_{j}} F\left(a+u_{i}\right)=D_{u_{i}+u_{j}} F\left(a^{\prime}+u_{i}\right)$.
+
+Since $i$ and $j$ (and therefore $u_{i}$ and $u_{j}$ ) are fixed and since $F$ is APN, this implies either $a=a^{\prime}$ or $a+a^{\prime}=u_{i}+u_{j}$. In other words, at most two distinct shifted derivatives may map $u_{j}$ to $G\left(u_{i}\right)$.
+
+Now suppose that $i$ is fixed and $j$ ranges over $[K]$. Since we consider only $j \neq i$ and since there are $K$ indices in total, there are $(K-1)$ choices for $j$ for any fixed $i$. For each such $j$, there are at most two shifted derivatives $D_{a}^{u_{i}} F$ mapping $u_{j}$ to $G\left(u_{i}\right)$. Therefore, at most $2(K-1)$ shifted derivatives may take $G\left(u_{i}\right)$ as value when $a+u_{i} \notin U$.
+
+We now consider the derivative directions $a \in \mathbb{F}_{2^{n}}$ for which $a+u_{i} \in U$. There are precisely $K$ such directions $a$, viz. $u_{1}+u_{i}, u_{2}+u_{i}, \ldots, u_{K}+u_{i}$. Furthermore, $D_{0}^{u_{i}} F$ cannot map to $G\left(u_{i}\right)$ unless $v_{i}=0$, so that there are at most $(K-1)$ derivatives of this type which may map to $G\left(u_{i}\right)$.
+
+Thus, in total, there can be no more than $2(K-1)+ (K-1)=3(K-1)$ derivative directions $a$ for which $D_{a}^{u_{i}} F$ maps to $G\left(u_{i}\right)$.
+
+Note that in the proof above, the number of derivative directions $a$ (with $\left.a+u_{i} \notin U\right)$ such that $D_{a}^{u_{i}} F\left(u_{j}\right)=G\left(u_{i}\right)$ for some fixed $i$ and $j$ is limited to two because $F$ is assumed to be APN. If we take $F$ to be differentially $\delta$-uniform instead, the upper bound on the number of derivatives $D_{a}^{u_{i}} F$ mapping to $G\left(u_{i}\right)$ will be $(\delta+1)(K-1)$.
+
+Corollary 1 can now be used to compute a lower bound on the distance between a given $F$ and its nearest APN "neighbor". In order to facilitate the following discussion, we introduce some notation related to the shifted derivatives. In particular, we define $\Pi_{F}^{\beta}(b)$ to be the set of derivative directions $a$ for which $D_{a}^{\beta} F$ maps to $b$, i.e.
+
+$$
+\begin{aligned}
+\Pi_{F}^{\beta}(b) & =\left\{a \in \mathbb{F}_{2^{n}}: b \in H_{a}^{\beta} F\right\} \\
+& =\left\{a \in \mathbb{F}_{2^{n}}:\left(\exists x \in \mathbb{F}_{2^{n}}\right)\left(D_{a}^{\beta} F(x)=b\right)\right\}
+\end{aligned}
+$$
+
+By Corollary 1, we need to count the numbers $\left|\Pi_{F}^{u_{i}}\left(G\left(u_{i}\right)\right)\right|$ for $i \in[K]$ and ensure that none of them is greater than $3(K-1)$. The minimum value of $\left|\Pi_{F}^{\beta}(b)\right|$ through all possible values of $\beta$ and $b$ is certainly a lower bound on $\min _{i \in[K]}\left|\Pi_{F}^{u_{i}}\left(G\left(u_{i}\right)\right)\right|$; if this minimum value is greater than 3( $K-1$ ) for some given $K$, then no function $G$ within distance $K$ of $F$ can be APN.
+
+Thus, we can apply the lower bound from Corollary 1 by computing the minimum value of $\left|\Pi_{F}^{\beta}(b)\right|$ through all $\beta, b \in \mathbb{F}_{2^{n}}$. In certain cases, such as for quadratic functions (see Proposition 5 below), it suffices to consider a fixed value of $\beta$ and to only go through all $b \in \mathbb{F}_{2^{n}}$. For this reason, we define the set $\Pi_{F}^{\beta}$ as the spectrum of the values of $\left|\Pi_{F}^{\beta}(b)\right|$ for a fixed shift $\beta$, i.e.
+
+$$
+\Pi_{F}^{\beta}=\left\{\left|\Pi_{F}^{\beta}(b)\right|: b \in \mathbb{F}_{2^{n}}\right\}
+$$
+
+and $\Pi_{F}$ as the spectrum of $\left|\Pi_{F}^{\beta}(b)\right|$ for all shifts $\beta$ and all values $b$ :
+
+$$
+\Pi_{F}=\bigcup_{\beta \in \mathbb{F}_{2^{n}}} \Pi_{F}^{\beta}=\left\{\left|\Pi_{F}^{\beta}(b)\right|: \beta, b \in \mathbb{F}_{2^{n}}\right\} .
+$$
+
+For convenience, we also denote by $m_{F}$ the minimal element of $\Pi_{F}$, i.e. $m_{F}=\min \left\{\left|\Pi_{F}^{\beta}(b)\right|: \beta, b \in \mathbb{F}_{2^{n}}\right\}$. The lower bound on the distance between APN functions can now be stated as follows.
+
+Corollary 2: Let $F$ be an APN function over $\mathbb{F}_{2^{n}}$ and let $m_{F}$ be the number
+
+$$
+\begin{aligned}
+m_{F}= & \min \Pi_{F}=\min _{b, \beta \in \mathbb{F}_{2^{n}}}\left|\Pi_{F}^{\beta}(b)\right|= \\
+& \min _{b, \beta \in \mathbb{F}_{2^{n}}}\left|\left\{a \in \mathbb{F}_{2^{n}}:\left(\exists x \in \mathbb{F}_{2^{n}}\right)\left(D_{a}^{\beta} F(x)=b\right)\right\}\right| .
+\end{aligned}
+$$
+
+Then for any APN function $G \neq F$ over $\mathbb{F}_{2^{n}}$, the Hamming distance $d(F, G)$ between $F$ and $G$ satisfies
+
+
+\begin{equation*}
+d(F, G) \geq\left\lceil\frac{m_{F}}{3}\right\rceil+1 \tag{5}
+\end{equation*}
+
+
+Proof: By Corollary 1, if $F$ and $G$ are APN functions at distance $K$ of one another, than no more than $3(K-1)$ shifted derivatives $D_{a}^{u_{i}} F$ may map to $G\left(u_{i}\right)$ for any fixed $i \in[K]$. For a fixed $i$, this quantity can be written as $\mid\left\{a \in \mathbb{F}_{2^{n}}:(\exists x \in\right. \left.\left.\mathbb{F}_{2^{n}}\right)\left(D_{a}^{u_{i}}(x)=G\left(u_{i}\right)\right)\right\} \mid$. If we now go through all possible values of $i \in[K]$, we get that\\
+$\min _{i \in[K]}\left|\left\{a \in \mathbb{F}_{2^{n}}:\left(\exists x \in \mathbb{F}_{2^{n}}\right)\left(D_{a}^{u_{i}}(x)=G\left(u_{i}\right)\right)\right\}\right| \leq 3(K-1)$.\\
+Deriving a lower bound on $K$ from this expression, however, would require knowledge of $D_{a}^{u_{i}}(x)$ and $G\left(u_{i}\right)$ for each $i \in[K]$. However, since $u_{i}$ and $G\left(u_{i}\right)$ are elements of the finite field $\mathbb{F}_{2^{n}}$, going through all possible choices $\beta$ for $u_{i}$ and all possible choices $b$ for $G\left(u_{i}\right)$, we clearly have
+
+$$
+\begin{gathered}
+\min _{b, \beta}\left|\left\{a \in \mathbb{F}_{2^{n}}:\left(\exists x \in \mathbb{F}_{2^{n}}\right)\left(D_{a}^{\beta}(x)=b\right)\right\}\right| \leq \\
+\min _{i \in[K]}\left|\left\{a \in \mathbb{F}_{2^{n}}:\left(\exists x \in \mathbb{F}_{2^{n}}\right)\left(D_{a}^{u_{i}}(x)=G\left(u_{i}\right)\right)\right\}\right| \leq 3(K-1) .
+\end{gathered}
+$$
+
+If we denote the left-most quantity by $m_{F}$, as in the statement of the Corollary, we then have
+
+$$
+m_{F} \leq 3(K-1)
+$$
+
+which immediately implies the lower bound.
+
+\section*{C. Invariance Properties}
+As discussed above, the lower bound on the Hamming distance between a given APN function $F$ and its closest APN "neighbor" is given in terms of the number $m_{F}$ which in turn can be expressed via the sets $\Pi_{F}^{\beta}(b), \Pi_{F}^{\beta}$ and $\Pi_{F}$. It is therefore interesting to observe that the set $\Pi_{F}$ is invariant under CCZ-equivalence, as shown in the following proposition. This then makes the lower bound obtained via Corollary 2 for some given function $F$ valid for all members of its CCZ-equivalence class.
+
+Proposition 3: Suppose $F$ is APN and is CCZ-equivalent to $F^{\prime}$ via the affine permutation $\mathcal{L}=\left(L_{1}, L_{2}\right)$ of $\mathbb{F}_{2^{n}}^{2}$.
+
+Then $\Pi_{F}^{\beta}(t)=\Pi_{F^{\prime}}^{L_{1}(\beta, t)}\left(L_{2}(\beta, t)\right)$ for any $\beta, t \in \mathbb{F}_{2^{n}}$. Consequently, the set $\Pi_{F}$ is invariant under CCZ-equivalence.
+
+Proof: To show the first part of the statement, define $F_{1}(x)=L_{1}(x, F(x))$ and $F_{2}(x)=L_{2}(x, F(x))$ as in (1); then $F_{1}$ is a permutation and $F^{\prime}=F_{2} \circ F_{1}^{-1}$.
+
+If we consider the set of all pairs $(a, x)$ such that $D_{a}^{\beta} F(x)=t$, we can obtain using the affinity of $\mathcal{L}$ :
+
+$$
+\begin{aligned}
+& \left|\left\{(a, x) \in \mathbb{F}_{2^{n}}: F(x)+F(a+x)+F(a+\beta)=t\right\}\right|= \\
+& \left|\left\{(x, y, z) \in \mathbb{F}_{2^{n}}^{3}:(x, F(x))+(y, F(y))+(z, F(z))=(\beta, t)\right\}\right|= \\
+& \mid\left\{(x, y, z):\left(F_{1}(x), F_{2}(x)\right)+\left(F_{1}(y), F_{2}(y)\right)+\right. \\
+& \left.\quad\left(F_{1}(z), F_{2}(z)\right)=\mathcal{L}(\beta, t)\right\} \mid= \\
+& \mid\left\{(x, y, z):\left(x, F^{\prime}(x)\right)+\left(y, F^{\prime}(y)\right)+\right. \\
+& \left.\quad\left(z, F^{\prime}(z)\right)=\left(L_{1}(\beta, t), L_{2}(\beta, t)\right)\right\} \mid= \\
+& \left|\left\{(a, x): F^{\prime}(x)+F^{\prime}(a+x)+F^{\prime}\left(a+L_{1}(\beta, t)\right)=L_{2}(\beta, t)\right\}\right| .
+\end{aligned}
+$$
+
+In the third step we use the fact that $F_{1}$ is a permutation and go through all triples $\left(F_{1}^{-1}(x), F_{1}^{-1}(y), F_{1}^{-1}(z)\right)$ instead of ( $x, y, z$ ).
+
+Now, since $\left|\Pi_{F}^{\beta}(t)\right|$ counts the number of derivative directions $a$ for which $D_{a}^{\beta} F$ maps to $t$, and since all (shifted) derivatives of $F$ and $F^{\prime}$ are 2-to-1 due to $F$ and $F^{\prime}$ being APN, we have
+
+
+\begin{gather*}
+2\left|\Pi_{F}^{\beta}(t)\right|=\left|\left\{(a, x) \in \mathbb{F}_{2^{n}}: F(x)+F(a+x)+F(a+\beta)=t\right\}\right|= \\
+\mid\left\{(a, x): F^{\prime}(x)+F^{\prime}(a+x)+F^{\prime}\left(a+L_{1}(\beta, t)\right)=\right. \\
+\left.L_{2}(\beta, t)\right\}|=2| \Pi_{F^{\prime}}^{L_{1}(\beta, t)}\left(L_{2}(\beta, t)\right) \mid . \tag{6}
+\end{gather*}
+
+
+The invariance of $\Pi_{F}$ then follows from the fact that $\mathcal{L}= \left(L_{1}, L_{2}\right)$ is a permutation and $\Pi_{F}=\left\{\left|\Pi_{F}^{\beta}(t)\right|: \beta, t \in \mathbb{F}_{2^{n}}\right\}$, so that when computing $\Pi_{F}$ we go through all possible pairs ( $\beta, t$ ).
+
+As EA-equivalence is a special case of CCZ-equivalence, it is evident that EA-equivalence leaves the set $\Pi_{F}$ invariant as well. Under EA-equivalence, however, a stronger invariance holds.
+
+Proposition 4: For any fixed $\beta \in \mathbb{F}_{2^{n}}$, if $F^{\prime}$ and $F$ are EA-equivalent APN functions via $F^{\prime}=A_{1} \circ F \circ A_{2}+A$, where $A_{1}, A_{2}$ and $A$ are affine and $A_{1}, A_{2}$ are bijective, we have
+
+$$
+\left(\forall t \in \mathbb{F}_{2^{n}}\right)\left(\left|\Pi_{F^{\prime}}^{\beta}(t)\right|=\left|\Pi_{F}^{A_{2}(\beta)}\left(A_{1}^{-1}(t+A(\beta))\right)\right|\right) .
+$$
+
+Consequently, $\Pi_{F^{\prime}}^{\beta}=\Pi_{F}^{A_{2}(\beta)}$.\\
+Proof: We have, thanks to $F$ and $F^{\prime}$ being APN and their derivatives being 2-to-1 functions,
+
+
+\begin{align*}
+& 2\left|\Pi_{F^{\prime}}^{\beta}(t)\right|= \\
+& \left|\left\{(a, x) \in \mathbb{F}_{2^{n}}^{2}: F^{\prime}(x)+F^{\prime}(a+x)+F^{\prime}(a+\beta)=t\right\}\right|= \\
+& \mid\left\{(a, x): A_{1}\left(F\left(A_{2}(x)\right)\right)+A_{1}\left(F\left(A_{2}(a+x)\right)\right)+\right. \\
+& \left.A_{1}\left(F\left(A_{2}(a+\beta)\right)\right)+A(x)+A(a+x)+A(a+\beta)=t\right\} \mid= \\
+& \mid\left\{(a, x): A_{1}\left(F\left(A_{2}(x)\right)+F\left(A_{2}(a)\right)+\right.\right. \\
+& \left.\left.\quad F\left(A_{2}(a+x+\beta)\right)\right)=t+A(\beta)\right\} \mid= \\
+& \left|\left\{(a, x): A_{1}\left(F(x)+F(a)+F\left(a+x+A_{2}(\beta)\right)\right)=t+A(\beta)\right\}\right|= \\
+& \mid\left\{(a, x): F(x)+F(a)+F\left(a+x+A_{2}(\beta)\right)=\right. \\
+& \left.A_{1}^{-1}(t+A(\beta))\right\}|=2| \Pi_{F}^{A_{2}(\beta)}\left(A_{1}^{-1}(t+A(\beta))\right) \mid \tag{7}
+\end{align*}
+
+
+In the second step we use that for any affine function $A$ we have $A(x+y+z)=A(x)+A(y)+A(z)$ for any $x, y, z$, and also count through ( $x, a+x$ ) instead of ( $x, a$ ). In the third step we use the fact that $A_{2}$ is a permutation and count through all pairs ( $A_{2}(a), A_{2}(x)$ ) instead of ( $a, x$ ); then $A_{2}(x)$ becomes $x$, $A_{2}(a)$ becomes $a$ and $A_{2}(x+a+\beta)=A_{2}(x)+A_{2}(a)+A_{2}(\beta)$ becomes $x+a+A_{2}(\beta)$.
+
+Then clearly
+
+$$
+\begin{aligned}
+& \Pi_{F^{\prime}}^{\beta}=\left\{\left|\Pi_{F^{\prime}}^{\beta}(t)\right|: t \in \mathbb{F}_{2^{n}}\right\}= \\
+& \quad\left\{\left|\Pi_{F}^{A_{2}(\beta)}\left(A_{1}^{-1}(t+A(\beta))\right)\right|: t \in \mathbb{F}_{2^{n}}\right\}= \\
+& \quad\left\{\left|\Pi_{F}^{A_{2}(\beta)}(t)\right|: t \in \mathbb{F}_{2^{n}}\right\}=\Pi_{F}^{A_{2}(\beta)},
+\end{aligned}
+$$
+
+thereby concluding the proof.
+
+\section*{D. The Case of Quadratic Functions}
+For a quadratic function $F$, the set $\Pi_{F}^{\beta}$ does not depend on the choice of $\beta$, which greatly reduces the amount of computation needed to calculate $m_{F}$.
+
+Proposition 5: Let $F$ be a quadratic ( $n, n$ )-function. Then $\Pi_{F}^{\beta}=\Pi_{F}^{\beta^{\prime}}$ for any $\beta, \beta^{\prime} \in \mathbb{F}_{2^{n}}$.
+
+Proof: Since $F$ is quadratic, its derivatives $D_{a} F$ for any $a \neq 0$ are affine functions, i.e. they satisfy
+
+$$
+D_{a} F(x)+D_{a} F(y)=D_{a} F(x+y)+D_{a} F(0)
+$$
+
+for any $x, y \in \mathbb{F}_{2^{n}}$. We thus have
+
+\[
+\begin{array}{r}
+D_{a}^{\beta} F(x)+D_{a}^{0} F(x+\beta)= \\
+D_{a} F(x)+D_{a} F(x+\beta)+F(a+\beta)+F(a)= \\
+D_{a} F(\beta)+D_{a} F(0)+F(a+\beta)+F(a)= \\
+F(\beta)+F(a+\beta)+F(0)+F(a)+F(a+\beta)+F(a)= \\
+F(\beta)+F(0) \tag{8}
+\end{array}
+\]
+
+so that we have
+
+$$
+D_{a}^{\beta} F(x)=D_{a}^{0} F(x+\beta)+s
+$$
+
+for some constant $s$ which depends only on $F$ and $\beta$.\\
+We then have
+
+$$
+\left|\Pi_{F}^{\beta}(t)\right|=\left|\Pi_{F}^{0}(t+s)\right|
+$$
+
+so that, indeed,
+
+$$
+\Pi_{F}^{\beta}=\left\{\left|\Pi_{F}^{\beta}(t)\right|: t \in \mathbb{F}_{2^{n}}\right\}=\left\{\left|\Pi_{F}^{0}(t+s)\right|: t \in \mathbb{F}_{2^{n}}\right\}=\Pi_{F}^{0}
+$$
+
+as claimed.
+
+\section*{E. Examples and Computation Results}
+In some cases, the value $m_{F}$ can be computed mathematically. As an example, we consider the function $F(x)=x^{3}$ over the finite field $\mathbb{F}_{2^{n}}$. We derive an exact formula for the size of $\Pi_{F}^{\beta}(b)$, which allows us to express $\Pi_{F}^{\beta}$ and, consequently, $m_{F}$ as a function of the dimension $n$. From this we can then immediately derive a lower bound on the distance between $x^{3}$ and the closest APN function. Note that since $x^{3}$ is quadratic, by Proposition 5 we have that $m_{F}=\min \Pi_{F}^{\beta}$ for an arbitrary $\beta \in \mathbb{F}_{2^{n}}$.
+
+Proposition 6: Let $F(x)=x^{3}$ be over $\mathbb{F}_{2^{n}}$ and let $b, \beta \in \mathbb{F}_{2^{n}}$ be arbitrary. Then
+
+\[
+\left|\Pi_{F}^{\beta}(b)\right|= \begin{cases}2^{n}-1 & b=\beta^{3}  \tag{9}\\ 2^{n-1}-1 & b \neq \beta^{3}, n \text { odd } \\ 2^{n-1}+2^{n / 2}-1 & b \neq \beta^{3}, b+\beta^{3} \text { is a cube } \\ & n \text { even, } n / 2 \text { odd } \\ 2^{n-1}-2^{n / 2-1}-1 \quad & b \neq \beta^{3}, b+\beta^{3} \text { is not a cube } \\ & n \text { even, } n / 2 \text { odd } \\ 2^{n-1}-2^{n / 2}-1 \quad & b \neq \beta^{3}, b+\beta^{3} \text { is a cube } \\ & n \text { even, } n / 2 \text { even } \\ 2^{n-1}+2^{n / 2-1}-1 \quad & b \neq \beta^{3}, b+\beta^{3} \text { is not a cube } \\ & n \text { even, } n / 2 \text { even }\end{cases}
+\]
+
+The value $\min _{b \in \mathbb{F}_{2^{n}}}\left|\Pi_{F}^{\beta}(b)\right|$ is then equal to
+
+\[
+m_{F}=\min \Pi_{F}^{\beta}= \begin{cases}2^{n-1}-1 & n \text { is odd }  \tag{10}\\ 2^{n-1}-2^{n / 2-1}-1 & n \text { is even, } n / 2 \text { is odd } \\ 2^{n-1}-2^{n / 2}-1 & n \text { is even, } n / 2 \text { is even }\end{cases}
+\]
+
+and the lower bound on the distance to the closest APN function $G$ can be explicitly written as
+
+\[
+d(F, G) \geq \begin{cases}\frac{2^{n-1}+2}{3} & n \text { is odd }  \tag{11}\\ \frac{2^{n-1}-2^{n / 2-1}+2}{3} & n \text { is even, } n / 2 \text { is odd } \\ \frac{2^{n-1}-2^{n / 2}+2}{3} & n \text { is even, } n / 2 \text { is even. }\end{cases}
+\]
+
+Proof: The shifted derivative $D_{a}^{\beta} F$ of the Gold function $F(x)=x^{3}$ takes the form\\
+$D_{a}^{\beta} F(x)=x^{3}+(x+a)^{3}+(a+\beta)^{3}=a^{2}(x+\beta)+a(x+\beta)^{2}+\beta^{3}$\\
+for any $a, \beta \in \mathbb{F}_{2^{n}}$.\\
+For convenience, we introduce the "equality indicator" $I(A, B)$, where $A$ and $B$ are some arbitrary expressions, defined as
+
+$$
+I(A, B)= \begin{cases}1 & A=B \\ 0 & A \neq B\end{cases}
+$$
+
+Recall that the value of $\left|\Pi_{F}^{\beta}(b)\right|$ is the number of derivative directions $a \in \mathbb{F}_{2^{n}}$ for which $D_{a}^{\beta} F$ maps to $b$. Since $F$ is APN, $\left|\Pi_{F}^{\beta}(b)\right|$ can be expressed as
+
+
+\begin{align*}
+& \left|\Pi_{F}^{\beta}(b)\right|= \\
+& \frac{1}{2}\left|\left\{(a, x) \in \mathbb{F}_{2^{n}}^{*} \times \mathbb{F}_{2^{n}}: a^{2}(x+\beta)+a(x+\beta)^{2}+\beta^{3}=b\right\}\right| \\
+& \quad+I\left(b, \beta^{3}\right)= \\
+& \frac{1}{2}\left|\left\{(a, x) \in \mathbb{F}_{2^{n}}^{*} \times \mathbb{F}_{2^{n}}: a^{2} x+a x^{2}=b+\beta^{3}\right\}\right|+I\left(b, \beta^{3}\right) \tag{12}
+\end{align*}
+
+
+by substituting $x+\beta$ for $x$.\\
+Note that for $a=0$, (12) becomes $b=\beta^{3}$, so that the number of solutions $x$ is $2^{n} I\left(\beta, b^{3}\right)$; however, all of these solutions correspond to the same derivative direction $a=0$. For any fixed $a \neq 0$, we can divide both sides of the equation
+
+$$
+a^{2}(x+\beta)+a(x+\beta)^{2}=b+\beta^{3}
+$$
+
+by $a^{3}$ and substitute $a x+\beta$ for $x$ in order to obtain
+
+
+\begin{equation*}
+x^{2}+x=\frac{b+\beta^{3}}{a^{3}} \tag{13}
+\end{equation*}
+
+
+Since $x^{2}+x$ is linear with roots 0 and 1 , it is a 2-to- 1 mapping, and its image set over $\mathbb{F}_{2^{n}}$ is precisely the set of all elements with zero trace. Therefore, for a fixed $a \neq 0$, equation (13) has two solutions if $\operatorname{Tr}_{n}\left(\frac{b+\beta^{3}}{a^{3}}\right)=0$, and no solutions otherwise. Consequently, if we define the function $h: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$ as
+
+$$
+h(a)= \begin{cases}\operatorname{Tr}_{n}\left(\frac{b+\beta^{3}}{a^{3}}\right)+1 & a \neq 0 \\ 0 & a=0\end{cases}
+$$
+
+we can express $\left|\Pi_{F}^{\beta}(b)\right|$ as
+
+
+\begin{equation*}
+\left|\Pi_{F}^{\beta}(b)\right|=I\left(b, \beta^{3}\right)+\mathrm{wt}(h) \tag{14}
+\end{equation*}
+
+
+where $\operatorname{wt}(h)$ is the Hamming weight of $h$, i.e. the number of elements $a \in \mathbb{F}_{2^{n}}$ for which $h(a)$ is non-zero.
+
+The weight of the Boolean function $f: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$ defined as $f(a)=\operatorname{Tr}_{n}\left(\lambda a^{3}\right)$ for some given constant $\lambda \in \mathbb{F}_{2^{n}}$ is known from [13]. More precisely, wt $(f)$ takes the following values:
+
+\[
+\operatorname{wt}(f)= \begin{cases}0 & \lambda=0 ;  \tag{15}\\ 2^{n-1} & n \text { odd }, \lambda \neq 0 ; \\ 2^{n-1}-2^{n / 2} & n \text { even, } n / 2 \text { odd } \\ & \quad \lambda \text { is a cube, } \lambda \neq 0 \\ 2^{n-1}+2^{n / 2-1} & \quad n \text { even, } n / 2 \text { odd } \\ & \quad \lambda \text { is not a cube, } \lambda \neq 0 \\ 2^{n-1}+2^{n / 2} & \quad n \text { even, } n / 2 \text { even, } \\ & \quad \lambda \text { is a cube, } \lambda \neq 0 \\ 2^{n-1}-2^{n / 2-1} & \quad n \text { even, } n / 2 \text { even, } \\ & \quad \lambda \text { is not a cube, } \lambda \neq 0\end{cases}
+\]
+
+Note that in the case of $a \neq 0$ we can express the weight of $h$ as
+
+
+\begin{equation*}
+w t(h)=2^{n}-w t(f)-1 \tag{16}
+\end{equation*}
+
+
+for $f(a)=\operatorname{Tr}_{n}\left(\lambda a^{3}\right)$ with $\lambda=\left(b+\beta^{3}\right)$.\\
+From Proposition 6 we can easily see that the distance $d\left(x^{3}, G\right)$ tends to infinity with $n$. Observe that the value $\Pi_{F}^{\beta}$ does not actually depend on the shift $\beta$; this is true for all quadratic functions as per Proposition 5.
+
+Table I gives the values of $m_{F}$ (for $F(x)=x^{3}$ ) and the lower bound on the distance between $x^{3}$ and the nearest APN function for all dimensions $n$ in the range $1 \leq n \leq 20$. Note that for $1 \leq n \leq 4$ the bound is tight as witnessed by:
+
+\begin{itemize}
+  \item $u_{1}=0, v_{1}=1$ for $n=1$;
+  \item $u_{1}=0, v_{1}=\alpha$ for $n=2$, where $\alpha$ is a primitive element of $\mathbb{F}_{2^{2}}$;
+  \item $u_{1}=0, u_{2}=1, v_{1}=1, v_{2}=\alpha$ for $n=3$, where $\alpha$ is a primitive element of $\mathbb{F}_{2^{3}}$;
+  \item $u_{1}=0, u_{2}=1, v_{1}=1, v_{2}=1$ for $n=4$.
+\end{itemize}
+
+However, as soon as $n \geq 5$, the bound is no longer tight in general. Indeed, in the case of $n=5$, we have verified that the smallest distance to an APN function is equal to 8, which
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{TABLE I\\
+Values of $m_{F}$ and Lower Bounds on $d(F, G)$ for Any $G$ APN For $F(x)=x^{3}$ Over $\mathbb{F}_{2^{n}}$}
+\begin{tabular}{|l|l|l|}
+\hline
+Dimension & $m_{x^{3}}$ & Lower bound on minimum distance \\
+\hline
+1 & 0 & 1 \\
+\hline
+2 & 0 & 1 \\
+\hline
+3 & 3 & 2 \\
+\hline
+4 & 3 & 2 \\
+\hline
+5 & 15 & 6 \\
+\hline
+6 & 27 & 10 \\
+\hline
+7 & 63 & 22 \\
+\hline
+8 & 111 & 38 \\
+\hline
+9 & 255 & 86 \\
+\hline
+10 & 495 & 166 \\
+\hline
+11 & 1023 & 342 \\
+\hline
+12 & 1983 & 662 \\
+\hline
+13 & 4095 & 1366 \\
+\hline
+14 & 8127 & 2710 \\
+\hline
+15 & 16383 & 5462 \\
+\hline
+16 & 32511 & 10838 \\
+\hline
+17 & 65535 & 21846 \\
+\hline
+18 & 130815 & 43606 \\
+\hline
+19 & 262143 & 87382 \\
+\hline
+20 & 523263 & 174422 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+shows that the bound is not tight anymore. It is worth noting, furthermore, that in this case all possible APN functions at distance 8 from $x^{3}$ were obtained by shifting 8 points from $\mathbb{F}_{2^{n}}$ by the same value $v \in \mathbb{F}_{2^{n}}$. Whether the bound is tight for some $n>5$ remains an open question.
+
+By Proposition 3, we know that the value $m_{F}$ for some given APN function $F$ and the lower bound $K$ on the distance to the closest APN function derived from it are valid not only for $F$ itself, but for all functions belonging to its CCZ-equivalence class. Since all APN functions of dimensions four and five have been classified up to CCZ-equivalence [3], Corollary 2 can now be used to obtain a lower bound on the Hamming distance between any two APN functions over $\mathbb{F}_{2^{n}}$ with $n \in\{4,5\}$ by examining a single representative from each. For higher dimensions, we can compute the lower bound for the known CCZ-classes.
+
+Table II gives the values of $m_{F}$ for representatives from all switching classes [16] over $\mathbb{F}_{2^{n}}$ with $n \in\{4,5,6,7,8\}$. In the case of $n \in\{4,5\}$ the selected functions encompass representatives from all CCZ-equivalence classes of the corresponding dimension. In the case of $n \in\{6,8\}$, the functions are given and indexed according to Table 5 from [16]. Note that for $n=7$, we obtain the same bound for all functions listed in [16] except for the inverse function. Since APN functions in dimensions $n \leq 5$ have been completely classified up to CCZ-equivalence [3], this means that for $n \leq 5$ we now have a lower bound on the distance to the closest APN function for all APN functions over $\mathbb{F}_{2^{n}}$.
+
+In addition, we compute the values of $\Pi_{F}$ and $m_{F}$ for the new 471, resp. 8157 APN functions over $\mathbb{F}_{2^{7}}$, resp. $\mathbb{F}_{2^{8}}$ listed in [23]. In the case of $n=7$, we obtain $m_{F}=63$ for all functions $F$ giving a lower bound of 22 on the minimum distance to the closest APN function. In the case of $n=8, m_{F}$ takes values $69,75,81,87,93,99,105$, so that the lower bound on the Hamming distance is always at least 24 . We thus have a lower bound on the distance to the closest APN function for all known APN functions in dimensions $n=7$ and $n=8$. The
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{TABLE II\\
+Values of $m_{F}$, Lower Bounds on $d(F, G)$ and Minimum Single Shift Distance for Any $G \neq F$ APN for $F(x)$ From [16]}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Dimension & F & $m_{F}$ & Lower bound on minimum distance & Minimum single-shift distance \\
+\hline
+4 & $x^{3}$ & 3 & 2 & 2 \\
+\hline
+5 & $x^{3}$ & 15 & 6 & 8 \\
+\hline
+5 & $x^{5}$ & 15 & 6 & 8 \\
+\hline
+5 & $x^{15}$ & 9 & 4 & 10 \\
+\hline
+6 & 1.1 & 27 & 10 & 16 \\
+\hline
+6 & 1.2 & 27 & 10 & 16 \\
+\hline
+6 & 2.1 & 15 & 6 & 16 \\
+\hline
+6 & 2.2 & 27 & 10 & 16 \\
+\hline
+6 & 2.3 & 27 & 10 & 16 \\
+\hline
+6 & 2.4 & 15 & 6 & 8 \\
+\hline
+6 & 2.5 & 15 & 6 & 16 \\
+\hline
+6 & 2.6 & 15 & 6 & 8 \\
+\hline
+6 & 2.7 & 15 & 6 & 8 \\
+\hline
+6 & 2.8 & 15 & 6 & 8 \\
+\hline
+6 & 2.9 & 21 & 8 & 16 \\
+\hline
+6 & 2.10 & 21 & 8 & 8 \\
+\hline
+6 & 2.11 & 15 & 6 & 16 \\
+\hline
+6 & 2.12 & 15 & 6 & 8 \\
+\hline
+7 & 7.1 & 54 & 19 & ? \\
+\hline
+7 & all others & 63 & 22 & ? \\
+\hline
+8 & 1.1 & 111 & 38 & ? \\
+\hline
+8 & 1.2 & 111 & 38 & ? \\
+\hline
+8 & 1.3 & 111 & 38 & ? \\
+\hline
+8 & 1.4 & 111 & 38 & ? \\
+\hline
+8 & 1.5 & 111 & 38 & ? \\
+\hline
+8 & 1.6 & 111 & 38 & ? \\
+\hline
+8 & 1.7 & 111 & 38 & ? \\
+\hline
+8 & 1.8 & 111 & 38 & ? \\
+\hline
+8 & 1.9 & 111 & 38 & ? \\
+\hline
+8 & 1.10 & 111 & 38 & ? \\
+\hline
+8 & 1.11 & 111 & 38 & ? \\
+\hline
+8 & 1.12 & 111 & 38 & ? \\
+\hline
+8 & 1.13 & 111 & 38 & ? \\
+\hline
+8 & 1.14 & 99 & 34 & ? \\
+\hline
+8 & 1.15 & 111 & 38 & ? \\
+\hline
+8 & 1.16 & 111 & 38 & ? \\
+\hline
+8 & 1.17 & 111 & 38 & ? \\
+\hline
+8 & 2.1 & 111 & 38 & ? \\
+\hline
+8 & 3.1 & 111 & 38 & ? \\
+\hline
+8 & 4.1 & 99 & 34 & ? \\
+\hline
+8 & 5.1 & 105 & 36 & ? \\
+\hline
+8 & 6.1 & 105 & 36 & ? \\
+\hline
+8 & 7.1 & 111 & 38 & ? \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+multiset $\Pi_{F}$ takes 6665 distinct values for these 8157 functions. A detailed summary of these computational results can be found online at \href{https://boolean.h.uib.no/mediawiki/}{https://boolean.h.uib.no/mediawiki/}.
+
+The next-to-last column of the table gives the minimum distance from a given function $F$ to the nearest APN function; this can be computed simply as $\left\lceil m_{F} / 3\right\rceil+1$ but is explicitly given here for convenience. The last column gives the minimum distance to the closest APN function that can be obtained from $F$ by shifting some number of points by the same shift, as described in Section V. These values can be computed efficiently and effectively provide an upper bound on the minimum distance to the closest APN function.
+
+For the case of $n=5$, we use the filtering methods described above to compute the exact minimum distance to the closest APN function for a representative from each EA-equivalence class; APN functions have been completely classified in this dimension up to EA-equivalence [3]. This shows, in particular, that the single shift distance can, in general, be larger than the minimum distance to an APN
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{TABLE III\\
+Distance Between APN EA-Representatives From $\mathbb{F}_{2^{5}}$ And Closest Apn Function}
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+$F$ & Lower bound & Actual distance & Singleshift distance & Number of shifts & CCZclass \\
+\hline
+$x^{3}$ & 6 & 8 & 8 & 1 & $x^{5}$ \\
+\hline
+$x^{5}$ & 6 & 8 & 8 & 1 & $x^{3}$ \\
+\hline
+BCP-2 & 6 & 8 & 8 & 1,4 & $x^{3}$ \\
+\hline
+BCP-1 & 6 & 8 & 8 & 1,4 & $x^{5}$ \\
+\hline
+$x^{7}$ & 6 & 10 & 12 & 10 & $x^{7}$ \\
+\hline
+$x^{11}$ & 6 & 10 & 12 & 10 & $x^{11}$ \\
+\hline
+$x^{15}$ & 4 & 10 & 10 & 10 & $x^{15}$ \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+function, and that this minimum distance is not preserved under CCZ-equivalence. The results are given in Table III. In the column labeled "Number of shifts", we give the number of distinct shifts that lead to an APN function; e.g. for BCP-2, either all points from $U$ must be assigned the same shift, or they should be divided into four pairs, with each pair of points shifted by the same value. The last column of Table III gives the CCZ-class to which the function obtained by shifting points from $F$ belongs. The functions labeled "BCP-1" and "BCP-2" are constructed in [8], and constitute the earliest example of an APN function EA-inequivalent to a power function.
+
+\section*{V. Single Shift}
+A significantly simplified construction involves shifting all the points $u_{1}, u_{2}, \ldots, u_{K}$ by the same value $v \in \mathbb{F}_{2^{n}}^{*}$. In this case, characterizing the APN-ness of
+
+$$
+G(x)=F(x)+v\left(\sum_{i \in[K]} 1_{u_{i}}(x)\right)
+$$
+
+becomes easier regardless of whether $F$ is assumed to be APN or not.
+
+For a given triple $(a, x, y) \in \mathbb{F}_{2^{n}}^{3}$, let us denote by $N_{a, x, y}$ the parity of the number of elements from $\{x, y, a+x, a+y\}$ that are in $U$, i.e.
+
+$$
+N_{a, x, y}=|\{x, y, a+x, a+y\} \cap U| \quad \bmod 2 .
+$$
+
+Observe that a differential equation of the form $D_{a} G(x)=b$ for given $a \in \mathbb{F}_{2^{n}}^{*}, b \in \mathbb{F}_{2^{n}}$ can have more than two solutions if and only if
+
+$$
+D_{a} F(x)+D_{a} F(y)=v N_{a, x, y}
+$$
+
+for $x, y \in \mathbb{F}_{2^{n}}$ with $x+y \neq a$.\\
+Given some initial function $F$ over $\mathbb{F}_{2^{n}}$, the following procedure can then be used to find all APN functions $G$ that can be obtained from $F$ by shifting some set of points $U$ by a given shift $v \in \mathbb{F}_{2^{n}}^{*}$ :
+
+\begin{enumerate}
+  \item assign a Boolean variable $u_{x} \in \mathbb{F}_{2}$ to every field element $x \in \mathbb{F}_{2^{n}}$; the value of $u_{x}$ will indicate whether $x$ is in U or not;
+  \item find all tuples $(x, y, a) \in \mathbb{F}_{2^{n}}^{3}$ for which $D_{a} F(x)+ D_{a} F(y)=v$ with $a \neq 0, x \neq y, a+y ;$\\
+3 ) for every such tuple, consider the equation $u_{x}+u_{y}+ u_{a+x}+u_{a+y}=0$;
+  \item find also all tuples $(x, y, a) \in \mathbb{F}_{2^{n}}^{3}$ for which $D_{a} F(x)+ D_{a} F(y)=0$ with $a \neq 0, x \neq y, a+y ;$
+  \item for every such tuple, consider the equation $u_{x}+u_{y}+ u_{a+x}+u_{a+y}=1$;
+  \item solve the system of all such equations; this can be done by e.g. constructing an $e \times\left(2^{n}\right)$ matrix over $\mathbb{F}_{2}$, where $e$ is the number of tuples of both types considered above;
+  \item the solutions to this system now correspond to precisely those sets $U \subseteq \mathbb{F}_{2^{n}}$ for which $G$ is APN.\\
+Note that in the case that $F$ is APN, no equations of the type $D_{a} F(x)+D_{a} F(y)=0$ exist for $x+y \neq a$ so that steps four and five above can be skipped.
+\end{enumerate}
+
+This method is quite useful in practice, as it can be applied rather efficiently (the main part of the computations consists of finding all tuples ( $x, y, a$ ) satisfying one of the conditions given above) and since it can be applied to an arbitrary function $F$ (not only APN). Note that the same method can be obtained from Theorem 9 in [16] for the case that $F$ is APN, where it is presented as a special case of the so-called "switching construction". A construction in which a Boolean function is added to an $(n, n)$-function is also studied in [7].
+
+\section*{VI. Conclusion}
+We examined a construction in which a given vectorial Boolean function $F$ is modified at $K$ different points in order to obtain a new function $G$. We introduced a new CCZ-invariant for APN functions $\Pi_{F}$ which to the best of our knowledge is the first such new invariant for the last ten years. We computed the values of $\Pi_{F}$ for all known APN functions over $\mathbb{F}_{2^{n}}$ for $n \leq 8$. We obtained sufficient and necessary conditions for $G$ to be APN, from which we derived an efficient procedure for searching for APN functions at a given distance from $F$ as well as a lower bound on the distance to the closest APN function in terms of $\Pi_{F}$ and $m_{F}$. Based on this, we computed a lower bound on the Hamming distance to the closest APN function for all APN functions over $\mathbb{F}_{2^{n}}$ for $n \leq 5$, and for all known APN functions over $\mathbb{F}_{2^{n}}$ for $n \leq 8$. We also gave a formula expressing this lower bound for the Gold function $x^{3}$ over $\mathbb{F}_{2^{n}}$ for any dimension $n$. An additional method for characterizing the APN-ness of $G$ was given for the special case when all the shifts $v_{1}, v_{2}, \ldots, v_{K}$ are identical.
+
+There is a lot of room for future work, and a number of questions and research directions remain open. The methods used here for the characterizations of APN functions may be applied to other classes such as differentially 4 -uniform functions. A theoretical lower bound on the value $m_{F}$ would be valuable, as well as additional results related to its computation. Finding relations between $m_{F}$ and other properties of $F$ may be very important, and applying the filtering procedure in practice may lead to new examples of APN functions.
+
+\section*{References}
+[1] P. Thierry, "Berger, Anne Canteaut, Pascale Charpin, and Yann LaigleChapuy, "On almost perfect nonlinear functions over $\mathbb{F}_{2}^{n}$ ", IEEE Trans. Inf. Theory, vol. 52, no. 9, pp. 4160-4170, 2006.\\[0pt]
+[2] E. Biham and A. Shamir, "Differential cryptanalysis of DES-like cryptosystems," J. Cryptol., vol. 4, no. 1, pp. 3-72, Jan. 1991.\\[0pt]
+[3] M. Brinkmann and G. Leander, "On the classification of APN functions up to dimension five," Des., Codes Cryptogr., vol. 49, nos. 1-3, pp. 273-288, Dec. 2008.\\[0pt]
+[4] L. Budaghyan, "The equivalence of almost bent and almost perfect nonlinear functions and their generalizations," Ph.D. dissertation, Dept. Math., Otto-von-Guericke-Univ. Magdeburg, Magdeburg, Germany, 2005.\\[0pt]
+[5] L. Budaghyan, C. Carlet, T. Helleseth, and N. Kaleyski, "Changing points in APN functions," in Proc. 3rd Int. Workshop Boolean Functions Their Appl. (BFA), Loen, Norway, Jun. 2018, p. 1217.\\[0pt]
+[6] L. Budaghyan, C. Carlet, T. Helleseth, N. Li, and B. Sun, "On upper bounds for algebraic degrees of APN functions," IEEE Trans. Inf. Theory, vol. 64, no. 6, pp. 4399-4411, Jun. 2018.\\[0pt]
+[7] L. Budaghyan, C. Carlet, and G. Leander, "Constructing new APN functions from known ones," Finite Fields Their Appl., vol. 15, no. 2, pp. 150-159, Apr. 2009.\\[0pt]
+[8] L. Budaghyan, C. Carlet, and A. Pott, "New classes of almost bent and almost perfect nonlinear polynomials," IEEE Trans. Inf. Theory, vol. 52, no. 3, pp. 1141-1152, Mar. 2006.\\[0pt]
+[9] A. Canteaut, P. Charpin, and H. Dobbertin, "Binary m-sequences with three-valued crosscorrelation: A proof of Welch's conjecture," IEEE Trans. Inf. Theory, vol. 46, no. 1, pp. 4-8, Jan. 2000.\\[0pt]
+[10] C. Carlet, "Boolean functions for cryptography and error correcting codes," in Boolean Models and Methods in Mathematics, Computer Science, and Engineering, Y. Crama and P. Hammer, Eds. Cambridge, U.K.: Cambridge Univ. Press, 2010, pp. 257-397.\\[0pt]
+[11] C. Carlet, "Boolean and vectorial plateaued functions and APN functions," IEEE Trans. Inf. Theory, vol. 61, no. 11, pp. 6272-6289, Nov. 2015.\\[0pt]
+[12] C. Carlet, P. Charpin, and A. Victor, "Zinoviev codes, bent functions and permutations suitable for DES-like cryptosystems," Des., Codes Cryptogr., vol. 15, no. 2, pp. 125-156, 1998.\\[0pt]
+[13] L. Carlitz, "Explicit evaluation of certain exponential sums," Math. Scandinavica, vol. 44, p. 5, Dec. 1979.\\[0pt]
+[14] F. Chabaud and S. Vaudenay, "Links between differential and linear cryptanalysis," in Proc. Workshop Theory Appl. Cryptograph. Techn. in Lecture Notes in Computer Science, vol. 950, 1994, pp. 356-365.\\[0pt]
+[15] P. Charpin, S. Mesnager, and S. Sarkar, "Involutions over the Galois field $\mathbb{F}_{2} \mathrm{n}$," IEEE Trans. Inf. Theory, vol. 62, no. 4, pp. 2266-2276, Apr. 2016.\\[0pt]
+[16] Y. Edel and A. Pott, "A new almost perfect nonlinear function which is not quadratic," Adv. Math. Commun., vol. 3, no. 1, pp. 59-81, 2009.\\[0pt]
+[17] N. S. Kaleyski, "Changing APN functions at two points," Cryptogr. Commun., vol. 11, no. 6, pp. 1165-1184, Nov. 2019.\\[0pt]
+[18] Y. Li, M. Wang, and Y. Yu, "Constructing differentially 4-uniform permutations over $G F\left(2^{2 k}\right)$ from the inverse function revisited," IACR Cryptol. ePrint Arch., vol. 2013, p. 731, Nov. 2013.\\[0pt]
+[19] K. Nyberg, "Perfect nonlinear s-boxes," in Advances CryptologyEUROCRYPT, D. W. Davies, Ed. Berlin, Germany: Springer, 1991. pp. 378-386.\\[0pt]
+[20] K. Nyberg, "Differentially uniform mappings for cryptography," in Advances in Cryptology-EUROCRYPT (Lecture Notes in Computer Science), vol. 765. Berlin, Germany: Springer, 1994, pp. 55-64.\\[0pt]
+[21] K. Nyberg, "S-boxes and round functions with controllable linearity and differential uniformity," in Proc. Int. Workshop Fast Softw. Encryption, 1994, pp. 111-130.\\[0pt]
+[22] L. C. Washington and W. Trappe, Introduction to Cryptography With Coding Theory. Upper Saddle River, NJ, USA: Prentice-Hall, 2002.\\[0pt]
+[23] Y. Yu, M. Wang, and Y. Li, "A matrix approach for constructing quadratic APN functions," Des., Codes Cryptogr., vol. 73, no. 2, pp. 587-600, Nov. 2014.\\[0pt]
+[24] Y. Yu, M. Wang, and Y. Li, "Constructing differentially 4 uniform permutations from known ones," Chin. J. Electron., vol. 22, no. 3, pp. 495-499, 2013.
+
+Lilya Budaghyan received the Ph.D. degree from the University of Magdeburg, Germany, in 2005, and the Habilitation degree from the University of Paris VIII, France, in 2013. She conducted her research at Yerevan State University, Armenia, from 1998 to 2003, the University of Magdeburg, Germany, from 2003 to 2005, the University of Trento, Italy, from 2005 to 2007, Telecom ParisTech in 2011, and the Universities of Paris VIII and Paris XIII from 2012 to 2013. Since 2007, she has been with the University of Bergen, Norway, where she is currently a Professor and the Leader of the Selmer Center in Secure Communication. Her main research interest is in the field of cryptographic Boolean functions and their applications. Since 2018, she has been a member of the Norwegian Academy of Technological Sciences (NTVA). She received the Trond Mohn Foundation Award in 2016, the Young Research Talent Grant from the Norwegian Research Council in 2014, the Postdoctoral Fellowship Award from the Foundation of Mathematical Sciences of Paris in 2012, and the Emil Artin Junior Prize in Mathematics in 2011.
+
+Claude Carlet received the Ph.D. degree from the University of Paris 6, Paris, France, in 1990, and the Habilitation degree to direct theses from the University of Amiens, France, in 1994. He was an Associate Professor with the Department of Computer Science, University of Amiens, France, from 1990 to 1994, and a Professor with the Department of Computer Science, University of Caen Normandy, France, from 1994 to 2000, and with the Department of Mathematics, University of Paris 8, Saint-Denis, France, where he has been a Professor Emeritus since then. He is also related to the University of Bergen, Norway. His research interests include Boolean functions, cryptology, and coding theory. He was an Associate Editor for coding theory of the IEEE Transactions on Information Theory from March 2002 to February 2005. He is the Editor-in-Chief of the journal Cryptography and Communications-Discrete Structures, Boolean Functions and Sequences (CCDS) (Springer). He is in the editorial boards of the journals Designs, Codes and Cryptography (Springer), Advances in Mathematics of Communications (AIMS), International Journal of Computer Mathematics (Taylor \& Francis), Journal of Algebraic Combinatorics (JACO) (Springer), and International Journal of Information and Coding Theory (Inderscience Publishers).
+
+Tor Helleseth (Fellow, IEEE) received the Cand. Real. and Dr. Philos. degrees in mathematics from the University of Bergen, Bergen, Norway, in 1971 and 1979, respectively. From 1973 to 1980, he was a Research Assistant with the Department of Mathematics, University of Bergen. From 1981 to 1984, he was with the Chief Headquarters of Defense in Norway. Since 1984, he has been a Professor with the Department of Informatics, University of Bergen. During the academic years of 1977 to 1978 and 1992 to 1993, he was on sabbatical leave at the University of Southern California, Los Angeles, and from 1979 to 1980, he was a Research Fellow at the Eindhoven University of Technology, Eindhoven, The Netherlands. His research interests include coding theory and cryptology. In 2004, he was also elected as a member of Det Norske Videnskaps-Akademi. He was the Program Chairman of Eurocrypt'93 and of the Information Theory Workshop, Longyearbyen, Norway, in 1997. He was the Program Co-Chairman of SETA04, Seoul, South Korea, and of SETA06, Beijing, China. He was also the Program Co-Chairman of the IEEE Information Theory Workshop, Solstrand, Norway, in 2007. From 2007 to 2009, he served on the Board of Governors of the IEEE Information Theory Society. He served as an Associate Editor for coding theory for the IEEE Transactions on Information Theory from 1991 to 1993. In 1997, he was elected as a Fellow of the IEEE for his contributions to coding theory and cryptography.
+
+Nikolay Kaleyski received the bachelor's degree in general computer science and the master's degree in theoretical computer science from Charles University, Prague, in 2014 and 2016, respectively. He is currently pursuing the Ph.D. degree with the University of Bergen. His bachelor's thesis, "Eigenvalues of symmetric interval matrices," concerns the implementation of algorithms for computing the eigenvalues of symmetric interval matrices in Matlab, while his master's thesis, "Boolean methods in knowledge compilation," concerns the construction and analysis of a family of Boolean functions serving as a counter-example to an open problem in knowledge compilation. His current research focuses on the construction and analysis of cryptographically optimal Boolean functions, with a focus on almost perfect nonlinear (APN) and almost bent $(\mathrm{AB})$ functions.
+
+
+\end{document}

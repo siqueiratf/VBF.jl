@@ -1,0 +1,689 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage{bbold}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=magenta, urlcolor=cyan,}
+\urlstyle{same}
+\usepackage{caption}
+
+\title{Constructing new differentially 4-uniform permutations from the inverse function }
+
+\author{Zhengbang Zha ${ }^{\mathrm{a}, \mathrm{b}, *}$, Lei Hu ${ }^{\mathrm{a}}$, Siwei Sun ${ }^{\mathrm{a}}$\\
+${ }^{\mathrm{a}}$ State Key Laboratory of Information Security, Institute of Information Engineering, Chinese Academy of Sciences, Beijing 100093, China\\
+${ }^{\mathrm{b}}$ School of Mathematical Sciences, Luoyang Normal University, Luoyang 471022, China}
+\date{}
+
+
+%New command to display footnote whose markers will always be hidden
+\let\svthefootnote\thefootnote
+\newcommand\blfootnotetext[1]{%
+  \let\thefootnote\relax\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \let\thefootnote\svthefootnote%
+}
+
+%Overriding the \footnotetext command to hide the marker if its value is `0`
+\let\svfootnotetext\footnotetext
+\renewcommand\footnotetext[2][?]{%
+  \if\relax#1\relax%
+    \ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+  \else%
+    \if?#1\ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+    \else\svfootnotetext[#1]{#2}\fi%
+  \fi
+}
+
+\begin{document}
+\maketitle
+\captionsetup{singlelinecheck=false}
+
+
+\section*{ARTICLE INFO}
+\section*{Article history:}
+Received 6 March 2013\\
+Received in revised form 15 August 2013\\
+Accepted 19 August 2013\\
+Available online 14 September 2013\\
+Communicated by Gary McGuire
+
+\section*{MSC:}
+94A60\\
+11T71\\
+14G50
+
+\section*{Keywords:}
+Permutation\\
+Differentially 4-uniform function\\
+Nonlinearity\\
+Algebraic degree
+
+\begin{abstract}
+Two new families of differentially 4 -uniform permutations over $\mathbb{F}_{2^{2 m}}$ are constructed by modifying the values of the inverse function on some subfield of $\mathbb{F}_{2^{2 m}}$ and by applying affine transformations on the function. The resulted 4 -uniform permutations have high nonlinearity and algebraic degree. A family of differentially 6-uniform permutations with high nonlinearity and algebraic degree is also constructed by making the modification on an affine subspace of $\mathbb{F}_{2^{2 m}}$.
+\end{abstract}
+
+© 2013 Elsevier Inc. All rights reserved.
+
+\section*{1. Introduction}
+Let $\mathbb{F}_{2^{n}}$ be a finite field with $2^{n}$ elements and $f$ be a function from $\mathbb{F}_{2^{n}}$ to itself. Let $N(a, b)$ denote the number of solutions $x \in \mathbb{F}_{2^{n}}$ of the equation $f(x+a)+f(x)=b$, where $a, b \in \mathbb{F}_{2^{n}}$, and let $\Delta_{f}=\max \left\{N(a, b) \mid a, b \in \mathbb{F}_{2^{n}}, a \neq 0\right\}$. Nyberg [13] defined a function $f$ to be differentially $k$-uniform if $\Delta_{f}=k$. Since $f(x+a)+f(x)=f((x+a)+a)+f(x+a), \Delta_{f}=2$ is the minimum possible value of $\Delta_{f}$. Functions with $\Delta_{f}=2$ are called almost perfect nonlinear (APN) functions. The research of APN functions can be seen in [1,8] and the references therein. APN functions have optimal resistance to differential attacks. However, there was only one sporadic example of APN permutation over fields
+
+\footnotetext{\begin{itemize}
+  \item Corresponding author at: School of Mathematical Sciences, Luoyang Normal University, Luoyang 471022, China.
+\end{itemize}
+
+E-mail addresses: \href{mailto:zhazhengbang@163.com}{zhazhengbang@163.com} (Z. Zha), \href{mailto:hu@is.ac.cn}{hu@is.ac.cn} (L. Hu), \href{mailto:swsun@is.ac.cn}{swsun@is.ac.cn} (S. Sun).
+}
+with even degree [7]. It is a big open problem whether there exist more ones. As we know, many symmetric ciphers use the substitution boxes (S-boxes) to bring the confusion into the system. Most of such S-boxes are functions from $\mathbb{F}_{2^{n}}$ to itself. One would like these functions have high nonlinearity, low differential uniformity and high algebraic degree for resisting against linear cryptanalysis, differential cryptanalysis and other cryptanalysis like algebraic attacks. Moreover, for ease of software implementation of encryption and decryption, one would like these functions are permutations for even number $n$. The inverse function over $\mathbb{F}_{2^{8}}$ is such a function and is used as the S-boxes of the Advanced Encryption Standard (AES). Finding more differentially 4-uniform functions is still an active research topic for providing more choices for the S-boxes.
+
+Bracken and Leander [3] firstly proved the function $x^{2^{2 k}}+2^{k}+1$ is a differentially 4 -uniform permutation with high nonlinearity. In a subsequent work, Bracken et al. [4] introduced a new binomial differentially 4-uniform permutation. But the algebraic degrees of these two differentially 4-uniform permutations are less than 4 , which is vulnerable to higher order differential attack [9]. In [5], Carlet proposed a new method of constructing differentially 4 -uniform permutations. Inspired by the idea of Carlet, Li and Wang [12] presented a construction of differentially 4-uniform permutation over $\mathbb{F}_{2^{2 m}}$ from quadratic APN permutations $\mathbb{F}_{2^{2 m+1}}$. After that, Tan et al. [15] applied a powerful switching method (which can be seen in [14]) on five known families to construct differentially 4 -uniform permutations and succeeded to find two new families of differentially 4 -uniform permutations. Recently, by exchanging two values of the inverse function on $\mathbb{F}_{2^{2 m}}$, Yu et al. [16] got some new differentially 4 -uniform permutations which are CCZ-inequivalent to the inverse functions. In this paper, we will present two new families of differentially 4 -uniform permutations, which are constructed by modifying the inverse function on some subfield and by applying affine transformations on the function. We show that both the new differentially 4 -uniform permutations have high nonlinearity and algebraic degree.
+
+The rest of this paper is organized as follows. In Section 2, some preliminaries needed later as well as a brief overview of known differentially 4 -uniform permutations are presented. In Section 3, we present two new constructions of differentially 4 -uniform permutations and show their cryptographic properties. In Section 4, we present another construction of functions with low differential uniformity. Some computational results and conclusion are given in Section 5.
+
+\section*{2. Preliminaries}
+Let $k$ be a divisor of $n$. The trace map from $\mathbb{F}_{2^{n}}$ onto its subfield $\mathbb{F}_{2^{k}}$ is defined as
+
+$$
+\operatorname{Tr}_{k}^{n}(x)=x+x^{2^{k}}+x^{2^{2 k}}+\cdots+x^{2^{n-k}}
+$$
+
+The absolute trace map (i.e., for $k=1$ ) is simply denoted by $\operatorname{Tr}(x)=\sum_{i=0}^{n-1} x^{2^{i}}$.\\
+For a function $f(x)=\sum_{i=0}^{2^{n}-1} a_{i} x^{i}, a_{i} \in \mathbb{F}_{2^{n}}$, we denote its algebraic degree by deg $f$, which is defined to be the maximal 2 -weight of the exponent $i$ such that $a_{i} \neq 0$. We note that the 2 -weight of an integer is the number of ones in its binary expression. It is known that if $f$ is a permutation on $\mathbb{F}_{2^{n}}$, then $\operatorname{deg} f \leqslant n-1$. If it attains the equality then we call it a permutation with optimal algebraic degree. If $\operatorname{deg} f \leqslant 1$, then $f$ is called an affine function.
+
+For a function $f: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$, the Walsh transform $f^{\mathcal{W}}: \mathbb{F}_{2^{n}} \times \mathbb{F}_{2^{n}}^{*} \rightarrow \mathbb{C}$ of $f$ is defined as:
+
+$$
+f^{\mathcal{W}}(a, b):=\sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{\operatorname{Tr}(a x+b f(x))}, \quad a \in \mathbb{F}_{2^{n}}, b \in \mathbb{F}_{2^{n}}^{*}
+$$
+
+The set $\mathcal{W}_{f}:=\left\{f^{\mathcal{W}}(a, b) \mid a \in \mathbb{F}_{2^{n}}, b \in \mathbb{F}_{2^{n}}^{*}\right\}$ is called the Walsh spectrum of $f$. The nonlinearity $\mathcal{N} \mathcal{L}(f)$ of $f$ is defined as
+
+$$
+\mathcal{N} \mathcal{L}(f) \triangleq 2^{n-1}-\frac{1}{2} \max _{w \in W_{f}}|w|
+$$
+
+It is known that if $n$ is odd, the nonlinearity $\mathcal{N} \mathcal{L}(f)$ is upper-bounded by $2^{n-1}-2^{\frac{n-1}{2}}$; and when $n$ is even it is conjectured that $\mathcal{N} \mathcal{L}(f)$ is upper-bounded by $2^{n-1}-2^{\frac{n}{2}}$ [4]. We call a function maximal nonlinear if its nonlinearity attains these bounds.
+
+Two functions $f, g: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ are called extended affine equivalent (EA-equivalent) if $g=A_{1} \circ f \circ A_{2}+A$ for some affine permutations $A_{1}$ and $A_{2}$ and an affine function $A$. Nonconstant EA-equivalent functions have the same algebraic degree.
+
+Two functions $f$ and $g$ from $\mathbb{F}_{2^{n}}$ to itself are called Carlet-Charpin-Zinoviev equivalent (CCZequivalent) if the graphs of $f$ and $g$ are affine equivalent. It is shown in [6] that EA-equivalence implies CCZ-equivalence, but not vice versa. Every permutation is CCZ-equivalent to its inverse, and the differential spectrum and the Walsh spectrum are CCZ-invariant $[2,6]$.
+
+The inverse function defined on $\mathbb{F}_{2^{n}}$ is given by $f(x)=x^{-1}$, where $0^{-1}$ is always defined as 0 in this paper. It is a permutation with optimal or suboptimal differentially uniformity: for odd $n, \Delta_{f}=2$ and for even $n, \Delta_{f}=4$.
+
+The well-known examples of differentially 4 -uniform permutations which have high nonlinearity are given in the following theorem, and we refer the reader to [4,15].
+
+Theorem I. Let $f$ be a function over $\mathbb{F}_{2^{n}}$. Then $f$ is a differentially 4-uniform permutation if:
+
+\begin{enumerate}
+  \item $f(x)=x^{2^{i}+1}, g \operatorname{gcd}(i, n)=2, n=2 t$ and $t$ is odd (Gold);
+  \item $f(x)=x^{2^{2 i}-2^{i}+1}, \operatorname{gcd}(i, n)=2, n=2 t$ and $t$ is odd (Kasami);
+  \item $f(x)=x^{2^{n}-2}, n=2 t$ (Inverse);
+  \item $f(x)=x^{2^{2 t}}+2^{t}+1, n=4 t$ and $t$ is odd(Bracken-Leander);
+  \item $f(x)=\alpha x^{2^{s}+1}+\alpha^{2^{t}} x^{2^{-t}+2^{t+s}}$, $n=3 t, t / 2$ is odd, $\operatorname{gcd}(n, s)=2,3 \mid t+s$ and $\alpha$ is a primitive element of $\mathbb{F}_{2^{n}}$ (Bracken-Tan-Tan);
+  \item $f(x)=x^{-1}+\operatorname{Tr}\left(x+\left(x^{-1}+1\right)^{-1}\right), n=2 t$ is even (Tan-Qu-Tan-Li); or
+  \item $f(x)=x^{-1}+\operatorname{Tr}\left(x^{-3\left(2^{k}+1\right)}+\left(x^{-1}+1\right)^{3\left(2^{k}+1\right)}\right), n=2 t$ and $2 \leqslant k \leqslant t-1$ (Tan-Qu-Tan-Li).
+\end{enumerate}
+
+Below we always let $n$ and $s$ be positive integers with $n>1$, and $q=2^{s}$ be a power of 2 . Let $\omega$ be a primitive third root of unity in the algebraic closure of $\mathbb{F}_{q}$. Clearly, $\omega \in \mathbb{F}_{q}$ if $s$ is even and $\omega \notin \mathbb{F}_{q}$ otherwise.
+
+\section*{3. New differentially 4 -uniform permutations}
+First we present five lemmas needed in the sequel.\\[0pt]
+Lemma 1. (See [10].) For any $a, b \in \mathbb{F}_{2^{n}}$ and $a \neq 0$, the polynomial $f(x)=x^{2}+a x+b$ is irreducible over $\mathbb{F}_{2^{n}}$ if and only if $\operatorname{Tr}\left(b / a^{2}\right)=1$.
+
+Lemma 2. Let $t \in \mathbb{F}_{q}^{*}$. Assume $(n, q) \neq(2,2),(2,4)$. Then there exists $a \in \mathbb{F}_{q^{n}} \backslash \mathbb{F}_{q}$ such that the equation
+
+
+\begin{equation*}
+(x / a)^{2}+x / a+\frac{1}{1+a t}=0 \tag{1}
+\end{equation*}
+
+
+has two solutions in $\mathbb{F}_{q^{n}} \backslash \mathbb{F}_{q}$.\\
+Proof. By Lemma 1, Eq. (1) has solutions in $\mathbb{F}_{q^{n}}$ if and only if $\operatorname{Tr}\left(\frac{1}{1+a t}\right)=0$, where $\operatorname{Tr}$ is the absolute trace map from $\mathbb{F}_{q^{n}}$ to $\mathbb{F}_{2}$. There are exactly $q^{n} / 2-1$ values of $a \in \mathbb{F}_{q^{n}} \backslash\left\{t^{-1}\right\}$ such that $\operatorname{Tr}\left(\frac{1}{1+a t}\right)=0$. Since $t \in \mathbb{F}_{q}^{*}$, there are exactly $q / 2-1$ values of $a \in \mathbb{F}_{q} \backslash\left\{t^{-1}\right\}$ such that $\operatorname{Tr}_{1}^{s}\left(\frac{1}{1+a t}\right)=0$. For $a \in \mathbb{F}_{q}$, $\operatorname{Tr}_{1}^{s n}\left(\frac{1}{1+a t}\right)=n \operatorname{Tr}_{1}^{s}\left(\frac{1}{1+a t}\right)$, thus, there are exactly $q / 2-1$ (if $n$ is odd) or $q-1$ (if $n$ is even) values of $a \in \mathbb{F}_{q} \backslash\left\{t^{-1}\right\}$ such that $\operatorname{Tr}\left(\frac{1}{1+a t}\right)=0$. Hence, there exist exactly $\frac{1}{2}\left(q^{n}-q\right)$ (if $n$ is odd) or $\frac{1}{2}\left(q^{n}-2 q\right)$ (if $n$ is even) values of $a \in \mathbb{F}_{q^{n}} \backslash \mathbb{F}_{q}$ such that $\operatorname{Tr}\left(\frac{1}{1+a t}\right)=0$.
+
+To count the elements among such $a$ 's such that the solutions of (1) are both not in $\mathbb{F}_{q}$, we enumerate those elements such that (1) has at least one solution in $\mathbb{F}_{q}$. Write Eq. (1) on $x$ as an equation $(1+x t) a^{2}+\left(x^{2} t+x\right) a+x^{2}=0$ on $a$. Given an $x \in \mathbb{F}_{q}^{*} \backslash\left\{t^{-1}\right\}$, there are at most two solutions on $a$, thus, there exist at most $2(q-2)$ values of $a \in \mathbb{F}_{q^{n}}$ such that (1) has at least one solution in $\mathbb{F}_{q}$. Since $n>1$ and $(n, q) \neq(2,2),(2,4)$, it is easy to check that $\frac{1}{2}\left(q^{n}-2 q\right)>2(q-2)$, thus, there must exist $a \in \mathbb{F}_{q^{n}} \backslash \mathbb{F}_{q}$ such that (1) has two solutions in $\mathbb{F}_{q^{n}} \backslash \mathbb{F}_{q}$.
+
+Lemma 3. (See [11].) Define the Kloosterman sum over $\mathbb{F}_{2^{s}}$ as
+
+$$
+K_{S}(\lambda)=\sum_{x \in \mathbb{F}_{2^{s}}}(-1)^{\operatorname{Tr}\left(\lambda x+x^{-1}\right)}, \quad \lambda \in \mathbb{F}_{2^{s}} .
+$$
+
+The set $\left\{K_{S}(\lambda): \lambda \in \mathbb{F}_{2^{s}}\right\}$ is exactly the set of all integers $k \equiv 0(\bmod 4)$ in the range $\left[-2^{\frac{s}{2}+1}+1,2^{\frac{s}{2}+1}+1\right]$.\\
+Lemma 4. Let $s \geqslant 5$ be odd. There exists $u \in \mathbb{F}_{q}^{*}$ such that $\operatorname{Tr}_{1}^{s}\left(\frac{1}{1+u+u^{-1}}\right)=0$.\\
+Proof. The mapping $u \mapsto u+u^{-1}$ is exactly 2-to-1 from $\mathbb{F}_{q} \backslash \mathbb{F}_{2}$ to $\mathbb{F}_{q} \backslash \mathbb{F}_{2}$ with the convention that $0^{-1}=0$. Since $s$ is odd, we have $\operatorname{Tr}_{1}^{s}(1)=1$. Assume on the contrary that the claim is false. Then by the property of the mapping being 2 -to- 1 , elements of the form $\frac{1}{1+u+u^{-1}}, u \in \mathbb{F}_{q}$, form the support set of the absolute trace map, namely,
+
+$$
+\left\{\frac{1}{1+u+u^{-1}}: u \in \mathbb{F}_{q}\right\}=\left\{v \in \mathbb{F}_{q}: \operatorname{Tr}_{1}^{s}(v)=1\right\}\left(=: \operatorname{supp}\left(\operatorname{Tr}_{1}^{s}\right)\right) .
+$$
+
+Since $\operatorname{Tr}_{1}^{S}\left(\frac{u}{u^{2}+u+1}\right)=\operatorname{Tr}_{1}^{S}\left(\frac{1}{1+u+u^{-1}}\right)=1$, the equation $z^{2}+\frac{u^{2}+u+1}{u} z+1=0$ on $z$ has no solution in $\mathbb{F}_{q}$ by Lemma 1. Thus, for any $u, z \in \mathbb{F}_{q}$, we have $1+u+u^{-1} \neq z+z^{-1}$, and hence, elements of the form $\frac{1}{z+z^{-1}}, z \in \mathbb{F}_{q}$, form the zero set of the absolute trace map, namely
+
+$$
+\left\{\frac{1}{u+u^{-1}}: u \in \mathbb{F}_{q}\right\}=\left\{v \in \mathbb{F}_{q}: \operatorname{Tr}_{1}^{s}(v)=0\right\}\left(=: \operatorname{zero}\left(\operatorname{Tr}_{1}^{s}\right)\right) .
+$$
+
+For any $v \in \operatorname{supp}\left(\operatorname{Tr}_{1}^{s}\right)$, write it as $v=\frac{1}{1+u+u^{-1}}$ for some $u \in \mathbb{F}_{q}$. Then we get $\operatorname{Tr}_{1}^{s}\left(\frac{1}{1+v^{-1}}\right)= \operatorname{Tr}_{1}^{s}\left(\frac{1}{u+u^{-1}}\right)=0$. Similarly, for any $v \in \operatorname{zero}\left(\operatorname{Tr}_{1}^{s}\right)$, write it as $v=\frac{1}{u+u^{-1}}$ for some $u \in \mathbb{F}_{q}$, and we have $\operatorname{Tr}_{1}^{s}\left(\frac{1}{1+v^{-1}}\right)=\operatorname{Tr}_{1}^{s}\left(\frac{1}{1+u+u^{-1}}\right)=1$. Therefore, for any $v \in \mathbb{F}_{q}$, we obtain $\operatorname{Tr}_{1}^{s}\left(\frac{1}{1+v^{-1}}\right)=\operatorname{Tr}_{1}^{s}(v)+1$, or equivalently,
+
+$$
+\operatorname{Tr}_{1}^{s}\left(\frac{1}{1+v^{-1}}\right)=\operatorname{Tr}_{1}^{s}(v+1)
+$$
+
+Noticing that $u u^{-1}=1$ holds only for $u \neq 0$ and replacing $v$ by $v+1$, for any $v \in \mathbb{F}_{q} \backslash \mathbb{F}_{2}$, we get
+
+$$
+\operatorname{Tr}_{1}^{s}\left(1+v^{-1}\right)=\operatorname{Tr}_{1}^{s}(v)
+$$
+
+In a summary, we have $\operatorname{Tr}_{1}^{s}\left(v+v^{-1}\right)=1$ for any $v \in \mathbb{F}_{2^{s}} \backslash \mathbb{F}_{2}$. Therefore, $K_{s}(1)=2-\left(2^{s}-2\right)=4-2^{s}$, which is impossible for $s \geqslant 5$ by Lemma 3.
+
+Remark 1. When $s=1$ or $3, \operatorname{Tr}_{1}^{s}\left(\frac{1}{1+u+u^{-1}}\right)=1$ holds for all $u \in \mathbb{F}_{2^{s}}$.
+
+Lemma 5. Let $s$ be odd and $n$ be even. Let $t \in \mathbb{F}_{q}^{*}$ and $a \in \mathbb{F}_{q^{n}}^{*} \backslash \mathbb{F}_{q}$ with $a^{q-1}=\omega$ or $\omega^{2}$. Then, if and only if $s \geqslant 5$, or $s=1,3$ and $\frac{n}{2}$ is even, there exists such an element a such that Eq. (1) has two solutions in $\mathbb{F}_{q^{n}} \backslash \mathbb{F}_{q}$.
+
+Proof. Without loss of generality, we consider the case of $a^{q-1}=\omega$. Since $s$ is odd and $n$ is even, we obtain $q \equiv 2(\bmod 3)$, $a^{q^{2}-1}=\omega^{q+1}=1$, and at $\in \mathbb{F}_{q^{2}}$. Then,
+
+$$
+\begin{aligned}
+\operatorname{Tr}_{1}^{s n}\left(\frac{1}{1+a t}\right) & =\operatorname{Tr}_{1}^{2 s}\left(\operatorname{Tr}_{2 s}^{n s}\left(\frac{1}{1+a t}\right)\right)=\frac{n}{2} \operatorname{Tr}_{1}^{2 s}\left(\frac{1}{1+a t}\right) \\
+& =\frac{n}{2} \operatorname{Tr}_{1}^{s}\left(\frac{1}{1+a t}+\frac{1}{1+\omega a t}\right)=\frac{n}{2} \operatorname{Tr}_{1}^{s}\left(\frac{1}{1+\omega^{2} a t+\left(\omega^{2} a t\right)^{-1}}\right)
+\end{aligned}
+$$
+
+It is easy to check that $\omega^{2} a \in \mathbb{F}_{q}^{*}$ and when $a$ takes all elements in $\mathbb{F}_{q^{2}}$ with $a^{q-1}=\omega, \omega^{2} a t \in \mathbb{F}_{q}^{*}$ runs all elements in $\mathbb{F}_{q}^{*}$. From Lemma 4 and Remark 1, we have that there exists some value $a$ such that $\operatorname{Tr}_{1}^{s n}\left(\frac{1}{1+a t}\right)=0$, i.e., Eq. (1) has solutions if and only if $s \geqslant 5$, or $s=1,3$ and $\frac{n}{2}$ is even. We show that any of its solutions $x$ cannot be in $\mathbb{F}_{q}$ as follows.
+
+Assume on the contrary that $x \in \mathbb{F}_{q}$. Since $t \in \mathbb{F}_{q}^{*}$ and $a^{q}=\omega a$, we have $1+a t \neq 0$ and
+
+
+\begin{equation*}
+a^{2}(1+t x)+a\left(x+t x^{2}\right)+x^{2}=0 \tag{2}
+\end{equation*}
+
+
+from (1). Taking the $q$-th powers of (2), we get
+
+$$
+\omega^{2} a^{2}(1+t x)+\omega a\left(x+t x^{2}\right)+x^{2}=0
+$$
+
+Summing the above equation and (2), we obtain $\omega a^{2}(1+t x)\left(1+\omega a^{-1} x\right)=0$. If $1+x t=0$, we get $x=0$ from (2), which is a contradiction. Then we have $x=\omega^{2} a$ and $\omega+\omega^{2}+\frac{1}{1+a t}=0$ from (1). It leads to $a t=0$, which is also a contradiction.
+
+Inspired by the idea of [16], we give the following new constructions of differentially 4 -uniform permutations.
+
+\subsection*{3.1. The first construction}
+As we know, for $x \in \mathbb{F}_{q^{n}},\left(x^{q}+x\right)^{q^{n}-1}=1$ if and only if $x^{q} \neq x$. Our first construction is the following function
+
+\[
+f(x)=x^{-1}+t\left(x^{q}+x\right)^{q^{n}-1}+t= \begin{cases}x^{-1}+t, & \text { if } x^{q}=x  \tag{3}\\ x^{-1}, & \text { if } x^{q} \neq x\end{cases}
+\]
+
+where $t \in \mathbb{F}_{q}^{*}$. Obviously, since $t \in \mathbb{F}_{q}^{*}$, we have that $x^{-1}+t$ is injective over the subfield $\mathbb{F}_{q}$ and $x^{-1}$ is injective over the subset $\mathbb{F}_{q^{n}} \backslash \mathbb{F}_{q}$. Then we get that $f$ is a permutation over $\mathbb{F}_{q^{n}}$.
+
+Let $a \in \mathbb{F}_{q^{n}}^{*}$ and $b \in \mathbb{F}_{q^{n}}$. Now we consider the solutions of equation $f(x+a)+f(x)=b$, i.e.,
+
+
+\begin{equation*}
+(x+a)^{-1}+t\left(x^{q}+x+a^{q}+a\right)^{q^{n}-1}+x^{-1}+t\left(x^{q}+x\right)^{q^{n}-1}=b \tag{4}
+\end{equation*}
+
+
+over $\mathbb{F}_{q^{n}}$. Since $f$ is a permutation over $\mathbb{F}_{q^{n}}$, the above equation has no solution if $b=0$. Below we assume $b \neq 0$.
+
+Assume that $x$ is a solution to (4). When $x=0, a$, we have $b=a^{-1}+t\left(a^{q}+a\right)^{q^{n}-1}\left(:=b_{0}\right)$. We note that $b_{0}=a^{-1}$ if $a=a^{q}$ and $b_{0}=a^{-1}+t$ if $a \neq a^{q}$. Hence, when $b \neq b_{0}$, the solution $x$ must be not equal to 0 and $a$, and we can divide the solutions into two disjoint cases as follows.
+
+Case I: Assume both or neither of $x$ and $x+a$ belong to $\mathbb{F}_{q}$. In this case, we get
+
+
+\begin{equation*}
+b x^{2}+a b x+a=0 \tag{5}
+\end{equation*}
+
+
+We note that Eq. (5) has at most two solutions for any pair $(a, b) \in \mathbb{F}_{q^{n}}^{*} \times \mathbb{F}_{q^{n}}^{*}$. If $x_{1}$ is a solution of (5), then $x_{1}+a$ is also a solution of (5). Therefore, only one subcase happens in Case I. That is to say, either both the solutions of (5) are in $\mathbb{F}_{q}$ or neither in $\mathbb{F}_{q}$.
+
+Case II: Assume exactly one of $x$ and $x+a$ belongs to $\mathbb{F}_{q}$. In this case, we obtain $a \neq a^{q}$ and
+
+
+\begin{equation*}
+(b+t) x^{2}+(b+t) a x+a=0 \tag{6}
+\end{equation*}
+
+
+Again since $a \neq 0$, Eq. (6) has at most two solutions.\\
+Combining the two cases, for any pair ( $a, b$ ) with $b \neq b_{0}$, there are at most four solutions of (4) in Cases I and II.
+
+Next we consider the case of $b=b_{0}$ and determine the differential uniformity of function $f$ defined by (3).
+
+Theorem 1. Let $s$ be even. Then the function $f$ defined by (3) is a differentially 4-uniform permutation over $\mathbb{F}_{q^{n}}$.
+
+Proof. If $a=a^{q}$ and $b=b_{0}=a^{-1}$, there are two solutions $\omega a, \omega^{2} a \in \mathbb{F}_{q}$ in Case I and no solution in Case II. Then we get four solutions $0, a, \omega a, \omega^{2} a$ of (4).
+
+If $a \neq a^{q}$ and $b=b_{0}=a^{-1}+t$, we have $a(b+t)=1$. Then we obtain two solutions $\omega a, \omega^{2} a$ of (6). Since $s$ is even, we have that $q \equiv 1(\bmod 3)$ and both the solutions $\omega a, \omega^{2} a$ lead to $a^{q}=a$, which is a contradiction. Therefore, we obtain at most four solutions ( $0, a$ and two solutions in Case I) of (4).
+
+Therefore, $f$ is a differentially 4 -uniform permutation over $\mathbb{F}_{q^{n}}$.
+
+Theorem 2. Let $s, n$ be odd. Then the function $f$ defined by (3) is a differentially 4-uniform permutation over $\mathbb{F}_{q^{n}}$.
+
+Proof. If $a=a^{q}$ and $b=b_{0}=a^{-1}$, then we get $\operatorname{Tr}\left(\frac{1}{a b}\right)=\operatorname{Tr}(1)=1$. From Lemma 1 , there are no solutions in Case I. Then we obtain only two solutions 0, $a$ of (4).
+
+If $a \neq a^{q}$ and $b=b_{0}=a^{-1}+t$, similarly, we have that $a(b+t)=1$ and there are no solutions in Case II from Lemma 1. Then we obtain at most four solutions ( $0, a$ and two solutions in Case I) of (4). Substituting $b=a^{-1}+t$ into (5), then we get $x^{2}+a x+\frac{a^{2}}{1+a t}=0$. By Lemma 2, there exists a pair ( $a, b$ ) such that there are exactly four solutions of (4). The proof is complete.
+
+Theorem 3. Let $s$ be odd and $n$ be even. For the function $f$ defined by (3), we have $\Delta_{f}=6$ if $s \geqslant 5$, or $s=1,3$ and $\frac{n}{2}$ is even. Otherwise, we have $\Delta_{f}=4$.
+
+Proof. If $a=a^{q}$ and $b=b_{0}=a^{-1}$, we get $\operatorname{Tr}\left(\frac{1}{a b}\right)=\operatorname{Tr}(1)=0$. From Lemma 1 , we obtain two solutions $\omega a, \omega^{2} a \notin \mathbb{F}_{q}$ in Case I. Therefore, there are exactly four solutions 0, $a, \omega a$ and $\omega^{2} a$ of (4).
+
+If $a \neq a^{q}$ and $b=b_{0}=a^{-1}+t$, we get that $a(b+t)=1$ and there are two solutions $\omega a$ and $\omega^{2} a$ of (6). We note that these two solutions are truly in Case II if and only if $a^{q}=\omega a$ or $a^{q}=\omega^{2} a$. That is to say, if $a^{q-1}=\omega$ or $\omega^{2}$, there are at most six solutions ( $0, a, \omega a, \omega^{2} a$ and two solutions in Case I) of (4). Otherwise, there are at most four solutions of (4).
+
+For the case of $a^{q-1}=\omega$ or $\omega^{2}$, Eq. (5) turns to Eq. (1) while $b=a^{-1}+t$. By Lemma 5, we have that Eq. (4) has exactly two solutions in Case I or totally six solutions for some value of $a$ if and only if $s \geqslant 5$, or $s=1,3$ and $\frac{n}{2}$ is even. This completes the proof.
+
+We note that the compositional inverse of $f$ defined by (3), namely the function $g: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ such that $g(f(x))=x$ holds for any $x \in \mathbb{F}_{2^{n}}$, is given by
+
+$$
+g(x)=(x+t)^{-1}+\left(x^{-1}+(x+t)^{-1}\right)\left(x^{q}+x\right)^{q^{n}-1}= \begin{cases}(x+t)^{-1}, & \text { if } x^{q}=x \\ x^{-1}, & \text { if } x^{q} \neq x\end{cases}
+$$
+
+From the property of CCZ-equivalence, we get that $g$ has the same differential uniformity.\\
+In the following, we will determine the algebraic degree and nonlinearity of the function defined by (3).
+
+Proposition 1. Both the function $f$ defined by (3) and its compositional inverse have the maximum possible algebraic degree sn-1.
+
+Proof. Firstly, we give the expansion of $\left(x^{q}+x\right)^{q^{n}-1}$ over $\mathbb{F}_{q^{n}}$ as
+
+
+\begin{align*}
+\left(x^{q}+x\right)^{q^{n}-1} & =\sum_{i=0}^{q^{n}-1}\binom{q^{n}-1}{i} x^{i q} x^{q^{n}-1-i}=x^{q^{n}-1}+\sum_{i=1}^{q^{n}-1} x^{i(q-1)} \\
+& =x^{q^{n}-1}+\sum_{i=1}^{q^{n-1}+q^{n-2}+\cdots+1} x^{i(q-1)}=\sum_{i=1}^{q^{n-1}+q^{n-2}+\cdots+q} x^{i(q-1)} \tag{7}
+\end{align*}
+
+
+From Eq. (7), we obtain that the maximal degree of the expansion of $\left(x^{q}+x\right)^{q^{n}-1}$ is $q^{n}-q$. Then the algebraic degree of $f$ defined by (3) is $s n-1$.
+
+Now, we consider the compositional inverse of $f$. We note that $(x+t)^{-1}=\sum_{i=0}^{q^{n}-2}\binom{q^{n}-2}{i} x^{i} t^{q^{n}-2-i}$. Then we get
+
+$$
+\begin{aligned}
+\left(x^{-1}+(x+t)^{-1}\right)\left(x^{q}+x\right)^{q^{n}-1} & =\sum_{i=0}^{q^{n}-3}\binom{q^{n}-2}{i} x^{i} t^{q^{n}-2-i} \sum_{j=1}^{q^{n-1}+q^{n-2}+\cdots+q} x^{j(q-1)} \\
+& =\sum_{i=0}^{q^{n}-3} \sum_{j=1}^{q^{n-1}+q^{n-2}+\cdots+q}\binom{q^{n}-2}{i} t^{q^{n}-2-i} x^{i+j(q-1)}
+\end{aligned}
+$$
+
+Since $t \in \mathbb{F}_{q}^{*}$, the coefficient of the term $x^{q^{n}-1}$ in the above expansion is
+
+$$
+\sum_{j=1}^{q^{n-1}+q^{n-2}+\cdots+q}\binom{q^{n}-2}{q^{n}-1-j(q-1)} t^{j(q-1)-1}=t^{-1} \sum_{j=1}^{q^{n-1}+q^{n-2}+\cdots+q}\binom{q^{n}-2}{j(q-1)-1}=0
+$$
+
+The coefficient of the term $x^{q^{n}-2}$ is
+
+$$
+\sum_{j=1}^{q^{n-1}+q^{n-2}+\cdots+q}\binom{q^{n}-2}{q^{n}-2-j(q-1)} t^{j(q-1)}=\sum_{j=1}^{q^{n-1}+q^{n-2}+\cdots+q}\binom{q^{n}-2}{j(q-1)}=0
+$$
+
+Then the compositional inverse of $f$ defined by (3) has algebraic degree $s n-1$.\\
+Proposition 2. The nonlinearity of $f$ defined by (3) satisfies $\mathcal{N} \mathcal{L}(f) \geqslant 2^{s n-1}-2^{\frac{s n}{2}}-2^{s}$.
+
+Proof. As we know, the nonlinearity of $f$ is defined by $\mathcal{N} \mathcal{L}(f)=2^{s n-1}-\frac{1}{2} \max f^{\mathcal{W}}(a, b)$, where $f^{\mathcal{W}}(a, b)=\sum_{x \in \mathbb{F}_{q^{n}}}(-1)^{\operatorname{Tr}(a x+b f(x))}$ for $a, b \in \mathbb{F}_{q^{n}}$ and $b \neq 0$. We have that
+
+$$
+\begin{aligned}
+f^{\mathcal{W}}(a, b) & =\sum_{x \in \mathbb{F}_{q^{n}}}(-1)^{\operatorname{Tr}\left(a x+b\left(x^{-1}+t\left(x^{q}+x\right)^{q^{n}-1}+t\right)\right)} \\
+& =\sum_{x \in \mathbb{F}_{q^{n}} / \mathbb{F}_{q}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}+\sum_{x \in \mathbb{F}_{q}}(-1)^{\operatorname{Tr}\left(a x+b\left(x^{-1}+t\right)\right)}
+\end{aligned}
+$$
+
+If $\operatorname{Tr}(b t)=0$, we get $\left|f^{\mathcal{W}}(a, b)\right|=\left|\sum_{x \in \mathbb{F}_{q^{n}}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}\right| \leqslant 2^{\frac{s n}{2}+1}$ from Lemma 3. If $\operatorname{Tr}(b t)=1$, we obtain
+
+$$
+\begin{aligned}
+\left|f^{\mathcal{W}}(a, b)\right| & =\left|\sum_{x \in \mathbb{F}_{q^{n}}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}-2 \sum_{x \in \mathbb{F}_{q}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}\right| \\
+& \leqslant\left|\sum_{x \in \mathbb{F}_{q^{n}}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}\right|+2\left|\sum_{x \in \mathbb{F}_{q}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}\right| \\
+& \leqslant 2^{\frac{s n}{2}+1}+2^{s+1}
+\end{aligned}
+$$
+
+This implies that $\mathcal{N} \mathcal{L}(f) \geqslant 2^{s n-1}-\frac{1}{2}\left(2^{\frac{s n}{2}+1}+2^{s+1}\right)=2^{s n-1}-2^{\frac{s n}{2}}-2^{s}$.
+
+\subsection*{3.2. The second construction}
+Let $t_{1}, t_{2} \in \mathbb{F}_{q}$ with $\operatorname{Tr}\left(t_{1}^{-1}\right)=1$. Our second construction is the following function
+
+
+\begin{equation*}
+f(x)=t_{1} x^{-1}+\left(t_{1}+1\right) x^{-1}\left(x^{q}+x\right)^{q^{n}-1}+t_{2}\left(x^{q}+x\right)^{q^{n}-1}+t_{2} \tag{8}
+\end{equation*}
+
+
+Since $\left(x^{q}+x\right)^{q^{n}-1}=1$ if and only if $x^{q} \neq x$, then we get
+
+$$
+f(x)= \begin{cases}t_{1} x^{-1}+t_{2}, & \text { if } x^{q}=x \\ x^{-1}, & \text { if } x^{q} \neq x\end{cases}
+$$
+
+Since $t_{1}, t_{2} \in \mathbb{F}_{q}$ and $\operatorname{Tr}\left(t_{1}^{-1}\right)=1$, we can easily find that $t_{1} \neq 0$ and $t_{1} x^{-1}+t_{2}$ is injective over the subfield $\mathbb{F}_{q}$ and $x^{-1}$ is injective over the subset $\mathbb{F}_{q^{n}} \backslash \mathbb{F}_{q}$. Then we have that $f$ is a permutation over $\mathbb{F}_{q^{n}}$.
+
+Let $a, b \in \mathbb{F}_{q^{n}}^{*}$. Now we consider the solutions of equation $f(x+a)-f(x)=b$, i.e.,
+
+
+\begin{align*}
+& t_{1}(x+a)^{-1}+\left(t_{1}+1\right)(x+a)^{-1}\left(x^{q}+x+a^{q}+a\right)^{q^{n}-1}+t_{2}\left(x^{q}+x+a^{q}+a\right)^{q^{n}-1} \\
+& \quad+t_{1} x^{-1}+\left(t_{1}+1\right) x^{-1}\left(x^{q}+x\right)^{q^{n}-1}+t_{2}\left(x^{q}+x\right)^{q^{n}-1}=b \tag{9}
+\end{align*}
+
+
+over $\mathbb{F}_{q^{n}}$. When $x=0, a$, we get
+
+$$
+b=t_{1} a^{-1}+\left(t_{1}+1\right) a^{-1}\left(a^{q}+a\right)^{q^{n}-1}+t_{2}\left(a^{q}+a\right)^{q^{n}-1}\left(:=b_{1}\right)
+$$
+
+For other possible solutions namely ones with $x \neq 0, a$, we divide the solutions into the following four disjoint cases to discuss.
+
+Case I: Assume both $x$ and $x+a$ belong to $\mathbb{F}_{q}$. In this case, we have $a^{q}=a$ and $t_{1}(x+a)^{-1}+ t_{1} x^{-1}=b$ from (9). It leads to $(x / a)^{2}+x / a+t_{1} /(a b)=0$.
+
+Case II: Assume $x \notin \mathbb{F}_{q}$ and $x+a \in \mathbb{F}_{q}$. In this case, we obtain $a^{q} \neq a, x^{q}=x+a+a^{q}$ and $t_{1}(x+ a)^{-1}+t_{2}+x^{-1}=b$. Then we obtain
+
+
+\begin{equation*}
+\left(b+t_{2}\right) x^{2}+\left(a b+a t_{2}+t_{1}+1\right) x+a=0 \tag{10}
+\end{equation*}
+
+
+Raising to the $q$-th powers for both sides of (10), we get
+
+
+\begin{equation*}
+\left(b+t_{2}\right)^{q}\left(x^{2}+a^{2}+a^{2 q}\right)+\left(a b+a t_{2}+t_{1}+1\right)^{q}\left(x+a+a^{q}\right)+a^{q}=0 \tag{11}
+\end{equation*}
+
+
+If $b=t_{2}$ or $\left(b+t_{2}\right)\left(a b+a t_{2}+t_{1}+1\right)^{q} \neq\left(b+t_{2}\right)^{q}\left(a b+a t_{2}+t_{1}+1\right)$, there is at most one solution of (10). Otherwise, there are at most two solutions of (10). Meanwhile, we have $b \neq t_{2},\left(b+t_{2}\right)(a b+ \left.a t_{2}+t_{1}+1\right)^{q}=\left(b+t_{2}\right)^{q}\left(a b+a t_{2}+t_{1}+1\right)$ and
+
+
+\begin{equation*}
+\left(b+t_{2}\right)^{q} a+\left(b+t_{2}\right)\left(\left(b+t_{2}\right)^{q}\left(a^{2}+a^{2 q}\right)+\left(a b+a t_{2}+t_{1}+1\right)^{q}\left(a+a^{q}\right)+a^{q}\right)=0 \tag{12}
+\end{equation*}
+
+
+Case III: Assume $x \in \mathbb{F}_{q}$ and $x+a \notin \mathbb{F}_{q}$. Then we get $a^{q} \neq a$ and $(x+a)^{-1}+t_{1} x^{-1}+t_{2}=b$ which leads to
+
+
+\begin{equation*}
+\left(b+t_{2}\right) x^{2}+\left(a b+a t_{2}+t_{1}+1\right) x+a t_{1}=0 \tag{13}
+\end{equation*}
+
+
+Raising to the $q$-th powers for both sides of (13), we get
+
+
+\begin{equation*}
+\left(b+t_{2}\right)^{q} x^{2}+\left(a b+a t_{2}+t_{1}+1\right)^{q} x+a^{q} t_{1}^{q}=0 \tag{14}
+\end{equation*}
+
+
+If $b=t_{2}$ or $\left(b+t_{2}\right)\left(a b+a t_{2}+t_{1}+1\right)^{q} \neq\left(b+t_{2}\right)^{q}\left(a b+a t_{2}+t_{1}+1\right)$, there is at most one solution of (13). Otherwise, there are at most two solutions of (13). At the same time, we obtain $b \neq t_{2}$, $\left(b+t_{2}\right)\left(a b+a t_{2}+t_{1}+1\right)^{q}=\left(b+t_{2}\right)^{q}\left(a b+a t_{2}+t_{1}+1\right)$ and
+
+
+\begin{equation*}
+\left(b+t_{2}\right)^{q} a t_{1}+\left(b+t_{2}\right) a^{q} t_{1}^{q}=0 \tag{15}
+\end{equation*}
+
+
+Case IV: Assume neither of $x$ and $x+a$ belongs to $\mathbb{F}_{q}$. Then we get $(x / a)^{2}+x / a+(a b)^{-1}=0$ from (9).
+
+Obviously, Eq. (9) has no solutions in Cases II and III when $a \in \mathbb{F}_{q}$. Firstly, we give the following lemma needed later.
+
+Lemma 6. Let $n$ be odd. There exist at most two solutions of (9) in Cases II and III.
+
+Proof. If $b=t_{2}$ or $\left(b+t_{2}\right)\left(a b+a t_{2}+t_{1}+1\right)^{q} \neq\left(b+t_{2}\right)^{q}\left(a b+a t_{2}+t_{1}+1\right)$, by the above discussion, we know that there is at most one solution in Cases II and III respectively.
+
+If $b \neq t_{2}$ and $\left(b+t_{2}\right)\left(a b+a t_{2}+t_{1}+1\right)^{q}=\left(b+t_{2}\right)^{q}\left(a b+a t_{2}+t_{1}+1\right)$, we assume that there exist solutions of (9) in both Cases II and III. Since $t_{1}, t_{2} \in \mathbb{F}_{q}$, then we get $a+a^{q}=\left(\frac{a b+a t_{2}+t_{1}+1}{b+t_{2}}\right)^{q} \in \mathbb{F}_{q}$ from (12) and (15). We can deduce that $\left(a+a^{q}\right)^{q}=a+a^{q}$, i.e., $a=a^{q^{2}}$. Since $n$ is odd, we obtain $a \in \mathbb{F}_{q^{2}} \cap \mathbb{F}_{q^{n}}=\mathbb{F}_{q}$ which leads to a contradiction. Therefore, there are at most two solutions of (9) in Cases II and III.
+
+Then we have the following results.\\
+Theorem 4. Let $n$ be odd and $s$ be even. Let $t_{1}, t_{2} \in \mathbb{F}_{q}$ with $\operatorname{Tr}\left(t_{1}^{-1}\right)=1$. Then the function $f$ defined by (8) is a differentially 4-uniform permutation over $\mathbb{F}_{q^{n}}$.
+
+Proof. If $a \in \mathbb{F}_{q}$, we get $b_{1}=t_{1} a^{-1}$. When $b=b_{1}$, since $(a b)^{-1}=t_{1}^{-1}, \operatorname{Tr}\left(t_{1}^{-1}\right)=1$ and $\operatorname{Tr}\left(\frac{t_{1}}{a b}\right)=0$, from Lemma 1, we have two solutions $\omega a, \omega^{2} a$ in Case I and no solution in Case IV. Then we obtain four solutions $0, a, \omega a, \omega^{2} a$ of (9). When $b \neq b_{1}$, there are at most four solutions of (9) in Cases I and IV.
+
+If $a \notin \mathbb{F}_{q}$, from Lemma 6, we have that $b_{1}=t_{2}+a^{-1}$ and there are at most two solutions of (9) in Cases II and III. When $b=b_{1}$, Eq. (10) turns to $x^{2}+a t_{1} x+a^{2}=0$ and Eq. (13) turns to $x^{2}+a t_{1} x+ a^{2} t_{1}=0$. Since $\operatorname{Tr}\left(t_{1}^{-1}\right)=1$, both (10) and (13) have no solution. Therefore, there are at most four solutions ( $0, a$ and two solutions in Case IV) of (9). When $b \neq b_{1}$, there are at most four solutions of (9) (two solutions in Cases II, III and two solutions in Case IV). We finish the proof.
+
+In Theorem 4, if we replace the condition that $s$ is even with that $s$ is odd, then we get the following result from Lemma 2.
+
+Theorem 5. Let sn be odd. Let $t_{1}, t_{2} \in \mathbb{F}_{q}^{*}$ with $\operatorname{Tr}\left(t_{1}^{-1}\right)=1$. Then the function $f$ defined by (8) is a differentially 4-uniform permutation over $\mathbb{F}_{q^{n}}$.
+
+Proof. If $a \in \mathbb{F}_{q}$, we get $b_{1}=t_{1} a^{-1}$. When $b=b_{1}$, since $(a b)^{-1}=t_{1}^{-1}$ and $\operatorname{Tr}\left(t_{1}^{-1}\right)=1$, from Lemma 1 , we have no solution in Case IV. Since $\operatorname{Tr}\left(\frac{t_{1}}{a b}\right)=\operatorname{Tr}(1)=1$, we also have no solution in Case I. Then we get only two solutions $0, a$ of (9). When $b \neq b_{1}$, there are at most four solutions of (9) in Cases I and IV.
+
+If $a \notin \mathbb{F}_{q}$, similarly to that of the proof of Theorem 4, we obtain $b_{1}=t_{2}+a^{-1}$. When $b \neq b_{1}$, there are at most four solutions (two solutions in Cases II, III and two solutions in Case IV) of (9). And when $b=b_{1}$, there are at most four solutions ( $0, a$ and two solutions in Case IV) of (9). Since $b_{1}=t_{2}+a^{-1}$, the equation in Case IV turns to $(x / a)^{2}+(x / a)+\frac{1}{1+a t_{2}}=0$. From Lemma 2, we have that there are exactly two solutions of (9) in Case IV for some $a \in \mathbb{F}_{q^{n}} \backslash \mathbb{F}_{q}$. The proof is complete.
+
+We note that the compositional inverse of $f$ defined by (8) is
+
+$$
+g(x)=x^{-1}\left(x^{q}+x\right)^{q^{n}-1}+t_{1}\left(x+t_{2}\right)^{-1}\left(\left(x^{q}+x\right)^{q^{n}-1}+1\right)= \begin{cases}t_{1}\left(x+t_{2}\right)^{-1}, & \text { if } x^{q}=x \\ x^{-1}, & \text { if } x^{q} \neq x\end{cases}
+$$
+
+From the property of CCZ-equivalence, we get that $g$ is also a differentially 4 -uniform permutation over $\mathbb{F}_{q^{n}}$.
+
+From Eq. (7), we can find that the polynomial $\left(x^{q}+x\right)^{q^{n}-1}$ has no constant item and items with the form of $x^{q^{n}-1}$. This implies the following proposition.
+
+Proposition 3. Both the function $f$ defined by (8) and its compositional inverse have the maximum possible algebraic degree sn-1.
+
+Proposition 4. The nonlinearity of $f$ defined by (8) satisfies $\mathcal{N} \mathcal{L}(f) \geqslant 2^{s n-1}-2^{\frac{s n}{2}}-2^{s}$.\\
+Proof. From the definition of nonlinearity in the preliminaries, we have that
+
+$$
+\begin{aligned}
+f^{\mathcal{W}}(a, b) & =\sum_{x \in \mathbb{F}_{q^{n}}}(-1)^{\operatorname{Tr}\left(a x+b\left(t_{1} x^{-1}+\left(t_{1}+1\right) x^{-1}\left(x^{q}+x\right)^{q^{n}-1}+t_{2}\left(x^{q}+x\right)^{q^{n}-1}+t_{2}\right)\right)} \\
+& =\sum_{x \in \mathbb{F}_{q^{n}} / \mathbb{F}_{q}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}+\sum_{x \in \mathbb{F}_{q}}(-1)^{\operatorname{Tr}\left(a x+b t_{1} x^{-1}+b t_{2}\right)} \\
+& =\sum_{x \in \mathbb{F}_{q^{n}}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}-\sum_{x \in \mathbb{F}_{q}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}+\sum_{x \in \mathbb{F}_{q}}(-1)^{\operatorname{Tr}\left(a x+b t_{1} x^{-1}+b t_{2}\right)}
+\end{aligned}
+$$
+
+By using of Lemma 3, we can get
+
+$$
+\begin{aligned}
+\left|f^{\mathcal{W}}(a, b)\right| & \leqslant\left|\sum_{x \in \mathbb{F}_{q} n}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}\right|+\left|\sum_{x \in \mathbb{F}_{q}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}\right|+\left|\sum_{x \in \mathbb{F}_{q}}(-1)^{\operatorname{Tr}\left(a x+b t_{1} x^{-1}\right)}\right| \\
+& \leqslant 2^{\frac{s n}{2}+1}+2^{s+1}
+\end{aligned}
+$$
+
+Then we obtain that $\mathcal{N} \mathcal{L}(f) \geqslant 2^{s n-1}-\frac{1}{2}\left(2^{\frac{s n}{2}+1}+2^{s+1}\right)=2^{s n-1}-2^{\frac{s n}{2}}-2^{s}$.\\
+When $s$ is even with $s n \leqslant 8$, we computed the nonlinearity and differential spectrum of the differentially 4 -uniform permutations in Theorems 1 and 4 by MAGMA. The computational results can be seen in Section 5. The nonlinearity of our new functions is less than the maximal nonlinearity. Our new functions has different differential spectrum with the families 6)-7) in Theorem I [15]. As we know, all the differentially 4-uniform permutations of [5,12] and the families 1)-5) in Theorem I have the maximal nonlinearity. Therefore, our new functions are CCZ-inequivalent to the differentially 4 -uniform permutations in [5,12] and Theorem I. We note that the differentially 4-uniform permutations of [16] have the nonlinearity 110 on $\mathbb{F}_{2^{8}}$. That is to say, our new functions in Theorem 1 are also CCZ-inequivalent to the differentially 4-uniform permutations of [16] on $\mathbb{F}_{2^{8}}$. Then we have the following proposition.
+
+Proposition 5. The differentially 4 -uniform permutations defined in Theorems 1 and 4 are CCZ-inequivalent to the ones of [5,12] and Theorem I. Especially, the differentially 4-uniform permutation defined in Theorem 1 is CCZ-inequivalent to all the known ones on $\mathbb{F}_{2^{8}}$.
+
+\section*{4. A construction of permutations with low differential uniformity}
+Let $t_{1} \in \mathbb{F}_{q^{n}}^{*}$ and $S=\left\{x \in \mathbb{F}_{q^{n}} \mid x^{q}+x=t_{1}\right\}$. We note that $S$ is non-empty if and only if $\operatorname{Tr}_{s}^{S n}\left(t_{1}\right)=0$ and is an affine subspace of $\mathbb{F}_{q^{n}}$. In this section, we will modify the values of the inverse function on $S$ and get some new functions with low differential uniformity.
+
+Theorem 6. Let $t_{1} \in \mathbb{F}_{q^{n}}^{*}$ with $\operatorname{Tr}_{s}^{s n}\left(t_{1}\right)=0$. Let $t_{2} \in \mathbb{F}_{q}^{*}$. Then the function $f(x)=\left(x+t_{2}\right)^{-1}+\left(x^{q}+x+\right. \left.t_{1}\right)^{q^{n}-1}\left(x^{-1}+\left(x+t_{2}\right)^{-1}\right)$ is a permutation over $\mathbb{F}_{q^{n}}$ with $\Delta_{f} \leqslant 6$.
+
+Proof. Since $\left(x^{q}+x+t_{1}\right)^{q^{n}-1}=1$ if and only if $x^{q} \neq x+t_{1}$, then we get
+
+$$
+f(x)= \begin{cases}\left(x+t_{2}\right)^{-1}, & \text { if } x^{q}=x+t_{1}, \\ x^{-1}, & \text { if } x^{q} \neq x+t_{1} .\end{cases}
+$$
+
+Obviously, $\left(x+t_{2}\right)^{-1}$ is injective when $x \in S$ and $x^{-1}$ is injective when $x \notin S$. If there exist $x_{1}^{q}=x_{1}+t_{1}$, $x_{2}^{q} \neq x_{2}+t_{1}$ such that $\left(x_{1}+t_{2}\right)^{-1}=x_{2}^{-1}$, then we have $x_{1}+t_{2}=x_{2}$. Since $t_{2} \in \mathbb{F}_{q}^{*}$, then we obtain $x_{2}^{q}+x_{2}=x_{1}^{q}+t_{2}^{q}+x_{1}+t_{2}=t_{1}$, which leads to a contradiction. Therefore, $f$ is a permutation over $\mathbb{F}_{q^{n}}$.
+
+Let $a, b \in \mathbb{F}_{q^{n}}^{*}$. Now we consider the solutions of equation $f(x+a)-f(x)=b$, i.e.,
+
+
+\begin{align*}
+& \left(x+a+t_{2}\right)^{-1}+\left(x^{q}+x+t_{1}+a^{q}+a\right)^{q^{n}-1}\left((x+a)^{-1}+\left(x+a+t_{2}\right)^{-1}\right) \\
+& \quad+\left(x+t_{2}\right)^{-1}+\left(x^{q}+x+t_{1}\right)^{q^{n}-1}\left(x^{-1}+\left(x+t_{2}\right)^{-1}\right)=b \tag{16}
+\end{align*}
+
+
+over $\mathbb{F}_{q^{n}}$.\\
+When $x=t_{2}, a+t_{2}$, we get
+
+$$
+b=t_{2}^{-1}+a^{-1}+\left(a^{q}+a+t_{1}\right)^{q^{n}-1}\left(\left(a+t_{2}\right)^{-1}+a^{-1}\right)\left(:=b_{2}\right) .
+$$
+
+When $x=0, a$, we get
+
+$$
+b=\left(a+t_{2}\right)^{-1}+\left(a^{q}+a+t_{1}\right)^{q^{n}-1}\left(a^{-1}+\left(a+t_{2}\right)^{-1}\right)\left(:=b_{3}\right) .
+$$
+
+And when $x \neq 0, a, t_{2}, a+t_{2}$, we can divide the solutions into the following four disjoint cases.\\
+Case I: If $x+a \in S$ and $x \in S$, we have $a^{q}=a$ and $\left(x+a+t_{2}\right)^{-1}+\left(x+t_{2}\right)^{-1}=b$. This leads to $b x^{2}+a b x+b t_{2}^{2}+a b t_{2}+a=0$.
+
+Case II: If $x+a \in S$ and $x \notin S$, we obtain $a^{q} \neq a, x^{q}=x+a+a^{q}+t_{1}$ and $\left(x+a+t_{2}\right)^{-1}+x^{-1}=b$. Then we get $b x^{2}+\left(a b+b t_{2}\right) x+a+t_{2}=0$. Since $b \neq 0$, we have
+
+
+\begin{equation*}
+x^{2}+\left(a+t_{2}\right) x+\frac{a+t_{2}}{b}=0 \tag{17}
+\end{equation*}
+
+
+Raising to the $q$-th power for both sides of (17), we get $x^{2 q}+\left(a+t_{2}\right)^{q} x^{q}+\frac{\left(a+t_{2}\right)^{q}}{b^{q}}=0$. It leads to
+
+
+\begin{equation*}
+x^{2}+\left(a+t_{2}\right)^{q} x+a^{2}+a^{2 q}+t_{1}^{2}+\left(a+t_{2}\right)^{q}\left(a+a^{q}+t_{1}\right)+\frac{\left(a+t_{2}\right)^{q}}{b^{q}}=0 \tag{18}
+\end{equation*}
+
+
+Since $a \neq a^{q}$ and $t_{2} \in F_{q}^{*}$, then we obtain $a+t_{2} \neq\left(a+t_{2}\right)^{q}$ and
+
+$$
+x=a+t_{2}+\frac{1}{a+a^{q}}\left(t_{1}^{2}+\left(a^{q}+t_{2}\right) t_{1}+\frac{a+t_{2}}{b}+\frac{a^{q}+t_{2}}{b^{q}}\right)
+$$
+
+from (17) and (18). There is at most one solution of (16) in this case.\\
+Case III: If $x+a \notin S$ and $x \in S$, we get $a^{q} \neq a$ and $(x+a)^{-1}+\left(x+t_{2}\right)^{-1}=b$. Then we have $b x^{2}+\left(a b+b t_{2}\right) x+a+t_{2}+a b t_{2}=0$ which leads to
+
+
+\begin{equation*}
+x^{2}+\left(a+t_{2}\right) x+\frac{a+t_{2}+a b t_{2}}{b}=0 \tag{19}
+\end{equation*}
+
+
+Raising the $q$-th power of (19), we get $x^{2 q}+\left(a+t_{2}\right)^{q} x^{q}+\frac{\left(a+t_{2}+a b t_{2}\right)^{q}}{b^{q}}=0$. It leads to
+
+
+\begin{equation*}
+x^{2}+\left(a+t_{2}\right)^{q} x+t_{1}^{2}+\left(a+t_{2}\right)^{q} t_{1}+\frac{\left(a+t_{2}+a b t_{2}\right)^{q}}{b^{q}}=0 \tag{20}
+\end{equation*}
+
+
+Obviously, we have that $a+t_{2} \neq\left(a+t_{2}\right)^{q}$ and there is at most one solution of (16).\\
+Case IV: If $x+a \notin S$ and $x \notin S$, then we get $(x+a)^{-1}+x^{-1}=b$ which leads to $b x^{2}+a b x+a=0$.\\
+By the above analysis, we can conclude the solutions of (16) as follows.\\
+If $a \in \mathbb{F}_{q}$, then we get $b_{2}=t_{2}^{-1}+\left(a+t_{2}\right)^{-1}$ and $b_{3}=a^{-1}$. When $b=b_{2}$, we have two solutions $0, a$ in Case I. It leads to $t_{1}=0$, which is a contradiction. Then we have at most four solutions ( $t_{2}, t_{2}+a$ and two solutions in Case IV). When $b=b_{3}$, we obtain at most six solutions ( $0, a$, two solutions in Case I and two solutions in Case IV). And when $b \neq b_{2}, b_{3}$, we get at most four solutions (two solutions in Case I and two solutions in Case IV).
+
+If $a \in S$, then we get $b_{2}=t_{2}^{-1}+a^{-1}$ and $b_{3}=\left(a+t_{2}\right)^{-1}$. When $b=b_{2}$, we have two solutions $a, t_{2}$ of (17) in Case II and two solutions $0, a+t_{2}$ of (19) in Case III, which leads to a contradiction. Then we get at most four solutions ( $t_{2}, t_{2}+a$ and two solutions in Case IV). When $b=b_{3}$, we obtain at most six solutions ( $0, a$, one solution in Case II, one solution in Case III and two solutions in Case IV). And when $b \neq b_{2}, b_{3}$, we have at most four solutions (one solution in Case II, one solution in Case III and two solutions in Case IV).
+
+If $a \notin S \cup \mathbb{F}_{q}$, then we get $b_{2}=t_{2}^{-1}+\left(a+t_{2}\right)^{-1}$ and $b_{3}=a^{-1}$. When $b=b_{2}$, we obtain that $b t_{2}^{2}+a b t_{2}+a=0$ and there are two solutions $a+t_{2}, t_{2}$ in Case IV, which is a contradiction. Then we have at most four solutions ( $t_{2}, t_{2}+a$, one solution in Case II and one solution in Case III). When\\
+$b=b_{3}$, we get at most six solutions ( $0, a$, one solution in Case II, one solution in Case III and two solutions in Case IV). When $b \neq b_{2}, b_{3}$, we obtain at most four solutions (one solution in Case II, one solution in Case III and two solutions in Case IV). We complete the proof.
+
+We note that the compositional inverse of $f$ in Theorem 6 is
+
+$$
+g(x)=x^{-1}+t_{2}\left(x^{-q}+x^{-1}+t_{1}\right)^{q^{n}-1}+t_{2}= \begin{cases}x^{-1}+t_{2}, & \text { if } x^{-q}=x^{-1}+t_{1} \\ x^{-1}, & \text { if } x^{-q} \neq x^{-1}+t_{1}\end{cases}
+$$
+
+From the property of CCZ-equivalence, we get that $g$ is also a permutation over $\mathbb{F}_{q^{n}}$ with $\Delta_{g} \leqslant 6$. Checked by a computer, we can find that both the function $f$ defined in Theorem 6 and its compositional inverse have algebraic degree $s n-1$.
+
+Proposition 6. The nonlinearity of $f$ defined in Theorem 6 satisfies $\mathcal{N} \mathcal{L}(f) \geqslant 2^{s n-1}-2^{\frac{s n}{2}}-2^{s}$.
+
+Proof. Similarly to the proof of Proposition 2, we obtain
+
+$$
+\begin{aligned}
+f^{\mathcal{W}}(a, b) & =\sum_{x \in \mathbb{F}_{q^{n}}}(-1)^{\operatorname{Tr}\left(a x+b\left(\left(x+t_{2}\right)^{-1}+\left(x^{q}+x+t_{1}\right)^{q^{n}-1}\left(x^{-1}+\left(x+t_{2}\right)^{-1}\right)\right)\right.} \\
+& =\sum_{x^{q}+x=t_{1}}(-1)^{\operatorname{Tr}\left(a x+b\left(x+t_{2}\right)^{-1}\right)}+\sum_{x^{q}+x \neq t_{1}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)} \\
+& =\sum_{x^{q}+x=t_{1}}(-1)^{\operatorname{Tr}\left(a x+a t_{2}+b x^{-1}\right)}+\sum_{x^{q}+x \neq t_{1}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)} .
+\end{aligned}
+$$
+
+If $\operatorname{Tr}\left(a t_{2}\right)=0$, we have $\left|f^{\mathcal{W}}(a, b)\right|=\left|\sum_{x \in \mathbb{F}_{q^{n}}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}\right| \leqslant 2^{\frac{s n}{2}+1}$ from Lemma 3. If $\operatorname{Tr}\left(a t_{2}\right)=1$, we get
+
+$$
+\begin{aligned}
+\left|f^{\mathcal{W}}(a, b)\right| & =\left|\sum_{x \in \mathbb{F}_{q^{n}}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}-2 \sum_{x^{q}+x=t_{1}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}\right| \\
+& \leqslant\left|\sum_{x \in \mathbb{F}_{q^{n}}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}\right|+2\left|\sum_{x^{q}+x=t_{1}}(-1)^{\operatorname{Tr}\left(a x+b x^{-1}\right)}\right| \\
+& \leqslant 2^{\frac{s n}{2}+1}+2^{s+1}
+\end{aligned}
+$$
+
+Then we can deduce that $\mathcal{N} \mathcal{L}(f) \geqslant 2^{s n-1}-\frac{1}{2}\left(2^{\frac{s n}{2}+1}+2^{s+1}\right)=2^{s n-1}-2^{\frac{s n}{2}}-2^{s}$.\\
+In the proof of Theorem 6, we find that the 6-uniformity of the function $f$ only appears when $b=b_{3}$. If we can reduce the differential uniformity of $f$ at $b=b_{3}$ by adding some extra restrictions, then we can get differentially 4 -uniform permutations. One of the examples is as follows.
+
+Example 1. Let $t_{1}, t_{2} \in \mathbb{F}_{4}^{*}$. Then the function $f(x)=\left(x+t_{2}\right)^{-1}+\left(x^{4}+x+t_{1}\right)^{15}\left(x^{-1}+\left(x+t_{2}\right)^{-1}\right)$ is a differentially 4-uniform permutation over $\mathbb{F}_{2^{4}}$.
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{Table 1\\
+Nonlinearity and differential spectra of functions in Theorem 1 over $\mathbb{F}_{2^{s n}}$.}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+$s n$ & $f(x)$ & $\mathcal{N} \mathcal{L}(f)$ & $\mathcal{D}(f)$ & $\mathcal{B}(f)$ \\
+\hline
+4 & $x^{14}+t\left(x^{4}+x\right)^{15}+t$ & 4 & $\left\{0^{135}, 2^{90}, 4^{15}\right\}$ & 0 \\
+\hline
+6 & $x^{62}+t\left(x^{4}+x\right)^{63}+t$ & 22 & $\left\{0^{2127}, 2^{1794}, 4^{111}\right\}$ & 20 \\
+\hline
+8 & $x^{254}+t\left(x^{4}+x\right)^{255}+t$ & 108 & $\left\{0^{34335}, 2^{29250}, 4^{1695}\right\}$ & 108 \\
+\hline
+8 & $x^{254}+l\left(x^{16}+x\right)^{255}+l$ & 108 & $\left\{0^{34335}, 2^{29250}, 4^{1695}\right\}$ & 96 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{Table 2\\
+Nonlinearity and differential spectra of functions in Example 1 and Theorem 4 over $\mathbb{F}_{2^{\text {sn }}}$.}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+$s n$ & $f(x)$ & $\mathcal{N} \mathcal{L}(f)$ & $\mathcal{D}(f)$ & $\mathcal{B}(f)$ \\
+\hline
+4 & $(x+t)^{14}+\left(x^{4}+x+h\right)^{15}\left(x^{14}+(x+t)^{14}\right)$ & 4 & $\left\{0^{135}, 2^{90}, 4^{15}\right\}$ & 0 \\
+\hline
+6 & $\omega x^{62}+\omega^{2} x^{62}\left(x^{4}+x\right)^{63}$ & 22 & $\left\{0^{2127}, 2^{1794}, 4^{111}\right\}$ & 20 \\
+\hline
+6 & $\omega x^{62}+\omega^{2} x^{62}\left(x^{4}+x\right)^{63}+t\left(x^{4}+x\right)^{63}+t$ & 22 & $\left\{0^{2103}, 2^{1842}, 4^{87}\right\}$ & 20 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\section*{5. Computational results and conclusion}
+For all ( $s, n$ ) with $s n \leqslant 8$, we compute the nonlinearity and differential spectra of functions in Theorems 1, 4 and Example 1 by MAGMA. The computational results are listed in Tables 1 and 2, where $t, h, l \in \mathbb{F}_{2^{s n}}$ with $t^{3}=h^{3}=l^{15}=1$. The notation $\mathcal{D}(f)$ represents the differential spectra of function $f, \mathcal{B}(f)$ represents the nonlinearity bound of function $f$ in this paper, and the multiset $M=\left\{a_{1}^{m_{1}}, a_{2}^{m_{2}}, \ldots, a_{s n}^{m_{s n}}\right\}$ means the elements $a_{i}$ appear $m_{i}$ times in $M$ for $1 \leqslant i \leqslant s n$.
+
+From our computational results, we conclude the paper as follows. In this paper, we succeed to construct two new families of differentially 4 -uniform permutations by modifying the values of the inverse function on some subfield of $\mathbb{F}_{2^{2 m}}$. These differentially 4-uniform permutations are CCZ-inequivalent to the known ones and they have high nonlinearity and algebraic degree. If the modification is made on an affine subspace of $\mathbb{F}_{2^{2 m}}$, we can also get a family of permutations with low differential uniformity ( $\Delta_{f} \leqslant 6$ ).
+
+\section*{Acknowledgments}
+The authors would like to thank the anonymous reviewers for their detailed comments and suggestions which improved both the quality and presentation of this paper. The authors are indebted to Prof. Xiwang Cao for helping us to prove Lemma 4. The work of this paper was supported by the National Basic Research Programme under Grant 2013CB834203, the National Natural Science Foundation of China (Grants 61070172, 10990011 and 11201214), the Strategic Priority Research Program of Chinese Academy of Sciences under Grant XDA06010702, and the State Key Laboratory of Information Security, Chinese Academy of Sciences.
+
+\section*{References}
+[1] C. Bracken, E. Byrne, N. Markin, G. McGuire, A few more quadratic APN functions, Cryptogr. Commun. 3 (1) (2011) 43-53.\\[0pt]
+[2] L. Budaghyan, C. Carlet, A. Pott, New classes of almost bent and almost perfect nonlinear polynomials, IEEE Trans. Inf. Theory 52 (3) (2006) 1141-1152.\\[0pt]
+[3] C. Bracken, G. Leander, A highly nonlinear differentially 4 uniform power mapping that permutes fields of even degree, Finite Fields Appl. 16 (4) (2010) 231-242.\\[0pt]
+[4] C. Bracken, C.H. Tan, Y. Tan, Binomial differentially 4 uniform permutations with high nonlinearity, Finite Fields Appl. 18 (3) (2012) 537-546.\\[0pt]
+[5] C. Carlet, On known and new differentially uniform functions, in: U. Parampalli, P. Hawkes (Eds.), ACISP 2011, in: Lect. Notes Comput. Sci., vol. 6812, Springer, Heidelberg, 2011, pp. 1-15.\\[0pt]
+[6] C. Carlet, P. Charpin, V. Zinoviev, Codes, bent functions and permutations suitable for DES-like cryptosystems, Des. Codes Cryptogr. 15 (1998) 125-156.\\[0pt]
+[7] J.F. Dillon, APN polynomials: an update, in: Fq9, Conference Finite Fields and Applications, Dublin, Ireland, 2009.\\[0pt]
+[8] Y. Edel, A. Pott, A new almost perfect nonlinear function which is not quadratic, Adv. Math. Commun. 3 (1) (2009) 59-81.\\[0pt]
+[9] L. Knudsen, Truncated and higher order differentials, in: B. Preneel (Ed.), FSE 1994, in: Lect. Notes Comput. Sci., vol. 1008, Springer, Heidelberg, 1995, pp. 196-211.\\[0pt]
+[10] R. Lidl, H. Niederreiter, Finite Fields, Encyclopedia Math. Appl., vol. 20, 1997.\\[0pt]
+[11] G. Lachaud, J. Wolfmann, The weights of the orthogonals of the extended quadratic binary Goppa codes, IEEE Trans. Inf. Theory 36 (3) (1990) 686-692.\\[0pt]
+[12] Y. Li, M. Wang, Constructing differentially 4-uniform permutations over $\mathbb{F}_{2^{2 m}}$ from quadratic APN permutations over $\mathbb{F}_{2^{2 m+1}}$, Des. Codes Cryptogr. (2013), \href{http://dx.doi.org/10.1007/s10623-012-9760-9}{http://dx.doi.org/10.1007/s10623-012-9760-9}, in press.\\[0pt]
+[13] K. Nyberg, Differentially uniform mappings for cryptography, in: Advances in Cryptology-EUROCRYPT 93, in: Lect. Notes Comput. Sci., vol. 765, Springer-Verlag, New York, 1994, pp. 134-144.\\[0pt]
+[14] A. Pott, Y. Zhou, Switching constructions of planar functions on finite fields, in: Proceedings of WAIFI 2010, in: Lect. Notes Comput. Sci., vol. 6087, 2010, pp. 135-150.\\[0pt]
+[15] Y. Tan, L. Qu, C.H. Tan, C. Li, New families of differentially 4-uniform permutations over $\mathbb{F}_{2^{2 k}}$, in: T. Helleseth, J. Jedwab (Eds.), SETA 2012, in: Lect. Notes Comput. Sci., vol. 7280, Springer, Heidelberg, 2012, pp. 25-39.\\[0pt]
+[16] Y. Yu, M. Wang, Y. Li, Constructing differential 4-uniform permutations from know ones, \href{http://eprint.iacr.org/2011/047}{http://eprint.iacr.org/2011/047}.
+
+\begin{itemize}
+  \item 
+\end{itemize}
+
+
+\end{document}

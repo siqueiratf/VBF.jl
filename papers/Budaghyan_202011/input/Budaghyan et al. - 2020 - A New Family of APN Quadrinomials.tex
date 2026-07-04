@@ -1,0 +1,550 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage{bbold}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=magenta, urlcolor=cyan,}
+\urlstyle{same}
+\usepackage{caption}
+
+\title{A New Family of APN Quadrinomials }
+
+\author{Lilya Budaghyan, Tor Helleseth, and Nikolay Kaleyski ${ }^{\text {( ) }}$}
+\date{}
+
+
+%New command to display footnote whose markers will always be hidden
+\let\svthefootnote\thefootnote
+\newcommand\blfootnotetext[1]{%
+  \let\thefootnote\relax\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \let\thefootnote\svthefootnote%
+}
+
+%Overriding the \footnotetext command to hide the marker if its value is `0`
+\let\svfootnotetext\footnotetext
+\renewcommand\footnotetext[2][?]{%
+  \if\relax#1\relax%
+    \ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+  \else%
+    \if?#1\ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+    \else\svfootnotetext[#1]{#2}\fi%
+  \fi
+}
+
+\begin{document}
+\maketitle
+\captionsetup{singlelinecheck=false}
+
+
+\begin{abstract}
+The binomial $B(x)=x^{3}+\beta x^{36}$ (where $\beta$ is primitive in $\mathbb{F}_{2^{2}}$ ) over $\mathbb{F}_{2^{10}}$ is the first known example of an Almost Perfect Nonlinear (APN) function that is not CCZ-equivalent to a power function, and has remained unclassified into any infinite family of APN functions since its discovery in 2006. We generalize this binomial to an infinite family of APN quadrinomials of the form $x^{3}+a\left(x^{2^{i}+1}\right)^{2^{k}}+b x^{3 \cdot 2^{m}}+c\left(x^{2^{i+m}+2^{m}}\right)^{2^{k}}$ from which $B(x)$ can be obtained by setting $a=\beta, b=c=0, i=3$, $k=2$. We show that for any dimension $n=2 m$ with $m$ odd and $3 \nmid m$, setting $(a, b, c)=\left(\beta, \beta^{2}, 1\right)$ and $i=m-2$ or $i=(m-2)^{-1} \bmod n$ yields an APN function, and verify that for $n=10$ the quadrinomials obtained in this way for $i=m-2$ and $i=(m-2)^{-1} \bmod n$ are CCZ-inequivalent to each other, to $B(x)$, and to any other known APN function over $\mathbb{F}_{2^{10}}$.
+\end{abstract}
+
+Index Terms-Boolean functions, almost perfect nonlinear (APN), differential uniformity.
+
+\section*{I. Introduction}
+VECTORIAL Boolean functions, or $(n, m)$-functions, are mappings between the vector spaces $\mathbb{F}_{2}^{n}$ and $\mathbb{F}_{2}^{m}$ for some positive integers $n$ and $m$, where $\mathbb{F}_{2}$ is the finite field with two elements. Any such mapping can be understood as a transformation substituting a sequence of $n$ bits (zeros and ones) with a sequence of $m$ bits according to a given prescription, and for this reason ( $n, m$ )-functions naturally appear in different areas of computer science and engineering. In particular, $(n, m)$-functions are of critical importance in the field of cryptography: virtually all modern block ciphers incorporate an ( $n, m$ )-function (usually referred to as an "S-box" or "substitution box" in this context) as their only nonlinear component, and as such the security of the encryption directly depends on the properties of the $(n, m)$-function. Researchers have defined various properties which measure the resistance of an $(n, m)$-function to different kinds of cryptanalysis, including nonlinearity, differential uniformity, boomerang uniformity, algebraic degree, and so forth. The lower the differential uniformity of a function, in particular, the better its security against differential cryptanalysis [3], which is one of the most efficient attacks that can be employed against block ciphers. When $n=m$, which is the main case of our interest, the differential uniformity of any $(n, n)$-function
+
+\footnotetext{Manuscript received September 5, 2019; revised June 23, 2020; accepted June 30, 2020. Date of publication July 6, 2020; date of current version October 21, 2020. This work was supported in part by the Trond Mohn Foundation and in part by the Research Council of Norway under Contract 247742/O70. This article was presented in part at the Fourth International Workshop on Boolean Functions and their Applications (BFA-2019), 2019. (Corresponding author: Nikolay Kaleyski.)
+
+The authors are with the Department of Informatics, University of Bergen, 5020 Bergen, Norway (e-mail: \href{mailto:nikolay.kaleyski@uib.no}{nikolay.kaleyski@uib.no}).
+
+Communicated by A. Canteaut, Associate Editor for Cryptography.\\
+Digital Object Identifier 10.1109/TIT.2020.3007513
+}\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{TABLE I\\
+Known Infinite Families of Apn Power Functions Over $\mathbb{F}_{2} n$}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Family & Exponent & Conditions & Algebraic degree & Source \\
+\hline
+Gold & $2^{i}+1$ & $\operatorname{gcd}(i, n)=1$ & 2 & [18], [22] \\
+\hline
+Kasami & $2^{2 i}-2^{i}+1$ & $\operatorname{gcd}(i, n)=1$ & $i+1$ & [19], [20] \\
+\hline
+Welch & $2^{t}+3$ & $n=2 t+1$ & 3 & [13] \\
+\hline
+Niho & \begin{tabular}{l}
+$2^{t}+2^{t / 2}-1, t$ even \\
+$2^{t}+2^{(3 t+1) / 2}-1$, $t$ odd \\
+\end{tabular} & $n=2 t+1$ & \begin{tabular}{l}
+$(t+2) / 2$ \\
+$t+1$ \\
+\end{tabular} & [12] \\
+\hline
+Inverse & $2^{2 t}-1$ & $n=2 t+1$ & $n-1$ & [2], [22] \\
+\hline
+Dobbertin & \( \begin{aligned} & 2^{4 i}+2^{3 i}+2^{2 i}+ \\ & 2^{i}-1 \end{aligned} \) & $n=5 i$ & $i+3$ & [14] \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+is at least 2 , and the $(n, n)$-functions meeting this bound are called almost perfect nonlinear (APN). Discovering new examples and constructions of APN functions is thus a matter of significant practical importance since they enable the design of new block ciphers. APN functions are interesting from a theoretical point of view as well, as they correspond to optimal objects within other areas of mathematics and computer science, e.g. coding theory, combinatorics, and projective geometry.
+
+Finding new constructions of APN functions is difficult. APN functions have been known and studied since the early 90's [22] but, to date, only six infinite families of APN monomials and 11 infinite families of APN polynomials are known. Together, these cover only a miniscule fraction of all APN functions: for instance, more than 8000 CCZ-inequivalent APN functions have been constructed over $\mathbb{F}_{2}^{8}$ [25], yet none of them have been classified into general constructions yet. Finding new examples of infinite families is an area of intense ongoing research. Tables I and II list all currently known infinite families of APN functions.
+
+When $n=m$, it is convenient to identify the vector space $\mathbb{F}_{2}^{n}$ with the finite field $\mathbb{F}_{2^{n}}$ and to consider mappings from $\mathbb{F}_{2^{n}}$ (instead of $\mathbb{F}_{2}^{n}$ ) to itself. The binomials $B^{\prime}(x)=x^{3}+\alpha^{36} x^{36}$ and $B(x)=x^{3}+\alpha^{341} x^{36}$ (where $\alpha$ is a primitive element of $\mathbb{F}_{2^{10}}$ ) are known to be APN over $\mathbb{F}_{2^{10}}$ [16] and are remarkable as the first examples of APN functions that are CCZ-inequivalent to power functions. Since their discovery in 2006, a lot of work has been done on the construction of polynomial APN functions [4], [5], [7]-[11], [26] but the binomials $B(x)$ and $B^{\prime}(x)$ have not been classified into any infinite family or construction to date. It is worth noting that the binomial $x^{3}+w x^{258}$ over $\mathbb{F}_{2^{12}}$ (where $w \in \mathbb{F}_{2^{12}}$ has order 273 or 585 ) was also a sporadic, i.e., not belonging to any infinite family, APN polynomial, until it was classified into two infinite families, one for dimensions $n$ that are multiples of 3 , and one for dimensions $n$ that are multiples of 4 [9].
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{TABLE II\\
+Known Infinite Families of Quadratic APN Polynomials Over $\mathbb{F}_{2} n$}
+\begin{tabular}{|l|l|l|l|}
+\hline
+ID & Functions & Conditions & Source \\
+\hline
+F1F2 & $x^{2^{s}+1}+u^{2^{k}-1} x^{2^{i k}+2^{m k+s}}$ & $n=p k, \operatorname{gcd}(k, 3)=\operatorname{gcd}(s, 3 k)=1, p \in \{3,4\}, i=s k \bmod p, m=p-i, n \geq 12, u$ primitive in $\mathbb{F}_{2}^{*}{ }^{n}$ & [9] \\
+\hline
+F3 & \( \begin{aligned} & s x^{q+1}+x^{2^{i}+1}+x^{q\left(2^{i}+1\right)}+ \\ & c x^{2^{i} q+1}+c^{q} x^{2^{i}+q} \end{aligned} \) & $q=2^{m}, n=2 m, \operatorname{gcd}(i, m)=1, c \in \mathbb{F}_{2^{n}, s} \in \mathbb{F}_{2^{n}} \backslash \mathbb{F}_{q}, X^{2^{i}+1}+c X^{2^{i}}+c^{q} X+$ 1 has no solution $x$ s.t. $x^{q+1}=1$ & [8] \\
+\hline
+F4 & $x^{3}+a^{-1} \operatorname{Tr}_{1}^{n}\left(a^{3} x^{9}\right)$ & $a \neq 0$ & [10] \\
+\hline
+F5 & $x^{3}+a^{-1} \operatorname{Tr}_{3}^{n}\left(a^{3} x^{9}+a^{6} x^{18}\right)$ & $3 \mid n, a \neq 0$ & [11] \\
+\hline
+F6 & $x^{3}+a^{-1} \operatorname{Tr}_{3}^{n}\left(a^{6} x^{18}+a^{12} x^{36}\right)$ & $3 \mid n, a \neq 0$ & [11] \\
+\hline
+F7F9 & \( \begin{aligned} & u x^{2^{s}+1}+u^{2^{k}} x^{2^{-k}+2^{k+s}}+ \\ & v x^{2^{-k}+1}+w u^{2^{k}+1} x^{2^{s}+2^{k+s}}+ \end{aligned} \) & $n=3 k, \operatorname{gcd}(k, 3)=\operatorname{gcd}(s, 3 k)=1, v, w \in \mathbb{F}_{2^{k}}, v w \neq 1,3 \mid(k+s), u$ primitive in $\mathbb{F}_{2^{n}}^{*}$ & [5] \\
+\hline
+F10 & \( \begin{aligned} & \left(x+x^{2^{m}}\right)^{2^{k}+1}+u^{\prime}(u x+ \\ & \left.u^{2^{m}} x^{2^{m}}\right)^{\left(2^{k}+1\right) 2^{i}}+u(x+ \\ & \left.x^{2^{m}}\right)\left(u x+u^{2^{m}} x^{2^{m}}\right) \end{aligned} \) & $n=2 m, m \geqslant 2$ even, $\operatorname{gcd}(k, m)=1$ and $i \geqslant 2$ even, $u$ primitive in $\mathbb{F}_{2^{n}}^{*}, u^{\prime} \in \mathbb{F}_{2^{m}}$ not a cube & [26] \\
+\hline
+F11 & \( \begin{aligned} & a^{2} x^{2^{2 m+1}+1}+b^{2} x^{2^{m+1}+1}+ \\ & a x^{2^{2 m}+2}+b x^{2^{m}+2}+\left(c^{2}+c\right) x^{3} \end{aligned} \) & $n=3 m, m$ odd, $L(x)=a x^{2^{2 m}}+b x^{2^{m}}+c x$ satisfies the conditions of Lemma 8 of [7] & [7] \\
+\hline
+F12 & \( \begin{aligned} & u\left(u^{q} x+x^{q} u\right)\left(x^{q}+x\right)+ \\ & \left(u^{q} x+x^{q} u\right)^{2^{2 i}+2^{3 i}}+a\left(u^{q} x+\right. \\ & \left.x^{q} u\right)^{2^{2 i}}\left(x^{q}+x\right)^{2^{i}}+b\left(x^{q}+\right. \\ & x)^{2^{i}+1} \end{aligned} \) & $q=2^{m}, n=2 m, \operatorname{gcd}(i, m)=1, x^{2^{i}+1}+a x+b$ has no roots in $\mathbb{F}_{2^{m}}$ & [23] \\
+\hline
+F13 & \( \begin{aligned} & x^{3}+a\left(x^{2^{i}+1}\right)^{2^{k}}+b x^{3 \cdot 2^{m}}+ \\ & c\left(x^{2^{i+m}}+2^{m}\right)^{2^{k}} \\ \hline & \end{aligned} \) & $n=2 m, a, b, c \in \mathbb{F}_{4}$ satisfying the conditions of Corollary 1 & new \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+Attempts to generalize $B(x)$ and $B^{\prime}(x)$ to an infinite family have, to the best of our knowledge, so far only considered binomials of a similar form in higher dimensions [10], which has not resulted in any success thus far. In our work, we take a different approach, which involves expanding $B(x)$ and $B^{\prime}(x)$ into APN polynomials with more than two terms, and then generalizing these polynomials to higher dimensions. Based on our experiments, we arrive at a family of quadrinomials of the form
+
+$$
+x^{3}+a\left(x^{2^{i}+1}\right)^{2^{k}}+b x^{3 \cdot 2^{m}}+c\left(x^{2^{i+m}+2^{m}}\right)^{2^{k}}
+$$
+
+in which $B(x)$ corresponds to the coefficients $(a, b, c)= (\beta, 0,0)$ and the exponents $i=3, k=2$. We show that the coefficients $(a, b, c)=\left(\beta, \beta^{2}, 1\right)$, where $\beta$ is primitive in $\mathbb{F}_{2^{2}}$, and exponents $i=m-2, i=(m-2)^{-1} \bmod n$, $i=m$ or $i=n-1$ in the case of even $k$, or $i=m+2$, $i=(m+2)^{-1} \bmod n$, or $i=n-1$ in the case of odd $k$, where $n=2 m$ and $m$ is odd with $3 \nmid m$, give rise to APN functions. Furthermore, in the case of $n=10$, we show that for $i=m-2$ and $i=(m-2)^{-1}$, these APN functions are CCZ-inequivalent to each other or to any other known APN function over $\mathbb{F}_{2^{10}}$, including $B(x)$ and $B^{\prime}(x)$. For $i=m$ and $i=n-1$ the functions are equivalent to representatives from the known families.
+
+The condition $3 \nmid m$ is needed since $\beta$ is a cube in $\mathbb{F}_{2^{n}}$ if and only if $3 \mid m$. Indeed, $\beta$ is a cube in $\mathbb{F}_{2^{n}}$ if and only if $\beta^{\left(2^{n}-1\right) / d}=1$, where $d=\operatorname{gcd}\left(2^{n}-1,3\right)$; see e.g. [21]. For even $n, \operatorname{gcd}\left(2^{n}-1,3\right)=3$. The rest follows by observing that for $n=2 m,\left(2^{n}-1\right) / 3 \equiv 0\left(\bmod 2^{n}-1\right)$ if and only if $3 \mid m$, and since $\beta^{3}=1$.
+
+\section*{II. Preliminaries}
+Let $n$ be a positive integer. We denote by $\mathbb{F}_{2^{n}}$ the finite field with $2^{n}$ elements, and by $\mathbb{F}_{2^{n}}^{*}$ the set of its non-zero\\
+elements, i.e., its multiplicative group. For $m \mid n$, we denote by $\operatorname{Tr}_{m}^{n}: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{m}}$, resp. $\mathrm{N}_{m}^{n}: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{m}}$ the trace function $\operatorname{Tr}_{m}^{n}(x)=\sum_{i=0}^{n / m-1} x^{2^{m i}}$, resp. the norm function $\mathrm{N}_{m}^{n}(x)=\prod_{i=0}^{n / m-1} x^{2^{m i}}$ from $\mathbb{F}_{2^{n}}$ into its subfield $\mathbb{F}_{2^{m}}$. We will only work with fields of even dimension $n=2 k$; given some element $x \in \mathbb{F}_{2^{n}}$, we denote $\bar{x}=x^{2^{k}}$, and refer to $\bar{x}$ as the conjugate of $x$.
+
+An ( $n, n$ )-function is any mapping $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$. Any such function can be expressed as a polynomial of the form $F(x)=\sum_{i=0}^{2^{n}-1} a_{i} x^{i}$, for $a_{i} \in \mathbb{F}_{2^{n}}$. This is the univariate representation of $F$, and it is unique. The algebraic degree of $F$, denoted $\operatorname{deg}(F)$, is the largest binary weight of an exponent $i$ with $a_{i} \neq 0$ in the univariate representation, where the binary weight of an integer is the number of ones in its binary notation, i.e., the minimum number of distinct powers of two that sum up to it. Functions of algebraic degree 1, 2, and 3 are called affine, quadratic, and cubic, respectively. An affine function $F$ satisfying $F(0)=0$ is called linear.
+
+Given an ( $n, n$ )-function $F$, we denote by $\Delta_{F}(a, b)$ the number of solutions $x$ to the equation $D_{a} F(x)=b$, where $D_{a} F(x)=F(x+a)+F(x)$ is the derivative of $F$ in direction $a \in \mathbb{F}_{2^{n}}$. The largest value of $\Delta_{F}(a, b)$ among all $a \neq 0$ and all $b$ is denoted by $\Delta_{F}$ and is called the differential uniformity of $F$. If $\Delta_{F}=2$, we say that $F$ is almost perfect nonlinear (APN).
+
+The Walsh transform of $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ is the integer-valued function $W_{F}(a, b)=\sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{b \cdot F(x)+a \cdot x}$ for $a, b \in \mathbb{F}_{2^{n}}$, where the scalar product can be defined as $a \cdot b=\operatorname{Tr}_{1}^{n}(a b)$ for $a, b \in \mathbb{F}_{2^{n}}$ without losing generality. The values of $W_{F}(a, b)$ for $a, b \in \mathbb{F}_{2^{n}}$ are the Walsh coefficients of $F$, and the multiset $\left\{W_{F}(a, b): a, b \in \mathbb{F}_{2^{n}}\right\}$ is called the Walsh spectrum of $F$. The multiset $\left\{\left|W_{F}(a, b)\right|: a, b \in \mathbb{F}_{2^{n}}\right\}$ of the absolute values of the Walsh transform is the extended Walsh spectrum.
+
+Two designs, $\operatorname{dev}\left(G_{F}\right)$ and $\operatorname{dev}\left(D_{F}\right)$, can be associated with a given APN function $F$ over $\mathbb{F}_{2^{n}}$ [17]. In both cases, the set of points is $\mathbb{F}_{2^{n}}^{2}$. The set of blocks of $\operatorname{dev}\left(G_{F}\right)$, resp. $\operatorname{dev}\left(D_{F}\right)$ is $\left\{(x+a, F(x)+b): x \in \mathbb{F}_{2^{n}}\right\}$ for $a, b \in \mathbb{F}_{2^{n}}$, resp. $\left\{(x+y+a, F(x)+F(y)+b): x, y \in \mathbb{F}_{2^{n}}, x \neq y\right\}$ for $a, b \in \mathbb{F}_{2^{n}}$. The rank of the incidence matrix of $\operatorname{dev}\left(G_{F}\right)$, resp. $\operatorname{dev}\left(D_{F}\right)$ is called the $\Gamma$-rank, resp. $\Delta$-rank of $F$.
+
+Since the number of distinct $(n, n)$-functions, viz. $\left(2^{n}\right)^{2^{n}}$, grows rapidly with the dimension, $(n, n)$-functions are classified only up to a suitable equivalence relation which preserves the properties being studied. The most general known equivalence relation which preserves the differential uniformity is the so-called Carlet-Charpin-Zinoviev equivalence (CCZ-equivalence): we say that two $(n, n)$-functions $F$ and $F^{\prime}$ are CCZ-equivalent if there is an affine permutation $\mathcal{L}$ of $\mathbb{F}_{2^{n}}^{2}$ which maps the graph $G_{F}=\left\{(x, F(x)): x \in \mathbb{F}_{2^{n}}\right\}$ of $F$ to the graph $G_{F^{\prime}}$ of $G$. Deciding whether two given functions $F$ and $F^{\prime}$ are CCZ-equivalent computationally is a difficult problem in general, and is typically resolved via code isomorphism. More precisely, a linear code $\mathcal{C}_{F}$ with the generating matrix
+
+$$
+\mathcal{C}_{F}=\left(\begin{array}{cccc}
+1 & 1 & \ldots & 1 \\
+0 & \alpha & \ldots & \alpha^{2^{n}-1} \\
+F(0) & F(\alpha) & \ldots & F\left(\alpha^{2^{n}-1}\right)
+\end{array}\right)
+$$
+
+can be associated with any given $(n, n)$-function $F$, where $\alpha$ is the primitive element of $\mathbb{F}_{2^{n}}$. Then $F$ and $F^{\prime}$ are CCZ-equivalent if and only if $\mathcal{C}_{F}$ and $\mathcal{C}_{F^{\prime}}$ are isomorphic [6].
+
+Various CCZ-invariants, i.e., properties that remain invariant under CCZ-equivalence, can be used to show that a pair of ( $n, n$ )-functions is CCZ-inequivalent. These include the differential uniformity, the extended Walsh spectrum and the $\Gamma$ - and $\Delta$-ranks. In particular, it is known that if $F$ and $F^{\prime}$ are CCZ-equivalent, then they must necessarily have e.g. the same $\Gamma$-rank. Thus, if two functions have distinct $\Gamma$-ranks, then they are definitely CCZ-inequivalent (although the converse does not hold in general).
+
+A special cases of CCZ-equivalence is the so-called extended affine equivalence ( $E A$-equivalence). Two $(n, n)$ functions $F$ and $F^{\prime}$ are said to be EA-equivalent if $F^{\prime}=A_{1} \circ F \circ A_{2}+A$ for affine $A_{1}, A_{2}, A: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ with $A_{1}, A_{2}$ bijective.
+
+\section*{III. A New Family of APN Quadrinomials}
+Let $\beta$ denote the primitive element of $\mathbb{F}_{2^{2}}$. Note that $\bar{\beta}=\beta^{2}$. We know that $B(x)=x^{3}+\beta x^{36}$ and $B^{\prime}(x)=x^{3}+\alpha^{11} x^{341}$, where $\alpha$ is primitive in $\mathbb{F}_{2^{10}}$ are APN over $\mathbb{F}_{2^{10}}$ [16] but have not been classified into any infinite family yet. By means of the code isomorphism test, we establish that $B(x)$ and $B^{\prime}(x)$ are CCZ-equivalent, and henceforth concentrate on $B(x)$ only. We look for polynomials $P(x)$ with a small number of terms such that $B(x)+P(x)$ is APN. We do not find any non-trivial (that is, not arising from simple EA-equivalence) monomial $P(x)$ for which $B(x)+P(x)$ is APN. We do, however, come across binomials $P(x)$ for which $B(x)+P(x)$ is APN and is CCZ-inequivalent to any known APN function over $\mathbb{F}_{2^{10}}$. A detailed description of the tests that we performed for\\
+disproving CCZ-equivalence can be found at the end of this section after Theorem 2.
+
+Observation 1: The quadrinomials $x^{3}+\beta x^{36}+\beta^{2} x^{96}+x^{129}$ and $x^{3}+\beta x^{129}+\beta^{2} x^{96}+x^{36}$ are APN over $\mathbb{F}_{2^{10}}$, and are CCZ-inequivalent to each other and to any other known APN function over $\mathbb{F}_{2^{10}}$.
+
+Note that $96 \equiv 332 \bmod \left(2^{10}-1\right)$ and $129 \equiv 3632 \bmod \left(2^{10}-1\right)$, i.e., $x^{96}=\overline{x^{3}}$, and $x^{129}=\overline{x^{36}}$ and, conversely, $x^{36}=\overline{x^{129}}$. Furthermore, $36=4 \cdot 9=4 \cdot\left(2^{3}+1\right)$. It is thus natural to consider functions of the form
+
+
+\begin{equation*}
+C_{i}(x)=x^{3}+\beta x^{2^{i}+1}+\beta^{2} \overline{x^{3}}+\overline{x^{2^{i}+1}} \tag{1}
+\end{equation*}
+
+
+for $0 \leq i \leq n-1$. The APN-ness of such functions can be characterized by the solvability of the following system of equations.
+
+Proposition 1: Let $n=2 m, 3 \nmid m, m$ odd, and let $C_{i}(x)$ be defined as in (1). Consider the system $E_{i}$ defined by
+
+\[
+\left\{\begin{array}{l}
+a^{3}\left(x^{2}+x\right) \in \beta \cdot \mathbb{F}_{2^{m}}  \tag{2}\\
+a^{2^{i}+1}\left(x^{2^{i}}+x\right) \in \beta \cdot \mathbb{F}_{2^{m}} .
+\end{array}\right.
+\]
+
+Given some integer $1 \leq i \leq n-1$, the function defined by $C_{i}(x)$ is APN over $\mathbb{F}_{2^{n}}$ if, for any $a \in \mathbb{F}_{2^{n}}^{*}$, the system $E_{i}$ from (2) only has trivial solutions in $x$, i.e., only $x \in \mathbb{F}_{2}$ can be a solution to $E_{i}$.
+
+Proof: Note that $C_{i}$ is quadratic, so that proving its APN-ness is equivalent to showing that the equation $D_{a} C_{i}(a x)=D_{a} C_{i} F(0)$ has only $x \in \mathbb{F}_{2}$ as solutions for $a \neq 0$. The expression $D_{a} C_{i}(a x)+D_{a} C_{i} F(0)$ takes the form\\
+$a^{3}\left(x^{2}+x\right)+\beta a^{2^{i}+1}\left(x^{2^{i}}+x\right)+\beta^{2} \overline{a^{3}\left(x^{2}+x\right)}+\overline{a^{2^{i}+1}\left(x^{2^{i}}+x\right)}$.\\
+For simplicity, denote $A=a^{3}\left(x^{2}+x\right)$ and $B=a^{2^{i}+1}\left(x^{2^{i}}+x\right)$. Then the equation $D_{a} C_{i}(a x)+ D_{a} C_{i}(0)=0$ becomes
+
+
+\begin{equation*}
+A+\beta B+\beta^{2} \bar{A}+\bar{B}=0 \tag{3}
+\end{equation*}
+
+
+Taking the conjugate of (3) and multiplying it by $\beta$, we get $\beta^{2} A+\beta B+\beta \bar{A}+\bar{B}=0$, and, adding this to (3), we obtain $\beta A+\bar{A}=0$ which implies $\beta^{2} A=\beta \bar{A}$, hence $\beta^{2} A=\overline{\beta^{2} A}$ and thus $\beta^{2} A \in \mathbb{F}_{2^{m}}$, i.e., $A \in \beta \cdot \mathbb{F}_{2^{m}}$. Multiplying the identity $\beta A+\bar{A}=0$ by $\beta^{2}$ and substituting it back into (3), we obtain $\beta B+\bar{B}=0$, so that we also have $B \in \beta \cdot \mathbb{F}_{2^{m}}$. The two inclusions, viz. $A \in \beta \cdot \mathbb{F}_{2^{m}}$ and $B \in \beta \cdot \mathbb{F}_{2^{m}}$, are precisely the equations in the system (2). Therefore, under the hypothesis, $D_{a} C_{i}(a x)+D_{a} C_{i}(0)=0$ can only have trivial solutions, and thus $C_{i}(x)$ is APN.
+
+Next, we determine values of $i$ for which system (2) only has trivial solutions. According to our experimental results, which encompass dimensions up to 46 , there are precisely four such values of $i$ for any given dimension $n$ satisfying the conditions of Proposition 1. Two of these give rise to APN functions equivalent to some of the previously known ones, while the other two lead to infinite constructions of APN functions whose instances for $n=10$, i.e the quadrinomials from Observation 1, are CCZ-inequivalent to any known APN function over $\mathbb{F}_{2^{10}}$.
+
+In the proof of Theorem 2 we will need the following auxiliary results.
+
+Lemma 1: Let $n=2 m$ for $m$ odd, and suppose that for some $c \in \mathbb{F}_{2^{n}}$ with $\operatorname{Tr}_{1}^{n}(c)=0$ we have
+
+
+\begin{equation*}
+c\left(c+c^{2}+c^{4}+\cdots+c^{2^{m+1}}\right) \in \mathbb{F}_{2^{m}} \tag{4}
+\end{equation*}
+
+
+Then $c$ is a cube.\\
+Proof: First, observe that all elements of $\mathbb{F}_{2^{m}}$ are cubes due to $\left(2^{m}-1,3\right)=1$ for $m$ odd.
+
+For convenience, let us denote by $h(c)=c+c^{2}+\cdots+ c^{2^{m-1}}$ the "half-trace" function. Then (4) can be written as $\operatorname{ch}(c)+c^{2^{m}+1}+c^{2^{m+1}+1} \in \mathbb{F}_{2^{m}}$, and since $c^{2^{m}+1}=\mathrm{N}_{m}^{n}(c)$ is an element of $\mathbb{F}_{2^{m}}$, this becomes simply
+
+
+\begin{equation*}
+\operatorname{ch}(c)+c^{2^{m+1}+1} \in \mathbb{F}_{2^{m}} \tag{5}
+\end{equation*}
+
+
+Observe that $h(c)+\overline{h(c)}=\operatorname{Tr}_{1}^{n}(c)$, and since $\operatorname{Tr}_{1}^{n}(c)=0$ by assumption, we have $h(c)=h(c)$. Conjugating (5), we get $h(c)(c+\bar{c})=c \bar{c}(c+\bar{c})$, and, assuming that $c \neq \bar{c}$ (for otherwise $c$ is already in $\mathbb{F}_{2^{m}}$ and thus a cube), this becomes $h(c)=c \bar{c}$.
+
+From the definition of $h(c)$, we clearly have $h(c)+h(c)^{2}= c+\bar{c}$. Hence $c+\bar{c}=c \bar{c}+c^{2} \bar{c}^{2}$, from which we get $c+\bar{c}+ c \bar{c}+c^{2}=c^{2} \bar{c}^{2}+c^{2}$ by adding $c^{2}$ to both sides, and, finally, $(c+\bar{c})(1+c)=c^{2}\left(1+\bar{c}^{2}\right)$. Now, observe that $\left(1+\bar{c}^{2}\right) /(1+c)= (1+c)^{2^{m+1}-1}$, which is s cube for $m$ odd, and that $c+\bar{c}$ lies in $\mathbb{F}_{2^{m}}$ and is thus a cube. Hence $c^{2}$, and thus also $c$ is a cube, which completes the proof.
+
+Theorem 1: [24] Let $t_{1}$ and $t_{2}$ denote the zeros of $t^{2}+ b t+a^{3}$ in $\mathbb{F}_{2^{n}}$ where $n=2 m$ and $a \in \mathbb{F}_{2^{m}}, b \in \mathbb{F}_{2^{m}}^{*}$. Let $f(x)=x^{3}+a x+b$, then
+
+\begin{itemize}
+  \item $f$ has three zeros in $\mathbb{F}_{2^{m}}$ if and only if $\operatorname{Tr}_{1}^{m}\left(\frac{a^{3}}{b^{2}}+1\right)=0$ and $t_{1}, t_{2}$ are cubes in $\mathbb{F}_{2^{m}}$ (if $m$ is even), $\mathbb{F}_{2^{n}}$ (if $m$ is odd).
+  \item $f$ has exactly one zero in $\mathbb{F}_{2^{m}}$ if and only if $\operatorname{Tr}_{1}^{m}\left(\frac{a^{3}}{b^{2}}+\right.$ 1) $=1$.
+  \item $f$ has no zeros in $\mathbb{F}_{2^{m}}$ if and only if $\operatorname{Tr}_{1}^{m}\left(\frac{a^{3}}{b^{2}}+1\right)=0$ and $t_{1}, t_{2}$ are not cubes in $\mathbb{F}_{2^{m}}$ (if $m$ is even), $\mathbb{F}_{2^{n}}$ (if $m$ is odd).\\[0pt]
+Lemma 2: [15] Let $r, n$ be positive integers, and let $a, b, c \in \mathbb{F}_{2^{n}}$. Then the quadratic polynomial $Q(x)=x^{2^{r}+1}+ a x^{2^{r}}+b x+c$ has either $0,1,2$, or $2^{r_{0}}+1$ roots $x \in \mathbb{F}_{2^{n}}$, where $r_{0}=\operatorname{gcd}(r, n)$.
+\end{itemize}
+
+Using Lemma 2, we can obtain the following.\\
+Lemma 3: Let $m$ and $i$ be positive integers such that $\operatorname{gcd}(m, i)=1$ and let $S \in \mathbb{F}_{2^{m}} \backslash\{0,1\}$. Then the polynomial
+
+$$
+P(N)=\left(S^{2^{i}}+S\right) N^{2^{2 i}}+\left(S^{2^{2 i}}+S\right) N^{2^{i}}+\left(S^{2^{2 i}}+S^{2^{i}}\right) N
+$$
+
+in $N$ has four roots, viz. $N=0, N=1, N=S$, and $N= S+1$.
+
+Proof: Note that for $S \notin\{0,1\}$ the coefficients of $P$ are all non-zero. Dividing $P$ by $N$ and substituting $t=N^{2^{i}-1}$, we obtain a new polynomial $P^{\prime}(t)=a t^{2^{i}+1}+b t+c$, with $a=\left(S^{2^{i}}+S\right), b=\left(S^{2^{2 i}}+S\right)$ and $c=\left(S^{2^{2 i}}+S^{2^{i}}\right)$. Since $\operatorname{gcd}(i, m)=1$ from the hypothesis, by Lemma $2 P^{\prime}(t)$ can have at most three roots. Due to $\operatorname{gcd}(i, m)=1$, every element in $\mathbb{F}_{2^{m}}$ has a unique ( $2^{i}-1$ )-st root, and hence every root $t$ of $P^{\prime}$ corresponds to a unique root $N$ of $P$. It remains to verify\\
+that for $N \in\{0,1, S, S+1\}, P(N)$ does indeed evaluate to zero. \(\square\)
+
+We are now ready to prove the main result.\\
+Theorem 2: Let $n=2 m$ with $m$ odd and $3 \nmid m$. Then the system $E_{i}$ from (2) does not have any solutions $x \notin \mathbb{F}_{2}$ for the following values of $i$ : 1 )
+
+\begin{enumerate}
+  \item $i=m-2$;
+  \item $i=m$;
+  \item $i=(m-2)^{-1} \bmod n$;
+  \item $i=n-1$.
+\end{enumerate}
+
+Proof: First, observe that all elements of the half-field $\mathbb{F}_{2^{m}}$ are cubes in $\mathbb{F}_{2^{n}}$. If some $a \neq 0$ and $x \notin \mathbb{F}_{2}$ satisfy system (2), then $a^{3}\left(x^{2}+x\right)=\alpha_{1} \beta$ and $a^{2^{i}+1}\left(x^{2^{i}}+x\right)=\alpha_{2} \beta$ for some $\alpha_{1}, \alpha_{2} \in \mathbb{F}_{2^{m}}$ with $\alpha_{1} \neq 0$. We can write $\alpha_{1}=c^{3}$ for some $c \in \mathbb{F}_{2^{n}}^{*}$. Dividing both sides of the first equation by $c^{3}$, we obtain $(a / c)^{3}\left(x^{2}+x\right)=\beta$. Dividing both sides of the second equation by $c^{2^{i}+1}$, we obtain $(a / c)^{2^{i}+1}\left(x^{2^{i}}+x\right)= \alpha_{2} \beta c^{-\left(2^{i}+1\right)}$. Since $3 \mid 2^{i}+1$ for odd $i, c^{-\left(2^{i}+1\right)}$ is in $\mathbb{F}_{2^{m}}$. Thus, system (2) has a non-trivial solution $x \notin \mathbb{F}_{2}$ if and only of the system
+
+\[
+\left\{\begin{array}{l}
+a^{3}\left(x^{2}+x\right)=\beta  \tag{6}\\
+a^{2^{2}+1}\left(x^{2^{i}}+x\right)=\alpha \beta
+\end{array}\right.
+\]
+
+has a solution for some $\alpha \in \mathbb{F}_{2^{m}}$. In the following, we show that for each of the values of $i$ given in the statement of the theorem, this reduced system (6) has no solutions.
+
+Case 1 In the case of $i=m-2$, we have the system
+
+$$
+\left\{\begin{array}{l}
+a^{3}\left(x^{2}+x\right)=\beta \\
+a^{2^{m-2}+1}\left(x^{2^{m-2}}+x\right)=\beta \cdot \mathbb{F}_{2^{m}}
+\end{array}\right.
+$$
+
+for some $\alpha \in \mathbb{F}_{2^{m}}$. Raising the second equation to the fourth power, we have $a^{2^{m}+4}\left(\bar{x}+x^{4}\right)=\alpha^{4} \beta$. From the first equation, we can write $a^{3}=\beta /\left(x^{2}+x\right)$. Substituting this into the previous equation, we obtain $a^{2^{m}+1} \frac{\bar{x}+x^{4}}{x^{2}+x} \in \mathbb{F}_{2^{m}}$. Since $a^{2^{m}+1} \in \mathbb{F}_{2^{m}}$, this simply means $\left(\bar{x}+x^{4}\right) /\left(x^{2}+x\right) \in \mathbb{F}_{2^{m}}$. Thus
+
+$$
+\frac{\bar{x}+x^{4}}{x^{2}+x}=\frac{x+\bar{x}^{4}}{\bar{x}^{2}+\bar{x}}
+$$
+
+and hence $\left(x^{2}+x\right)\left(x+\bar{x}^{4}\right) \in \mathbb{F}_{2^{m}}$. Denoting $c=x^{2}+x$, we can express $x+\bar{x}^{4}=x+x^{2^{m+2}}$ as $c+c^{2}+c^{4}+\cdots+c^{2^{m+1}}$. We now have $\operatorname{Tr}_{1}^{n}(c)=0$ and $c\left(c+c^{2}+\cdots+c^{2^{m+1}}\right) \in \mathbb{F}_{2^{m}}$, so according to Lemma $1, c=x^{2}+x$ must be a cube. But then $a^{3}\left(x^{2}+x\right) \in \beta \cdot \mathbb{F}_{2^{m}}$ implies that $\beta$ is a cube which is impossible when $3 \nmid m$.
+
+Case 2 The case $i=m$ trivially has no solutions since if $a^{2^{m}+1}\left(x^{2^{m}}+x\right)=\alpha \beta$ for some $\alpha \in \mathbb{F}_{2^{m}}$, then conjugating both sides yields $a^{2^{m}+1}\left(x^{2^{m}}+x\right)=\alpha \beta^{2}$, implying $\beta=\beta^{2}$.
+
+Case 3 In the case of $i=(m-2)^{-1} \bmod n$, we have the equation system
+
+\[
+\left\{\begin{array}{l}
+a^{i(m-2)+1}\left(x^{2^{i(m-2)}}+x\right)=\beta  \tag{7}\\
+a^{2^{i}+1}\left(x^{2^{i}}+x\right)=\alpha \beta
+\end{array}\right.
+\]
+
+for some $\alpha \in \mathbb{F}_{2^{m}}$. Raising the first equation to the power $2^{2 i}$, we obtain
+
+
+\begin{equation*}
+a^{2^{i m}+2^{2 i}}\left(x^{2^{i m}}+x^{2^{2 i}}\right)=\beta, \tag{8}
+\end{equation*}
+
+
+and raising the second equation to the power $2^{i}-1$ yields
+
+
+\begin{equation*}
+a^{2^{2 i}-1}\left(x^{2^{i}}+x\right)^{2^{i}-1}=\alpha^{2^{i}-1} \beta . \tag{9}
+\end{equation*}
+
+
+From (8) and (9) we obtain the identity
+
+
+\begin{equation*}
+\frac{\alpha^{2^{i}-1} \beta a^{2^{i m}}+2^{2 i}}{\beta a^{2^{2 i}-1}}=\frac{\left(x^{2^{i}}+x\right)^{2^{i}-1}}{x^{2^{i m}}+x^{2^{2 i}}} . \tag{10}
+\end{equation*}
+
+
+The left-hand side of (10) simplifies to $\alpha^{2^{i}-1} a^{2^{i m}+1}$. Since $a^{2^{i m}+1}=a^{2^{m}+1}$ is in $\mathbb{F}_{2^{m}}$ for any $a \in \mathbb{F}_{2^{n}}$, we have that $\left(x^{2^{i m}}+x^{2^{2 i}}\right) /\left(x^{2^{i}}+x\right)^{2^{i}-1} \in \mathbb{F}_{2^{m}}$, i.e.,
+
+$$
+\frac{\left(\bar{x}+x^{2^{2 i}}\right)\left(x^{2^{i}}+x\right)}{\left(x^{2^{i}}+x\right)^{2^{i}}}=\frac{\left(x+\bar{x}^{2^{2 i}}\right)\left(\bar{x}^{2^{i}}+\bar{x}\right)}{\left(\bar{x}^{2^{i}}+\bar{x}\right)^{2^{i}}}
+$$
+
+and hence
+
+
+\begin{equation*}
+\left(\bar{x}+x^{2^{2 i}}\right)\left(x^{2^{i}}+x\right)\left(\bar{x}^{2^{2 i}}+\bar{x}^{2^{i}}\right)=\left(x+\bar{x}^{2^{2 i}}\right)\left(\bar{x}^{2^{i}}+\bar{x}\right)\left(x^{2^{2 i}}+x^{2^{i}}\right) . \tag{11}
+\end{equation*}
+
+
+The left-hand side of (11) takes the form
+
+$$
+\begin{gathered}
+A(x)=x^{2^{i}} \bar{x}^{2^{2 i}+1}+x^{2^{i}} \bar{x}^{2^{i}+1}+x^{2^{2 i}+2^{i}} \bar{x}^{2^{2 i}}+x^{2^{2 i}+2^{i}} \bar{x}^{2^{i}}+ \\
+x \bar{x}^{2^{2 i}+1}+x \bar{x}^{2^{i}+1}+x^{2^{2 i}+1} \bar{x}^{2^{2 i}}+x^{2^{2 i}+1} \bar{x}^{2^{i}}
+\end{gathered}
+$$
+
+Denoting $S=x+\bar{x}$ and $N=x \bar{x}$, and observing that $A(x)+A(\bar{x})=0$, we can write
+
+\[
+\begin{array}{r}
+A(x)+A(\bar{x})= \\
+\left(S^{2^{i}}+S\right) N^{2^{2 i}}+\left(S^{2^{2 i}}+S\right) N^{2^{i}}+\left(S^{2^{2 i}}+S^{2^{i}}\right) N=0 \tag{12}
+\end{array}
+\]
+
+We now consider the expression on the right-hand side of (12) as a polynomial in $S$ and $N$ and determine its possible roots by Lemma 3. Before doing so, we need to rule out the cases when $N=0$ and $S \in\{0,1\}$. Unless $x=0$, we must clearly have $N \neq 0$. If $S=x+\bar{x}=0$, then we must have $x \in \mathbb{F}_{2^{m}}$ so that ( $x^{2}+x$ ) is in $\mathbb{F}_{2^{m}}$ and is hence a cube. But then the equation $a^{3}\left(x^{2}+x\right)=\beta$ from (7) implies that $\beta$ is a cube, which is impossible under the assumption $3 \nmid m$. If $S=x+\bar{x}=1$, then from the identity $x^{2}+(x+\bar{x}) x=x \bar{x}$ we get $x^{2}+x=x \bar{x}=N$ and we once again infer that $x^{2}+x$ must be a cube, which is impossible.
+
+We can now apply Lemma 3 to see that only $N=1, N=S$, and $N=S+1$ are solutions to (12). We can additionally assume $N \neq S+1$, since otherwise we have $x \bar{x}=x+\bar{x}+1$; multiplying both sides by $x$ and adding this to the original expression then gives us $\left(x^{2}+1\right)(\bar{x}+1)=0$, which implies $x=1$. We thus only need to consider the cases $N=1$ and $N=S$.
+
+By adding $a^{3}\left(x^{2}+x\right)=\beta$ and $x^{2}+S x+N=0$ together, we obtain $(S+1) x+N=\beta / a^{3}$ and hence
+
+
+\begin{equation*}
+x=\left(N+\beta / a^{3}\right) /(S+1) . \tag{13}
+\end{equation*}
+
+
+Since $N=x \bar{x}$ and thus $x=N / \bar{x}$, we obtain
+
+$$
+\frac{N+\beta / a^{3}}{S+1}=\frac{N(S+1)}{N+\overline{\left(\beta / a^{3}\right)}}
+$$
+
+leading to
+
+
+\begin{align*}
+& N(S+1)^{2}=\left(N+\beta / a^{3}\right)\left(N+\overline{\beta / a^{3}}\right) \\
+= & N^{2}+\left(\beta / a^{3}+\overline{\beta / a^{3}}\right) N+\beta / a^{3} \overline{\beta / a^{3}} . \tag{14}
+\end{align*}
+
+
+From (13), we get $S=x+\bar{x}=\frac{N+\beta / a^{3}+N+\overline{\beta / a^{3}}}{S+1}= \frac{\beta / a^{3}+\overline{\beta / a^{3}}}{S+1}$ so that
+
+
+\begin{equation*}
+S^{2}+S=\beta / a^{3}+\overline{\beta / a^{3}} . \tag{15}
+\end{equation*}
+
+
+Substituting this into (14), we obtain $N(S+1)^{2}=N^{2}+ \left(S^{2}+S\right) N+\beta / a^{3} \overline{\beta / a^{3}}$, which implies
+
+$$
+N^{2}+(S+1) N+\beta / a^{3} \overline{\beta / a^{3}}=0 .
+$$
+
+When $N \in\{1, S\}$, this implies $S=a^{-3} \overline{a^{-3}}$. Hence $S^{2}+ S=a^{-6} \overline{a^{-6}}+a^{-3} \overline{a^{-3}}$. Combining this with (15), we see that $\beta / a^{3}+\overline{\beta / a^{3}}=a^{-6} \overline{a^{-6}}+a^{-3} \overline{a^{-3}}$ and hence $t_{1}=\beta / a^{3}$ and $t_{2}=\overline{\beta / a^{3}}$ are roots of the polynomial $t^{2}+\left(a^{-6} \overline{a^{-6}}+\right. \left.a^{-3} \overline{a^{-3}}\right) t+a^{-3} \overline{a^{-3}}$.
+
+If we denote $c_{1}=(a \bar{a})^{-1}, c_{2}=c_{1}^{6}+c_{1}^{3}$, we can write it more succinctly as $t^{2}+c_{2} t+c_{1}^{3}$. Dividing both sides by $c_{2}^{2}$ and denoting $y=t / c_{2}$, this becomes $y^{2}+y+\left(c_{1}^{3}\right) /\left(c_{2}^{2}\right)$.
+
+Since a quadratic equation $y^{2}+y=v$ for $v \in \mathbb{F}_{2^{k}}$ has solutions in $\mathbb{F}_{2^{k}}$ if and only if $\operatorname{Tr}_{1}^{k}(v)=0$ [1], we have that $\operatorname{Tr}_{1}^{m}\left(\frac{c_{1}^{3}}{c_{2}^{2}}\right)=1$, and hence $\operatorname{Tr}_{1}^{m}\left(\frac{c_{1}^{3}}{c_{2}^{2}}+1\right)=0$ due to $m$ being odd.
+
+Letting $f(y)=y^{3}+c_{1} y+c_{1}^{6}+c_{1}^{3}$, by Theorem $1, f$ has either three roots, or none at all. However, $c_{1}^{2}$ can easily be seen to be a root, so that $f$ must have three roots. Again by Theorem 1 , this implies that $t_{1}$ and $t_{2}$ have to be cubes, which is impossible for $3 \nmid m$.
+
+Case 4 When $i=n-1$, we have the system
+
+$$
+\left\{\begin{array}{l}
+a^{3}\left(x^{2}+x\right)=\beta \\
+a^{2^{n-1}}+1\left(x^{2^{n-1}}+x\right)=\alpha \beta
+\end{array}\right.
+$$
+
+for $\alpha \in \mathbb{F}_{2^{m}}$.\\
+Raising the second equation to the second power yields $a^{3}\left(x^{2}+x\right)=\alpha^{2} \beta^{2}$ so that we have $\alpha^{2} \beta^{2}=\beta$, implying that $\beta$ lies in $\mathbb{F}_{2^{m}}$.
+
+According to our experimental results up to dimension $n=46$, the values of $i$ given in Theorem 2 are the only ones for which $C_{i}(x)=x^{3}+\beta x^{2^{i}+1}+x^{3 \cdot 2^{m}}+x^{2^{i+m}+2^{m}}$ is APN. We can generalize $C_{i}$ to the form $C_{i}^{\prime}(x)=x^{3}+ \beta\left(x^{2^{i}+1}\right)^{2^{k}}+\beta^{2} \overline{x^{3}}+\overline{\left(x^{2^{i}+1}\right)^{2^{k}}}$ for some non-negative integer $k$. The APN-ness of such a function can be characterized by the solvability of the system
+
+\[
+\left\{\begin{array}{l}
+a^{3}\left(x^{2}+x\right) \in \beta \cdot \mathbb{F}_{2^{m}}  \tag{16}\\
+\left(a^{2^{i}+1}\left(x^{2^{i}}+x\right)\right)^{2^{k}} \in \beta \cdot \mathbb{F}_{2^{m}}
+\end{array}\right.
+\]
+
+Note that raising $\beta$ to an even power of two leaves it unchanged. Thus, for even values of $k$, system (16) has non-trivial solutions if and only if (2) does. Therefore, for $i \in\left\{m-2, m, n-1,(m-2)^{-1} \bmod n\right\}$ and even $k$ the generalized quadrinomial $C_{i}^{\prime}(x)$ is APN.
+
+If $k$ is odd, we obtain a slightly different system.\\
+Lemma 4: Let $k$ be odd. Then the system
+
+\[
+\left\{\begin{array}{l}
+a^{3}\left(x^{2}+x\right) \in \beta \cdot \mathbb{F}_{2^{m}}  \tag{17}\\
+\left(a^{2^{i}+1}\left(x^{2^{i}}+x\right)\right)^{2^{k}} \in \beta \cdot \mathbb{F}_{2^{m}} .
+\end{array}\right.
+\]
+
+has only trivial solutions for $i \in\left\{m+2, m,(m+2)^{-1}\right. \bmod n\}$.
+
+Proof: Suppose $i=m+2$. Since raising $\beta$ to an odd power of two yields $\beta^{2}$, raising the second equation of system (17) to the power $2^{n-k}$ leaves us with $a^{2^{m+2}+1}\left(x^{2^{m}+2}+x\right)=\alpha^{\prime} \beta^{2}$ for $\alpha^{\prime}=\alpha^{2^{n-k}}$. Raising it again to the power ( $2^{m-2}$ ) and, noting that $m-2$ is odd, we obtain $a^{2^{m-2}}+1\left(x^{2^{m-2}}+x\right)=\alpha^{\prime \prime} \beta$ with $\alpha^{\prime \prime}=\alpha^{2^{m-2}}$, which is the same as system (2). Similarly, when $i=(m+2)^{-1}$, we first raise the second equation to the power $2^{n-k}$, and then to the power $2^{(m-2)^{-1}} \bmod n$; again, $(m-2)^{-1} \bmod n$ is odd, so that we come back to system (7). In the case of $i=m$, it suffices to conjugate the equation $a^{2^{m}+1}\left(x^{2^{m}}+x\right)=\alpha^{\prime} \beta^{2}$ in order to derive a contradiction in the same way as in the proof of Theorem 2. \(\square\)
+
+When $k$ is odd, the case of $i=n-1$ does allow non-trivial solutions, which can easily be seen by taking $\alpha=1$ and any $a \in \mathbb{F}_{2^{n}}^{*}$ for which $x^{2}+x=\beta / a^{3}$ is solvable. According to our data for dimension $n=10$ (which is the highest dimension for which we can computationally test CCZ-equivalence by our current means), the polynomials $C_{i}^{\prime}$ for odd values of $k$ are equivalent to some $C_{i}$, so that we may assume $k=0$. Furthermore, for $i=m$ and $i=n-1$, the polynomial $C_{i}$ over $\mathbb{F}_{2^{10}}$ is CCZ-equivalent to one of the known CCZ-equivalence classes: in the case of $i=n-1, C_{i}$ is equivalent to the Gold function $x^{3}$, and in the case of $i=m$ it is equivalent to family F3 from Table II.
+
+The remaining two values of $i$, viz. $m-2$ and $(m-2)^{-1} \bmod n$ yield for dimension $n=10$ the two CCZ-inequivalent APN quadrinomials from Observation $1, C_{3}$ and $C_{7}$, which are, in addition, CCZ-inequivalent to any currently known APN function over $\mathbb{F}_{2^{10}}$. We have verified this computationally in two ways. First, we used the code isomorphism test described in Section II to compare $C_{3}$ and $C_{7}$ against representatives from the known infinite families, against the sporadic binomials $B(x)$ and $B^{\prime}(x)$, and, finally, against themselves. These tests typically take less than half a minute for any given pair of functions, and show that $C_{3}$ and $C_{7}$ are indeed CCZ-inequivalent to any other known APN function over $\mathbb{F}_{2^{10}}$. Second, we have computed the $\Gamma$-ranks of $C_{3}$ and $C_{7}, B$, and representatives from the equivalence classes of the known APN functions. The results are summarized in Table III below and further confirm these results.
+
+Family F12 in Table II gives six CCZ-inequivalent representatives over $\mathbb{F}_{2^{10}}$. Since their polynomial form is quite complicated, we omit it in Table III, and only list their $\Gamma$ ranks; we note that only five values are given, since two of these six CCZ-inequivalent representatives have the same $\Gamma$ rank.
+
+In any case, by inspecting the $\Gamma$-ranks of the known APN functions in the table, it is evident that $C_{3}$ and $C_{7}$ are inequivalent to any of them. As a consequence, we collect all the above results in the following corollary and construct a new family of APN functions.
+
+Corollary 1: Let $n=2 m$ with $m$ odd and $3 \nmid m$. Consider the quadrinomial
+
+$$
+C(x)=x^{3}+a\left(x^{2^{i}+1}\right)^{2^{k}}+b x^{3 \cdot 2^{m}}+c\left(x^{2^{i+m}+2^{m}}\right)^{2^{k}} .
+$$
+
+Then $C(x)$ is APN over $\mathbb{F}_{2^{n}}$ in the following cases:
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{TABLE III\\
+$\Gamma$-Ranks of All Known CCZ-Inequivalent APN Functions Over $\mathbb{F}_{2^{10}}$}
+\begin{tabular}{|l|l|l|}
+\hline
+Function & Family & $\Gamma$-rank \\
+\hline
+$x^{3}$ & Gold & 125042 \\
+\hline
+$x^{9}$ & Gold & 136492 \\
+\hline
+$x^{57}$ & Kasami & 186416 \\
+\hline
+$x^{339}$ & Dobbertin & 280604 \\
+\hline
+$x^{6}+x^{33}+\alpha^{31} x^{192}$ & F3 & 151216 \\
+\hline
+$x^{33}+x^{72}+\alpha^{31} x^{258}$ & F3 & 153896 \\
+\hline
+$x^{3}+\operatorname{Tr}_{1}^{10}\left(x^{9}\right)$ & F4 & 153896 \\
+\hline
+$x^{3}+\alpha^{-1} \operatorname{Tr}_{1}^{10}\left(a^{3} x^{9}\right)$ & F4 & 164098 \\
+\hline
+- & F12 & 162550, 163308, 163398, 163400, 164026 \\
+\hline
+$B(x)=x^{3}+\alpha^{341} x^{36}$ & [16] & 169984 \\
+\hline
+$C_{3}$ & new & 166068 \\
+\hline
+$C_{7}$ & new & 166168 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{enumerate}
+  \item $n=10,(a, b, c)=(\beta, 0,0), i=3, k=2$ (this gives us the binomial $B(x))$;
+  \item $(a, b, c)=\left(\beta, \beta^{2}, 1\right), i=m-2, k$ even;
+  \item $(a, b, c)=\left(\beta, \beta^{2}, 1\right), i=(m-2)^{-1}, k$ even;
+  \item $(a, b, c)=\left(\beta, \beta^{2}, 1\right), i=m, k$ even;
+  \item $(a, b, c)=\left(\beta, \beta^{2}, 1\right), i=n-1, k$ even
+  \item $(a, b, c)=\left(\beta, \beta^{2}, 1\right), i=m+2, k$ odd;
+  \item $(a, b, c)=\left(\beta, \beta^{2}, 1\right), i=(m+2)^{-1}, k$ odd;
+  \item $(a, b, c)=\left(\beta, \beta^{2}, 1\right), i=n-1, k$ odd.
+\end{enumerate}
+
+Furthermore, in dimension $n=10$, the functions in items 2 and 3 lie in distinct classes with respect to CCZ-equivalence and are CCZ-inequivalent to any known APN function over $\mathbb{F}_{2^{10}}$, including $B(x)$.
+
+\section*{IV. Conclusion}
+We have constructed a family of quadrinomial functions over finite fields $\mathbb{F}_{2^{n}}$ with $n=2 m, m$ odd and $3 \nmid m$ which contains the previously unclassified binomial $x^{3}+\beta x^{36}$ (discovered in 2006 as the first example of an APN function CCZ-inequivalent to a power function) in the sense that $B(x)$ can be obtained by setting two of the coefficients in the quadrinomial construction to zero. We have shown two infinite constructions of APN functions belonging to this family, and demonstrated that their instances over $\mathbb{F}_{2^{10}}$ are CCZ-inequivalent to any known APN function over this field, including the sporadic binomial $B(x)$, and that they are CCZ-inequivalent to each other. We have also characterized the APN-ness of all quadrinomials of the form $x^{3}+\beta\left(x^{2^{i}+1}\right)^{2^{k}}+ \beta^{2} x^{3 \cdot 2^{m}}+\left(x^{2^{i+m}+2^{m}}\right)^{2^{k}}$ in terms of the solvability of a system of equations.
+
+\section*{References}
+[1] E. R. Berlekamp, H. Rumsey, and G. Solomon, "On the solution of algebraic equations over finite fields," Inf. Control, vol. 10, no. 6, pp. 553-564, Jun. 1967.\\[0pt]
+[2] T. Beth and C. Ding, "On almost perfect nonlinear permutations," in Advances in Cryptology-EUROCRYPT (Lecture Notes in Computer Science), vol. 765, T. Helleseth, Eds. Berlin, Germany: Springer, 1994.\\[0pt]
+[3] E. Biham and A. Shamir, "Differential cryptanalysis of Des.Like cryptosystems," J. Cryptol., vol. 4, no. 1, pp. 3-72, Jan. 1991, doi: 10.1007/ BF00630563.\\[0pt]
+[4] C. Bracken, E. Byrne, N. Markin, and G. McGuire, "New families of quadratic almost perfect nonlinear trinomials and multinomials," Finite Fields Their Appl., vol. 14, no. 3, pp. 703-714, Jul. 2008.\\[0pt]
+[5] C. Bracken, E. Byrne, N. Markin, and G. McGuire, "A few more quadratic APN functions," Cryptogr. Commun., vol. 3, no. 1, pp. 43-53, Mar. 2011.\\[0pt]
+[6] K. A. Browning et al., "APN polynomials and related codes," J. Combinatorics, Inf. Syst. Sci., vol. 34, nos. 1-4, pp. 135-159, 2009.\\[0pt]
+[7] L. Budaghyan, M. Calderini, C. Carlet, R. S. Coulter, and I. Villa, "Constructing APN functions through isotopic shifts," IEEE Trans. Inf. Theory, doi: 10.1109/TIT.2020.2974471.\\[0pt]
+[8] L. Budaghyan and C. Carlet, "Classes of quadratic APN trinomials and hexanomials and related structures," IEEE Trans. Inf. Theory, vol. 54, no. 5, pp. 2354-2357, May 2008.\\[0pt]
+[9] L. Budaghyan, C. Carlet, and G. Leander, "Two classes of quadratic APN binomials inequivalent to power functions," IEEE Trans. Inf. Theory, vol. 54, no. 9, pp. 4218-4229, Sep. 2008.\\[0pt]
+[10] L. Budaghyan, C. Carlet, and G. Leander, "Constructing new APN functions from known ones," Finite Fields Their Appl., vol. 15, no. 2, pp. 150-159, Apr. 2009.\\[0pt]
+[11] L. Budaghyan, C. Carlet, and G. Leander, "On a construction of quadratic APN functions," in Proc. IEEE Inf. Theory Workshop, Oct. 2009, pp. 374-378.\\[0pt]
+[12] H. Dobbertin, "Almost perfect nonlinear power functions on $\operatorname{GF}(2 \mathrm{n})$ : The Niho case," Inf. Comput., vol. 151, nos. 1-2, pp. 57-72, May 1999.\\[0pt]
+[13] H. Dobbertin, "Almost perfect nonlinear power functions on $G F\left(2^{n}\right)$ : The Welch case," IEEE Trans. Inf. Theory, vol. 45, no. 4, pp. 1271-1275, May 1999.\\[0pt]
+[14] H. Dobbertin, "Almost perfect nonlinear power functions on $G F\left(2^{n}\right)$ : A new case for n divisible by 5," in Proc. Int. Conf. Finite Fields Appl., 2001, pp. 113-121.\\[0pt]
+[15] H. Dobbertin, P. Felke, T. Helleseth, and P. Rosendahl, "Niho type crosscorrelation functions via Dickson polynomials and Kloosterman sums," IEEE Trans. Inf. Theory, vol. 52, no. 2, pp. 613-627, Feb. 2006.\\[0pt]
+[16] Y. Edel, G. Kyureghyan, and A. Pott, "A new APN function which is not equivalent to a power mapping," IEEE Trans. Inf. Theory, vol. 52, no. 2, pp. 744-747, Feb. 2006.\\[0pt]
+[17] Y. Edel and A. Pott, "A new almost perfect nonlinear function which is not quadratic," Adv. Math. Commun., vol. 3, no. 1, pp. 59-81, 2009.\\[0pt]
+[18] R. Gold, "Maximal recursive sequences with 3-valued recursive crosscorrelation functions (Corresp.)," IEEE Trans. Inf. Theory, vol. IT-14, no. 1, pp. 154-156, Jan. 1968.\\[0pt]
+[19] H. Janwa and R. M. Wilson, "Hyperplane sections of fermat varieties in $\mathrm{P}^{3}$ in char. 2 and some applications to cyclic codes," in Applied Algebra, Algebraic Algorithms and Error-Correcting Codes (AAECC) (Lecture Notes in Computer Science), vol. 673, G. Cohen, T. Mora, and O. Moreno, Eds. Berlin, Germany: Springer, 1993.\\[0pt]
+[20] T. Kasami, "The weight enumerators for several classes of subcodes of the 2nd order binary reed-muller codes," Inf. Control, vol. 18, no. 4, pp. 369-394, May 1971.\\[0pt]
+[21] R. Lidl and H. Niederreiter, Finite Fields, vol. 20. Cambridge, U.K.: Cambridge Univ. Press, Dec. 1997.\\[0pt]
+[22] K. Nyberg, "Differentially uniform mappings for cryptography," in Advances in Cryptology-EUROCRYPT (Lecture Notes in Computer Science), vol. 765, T. Helleseth, Eds. Berlin, Germany: Springer, 1994.\\[0pt]
+[23] H. Taniguchi, "On some quadratic APN functions," Des., Codes Cryptogr., vol. 3, pp. 43-53, Mar. 2011.\\[0pt]
+[24] K. S. Williams, "Note on cubics over $G F\left(2^{n}\right)$ and $G F\left(3^{n}\right)$," J. Number Theory, vol. 7, no. 4, pp. 361-365, Nov. 1975.\\[0pt]
+[25] Y. Yu, M. Wang, and Y. Li, "A matrix approach for constructing quadratic APN functions," Des., Codes Cryptogr., vol. 73, no. 2, pp. 587-600, Nov. 2014.\\[0pt]
+[26] Y. Zhou and A. Pott, "A new family of semifields with 2 parameters," Adv. Math., vol. 234, pp. 43-60, Feb. 2013.
+
+Lilya Budaghyan received the Ph.D. degree from the University of Magdeburg, Germany, in 2005, and the Habilitation degree from the University of Paris VIII, France, in 2013. She has been with the University of Bergen since 2007. She is currently a Professor and the Leader of the Selmer Center in Secure Communication, University of Bergen, Norway. Her main research interests include cryptographic Boolean functions and their applications. She also conducted her research at Yerevan State University, Armenia, from 1998 to 2003, the University of Magdeburg, Germany, from 2003 to 2005, the University of Trento, Italy, from 2005 to 2007, Telecom ParisTech in 2011, and the Universities of Paris VIII and Paris XIII from 2012 to 2013. She was a recipient of the Trond Mohn Foundation Award in 2016, the Young Research Talent Grant from the Norwegian Research Council in 2014, a Postdoctoral Fellowship Award from the Foundation of Mathematical Sciences of Paris in 2012, and the Emil Artin Junior Prize in Mathematics in 2011. Since 2018, she has been a member of the Norwegian Academy of Technological Sciences (NTVA).
+
+Tor Helleseth received the Dr. Philosophy degree in mathematics from the University of Bergen, Norway, in 1979. From 1977 to 1978 and 1992 to 1993, he was on sabbatical leave with the University of Southern California, USA. From 1979 to 1980, he was a Post-Doctoral Fellow with the Eindhoven University of Technology, The Netherlands. From 1981 to 1984, he was a Researcher with the Chief Headquarters of Defense, Norway. From 1984 to 2017, he was a Professor with the Department of Informatics, University of Bergen, where he is currently a Professor Emeritus. He served as an Associate Editor for the IEEE Transactions on Information Theory from 1991 to 1993 and Coding Theory from 2012 to 2014 for Sequences. He is on the editorial board for Designs, Codes, and Cryptography (DCC) and Cryptography and Communications: Discrete Structures, Boolean Functions and Sequences (CCDS). He has published more than 400 articles in international refereed journals and conferences in coding theory, cryptography and sequence designs, including more than 100 co-authors from more than 25 countries. He was the Program Co-Chair of Eurocrypt'93, the IEEE Information Theory Workshop, ITW1997, ITW2007, Arctic Crypt 2016, and Sequences and Their Applications, SETA'98, SETA'04, SETA'06, SETA'12, SETA'18, and SETA'20. He was a Program Co-Chair of the International Workshop on Signal Designs and its Applications in Communications (IWSDA'19). He was a Coordinator of NISNet, a national network in information security, in Norway from 2007 to 2011. In 1997, he was Elected IEEE Fellow for his Contributions to Coding Theory and Cryptography and in 2004, Elected Member of the Norwegian Academy of Science (Det Norske Videnskaps-Akademi). He served on the Board of Governors for the IEEE IT-Society from 2007 to 2009. His research interests include coding theory, cryptography, sequence designs, finite fields, and discrete mathematics.
+
+Nikolay Kaleyski received the bachelor's degree in general computer science and the master's degree in theoretical computer science from Charles University, Prague, in 2014 and 2016, respectively, and the Ph.D. degree from the University of Bergen in June 2017. His bachelor's thesis, Eigenvalues of symmetric interval matrices, concerns the implementation of algorithms for computing the eigenvalues of symmetric interval matrices in Matlab, while his master's thesis, Boolean methods in knowledge compilation, concerns the construction and analysis of a family of Boolean functions serving as a counter-example to an open problem in knowledge compilation. His current research interests include construction and analysis of cryptographically optimal Boolean functions, with a focus on almost perfect nonlinear (APN) and almost bent ( AB ) functions.
+
+
+\end{document}

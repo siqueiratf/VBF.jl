@@ -1,0 +1,701 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage{bbold}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=magenta, urlcolor=cyan,}
+\urlstyle{same}
+
+\title{Constructing differentially 4-uniform permutations over GF( $2^{2 m}$ ) from quadratic APN permutations over $\mathrm{GF}\left(2^{2 m+1}\right)$ }
+
+\author{Yongqiang Li ⋅ Mingsheng Wang}
+\date{}
+
+
+%New command to display footnote whose markers will always be hidden
+\let\svthefootnote\thefootnote
+\newcommand\blfootnotetext[1]{%
+  \let\thefootnote\relax\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \let\thefootnote\svthefootnote%
+}
+
+%Overriding the \footnotetext command to hide the marker if its value is `0`
+\let\svfootnotetext\footnotetext
+\renewcommand\footnotetext[2][?]{%
+  \if\relax#1\relax%
+    \ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+  \else%
+    \if?#1\ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+    \else\svfootnotetext[#1]{#2}\fi%
+  \fi
+}
+
+\DeclareUnicodeCharacter{22C5}{\ifmmode\cdot\else{$\cdot$}\fi}
+
+\begin{document}
+\maketitle
+Received: 18 February 2012 / Revised: 1 October 2012 / Accepted: 13 October 2012 /\\
+Published online: 25 October 2012\\
+© Springer Science+Business Media New York 2012
+
+\begin{abstract}
+In this paper, by means of the idea proposed by Carlet (ACISP 1-15, 2011), differentially 4-uniform permutations with the best known nonlinearity over $\mathbb{F}_{2^{2 m}}$ are constructed using quadratic APN permutations over $\mathbb{F}_{2^{2 m+1}}$. Special constructions are given using the Gold functions. The algebraic degree of the constructions and their compositional inverses is also investigated. One construction and its compositional inverse both have algebraic degree $m+1$ over $\mathbb{F}_{2}^{2 m}$.
+\end{abstract}
+
+Keywords Permutation • Differential uniformity • Nonlinearity • Algebraic degree\\
+Mathematics Subject Classification (2000) 06E30 $\cdot$ 11T06 $\cdot$ 94A60
+
+\section*{1 Introduction}
+S(ubstitution)-boxes play an important role in iterated block ciphers since they serve as the confusion part and in most cases are the only nonlinear part of round functions. For efficiency of implementations, S-boxes are often designed as permutations over $\mathbb{F}_{2^{2 m}}$ in practice. These boxes should possess low differential uniformity and high nonlinearity to resist differential cryptanalysis [2] and linear cryptanalysis [26] respectively. Therefore, the problem of constructing permutations with low differential uniformity and high nonlinearity over $\mathbb{F}_{2^{2 m}}$ is of significant importance in cryptography.
+
+\footnotetext{Communicated by C. Carlet.\\
+Y. Li ⋅ M. Wang ( $\boxtimes$ )
+
+The State Key Laboratory of Information Security, Institute of Information Engineering, Chinese Academy of Sciences, Beijing 100093, China\\
+e-mail: \href{mailto:mingsheng_wang@yahoo.com.cn}{mingsheng\_wang@yahoo.com.cn}\\
+Y. Li\\
+e-mail: \href{mailto:yongq.lee@gmail.com}{yongq.lee@gmail.com}
+}For $F(x) \in \mathbb{F}_{2^{n}}[x], u, v \in \mathbb{F}_{2^{n}}$, the Walsh transform of $F(x)$ is defined as
+
+$$
+\lambda_{F}(u, v)=\sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{\operatorname{Tr}(v F(x)+u x)}
+$$
+
+and the Walsh spectrum of $F(x)$ is $\left\{\lambda_{F}(u, v): u \in \mathbb{F}_{2^{n}}, v \in \mathbb{F}_{2^{n}}^{*}\right\}$. The nonlinearity of $F(x)$, which is defined as the minimum distance of the components of $F(x)$ and all affine Boolean functions on $n$ variables, is related to the Walsh transform through the following equality
+
+$$
+\mathcal{N} \mathcal{L}(F)=2^{n-1}-\frac{1}{2} \max _{v \in \mathbb{F}_{2^{n}}^{*}, u \in \mathbb{F}_{2^{n}}}\left|\lambda_{F}(u, v)\right|
+$$
+
+For odd $n$ and $F(x) \in \mathbb{F}_{2^{n}}[x], \mathcal{N} \mathcal{L}(F) \leq 2^{n-1}-2^{\frac{n-1}{2}}$ [17]. The functions achieving equality are called almost bent ( AB ). The Walsh spectrum of AB functions is $\left\{0, \pm 2^{\frac{n+1}{2}}\right\}$ [17]. The Gold functions are AB functions [20,27]. For even $n$ and $F(x) \in \mathbb{F}_{2^{n}}[x]$, the upper bound on the nonlinearity of $F(x)$ is still open. The best known nonlinearity is $2^{n-1}-2^{\frac{n}{2}}$ [19].
+
+The algebraic degree of $F(x)=\sum_{j=0}^{2^{n}-1} c_{j} x^{j} \in \mathbb{F}_{2^{n}}[x]$, which is denoted by $d^{\circ}(F)$, equals the maximum Hamming weight of the binary expansion of $j$ with $c_{j} \neq 0$ [16]. In other words, $d^{\circ}(F)=\max _{j, c_{j} \neq 0}\left\{\omega_{2}(j)\right\}$. The functions with algebraic degree 2 are called quadratic functions. It was demonstrated that an S-box should have algebraic degree at least 4 to resist higher order differential attack [22].
+
+A function $F(x) \in \mathbb{F}_{2^{n}}[x]$ is called differentially $\delta$-uniform if $F(x)+F(x+a)=b$ has at most $\delta$ solutions for any $a \in \mathbb{F}_{2^{n}}^{*}$ and $b \in \mathbb{F}_{2^{n}}$ [27], $\delta$ is called the differential uniformity of $F(x)$. It is easy to see that the lower bound on differential uniformity of $F(x) \in \mathbb{F}_{2^{n}}[x]$ is 2 . Differentially 2 -uniform functions are called almost perfect nonlinear (APN). For other cryptography properties of Boolean functions and vectorial Boolean functions, one can see [13,14] for more details.
+
+AB functions are all APN functions [17]. Much work has been done on constructing APN functions [4,5,9-12], since they provide the best resistance to differential attacks. Then APN permutations over $\mathbb{F}_{2^{2 m}}$ would be the best choice for S-boxes in cryptography. However, only one APN permutation over $\mathbb{F}_{2^{6}}$ has been found [18], and the existence of APN permutations over $\mathbb{F}_{2^{2 m}}$ with $m \geq 4$ remains open.
+
+Therefore, it is appropriate to choose differentially 4 -uniform permutations as S-boxes of block ciphers in real applications. For example, the S-box of AES is affine equivalent to the inverse function over $\mathbb{F}_{2^{8}}$. The construction of differentially 4-uniform permutations with the highest nonlinearity over $\mathbb{F}_{2^{2 m}}$ is also difficult. Here is a list of some permutations over $\mathbb{F}_{2^{2 m}}$ with differential uniformity 4 and nonlinearity $2^{2 m-1}-2^{m}$ for infinitely many $m$, and the drawbacks of each permutation can be seen in [15].
+
+\begin{itemize}
+  \item Suppose $k$ is odd, $n=2 k, \operatorname{gcd}(i, n)=2$, then $x^{2^{i}+1}$ and $x^{2^{2 i}-2^{i}+1}$ are differentially 4-uniform permutations over $\mathbb{F}_{2^{n}}$ and their Walsh spectrum are $\left\{0, \pm 2^{k+1}\right\}[20,21,27]$.
+  \item Suppose $n$ is even, then $x^{2^{n}}-2$ is a differentially 4-uniform permutation over $\mathbb{F}_{2^{n}}$ and its Walsh spectrum is $\left\{\left.-2^{\frac{n}{2}+1}+1 \leq a \leq 2^{\frac{n}{2}+1}+1 \right\rvert\, a \equiv 0 \bmod 4\right\}[1,23,27]$.
+  \item Suppose $k$ is odd, $n=4 k$, then $x^{2^{2 k}+2^{k}+1}$ is a differentially 4-uniform permutation over $\mathbb{F}_{2^{n}}$ and its Walsh spectrum is $\left\{0, \pm 2^{2 k}, \pm 2^{2 k+1}\right\}$ [3].
+  \item Suppose $n=3 k, k$ is even with $3 \nmid k, k / 2$ is odd, $\operatorname{gcd}(3 k, s)=2,3 \mid k+s$ and $\alpha$ is a primitive element of $\mathbb{F}_{2^{n}}$, then $\alpha x^{2^{s}+1}+\alpha^{2^{k}} x^{2^{-k}+2^{k+s}}$ is a differentially 4-uniform permutation over $\mathbb{F}_{2^{n}}$, and its Walsh spectrum is a subset of $\left\{0, \pm 2^{n / 2}, \pm 2^{(n+2) / 2}\right\}[6]$.
+\end{itemize}
+
+Two functions $F_{1}(x), F_{2}(x) \in \mathbb{F}_{2^{n}}[x]$ are called EA-equivalent, if there exist affine permutations $A_{1}(x), A_{2}(x) \in \mathbb{F}_{2^{n}}[x]$ and an affine function $A_{3}(x) \in \mathbb{F}_{2^{n}}[x]$, such that
+
+$$
+F_{1}(x)=A_{1}\left(F_{2}\left(A_{2}(x)\right)\right)+A_{3}(x) .
+$$
+
+A more general framework is introduced by considering graphs of functions [16]. Two functions $F_{1}, F_{2} \in \mathbb{F}_{2^{n}}[x]$ are called CCZ-equivalent if there exists an affine permutation $\mathcal{L}$ over $\mathbb{F}_{2^{n}}^{2}$, such that $\mathcal{L}\left(G_{F_{1}}\right)=G_{F_{2}}$, where $G_{F_{i}}=\left\{\left(x, F_{i}(x)\right) \mid x \in \mathbb{F}_{2^{n}}\right\}, i=1,2$. CCZ-equivalence is more general then EA-equivalence since a new class of AB and APN functions constructed by using CCZ-equivalence can not be obtained by EA-equivalence [10]. For $F(x) \in \mathbb{F}_{2^{n}}[x]$, the extended code $\tilde{C}_{F}$ of $F(x)$ is the linear code with parity check matrix
+
+$$
+\left[\begin{array}{ccc}
+\cdots & 1 & \cdots \\
+\cdots & x & \cdots \\
+\cdots & F(x) & \cdots
+\end{array}\right]
+$$
+
+For admissible maps $F_{1}(x), F_{2}(x) \in \mathbb{F}_{2^{n}}[x], F_{1}(x)$ and $F_{2}(x)$ are CCZ-equivalent if and only if $\tilde{C}_{F_{1}}$ and $\tilde{C}_{F_{2}}$ are equivalent [7].
+
+Differential uniformity, nonlinearity and Walsh spectrum are invariants of both EA-equivalence and CCZ-equivalence. Algebraic degree is preserved by EA-equivalence, but not CCZequivalence. However, neither EA-equivalence nor CCZ-equivalence preserve permutations. Then it is possible to get permutations by applying EA-equivalence or CCZ-equivalence to $F(x)$, where $F(x)$ is a function with low differential uniformity and high nonlinearity, see [10, 18, 24, 25, 29] for more details.
+
+Recently, Carlet proposed a new method for constructing differentially 4-uniform permutations [15]. The idea is that instead of using the field structure of $\mathbb{F}_{2^{n}}$, to use that of $\mathbb{F}_{2^{n+1}}$. Suppose that $H$ is a linear subspace of $\mathbb{F}_{2^{n+1}}$ of dimension $n,\left\{\alpha_{1}, \cdots, \alpha_{n}\right\}$ is a basis of $H$ over $\mathbb{F}_{2}$, and $F(x)$ is a differentially $\delta$-uniform map on $\mathbb{F}_{2^{n+1}}$ with $F(H)=H$, where $F(H)=\{F(\alpha) \mid \alpha \in H\}$. Identify a vector of $\left(c_{1}, \cdots, c_{n}\right) \in \mathbb{F}_{2}^{n}$ as an element $\alpha \in H$ through $\alpha=\sum_{i=1}^{n} c_{i} \alpha_{i}$. Then
+
+$$
+\begin{aligned}
+\mathbb{F}_{2}^{n} & \rightarrow \quad \mathbb{F}_{2}^{n} \\
+\left(c_{1}, \cdots, c_{n}\right) & \rightarrow\left(d_{1}, \cdots, d_{n}\right)
+\end{aligned}
+$$
+
+is a differentially $\delta$-uniform permutation over $\mathbb{F}_{2}^{n}$, where $\alpha=\sum_{i=1}^{n} c_{i} \alpha_{i}, F(\alpha)=\sum_{i=1}^{n} d_{i} \alpha_{i}$. Carlet illustrates his idea with a construction as follows.
+
+Theorem 1 [15] Suppose $c=n \bmod 2, \alpha \in \mathbb{F}_{2^{n+1}}$ and $\operatorname{Tr}(\alpha)=1$. Identify a vector of $\mathbb{F}_{2}^{n}$ as an element of $H=\left\{u \in \mathbb{F}_{2^{n+1}} \mid \operatorname{Tr}(u)=0\right\}$. Then the restriction of $x+\frac{1}{x+\alpha+c}+\left(\frac{1}{x+\alpha+c}\right)^{2}$ to $H$ is a differentially 4-uniform permutation over $\mathbb{F}_{2}^{n}$ and its algebraic degree is $n-1$.
+
+The bound on the nonlinearity of the permutations in Theorem 1 shows that these permutations do not have the highest nonlinearity [15]. In the present paper, we show that differentially 4-uniform permutations with the best known nonlinearity over $\mathbb{F}_{2}^{n}$, where $n$ is even, can be constructed from quadratic APN permutations over $\mathbb{F}_{2^{n+1}}$ using the above identification.
+
+The paper is organized as follows. In Sect. 2, a general construction is given and its nonlinearity is investigated. In Sect. 3, several constructions are given using the Gold functions. The conclusion is given in Sect. 4.
+
+\section*{2 A general construction}
+First, for a function $F(x) \in \mathbb{F}_{2^{N}}[x], H \subseteq \mathbb{F}_{2^{N}}, F(H)$ means $\{F(h) \mid h \in H\}, a+H$ means $\{a+h \mid h \in H\}$, where $a \in \mathbb{F}_{2^{N}}$.
+
+In this section, we show that differentially 4-uniform permutations over $\mathbb{F}_{2^{n}}$ can be constructed from quadratic APN permutations over $\mathbb{F}_{2^{n+1}}$. Notice that for odd $n$, there are no quadratic APN permutations over $\mathbb{F}_{2^{n+1}}$ [28]. Therefore throughout this paper, we assume that $n$ is an even integer.
+
+If $F(x) \in \mathbb{F}_{2^{n+1}}[x]$ is a quadratic APN permutation with $F(0)=0$, then it is easy to see that for any $u \in \mathbb{F}_{2^{n+1}}^{*}$,
+
+$$
+L_{u}(x)=F(x)+F(x+u)+F(u)
+$$
+
+is a linear polynomial with kernel $\{0, u\}$. Thus the image of $L_{u}(x)$ is a linear subspace of $\mathbb{F}_{2^{n+1}}$ of dimension $n$. Identify a vector of $\mathbb{F}_{2}^{n}$ as an element of the image of $L_{u}(x)$. Then we have the following result.
+
+Theorem 2 Let $n$ be even, $F(x) \in \mathbb{F}_{2^{n+1}}[x]$ be a quadratic APN permutation with $F(0)= 0, u \in \mathbb{F}_{2^{n}}^{*}, L_{u}(x)=F(x)+F(x+u)+F(u)$. Identify a vector of $\mathbb{F}_{2}^{n}$ as an element of $H_{u}=\left\{L_{u}(x) \mid x \in \mathbb{F}_{2^{n+1}}\right\}$. Let $F_{u}(x)$ be the restriction of
+
+$$
+L_{u}\left(F^{-1}(x)\right)
+$$
+
+to $H_{u}$, where $F^{-1}(x)$ is the compositional inverse of $F(x)$. Then $F_{u}(x)$ is a differentially 4-uniform permutation over $\mathbb{F}_{2}^{n}$.
+
+Proof Notice that $F_{u}\left(H_{u}\right)=L_{u}\left(F^{-1}\left(H_{u}\right)\right) \subseteq H_{u}$, then we only need to show that $L_{u}\left(F^{-1}(x)\right)$ is injective on $H_{u}$. Assume that there exist $x_{1} \neq x_{2} \in H_{u}$, such that $L_{u}\left(F^{-1}\left(x_{1}\right)\right) =L_{u}\left(F^{-1}\left(x_{2}\right)\right)$. Then
+
+$$
+F^{-1}\left(x_{1}\right)=F^{-1}\left(x_{2}\right)+u
+$$
+
+since $\operatorname{ker}\left(L_{u}\right)=\{0, u\}$. Compose the two sides of the above equality with $F(x)$, then we have
+
+$$
+x_{1}=F\left(F^{-1}\left(x_{2}\right)+u\right)
+$$
+
+which is equivalent to
+
+$$
+x_{1}+x_{2}=F\left(F^{-1}\left(x_{2}\right)+u\right)+F\left(F^{-1}\left(x_{2}\right)\right)
+$$
+
+This means $x_{1}+x_{2} \in\left\{F(x+u)+F(x) \mid x \in \mathbb{F}_{2^{n+1}}\right\}=F(u)+H_{u}$. Since $F(x)$ is a permutation, then $F(x)+F(x+u)=0$ has no roots in $\mathbb{F}_{2^{n+1}}$. Therefore, $F(u) \notin H_{u}$ and $F(u)+H_{u}$ is the coset of $H_{u}$ in $\mathbb{F}_{2^{n+1}}$. Thus
+
+$$
+H_{u} \cap\left(F(u)+H_{u}\right)=\varnothing .
+$$
+
+On the other hand, we have $x_{1}+x_{2} \in H_{u}$ since $x_{1}, x_{2} \in H_{u}$ and the fact that $H_{u}$ is a linear subspace of $\mathbb{F}_{2^{n+1}}$. Hence $x_{1}+x_{2} \in H_{u} \cap\left(F(u)+H_{u}\right)$, which is a contradiction.
+
+The differential uniformity of $L_{u}\left(F^{-1}(x)\right)$ is easy to check. Since $\left|\operatorname{ker}\left(L_{u}\right)\right|=2$ and $F(x)$ is an APN permutation, it follows that $F^{-1}(x)$ is also APN and $L_{u}\left(F^{-1}(x)\right)$ is differentially 4-uniform.
+
+Remark 1 If we replace $L_{u}(x)$ in Theorem 2 with any other linear polynomial $L(x) \in \mathbb{F}_{2^{n+1}}[x]$ with kernel $\{0, u\}$ and image $H_{u}$, Theorem 2 also holds. Notice that there are $\prod_{i=0}^{n-1}\left(2^{n}-2^{i}\right)$ different linear polynomials with kernel $\{0, u\}$ and image $H_{u}$, which is also the amount of different linear permutations over $H_{u}$. Therefore, there exists a linear permutation $M$ over $H_{u}$ such that $L(x)=M\left(L_{u}(x)\right)$. Then the restriction of $L\left(F^{-1}(x)\right)$ to $H_{u}$ equals the restriction of $M\left(L_{u}\left(F^{-1}(x)\right)\right)$ to $H_{u}$ and EA-equivalent to $F_{u}(x)$. Thus, it is enough to choose $L_{u}(x)=F(x)+F(x+u)+F(u)$.
+
+Notice that when $n+1$ is odd, a quadratic function $F(x) \in \mathbb{F}_{2^{n+1}}[x]$ is APN if and only if it is AB [16]. Then we can characterize the nonlinearity of the permutations constructed in Theorem 2 as follows.
+
+Theorem 3 Let $F_{u}(x)$ be a function constructed as in Theorem 2. Then $\mathcal{N} \mathcal{L}\left(F_{u}\right)=2^{n-1} -2^{\frac{n}{2}}$, which is the best known nonlinearity over $\mathbb{F}_{2}^{n}$.
+
+Proof For any linear subspace $H$ of $\mathbb{F}_{2^{n+1}}$ with dimension $n$ over $\mathbb{F}_{2}$, it is must be a kernel of a linear mapping with the type $\operatorname{Tr}(\alpha x)$ for some $\alpha \in \mathbb{F}_{2^{n+1}}^{*}$. Suppose $\alpha_{u} \in \mathbb{F}_{2^{n+1}}^{*}$ such that
+
+$$
+H_{u}=\left\{L_{u}(x) \mid x \in \mathbb{F}_{2^{n+1}}\right\}=\left\{x \in \mathbb{F}_{2^{n+1}} \mid \operatorname{Tr}_{n+1}\left(\alpha_{u} x\right)=0\right\}
+$$
+
+Remember that $F_{u}(x)$ is the restriction of $L_{u}\left(F^{-1}(x)\right)$ to $H_{u}$, then
+
+$$
+\mathcal{N} \mathcal{L}\left(F_{u}\right)=2^{n-1}-\frac{1}{2} \max _{a \in \mathbb{F}_{2^{n+1}}, b \in \mathbb{F}_{2^{n+1}} \backslash\left\{0, \alpha_{u}\right\}}\left|\lambda_{F_{u}}(a, b)\right|,
+$$
+
+where $\lambda_{F_{u}}(a, b)=\sum_{x \in H_{u}}(-1)^{\operatorname{Tr}\left(b L_{u}\left(F^{-1}(x)\right)+a x\right)}$. Since $F(x)$ is an AB permutation over $\mathbb{F}_{2^{n+1}}$, then its Walsh spectrum is $\left\{0, \pm 2^{\frac{n+2}{2}}\right\}$. Hence for $a, b \in \mathbb{F}_{2^{n+1}} \backslash\left\{0, \alpha_{u}\right\}$, we have
+
+$$
+\begin{aligned}
+\lambda_{F_{u}}(a, b)= & \sum_{x \in H_{u}}(-1)^{\operatorname{Tr}\left(b L_{u}\left(F^{-1}(x)\right)+a x\right)} \\
+= & \sum_{x \in H_{u}}(-1)^{\operatorname{Tr}\left(L_{u}^{*}(b) F^{-1}(x)+a x\right)} \\
+= & \frac{1}{2}\left(\sum_{x \in \mathbb{F}_{2^{n+1}}}(-1)^{\operatorname{Tr}\left(L_{u}^{*}(b) F^{-1}(x)+a x\right)}\right. \\
+& \left.+\sum_{x \in \mathbb{F}_{2^{n+1}}}(-1)^{\operatorname{Tr}\left(L_{u}^{*}(b) F^{-1}(x)+\left(a+\alpha_{u}\right) x\right)}\right) \\
+= & \frac{1}{2}\left(\sum_{x \in \mathbb{F}_{2^{n+1}}}(-1)^{\operatorname{Tr}\left(L_{u}^{*}(b) x+a F(x)\right)}\right. \\
+& \left.+\sum_{x \in \mathbb{F}_{2^{n+1}}}(-1)^{\operatorname{Tr}\left(L_{u}^{*}(b) x+\left(a+\alpha_{u}\right) F(x)\right)}\right) \\
+= & \frac{1}{2}\left(\lambda_{F}\left(L_{u}^{*}(b), a\right)+\lambda_{F}\left(L_{u}^{*}(b), a+\alpha_{u}\right)\right) \\
+& \in\left\{0, \pm 2^{\frac{n}{2}}, \pm 2^{\frac{n+2}{2}}\right\}
+\end{aligned}
+$$
+
+where $L_{u}^{*}$ is the adjoint operator of $L_{u}$. Notice that
+
+$$
+\lambda_{F_{u}}(0, b)=\lambda_{F_{u}}\left(\alpha_{u}, b\right)=0
+$$
+
+for any $b \in \mathbb{F}_{2^{n+1}} \backslash\left\{0, \alpha_{u}\right\}$, since $F_{u}(x)$ is a permutation over $H_{u}$. Then we have
+
+$$
+\Lambda_{F_{u}}=\left\{\lambda_{F_{u}}(a, b) \mid a \in \mathbb{F}_{2^{n+1}}, b \in \mathbb{F}_{2^{n+1}} \backslash\left\{0, \alpha_{u}\right\}\right\} \subseteq\left\{0, \pm 2^{\frac{n}{2}}, \pm 2^{\frac{n+2}{2}}\right\}
+$$
+
+Therefore,
+
+$$
+\mathcal{N} \mathcal{L}\left(F_{u}\right) \geq 2^{n-1}-2^{\frac{n}{2}}
+$$
+
+We claim that the equality holds. Otherwise, $\pm 2^{\frac{n+2}{2}} \notin \Lambda_{F_{u}}$ and hence $\Lambda_{F_{u}} \subseteq\left\{0, \pm 2^{\frac{n}{2}}\right\}$. According to Parseval's equality, for any $b \in \mathbb{F}_{2}^{n *}$, it is true that
+
+$$
+\sum_{a \in \mathbb{F}_{2}^{n}}\left(\sum_{x \in \mathbb{F}_{2}^{n}}(-1)^{b \cdot F_{u}(x)+a \cdot x}\right)^{2}=2^{2 n}
+$$
+
+Thus for any $a \in \mathbb{F}_{2}^{n}$, it must be $\lambda_{F_{u}}(a, b)= \pm 2^{\frac{n}{2}}$. This contradicts with $\lambda_{F_{u}}(0, b)=0$, since $F_{u}(x)$ is a permutation over $\mathbb{F}_{2}^{n}$. Therefore, $\mathcal{N} \mathcal{L}\left(F_{u}\right)=2^{n-1}-2^{\frac{n}{2}}$.
+
+The proof of Theorem 3 shows that the Walsh spectrum of $F_{u}$ is a subset of $\left\{0, \pm 2^{\frac{n}{2}}, \pm 2^{\frac{n+2}{2}}\right\}$. Then the differentially 4-uniform permutations constructed in Theorem 2 are CCZ-inequivalent to the inverse function over $\mathbb{F}_{2^{n}}$ with even $n \geq 6$, since the Walsh spectrum of the inverse function is $\left\{\left.-2^{\frac{n}{2}+1}+1 \leq k \leq 2^{\frac{n}{2}+1}+1 \right\rvert\, k \equiv 0 \bmod 4\right\}$.
+
+\section*{3 Constructions from the Gold functions}
+It is well-known that $x^{2^{i}+1}$ is an AB permutation over $\mathbb{F}_{2^{n+1}}$ when $n$ is even and $\operatorname{gcd}(i, n+1)=$ 1. We denote its compositional inverse by $x^{\frac{1}{2^{i}+1}}$. In this section, we give some constructions of differentially 4-uniform permutations with the best known nonlinearity over $\mathbb{F}_{2}^{n}$ by using the Gold functions. It is easy to see that for the Gold functions and $u \in \mathbb{F}_{2^{n+1}}^{*}$,
+
+$$
+L_{u}(x)=x^{2^{i}+1}+(x+u)^{2^{i}+1}+u^{2^{i}+1}=u x^{2^{i}}+u^{2^{i}} x .
+$$
+
+Let $\left|\Lambda_{F}\right|=\left\{|a|: a \in \Lambda_{F}\right\}$. Then according to Theorems 2 and 3, we have the following result.
+
+Theorem 4 Suppose $n \geq 4$ is even, $\operatorname{gcd}(i, n+1)=1, u \in \mathbb{F}_{2^{n+1}}^{*}$. Identify a vector of $\mathbb{F}_{2}^{n}$ as an element of the $n$-dimension linear subspace $H_{u}=\left\{u x^{2^{i}}+u^{2^{i}} x \mid x \in \mathbb{F}_{2^{n+1}}\right\}$. Let $F_{u}(x)$ be the restriction of $u x^{\frac{2^{i}}{2^{i}+1}}+u^{2^{i}} x^{\frac{1}{2^{i}+1}}$ to $H_{u}$, where $x^{\frac{1}{2^{i}+1}}$ is the compositional inverse of $x^{2^{i}+1}$ over $\mathbb{F}_{2^{n+1}}$. Then the following statements hold.\\
+$1 F_{u}(x)$ is a differentially 4-uniform permutation over $\mathbb{F}_{2}^{n}$.\\
+2 The nonlinearity of $F_{u}(x)$ is $2^{n-1}-2^{\frac{n}{2}}$.\\
+$3\left|\Lambda_{F_{u}}\right|=\left\{0,2^{\frac{n}{2}}, 2^{\frac{n+2}{2}}\right\}$.
+
+Proof We only need to prove $2^{\frac{n}{2}} \in\left|\Lambda_{F_{u}}\right|$. First, for power mappings $x^{d}$ on $\mathbb{F}_{2^{n+1}}$, if $\left(x+v_{0}\right)^{d}=x^{d}+v_{0}^{d}$ for some $v_{0} \in \mathbb{F}_{2^{n+1}}^{*}$, then for all $v \in \mathbb{F}_{2^{n+1}}^{*}$, it holds
+
+$$
+\begin{aligned}
+(x+v)^{d} & =\left(\frac{v}{v_{0}}\right)^{d}\left(\frac{v_{0}}{v} x+v_{0}\right)^{d} \\
+& =\left(\frac{v}{v_{0}}\right)^{d}\left(\left(\frac{v_{0}}{v} x\right)^{d}+v_{0}^{d}\right) \\
+& =x^{d}+v^{d}
+\end{aligned}
+$$
+
+which means $x^{d}$ is linear. Notice that $x^{-\frac{1}{2^{i}+1}}$ is not linear when $n \geq 4$, then there exists $a_{0} \in \mathbb{F}_{2^{n+1}}$, such that $a_{0}^{-\frac{1}{2^{i}+1}}+\left(a_{0}+u^{-\left(2^{i}+1\right)}\right)^{-\frac{1}{2^{i}+1}}+u \neq 0$. This implies $a_{0} \notin\left\{0, u^{-\left(2^{i}+1\right)}\right\}$. Hence, $a_{0}^{-\frac{1}{2^{i}+1}},\left(a_{0}+u^{-\left(2^{i}+1\right)}\right)^{-\frac{1}{2^{i}+1}}$ and $u$ are linearly independent over $\mathbb{F}_{2}$. Therefore, there exists $c_{0} \neq 0$ satisfying the following system of linear equations
+
+$$
+\left\{\begin{array}{l}
+\operatorname{Tr}\left(a_{0}^{-\frac{1}{2^{i}+1}} c_{0}\right)=0 \\
+\operatorname{Tr}\left(\left(a_{0}+u^{-\left(2^{i}+1\right)}\right)^{-\frac{1}{2^{i}+1}} c_{0}\right)=1 \\
+\operatorname{Tr}\left(u c_{0}\right)=0
+\end{array}\right.
+$$
+
+It is easy to check that $L_{u}^{*}(x)=u^{2^{i}} x+(u x)^{2^{n+1-i}}$ and $\operatorname{ker}\left(L_{u}^{*}\right)=\left\{0, u^{-\left(2^{i}+1\right)}\right\}$. Then $L_{u}^{*}\left(\mathbb{F}_{2^{n+1}}\right)=\left\{x \in \mathbb{F}_{2^{n+1}} \mid \operatorname{Tr}(u x)=0\right\}$. Hence $c_{0} \in L_{u}^{*}\left(\mathbb{F}_{2^{n+1}}\right)$, which means that there exists $b_{0} \in \mathbb{F}_{2^{n+1}}$ such that $L_{u}^{*}\left(b_{0}\right)=c_{0}$. Since $c_{0} \neq 0$, then $b_{0} \notin \operatorname{ker}\left(L_{u}^{*}\right)=\left\{0, u^{-\left(2^{i}+1\right)}\right\}$.
+
+Remember that $\alpha_{u}$ is defined as the unique element in $\mathbb{F}_{2^{n+1}}^{*}$ such that $H_{u}$ is the kernel of $\operatorname{Tr}\left(\alpha_{u} x\right)$ in the proof of Theorem 3. For the Gold functions, it is easy to see that $\alpha_{u}=u^{-\left(2^{i}+1\right)}$. On the other hand, for $F(x)=x^{2^{i}+1}$ with $\operatorname{gcd}(i, n+1)=1$, it has been proven in [20] that for $b \in \mathbb{F}_{2^{n+1}}^{*}$ and $a \in \mathbb{F}_{2^{n+1}}$,
+
+$$
+\left|\lambda_{F}(a, b)\right|= \begin{cases}0 & \text { if } \operatorname{Tr}\left(a b^{-\frac{1}{2^{i}+1}}\right)=0 \\ 2^{\frac{n+2}{2}} & \text { if } \operatorname{Tr}\left(a b^{-\frac{1}{2^{i}+1}}\right)=1\end{cases}
+$$
+
+Then according to the proof of Theorem 3, for $a_{0}, b_{0} \in \mathbb{F}_{2^{n+1}} \backslash\left\{0, u^{-\left(2^{i}+1\right)}\right\}$, it holds
+
+$$
+\begin{aligned}
+\left|\lambda_{F_{u}}\left(a_{0}, b_{0}\right)\right| & =\frac{1}{2}\left|\lambda_{F}\left(L_{u}^{*}\left(b_{0}\right), a_{0}\right)+\lambda_{F}\left(L_{u}^{*}\left(b_{0}\right), a_{0}+u^{-\left(2^{i}+1\right)}\right)\right| \\
+& =\frac{1}{2}\left|\lambda_{F}\left(c_{0}, a_{0}\right)+\lambda_{F}\left(c_{0}, a_{0}+u^{-\left(2^{i}+1\right)}\right)\right| \\
+& =2^{\frac{n}{2}}
+\end{aligned}
+$$
+
+and the proof is completed.\\
+The result above means that the permutation constructed in Theorem 4 is CCZ-inequivalent to $x^{2^{i}+1}$ and $x^{2^{i i}-2^{i}+1}$ on $\mathbb{F}_{2^{n}}$, where $n$ is even, $\frac{n}{2}$ is odd and $\operatorname{gcd}(i, n)=2$, since $\left|\Lambda_{F}\right|=\left\{0,2^{\frac{n+2}{2}}\right\}$ for $F(x)$ are $x^{2^{i}+1}$ and $x^{2^{2 i}-2^{i}+1}$ respectively [21,27].
+
+Next, we will investigate the algebraic degree of $F_{u}(x)$ and $F_{u}^{-1}(x)$. The following lemmas are useful.
+
+Lemma 1 [27] Suppose $\operatorname{gcd}(i, n+1)=1$, then the compositional inverse of $x^{2^{i}+1}$ over $\mathbb{F}_{2^{n+1}}$ is $x^{d}$, where $d=\frac{2^{i(n+2)}-1}{2^{2 i}-1}=\sum_{k=0}^{\frac{n}{2}} 2^{2 i k} \bmod \left(2^{n+1}-1\right)$. Its algebraic degree is $\frac{n+2}{2}$.
+
+The 2-weight of an integer $t \in \mathbb{N}$ means the number of nonzero terms in the binary expansion of $t$, denoted by $\omega_{2}(t)$. Let us recall the following lemma.
+
+Lemma 2 [15] Let $n \leq N, F^{\prime} \in \mathbb{F}_{2^{N}}[x], F$ be the restriction of $F^{\prime}$ to an $n$-dimensional affine space $E$, and $k$ be a positive integer. Then $F$ has algebraic degree at most $k$ if and only if for every integer $i$ with $\omega_{2}(i)$ at most $n-k-1$, we have $\sum_{x \in E} x^{i} F(x)=0$.
+
+The following lemma is also needed in the proof of Proposition 1.\\
+Lemma 3 Let $i$ be a positive integer, $\operatorname{gcd}(i, n+1)=1$, and $d\left(2^{i}+1\right)=1 \bmod \left(2^{n+1}-1\right)$. Then there do not exist $0 \leq k_{1}, k_{2} \leq n$, such that $d+2^{k_{1}}=2^{i} d+2^{k_{2}} \bmod \left(2^{n+1}-1\right)$.
+
+Proof Assume that there are $0 \leq k_{1}, k_{2} \leq n$, such that $d+2^{k_{1}}=2^{i} d+2^{k_{2}} \bmod \left(2^{n+1}-1\right)$. Multiplying by $2^{i}+1$, we have
+
+
+\begin{equation*}
+1+2^{i+k_{1}}+2^{k_{1}}=2^{i}+2^{i+k_{2}}+2^{k_{2}} \bmod \left(2^{n+1}-1\right) . \tag{1}
+\end{equation*}
+
+
+Let $c_{1}=1+2^{i+k_{1}}+2^{k_{1}} \bmod \left(2^{n+1}-1\right)$ and $c_{2}=2^{i}+2^{i+k_{2}}+2^{k_{2}} \bmod \left(2^{n+1}-1\right)$. Then $1 \leq \omega_{2}\left(c_{1}\right)=\omega_{2}\left(c_{2}\right) \leq 3$. There are three cases:
+
+Case 1. $\omega_{2}\left(c_{1}\right)=\omega_{2}\left(c_{2}\right)=1$. Notice that $k_{1} \neq i+k_{1} \bmod (n+1)$, then $\omega_{2}\left(c_{1}\right)=1$ if and only if $k_{1}=0,\left(i+k_{1}\right) \bmod n+1=1$, or $\left(i+k_{1}\right) \bmod n+1=0, k_{1}=1$, from which we get $c_{1}=4$. By the same reasoning, $\omega_{2}\left(c_{2}\right)=1$ if and only if $\left(i+k_{2}\right) \bmod n+1=i, k_{2}=i+1 \bmod (n+1)$, or $i+k_{2}=i+1 \bmod (n+1), k_{2}=i$, from which we get $k_{2}=0, i=n$, or $i=k_{2}=1$. Hence $c_{2}=2$, or 8 . Therefore, we get a contradiction to (1).\\
+Case 2. $\omega_{2}\left(c_{1}\right)=\omega_{2}\left(c_{2}\right)=2 . \omega_{2}\left(c_{1}\right)=2$ if and only if $k_{1}=0, i \neq 1$ or $\left(i+k_{1}\right) \bmod n+ 1=0, i \neq n$, from which we get $c_{1}=2^{i}+2$ or $c_{1}=2^{n+1-i}+2$. Notice that $2^{i+k_{1}}+2^{k_{1}} \neq 2^{i+1} \bmod \left(2^{n+1}-1\right)$, then $\omega_{2}\left(c_{2}\right)=2$ if and only if $i=k_{2}, i \neq 1$, from which we get $c_{2}=2^{2 i}+2^{i+1}$. Therefore (1) is equivalent to
+
+$$
+2^{n+1-i}+2=2^{2 i}+2^{i+1} \bmod \left(2^{n+1}-1\right)
+$$
+
+since $c_{2}=2^{i}\left(2^{i}+2\right) \neq 2^{i}+2 \bmod \left(2^{n+1}-1\right)$. Thus $2 i=1 \bmod (n+1)$ and $i+1=n+1-i \bmod (n+1)$, which are equivalent to $i=\frac{n}{2}+1$ and $i=\frac{n}{2}$ respectively. This is a contradiction.\\
+Case 3. $\omega_{2}\left(c_{1}\right)=\omega_{2}\left(c_{2}\right)=3$. Then it must have $k_{1} \neq 0$ and $i+k_{2}=0 \bmod (n+1)$. Therefore (1) is equivalent to
+
+$$
+1+2^{i+k_{1}}+2^{k_{1}}=2^{i}+2^{n+1-i}+1 \bmod \left(2^{n+1}-1\right) .
+$$
+
+Hence $k_{1}=i$, and $n+1-i=k_{1}+i \bmod (n+1)$, which is equivalent to $n+1=3 i$. This is a contradiction since $\operatorname{gcd}(i, n+1)=1$.
+
+With above lemmas, we have the following result.\\
+Proposition 1 Let $n \geq 4$ be even and $F_{u}(x)$ be the function constructed in Theorem 4. Then $d^{\circ}\left(F_{u}\right)=\frac{n+2}{2}$.
+
+Proof Without loss of generality, we prove the case of $u=1$. Suppose $F_{1}(x)$ is the restriction of $x^{d}+x^{2^{i} d}$ to
+
+$$
+H_{1}=\left\{x+x^{2^{i}} \mid x \in \mathbb{F}_{2^{n+1}}\right\}=\left\{x \in \mathbb{F}_{2^{n+1}} \mid \operatorname{Tr}(x)=0\right\}
+$$
+
+where $d\left(2^{i}+1\right)=1 \bmod \left(2^{n+1}-1\right)$. Then according to Lemma 1, we have $d^{\circ}\left(F_{1}(x)\right) \leq \frac{n+2}{2}$. In the next, we show that the equality holds.
+
+By Lemma 1, $\omega_{2}(d)=\frac{n+2}{2}<n$. We may choose an integer $k$ with $0 \leq k \leq n$, such that $\omega_{2}\left(d+2^{k}\right)=\omega_{2}(d)+1$. Notice that for any $x^{l}$, where $1 \leq l \leq 2^{n+1}-2$, we have
+
+$$
+\sum_{x \in \mathbb{F}_{2^{n+1}}} x^{l}=\sum_{j=0}^{2^{n+1}-2} g^{j l}=\frac{1+g^{l\left(2^{n+1}-1\right)}}{1+g^{l}}=0
+$$
+
+where $g$ is a primitive element of $\mathbb{F}_{2^{n+1}}$. Hence by the choice of $k$, we have
+
+$$
+\sum_{x \in \mathbb{F}_{2^{n+1}}} x^{2^{n+1}-1-\left(d+2^{k}\right)}\left(x^{d}+x^{2^{i} d}\right)=0
+$$
+
+and $\sum_{x \in \mathbb{F}_{2^{n+1}}} x^{2^{j}-2^{k}}=0$ for $0 \leq j \leq n$ and $j \neq k$. Similarly, it is true that
+
+$$
+\sum_{x \in \mathbb{F}_{2^{n+1}}} x^{\left(2^{i}-1\right) d+2^{j}-2^{k}}=0
+$$
+
+for $0 \leq j \leq n$, since $\left(2^{i}-1\right) d+2^{j}-2^{k} \neq 0 \bmod \left(2^{n+1}-1\right)$ for any integer $0 \leq j \leq n$ by Lemma 3. Therefore, we have
+
+$$
+\begin{aligned}
+& \sum_{x \in H_{1}} x^{2^{n+1}-1-\left(d+2^{k}\right)}\left(x^{d}+x^{2^{i} d}\right) \\
+= & \sum_{x \in \mathbb{F}_{2^{n+1}}} x^{2^{n+1}-1-\left(d+2^{k}\right)}\left(x^{d}+x^{2^{i} d}\right)(\operatorname{Tr}(x)+1) \\
+= & \sum_{x \in \mathbb{F}_{2^{n+1}}} x^{2^{n+1}-1-\left(d+2^{k}\right)}\left(x^{d}+x^{2^{i} d}\right) \operatorname{Tr}(x) \\
+= & \sum_{x \in \mathbb{F}_{2^{n+1}}} x^{2^{n+1}-1}+\sum_{j=0, j \neq k}^{n} \sum_{x \in \mathbb{F}_{2^{n+1}}} x^{2^{j}-2^{k}}+\sum_{j=0}^{n} \sum_{x \in \mathbb{F}_{2^{n+1}}} x^{\left(2^{i}-1\right) d-2^{k}+2^{j}} \\
+= & 1
+\end{aligned}
+$$
+
+Thus by Lemma 2,
+
+$$
+d^{\circ}(F) \geq n-\left(\frac{n}{2}-1\right)=\frac{n+2}{2}
+$$
+
+since $\omega_{2}\left(2^{n+1}-1-\left(d+2^{k}\right)\right)=n+1-\left(\omega_{2}(d)+1\right)=\frac{n}{2}-1$.\\
+As for the algebraic degree of the compositional inverse of the function constructed in Theorem 4, we have the following results.
+
+Proposition 2 Let $n \geq 4$ be even and $F_{u}(x)$ be the function constructed in Theorem 4. Then $d^{\circ}\left(F_{u}^{-1}(x)\right) \leq 3$.
+
+Proof As Proposition 1, we prove the case of $u=1 . F_{1}(x)$ is the restriction of $x^{\frac{1}{2^{i}+1}}+x^{\frac{2^{i}}{2^{i}+1}}$ to $H_{1}=\left\{x \in \mathbb{F}_{2^{n+1}} \mid \operatorname{Tr}(x)=0\right\}$. For $y \in H_{1}$, we have to determine the roots of
+
+
+\begin{equation*}
+x^{\frac{1}{2^{i}+1}}+x^{\frac{2^{i}}{2^{i}+1}}=y \tag{2}
+\end{equation*}
+
+
+Let $x_{0}$ be a root of $x+x^{2^{i}}=b$, where $b \in \mathbb{F}_{2^{n+1}}$ with $\operatorname{Tr}(b)=0$. Since $\operatorname{ker}\left(x+x^{2^{i}}\right)= \{0,1\}$, then $x_{0}+1$ is the other root of it. Notice that $\operatorname{Tr}(1)=1$, without loss of generality, we assume $\operatorname{Tr}\left(x_{0}\right)=0$. Let $L(x)=\sum_{j=0}^{\frac{n-2}{2}} x^{2^{(2 j+1) i}}$, then
+
+$$
+L(b)=L\left(x_{0}+x_{0}^{2^{i}}\right)=\sum_{j=0}^{\frac{n-2}{2}}\left(x_{0}^{2^{(2 j+1) i}}+x_{0}^{2^{(2 j+2) i}}\right)=\sum_{j=1}^{n} x_{0}^{2^{j i}}=\operatorname{Tr}\left(x_{0}\right)+x_{0}=x_{0},
+$$
+
+since $\operatorname{gcd}(i, n+1)=1,\{i \cdot k \bmod (n+1) \mid 1 \leq k \leq n\}=\{k \mid 1 \leq k \leq n\}$. This means the two roots of $x+x^{2^{i}}=b$ are $L(b)$ and $L(b)+1$. Therefore, from (2) we have
+
+$$
+x^{\frac{1}{2^{i}+1}}=L(y) \text { or } L(y)+1
+$$
+
+Hence, the two roots of Eq. (2) are $L(y)^{2^{i}+1}$ and $(L(y)+1)^{2^{i}+1}$. Remember that we have to choose the one, whose trace equals zero, from these two roots, since $x \in H_{1}$. Thus the compositional inverse of $F_{1}(x)$ is
+
+$$
+F_{1}^{-1}(x)= \begin{cases}L(x)^{2^{i}+1} & \operatorname{Tr}\left(L(x)^{2^{i}+1}\right)=0 \\ (L(x)+1)^{2^{i}+1} & \operatorname{Tr}\left(L(x)^{2^{i}+1}\right)=1\end{cases}
+$$
+
+which equals the restriction of
+
+$$
+\begin{aligned}
+& L(x)^{2^{i}+1} \operatorname{Tr}\left(L(x)^{2^{i}+1}+1\right)+(L(x)+1)^{2^{i}+1} \operatorname{Tr}\left(L(x)^{2^{i}+1}\right) \\
+& =L(x)^{2^{i}+1}+\operatorname{Tr}\left(L(x)^{2^{i}+1}\right)+\left(L(x)^{2^{i}}+L(x)\right) \operatorname{Tr}\left(L(x)^{2^{i}+1}\right)
+\end{aligned}
+$$
+
+to $H_{1}$. Therefore, $d^{\circ}\left(F_{1}^{-1}\right) \leq 3$.\\
+Proposition 2 shows that the compositional inverse of the function constructed in Theorem 4 does not have a high algebraic degree to resist higher order differential attack. In order to improve this, we give the modification as follows.
+
+Theorem 5 Suppose $n \geq 4$ is even, $\operatorname{gcd}(i, n+1)=1, u \in \mathbb{F}_{2^{n+1}}^{*}, H_{u}=\left\{u x^{2^{i}}+u^{2^{i}} x \mid\right. \left.x \in \mathbb{F}_{2^{n+1}}\right\}$. Let $F_{u}^{\prime}(x)$ be the restriction of $u x^{\frac{2^{i}}{2^{i}+1}}+u^{2^{i}} x^{\frac{1}{2^{i}+1}}+x$ to $H_{u}$. Then the following statements hold.
+
+\begin{enumerate}
+  \item $\quad F_{u}^{\prime}(x)$ is a differentially 4-uniform permutation over $\mathbb{F}_{2}^{n}$.
+  \item The nonlinearity of $F_{u}^{\prime}(x)$ equals $2^{n-1}-2^{\frac{n}{2}}$ and $\left|\Lambda_{F_{u}^{\prime}}\right|=\left\{0,2^{\frac{n}{2}}, 2^{\frac{n+2}{2}}\right\}$.
+  \item $d^{\circ}\left(F_{u}^{\prime}\right)=d^{\circ}\left(F_{u}^{\prime-1}\right)=\frac{n+2}{2}$.
+\end{enumerate}
+
+Proof Let $F_{u}(x)$ be the permutation constructed in Theorem 4. Then $F_{u}(x)$ and $F_{u}^{\prime}(x)$ are EA-equivalent since $F_{u}^{\prime}(x)=F_{u}(x)+x$. Therefore, $F_{u}^{\prime}(x)$ is a differentially 4-uniform function with nonlinearity $2^{n-1}-2^{\frac{n}{2}}$, the set $\left|\Lambda_{F_{u}^{\prime}}\right|=\left\{0,2^{\frac{n}{2}}, 2^{\frac{n+2}{2}}\right\}$ and algebraic degree $\frac{n+2}{2}$. Thus we only need to show that $F_{u}^{\prime}(x)$ is a permutation and $d^{\circ}\left(F_{u}^{\prime-1}\right)=\frac{n+2}{2}$.
+
+Let $F_{1}(x)=u x^{\frac{2^{i}}{2^{i}+1}}+u^{2^{i}} x^{\frac{1}{2^{i}+1}}$ and $F(x)=u x^{\frac{2^{i}}{2^{i}+1}}+u^{2^{i}} x^{\frac{1}{2^{i}+1}}+x$. It has been proven that $F_{1}\left(H_{u}\right)=H_{u}$. Since $H_{u}$ is a linear subspace of $\mathbb{F}_{2^{n+1}}$, we conclude that $F\left(H_{u}\right) \subseteq H_{u}$. On the other hand,
+
+
+\begin{equation*}
+F(x)=u x^{\frac{2^{i}}{2^{i}+1}}+u^{2^{i}} x^{\frac{1}{2^{i}+1}}+x=\left(x^{\frac{1}{2^{i}+1}}+u\right)^{2^{i}+1}+u^{2^{i}+1} \tag{3}
+\end{equation*}
+
+
+is a permutation over $\mathbb{F}_{2^{n+1}}$, then $\left|F\left(H_{u}\right)\right|=\left|H_{u}\right|$, which shows that $F(x)$ is a permutation when restricted to $H_{u}$.
+
+By (3), the compositional inverse of $F_{u}^{\prime}(x)$ equals the restriction of
+
+$$
+\begin{aligned}
+& \left(\left(x+u^{2^{i}+1}\right)^{\frac{1}{2^{i}+1}}+u\right)^{2^{i}+1} \\
+& =x+u\left(x+u^{2^{i}+1}\right)^{\frac{2^{i}}{2^{i}+1}}+u^{2^{i}}\left(x+u^{2^{i}+1}\right)^{\frac{1}{2^{i}+1}}
+\end{aligned}
+$$
+
+to $H_{u}$. Therefore, its algebraic degree is also $\frac{n+2}{2}$ by applying the same reasoning as Proposition 1.
+
+It is proved that for a nonzero linear polynomial $L(x) \in \mathbb{F}_{2^{n}}[x], x^{2^{i}+1}+L(x)$ is a permutation over $\mathbb{F}_{2^{n}}$ if and only if $n$ is odd and $L(x)=u x^{2^{i}}+u^{2^{i}} x$ for some $u \in \mathbb{F}_{2^{n}}^{*}$ [24]. Then there do not exist other linear polynomials helpful for constructing differentially 4-uniform permutations as those in Theorem 5.
+
+Next, we show that differentially 4-uniform permutations over $\mathbb{F}_{2}^{n}$ can also be constructed from APN permutations over $\mathbb{F}_{2^{n+1}}$ with the algebraic degree larger than 2 . Let us recall the following result.
+
+Lemma 4 [8] Let $m \geq 9$ be odd and divisible by $3, \operatorname{gcd}(i, m)=1, s=i \bmod$ 3. Then
+
+$$
+\left(x^{\frac{1}{2^{i}+1}}+\operatorname{Tr}_{m / 3}\left(x+x^{2^{2 s}}\right)\right)^{-1}
+$$
+
+is an $A B$ permutation over $\mathbb{F}_{2^{m}}$, which is EA-inequivalent to the Gold functions and their inverses. Its algebraic degree is 4.
+
+Lemma 5 Let $m=n+1$ be odd and divisible by $3, \operatorname{gcd}(i, m)=1, s=i \bmod 3, F(x)= x^{\frac{1}{2^{i}+1}}+\operatorname{Tr}_{m / 3}\left(x+x^{2^{2 s}}\right)$. Then $\operatorname{Tr}\left(F^{-1}(x)+F^{-1}(x+1)\right)=1$, where $F^{-1}(x)$ is the compositional inverse of $F(x)$.\\
+Proof Notice that in order to prove $\operatorname{Tr}\left(F^{-1}(a)+F^{-1}(a+1)\right)=1$ for all $a \in \mathbb{F}_{2^{n+1}}$, we can always suppose $a \in\left\{\alpha \in \mathbb{F}_{2^{n+1}} \mid \operatorname{Tr}(\alpha)=1\right\}=\operatorname{Tr}^{(1)}$, since $\operatorname{Tr}(1)=1$.
+
+It is proved in [8] that
+
+$$
+\begin{aligned}
+F^{-1}(x)= & x^{2^{i}+1}+\left(\operatorname{Tr}_{m / 3}\left(x^{2^{i}+1}\right)\right)^{6}+\left(\operatorname{Tr}_{m / 3}\left(x^{2^{i}+1}\right)\right)^{5} \\
+& +\left(\operatorname{Tr}_{m / 3}\left(x^{2^{i}+1}\right)\right)^{3}+\left(\operatorname{Tr}_{m / 3}\left(x^{2^{i}+1}\right)\right)^{4} \\
+& +x^{2^{i}} \operatorname{Tr}(x) \operatorname{Tr}_{m / 3}\left(x^{2^{i}+1}+x^{2^{2 s}\left(2^{i}+1\right)}\right)+x \operatorname{Tr}(x) \operatorname{Tr}_{m / 3}\left(x^{2^{i}+1}+x^{2^{s}\left(2^{i}+1\right)}\right) \\
+& +x^{2^{i}} \operatorname{Tr}_{m / 3}\left(x^{2\left(2^{i}+1\right)}+x^{2^{2 s+1}\left(2^{i}+1\right)}\right)+x \operatorname{Tr}_{m / 3}\left(x^{2\left(2^{i}+1\right)}+x^{2^{s+1}\left(2^{i}+1\right)}\right) \\
+& +\operatorname{Tr}(x) \operatorname{Tr}_{m / 3}\left(x^{2^{i}+1}+x^{4\left(2^{i}+1\right)}\right)
+\end{aligned}
+$$
+
+It is easy to see that $\operatorname{Tr}\left(\operatorname{Tr}_{m / 3}\left(x^{2^{i}+1}\right)\right)=\operatorname{Tr}\left(x^{2^{i}+1}\right)$ and
+
+$$
+\operatorname{Tr}_{m / 3}(b)^{2^{i}}=\operatorname{Tr}_{m / 3}(b)^{2^{s}}=\operatorname{Tr}_{m / 3}\left(b^{2^{s}}\right)
+$$
+
+for any $b \in \mathbb{F}_{2^{m}}$. Then for $a \in \operatorname{Tr}^{(1)}$, it can be verified that
+
+$$
+\begin{aligned}
+& \operatorname{Tr}\left(a^{2^{i}} \operatorname{Tr}(a) \operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}+a^{2^{2 s}\left(2^{i}+1\right)}\right)+a \operatorname{Tr}(a) \operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}+a^{2^{s}\left(2^{i}+1\right)}\right)\right) \\
+& =\operatorname{Tr}\left(a^{2^{i}}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}+a^{2^{2 s}\left(2^{i}+1\right)}\right)+\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}+a^{2^{s}\left(2^{i}+1\right)}\right)^{2^{i}}\right)\right) \\
+& =\operatorname{Tr}\left(a^{2^{i}}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}+a^{2^{2 s}\left(2^{i}+1\right)}\right)+\operatorname{Tr}_{m / 3}\left(a^{2^{s}\left(2^{i}+1\right)}+a^{2^{2 s}\left(2^{i}+1\right)}\right)\right)\right) \\
+& =\operatorname{Tr}\left(a^{2^{i}}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}+a^{2^{s}\left(2^{i}+1\right)}\right)\right)\right)
+\end{aligned}
+$$
+
+and similarly
+
+$$
+\begin{aligned}
+& \operatorname{Tr}\left(a^{2^{i}} \operatorname{Tr}_{m / 3}\left(a^{2\left(2^{i}+1\right)}+a^{2^{2 s+1}\left(2^{i}+1\right)}\right)+a \operatorname{Tr}_{m / 3}\left(x^{2\left(2^{i}+1\right)}+a^{2^{s+1}\left(2^{i}+1\right)}\right)\right) \\
+& =\operatorname{Tr}\left(a^{2^{i}} \operatorname{Tr}_{m / 3}\left(a^{2\left(2^{i}+1\right)}+a^{2^{s+1}\left(2^{i}+1\right)}\right)\right)
+\end{aligned}
+$$
+
+Thus for $a \in \operatorname{Tr}^{(1)}$, we have
+
+$$
+\begin{aligned}
+\operatorname{Tr}\left(F^{-1}(a)\right)= & \operatorname{Tr}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{5}+a^{2^{i}} \operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}+a^{2^{s}\left(2^{i}+1\right)}\right)\right. \\
+& \left.\quad+a^{2^{i}} \operatorname{Tr}_{m / 3}\left(a^{2\left(2^{i}+1\right)}+a^{2^{s+1}\left(2^{i}+1\right)}\right)\right) \\
+= & \operatorname{Tr}_{3}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{5}+\operatorname{Tr}_{m / 3}(a)^{2^{s}} \operatorname{Tr}_{m / 3}\left(a^{2\left(2^{i}+1\right)}+a^{2^{s+1}\left(2^{i}+1\right)}\right)\right. \\
+& \left.\quad+\operatorname{Tr}_{m / 3}(a)^{2^{s}} \operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}+a^{2^{s}\left(2^{i}+1\right)}\right)\right) \\
+= & \operatorname{Tr}_{3}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{2^{s}+1}+\operatorname{Tr}_{m / 3}(a)^{2^{s}} \operatorname{Tr}_{m / 3}\left(a^{2\left(2^{i}+1\right)}+a^{2^{s+1}\left(2^{i}+1\right)}\right)\right. \\
+& \left.\quad+\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{2^{s}} \operatorname{Tr}_{m / 3}\left(a^{2^{s}}+a^{2^{2 s}}\right)\right)
+\end{aligned}
+$$
+
+The last equality is because $\operatorname{Tr}_{3}\left(\operatorname{Tr}_{m / 3}(x)^{3}\right)=\operatorname{Tr}_{3}$\\
+$\left(\operatorname{Tr}_{m / 3}(x)^{5}\right)$, thus we can write $\operatorname{Tr}_{3}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{5}\right)$ as $\operatorname{Tr}_{3}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{2^{s}+1}\right)$.\\
+Also, for $a \in \operatorname{Tr}^{(1)}$, we have $\operatorname{Tr}(a+1)=0$, and
+
+$$
+\begin{aligned}
+\operatorname{Tr}\left(F^{-1}(a+1)\right)= & \operatorname{Tr}\left(\operatorname{Tr}_{m / 3}\left((a+1)^{2^{i}+1}\right)^{2^{s}+1}\right. \\
+& \left.+\left(a^{2^{i}}+1\right) \operatorname{Tr}_{m / 3}\left((a+1)^{2\left(2^{i}+1\right)}+(a+1)^{2^{s+1}\left(2^{i}+1\right)}\right)\right)
+\end{aligned}
+$$
+
+To simplify the above formula, we have
+
+$$
+\begin{aligned}
+& \operatorname{Tr}\left(\operatorname{Tr}_{m / 3}\left((a+1)^{2^{i}+1}\right)^{2^{s}+1}\right)=\operatorname{Tr}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}+a^{2^{i}}+a+1\right)^{2^{s}+1}\right) \\
+= & \operatorname{Tr}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{2^{s}+1}+\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{2^{s}} \operatorname{Tr}_{m / 3}\left(a^{2^{i}}+a+1\right)\right. \\
+& \left.+\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right) \operatorname{Tr}_{m / 3}\left(a^{2^{i}}+a+1\right)^{2^{s}}+\operatorname{Tr}_{m / 3}\left(a^{2^{i}}+a+1\right)^{2^{s}+1}\right) \\
+= & \operatorname{Tr}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{2^{s}+1}+\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{2^{s}} \operatorname{Tr}_{m / 3}\left(a^{2^{s}}+a^{2^{s}}\right)\right. \\
+& +\operatorname{Tr}_{m / 3}\left(a^{2^{i}}\right)^{2^{s}+1}+\operatorname{Tr}_{m / 3}\left(a^{2^{i}}\right)^{2^{s}} \operatorname{Tr}_{m / 3}(a+1)+\operatorname{Tr}_{m / 3}\left(a^{2^{i}}\right) \operatorname{Tr}_{m / 3}(a+1)^{2^{s}} \\
+& \left.+\operatorname{Tr}_{m / 3}(a)^{2^{s}+1}+\operatorname{Tr}_{m / 3}(a)^{2^{s}}+\operatorname{Tr}_{m / 3}(a)+1\right) \\
+= & \operatorname{Tr}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{2^{s}+1}+\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{2^{s}} \operatorname{Tr}_{m / 3}\left(a^{2^{s}}+a^{2^{2 s}}\right)+\operatorname{Tr}_{m / 3}(a)^{2^{2 s}+1}\right) \\
+= & \operatorname{Tr}_{3}\left(\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{2^{s}+1}+\operatorname{Tr}_{m / 3}\left(a^{2^{i}+1}\right)^{2^{s}} \operatorname{Tr}_{m / 3}\left(a^{2^{s}}+a^{2^{s}}\right)+\operatorname{Tr}_{m / 3}(a)^{2^{2 s}+1}\right)
+\end{aligned}
+$$
+
+and
+
+$$
+\begin{aligned}
+& \operatorname{Tr}\left(\left(a^{2^{i}}+1\right) \operatorname{Tr}_{m / 3}\left((a+1)^{2\left(2^{i}+1\right)}+(a+1)^{2^{s+1}\left(2^{i}+1\right)}\right)\right) \\
+&= \operatorname{Tr}\left(a^{2^{i}} \operatorname{Tr}_{m / 3}\left(a^{2\left(2^{i}+1\right)}+a^{2^{s+1}\left(2^{i}+1\right)}+a^{2^{i+1}}+a^{2}+a^{2^{i+s+1}}+a^{2^{s+1}}\right)\right) \\
+&= \operatorname{Tr}\left(a^{2^{i}} \operatorname{Tr}_{m / 3}\left(a^{2\left(2^{i}+1\right)}+a^{2^{s+1}\left(2^{i}+1\right)}+a^{2}+a^{2^{2 s+1}}\right)\right) \\
+&= \operatorname{Tr}_{3}\left(\operatorname{Tr}_{m / 3}(a)^{2^{s}} \operatorname{Tr}_{m / 3}\left(a^{2\left(2^{i}+1\right)}+a^{2^{s+1}\left(2^{i}+1\right)}\right)\right. \\
+&\left.+\operatorname{Tr}_{m / 3}(a)^{2^{s}+2}+\operatorname{Tr}_{m / 3}(a)^{2^{s}+2^{2 s+1}}\right)
+\end{aligned}
+$$
+
+Therefore,
+
+$$
+\begin{aligned}
+& \operatorname{Tr}\left(F^{-1}(a)+F^{-1}(a+1)\right) \\
+& =\operatorname{Tr}_{3}\left(\operatorname{Tr}_{m / 3}(a)^{2^{2 s}+1}+\operatorname{Tr}_{m / 3}(a)^{2^{s}+2}+\operatorname{Tr}_{m / 3}(a)^{2^{s}+2^{2 s+1}}\right)
+\end{aligned}
+$$
+
+Hence, when $s=1$, we have
+
+$$
+\begin{aligned}
+& \operatorname{Tr}\left(F^{-1}(a)+F^{-1}(a+1)\right) \\
+& =\operatorname{Tr}_{3}\left(\operatorname{Tr}_{m / 3}(a)^{5}+\operatorname{Tr}_{m / 3}(a)^{4}+\operatorname{Tr}_{m / 3}(a)^{10}\right) \\
+& =\operatorname{Tr}_{3}\left(\operatorname{Tr}_{m / 3}(a)\right) \\
+& =\operatorname{Tr}(a)=1
+\end{aligned}
+$$
+
+Similarly, when $s=2, \operatorname{Tr}\left(F^{-1}(a)+F^{-1}(a+1)\right)=1$. Then we complete the proof.\\
+Theorem 6 Let $m=n+1$ be odd and divisible by 3, $\operatorname{gcd}(i, m)=1, s=i \bmod 3 . F(x)= x^{\frac{1}{2^{i}+1}}+\operatorname{Tr}_{m / 3}\left(x+x^{2^{2 s}}\right)$ is an AB permutation over $\mathbb{F}_{2^{m}}$. Identify a vector of $\mathbb{F}_{2}^{n}$ as an element of the linear subspace $\operatorname{Tr}^{(0)}=\left\{x \in \mathbb{F}_{2^{m}} \mid \operatorname{Tr}_{m}(x)=0\right\}$. Let $F^{\prime}(x)$ be the restriction of $F(x)+F(x)^{2^{i}}$ to $\operatorname{Tr}^{(0)}$. Then the following statements hold.
+
+\begin{enumerate}
+  \item $F^{\prime}(x)$ is a differentially 4 -uniform permutation over $\mathbb{F}_{2}^{n}$;
+  \item Its nonlinearity is $2^{n-1}-2^{\frac{n}{2}}$ and $\left|\Lambda_{F^{\prime}}\right|=\left\{0,2^{\frac{n}{2}}, 2^{\frac{n+2}{2}}\right\}$;
+  \item $d^{\circ}\left(F^{\prime}\right)=\frac{n+2}{2}$ and $d^{\circ}\left(F^{\prime-1}\right) \leq 7$.
+\end{enumerate}
+
+Proof As the proof of Theorem 5, we have $F^{\prime}(x)$ is EA-equivalent to the function constructed in Theorem 4. Thus we only need to prove that $F^{\prime}(x)$ is a permutation over $\mathbb{F}_{2}^{n}$ and $d^{\circ}\left(F^{\prime-1}\right) \leq 7$.
+
+First, $F^{\prime}\left(\operatorname{Tr}^{(0)}\right) \subseteq \operatorname{Tr}^{(0)}$. Then we only need to show that $F^{\prime}(x)$ is injective on $\operatorname{Tr}^{(0)}$. Assume that there exist $x_{1} \neq x_{2} \in \operatorname{Tr}^{(0)}$, such that $F\left(x_{1}\right)+F\left(x_{1}\right)^{2^{i}}=F\left(x_{2}\right)+F\left(x_{2}\right)^{2^{i}}$. Since $F(x)$ is a permutation and $\operatorname{ker}\left(x+x^{2^{i}}\right)=\{0,1\}$, it holds
+
+$$
+x_{1}^{\frac{1}{2^{i}+1}}+\operatorname{Tr}_{m / 3}\left(x_{1}+x_{1}^{2^{2 s}}\right)=x_{2}^{\frac{1}{2^{i}+1}}+\operatorname{Tr}_{m / 3}\left(x_{2}+x_{2}^{2^{2 s}}\right)+1
+$$
+
+Compose the two sides of the above equation with $F^{-1}$, we get
+
+$$
+x_{1}=F^{-1}\left(F\left(x_{2}\right)+1\right)
+$$
+
+Hence,
+
+$$
+x_{1}+x_{2}=F^{-1}\left(F\left(x_{2}\right)+1\right)+F^{-1}\left(F\left(x_{2}\right)\right)
+$$
+
+By Lemma 5, we have
+
+$$
+\operatorname{Tr}\left(x_{1}+x_{2}\right)=\operatorname{Tr}\left(F^{-1}\left(F\left(x_{2}\right)+1\right)+F^{-1}\left(F\left(x_{2}\right)\right)\right)=1
+$$
+
+However, $\operatorname{Tr}\left(x_{1}+x_{2}\right)=0$, since $x_{1}, x_{2} \in \operatorname{Tr}^{(0)}$ which implies $x_{1}+x_{2} \in \operatorname{Tr}^{(0)}$. Hence we obtain a contradiction. Thus $F^{\prime}(x)$ is a permutation on $\operatorname{Tr}^{(0)}$.
+
+Let $L(x)=\sum_{j=0}^{\frac{m-3}{2}} x^{2^{(2 j+1) i}}$. By Lemma 5 and a similar argument as Proposition 2, we have
+
+$$
+F^{\prime-1}(x)= \begin{cases}F^{-1}(L(x)) & \operatorname{Tr}\left(F^{-1}(L(x))\right)=0 \\ F^{-1}(L(x)+1) & \operatorname{Tr}\left(F^{-1}(L(x))\right)=1\end{cases}
+$$
+
+which is equivalent to the restriction of
+
+$$
+\begin{aligned}
+& F^{-1}(L(x))\left(\operatorname{Tr}\left(F^{-1}(L(x))\right)+1\right)+F^{-1}(L(x)+1) \operatorname{Tr}\left(F^{-1}(L(x))\right) \\
+& =\operatorname{Tr}\left(F^{-1}(L(x))\right)\left(F^{-1}(L(x))+F^{-1}(L(x)+1)\right)+F^{-1}(L(x))
+\end{aligned}
+$$
+
+to $\operatorname{Tr}^{(0)}$. By Lemma 4, $d^{\circ}\left(F^{-1}\right)=4$. Then the algebraic degree of $F^{-1}(L(x))+F^{-1} (L(x)+1)$ is less than or equal to 3 . Hence, $d^{\circ}\left(F^{\prime-1}\right) \leq 7$.
+
+Remark 2 With the help of Magma, we get $d^{\circ}\left(F^{\prime-1}\right)=5$ when $m=9,15$. Then it is reasonable to believe that $d^{\circ}\left(F^{\prime-1}\right)=5$ is true for every odd $m$ divisible by 3 . The inverses of the permutations constructed in Theorems 5 and 6 are EA-inequivalent when $n \geq 14$, since their algebraic degrees are not equal.
+
+When $n=8$, we have $d^{\circ}\left(F_{u}^{\prime-1}\right)=5$, where $F_{u}^{\prime}(x)$ is the permutation constructed in Theorem 5. Define
+
+$$
+R D_{F}(a, 4)=\mid\left\{b \in \mathbb{F}_{2^{n}} \mid F(x)+F(x+a)=b \text { has } 4 \text { roots }\right\} \mid .
+$$
+
+Then it is easy to verify that $R D_{F}(4)=\left\{R D_{F}(a, 4) \mid a \in \mathbb{F}_{2^{n}}^{*}\right\}$ is invariant under EA-equivalence. Let $i=1$, with the help of Magma, we have
+
+$$
+R D_{F_{u}^{\prime-1}}(4)=\{13,14,15,16,17,18,19,20,23\}
+$$
+
+and
+
+$$
+R D_{F^{\prime-1}}(4)=\{11,12,13,14,15,16,17,18,19,21,22,23,28\} .
+$$
+
+Then $F_{u}^{\prime-1}(x)$ and $F^{\prime-1}(x)$ are EA-inequivalent on $\mathbb{F}_{2^{8}}$.\\
+Remark 3 Under corresponding conditions, the CCZ-inequivalence of our constructions and inverse functions, $x^{2^{i}+1}$ and $x^{2^{2 i}-2^{i}+1}$ has been shown in the text. For $\frac{n}{2}$ is even, we consider $n=4$ and $n=8$, which are the most often used sizes for S-boxes in cryprography. With the help of Magma, we have following results.
+
+\begin{enumerate}
+  \item $n=4$, taking $i=1,2, u=1$, the Walsh spectrum of our constructions is $\{0, \pm 4, \pm 8\}$. There are no differentially 4-uniform power mappings on $\mathbb{F}_{2^{4}}$ with the same Walsh spectrum. The restriction of $x^{\frac{1}{3}}+x^{\frac{2}{3}}$ and $x^{\frac{1}{5}}+x^{\frac{4}{5}}$ to $\left\{x \in \mathbb{F}_{2^{5}} \mid \operatorname{Tr}(x)=0\right\}$ are CCZ-equivalent, since their extended codes are equivalent.
+  \item $n=8$, taking $i=1,2,4$ and $u=1$, the Walsh spectrum of our constructions is $\{0, \pm 16, \pm 32\}$. There is only one power mapping (up to EA-equivalence) on $\mathbb{F}_{2^{8}}$ with differential uniformity 4 and Walsh spectrum $\{0, \pm 16, \pm 32\}$, which is $x^{21}\left(x^{2^{2 k}}+2^{k}+1\right)$. However, the extended codes of our constructions ( $i=1,2,4, u=1$ ) and $x^{21}$ are pairwise inequivalent. This means our constructions are CCZ-inequivalent to any power mappings on $\mathbb{F}_{2}$, and the restriction of $x^{\frac{1}{3}}+x^{\frac{2}{3}}, x^{\frac{1}{5}}+x^{\frac{4}{5}}$ and $x^{\frac{1}{17}}+x^{\frac{16}{17}}$ to $\left\{x \in \mathbb{F}_{29} \mid\right. \operatorname{Tr}(x)=0\}$ are also pairwise CCZ-inequivalent.
+\end{enumerate}
+
+\section*{4 Conclusion and open problem}
+In this paper, we give a method for constructing differentially 4 -uniform permutations with the best known nonlinearity over $\mathbb{F}_{2^{2 m}}$ from quadratic AB permutations over $\mathbb{F}_{2^{2 m+1}}$. Besides inverse functions, it is the first time that differentially 4-uniform permutations over $\mathbb{F}_{2^{2^{n}}}$ with\\
+the highest nonlinearity are constructed. Besides the Gold functions, there are other AB permutations over $\mathbb{F}_{2^{2 m+1}}[11]$. Then one can obtain other differentially 4 -uniform permutations by applying the same method in the paper.
+
+We believe that the idea in [15] is very powerful for constructing permutations with low differential uniformity. Besides quadratic APN permutations used in this paper and inverse functions used in [15], there are lots of other APN functions on $\mathbb{F}_{2^{n+1}}$, see [14, 15] for details. Then can one construct other differentially 4-uniform permutations over $\mathbb{F}_{2^{n}}$ by using other APN functions (or non-APN functions) on $\mathbb{F}_{2^{n+1}}$ ? This is an interesting problem needs further study and we leave it open. It is our hope that the results presented in this paper will motivate new progress in related areas.
+
+Acknowledgments The authors are very grateful to referees for their valuable comments on this paper which have greatly improved the presentation of the paper. This work is supported by 973 Project (No. 2013CB834203), the National Natural Science Foundation of China (No. 60970134, No. 11171323), the IIE's Cryptography Research Project (No. Y2Z0011102), the Strategic Priority Research Program of the Chinese Academy of Sciences (No. XDA06010701).
+
+\section*{References}
+\begin{enumerate}
+  \item Beth T., Ding C.: On almost perfect nonlinear permutations. In: Advances in CryptologyEUROCRYPT'93. LNCS, vol. 765, pp. 65-76. Springer, New York (1994).
+  \item Biham E., Shamir A.: Defferential cryptanalysis of DES-like cryptosystems. J. Cryptol. 4(1), 3-72 (1991).
+  \item Bracken C., Leander G.: A highly nonlinear differentially 4 uniform power mapping that permutes fields of even degree. Finite Fields Appl. 16(4), 231-242 (2010).
+  \item Bracken C., Byrne E., Markin N., McGuire G.: New families of quadratic almost perfect nonlinear trinomials and multinomials. Finite Fields Appl. 14(3), 703-714 (2008).
+  \item Bracken C., Byrne E., Markin N., McGuire G.: A few more quadratic APN functions. Cryptogr. Commun. 3(1), 43-53 (2011).
+  \item Bracken C., Tan C.H., Tan Y.: Binomial differentially 4 uniform permutations with high nonlinearity. Finite Fields Appl. 18(3), 537-546 (2012).
+  \item Browning K.A., Dillon J.F., Kibler R.E., McQuistan M.T.: APN polynomials and related codes. J. Comb. Inf. Syst. Sci. 34(1-4), 135-159 (2009).
+  \item Budaghyan L.: The Simplest Method for Constructing APN Polynomials EA-Inequivalent to Power Functions. WAIFI 2007, LNCS 4547, pp. 177-188. Springer, Heidelberg (2007).
+  \item Budaghyan L., Carlet C.: Classes of quadratic APN trinomials and hexanomials and related structures. IEEE Trans. Inf. Theory, 54(5), 2354-2357 (2008).
+  \item Budaghyan L., Carlet C., Pott A.: New classes of almost bent and almost perfect nonlinear polynomials. IEEE Trans. Inf. Theory 52(3), 1141-1152 (2006).
+  \item Budaghyan L., Carlet C., Leander G.: Two classes of quadratic APN binomials inequivalent to power functions. IEEE Trans. Inf. Theory 54(9), 4218-4229(2008).
+  \item Budaghyan L., Carlet C., Leander G.: Constructing new APN functions from known ones. Finite Fields Appl. 15(2), 150-159 (2009).
+  \item Carlet C.: Boolean functions for cryptography and error correcting codes. In: Crama Y., Hammer P.L. (eds.) Chapter of the Monography "Boolean Models and Methods in Mathematics, Computer Science, and Engineering", pp. 257-397. Cambridge University Press, Cambridge (2010).
+  \item Carlet C.: Vectorial Boolean functions for cryptography. In: Crama Y., Hammer P.L. (eds.) Chapter of the Monography "Boolean Models and Methods in Mathematics, Computer Science, and Engineering", pp. 398-469. Cambridge University Press, Cambridge (2010).
+  \item Carlet C.: On known and new differentially uniform functions. ACISP 1-15 (2011).
+  \item Carlet C., Charpin P., Zinoviev V.: Codes, bent functions and permutations sutiable for DES-like cryptosystems. Des. Codes Cryptogr. 15(2), 125-156 (1998).
+  \item Chabaud F., Vaudenay S.: Links between differential and linear cryptanalysis. In: Advances in Cryptol-ogy-EUROCRYPT'94. LNCS, vol. 950, pp. 356-365. Springer, New York (1995).
+  \item Dillon J.F.: APN polynomials: An Update. In: International Conference on Fields and Applications Fq9, Dublin, Ireland (2009).
+  \item Dobbertin H.: One-to-one highly nonlinear power functions on $G F\left(2^{n}\right)$. Appl. Algebra Eng. Commun. Comput. 9(2), 139-152 (1998).
+  \item Gold R.: Maximal recursive sequences with 3 -valued recursive crosscorrelation functions. IEEE Trans. Inf. Theory 14, 154-156 (1968).
+  \item Kasami T.: The weight enumerators for several classes of subcodes of the second order binary ReedMuller codes. Inf. Control 18, 369-394 (1971).
+  \item Knudsen L.: Truncated and higher order differentials. In: Preneel, B. (ed.) FSE 1994. LNCS, vol. 1008, pp. 196-211. Springer, Heidelberg (1995).
+  \item Lachaud G., Wolfmann J.: The weights of the orthogonals of the extended quadratic binary Goppa codes. IEEE Trans. Inf. Theory 36(3), 686-692 (1990).
+  \item Li Y., Wang M.: On EA-equivalence of certain permutations to power mappings. Des. Codes Cryptogr. 58(3), 259-269 (2011).
+  \item Li Y., Wang M.: Permutation polynomials EA-equivalent to the inverse function over $G F\left(2^{n}\right)$. Cryptogr. Commun. 3(3), 175-186 (2011).
+  \item Matsui M.: Linear cryptanalysis method for DES cipher. In: Advances in Cryptology-EUROCRYPT'93. Lecture Notes in computer Science, vol. 765, pp. 386-397. Springer, New York (1994).
+  \item Nyberg K.: Differentially uniform mappings for cryptography. In: Advances in CryptographyEUROCRYPT'93. LNCS, vol. 765, pp. 55-64. Springer, Berlin (1994).
+  \item Nyberg K.: S-boxes and round functions with controllable linearity and differential uniformity. In: Proceedings of Fast Software Encryption 1994. Lecture Notes in Computer Science, vol. 1008, pp. 111-130. Springer, Berlin (1995).
+  \item Pasalic E., Charpin P.: Some results concerning cryptographically significant mappings over $\mathrm{GF}\left(2^{n}\right)$. Des. Codes Cryptogr. 57(3), 257-269 (2010).
+\end{enumerate}
+
+
+\end{document}

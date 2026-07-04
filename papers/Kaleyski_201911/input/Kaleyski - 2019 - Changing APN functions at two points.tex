@@ -1,0 +1,914 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage{bbold}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=magenta, urlcolor=cyan,}
+\urlstyle{same}
+\usepackage{caption}
+
+\title{Changing APN functions at two points }
+
+\author{Nikolay S. Kaleyski ${ }^{\mathbf{1}}$ (D)}
+\date{}
+
+
+%New command to display footnote whose markers will always be hidden
+\let\svthefootnote\thefootnote
+\newcommand\blfootnotetext[1]{%
+  \let\thefootnote\relax\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \let\thefootnote\svthefootnote%
+}
+
+%Overriding the \footnotetext command to hide the marker if its value is `0`
+\let\svfootnotetext\footnotetext
+\renewcommand\footnotetext[2][?]{%
+  \if\relax#1\relax%
+    \ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+  \else%
+    \if?#1\ifnum\value{footnote}=0\blfootnotetext{#2}\else\svfootnotetext{#2}\fi%
+    \else\svfootnotetext[#1]{#2}\fi%
+  \fi
+}
+
+\begin{document}
+\maketitle
+\captionsetup{singlelinecheck=false}
+Received: 24 September 2018 / Accepted: 11 April 2019/Published online: 30 April 2019\\
+© Springer Science+Business Media, LLC, part of Springer Nature 2019
+
+\begin{abstract}
+We investigate a construction in which a vectorial Boolean function $G$ is obtained from a given function $F$ over $\mathbb{F}_{2^{n}}$ by changing the values of $F$ at two points of the underlying field. In particular, we examine the possibility of obtaining one APN function from another in this way. We characterize the APN-ness of $G$ in terms of the derivatives and in terms of the Walsh coefficients of $F$. We establish that changing two points of a function $F$ over $\mathbb{F}_{2^{n}}$ which is plateaued (and, in particular, AB ) or of algebraic degree $\operatorname{deg}(F)<n-1$ can never give a plateaued (and AB , in particular) function for any $n \geq 5$. We also examine a particular case in which we swap the values of $F$ at two points of $\mathbb{F}_{2^{n}}$. This is motivated by the fact that such a construction allows us to obtain one permutation from another. We obtain a necessary and sufficient condition for the APN-ness of $G$ which we then use to show that swapping two points of any power function over a field $\mathbb{F}_{2^{n}}$ with $n \geq 5$ can never produce an APN function. We also list some experimental results indicating that the same is true for the switching classes from Edel and Pott (Adv. Math. Commun. 3(1):59-81, 2009), and conjecture that the Hamming distance between two APN functions cannot be equal to two for $n \geq 5$.
+\end{abstract}
+
+Keywords Almost perfect nonlinear functions • Differential uniformity • Boolean functions
+
+Mathematics Subject Classification (2010) 94A60 • 06E30
+
+\section*{1 Introduction}
+A construction in which a given vectorial Boolean function is modified at one point are investigated in [2] in the context of the problem of the maximum algebraic degree of an APN function: given a function $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ and $u, v \in \mathbb{F}_{2^{n}}$, the one-point modification of $F$ is defined as $G(x)=F(x)+\left(1+(x+u)^{2^{n}-1}\right) v$ so that $G(u)=F(u)+v$ and $G(x)=F(x)$ for $x \neq u$; the reasoning behind this is that any $G$ with algebraic degree
+
+This article is part of the Topical Collection on Special Issue on Boolean Functions and Their Applications
+
+\footnotetext{Nikolay S. Kaleyski\\
+\href{mailto:nikolay.kaleyski@uib.no}{nikolay.kaleyski@uib.no}
+
+1 Department of Informatics, University of Bergen, Bergen, Norway
+}
+$\operatorname{deg}(G)=n$ can be expressed in this form. Although the question of the existence of an APN function of algebraic degree $n$ over $\mathbb{F}_{2^{n}}$ remains open in general, a multitude of nonexistence results are derived in [2] which support the conjecture that this is impossible. In this paper we examine a similar construction involving two points. More precisely, given $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$, we select $u_{1}, u_{2} \in \mathbb{F}_{2^{n}}^{*}$ and $v_{1}, v_{2} \in \mathbb{F}_{2^{n}}$, and define $G(x)=F(x)+(1+ \left.\left(x+u_{1}\right)^{2^{n}-1}\right) v_{1}+\left(1+\left(x+u_{2}\right)^{2^{n}-1}\right) v_{2}$. We examine under what conditions $G$ can be APN, especially when $F$ itself is APN. We see that if $F$ is plateaued or has $\operatorname{deg}(F)<n-1$, then $G$ is not plateaued for $n \geq 5$; in particular, $G$ is not AB if $F$ is AB for $n \geq 5$. We also observe that if $F$ is quadratic and not APN , then changing two points of $F$ cannot produce an APN function either.
+
+We also examine a special case in which the values of $F$ at $u_{1}$ and $u_{2}$ are swapped, so that $G\left(u_{1}\right)=F\left(u_{2}\right)$ and $G\left(u_{2}\right)=F\left(u_{1}\right)$; under EA-equivalence, we also assume $u_{1}=0$ and $u_{2}=1$. This case is more tractable and is interesting in that it allows us to obtain one permutation from another. We characterize the APN-ness of $G(x)=F(x)+x^{2^{n}-1}+(x+$ 1) $2^{n}-1$ in terms of the values $\sum_{y \in \mathbb{F}_{2^{n}}} \Delta_{F}(y, F(y)+1)$ and $\sum_{y \in \mathbb{F}_{2^{n}}} \Delta_{F}(y+1, F(y))$, where $\Delta_{F}(a, b)$ is the number of solutions $x$ to $D_{a} F(x)=b$. We demonstrate how a formula for the first of these values can be derived for $F(x)=x^{3}$. More generally, we show that no APN function can be obtained by swapping the values at $u_{1}=0$ and $u_{2}=1$ of any power function over $\mathbb{F}_{2^{n}}$ for $n \geq 5$, and verify that this is also true for all APN functions from [10]. Based on these results, we conjecture that swapping two points in an arbitrary APN function can never produce an APN function for $n \geq 5$.
+
+The method of swapping two points has previously been investigated in the context of constructing 4-differentially uniform permutations from the inverse function [16]. Some basic properties are given in [16], and the authors generalize the construction by changing the values of points lying on a cycle of length greater than two [13]; in particular, they obtain some involutions using the method (see [9]).
+
+\section*{2 Preliminaries}
+\subsection*{2.1 Representation of vectorial functions}
+An $n$-dimensional Boolean function is any function $f: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$. A vectorial Boolean $(n, m)$-function is any function $F: \mathbb{F}_{2}^{n} \rightarrow \mathbb{F}_{2}^{m}$. We focus only on the case $m=n$, in which it is more convenient to identify the vector space $\mathbb{F}_{2}^{n}$ with the finite field $\mathbb{F}_{2^{n}}$ and to consider functions from $\mathbb{F}_{2^{n}}$ to itself. Any ( $n, n$ )-function has a unique representation as a univariate polynomial over $\mathbb{F}_{2^{n}}$ of the form
+
+$$
+F(x)=\sum_{i=0}^{2^{n}-1} a_{i} x^{i}, a_{i} \in \mathbb{F}_{2^{n}}
+$$
+
+Given a natural number $0 \leq i \leq 2^{n}-1$ and its binary expansion $i=\sum_{k=0}^{n-1} 2^{k} i_{k}$ with $i_{k} \in\{0,1\}$, its two-weight $w_{2}(i)$ is the number of nonzero terms in its binary expansion, i.e. $w_{2}(i)=\sum_{k=0}^{n-1} i_{k}$. The algebraic degree of $F$ is then
+
+$$
+\operatorname{deg}(F)=\max \left\{w_{2}(i): 0 \leq i \leq 2^{n}-1, a_{i} \neq 0\right\} .
+$$
+
+Given an ( $n, n$ )-function $F$, its component functions are the functions from $\mathbb{F}_{2^{n}}$ to $\mathbb{F}_{2}$ of the form $\operatorname{Tr}_{1}^{n}(b F(x))$ for $b \in \mathbb{F}_{2^{n}}$, where $T r_{1}^{n}$ is the absolute trace function from $\mathbb{F}_{2^{n}}$ to $\mathbb{F}_{2}$, which we denote simply by $\operatorname{Tr}$ if the dimension $n$ is clear from the context.
+
+\subsection*{2.2 Almost perfect nonlinear functions and bent functions}
+Let $F$ be an ( $n, n$ )-function. The derivative of $F$ in direction $a$ for any $a \in \mathbb{F}_{2^{n}}$ is the function $D_{a} F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ defined as $D_{a} F(x)=F(x)+F(a+x)$. The differential sets $H_{a} F$ are the image sets of the derivatives of $F$, i.e. the sets of the form $H_{a} F=\left\{D_{a} F(x):\right. \left.x \in \mathbb{F}_{2^{n}}\right\}=\left\{F(x)+F(a+x): x \in \mathbb{F}_{2^{n}}\right\}$.
+
+For convenience, we also define the shifted derivative $D_{a}^{\beta} F$ in direction $a \in \mathbb{F}_{2^{n}}$ with shift $\beta \in \mathbb{F}_{2^{n}}$ as the function $D_{a}^{\beta} F(x)=F(x)+F(a+x)+F(a+\beta)$ and the shifted differential set $H_{a}^{\beta} F$ in direction $a$ with shift $\beta$ as its image set, i.e. as $H_{a}^{\beta} F=\left\{D_{a}^{\beta} F(x)\right.$ : $\left.x \in \mathbb{F}_{2^{n}}\right\}=\left\{F(x)+F(a+x)+F(a+\beta): x \in \mathbb{F}_{2^{n}}\right\}$.
+
+For any $a, b \in \mathbb{F}_{2^{n}}$, define $\Delta_{F}(a, b)=\left|\left\{x \in \mathbb{F}_{2^{n}}: F(x+a)+F(x)=b\right\}\right|$. Then, the differential uniformity of $F$ is defined as $\Delta_{F}=\max \left\{\Delta_{F}(a, b): a, b \in \mathbb{F}_{2^{n}}, a \neq 0\right\}$. An $(n, n)$-function $F$ is called differentially $\delta$-uniform if $\Delta_{F} \leq \delta$. If $\delta=2$, then $F$ is called almost perfect nonlinear (APN). Note that $\Delta_{F} \geq 2$ for any ( $n, n$ )-function and hence APN functions are those with optimal differential uniformity.
+
+APN functions over $\mathbb{F}_{2^{n}}$ can be characterized in several different ways. In this paper we focus on characterizations by means of the differential properties and the power moments of the function's Walsh transform. The Walsh transform of a Boolean function $f: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$ is defined by
+
+$$
+W_{f}(a)=\sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{f(x)+\operatorname{Tr}_{1}^{n}(a x)}, \quad a \in \mathbb{F}_{2}
+$$
+
+for any $a \in \mathbb{F}_{2^{n}}$. Also useful is the inverse Walsh transform formula
+
+
+\begin{equation*}
+\sum_{a \in \mathbb{F}_{2^{n}}} W_{f}(a)=2^{n}(-1)^{f(0)} \tag{1}
+\end{equation*}
+
+
+The Walsh transform of an ( $n, n$ )-function $F$ is defined by
+
+
+\begin{equation*}
+W_{F}(a, b)=\sum_{x \in \mathbb{F}_{2^{n}}}(-1)^{\operatorname{Tr}_{1}^{n}(b F(x))+\operatorname{Tr}_{1}^{n}(a x)} \tag{2}
+\end{equation*}
+
+
+for any $a, b \in \mathbb{F}_{2^{n}}$.\\
+The Boolean functions $\operatorname{Tr}_{1}^{n}(b F(x))$ for $b \in \mathbb{F}_{2^{n}}^{*}$ are said to be the component functions of $F$. In this way, the values of the Walsh transform of an ( $n, n$ )-function can be seen as the values of the Walsh transform of the component functions of $F$.
+
+In order to simplify notation, we will use $\eta(X)$, resp. $\eta_{b}(X)$ as shorthand for $(-1)^{\operatorname{Tr}_{1}^{n}(X)}$, resp. $(-1)^{\operatorname{Tr}_{1}^{n}(b X)}$ where $X$ is an arbitrary expression and $b \in \mathbb{F}_{2^{n}}$. We also define the equality indicator $I(A, B)$, where $A$ and $B$ are some arbitrary expressions, as $I(A, B)=1$ if $A=B$ and $I(A, B)=0$ otherwise.
+
+Given a set $S$, its characteristic function is denoted by $1_{S}(x)$ so that we have $1_{S}(x)=$ 1 for $x \in S$ and $1_{S}(x)=0$ for $x \notin S$. For a finite set $S=\left\{s_{1}, s_{2}, \ldots, s_{k}\right\}$ we write $1_{s_{1}, s_{2}, \ldots, s_{k}}(x)$ as shorthand for $1_{\left\{s_{1}, s_{2}, \ldots, s_{k}\right\}}(x)$.
+
+With the above background, we can give the following classic characterizations of APN functions in terms of their Walsh transform.
+
+Lemma 1 (see e.g. [8]) Let $F$ be an ( $n, n$ )-function. Then $F$ is APN if and only if
+
+$$
+\sum_{a \in \mathbb{F}_{2^{n}}} \sum_{b \in \mathbb{F}_{2^{n}}^{*}} W_{F}^{4}(a, b)=2^{3 n+1}\left(2^{n}-1\right)
+$$
+
+Lemma $2([4,5])$ Let $F$ be an APN function over $\mathbb{F}_{2^{n}}$ satisfying $F(0)=0$. Then
+
+$$
+\sum_{a, b \in \mathbb{F}_{2^{n}}} W_{F}^{3}(a, b)=3 \cdot 2^{3 n}-2^{2 n+1} .
+$$
+
+If $F$ is plateaued, this condition is necessary and sufficient for $F$ to be APN (plateaued functions are defined in Section 2.3 below).
+
+The nonlinearity $N_{F}$ of an $(n, n)$-function $F$ is the minimum Hamming distance between its component functions and the affine functions. It measures the function's resistance to linear cryptanalysis [14] and equals
+
+
+\begin{equation*}
+N_{F}=2^{n-1}-\frac{1}{2} \max _{a \in \mathbb{F}_{2^{n}}, b \in \mathbb{F}_{2^{n}}^{*}}\left|W_{F}(a, b)\right| \tag{3}
+\end{equation*}
+
+
+An ( $n, m$ )-function $F$ is called bent if $W_{F}(a, b) \in\left\{ \pm 2^{n / 2}\right\}$ for all $a \in \mathbb{F}_{2^{n}}$ and nonzero $b \in \mathbb{F}_{2^{m}}^{*}$. Clearly, bent functions can exist only for even values of $n$ in which case they achieve optimum nonlinearity. Nyberg in [15] proved that $(n, m)$-bent functions exist if and only if $n$ is even and $m \leq n / 2$. When $n$ is odd or $n=m$, the optimal functions with respect to nonlinearity are the almost bent functions. An ( $n, n$ )-function $F$ is called almost bent ( AB ) if its Walsh transform satisfies $W_{F}(a, b) \in\left\{0, \pm 2^{(n+1) / 2}\right\}$ for any $a \in \mathbb{F}_{2^{n}}$ and nonzero $b \in \mathbb{F}_{2^{n}}$. Any AB function is APN, but not vice versa. However, for $n$ odd, every quadratic APN function is also AB [6]; more generally, every plateaued APN function is also AB .
+
+\subsection*{2.3 Plateaued functions}
+A Boolean function $f: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2}$ is called plateaued if its Walsh transform satisfies $W_{f}(a) \in\{0, \pm \mu\}$ for some positive integer $\mu$ called the amplitude of $f$. An ( $n, n$ )function $F$ is called plateaued if all of its component functions are plateaued and it is called plateaued with single amplitude if all of its component functions are plateaued and have the same amplitude.
+
+The amplitude of a plateaued Boolean function $f$ is always of the form $2^{\lambda}$ for some $\lambda \geq \frac{n}{2}$, due to the well-known Parseval's identity $\sum_{a \in \mathbb{F}_{2^{n}}} W_{f}^{2}(a)=2^{2 n}$.
+
+Since the algebraic degree of a Boolean plateaued function in $n$ variables with amplitude $\mu$ is upper bounded by $n-\lambda+1$ [12], the algebraic degree of a plateaued ( $n, n$ )-function $F$ is upper bounded by $\max _{b \in \mathbb{F}_{2^{m}}^{*}}\left(n-\lambda_{b}+1\right)$ where $\lambda_{b}$ is the amplitude of $\operatorname{Tr}_{1}^{m}(b F(x))$, $b \neq 0$, so that $W_{F}(a, b) \in\left\{0, \pm 2^{\lambda_{u}}\right\}$ for any $a \in \mathbb{F}_{2^{n}}$. Since there exists no bent ( $n, n$ )function, this maximum is less than or equal to $n-(n+1) / 2+1=(n+1) / 2$. Hence a plateaued function can have algebraic degree $n$, resp. $n-1$ only if $n \leq 1$, resp. $n \leq 3$.
+
+\subsection*{2.4 Equivalence relations of functions}
+There are several equivalence relations of functions for which differential uniformity and nonlinearity are invariant. Due to these equivalence relations, having only one APN (respectively, AB ) function, one can generate a huge class of APN (respectively, AB ) functions.
+
+Two $(n, n)$-functions $F$ and $F^{\prime}$ are said to be
+
+\begin{itemize}
+  \item affine equivalent (linear equivalent) if $F^{\prime}=A_{1} \circ F \circ A_{2}$, where $A_{1}$ and $A_{2}$ are affine (linear) permutations of $\mathbb{F}_{2^{n}}$;
+  \item extended affine equivalent (EA-equivalent) if $F^{\prime}=A_{1} \circ F \circ A_{2}+A$, where $A, A_{1}, A_{2}$ are affine mappings over $\mathbb{F}_{2^{n}}$ and $A_{1}, A_{2}$ are permutations;
+  \item Carlet-Charpin-Zinoviev equivalent (CCZ-equivalent) if for some affine permutation $\mathcal{L}$ of $\mathbb{F}_{2^{n}} \times \mathbb{F}_{2^{n}}$ the image of the graph of $F$ is the graph of $F^{\prime}$, that is, $\mathcal{L}\left(G_{F}\right)=G_{F^{\prime}}$ where $G_{F}=\left\{(x, F(x)): x \in \mathbb{F}_{2^{n}}\right\}$ and $G_{F^{\prime}}=\left\{\left(x, F^{\prime}(x)\right): x \in \mathbb{F}_{2^{n}}\right\}$.
+\end{itemize}
+
+It is obvious that linear equivalence is a particular case of affine equivalence, and that affine equivalence is a particular case of EA-equivalence. As shown in [6], EA-equivalence is a particular case of CCZ-equivalence and every permutation is CCZ-equivalent to its inverse. The algebraic degree of a function (if it is not affine) is invariant under EA-equivalence but, in general, it is not preserved by CCZ-equivalence. The following proposition illustrates how EA-equivalence can be expressed in terms of CCZ-equivalence.
+
+Proposition 3 [3] Let $F$ and $F^{\prime}$ be functions from $\mathbb{F}_{2^{n}}$ to itself. The function $F^{\prime}$ is EAequivalent to the function $F$ or to the inverse of $F$ (if it exists) if and only if there exists an affine permutation $\mathcal{L}=\left(L_{1}, L_{2}\right)$ on $\mathbb{F}_{2}^{2 n}$ such that $\mathcal{L}\left(G_{F}\right)=G_{F^{\prime}}$ and the function $L_{1}$ depends only on one variable, i.e. $L_{1}(x, y)=L(x)$ or $L_{1}(x, y)=L(y)$.
+
+It is worth mentioning some properties that remain invariant under CCZ-equivalence. Assuming that $F$ and $F^{\prime}$ are CCZ-equivalent, we have:
+
+\begin{itemize}
+  \item $\left\{\Delta_{F}(a, b): a, b \in \mathbb{F}_{2^{n}}, a \neq 0\right\}=\left\{\Delta_{F^{\prime}}(a, b): a, b \in \mathbb{F}_{2^{n}}, a \neq 0\right\}[1]$;
+  \item if $F$ is APN then $F^{\prime}$ is APN too;
+  \item $N_{F}=N_{F^{\prime}}$ [6];
+  \item if $F$ is AB then $F^{\prime}$ is AB too;
+  \item if $F$ is plateaued with single amplitude $\lambda$ then $F^{\prime}$ is plateaued with the same single amplitude $\lambda$;
+  \item if $F$ is plateaued with different amplitudes then $F^{\prime}$ is not necessarily plateaued: it can happen that $F^{\prime}$ has no plateaued components at all. However, if $F$ and $F^{\prime}$ are EAequivalent then $F^{\prime}$ is plateaued with the same multi-set of amplitudes.
+\end{itemize}
+
+\section*{3 Changing two points of a given function}
+The properties of a construction that involves changing precisely one value of given function $F$ in order to obtain a new function $G$ are investigated in [2]. The main point of interest is the possibility of obtaining an APN function $G$ in this manner, and particular attention is paid to the case when the given $F$ is itself APN. This is motivated by the open problem of the existence of APN functions of algebraic degree $n$ over the field $\mathbb{F}_{2^{n}}$, since if two functions $F$ and $G$ are at distance one, then at least one of them must be of algebraic degree $n$. Two main characterizations of the APN-ness of such functions $G$ are obtained in [2], one involving the Walsh coefficients of $F$, and one based on the properties of the derivatives $D_{a} F$ of $F$ themselves. These characterizations are then applied in order to conclude that any $G$ obtained by such a one-point change from a given $F$ cannot be APN (except possibly for $n<3$ in some cases) if $F$ is a power, plateaued, quadratic or almost bent function . A number of additional non-existence results are also shown, which also agree with the conjecture that no APN function of algebraic degree $n$ exists over $\mathbb{F}_{2^{n}}$.
+
+This construction can naturally be generalized so as to encompass more than one point. Even for a small, fixed number of points $u_{1}, u_{2}, \ldots u_{K}$ at which the function is to be changed, however, the problem of the APN-ness of the resulting function seems very hard.
+
+In the following we investigate whether, and under what conditions it is possible to obtain an APN function by changing the values of two distinct points in a given APN function $F$. More precisely, given two distinct elements $u_{1}, u_{2}$ from $\mathbb{F}_{2^{n}}$ and two arbitrary elements $v_{1}, v_{2}$ from $\mathbb{F}_{2^{n}}$, we are interested in the APN-ness of the function
+
+
+\begin{align*}
+G(x)= & F(x)+1_{u_{1}}(x) v_{1}+1_{u_{2}}(x) v_{2}=F(x)+\left(1+\left(x+u_{1}\right)\right)^{2^{n}-1} v_{1} \\
+& +\left(1+\left(x+u_{2}\right)\right)^{2^{n}-1} v_{2}= \begin{cases}F(x)+v_{1} & x=u_{1} \\
+F(x)+v_{2} & x=u_{2} \\
+F(x) & x \notin\left\{u_{1}, u_{2}\right\}\end{cases} \tag{4}
+\end{align*}
+
+
+We take $v_{1}=v_{2}$ and denote both $v_{1}$ and $v_{2}$ by $v$ since assuming otherwise leads to the problem of the existence of APN functions of algebraic degree $n$ already discussed in [2]. We will also assume $v_{1}, v_{2} \neq 0$ so that the distance between $F$ and $G$ is indeed equal to two.
+
+A natural way to investigate the differential properties of $G$ is to examine the derivatives $D_{a} G$ and their expression via the derivatives $D_{a} F$ of $F$. From the definition of $G$ in (4) we can immediately see that for any $a \in \mathbb{F}_{2^{n}}^{*}$, the derivative $D_{a} G$ takes the form
+
+
+\begin{equation*}
+D_{a} G(x)=D_{a} F(x)+1_{u_{1}, a+u_{1}}(x) v_{1}+1_{u_{2}, a+u_{2}}(x) v_{2} \tag{5}
+\end{equation*}
+
+
+Recall that a function $F$ over $\mathbb{F}_{2^{n}}$ is APN if and only if there do not exist elements $a \in \mathbb{F}_{2^{n}}^{*}$ and $x, y \in \mathbb{F}_{2^{n}}$ such that $D_{a} F(x)=D_{a} F(y)$ and $x+y \notin\{0, a\}$; this follows immediately from the definition. A characterization of the conditions under which $G$ is APN can then be derived immediately from (5) by examining under what conditions such a triple of elements $(a, x, y) \in \mathbb{F}_{2^{n}}^{3}$ violating this condition may exist.
+
+Proposition 4 Let $F$ be an $(n, n)$-function and let $u_{1}, u_{2}$ be two distinct points from $\mathbb{F}_{2^{n}}$. Let also $v_{1}, v_{2}$ be arbitrary elements from $\mathbb{F}_{2^{n}}$. Then the function
+
+$$
+G(x)=F(x)+1_{u_{1}}(x) v_{1}+1_{u_{2}}(x) v_{2}
+$$
+
+is APN if and only if all of the following conditions are satisfied for every derivative direction $a \in \mathbb{F}_{2^{n}}^{*}$ :\\
+(i) $\quad D_{a} F$ is 2-to- 1 on $\mathbb{F}_{2^{n}} \backslash\left\{u_{1}, u_{2}, a+u_{1}, a+u_{2}\right\}$;\\
+(ii) $D_{a} F\left(u_{1}\right)+D_{a} F\left(u_{2}\right) \neq v_{1}+v_{2}$ unless $a=u_{1}+u_{2}$;\\
+(iii) $D_{a} F(x)+D_{a} F\left(u_{i}\right) \neq v_{i}$ unless $a=u_{1}+u_{2}$ or $x \in\left\{u_{1}, u_{2}, a+u_{1}, a+u_{2}\right\}$, for $i \in\{1,2\}$;\\
+(iv) $\quad D_{u_{1}+u_{2}} F\left(u_{i}\right)+D_{u_{1}+u_{2}} F(x) \neq v_{1}+v_{2}$ unless $x \in\left\{u_{1}, u_{2}\right\}$, for $i \in\{1,2\}$.
+
+Proof From the definition, $G$ is APN if and only if $D_{a} G(x)=D_{a} G(y)$ implies $a=0$ or $x+y \in\{0, a\}$ for any $a, x, y \in \mathbb{F}_{2}{ }^{n}$. We now examine under what circumstances such an equality may occur.
+
+Suppose that $D_{a} G(x)=D_{a} G(y)$ for some $a, x, y \in \mathbb{F}_{2^{n}}$ with $a \neq 0, x \neq y$ and $x \neq a+y$. Depending on whether $x$ and $y$ are in $\left\{u_{1}, u_{2}, a+u_{1}, a+u_{2}\right\}$, we examine the following cases:\\
+(i) If neither $x$ nor $y$ is in $\left\{u_{1}, u_{2}, a+u_{1}, a+u_{2}\right\}$, then $D_{a} G(x)=D_{a} G(y)$ is equivalent to $D_{a} F(x)=D_{a} F(y)$. However, due to the assumption $x \notin\{y, a+y\}$, this means that $D_{a} F$ itself is not 2-to-1.\\
+(ii) If say $x \in\left\{u_{1}, a+u_{1}\right\}$ and $y \in\left\{u_{2}, a+u_{2}\right\}$, then $D_{a} G(x)=D_{a} G(y)$ becomes $D_{a} F\left(u_{1}\right)+D_{a} F\left(u_{2}\right)=v_{1}+v_{2}$ since $x \neq y+a$ implies that $a \neq u_{1}+u_{2}$.\\
+(iii) If say $x \in\left\{u_{1}, a+u_{1}\right\}$ but $y \notin\left\{u_{1}, u_{2}, a+u_{1}, a+u_{2}\right\}$ and $a \neq u_{1}+u_{2}$, then $D_{a} G(x)=D_{a} G(y)$ is equivalent to $D_{a} F\left(u_{1}\right)+D_{a} F(y)=v_{1}$.\\
+(iv) If $a=u_{1}+u_{2}$ and say $x \in\left\{u_{1}, u_{2}\right\}, y \notin\left\{u_{1}, u_{2}\right\}$, then $D_{a} G(x)=D_{a} G(y)$ becomes $D_{a} F\left(u_{1}\right)+D_{a} F(y)=v_{1}+v_{2}$.
+
+Thus, all of the four conditions listed in the statement of the proposition are clearly necessary for $G$ to be APN. However, they are also sufficient since if $D_{a} G(x)=D_{a} G(y)$ is true for some $a, x, y \in \mathbb{F}_{2^{n}}$, with $a \neq 0$ and $x+y \notin\{0, a\}$, then one of these four cases must necessarily occur.
+
+One can easily find functions $F$ and elements $u_{1}, u_{2}, v_{1}, v_{2}$ satisfying the conditions of Proposition 4 in $\mathbb{F}_{2^{n}}$ with $n \leq 4$. For example, taking $F(x)=x^{3}$ over $\mathbb{F}_{2^{4}}, u_{1}=0, u_{2}=\alpha^{k}$ and $v_{1}=v_{2}=\alpha^{3 k}$ for some positive integer $k$, it is obvious that conditions (i) and (ii) of the proposition are immediately satisfied (on account of $F$ being APN), and it can be checked computationally that conditions (iii) and (iv) are satisfied as well. Note that due to $v_{1}=v_{2}$, this corresponds to the case of "swapping" two points described in Section 5. More generally, for any $u_{1}, u_{2} \in \mathbb{F}_{2^{4}} \times \mathbb{F}_{2^{4}}$ with $u_{1} \neq u_{2}$, there exists precisely one pair $v_{1}, v_{2}$ such that $G$ from the statement of Proposition 4 is APN; furthermore, $v_{1}=v_{2}$ in all such cases.
+
+For dimensions $n \geq 5$, the question of whether an APN function can be obtained by changing (or, in particular, swapping) two of the values of a another APN function remains unsolved. We present some partial negative results in Sections 5 and 6, but the problem of the minimum distance between APN functions remains open.
+
+Corollary 5 Let $F$ be a quadratic function over $\mathbb{F}_{2^{n}}$. If $F$ is not $A P N$ then $G(x)=F(x)+ 1_{u_{1}}(x) v_{1}+1_{u_{2}}(x) v_{2}$ is not APN either.
+
+Proof If $F$ is quadratic, then all derivatives $D_{a} F$ for $a \neq 0$ are $2^{s_{a}}$-to- 1 functions, with $1 \leq s_{a} \leq n$. Furthermore, if $F$ is not APN, then for some $a$ we must have $s_{a}>1$. Hence $G$ is not APN by condition (i) in Proposition 4.
+
+\section*{4 Characterization by means of the Walsh transform}
+From (4) and assuming $v_{1}=v_{2}=v$, the Walsh coefficients of $G$ can be expressed as $W_{G}(a, b)=W_{F}(a, b)+[\eta(b v)-1]\left[\eta\left(b F\left(u_{1}\right)+a u_{1}\right)+\eta\left(b F\left(u_{2}\right)+a u_{2}\right)\right]$. The difference of $W_{F}(a, b)$ and $W_{G}(a, b)$ can thus take only a limited number of different values:
+
+\[
+W_{G}(a, b)-W_{F}(a, b)= \begin{cases}4 & \operatorname{Tr}(b v)=\operatorname{Tr}\left(b F\left(u_{1}\right)+a u_{1}\right)=\operatorname{Tr}\left(b F\left(u_{2}\right)+a u_{2}\right)=1  \tag{6}\\ -4 & \operatorname{Tr}(b v)=1, \operatorname{Tr}\left(b F\left(u_{1}\right)+a u_{1}\right)=\operatorname{Tr}\left(b F\left(u_{2}\right)+a u_{2}\right)=0 \\ 0 & \text { otherwise. }\end{cases}
+\]
+
+In light of (3) this then implies that the nonlinearity of $G$ can differ from that of $F$ by at most two.
+
+Recall that at least one of $F$ and $G$ must have algebraic degree equal to ( $n-1$ ). Since the algebraic degree of AB functions is upper bounded by $\frac{n+1}{2}[6]$ then $G$ is not AB when $F$ is (for $n \geq 4$ ), and, therefore, $N_{G}=2^{n-1}-2^{\frac{n-1}{2}}-2$. Moreover if $F$ is plateaued then its algebraic degree is upper bounded by $\max _{b \in \mathbb{F}_{2^{n}}^{*}}\left(n-\lambda_{b}+1\right)$ where $2^{\lambda_{b}}$ is the amplitude of $\operatorname{Tr}_{1}^{m}(b F(x)), b \neq 0$, and, therefore, $G$ cannot be plateaued for $n \geq 5$. The upper bound on algebraic degree also implies that if $\operatorname{deg}(F)<n-1$ then $G$ is not plateaued, and, in particular, not AB .
+
+Note also that if $F$ is APN , then $G$ is differentially 6-uniform since the equation $D_{a} G(x)=b$ may have only $u_{1}, u_{2}, a+u_{1}$ and $a+u_{2}$ as solutions in addition to the two solutions of $D_{a} F(x)=b$. When $v_{1}=v_{2}=v, G$ is in fact differentially 4-uniform because $D_{a} G(x)=b$ is equivalent to $D_{a} F(x)=b$ for $a=u_{1}+u_{2}$, and for $a \neq u_{1}+u_{2}$, $D_{a} G\left(u_{1}\right)=D_{a} G\left(u_{2}\right)$ implies
+
+$$
+F\left(u_{1}\right)+F\left(u_{2}\right)=F\left(a+u_{1}\right)+F\left(a+u_{2}\right)+v+v=F\left(a+u_{1}\right)+F\left(a+u_{2}\right)
+$$
+
+which contradicts the APN-ness of $F$.
+
+Proposition 6 Let $F$ be an $(n, n)$-function satisfying $\operatorname{deg}(F)<n$ and let $G(x)=F(x)+ v\left(1_{u_{1}}(x)+1_{u_{2}}(x)\right)$. Then:\\
+(i) the degree of $G$ is $2^{n}-2$ and $\operatorname{deg}(G)=n-1$ unless $F$ contains a term $c x^{2^{n}-2}$ for some $c \in \mathbb{F}_{2^{n}}^{*}$;\\
+(ii) $W_{G}(a, b) \in\left\{W_{F}(a, b), W_{F}(a, b) \pm 4\right\}$;\\
+(ii) $N_{G} \in\left\{0, N_{F} \pm 2\right\}$;\\
+(iv) for $n \geq 4$, if $F$ is $A B$ then $G$ is not $A B$ and $N_{G}=2^{n-1}-2^{\frac{n-1}{2}}-2$\\
+(v) for $n \geq 5$, if $F$ is plateaued then $G$ is not plateaued;\\
+(vi) for $n \geq 4$, if $\operatorname{deg}(F)<n-1$ then $G$ is not plateaued, and, in particular, not $A B$.
+
+For investigating more complex conditions on the APN-ness of $G$, it can be useful to consider a simplified formulation wherein some of the values $u_{1}, u_{2}, v_{1}, v_{2}$ are fixed to e.g. 0 or 1. This can be done without loss of generality by constructing a function $F^{\prime}$ EA-equivalent to $F$ and a function $G^{\prime}$ EA-equivalent to $G$ as shown in the following two observations (recall that the property of a function being APN is invariant under EA-equivalence). Note that there are two cases depending on whether the values $F\left(u_{1}\right)$ and $F\left(u_{2}\right)$ are identical or not.
+
+Observation 7 Let $F$ be an $(n, n)$-function and let $G$ be defined as
+
+$$
+G(x)=F(x)+1_{u_{1}}(x) v_{1}+1_{u_{2}}(x) v_{2}
+$$
+
+for some $u_{1}, u_{2}, v_{1}, v_{2} \in \mathbb{F}_{2^{n}}$ with $u_{1} \neq u_{2}$ and $F\left(u_{1}\right) \neq F\left(u_{2}\right)$. Then there exists a function $F^{\prime}$ EA-equivalent to $F$ satisfying $F^{\prime}(0)=0$ and $F^{\prime}(1)=1$ as well as $v_{1}^{\prime}, v_{2}^{\prime} \in \mathbb{F}_{2^{n}}$ such that the function $G^{\prime}(x)$ defined as
+
+
+\begin{equation*}
+G^{\prime}(x)=F^{\prime}(x)+1_{0}(x) v_{1}^{\prime}+1_{1}(x) v_{2}^{\prime} \tag{7}
+\end{equation*}
+
+
+is $E A$-equivalent to $G$.\\
+Proof Given $F$ and $G$ as above, the construction of $G^{\prime}$ is performed as follows: take $A_{1}(x)=\frac{x}{F\left(u_{1}\right)+F\left(u_{2}\right)}, A_{2}(x)=x\left(u_{1}+u_{2}\right)+u_{1}$ and $A(x)=x+\frac{F\left(u_{1}\right)}{F\left(u_{1}\right)+F\left(u_{2}\right)}$; note that $A_{1}$ is indeed defined correctly due to $F\left(u_{1}\right) \neq F\left(u_{2}\right)$, that all three functions are affine and that $A_{1}$ and $A_{2}$ are bijective. Then the function ( $A_{1} \circ F \circ A_{2}+A$ ) is EA-equivalent to $G(x)$ and takes the form
+
+
+\begin{align*}
+& {\left[F\left(x\left(u_{1}+u_{2}\right)+u_{1}\right)+\left(1+\left(x\left(u_{1}+u_{2}\right)+u_{1}+u_{1}\right)^{2^{n}-1}\right) v_{1}+\right.} \\
+& \left.\quad\left(1+\left(x\left(u_{1}+u_{2}\right)+u_{1}+u_{2}\right)^{2^{n}-1}\right) v_{2}+F\left(u_{1}\right)\right] \cdot \frac{1}{F\left(u_{1}\right)+F\left(u_{2}\right)} \tag{8}
+\end{align*}
+
+
+Denoting $F^{\prime}(x)=\frac{F\left(x\left(u_{1}+u_{2}\right)+u_{1}\right)+F\left(u_{1}\right)}{F\left(u_{1}\right)+F\left(u_{2}\right)}$, this becomes
+
+
+\begin{equation*}
+F^{\prime}(x)+\left(1+x^{2^{n}-1}\right)\left(\frac{v_{1}}{F\left(u_{1}\right)+F\left(u_{2}\right)}\right)+\left(1+(x+1)^{2^{n}-1}\right)\left(\frac{v_{2}}{F\left(u_{1}\right)+F\left(u_{2}\right)}\right) \tag{9}
+\end{equation*}
+
+
+If we now take $v_{i}^{\prime}=\frac{v_{i}}{F\left(u_{1}\right)+F\left(u_{2}\right)}$ for $i \in\{1,2\}$, the above becomes
+
+
+\begin{equation*}
+F^{\prime}(x)+\left(1+x^{2^{n}-1}\right) v_{1}^{\prime}+\left(1+(x+1)^{2^{n}-1}\right) v_{2}^{\prime} \tag{10}
+\end{equation*}
+
+
+It remains to observe that $F^{\prime}(0)=0$ and $F^{\prime}(1)=1$ which follows directly from the definition of $F^{\prime}$.
+
+A similar approach can be used when $F\left(u_{1}\right)=F\left(u_{2}\right)$.\\
+Observation 8 Let $F$ be an ( $n, n$ )-function and let $G$ be defined as
+
+$$
+G(x)=F(x)+1_{u_{1}}(x) v_{1}+1_{u_{2}}(x) v_{2}
+$$
+
+for some $u_{1}, u_{2}, v_{1}, v_{2} \in \mathbb{F}_{2^{n}}$ with $u_{1} \neq u_{2}$ satisfying $F\left(u_{1}\right)=F\left(u_{2}\right), v_{i} \neq 0$ for $i=1,2$. Then there exists a function $F^{\prime}$ EA-equivalent to $F$ with $F^{\prime}(0)=F^{\prime}(1)=0$, as well as some $v \in \mathbb{F}_{2^{n}}$ such that the function $G^{\prime}$ defined as
+
+$$
+G^{\prime}(x)=F^{\prime}(x)+1_{0}(x)+1_{1}(x) v
+$$
+
+is EA-equivalent to $G$.\\
+Proof Given $G$ as above, take $A_{1}(x)=\frac{x}{v_{1}}, A_{2}(x)=\left(u_{1}+u_{2}\right) x+u_{1}$ and $A(x)=x+\frac{F\left(u_{1}\right)}{v_{1}}$; note that all of these functions are well-defined linear permutations under the hypothesis. Then
+
+
+\begin{gather*}
+\left(A_{1} \circ G \circ A_{2}+A\right)(x)=\frac{1}{v_{1}}\left[F\left(A_{2}(x)\right)+\left(1+\left(x\left(u_{1}+u_{2}\right)\right)^{2^{n}-1}\right) v_{1}+\right. \\
+\left.\left(1+\left((x+1)\left(u_{1}+u_{2}\right)\right)^{2^{n}-1}\right) v_{2}+F\left(u_{1}\right)\right]= \\
+\left(A_{1} \circ F \circ A_{2}+A\right)(x)+\left(1+x^{2^{n}-1}\right)+\left(1+(x+1)^{2^{n}-1}\right) \frac{v_{1}}{v_{2}}=  \tag{11}\\
+\left(A_{1} \circ F \circ A_{2}+A\right)(x)+\left(1+x^{2^{n}-1}\right)+\left(1+(x+1)^{2^{n}-1}\right) v
+\end{gather*}
+
+
+for $v=v 1 / v 2$; taking $F^{\prime}=A_{1} \circ F \circ A_{2}+A$, it then suffices to verify that we have $F^{\prime}(0)=F^{\prime}(1)=0$ :
+
+$$
+F^{\prime}(0)=\frac{F\left(u_{1}\right)+F\left(u_{1}\right)}{v_{1}}=0
+$$
+
+and
+
+$$
+F^{\prime}(1)=\frac{F\left(u_{2}\right)+F\left(u_{1}\right)}{v_{1}}=0
+$$
+
+due to $F\left(u_{1}\right)=F\left(u_{2}\right)$. This completes the proof.
+
+\section*{5 Swapping two points}
+A significant simplification in the case of $F\left(u_{1}\right) \neq F\left(u_{2}\right)$ consists in examining the particular case of swapping the values of $F$ at $u_{1}$ and $u_{2}$. This is a weaker construction, which makes it somewhat easier to obtain results. Furthermore, such a construction is of particular interest as it leaves the property of being a permutation invariant, i.e. if $F$ is a permutation then $G$ is a permutation too. In this case, the resulting function becomes (by substituting $v_{1}=1$ and $v_{2}=1$ into (7))
+
+
+\begin{equation*}
+G(x)=F(x)+x^{2^{n}-1}+(x+1)^{2^{n}-1} \tag{12}
+\end{equation*}
+
+
+with $F(0)=0$ and $F(1)=1$.\\
+Example 9 To see that swapping the values of a function $F$ at two points is indeed weaker than the general case of changing two points, consider the function $F(x)=x^{3}+\left(x^{2}+\right. x+1) \operatorname{Tr}_{1}^{n}\left(x^{3}\right)$ over $\mathbb{F}_{2^{4}}$ of algebraic degree 3 . All APN functions obtained by swapping two values of $F$ have algebraic degree 2 . On the other hand, taking e.g. $u_{1}=\alpha^{4}, u_{2}=\alpha^{2}$ and $v_{1}=v_{2}=1$ (where $\alpha$ is a primitive element of $\mathbb{F}_{2^{4}}$ ) results in an APN function of algebraic degree 3.
+
+In the following, we see how Lemmas 1 and 2 can be applied to the case of swapping two points. To facilitate the discussion, we define the following sets:
+
+
+\begin{align*}
+S & =\left\{(a, b) \in \mathbb{F}_{2^{n}} \operatorname{Tr}_{1}^{n}(a)=\operatorname{Tr}_{1}^{n}(b)=1\right\}  \tag{13}\\
+S^{\prime} & =\mathbb{F}_{2^{n}}^{2} \backslash(S \cup\{(0,0)\}) \tag{14}
+\end{align*}
+
+
+The following lemma is known as the "two-tuple balance property" [11].\\
+Lemma 10 For $c \in \mathbb{F}_{2^{n}}$, we have
+
+$$
+\sum_{\substack{x \in \mathbb{F}_{2} n \\ \operatorname{Tr}(x)=1}}(-1)^{\operatorname{Tr}(c x)}= \begin{cases}2^{n-1} & c=0 \\ -2^{n-1} & c=1 \\ 0 & c \notin\{0,1\}\end{cases}
+$$
+
+The following results easily follow by application of the above lemma.\\
+Observation 11 Let $F$ be an ( $n, n$ )-function. Then
+
+$$
+\sum_{(a, b) \in S} W_{F}(a, b)=2^{n-1} \sum_{\substack{b \in \mathbb{F}_{2^{n}} \\ \operatorname{Tr}(b)=1}}(-1)^{\operatorname{Tr}(b F(0))}-(-1)^{\operatorname{Tr}(b F(1))} .
+$$
+
+In particular, if $F(0)=0$ and $F(1)=1$, the above simplifies to
+
+
+\begin{equation*}
+\sum_{(a, b) \in S} W_{F}(a, b)=2^{2 n-1} \tag{15}
+\end{equation*}
+
+
+Proof From the definition, we have
+
+
+\begin{align*}
+& \sum_{(a, b) \in S} W_{F}(a, b)= \sum_{(a, b) \in S} \sum_{x \in \mathbb{F}_{2^{n}}} \eta(\operatorname{Tr}(b F(x)+a x))= \\
+& \sum_{x \in \mathbb{F}_{2^{n}}} \sum_{\operatorname{Tr}(b)=1} \eta_{b}(F(x)) \sum_{\operatorname{Tr}(a)=1} \eta_{a}(x)= \\
+& 2^{n-1} \cdot\left(\sum_{\operatorname{Tr}(b)=1} \eta_{b}(F(0))-\sum_{\operatorname{Tr}(b)=1} \eta_{b}(F(1))\right)=  \tag{16}\\
+& 2^{n-1} \sum_{\operatorname{Tr}(b)=1}\left(\eta_{b}(F(0))-\eta_{b}(F(1))\right)
+\end{align*}
+
+
+The particular statement follows by substituting $F(0)=0$ and $F(1)=1$.\\
+Proposition 12 Let $F$ be an ( $n, n$ )-function. Then
+
+
+\begin{equation*}
+\sum_{(a, b) \in S} W_{F}^{2}(a, b)=2^{3 n-2}-2^{2 n-2}\left(\Delta_{F}(1,0)-\Delta_{F}(1,1)\right) . \tag{17}
+\end{equation*}
+
+
+Proof From the definition we can easily obtain
+
+
+\begin{equation*}
+\sum_{(a, b) \in S} W_{F}^{2}(a, b)=\sum_{x, y} \sum_{\operatorname{Tr}(b)=1} \eta_{b}(F(x)+F(y)) \sum_{\operatorname{Tr}(a)=1} \eta_{a}(x+y) . \tag{18}
+\end{equation*}
+
+
+By Lemma 10, this is equivalent to
+
+
+\begin{align*}
+\sum_{(a, b) \in S} W_{F}^{2}(a, b) & =2^{n-1} \sum_{x}\left(\sum_{\operatorname{Tr}(b)=1} \eta_{b}(F(x)+F(x))-\sum_{\operatorname{Tr}(b)=1} \eta_{b}(F(x)+F(x+1))\right) \\
+& =2^{3 n-2}-2^{2 n-2}\left(\Delta_{F}(1,0)-\Delta_{F}(1,1)\right) \tag{19}
+\end{align*}
+
+
+which is what we wanted to show.\\
+Proposition 13 Let $F$ be an $(n, n)$-function satisfying $F(0)=0$ and $F(1)=1$. Then
+
+
+\begin{align*}
+\sum_{a \in \mathbb{F}_{2^{n}}, T_{1}^{n}(a)=0} W_{F}(a, b) & =0,  \tag{20}\\
+\sum_{a \in \mathbb{F}_{2^{n}}, T_{1}^{n}(a)=1} W_{F}(a, b) & =2^{n} . \tag{21}
+\end{align*}
+
+
+Proof Let $b \in \mathbb{F}_{2^{n}}$ satisfy $\operatorname{Tr}_{1}^{n}(b)=1$ and $G(x)=x^{2^{n}-1}+(x+1)^{2^{n}-1}+F(x)$. By Parseval's relation and by (6)
+
+$$
+\begin{aligned}
+2^{2 n}=\sum_{a \in \mathbb{F}_{2^{n}}} W_{G}^{2}(a, b) & =\sum_{\operatorname{Tr}_{1}^{n}(a)=0} W_{F}^{2}(a, b)+\sum_{\operatorname{Tr}_{1}^{n}(a)=1}\left(W_{F}(a, b)-4\right)^{2} \\
+& =\sum_{a \in \mathbb{F}_{2^{n}}} W_{F}^{2}(a, b)-8 \sum_{\operatorname{Tr}_{1}^{n}(a)=1} W_{F}(a, b)+2^{n+3} \\
+& =2^{2 n}+2^{n+3}-8 \sum_{\operatorname{Tr}_{1}^{n}(a)=1} W_{F}(a, b) .
+\end{aligned}
+$$
+
+Hence $\sum_{a \in \mathbb{F}_{2^{n}}, \operatorname{Tr}_{1}^{n}(a)=1} W_{F}(a, b)=2^{n}$. Besides, since $F(0)=0$ we have
+
+$$
+\sum_{a \in \mathbb{F}_{2^{n}}} W_{F}(a, b)=2^{n}
+$$
+
+by the inverse Walsh transform (1) and thus $\sum_{a, \operatorname{Tr}_{1}^{n}(a)=0} W_{F}(a, b)=0$.\\
+Proposition 14 Let $F$ be any function over $\mathbb{F}_{2^{n}}$ satisfying $F(0)=0$ and $F(1)=1$ and let $G$ be defined as $G(x)=x^{2^{n}-1}+(x+1)^{2^{n}-1}+F(x)$. Then $G$ is APN if and only if
+
+
+\begin{align*}
+& \sum_{(a, b) \in S}\left(W_{F}^{3}(a, b)-6 W_{F}^{2}(a, b)\right)= \\
+& \quad 2^{-4} \sum_{a \in \mathbb{F}_{2^{n}}} \sum_{b \in \mathbb{F}_{2^{n}}^{*}} W_{F}^{4}(a, b)-2^{4 n-3}+2^{3 n-3}-2^{2 n+2}, \tag{22}
+\end{align*}
+
+
+where $S$ is defined as in (13). In particular, if $F$ is APN, then $G$ is APN if and only if
+
+
+\begin{equation*}
+\sum_{(a, b) \in S}\left(W_{F}^{3}(a, b)-6 W_{F}^{2}(a, b)\right)=-2^{2 n+2} \tag{23}
+\end{equation*}
+
+
+Proof By (6) we get
+
+$$
+\begin{aligned}
+\sum_{a \in \mathbb{F}_{2^{n}}} \sum_{b \in \mathbb{F}_{2^{n}}^{*}} W_{G}^{4}(a, b)= & \sum_{(a, b) \in S^{\prime}} W_{F}^{4}(a, b)+\sum_{(a, b) \in S}\left(W_{F}(a, b)-4\right)^{4} \\
+= & \sum_{a \in \mathbb{F}_{2^{n}}} \sum_{b \in \mathbb{F}_{2^{n}}^{*}} W_{F}^{4}(a, b) \\
+& +\sum_{(a, b) \in S}\left(-16 W_{F}^{3}(a, b)+96 W_{F}^{2}(a, b)-256 W_{F}(a, b)+256\right)
+\end{aligned}
+$$
+
+where $S^{\prime}$ is defined as in (14).\\
+Hence, by (15) and Proposition 13
+
+$$
+\begin{aligned}
+\sum_{(a, b) \in S}\left(W_{F}^{3}(a, b)-6 W_{F}^{2}(a, b)\right)= & 2^{-4} \sum_{a \in \mathbb{F}_{2^{n}}} \sum_{b \in \mathbb{F}_{2^{n}}^{*}} W_{F}^{4}(a, b) \\
+& -2^{-4} \sum_{a \in \mathbb{F}_{2^{n}}} \sum_{b \in \mathbb{F}_{2^{n}}^{*}} W_{G}^{4}(a, b)-2^{2 n+2}
+\end{aligned}
+$$
+
+and, by Lemma 1, $G$ is APN if and only if (22) holds. If, in addition, $F$ is APN then by Lemma 1, $G$ is APN if and only if (15) is satisfied.
+
+We can now substitute the formula from Proposition 12 into Proposition 14 in order to obtain the following characterization.
+
+Observation 15 Let $F$ be over $\mathbb{F}_{2^{n}}$ with $F(0)=0$ and $F(1)=1$, and let $G(x)=x^{2^{n}-1}+ (x+1)^{2^{n}-1}+F(x)$. Then $G$ is APN if and only if
+
+
+\begin{align*}
+\sum_{(a, b) \in S} W_{F}^{3}(a, b)+3 \cdot 2^{2 n-1}\left(\Delta_{F}(1,0)-\Delta_{F}(1,1)\right)= & 2^{-4} \sum_{a} \sum_{b \neq 0} W_{F}^{4}(a, b) \\
+& +13 \cdot 2^{3 n-3}-2^{4 n-3}-2^{2 n+2} \tag{24}
+\end{align*}
+
+
+If, in addition, $F$ is APN, then $G$ is APN if and only if
+
+
+\begin{equation*}
+\sum_{(a, b) \in S} W_{F}^{3}(a, b)+3 \cdot 2^{2 n-1}\left(\Delta_{F}(1,0)-\Delta_{F}(1,1)\right)=3 \cdot 2^{3 n-1}-2^{2 n+2} \tag{25}
+\end{equation*}
+
+
+By means of mechanical computations similar to the ones in the proof of Proposition 12, we can obtain the following identity.
+
+Proposition 16 For any vectorial Boolean function $F$ over $\mathbb{F}_{2^{n}}$ we have
+
+\[
+\begin{array}{r}
+\sum_{(a, b) \in S} W_{F}^{3}(a, b)=2^{2 n-2} \sum_{y \in \mathbb{F}_{2^{n}}}\left(\Delta_{F}(y, F(y))-\Delta_{F}(y, F(y)+1)-\right. \\
+\left.\Delta_{F}(y+1, F(y))+\Delta_{F}(y+1, F(y)+1)\right) \tag{26}
+\end{array}
+\]
+
+In particular, if $F$ is $A P N$ and satisfies $F(0)=0$ and $F(1)=1$, this becomes
+
+
+\begin{equation*}
+\sum_{(a, b) \in S} W_{F}^{3}(a, b)=3 \cdot 2^{3 n-1}-2^{2 n}-2^{2 n-2} \sum_{y \in \mathbb{F}_{2^{n}}}\left(\Delta_{F}(y, F(y)+1)+\Delta_{F}(y+1, F(y))\right) . \tag{27}
+\end{equation*}
+
+
+Proof From the definition we have
+
+
+\begin{align*}
+\sum_{(a, b) \in S} W_{F}^{3}(a, b)= & \sum_{x, y, z \in \mathbb{F}_{2^{n}}} \sum_{\substack{b \in \mathbb{F}_{2^{n}} \\
+\operatorname{Tr}(b)=1}} \eta_{b}(F(x)+F(y)+F(z)) \sum_{\substack{a \in \mathbb{F}_{2^{n}} \\
+\operatorname{Tr}(a)=1}} \eta_{a}(x+y+z) \\
+= & 2^{n-1} \sum_{x, y \in \mathbb{F}_{2^{n}}}\left(\sum_{\substack{b \in \mathbb{F}_{2^{n}} \\
+\operatorname{Tr}(b)=1}} \eta_{b}(F(x)+F(y)+F(x+y))\right. \\
+& \left.-\sum_{\substack{b \in \mathbb{F}_{2^{n}} \\
+\operatorname{Tr}(b)=1}} \eta_{b}(F(x)+F(y)+F(x+y+1))\right) \tag{28}
+\end{align*}
+
+
+The main statement then follows by Lemma 10. The particular statement follows by observing that $\sum_{y \in \mathbb{F}_{2^{n}}} \Delta_{F}(y, F(y))=\sum_{y \in \mathbb{F}_{2^{n}}} \Delta_{F}(y+1, F(y)+1)=2^{n+1}+2^{n}-2$.
+
+Assuming that $F$ is APN, we can combine (25) and (27) to obtain the following:\\
+Theorem 17 Let $F$ be APN with $F(0)=0$ and $F(1)=1$. Then $G$ is APN if and only if
+
+
+\begin{equation*}
+6 \Delta_{F}(1,0)=\sum_{y \in \mathbb{F}_{2^{n}}}\left(\Delta_{F}(y, F(y)+1)+\Delta_{F}(y+1, F(y))\right) \tag{29}
+\end{equation*}
+
+
+This characterization allows us to show that a given $G$ is not APN by computing a very weak lower bound on the number of pairs $(x, y)$ satisfying $F(x)+F(x+y)+F(y)=1$ or $F(x)+F(x+y+1)+F(y)=0$. In Section 6 we derive a lower bound on the number of such pairs in the case of power functions. Experimental results show that the number of these solutions grows very quickly for APN functions as the dimension of the underlying field increases. Despite this, a theoretical lower bound appears difficult to prove in the general case; in Section 6.
+
+Table 1 gives the values of both $\sum_{y} \Delta_{F}(y, F(y)+1)$ and $\sum_{y} \Delta_{F}(y+1, F(y))$ for all APN functions from the known switching classes over $\mathbb{F}_{2^{n}}$ with $5 \leq n \leq 8$ as given in [10]. The functions in the table are indexed using the notation from Tables 3, 5, 7 and 9 from [10]. Since the sum of the two values, $\sum_{y} \Delta_{F}(y, F(y)+1)$ and $\sum_{y} \Delta_{F}(y+1, F(y))$, is greater than 12 in all cases, we can immediately apply Theorem 17 to obtain the following result.
+
+Since the sum of the two values $\sum_{y} \Delta_{F}(y, F(y)+1)$ and $\sum_{y} \Delta_{F}(y+1, F(y))$ for the functions in Table 1 in all cases is greater than 12, we can immediately apply Theorem 17 to get the following result.
+
+Observation 18 Let $F$ be any APN function from those given in [10], and let $G$ be defined as
+
+$$
+G(x)=F(x)+x^{2^{n}-1}+(x+1)^{2^{n}-1}
+$$
+
+Then $G$ is not APN.\\
+Example 19 In some cases an explicit formula for the values $\sum_{y} \Delta_{F}(y, F(y)+1)$ and $\sum_{y} \Delta_{F}(y+1, F(y))$ can be found. Consider, for example, the function $F(x)=x^{3}$ over
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{Table 1 The values\\
+$S_{1}=\sum_{y} \Delta_{F}(y, F(y)+1)$ and $S_{2}=\sum_{y} \Delta_{F}(y+1, F(y))$ for all functions $F$ from [10]}
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+n & F & $S_{1}$ & $S_{2}$ & n & $F$ & $S_{1}$ & $S_{2}$ \\
+\hline
+5 & 1.1 & 30 & 30 &  & 11.1 & 126 & 382 \\
+\hline
+ & 1.2 & 30 & 30 &  & 12.1 & 126 & 382 \\
+\hline
+ & 2.1 & 30 & 30 &  & 13.1 & 126 & 126 \\
+\hline
+6 & 1.1 & 78 & 78 &  & 14.1 & 126 & 126 \\
+\hline
+ & 1.2 & 78 & 78 &  & 14.2 & 126 & 382 \\
+\hline
+ & 2.1 & 54 & 66 &  & 14.3 & 126 & 126 \\
+\hline
+ & 2.2 & 54 & 78 & 8 & 1.1 & 222 & 222 \\
+\hline
+ & 2.3 & 54 & 54 &  & 1.2 & 222 & 222 \\
+\hline
+ & 2.4 & 54 & 54 &  & 1.3 & 222 & 222 \\
+\hline
+ & 2.5 & 54 & 66 &  & 1.4 & 222 & 222 \\
+\hline
+ & 2.6 & 42 & 54 &  & 1.5 & 270 & 222 \\
+\hline
+ & 2.7 & 66 & 66 &  & 1.6 & 270 & 222 \\
+\hline
+ & 2.8 & 78 & 54 &  & 1.7 & 270 & 222 \\
+\hline
+ & 2.9 & 66 & 90 &  & 1.8 & 222 & 222 \\
+\hline
+ & 2.10 & 54 & 42 &  & 1.9 & 270 & 222 \\
+\hline
+ & 2.11 & 66 & 66 &  & 1.10 & 222 & 222 \\
+\hline
+ & 2.12 & 54 & 66 &  & 1.11 & 270 & 222 \\
+\hline
+7 & 1.1 & 126 & 126 &  & 1.12 & 222 & 222 \\
+\hline
+ & 1.2 & 126 & 382 &  & 1.13 & 270 & 222 \\
+\hline
+ & 2.1 & 126 & 126 &  & 1.14 & 270 & 270 \\
+\hline
+ & 2.2 & 126 & 382 &  & 1.15 & 222 & 222 \\
+\hline
+ & 3.1 & 126 & 126 &  & 1.16 & 222 & 222 \\
+\hline
+ & 4.1 & 126 & 126 &  & 1.17 & 222 & 222 \\
+\hline
+ & 5.1 & 126 & 126 &  & 2.1 & 270 & 222 \\
+\hline
+ & 6.1 & 126 & 126 &  & 3.1 & 270 & 222 \\
+\hline
+ & 7.1 & 126 & 126 &  & 4.1 & 318 & 766 \\
+\hline
+ & 8.1 & 126 & 126 &  & 5.1 & 318 & 318 \\
+\hline
+ & 9.1 & 126 & 382 &  & 6.1 & 318 & 318 \\
+\hline
+ & 10.1 & 126 & 382 &  & 7.1 & 222 & 222 \\
+\hline
+ & 10.2 & 126 & 126 &  &  &  &  \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+$\mathbb{F}_{2^{n}}$. The sum $\sum_{y} \Delta_{F}(y, F(y)+1)$ is equal to the number of pairs $(x, y) \in \mathbb{F}_{2^{n}}^{2}$ satisfying $x^{3}+(x+y)^{3}+y^{3}=1$, which easily simplifies to
+
+
+\begin{equation*}
+x^{2} y+x y^{2}=1 . \tag{30}
+\end{equation*}
+
+
+Note that if $y=0$, no pair $(x, 0)$ can satisfy $(30)$. Consider some fixed nonzero $y \in \mathbb{F}_{2^{n}}^{*}$. Dividing both sides of (30) by the cube of its inverse yields
+
+
+\begin{equation*}
+\left(\frac{x}{y}\right)^{2}+\left(\frac{x}{y}\right)=\frac{1}{y^{3}} . \tag{31}
+\end{equation*}
+
+
+For this fixed $y$, define the function $g_{y}(x)=\left(\frac{x}{y}\right)^{2}+\left(\frac{x}{y}\right)$. Observe that $g_{y}\left(x_{1}\right)=g_{y}\left(x_{2}\right)$ implies
+
+$$
+\left(\frac{x_{1}+x_{2}}{y}\right)^{2}=\left(\frac{x_{1}+x_{2}}{y}\right)
+$$
+
+which is certainly satisfied when $x_{1}=x_{2}$. If $x_{1} \neq x_{2}$, however, we can divide both sides by $\left(x_{1}+x_{2}\right) / y$ in order to obtain
+
+
+\begin{equation*}
+x_{1}+x_{2}=y . \tag{32}
+\end{equation*}
+
+
+Thus, $g_{y}(x)$ is a 2 -to- 1 function on $\mathbb{F}_{2^{n}}$ for any $y \in \mathbb{F}_{2^{n}}^{*}$. Taking into account that $\operatorname{Tr}_{n}\left(g_{y}(x)\right)=0$ for any $x \in \mathbb{F}_{2^{n}}$, we can see that $\left\{g_{y}(x): x \in \mathbb{F}_{2^{n}}\right\}=\left\{x \in \mathbb{F}_{2^{n}}: \operatorname{Tr}_{n}(x)=\right. 0\}$. This means that for any fixed $y \in \mathbb{F}_{2^{n}}^{*}$, (30) has two solutions if $\operatorname{Tr}_{n}\left(y^{-3}\right)=0$, and no\\
+solutions otherwise. The value $\sum_{y} \Delta_{F}(y, F(y)+1)$ is then equal to twice the number of nonzero elements $y \in \mathbb{F}_{2^{n}}$ with $\operatorname{Tr}_{n}\left(y^{3}\right)=0$, i.e.
+
+
+\begin{equation*}
+\sum_{y} \Delta_{F}(y, F(y)+1)=2(w t(f)-1) \tag{33}
+\end{equation*}
+
+
+where $f$ is the function $f(a)=\operatorname{Tr}_{n}\left(a^{3}\right)$, and $w t(f)=\left|\left\{x \in \mathbb{F}_{2^{n}}: f(x) \neq 0\right\}\right|$ is the Hamming weight of $f$.
+
+The weight of any function of the form $x \mapsto \operatorname{Tr}_{n}\left(\lambda x^{3}\right)$, where $\lambda \in \mathbb{F}_{2^{n}}$ is a constant, is known from [7]. Adapting this slightly more general result to our particular case and substituting in (33), we have
+
+\[
+\sum_{y} \Delta_{F}(y, F(y)+1)= \begin{cases}2\left(2^{n-1}-1\right) & n \text { is odd }  \tag{34}\\ 2\left(2^{n-1}+2^{n / 2}-1\right) & n \text { is even and } n / 2 \text { is odd } \\ 2\left(2^{n-1}-2^{n / 2}-1\right) & n \text { is even and } n / 2 \text { is even }\end{cases}
+\]
+
+This formula then allows us to compute the values of $\sum_{y} \Delta_{F}(y, F(y)+1)$ for $F(x)=x^{3}$ for any dimension $n$. Table 2 lists the values obtained for all dimensions up to 20. Since these values are at least 30 for $n \geq 5$, we can make the following observation.
+
+Observation 20 Let $F(x)=x^{3}$ over $\mathbb{F}_{2^{n}}$ and let $G$ be defined as
+
+$$
+G(x)=F(x)+x^{2^{n}-1}+(x+1)^{2^{n}-1}
+$$
+
+i.e. by swapping the values of $F$ at 0 and 1 . Then $G$ is not APN unless $n \leq 4$.
+
+We have experimentally verified that all power APN functions over fields $\mathbb{F}_{2^{n}}$ of dimension $1 \leq n \leq 10$ have the same exact values for $\sum_{y} \Delta_{F}(y, F(y)+1)$ as those in Table 2. We thus formulate the following conjecture.
+
+Conjecture 21 For any power APN function $F$ over $\mathbb{F}_{2^{n}}$, the two values $\sum_{y} \Delta_{F}(y, F(y)+$ 1) and $\sum_{y} \Delta_{F}(y+1, F(y))$ are equal to $\sum_{y} \Delta_{x^{3}}\left(y, y^{3}+1\right)$ and are given by (34).
+
+Furthermore, the results in Table 1 suggest that even in the case of a general APN function, the values do not differ too much from that of the power APN function $x^{3}$ over the
+
+\begin{table}[h]
+\begin{center}
+\captionsetup{labelformat=empty}
+\caption{Table 2 Formula (34) applied to $F(x)=x^{3}$ for dimensions $1 \leq n \leq 20$}
+\begin{tabular}{|l|l|l|l|}
+\hline
+$n$ & $\sum_{y} \Delta_{F}(y, F(y)+1)$ & $n$ & $\sum_{y} \Delta_{F}(y, F(y)+1)$ \\
+\hline
+1 & 0 & 11 & 2046 \\
+\hline
+2 & 6 & 12 & 3966 \\
+\hline
+3 & 6 & 13 & 8190 \\
+\hline
+4 & 6 & 14 & 16638 \\
+\hline
+5 & 30 & 15 & 32766 \\
+\hline
+6 & 78 & 16 & 65022 \\
+\hline
+7 & 126 & 17 & 131070 \\
+\hline
+8 & 222 & 18 & 263166 \\
+\hline
+9 & 510 & 19 & 524286 \\
+\hline
+10 & 1086 & 20 & 1046526 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+same field. Seeing as how the latter form a sequence that monotonically increases with the dimension $n$, we formulate the following conjecture.
+
+Conjecture 22 Let $F$ be any APN function over $\mathbb{F}_{2^{n}}$ with $n \geq 5$. Then no function $G$ obtained by swapping two points of $F$ can be APN.
+
+Note also that a similar computation can be performed in order to obtain an explicit formula for the value $\sum_{y} \Delta_{F}(y+1, F(y))$. In the case of $F(x)=x^{3}$, we obtain the same formula as for $\sum_{y} \Delta_{F}(y, F(y)+1)$ so that in this case the two values are always the same. Based on our experimental results, this is also true for all power APN functions over $\mathbb{F}_{2^{n}}$ with $1 \leq n \leq 10$. As can be seen from Table 1, however, the two values may differ in the general case.
+
+\section*{6 Power functions}
+In this section we apply the conditions from Section 5 to show that for $n \geq 5$ no APN function can be obtained by swapping the values $F(0)$ and $F(1)$ of a power function. A well-known observation is that a power function $F$ is APN if and only if its derivative $D_{1} F$ is a 2-to-1 function.
+
+Recall that we assume $u_{1}=0, u_{2}=1$ and $v_{1}=v_{2}=v=1$, as well as $F(0)=0$ and $F(1)=1$. Then condition (iii) from Proposition 4 becomes: for $a \neq 1$, the equations $D_{a} F(x)+F(a)=1$ and $D_{a} F(x)+F(a+1)=0$ have no solution $x \notin\{0,1, a, a+1\}$. We will show that when $F$ is a power function of sufficiently high dimension, a pair ( $a, x$ ) violating this condition always exists.
+
+Since $F(x)=x^{l}$ for some positive integer $l$, the equation e.g. $D_{1} F(x)+F(a)=1$ can be rewritten as
+
+$$
+x^{l}+(a+x)^{l}+a^{l}=1
+$$
+
+We divide the analysis into several cases depending on the parity of the dimension $n$. We first show that any field of odd dimension contains at least one pair ( $a, x$ ) satisfying $D_{1} F(x)+F(a)=1$.
+
+Observation 23 Let $\mathbb{F}_{2^{n}}$ be a finite field with $n>1$ odd, and let $F(x)=x^{l}$ be a power APN function over $\mathbb{F}_{2^{n}}$. Then there exists a pair $(a, x) \in \mathbb{F}_{2^{n}}^{2}$ satisfying $a^{l}+x^{l}+(a+x)^{l}=1$.
+
+Proof Note that the equation $a^{l}+x^{l}+(a+x)^{l}=1$ can be more succinctly written as $D_{a}^{0} F(x)=1$. Since $x^{l}$ is a permutation, it suffices to find a pair $(a, x)$ such that $D_{a}^{0} F(x) \neq$ 0 . Since $F$ is APN, the shifted derivative $D_{a}^{0}$ is a 2-to- 1 function for any fixed $a \neq 0$, and maps all elements of $\mathbb{F}_{2^{n}}$ to 0 for $a=0$. Thus, at most $2^{n}+2\left(2^{n}-1\right)$ pairs ( $a, x$ ) can satisfy $D_{a}^{0} F(x)=0$. This quantity is strictly less than $2^{2 n}$ for $n>1$, so that at least one pair $(a, x)$ must exist satisfying $D_{a}^{0} F(x)=c$ for some $c \neq 0$. It now suffices to divide both sides by $c^{-1}$.
+
+It is easy to show that such a pair $(a, x)$ exists for any APN power function over $\mathbb{F}_{2^{2}}$ as well.
+
+Observation 24 Let $F(x)=x^{l}$ be APN over $\mathbb{F}_{2^{2}}$. Then there is a pair $(a, x) \in \mathbb{F}_{2^{n}}^{2}$ such that $x^{l}+(a+x)^{l}+a^{l}=1$.
+
+Proof Let $\alpha$ be a primitive element of $\mathbb{F}_{2^{2}}$. Since $F(x)=x^{l}$ is APN over a field of even dimension $n$, we must have $\operatorname{gcd}(l, n)=3$. Then $l$ is a multiple of three, say $l=3 l^{\prime}$ for some positive integer $l^{\prime}$. Now
+
+$$
+\alpha^{l}+(\alpha+1)^{l}+1^{l}=\alpha^{3 l^{\prime}}+(\alpha+1)^{3 l^{\prime}}+1=1+1+1=1
+$$
+
+since $\alpha^{3}=(\alpha+1)^{3}=1$.\\
+A simple but important observation is that for any two pairs ( $a_{1}, x_{1}$ ) and ( $a_{2}, x_{2}$ ) satisfying $D_{a_{1}}^{0} F\left(x_{1}\right)=D_{a_{2}}^{0} F\left(x_{2}\right)=1$, the sets $\left\{x_{1}, a_{1}+x_{1}, a_{1}\right\}$ and $\left\{x_{2}, a_{2}+x_{2}, a_{2}\right\}$ either coincide or are disjoint.
+
+Observation 25 Let $F$ be $A P N$ over $\mathbb{F}_{2^{n}}$ with $F(0)=0$ and $F(1)=1$. Let $A_{1}= \left\{a_{1}, b_{1}, a_{1}+b_{1}\right\}$ and $A_{2}=\left\{a_{2}, b_{2}, a_{2}+b_{2}\right\}$ be two sets of elements defining solutions to the equation
+
+
+\begin{equation*}
+F\left(a_{i}\right)+F\left(a_{i}+b_{i}\right)+F\left(b_{i}\right)=1 \tag{35}
+\end{equation*}
+
+
+for $i \in\{1,2\}$. Then $A_{1}$ and $A_{2}$ are either identical or disjoint.\\
+We can now apply the above observations in order to show that swapping two points in a power function cannot produce an APN function except over $\mathbb{F}_{2}, \mathbb{F}_{2^{2}}$ and $\mathbb{F}_{2^{4}}$.
+
+Proposition 26 Let $F(x)=x^{l}$ be a power function over $\mathbb{F}_{2^{n}}$ and $G(x)=x^{l}+x^{2^{n}-1}+ (x+1)^{2^{n}-1}$. Then $G$ cannot be APN for any dimension $n$ other than 1,2 and 4.
+
+Proof Let us assume that $G$ is APN. First, observe that the derivatives of $F$ and $G$ in direction 1 coincide since
+
+$$
+D_{1} G(x)=F(x)+x^{2^{n}-1}+(x+1)^{2^{n}-1}+F(x+1)+(x+1)^{2^{n}-1}+x^{2^{n}-1}=D_{1} F(x)
+$$
+
+Since $F(x)=x^{l}$ is APN if and only if $D_{1} F$ is 2-to-1, if $G$ is APN then $F$ must necessarily be APN as well.
+
+We now examine several cases.\\
+If $n$ is a composite number and $p$ and $q$ are two distinct primes dividing $n$, then $F$ is APN over $\mathbb{F}_{2^{p}}$ and $\mathbb{F}_{2^{q}}$ as well. According to Observations 23 and 24, there exist pairs $\left(a_{1}, x_{1}\right) \in \mathbb{F}_{2}^{2}$ and $\left(a_{2}, x_{2}\right) \in \mathbb{F}_{2}^{2}$ such that $D_{a_{i}} F(x)+F\left(a_{i}\right)=1$ for $i \in\{1,2\}$. Since $p$ and $q$ are coprime and therefore $\mathbb{F}_{2^{p}} \cap \mathbb{F}_{2^{q}}=\mathbb{F}_{2}$, the sets $\left\{a_{1}, x_{1}, a_{1}+x_{1}\right\}$ and $\left\{a_{2}, x_{2}, a_{2}+x_{2}\right\}$ are disjoint by Observation 25.
+
+Note that if some pair $(a, x)$ solves $D_{a} F(x)+F(a)=1$, then so do the pairs $(x, a)$, $(a+x, a),(a+x, x),(a, a+x)$ and $(x, a+x)$. Furthermore, all of these pairs are distinct as can be easily seen by contradiction. Hence the two pairs ( $a_{1}, x_{1}$ ) and ( $a_{2}, x_{2}$ ) above actually yield 12 distinct pairs $(a, x)$ solving $D_{a} F(x)+F(a)=1$. This means that the right-hand side of (29) from Theorem 17 is at least 24, while the left-hand side is at most 12 due to $F$ being APN. Then according to Theorem 17, $G$ is not APN.
+
+If $n$ is odd, then by Observation 23, there exists a pair ( $a, x$ ) solving $D_{a} F(x)+F(a)=1$. However, due to $n$ being odd, $F$ is a permutation over $\mathbb{F}_{2^{n}}$ and thus $\Delta_{F}(1,0)=0$. Thus, the left-hand side of (29) is equal to zero while its right-hand side is positive. Consequently, Theorem 17 implies that $G$ is not APN.
+
+Finally, suppose that $n$ is a power of two, i.e. $n=2^{k}$ for some $k>2$. Since $G$ is APN over $\mathbb{F}_{2^{2^{k}}}$ it must be APN over $\mathbb{F}_{2^{2^{k}}}$ for all $k^{\prime}<k$. In particular, $G$ must be APN over $\mathbb{F}_{2^{8}}$. However, no power APN function over $\mathbb{F}_{2^{8}}$ produces an APN function after a two-point\\
+swap, which can be verified by an exhaustive search. This means that $G$ cannot be APN in this case either.
+
+To complete the discussion, it is worth mentioning that $G(x)$ can indeed be APN for $n \in\{1,2,4\}$. This can easily be verified by using e.g. Theorem 17 or the definition of APN functions.
+
+Observation 27 Over the fields $\mathbb{F}_{2^{2}}$ for $i \in\{0,1,2\}$, the function $G(x)=x^{l}+x^{2^{n}-1}+ (x+1)^{2^{n}-1}$ is APN if and only if $F(x)=x^{l}$ is APN, where $n=2^{i}$.
+
+\section*{7 Equivalence relations}
+In this section we make some observations regarding the EA- and CCZ-equivalence classes of the functions $F$ and $G$ from the two-point construction.
+
+We begin by observing that the possibility of obtaining one EA-equivalence class from another does not depend on the concrete choice of representatives.
+
+Proposition 28 Let $F: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ and $G$ be defined as $G(x)=F(x)+v_{1}\left(x+u_{1}\right)^{2^{n}-1}+ v_{2}\left(x+u_{2}\right)^{2^{n}-1}$ for some $u_{1}, u_{2} \in \mathbb{F}_{2^{n}}$ and $v_{1}, v_{2} \in \mathbb{F}_{2^{n}}^{*}$, and let $G^{\prime}: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ be EAequivalent to $G$. Then there exist elements $u_{1}, u_{2}^{\prime} \in \mathbb{F}_{2^{n}}$ and $v_{1}^{\prime}, v_{2}^{\prime} \in \mathbb{F}_{2^{n}}^{*}$ and a function $F^{\prime}: \mathbb{F}_{2^{n}} \rightarrow \mathbb{F}_{2^{n}}$ EA-equivalent to $F$ such that
+
+$$
+G^{\prime}(x)=F^{\prime}(x)+v_{1}^{\prime}\left(x+u_{1}^{\prime}\right)^{2^{n}-1}+v_{2}^{\prime}\left(x+u_{2}^{\prime}\right)^{2^{n}-1}
+$$
+
+Proof Suppose that $G^{\prime}$ is EA-equivalent to $G$ via $G^{\prime}=A_{1} \circ G \circ A_{2}+A$ where $A_{1}, A_{2}, A$ are affine functions over $\mathbb{F}_{2^{n}}$ and $A_{1}, A_{2}$ are permutations. Assume without loss of generality that $A_{1}$ is linear. We can write
+
+
+\begin{align*}
+& G^{\prime}(x)=A_{1}\left(F\left(A_{2}(x)\right)\right)+A_{1}\left(v_{1}\left(A_{2}(x)+u_{1}\right)^{2^{n}-1}\right)+ \\
+& \quad A_{1}\left(v_{2}\left(A_{2}(x)+u_{2}\right)^{2^{n}-1}\right)+A(x)=\left(A_{1} \circ F \circ A_{2}+A\right)(x)+ \\
+& \quad A_{1}\left(v_{1}\right)\left(x+A_{2}^{-1}\left(u_{1}\right)\right)^{2^{n}-1}+A_{1}\left(v_{2}\right)\left(x+A_{2}^{-1}\left(u_{2}\right)\right)^{2^{n}-1} \tag{36}
+\end{align*}
+
+
+If we now take $F^{\prime}=A_{1} \circ F \circ A_{2}+A, u_{i}^{\prime}=A_{1}\left(v_{i}\right)$ and $v_{i}^{\prime}=A_{2}^{-1}\left(v_{i}\right)$ for $i \in\{1,2\}$, we have $G^{\prime}(x)=F^{\prime}(x)+v_{1}^{\prime}\left(x+u_{1}^{\prime}\right)^{2^{n}-1}+v_{2}^{\prime}\left(x+u_{2}\right)^{2^{n}-1}$ with $F^{\prime}$ clearly being EA-equivalent to $F$ and with $v_{1}^{\prime}, v_{2}^{\prime} \neq 0$ due to $A_{2}$ being a permutation.
+
+The following proposition is obtained by a similar argument.\\
+Proposition 29 Let $F$ and $F^{\prime}$ be EA-equivalent functions over $\mathbb{F}_{2^{n}}$ and let $G$ be defined by $G(x)=F(x)+v_{1}\left(x+u_{1}\right)^{2^{n}-1}+v_{2}\left(x+u_{2}\right)^{2^{n}-1}$ for some $u_{1}, u_{2} \in \mathbb{F}_{2^{n}}$ and $v_{1}, v_{2} \in \mathbb{F}_{2^{n}}^{*}$. Then there is a function $G^{\prime} E A$-equivalent to $G$ and some elements $u_{1}^{\prime}, u_{2}^{\prime} \in \mathbb{F}_{2^{n}}$ and $v_{1}^{\prime}, v_{2}^{\prime} \in \mathbb{F}_{2^{n}}^{*}$ such that
+
+$$
+G^{\prime}(x)=F^{\prime}(x)+v_{1}^{\prime}\left(x+u_{1}^{\prime}\right)^{2^{n}-1}+v_{2}^{\prime}\left(x+u_{2}^{\prime}\right)^{2^{n}-1} .
+$$
+
+We now turn to the more general notion of CCZ-equivalence.\\
+Proposition 30 Let $F$ be a function over $\mathbb{F}_{2^{n}}$ and let $G$ be defined over $\mathbb{F}_{2^{n}}$ as
+
+$$
+G(x)=F(x)+v_{1}\left(x+u_{1}\right)^{2^{n}-1}+v_{2}\left(x+u_{2}\right)^{2^{n}-1}
+$$
+
+for some $u_{1}, u_{2} \in \mathbb{F}_{2^{n}}$ and $v_{1}, v_{2} \in \mathbb{F}_{2^{n}}^{*}$, and suppose that $G^{\prime}$ is $C C Z$-equivalent to $G$. Then there exists a function $F^{\prime} C C Z$-equivalent to $F$ and elements $u_{1}^{\prime}, u_{2}^{\prime}, v_{1}^{\prime}, v_{2}^{\prime} \in \mathbb{F}_{2^{n}}$ such that
+
+$$
+G^{\prime}(x)=F^{\prime}(x)+v_{1}^{\prime}\left(x+u_{1}^{\prime}\right)^{2^{n}-1}+v_{2}^{\prime}\left(x+u_{2}^{\prime}\right)^{2^{n}-1} .
+$$
+
+Proof Suppose that $G^{\prime}$ is CCZ-equivalent to $G$ via the affine permutation $\mathcal{L}(x, y)= \left(L_{1}(x, y), L_{2}(x, y)\right)$ of $\mathbb{F}_{2^{n}}^{2}$. Writing $G_{i}(x)=L_{i}(x, G(x))$ for $i \in\{1,2\}$ and $A_{1}(x, y)= L_{1}(x)+L_{2}(y)+a$ and $A_{2}(x, y)=L_{3}(x)+L_{4}(y)+b$ for $L_{1}, L_{2}, L_{3}, L_{4}$ linear and $a, b \in \mathbb{F}_{2^{n}}$, we have
+
+$$
+\begin{aligned}
+& G^{\prime}(x)=L_{3}\left(G_{1}^{-1}(x)\right)+L_{4}\left(G\left(G_{1}^{-1}(x)\right)\right)+b=L_{3} \circ G_{1}^{-1}(x)+L_{4} \circ F \circ G_{1}^{-1}(x)+ \\
+& L_{4}\left(\left(G_{1}^{-1}(x)+u_{1}\right)^{2^{n}-1} v_{1}\right)+L_{4}\left(\left(G_{1}^{-1}(x)+u_{2}\right)^{2^{n}-1} v_{2}\right)+b=F^{\prime}(x)+ \\
+& L_{4}\left(\left(G_{1}^{-1}(x)+u_{1}\right)^{2^{n}-1} v_{1}+\left(G_{1}^{-1}(x)+u_{2}\right)^{2^{n}-1} v_{2}\right)= \\
+& F^{\prime}(x)+L_{4}\left(v_{1}\right)\left(x+G_{1}\left(u_{1}\right)\right)^{2^{n}-1}+L_{4}\left(v_{2}\right)\left(x+G_{1}\left(u_{2}\right)\right)
+\end{aligned}
+$$
+
+where we define $F^{\prime}(x)=F_{2} \circ G_{1}^{-1}(x)$ with $F_{2}(x)=L_{3}(x)+L_{4}(F(x))+b$. Now $F^{\prime}$ is clearly CCZ-equivalent to $F$ by the construction, and it suffices to take $u_{i}^{\prime}=G_{1}\left(u_{i}\right)$ and $v_{i}^{\prime}=L_{4}\left(v_{i}\right)$ for $i \in\{1,2\}$.
+
+Note that in the above proposition, we do not guarantee that $v_{1}^{\prime}$ and $v_{2}^{\prime}$ will be nonzero which means that the functions $F^{\prime}$ and $G^{\prime}$ may be at distance less than two. This raises the question of whether the minimum distance between functions belonging to distinct CCZequivalence classes depends on the concrete choice of representatives.
+
+\section*{8 Conclusion}
+We investigated a construction that involves changing the value of a given function $F$ over $\mathbb{F}_{2^{n}}$ at precisely two points of $\mathbb{F}_{2^{n}}$ and, in particular, concentrated on the possibility of obtaining an APN function in this manner when $F$ is APN. We characterized the APN-ness of the resulting function $G$ in terms of the derivatives and in terms of the Walsh coefficients of $F$. We observed that changing two points in a plateaued function $F$ cannot produce a plateaued function $G$, and neither can this happen for a function $F$ with $\operatorname{deg}(F)<n-1$ (unless $n<5$ ). Furthermore, no two AB functions at distance two may exist for $n \geq 4$.
+
+In addition, we observed that if $\operatorname{deg}(F)=2$ and $F$ is not APN, then any function $G$ obtained by changing two points of $F$ cannot be APN either.
+
+We also examined the less general but more tractable problem of swapping two points in a given function. In particular, we showed that if $F$ is APN and satisfies $F(0)=0$ and $F(1)=1$, then $G$ is APN if and only if
+
+$$
+6 \Delta_{F}(1,0)=\sum_{y \in \mathbb{F}_{2^{n}}} \Delta_{F}(y, F(y)+1)+\Delta_{F}(y+1, F(y)) .
+$$
+
+We applied this characterization in order to show that an APN function can never be obtained by swapping two values in any power function over $\mathbb{F}_{2^{n}}$ for $n>4$. We also derived an explicit formula for $\sum_{y} \Delta_{F}(y, F(y)+1)$ in the case of $F(x)=x^{3}$. Furthermore, we experimentally computed the values $\Delta_{F}(y, F(y)+1)$ and $\Delta_{F}(y+1, F(y))$ all known APN functions from [10], concluding that no APN function can be obtained by a two-point swap from those functions either.
+
+Despite the fact that the results in Tables 1 and 2 suggest that the values of $\Delta_{F}(y, F(y)+$ 1) and $\Delta_{F}(y+1, F(y))$ grow quite quickly with the dimension $n$ of the underlying field, it seems difficult to find a lower bound on those values in the general case. Further results in this direction should provide additional insight into the possibility of obtaining an APN functions by a two-point swap.
+
+The general case of arbitrarily changing two points in a given function also leaves room for further investigation; in particular, an analogue to Theorem 17 is highly desirable.
+
+Finally, as mentioned above, we mostly concentrated on the case when the initial function $F$ is itself APN. The possibility of obtaining an APN function $G$ from a function $F$ belonging to some other class of functions is another potential direction for future work.
+
+Acknowledgments This research was co-funded by the Trond Mohn Foundation (formerly the Bergen Research Foundation). I would like to thank my supervisors Lilya Budaghyan and Claude Carlet, as well as Tor Helleseth and Nian Li for their ongoing interest and support.
+
+\section*{References}
+\begin{enumerate}
+  \item Budaghyan, L.: The Equivalence of Almost Bent and Almost Perfect Nonlinear Functions and Their Generalizations. Ph.D. Thesis, Otto-von-Guericke-Universität Magdeburg, Universitätsbibliothek (2005)
+  \item Budaghyan, L., Carlet, C., Helleseth, T., Li, N., Sun, B.: On Upper Bounds for Algebraic Degrees of APN Functions. IEEE Trans. Inf. Theory 64(6), 4399-4411 (2018)
+  \item Budaghyan, L., Carlet, C., Pott, A.: New Classes of Almost Bent and Almost Perfect Nonlinear Polynomials. IEEE Trans. Inf. Theory 52(3), 1141-1152 (2006)
+  \item Carlet, C.: Boolean Models and Methods in Mathematics, Computer Science and Engineering: Vectorial Boolean Functions for Cryptography (2010)
+  \item Carlet, C.: Boolean and Vectorial Plateaued Functions and APN Functions. IEEE Trans. Inf. Theory 61(11), 6272-6289 (2015)
+  \item Carlet, C., Charpin, P., Zinoviev, V.A.: Codes, Bent Functions and Permutations Suitable for DES-like Cryptosystems. Des. Codes Crypt. 15(2), 125-156 (1998)
+  \item Carlitz, L.: Explicit Evaluation of Certain Exponential Sums. Math. Scand. 44, 5-16 (1979)
+  \item Chabaud, F., Vaudenay, S.: Links between Differential and Linear Cryptanalysis. In: Workshop on the Theory and Application of Cryptographic Techniques, EUROCRYPT '94, vol 950, pp. 356-365 (1994)
+  \item Charpin, P., Mesnager, S., Sarkar, S.: Involutions over the Galois Field. IEEE Trans. Inf. Theory 62(4), 2266-2276 (2016)
+  \item Edel, Y., Pott, A.: A New Almost Perfect Nonlinear Function which is not Quadratic. Adv. Math. Commun. 3(1), 59-81 (2009)
+  \item Golomb, S.W., Gong, G.: Signal Design for Good Correlation: For Wireless Communication, Cryptography and Radar (2005)
+  \item Langevin, P.: Covering Radius of $R M(1,9)$ in $R M(3,9)$. In: EUROCODE'90, pp. 51-59. Springer (1991)
+  \item Li, Y., Wang, M., Yu, Y.: Constructing Differentially 4-uniform Permutations over $g f\left(2^{2 k}\right)$ from the Inverse Function Revisited. IACR Cryptol. ePrint Arch. 2013, 731 (2013)
+  \item Matsui, M.: Linear Cryptanalysis Method For DES Cipher. In: EUROCRYPT '93 Workshop on the Theory and Application of Cryptographic Techniques on Advances in Cryptology, Pp. 386-397 (1994)
+  \item Nyberg, K.: Perfect Nonlinear S-boxes. In: EUROCRYPT'91 Proceedings of the 10th annual international conference on Theory and application of cryptographic techniques, pp. 378-386 (1991)
+  \item Yu, Y., Wang, M., Li, Y.: Constructing Differentially 4 Uniform Permutations from Known Ones. Chin. J. Electron. 22(3), 495-499 (2013)
+\end{enumerate}
+
+Publisher's note Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations.
+
+
+\end{document}
