@@ -22,7 +22,7 @@
 #          _open_sigma_index, print_section/print_check/print_kv (VBF core).
 
 using VBFCatalog, VBF
-import DBInterface
+const DBI = VBFCatalog.DBInterface            # avoid a root-project DBInterface dep
 include(joinpath(@__DIR__, "helpers.jl"))   # representative_sboxes
 
 # databases named in Theorem 6, as VBFCatalog bulk-corpus names
@@ -34,7 +34,7 @@ const DB_EDELPOTT    = "edelpott2009_n8"       # the genuine pre-2020 known set 
 function _sources_of(idx, F)
     h = VBFCatalog.sigma_hash(F)
     s = Set{String}()
-    for r in DBInterface.execute(idx,
+    for r in DBI.execute(idx,
             "SELECT DISTINCT source FROM ccz_sigma_index WHERE sigma_hash = '" * h * "'")
         push!(s, String(r.source))
     end
