@@ -3,7 +3,7 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../..)
 JULIA_PROJECT := --project=$(ROOT)
 
-.PHONY: help test report section4 algorithm1 theorem4 table2 table3 phase2 clean_results \
+.PHONY: help test report section4 algorithm1 theorem4 theorem6 table2 table3 phase2 clean_results \
         survey basis searchers clean_build
 
 # Overridable parameters
@@ -41,6 +41,10 @@ algorithm1:
 theorem4:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "theorem4.jl")); theorem4_report()'
+
+theorem6:
+	$(JULIA) $(JULIA_PROJECT) -e \
+	  'include(joinpath("$(MAKEFILE_DIR)", "theorem6.jl")); theorem6_report()'
 
 table2:
 	$(JULIA) $(JULIA_PROJECT) -e \
@@ -97,7 +101,8 @@ pack:
 
 help:
 	@echo 'Paper: Kuznetsov (2026) — Quadratic APN Functions via Gröbner Basis Search'
-	@echo 'Paper targets:  test  report  section4  algorithm1  theorem4  table2  table3  phase2  clean_results'
+	@echo 'Paper targets:  test  report  section4  algorithm1  theorem4  theorem6  table2  table3  phase2  clean_results'
+	@echo '                (theorem6 audits the Main result; needs the σ-index: make catalog full=1 + build_sigma_index!)'
 	@echo 'GPGPU targets:  survey  basis  searchers  clean_build'
 	@echo 'Phase-2 targets: catalog [full=1]  novelty'
 	@echo 'Params:         sample_size=$(sample_size)  seed=$(seed)  n=$(n)  class=$(class)  GPU_ARCH=$(GPU_ARCH)'
