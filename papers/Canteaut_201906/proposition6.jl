@@ -29,7 +29,7 @@ function proposition6_build(n::Int, i::Int; modulus::Int = primitive_polynomial(
     rtc_count = 0
     apn_pairs = Tuple{Int,Int}[]
     for alpha in 1:(1 << n) - 1
-        alpha == 1 && continue
+        alpha == 1 && continue   # α=1 verified not APN in proposition3.jl (alpha1_build)
         refined_trace_cond(n, i, alpha; modulus) && (rtc_count += 1)
         b1, b2 = beta_pair(n, i, alpha; modulus)
         for beta in (b1, b2)
@@ -57,16 +57,23 @@ function theorem1_build(i::Int = 1;
     results
 end
 
-function proposition6_report(io::IO = stdout; i::Int = 1)
+function proposition6_report(io::IO = stdout;
+                             i_n3 = (1, 2), i_n5 = (1, 2, 3, 4))
     print_section("Proposition 6 + Theorem 1 — APN butterfly ⟹ n = 3", io)
-    res3 = proposition6_build(3, i)
-    res5 = proposition6_build(5, i)
-    print_check(io, "n=3 i=$i: APN butterflies exist", !isempty(res3.apn_pairs))
-    print_kv(io, "  APN pairs (n=3)", length(res3.apn_pairs))
-    print_check(io, "n=5 i=$i: no APN butterfly (Prop 6 + Thm 1)", isempty(res5.apn_pairs))
-    print_kv(io, "  refined_trace_cond true count (n=5)", res5.rtc_count)
-    print_kv(io, "  APN pairs (n=5)", length(res5.apn_pairs))
-    print_kv(io, "completeness", "exhaustive β∈{β₁,β₂} sweep for n=3,5")
+    for i in i_n3
+        res3 = proposition6_build(3, i)
+        print_check(io,
+            "n=3 i=$i: APN butterflies exist ($(length(res3.apn_pairs)) pairs)",
+            !isempty(res3.apn_pairs))
+    end
+    for i in i_n5
+        res5 = proposition6_build(5, i)
+        print_check(io,
+            "n=5 i=$i: no APN butterfly, rtc never true (Prop 6 + Thm 1)",
+            isempty(res5.apn_pairs) && res5.rtc_count == 0)
+    end
+    print_kv(io, "completeness",
+             "exhaustive β∈{β₁,β₂} sweep, all i with gcd(i,n)=1 (n=3: i∈$(collect(i_n3)); n=5: i∈$(collect(i_n5)))")
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

@@ -46,13 +46,17 @@ function lemma1_build(n::Int, i::Int; modulus::Int = primitive_polynomial(n))
     (; all_zero = n_counterex == 0, n_pairs, n_counterex)
 end
 
-function lemma1_report(io::IO = stdout; n::Int = 3, i::Int = 1)
+function lemma1_report(io::IO = stdout;
+                       cases = ((3, 1), (3, 2), (5, 1), (5, 2), (5, 3), (5, 4)))
     print_section("Lemma 1 — Tr(B_{α,β}^τ) = 0", io)
-    r = lemma1_build(n, i)
-    print_check(io, "n=$n i=$i: Tr(B^τ)=0 for all (α,β)≠0 with Q_α(β)≠0", r.all_zero)
-    print_kv(io, "pairs checked", r.n_pairs)
-    print_kv(io, "counterexamples", r.n_counterex)
-    print_kv(io, "completeness", "exhaustive over F_{2^$n}")
+    for (n, i) in cases
+        r = lemma1_build(n, i)
+        print_check(io,
+            "n=$n i=$i: Tr(B^τ)=0 for all (α,β)≠0 with Q_α(β)≠0 ($(r.n_pairs) pairs)",
+            r.all_zero)
+    end
+    print_kv(io, "completeness",
+             "exhaustive over F_{2^n}, all i with gcd(i,n)=1")
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
