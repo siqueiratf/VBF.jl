@@ -21,3 +21,14 @@ algebraic_form    = "x^48 in GF(2^6), modulus x^6 + x + 1"
 bib_key = "Nyberg_199400"
 source            = "Nyberg, EUROCRYPT 1994 (general APN treatment); Kasami exponent family."
 monomial_exponent = 48
+
+[[apn_functions]]
+name              = "n6_Kim"
+description       = "Kim quadratic APN function kappa(x) = x^3 + x^10 + u*x^24 over GF(2^6), with u the generator under the Conway polynomial x^6+x^4+x^3+x+1. Quadratic source (CCZ-equivalent to the Dillon permutation) of the only known even-dimension APN permutation. Not a permutation. CCZ-inequivalent to n6_Gold_x3 and n6_Kasami_x48 (verified via are_ccz_equivalent)."
+n                 = 6
+m                 = 6
+is_permutation    = false
+algebraic_form    = "x^3 + x^10 + u*x^24 in GF(2^6), Conway modulus x^6 + x^4 + x^3 + x + 1, u the primitive element"
+bib_key = "Browning_201000"
+source            = "Browning, Dillon, McQuistan and Wolfe, 'An APN permutation in dimension six', Contemp. Math. 518 (2010); flagged by Canteaut_201906 review. LUT emitted from VBF kim_apn()."
+lut               = [0, 2, 52, 16, 25, 21, 54, 28, 37, 12, 35, 44, 16, 55, 13, 12, 25, 2, 1, 60, 28, 9, 31, 44, 53, 5, 31, 9, 28, 34, 45, 53, 34, 40, 29, 49, 21, 17, 49, 19, 26, 59, 23, 16, 1, 46, 23, 30, 5, 22, 22, 35, 46, 51, 38, 29, 52, 12, 21, 11, 51, 5, 9, 25]
