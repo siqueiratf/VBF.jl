@@ -78,50 +78,28 @@ violations** in the summary — they are the actionable follow-ups.
 
 ---
 
-## 4. Present next-step options (always, after every review)
+## 4. Follow-ups (explicit, opt-in — never automatic)
 
-After relaying the verdict, **end the response with an explicit next-step menu**
-so the user can address the identified gaps immediately instead of re-prompting.
-Build the menu from the findings — only offer steps that map to something the
-review actually flagged. Use the **`AskUserQuestion`** tool (multiSelect) so the
-user picks in one click; label each option with the concrete action and the paper
-ID / count it targets.
+The reviewer is read-only. Two possible follow-up actions, each requiring user
+go-ahead:
 
-Derive options from the findings:
+- **Catalog gaps** — if the review emitted Catalog-gap records, offer to run the
+  **`apn-catalog-updater`** agent (`subagent_type: "apn-catalog-updater"`),
+  passing the records verbatim. That agent re-verifies APN + novelty before
+  writing the `[[apn_functions]]` block. Do not invoke it unless the user asks.
+- **Reuse violations** — if helpers duplicate core, offer to refactor
+  `papers/<ID>/helpers.jl` to call the `VBF` export (or promote a genuinely
+  missing primitive into `packages/VBF/src/`). Separate edit task; not part of the
+  review.
 
-- **Catalog gaps found** → "Add N new APN function(s) to VBFCatalog" — runs the
-  **`apn-catalog-updater`** agent (`subagent_type: "apn-catalog-updater"`) with
-  the Catalog-gap records passed verbatim. That agent re-verifies APN + novelty
-  before writing the `[[apn_functions]]` block.
-- **Reuse violations found** → "Refactor helpers to reuse VBF core" — edit
-  `papers/<ID>/helpers.jl` to call the `VBF` export, or promote a genuinely
-  missing primitive into `packages/VBF/src/`. Separate edit task.
-- **Partial / Missing / incorrect items** → "Fix reproduction gaps in `<ID>`" —
-  address the specific unreproduced theorems, failing tests, or wrong formulas the
-  review named.
-- **Blocked items** → "Resolve blockers for `<ID>`" — e.g. supply missing
-  `input/*.tex`, install a missing dep, or clarify the target.
-- Always include a **"Nothing — done for now"** escape option.
-
-If the review found **no** gaps (verdict Complete, no catalog/reuse issues), say so
-and skip the menu — do not manufacture busywork.
-
-**Nothing runs automatically.** The menu only gathers the user's choice; execute a
-follow-up only after they select it. On selection:
-
-- Catalog gaps → dispatch `apn-catalog-updater` with the records.
-- Reuse / reproduction / blocker fixes → do the edits directly (or via the
-  relevant subagent), scoped to what the user picked.
-
-Run the review first; act on the menu only after the user chooses.
+Run the review first; act on it only after the user chooses to.
 
 ---
 
 ## Notes
 
 - The reviewer agent is **read-only**. All mutation (catalog writes, helper
-  refactors, gap fixes) happens in the §4 next-step menu after user selection,
-  never inside the review pass.
+  refactors) happens in named follow-up steps, never inside the review pass.
 - Keep this skill in sync with the agents: if the reviewer agent's name, the
   `apn-catalog-updater` name, the `papers/<ID>/input/` layout, or the catalog path
   `packages/VBFCatalog/data-raw/apn_catalog/n<N>_apn.toml` changes, update the
