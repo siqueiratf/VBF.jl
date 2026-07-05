@@ -24,7 +24,7 @@ Returns one entry per α: (alpha, b1, apn, rtc, equiv).
 function proposition5_build(n::Int, i::Int; modulus::Int = primitive_polynomial(n))
     results = NamedTuple[]
     for alpha in 1:(1 << n) - 1
-        alpha == 1 && continue
+        alpha == 1 && continue   # α=1 verified not APN in proposition3.jl (alpha1_build)
         b1, _ = beta_pair(n, i, alpha; modulus)
         F     = butterfly_closed_lut(n, i, alpha, b1; modulus)
         apn   = is_quadratic_apn(F)
@@ -34,15 +34,19 @@ function proposition5_build(n::Int, i::Int; modulus::Int = primitive_polynomial(
     results
 end
 
-function proposition5_report(io::IO = stdout; n::Int = 3, i::Int = 1)
+function proposition5_report(io::IO = stdout;
+                             cases = ((3, 1), (3, 2), (5, 1), (5, 2), (5, 3), (5, 4)))
     print_section("Proposition 5 — Refined Trace Condition ↔ APN", io)
-    res      = proposition5_build(n, i)
-    all_eq   = all(r.equiv for r in res)
-    n_apn    = count(r.apn for r in res)
-    print_check(io, "n=$n i=$i: apn(V_{α,β₁}) ↔ refined_trace_cond(α)", all_eq)
-    print_kv(io, "α values tested", length(res))
-    print_kv(io, "APN α values (both conditions true)", n_apn)
-    print_kv(io, "completeness", "exhaustive over F_{2^$n}")
+    for (n, i) in cases
+        res    = proposition5_build(n, i)
+        all_eq = all(r.equiv for r in res)
+        n_apn  = count(r.apn for r in res)
+        print_check(io,
+            "n=$n i=$i: apn(V_{α,β₁}) ↔ refined_trace_cond(α) ($(n_apn) APN α)",
+            all_eq)
+    end
+    print_kv(io, "completeness",
+             "exhaustive over F_{2^n}, all i with gcd(i,n)=1")
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

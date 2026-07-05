@@ -8,30 +8,43 @@
 using Dates
 
 include(joinpath(@__DIR__, "helpers.jl"))
+include(joinpath(@__DIR__, "equivalences.jl"))
+include(joinpath(@__DIR__, "proposition1.jl"))
+include(joinpath(@__DIR__, "proposition2.jl"))
 include(joinpath(@__DIR__, "lemma1.jl"))
 include(joinpath(@__DIR__, "proposition3.jl"))
+include(joinpath(@__DIR__, "proposition4.jl"))
 include(joinpath(@__DIR__, "proposition5.jl"))
 include(joinpath(@__DIR__, "proposition6.jl"))
 
 """
-    paper_report(io; i) -> nothing
+    paper_report(io) -> nothing
 
 Aggregate report for Canteaut, Perrin, Tian (2019).
-Prints structured results for all reproducible claims.
+Prints structured results for all reproducible claims, sweeping every i
+with gcd(i,n)=1 for n=3 (i∈{1,2}) and n=5 (i∈{1,2,3,4}).
 
 Reproduction scope:
-  - Lemma 1     — exact: Tr(B^τ)=0 exhaustive n=3, spot-check n=5
-  - Prop 3      — exact: APN ⟹ β∈{β₁,β₂} exhaustive n=3
-  - Prop 5      — exact: APN ↔ refined_trace_cond exhaustive n=3
-  - Prop 6+Thm1 — exact: n=5 exhaustive sweep finds zero APN butterflies
+  - Sec 2.2     — exact: Frobenius and β↔β′ affine-equivalence identities
+  - Prop 1      — exact: Helleseth–Kholosha counts |S₀|,|S₁|,|S₃| + trace criterion
+  - Prop 2      — exact: linearised-equation solution counts, all (U,V,C)
+  - Lemma 1     — exact: Tr(B^τ)=0 exhaustive n=3, n=5
+  - Prop 3      — exact: APN ⟹ β∈{β₁,β₂} exhaustive; α=1 never APN (DU ≥ 4)
+  - Prop 4      — exact: APN ⟺ β∈{β₁,β₂} ∧ trace cond; bridge to Prop 5
+  - Prop 5      — exact: APN ↔ refined_trace_cond
+  - Prop 6+Thm1 — exact: n=5 exhaustive sweeps find zero APN butterflies
 """
-function paper_report(io::IO = stdout; i::Int = 1)
+function paper_report(io::IO = stdout)
+    cases = ((3, 1), (3, 2), (5, 1), (5, 2), (5, 3), (5, 4))
     paper_banner(io)
-    lemma1_report(io; n = 3, i)
-    lemma1_report(io; n = 5, i)
-    proposition3_report(io; n = 3, i)
-    proposition5_report(io; n = 3, i)
-    proposition6_report(io; i)
+    equivalences_report(io; cases)
+    proposition1_report(io; cases)
+    proposition2_report(io; cases)
+    lemma1_report(io; cases)
+    proposition3_report(io; cases)
+    proposition4_report(io; cases)
+    proposition5_report(io; cases)
+    proposition6_report(io; i_n3 = (1, 2), i_n5 = (1, 2, 3, 4))
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
