@@ -29,29 +29,26 @@ function theorem5_1_report(io::IO = stdout; m::Int = 4)
     all_ok = true
     results = Dict{Tuple{Int,Int}, NamedTuple}()
 
-    # pick one i with gcd(i,m)=1 and test j=0 (even)
-    i = first(ii for ii in 1:(m - 1) if gcd(ii, m) == 1)
-    j = 0   # even
-
+    # all i with gcd(i,m)=1 and both even shifts j in {0,2}
+    is = [ii for ii in 1:(m - 1) if gcd(ii, m) == 1]
     cube_failures = 0
-    noncube_ok    = 0
-    for alpha in 1:(1 << m) - 1
-        is_cube = gf_is_dth_power(alpha, 3, m; modulus = mod_m)
-        F  = zhou_pott_sbox(m, i, j, alpha; modulus = mod_m)
-        du = differential_uniformity(F)
-        apn = (du == 2)
-        if is_cube && apn
-            cube_failures += 1
-        elseif !is_cube && !apn
-            cube_failures += 1
-        else
-            noncube_ok += 1
+    cases         = 0
+    for i in is, j in (0, 2)
+        for alpha in 1:(1 << m) - 1
+            is_cube = gf_is_dth_power(alpha, 3, m; modulus = mod_m)
+            F  = zhou_pott_sbox(m, i, j, alpha; modulus = mod_m)
+            du = differential_uniformity(F)
+            apn = (du == 2)
+            cases += 1
+            (is_cube == !apn) || (cube_failures += 1)
         end
     end
     ok_cube = (cube_failures == 0)
     all_ok &= ok_cube
-    print_check("i=$i j=$j: non-cube alpha <=> APN for all alpha in GF(2^$m)*", ok_cube, io)
-    print_kv("    cases tested", (1 << m) - 1, io)
+    i = first(is)
+    print_check("i in $(is), j in {0,2}: non-cube alpha <=> APN for all alpha in GF(2^$m)*",
+                ok_cube, io)
+    print_kv("    cases tested", cases, io)
 
     # Corollary 5.7: F3 (Zhou-Pott with j=0) is EA-equiv to bivariate Carlet a=0
     alpha_nc = first(a for a in 1:(1 << m) - 1
@@ -65,8 +62,8 @@ function theorem5_1_report(io::IO = stdout; m::Int = 4)
     print_section("Corollary 5.7 — F3 = Zhou-Pott = bivariate Carlet (a=0)", io)
     print_check("zhou_pott(i=$i,j=0,alpha=$(alpha_nc)) EA-equiv bivariate_carlet(a=0,b=$(alpha_nc))", ok_cor57, io)
 
-    print_kv("completeness", "exhaustive over all alpha in GF(2^$m)*, i=$i, j=0", io)
-    (; all_ok, i, j, cube_failures, noncube_ok, ok_cor57)
+    print_kv("completeness", "exhaustive over all alpha in GF(2^$m)*, i in $(is), j in {0,2}", io)
+    (; all_ok, is, cube_failures, ok_cor57)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

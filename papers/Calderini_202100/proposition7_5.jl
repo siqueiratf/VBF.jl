@@ -16,8 +16,9 @@
 # VBF API used: gf_mul, gf_pow, differential_uniformity, apn_ea_mugshot,
 #               print_section, print_check, print_kv
 
-include(joinpath(@__DIR__, "helpers.jl"))
+# Gologlu helpers first: both files define print_header and ours must win.
 include(joinpath(@__DIR__, "..", "Gologlu_202207", "helpers.jl"))
+include(joinpath(@__DIR__, "helpers.jl"))
 
 """
     kaleyski_li_sbox(m, i, j; modulus) -> SBox{2m}

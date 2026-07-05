@@ -7,7 +7,8 @@
 # Pseudocode:
 #   For each valid (m, i, c, d) with gcd(i,m)=1 and d not in GF(2^m):
 #     1. cond = (x^{2^i+1} + c*x^{2^i} + c^{2^m}*x + 1 = 0 has no x with x^{2^m+1}=1)
-#     2. Build H(x) = d*x^{e1} + x^{e2} + x^{e3} + c*x^{e4} + c^{2^m}*x^{e5}
+#     2. Build exact 6-term H(x) = d*x^{2^i(2^m+1)} + x^{2^m+1} + x^{2^i+1}
+#        + x^{2^m(2^i+1)} + c*x^{2^{m+i}+1} + c^{2^m}*x^{2^i+2^m}
 #     3. Verify: cond = true <=> differential_uniformity(H) == 2
 # VBF API used: gf_pow, primitive_polynomial, differential_uniformity,
 #               algebraic_degree, print_section, print_check, print_kv
@@ -22,8 +23,8 @@ Exhaustive over all (i, c) for n=2m with m in ms.
 """
 function theorem3_1_report(io::IO = stdout; ms::Vector{Int} = [2, 3])
     print_section("Theorem 3.1 — Hexanomial APN family", io)
-    println(io, "  H(x) = d*x^{2^{m+i}+2^i} + x^{2^i+1} + x^{2^{m+i}+2^m}")
-    println(io, "        + c*x^{2^{m+i}+1} + c^{2^m}*x^{2^i+2^m}  over GF(2^{2m})")
+    println(io, "  H(x) = d*x^{2^i(2^m+1)} + x^{2^m+1} + x^{2^i+1} + x^{2^m(2^i+1)}")
+    println(io, "        + c*x^{2^{m+i}+1} + c^{2^m}*x^{2^i+2^m}  over GF(2^{2m})  [exact 6-term form]")
     println(io, "  APN condition: x^{2^i+1}+c*x^{2^i}+c^{2^m}*x+1 != 0 for all x with x^{2^m+1}=1")
 
     all_ok  = true
