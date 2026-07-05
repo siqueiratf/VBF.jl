@@ -21,8 +21,10 @@
     F0 = theorem6_2_sbox(m, i, 0, 0; modulus = mod4)
     @test differential_uniformity(F0) != 2
 
-    # Full exhaustive check
+    # Full exhaustive check (incl. Lemma 6.1 necessary condition)
     r = theorem6_2_report(devnull; m = m, i = i)
     @test r.all_ok
     @test r.fail_count == 0
+    @test r.ok_lemma
+    @test r.apn_count > 0
 end

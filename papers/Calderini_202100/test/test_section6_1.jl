@@ -5,5 +5,17 @@
     @test r.valid_count > 0
     @test r.ea_classes >= 1
     @test r.new_classes >= 1   # paper claims at least one new CCZ-class
+    @test r.ok_new_vs_known    # distinct from Gold/hex/Taniguchi/Zhou-Pott
+    @test r.ok_all_classified  # sweep produced no unknown class
+    @test r.ok_new_case        # new class at F1 (h=2,k=0,r=0), b != 0
+    @test r.ok_swap            # Remark 6.3 swap-equivalence
+    @test r.ok_tan_f1          # F1 b=0 (h=3,r=2) -> Taniguchi
+    @test r.ok_tan_f2          # F2 (k=1,r=2) -> Taniguchi
+    @test r.ok_hex_000         # h=k=r=0 -> hexanomial class
     @test r.all_ok
+
+    # n=12 structural identity (cheap part of Section 6.1.3)
+    r12 = section6_1_n12_report(devnull; deep = false)
+    @test r12.ok_struct
+    @test r12.all_ok
 end

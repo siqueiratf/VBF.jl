@@ -36,19 +36,38 @@ function theorem6_2_report(io::IO = stdout; m::Int = 4, i::Int = 1)
     mod_m = primitive_polynomial(m)
     ok_count   = 0
     fail_count = 0
+    apn_count  = 0
+    lemma_fail = 0
+    h          = m ÷ 2
+
+    # Lemma 6.1 necessary condition: c*X^{2^i+1} + b*X^{2^i} + X^{2^{m/2}} + 1
+    # has no zero in GF(2^m) whenever F is APN.
+    lemma6_1_holds(b, c) = all(
+        gf_mul(c, gf_pow(x, (1 << i) + 1, m; modulus = mod_m), m; modulus = mod_m) ⊻
+        gf_mul(b, gf_pow(x, 1 << i, m; modulus = mod_m), m; modulus = mod_m) ⊻
+        gf_pow(x, 1 << h, m; modulus = mod_m) ⊻ 1 != 0
+        for x in 0:(1 << m) - 1)
 
     for b in 0:(1 << m) - 1, c in 0:(1 << m) - 1
         cond = theorem6_2_condition(m, i, b, c; modulus = mod_m)
         F    = theorem6_2_sbox(m, i, b, c; modulus = mod_m)
         du   = differential_uniformity(F)
-        cond == (du == 2) ? (ok_count += 1) : (fail_count += 1)
+        apn  = (du == 2)
+        cond == apn ? (ok_count += 1) : (fail_count += 1)
+        if apn
+            apn_count += 1
+            lemma6_1_holds(b, c) || (lemma_fail += 1)
+        end
     end
 
-    ok     = (fail_count == 0)
-    all_ok = ok
+    ok        = (fail_count == 0)
+    ok_lemma  = (lemma_fail == 0)
+    all_ok    = ok && ok_lemma
     print_check("condition <=> APN for all (b,c) in GF(2^$m)^2", ok, io)
+    print_check("Lemma 6.1: APN => necessary condition holds ($apn_count APN pairs)",
+                ok_lemma, io)
     print_kv("  cases tested", ok_count + fail_count, io)
-    print_kv("  APN pairs (b,c) found", ok_count, io)
+    print_kv("  APN pairs (b,c) found", apn_count, io)
 
     # Remark 6.3: F' = L o F where L(x,y)=(y,x) — verify APN-ness preserved
     b1 = first(b for b in 0:(1 << m) - 1
@@ -61,7 +80,7 @@ function theorem6_2_report(io::IO = stdout; m::Int = 4, i::Int = 1)
     print_kv("  algebraic degree", algebraic_degree(F_new), io)
 
     print_kv("completeness", "exhaustive over all (b,c) in GF(2^$m)^2", io)
-    (; all_ok, ok_count, fail_count)
+    (; all_ok, ok_count, fail_count, apn_count, ok_lemma)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

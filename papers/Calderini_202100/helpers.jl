@@ -22,15 +22,26 @@ function print_header(io::IO = stdout)
     println(io, "Julia $(VERSION)  |  $(today())")
     println(io)
     println(io, "Scope:")
-    println(io, "  [exact]  Theorem 3.1: hexanomial APN iff no-zero condition (n=4,6)")
-    println(io, "  [exact]  Theorem 4.4: bivariate Carlet EA-equiv hexanomial (n=8)")
-    println(io, "  [exact]  Proposition 4.5: b-value EA-equivalence (n=8)")
-    println(io, "  [exact]  Theorem 5.1: Zhou-Pott APN iff alpha non-cube (n=6,8)")
-    println(io, "  [exact]  Theorem 5.6: F1/F2/F3 spot-checks (n=8)")
-    println(io, "  [exact]  Theorem 6.2: new APN family condition (n=8)")
-    println(io, "  [exact]  Section 6.1: n=8 exhaustive search + CCZ-distinctness")
+    println(io, "  [exact]  Theorem 3.1: hexanomial APN iff no-zero condition (n=4,6,8)")
+    println(io, "  [exact]  Theorem 4.3: pentanomial APN condition + class == hexanomial class (n=6,8)")
+    println(io, "  [exact]  Theorem 4.4: bivariate Carlet EA-subset of hexanomial class (n=6,8)")
+    println(io, "  [exact]  Proposition 4.5: non-cube b-value EA-equivalence (n=8, m=4 even)")
+    println(io, "  [exact]  Theorem 5.1: Zhou-Pott APN iff alpha non-cube (n=8; m even only)")
+    println(io, "  [rand]   Theorem 5.4: general bivariate condition, seeded random sample (n=6,8)")
+    println(io, "  [exact]  Theorem 5.6/Cor 5.7/Prop 5.8: F1/F2/F3 spot-checks (n=8,10,12)")
+    println(io, "  [exact]  Theorem 6.2 + Lemma 6.1: new APN family condition (n=8)")
+    println(io, "  [exact]  Section 6.1.1: n=8 exhaustive F1/F2 case classification +")
+    println(io, "           CCZ-distinctness via ortho-derivative spectra (quadratic APN:")
+    println(io, "           CCZ-equiv <=> EA-equiv, Yoshiara 2012)")
+    println(io, "  [spot]   Section 6.1.3: n=12 targeted case checks (full sweep ~days, skipped)")
+    println(io, "  [exact]  Theorem 7.1: biprojective reduction f1-f4 (n=6, normalized coeffs)")
+    println(io, "  [exact]  Theorem 7.2: Gologlu F1/F2 APN (n=8,10)")
+    println(io, "  [exact]  Section 7: dimension-6 switching example (B, G, G+f)")
     println(io, "  [note]   Proposition 7.5: Kaleyski-Li in Gologlu F2 (optional n=10)")
-    println(io, "  [skip]   n=10,12,16 large CCZ-checks (Magma/out-of-scope)")
+    println(io, "  [skip]   Section 6.1.2 aggregate n=10 sweep (opt-in, ~15-30 min: make section6_1_deep)")
+    println(io, "  [skip]   Section 6.1.4 n=16 sweep (est. years of CPU; claims are Prop 5.8/")
+    println(io, "           Cor 5.7 instances verified here at m=4,5,6)")
+    println(io, "  [skip]   Tables 1-2 (survey content); CCZ vs external n=8 catalogs [52,53]")
     println(io)
 end
 
@@ -82,9 +93,9 @@ end
 """
     hexanomial_sbox(m, i, c, d; modulus) -> SBox{2m}
 
-Hexanomial H(x) from Theorem 3.1 (Budaghyan-Carlet 2008 family, simplified 5-term form):
-  H(x) = d*x^{2^{m+i}+2^i} + x^{2^i+1} + x^{2^{m+i}+2^m}
-        + c*x^{2^{m+i}+1} + c^{2^m}*x^{2^i+2^m}
+Exact hexanomial H(x) from Theorem 3.1 (Budaghyan-Carlet 2008 family):
+  H(x) = d*x^{2^i(2^m+1)} + x^{2^m+1}
+        + x^{2^i+1} + x^{2^m(2^i+1)} + c*x^{2^{m+i}+1} + c^{2^m}*x^{2^i+2^m}
 over GF(2^{2m}), gcd(i,m)=1, d not in GF(2^m).
 APN iff hexanomial_condition(m,i,c) holds.
 """
@@ -93,11 +104,44 @@ function hexanomial_sbox(m::Int, i::Int, c::Int, d::Int;
     n   = 2m
     mod = modulus
     Cm  = gf_pow(c, 1 << m, n; modulus = mod)
-    e1  = (1 << (m + i)) + (1 << i)
-    e2  = (1 << i) + 1
-    e3  = (1 << (m + i)) + (1 << m)
-    e4  = (1 << (m + i)) + 1
-    e5  = (1 << i) + (1 << m)
+    e1  = (1 << (m + i)) + (1 << i)   # 2^i(2^m+1)
+    e2  = (1 << m) + 1                # 2^m+1
+    e3  = (1 << i) + 1                # 2^i+1
+    e4  = (1 << (m + i)) + (1 << m)   # 2^m(2^i+1)
+    e5  = (1 << (m + i)) + 1          # 2^{m+i}+1
+    e6  = (1 << i) + (1 << m)         # 2^i+2^m
+    lut = Vector{Int}(undef, 1 << n)
+    for x in 0:(1 << n) - 1
+        lut[x + 1] =
+            gf_mul(d,  gf_pow(x, e1, n; modulus = mod), n; modulus = mod) ⊻
+            gf_pow(x, e2, n; modulus = mod) ⊻
+            gf_pow(x, e3, n; modulus = mod) ⊻
+            gf_pow(x, e4, n; modulus = mod) ⊻
+            gf_mul(c,  gf_pow(x, e5, n; modulus = mod), n; modulus = mod) ⊻
+            gf_mul(Cm, gf_pow(x, e6, n; modulus = mod), n; modulus = mod)
+    end
+    SBox{n}(lut)
+end
+
+"""
+    pentanomial_sbox(m, i, c, d; modulus) -> SBox{2m}
+
+Exact pentanomial P(x) from Theorem 4.3 ([17]; same APN class as Theorem 3.1):
+  P(x) = d*x^{2^m+1} + x^{2^i+1} + x^{2^m(2^i+1)}
+        + c*x^{2^{m+i}+1} + c^{2^m}*x^{2^i+2^m}
+over GF(2^{2m}), gcd(i,m)=1, d not in GF(2^m).
+APN iff hexanomial_condition(m,i,c) holds (same condition as Theorem 3.1).
+"""
+function pentanomial_sbox(m::Int, i::Int, c::Int, d::Int;
+                           modulus::Int = primitive_polynomial(2m))
+    n   = 2m
+    mod = modulus
+    Cm  = gf_pow(c, 1 << m, n; modulus = mod)
+    e1  = (1 << m) + 1                # 2^m+1
+    e2  = (1 << i) + 1                # 2^i+1
+    e3  = (1 << (m + i)) + (1 << m)   # 2^m(2^i+1)
+    e4  = (1 << (m + i)) + 1          # 2^{m+i}+1
+    e5  = (1 << i) + (1 << m)         # 2^i+2^m
     lut = Vector{Int}(undef, 1 << n)
     for x in 0:(1 << n) - 1
         lut[x + 1] =
@@ -188,6 +232,90 @@ function theorem6_2_sbox(m::Int, i::Int, b::Int, c::Int;
         lut[(x | (y << n)) + 1] = xy | (Gxy << n)
     end
     SBox{2n}(lut)
+end
+
+"""
+    f1_sbox(m, i, h, k, r, b, c; modulus) -> SBox{2m}
+
+Canonical form F1 of Theorem 5.6:
+  F1(x,y) = (xy, x^{2^i+1} + x^{2^{i+h}}*y^{2^h} + b*x^{2^k}*y^{2^{i+k}} + c*y^{2^{i+r}+2^r})
+over GF(2^m) x GF(2^m). With b=0 the k parameter is irrelevant (F1 "b=0" subcase).
+"""
+function f1_sbox(m::Int, i::Int, h::Int, k::Int, r::Int, b::Int, c::Int;
+                  modulus::Int = primitive_polynomial(m))
+    n   = m
+    mod = modulus
+    Ei1 = (1 << i) + 1
+    Exh = 1 << (i + h)   # gf_pow reduces via x^{2^m} = x
+    Eyh = 1 << h
+    Exk = 1 << k
+    Eyk = 1 << (i + k)
+    Eyr = ((1 << i) + 1) * (1 << r)
+    len = 1 << n
+    lut = Vector{Int}(undef, 1 << (2n))
+    for x in 0:(len - 1), y in 0:(len - 1)
+        xy  = gf_mul(x, y, n; modulus = mod)
+        Gxy = gf_pow(x, Ei1, n; modulus = mod) ⊻
+              gf_mul(gf_pow(x, Exh, n; modulus = mod),
+                     gf_pow(y, Eyh, n; modulus = mod), n; modulus = mod) ⊻
+              gf_mul(b, gf_mul(gf_pow(x, Exk, n; modulus = mod),
+                               gf_pow(y, Eyk, n; modulus = mod), n; modulus = mod),
+                     n; modulus = mod) ⊻
+              gf_mul(c, gf_pow(y, Eyr, n; modulus = mod), n; modulus = mod)
+        lut[(x | (y << n)) + 1] = xy | (Gxy << n)
+    end
+    SBox{2n}(lut)
+end
+
+"""
+    f2_sbox(m, i, k, r, c; modulus) -> SBox{2m}
+
+Canonical form F2 of Theorem 5.6:
+  F2(x,y) = (xy, x^{2^i+1} + x^{2^k}*y^{2^{i+k}} + c*y^{2^{i+r}+2^r})
+over GF(2^m) x GF(2^m), c != 0.
+"""
+function f2_sbox(m::Int, i::Int, k::Int, r::Int, c::Int;
+                  modulus::Int = primitive_polynomial(m))
+    n   = m
+    mod = modulus
+    Ei1 = (1 << i) + 1
+    Exk = 1 << k
+    Eyk = 1 << (i + k)
+    Eyr = ((1 << i) + 1) * (1 << r)
+    len = 1 << n
+    lut = Vector{Int}(undef, 1 << (2n))
+    for x in 0:(len - 1), y in 0:(len - 1)
+        xy  = gf_mul(x, y, n; modulus = mod)
+        Gxy = gf_pow(x, Ei1, n; modulus = mod) ⊻
+              gf_mul(gf_pow(x, Exk, n; modulus = mod),
+                     gf_pow(y, Eyk, n; modulus = mod), n; modulus = mod) ⊻
+              gf_mul(c, gf_pow(y, Eyr, n; modulus = mod), n; modulus = mod)
+        lut[(x | (y << n)) + 1] = xy | (Gxy << n)
+    end
+    SBox{2n}(lut)
+end
+
+"""
+    hexanomial_class_mugshots(m; modulus) -> Set{APNEAMugshot}
+
+EA-mugshot set of all APN hexanomials (exact Theorem 3.1 form) at n=2m,
+over all i with gcd(i,m)=1 and all c, with a fixed d not in GF(2^m).
+"""
+function hexanomial_class_mugshots(m::Int; modulus::Int = primitive_polynomial(2m))
+    n    = 2m
+    d    = first(x for x in 1:(1 << n) - 1
+                 if gf_pow(x, 1 << m, n; modulus = modulus) != x)
+    mugs = Set{APNEAMugshot}()
+    for i in 1:(m - 1)
+        gcd(i, m) == 1 || continue
+        for c in 0:(1 << n) - 1
+            hexanomial_condition(m, i, c; modulus = modulus) || continue
+            H = hexanomial_sbox(m, i, c, d; modulus = modulus)
+            differential_uniformity(H) == 2 || continue
+            push!(mugs, apn_ea_mugshot(H))
+        end
+    end
+    mugs
 end
 
 """
