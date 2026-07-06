@@ -543,14 +543,15 @@ function _empty_canonical(N::Int)
         a2 = (1 << (2kk)) + 2
         b2 = (1 << (2 * (kk + 1))) - 1
         for i = a2:3:(b2-1)
+            v = xgs[i+1]
             jx = 0
-            while t[2, jx+1] != xgs[i+1]
-                
+            # v is a nonzero field element, so it lies in exactly one β-coset
+            # triple; find that column by testing all three members (i, βi, β²i
+            # in rows 2,3,4), not just the representative t[2, ·]. v is always
+            # found with jx < tN, so the search stays in bounds.
+            while jx < tN &&
+                  t[2, jx+1] != v && t[3, jx+1] != v && t[4, jx+1] != v
                 jx += 1
-            end
-            while jx >= tN
-                
-                jx -= tN
             end
             used[jx+1] = true
         end
