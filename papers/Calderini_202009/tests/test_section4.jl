@@ -1,29 +1,47 @@
 @testset "section4_test" begin
     include(joinpath(@__DIR__, "..", "section4.jl"))
 
-    # Code matrix dimensions for Gold x³ n=5
+    # Paper-exact code matrix dimensions for Gold x³ n=5
     F5 = load_apn_function("n5_Gold_x3")
     N = 5
     n_size = 1 << N
+    @test size(ccz_matrix(F5)) == (2N + 1, n_size)          # C₁ (11, 32)
+    @test size(c2_matrix(F5)) == (2N + 1, 2n_size - 1)      # C₂ (11, 63)
+    @test size(c3_matrix(F5)) == (2N + 1, 3n_size - 2)      # C₃ (11, 94)
 
-    C1 = ccz_matrix(F5)
-    @test size(C1) == (2N + 1, n_size)          # (11, 32)
-
-    C2 = ea_matrix(F5)
-    @test size(C2) == (2N + 1, 2n_size - 1)     # (11, 63)
-
-    C3 = c3_matrix(F5)
-    @test size(C3) == (2N + 1, 2n_size - 1)     # (11, 63)
-
-    # C₄ only for permutations — Gold x³ is not a permutation for n=5
     D = dillon_apn_permutation()
-    C4 = c4_matrix(D)
-    @test size(C4) == (2 * 6 + 1, 3 * 64 - 2)  # (13, 190)
+    @test size(c4_matrix(D)) == (13, 191)                   # C₄ (2n+1, 3·2ⁿ-1)
+    @test_throws ArgumentError c4_matrix(kim_apn())         # permutations only
 
-    # C₄ throws for non-permutations
-    @test_throws ArgumentError c4_matrix(kim_apn())
-
-    # VBF's dillon_apn_permutation() is AE to its own inverse (it is F₂/F₃ in paper's notation)
+    # Theorem 5 at the weight-enumerator level
+    K = kim_apn()
     Dinv = compositional_inverse(D)
-    @test are_affine_equivalent(D, Dinv)   # Remark 4: F₂ (and F₃) are AE to their inverses
+    @test code_weight_enumerator(ccz_matrix(K)) == code_weight_enumerator(ccz_matrix(D))
+    @test code_weight_enumerator(c2_matrix(K)) != code_weight_enumerator(c2_matrix(D))
+    @test code_weight_enumerator(c3_matrix(D)) == code_weight_enumerator(c3_matrix(Dinv))
+
+    # Theorem 6 with the paper's F₁: not AE to its inverse, C₃ blind to it
+    F1 = calderini_f1()
+    F1inv = compositional_inverse(F1)
+    @test is_permutation(F1) && differential_uniformity(F1) == 2
+    @test !are_affine_equivalent(F1, F1inv)
+    @test code_weight_enumerator(c3_matrix(F1)) == code_weight_enumerator(c3_matrix(F1inv))
+
+    # C₄ codes of F₁ and F₁⁻¹+b are WE-isospectral for every b (the separation
+    # is certified by Theorem 6 + the complete AE decision, not by WE).
+    w4 = code_weight_enumerator(c4_matrix(F1))
+    @test all(
+        code_weight_enumerator(
+            c4_matrix(SBox{6}([Int(F1inv.lut[x + 1]) ⊻ b for x = 0:63])),
+        ) == w4 for b = 0:63
+    )
+
+    # Forward direction positive control: D AE F₂ ⟹ ∃b with matching C₄ WE.
+    F2 = calderini_f2()
+    w4D = code_weight_enumerator(c4_matrix(D))
+    @test any(
+        code_weight_enumerator(
+            c4_matrix(SBox{6}([Int(F2.lut[x + 1]) ⊻ b for x = 0:63])),
+        ) == w4D for b = 0:63
+    )
 end
