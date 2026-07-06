@@ -45,6 +45,7 @@ function section4_report(io::IO = stdout; full_search::Bool = false)
         return ok
     else
         println(io, "  [SKIP] full_search=false; run with full_search=true or 'rijndael_2040' target")
+        print_kv(io, "note", "2040 is transcribed from Table 4; not confirmed in the default run (~580s here)")
         print_kv(io, "completeness", "budget-limited (0 evaluated)")
         return true
     end

@@ -10,18 +10,9 @@
 #   4. Verify no cross-pair equivalences hold.
 #   5. Report number of self-equivalences for S0,S2,S3,S4 (paper: 4,4,1,1 resp.).
 # VBF API used: are_affine_equivalent, self_affine_equivalences, load_literature_sbox,
-#               inverse
+#               compositional_inverse
 
 include(joinpath(@__DIR__, "helpers.jl"))
-
-function _serpent_inverse(S::SBox{N,T}) where {N,T}
-    n = 1 << N
-    lut = Vector{T}(undef, n)
-    for x = 0:(n-1)
-        lut[S.lut[x+1]+1] = T(x)
-    end
-    SBox{N,T}(lut)
-end
 
 function section5_report(io::IO = stdout)
     print_section(io, "Section 5.2 — Serpent S-box Equivalences (Table 3 left)")
@@ -44,7 +35,7 @@ function section5_report(io::IO = stdout)
     end
 
     # Inverse-equivalent pair: S0 ~ S1^{-1}.
-    S1_inv = _serpent_inverse(sp.S1)
+    S1_inv = compositional_inverse(sp.S1)
     ok_inv = are_affine_equivalent(sp.S0, S1_inv)
     print_check(io, "Serpent S0 ~ S1^{-1} (inverse-equivalent pair)", ok_inv)
     all_ok &= ok_inv
