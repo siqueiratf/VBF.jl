@@ -1,5 +1,5 @@
-@testset "theorem5_test" begin
-    include(joinpath(@__DIR__, "..", "theorem5.jl"))
+@testset "theorem6_test" begin
+    include(joinpath(@__DIR__, "..", "theorem6.jl"))
 
     modulus = primitive_polynomial(6)
     n       = 6

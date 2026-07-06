@@ -13,23 +13,23 @@
 #     1. n = 3k; 2^{-k} ≡ 2^{n-k} (mod 2^n−1)
 #     2. exponents: e1=2^{n-k}+2^{k+s}, e2=2^s+1, e3=2^{k+s}+2^s
 #     3. LUT[x] = u·x^{e1} ⊕ u^{2^k}·x^{e2} ⊕ v·x^{e3}
-# VBF API used: gf_pow, gf_mul, primitive_polynomial, SBox
+# VBF API used: gf_pow, gf_mul, gf_trace, walsh_transform, primitive_polynomial, SBox
 
 using VBF
-
-function print_header(io::IO = stdout)
-    println(io, "=" ^ 72)
-    println(io, "Bracken, Byrne, Markin, McGuire (2008):")
-    println(io, "New Families of Quadratic APN Trinomials and Multinomials")
-    println(io, "Finite Fields and Their Applications 14 (2008), 703–714")
-    println(io, "=" ^ 72)
-end
 
 """
     trace_component_is_bent(F, v; modulus) -> Bool
 
 True if x ↦ Tr(v·F(x)) is a bent Boolean function (N even),
 where Tr is the absolute trace GF(2^N)→F₂ and · is GF multiplication.
+
+TODO: not a clean drop-in for core `bent_components(F)`. `bent_components`
+returns output masks `b` for the dot-product component `x ↦ ⟨b, F(x)⟩`, whereas
+here the component is the trace form `x ↦ Tr(v·F(x))`. Trace forms and
+dot-product forms are related by the (basis-dependent) dual-basis change
+`⟨b, y⟩ = Tr(v·y)`, so `v ∈ bent_components(F)` is *not* equivalent to this
+predicate without first mapping `v → b`. Kept explicit to test each specific
+`v ∈ GF(2^k)*` as the paper states it.
 """
 function trace_component_is_bent(F::SBox, v::Int;
                                    modulus::Int = primitive_polynomial(trailing_zeros(length(F.lut))))::Bool
@@ -39,18 +39,6 @@ function trace_component_is_bent(F::SBox, v::Int;
          for x in 0:n-1]
     wt = walsh_transform(g)
     all(w^2 == n for w in wt)
-end
-
-"""
-    gf_subfield_nonzero_elements(n, k; modulus) -> Vector{Int}
-
-Nonzero elements of GF(2^k) embedded in GF(2^n) (requires k | n).
-Returns {ω^{i·step} : i = 0 .. 2^k−2} where step = (2^n−1)/(2^k−1) and ω = 2.
-"""
-function gf_subfield_nonzero_elements(n::Int, k::Int;
-                                       modulus::Int = primitive_polynomial(n))::Vector{Int}
-    step = ((1 << n) - 1) ÷ ((1 << k) - 1)
-    [gf_pow(2, i * step, n; modulus) for i in 0:((1 << k) - 2)]
 end
 
 """

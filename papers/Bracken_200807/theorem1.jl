@@ -41,7 +41,7 @@ and r[i] chosen as the r_idx[i]-th nonzero element of GF(2^k) (0 → zero elemen
 function theorem1_sbox(k::Int, s::Int, r_idx::Vector{Int};
                         modulus::Int = primitive_polynomial(2k))
     n     = 2k
-    subf  = gf_subfield_nonzero_elements(n, k; modulus)
+    subf  = filter(!iszero, subfield_elements(n, k; modulus))
     r     = [i == 0 ? 0 : subf[mod1(i, length(subf))] for i in r_idx]
     b, c  = 2, gf_pow(2, 2, n; modulus)   # b=ω, c=ω^2
     SBox(family1_lut(k, s, b, c, r; modulus))

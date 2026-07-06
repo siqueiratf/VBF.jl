@@ -42,7 +42,7 @@ v_idx-th nonzero element of GF(2^k) in GF(2^{3k}) (v_idx=0 → v=0).
 function theorem3_sbox(k::Int, s::Int, v_idx::Int;
                         modulus::Int = primitive_polynomial(3k))
     n    = 3k
-    v    = v_idx == 0 ? 0 : gf_subfield_nonzero_elements(n, k; modulus)[v_idx]
+    v    = v_idx == 0 ? 0 : filter(!iszero, subfield_elements(n, k; modulus))[v_idx]
     SBox(family2_lut(k, s, 2, v; modulus))
 end
 
@@ -54,7 +54,7 @@ function lemma2_report(io::IO = stdout)
 
     k, n = 2, 6
     modulus = primitive_polynomial(n)
-    subf    = gf_subfield_nonzero_elements(n, k; modulus)   # GF(4)* in GF(64)
+    subf    = filter(!iszero, subfield_elements(n, k; modulus))   # GF(4)* in GF(64)
 
     # (i) Every θ ∈ GF(2^k)* is a 7th power in GF(2^k): since 3∤k=2, 7∤(2^k−1)=3
     all_in_k_are_7th = all(gf_is_dth_power(θ, 7, n; modulus) for θ in subf)

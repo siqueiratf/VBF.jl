@@ -4,7 +4,7 @@
     modulus = primitive_polynomial(6)
     k, s    = 3, 1
     n       = 2k
-    subf    = gf_subfield_nonzero_elements(n, k; modulus)
+    subf    = filter(!iszero, subfield_elements(n, k; modulus))
 
     # GF(8) has 7 nonzero elements
     @test length(subf) == 7

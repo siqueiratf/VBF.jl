@@ -7,7 +7,7 @@
     # Lemma 2 checks for k=2, n=6
     n   = 6
     u   = 2
-    subf = gf_subfield_nonzero_elements(n, k; modulus)   # GF(4)* in GF(64)
+    subf = filter(!iszero, subfield_elements(n, k; modulus))   # GF(4)* in GF(64)
 
     # (i) all GF(4)* elements are 7th powers in GF(4) [7 ∤ (2^2−1)=3]
     @test all(gf_is_dth_power(θ, 7, n; modulus) for θ in subf)
@@ -29,6 +29,10 @@
     # v=ω^{21} → trinomial
     F_tri = theorem3_sbox(k, s, 1)
     @test differential_uniformity(F_tri) == 2
+
+    # Larger instance: n=12 (k=4, s=5) on GF(4096) — APN (~0.1s)
+    @test differential_uniformity(theorem3_sbox(4, 5, 0)) == 2   # binomial (v=0)
+    @test differential_uniformity(theorem3_sbox(4, 5, 1)) == 2   # trinomial (v≠0)
 
     # Round-trip: v=0 LUT matches manually built binomial
     n6 = 3k

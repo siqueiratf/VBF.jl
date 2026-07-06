@@ -24,7 +24,7 @@ function theorem4_report(io::IO = stdout)
     k, s    = 3, 1
     n       = 2k
     modulus = primitive_polynomial(n)
-    subf    = gf_subfield_nonzero_elements(n, k; modulus)
+    subf    = filter(!iszero, subfield_elements(n, k; modulus))
 
     for (label, ridx) in [("trinomial  (r=[0,0])", [0, 0]),
                            ("pentanomial (r=[ω⁹,0])", [1, 0])]
