@@ -14,7 +14,7 @@ export mobius!, mobius, anf
 export walsh_hadamard!, walsh_hadamard, walsh_transform
 export PRIMITIVE_POLYNOMIALS, primitive_polynomial
 export CONWAY_POLYNOMIALS, conway_polynomial
-export gf_mul, gf_pow, gf_inv, gf_monomial_lut
+export gf_mul, gf_pow, gf_inv, gf_inv_zero_safe, gf_monomial_lut
 export gf_trace, gf_relative_trace, in_subfield, subfield_elements
 export gf_is_dth_power
 export evaluate_polynomial, polynomial_to_lut
@@ -95,7 +95,7 @@ export dillon_apn_permutation, kim_apn
 
 # tier 4 — statistics
 export ddt, differential_spectrum, differential_uniformity
-export lat, absolute_walsh_spectrum, linearity, walsh_power_moment
+export lat, absolute_walsh_spectrum, linearity, nonlinearity, walsh_power_moment
 export bct, boomerang_spectrum, boomerang_uniformity
 export fbct, fbct_spectrum, fbct_uniformity
 export algebraic_degree, degree_spectrum

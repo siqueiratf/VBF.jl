@@ -16,10 +16,7 @@ function print_header(io::IO = stdout)
 end
 
 # 0^{-1} = 0 convention used throughout the paper (Section 3)
-function safe_inv(x::Int, n::Int; modulus::Int = primitive_polynomial(n))
-    x == 0 && return 0
-    gf_pow(x, (1 << n) - 2, n; modulus)
-end
+const safe_inv = gf_inv_zero_safe
 
 # U_max = { x in F*_{2^n} | tr1n(x^{-1}) = 1  AND  tr1n((x+1)^{-1}) = 1 }
 # Indicator Eq.(7): delta_{U_max}(x) = tr(x^{-1}) * tr((x+1)^{-1})
