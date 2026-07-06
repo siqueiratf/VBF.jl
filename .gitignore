@@ -37,4 +37,14 @@ CLAUDE.md
 # Claude Code planning files — ephemeral, never committed.
 **/PLAN.md
 
-
+# Codex local state, overrides, and secrets. Keep the shared adapter files
+# (.codex/config.toml, .codex/agents/, .agents/skills/) tracked.
+.codex/*.local.toml
+.codex/*secrets*
+.codex/auth.json
+.codex/sessions/
+.codex/logs/
+.codex-log/
+.env
+.env.local
+.env.*.local
