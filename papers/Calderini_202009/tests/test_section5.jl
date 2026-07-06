@@ -87,8 +87,12 @@
     @test algebraic_degree(F14) == 3
     @test length(extract_linear_subspaces(walsh_zeroes(F14), 6; max_bits = 12)) == 25
 
-    # Catalog: 14 n=6 APN CCZ-reps exist and are APN
+    # Catalog: the n=6 APN CCZ-reps in the APN-rep family are all APN. There are
+    # 13 (not 14): the Kim class is now a declarative catalog entry (n6_Kim,
+    # Browning 2010), so its sboxU representative reprs6_4 merges into the APN
+    # family at build time rather than adding a separate APN-rep row. The 14th
+    # n=6 CCZ class is therefore n6_Kim in the "APN" family.
     creps = load_n6_ccz_reps()
-    @test length(creps) == 14
+    @test length(creps) == 13
     @test all(differential_uniformity(r) == 2 for r in creps)
 end

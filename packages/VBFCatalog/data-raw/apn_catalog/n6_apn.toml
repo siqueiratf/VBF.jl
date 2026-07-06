@@ -33,18 +33,9 @@ bib_key = "Browning_201000"
 source            = "Browning, Dillon, McQuistan and Wolfe, 'An APN permutation in dimension six', Contemp. Math. 518 (2010); flagged by Canteaut_201906 review. LUT emitted from VBF kim_apn(). Same CCZ class as Bracken_200807 Family (2) / Dillon T2 (x^3 + t*x^24 + x^10, Conway modulus 91)."
 lut               = [0, 2, 52, 16, 25, 21, 54, 28, 37, 12, 35, 44, 16, 55, 13, 12, 25, 2, 1, 60, 28, 9, 31, 44, 53, 5, 31, 9, 28, 34, 45, 53, 34, 40, 29, 49, 21, 17, 49, 19, 26, 59, 23, 16, 1, 46, 23, 30, 5, 22, 22, 35, 46, 51, 38, 29, 52, 12, 21, 11, 51, 5, 9, 25]
 
-# --- Bracken-Byrne-Markin-McGuire (2008) quadratic APN trinomial -------------
-# Family (2) / Dillon T2 at n=6 coincides with n6_Kim above (identical LUT), so
-# only the genuinely-distinct Family (1) representative is catalogued here.
-
-[[apn_functions]]
-name              = "n6_Bracken2008_fam1_trinomial"
-description       = "Bracken-Byrne-Markin-McGuire (2008) quadratic APN trinomial, n=6 CCZ-representative of Family (1) (Dillon T1). Not a permutation. Re-verified APN (differential uniformity 2) and CCZ-inequivalent to n6_Gold_x3, n6_Kasami_x48, and n6_Kim (= Bracken Family (2) / Dillon T2) via Gamma-rank (1146 vs 1102/1102/1166) and Delta-rank (94 vs 94/94/96)."
-n                 = 6
-m                 = 6
-is_permutation    = false
-algebraic_form    = "x^3 + t^11*x^6 + t*x^9 in GF(2^6) with t = primitive element (root of the modulus), modulus x^6 + x + 1"
-bib_key = "Bracken_200807"
-source            = "Bracken, Byrne, Markin, McGuire, 'New Families of Quadratic Almost Perfect Nonlinear Trinomials and Multinomials', Finite Fields Appl. 14 (2008) 703-714, section 5 (Family (1), Dillon T1 CCZ-representative for n=6)."
-modulus           = 67
-lut               = [0, 32, 30, 6, 52, 24, 19, 7, 60, 42, 31, 49, 28, 6, 6, 36, 34, 60, 24, 62, 49, 35, 50, 24, 20, 60, 19, 3, 19, 55, 45, 49, 7, 55, 34, 42, 31, 35, 3, 7, 50, 52, 42, 20, 62, 52, 31, 45, 35, 45, 34, 20, 28, 30, 36, 30, 28, 36, 32, 32, 55, 3, 50, 62]
+# --- Bracken-Byrne-Markin-McGuire (2008) quadratic APN trinomials ------------
+# Neither n=6 Bracken family is a new CCZ class: Family (2)/Dillon T2 coincides
+# with n6_Kim (identical LUT), and Family (1)/Dillon T1 is CCZ-equivalent to the
+# sboxU representative reprs6_1 (same ccz_fingerprint; different LUT so a
+# LUT-dedup misses it). Both are therefore already in the catalog via the
+# reps import, so neither is added here.
