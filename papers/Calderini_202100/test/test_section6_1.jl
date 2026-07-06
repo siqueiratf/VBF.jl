@@ -18,4 +18,13 @@
     r12 = section6_1_n12_report(devnull; deep = false)
     @test r12.ok_struct
     @test r12.all_ok
+
+    # rank-screen parity spot at n=12 (used by section6_1_n12_sweep)
+    mod6 = primitive_polynomial(6)
+    Fapn = theorem6_2_sbox(6, 1, 0, 6; modulus = mod6)
+    Fnot = theorem6_2_sbox(6, 1, 0, 1; modulus = mod6)
+    @test is_quadratic_apn_rank(Fapn)
+    @test differential_uniformity(Fapn) == 2
+    @test !is_quadratic_apn_rank(Fnot)
+    @test differential_uniformity(Fnot) != 2
 end
