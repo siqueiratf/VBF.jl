@@ -10,7 +10,13 @@
 #     3. Lemma 3(ii): verify eq.(5) has unique solution (a,b)=(alpha,1)
 #     4. Build F2 LUT via family_f2_lut(m, alpha)
 #     5. Check differential_uniformity(F2) == 2
-# VBF API used: gf_mul, gf_pow, gf_inv, gf_trace, differential_uniformity, SBox,
+# Pseudocode (lemma2_build):
+#   Exhaustively verify Williams' cubic criterion [30] over F_{2^m} (embedded
+#   as the subfield of F_{2^{2m}}, where the roots of h(t) live): for all a and
+#   b != 0, the root count of f(z)=z^3+az+b matches the trichotomy given by
+#   tr_m(a^3/b^2) and the cube-ness of the roots of h(t)=t^2+bt+a^3
+# VBF API used: gf_mul, gf_pow, gf_inv, gf_trace, gf_is_dth_power,
+#               subfield_elements, differential_uniformity, SBox,
 #               print_section, print_check, print_kv
 
 include(joinpath(@__DIR__, "helpers.jl"))
@@ -19,6 +25,55 @@ const THEOREM4_CASES = [
     (m=3, note="3|m novel case (Theorem 4 extends Li et al. [28])"),
     (m=4, note="gcd(3,4)=1 standard case (same as [28])"),
 ]
+
+const LEMMA2_CASES = [3, 4, 5]           # odd and even m, kept exhaustive-fast
+
+# Lemma 2 ([30], Williams). For b != 0, f(z) = z^3 + az + b has over F_{2^m}
+#   exactly 1 root  iff  tr_m(a^3/b^2) != tr_m(1);
+#   3 roots (resp. 0)  iff  tr_m(a^3/b^2) == tr_m(1) and the roots t_1, t_2 of
+#     h(t) = t^2 + bt + a^3 are cubes (resp. non-cubes) in F_{2^m} when m is
+#     even, in F_{2^{2m}} when m is odd.
+# Everything is computed inside F_{2^{2m}}, with F_{2^m} as its subfield (the
+# roots of h always lie in F_{2^{2m}}).
+function lemma2_build(m::Int; modulus::Int = primitive_polynomial(2 * m))
+    n = 2 * m
+    mul_(x, y) = gf_mul(x, y, n; modulus = modulus)
+    pow_(x, e) = gf_pow(x, e, n; modulus = modulus)
+    inv_(x)    = gf_inv(x, n; modulus = modulus)
+    # absolute trace of F_{2^m}, evaluated inside the F_{2^{2m}} representation
+    function trm(x)
+        acc, t = 0, x
+        for _ in 1:m
+            acc ⊻= t
+            t = mul_(t, t)
+        end
+        acc                              # 0 or 1 for x in the subfield
+    end
+    # "cube" in the field prescribed by the lemma
+    cube(t) = isodd(m) ? gf_is_dth_power(t, 3, n; modulus = modulus) :
+              (t == 0 || pow_(t, ((1 << m) - 1) ÷ 3) == 1)
+
+    S = subfield_elements(n, m; modulus = modulus)
+    tr1 = m % 2                          # tr_m(1) = m mod 2
+    checked, ok = 0, true
+    tallies = Dict{Int,Int}(0 => 0, 1 => 0, 3 => 0)
+    for a in S, b in S
+        b == 0 && continue
+        a3 = pow_(a, 3)
+        nroots = count(z -> pow_(z, 3) ⊻ mul_(a, z) ⊻ b == 0, S)
+        tr = trm(mul_(a3, inv_(mul_(b, b))))
+        predicted = if tr != tr1
+            1
+        else
+            hroots = [t for t in 0:(1 << n)-1 if mul_(t, t) ⊻ mul_(b, t) ⊻ a3 == 0]
+            all(cube, hroots) ? 3 : 0
+        end
+        ok &= (nroots == predicted)
+        tallies[nroots] = get(tallies, nroots, 0) + 1
+        checked += 1
+    end
+    (; m, checked, ok, tallies)
+end
 
 function lemma3_build(m::Int, alpha::Int; modulus::Int = primitive_polynomial(m))
     mul_(a, b) = gf_mul(a, b, m; modulus = modulus)
@@ -79,6 +134,15 @@ function theorem4_report(io::IO = stdout)
     println(io, "  Construction (k=1, q=2): F(x,y)=(x^3+xy+xy^2+a*y^3, x^5+xy+a*x^2y^2+a*x^4y+(1+a)^2*xy^4+a*y^5)")
     println(io, "  Condition: x^3+x+alpha has no root in F_{2^m}")
     println(io, "  Extends Li et al. [28] (which required gcd(3,m)=1) to all m")
+
+    print_section("Lemma 2 verification (Williams [30])", io)
+    println(io, "  Root count of z^3+az+b vs tr_m(a^3/b^2) / cube trichotomy,")
+    println(io, "  exhaustive over F_{2^m} x F_{2^m}^* for m in $(LEMMA2_CASES)")
+    for m in LEMMA2_CASES
+        r2 = lemma2_build(m)
+        print_check("Lemma 2 m=$m ($(r2.checked) pairs; roots 0/1/3: " *
+                    "$(r2.tallies[0])/$(r2.tallies[1])/$(r2.tallies[3]))", r2.ok, io)
+    end
 
     print_section("Lemma 3 verification", io)
     println(io, "  (i): tr_m(1/alpha^2) = tr_m(1)")

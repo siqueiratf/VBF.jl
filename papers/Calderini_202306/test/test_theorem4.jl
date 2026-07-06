@@ -1,6 +1,15 @@
 @testset "theorem4_test" begin
     include(joinpath(@__DIR__, "..", "theorem4.jl"))
 
+    # Lemma 2 (Williams [30]): exhaustive root-count trichotomy for z^3+az+b
+    for m in LEMMA2_CASES
+        r2 = lemma2_build(m)
+        @test r2.ok
+        @test r2.checked == (1 << m) * ((1 << m) - 1)
+        # every pair lands in a 0/1/3-root case, never 2
+        @test sum(values(r2.tallies)) == r2.checked
+    end
+
     results = theorem4_build()
     @test length(results) == 2
 
