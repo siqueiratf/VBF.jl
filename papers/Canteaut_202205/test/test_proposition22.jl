@@ -11,6 +11,12 @@
     F4 = gold_apn(4)
     @test verify_proposition22(F4)
 
+    # Non-degenerate case: quadratic with a multi-valued rank distribution —
+    # the formula is exercised at several ranks r simultaneously.
+    Q = pseudo_random_multirank_quadratic(6)
+    @test length(rank_distribution(Q)) ≥ 2
+    @test verify_proposition22(Q)
+
     # Spot-check formula for n=5 APN: R_dist[4] * 2^4 = D_dist[2^1] = D_dist[2]
     ddist5 = ddt_distribution(F5)
     @test rdist5[4] * 16 == ddist5[2]
