@@ -42,14 +42,15 @@ function print_header(io::IO = stdout)
     println(io)
     println(io, "  Scope:")
     println(io, "    EXACT      — Section 2 (LE correctness), Section 3 (AE/representative),")
-    println(io, "                 Section 5 (Serpent Table 3)")
+    println(io, "                 Section 5 (Serpent Table 3), Section 7 (Table 1 SPN bound),")
+    println(io, "                 Appendix C (Table 5 class counts, n≤3)")
     println(
         io,
         "    OPT-IN     — Section 4.1 Rijndael 2040 (full_search=true or 'rijndael_2040' target)",
     )
     println(
         io,
-        "    OUT-OF-SCOPE — non-bijective (DES/Khazad), Misty/Kasumi, Secs 4.2-4.3/6/7",
+        "    OUT-OF-SCOPE — non-bijective (DES/Khazad), Misty/Kasumi, Secs 4.2-4.3/6",
     )
     println(io)
 end
