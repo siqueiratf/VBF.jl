@@ -24,15 +24,6 @@ function _apply_linear(basis::NTuple{N,Int}, x::Int) where {N}
     acc
 end
 
-function _is_perm(lut::Vector{Int}, N::Int)
-    seen = falses(N)
-    for v in lut
-        seen[v+1] && return false
-        seen[v+1] = true
-    end
-    true
-end
-
 """
     remark4_check(; sample_size, full_search, seed, io) -> NamedTuple
 
@@ -50,7 +41,11 @@ function remark4_check(;
     m = 5
     N = 1 << m
     F_lut = theorem1_lut(m, 1)
-    combined = Vector{Int}(undef, N)
+    # `combined` is the live buffer; `sbox` aliases it (the SBox{N,T} constructor
+    # stores the vector by reference), so we mutate in place and call core
+    # `is_permutation` without reallocating an SBox each iteration.
+    combined = zeros(UInt8, N)
+    sbox = SBox{5,UInt8}(combined)
     tested = 0
     violations = 0
 
@@ -58,9 +53,9 @@ function remark4_check(;
         for v0 in 0:N-1, v1 in 0:N-1, v2 in 0:N-1, v3 in 0:N-1, v4 in 0:N-1
             basis = (v0, v1, v2, v3, v4)
             for x in 0:N-1
-                combined[x+1] = F_lut[x+1] ⊻ _apply_linear(basis, x)
+                combined[x+1] = UInt8(F_lut[x+1] ⊻ _apply_linear(basis, x))
             end
-            _is_perm(combined, N) && (violations += 1)
+            is_permutation(sbox) && (violations += 1)
             tested += 1
         end
     else
@@ -69,9 +64,9 @@ function remark4_check(;
         for _ in 1:sample_size
             basis = ntuple(_ -> rng(), 5)
             for x in 0:N-1
-                combined[x+1] = F_lut[x+1] ⊻ _apply_linear(basis, x)
+                combined[x+1] = UInt8(F_lut[x+1] ⊻ _apply_linear(basis, x))
             end
-            _is_perm(combined, N) && (violations += 1)
+            is_permutation(sbox) && (violations += 1)
             tested += 1
         end
     end

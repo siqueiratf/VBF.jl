@@ -15,6 +15,14 @@
         @test isempty(r_inv.mismatches)
     end
 
+    # Explicit F' expansion (tex l.588–590 / l.666–669) == construction F₂∘F₁⁻¹
+    for i in (1, 5)
+        r_exp = theorem3_explicit_formula_check(; m = 6, i = i)
+        @test r_exp.ok
+        @test r_exp.mismatch_count == 0
+        @test r_exp.checked == 64
+    end
+
     # m=6, i=1: APN, degree 4
     r = theorem3_check(; m = 6, i = 1)
     @test r.is_apn
@@ -24,6 +32,15 @@
     r = theorem3_check(; m = 6, i = 5)
     @test r.is_apn
     @test r.deg == 4
+
+    # Real CCZ-equivalence to Gold (paper's Conclusion) via the FIXED oracle —
+    # replaces the deg==4 heuristic as the equivalence-to-Gold / inequivalence-
+    # to-known-APN evidence. F' is degree-4 non-quadratic and a non-permutation,
+    # exercising the recently-fixed non-permutation path.
+    for i in (1, 5)
+        r_ccz = theorem3_ccz_to_gold_check(; m = 6, i = i)
+        @test r_ccz.is_ccz
+    end
 
     # argument validation
     @test_throws ArgumentError theorem3_lut(5, 1)   # 6 ∤ 5
