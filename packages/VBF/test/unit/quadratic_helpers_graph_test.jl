@@ -9,11 +9,17 @@ using Random
     @test isempty(automorphisms_from_ortho_derivative(load_literature_sbox("PRESENT")))     # not APN
 end
 
-@testset "automorphisms_from_ortho_derivative: empty when ortho-deriv non-permutation" begin
-    # x³ over GF(2⁴) is a quadratic APN but non-bijective; its ortho-derivative is many-to-one, so the permutation-only linear-equivalence search yields nothing (documented limitation).
+@testset "automorphisms_from_ortho_derivative: works when ortho-deriv non-permutation" begin
+    # x³ over GF(2⁴) is a quadratic APN but non-bijective; its ortho-derivative
+    # is many-to-one. The old permutation-only search silently returned an
+    # empty list here; linear_equivalences_general now covers the case, and
+    # every lifted map is validated against the graph.
     F = load_apn_function("n4_Gold_x3")
     @test !is_permutation(ortho_derivative(F))
-    @test isempty(automorphisms_from_ortho_derivative(F))
+    auts = automorphisms_from_ortho_derivative(F)
+    @test !isempty(auts)
+    G = FunctionGraph(F)
+    @test all(!isempty(graph_xor_equivalence(G, graph_image_by(G, L))) for L in auts)
 end
 
 @testset "automorphisms_from_ortho_derivative: every map fixes the graph" begin

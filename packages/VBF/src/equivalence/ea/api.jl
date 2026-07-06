@@ -45,20 +45,29 @@ whose ortho-derivatives are themselves permutations route to
      [`inner_permutation`](@ref) on `(F, currentG ⊕ s)`. Return `true`
      at the first success.
 
-# Limitations
+# Soundness guarantee
 
-- **Heggebakk is permutations-only**, but quadratic APN (the usual non-permutation
-  case — almost all APN are 3-to-1) is handled by `:ortho_derivative`, which now
-  uses the general, non-permutation-capable [`are_linearly_equivalent_general`](@ref).
-  Functions that are neither permutations nor quadratic APN still return `false`.
-- **Degenerate partitions.** For functions where the `k = 4` partition
-  signature is `[2ⁿ-1, 1]` (e.g., monomial APN), the outer-permutation
-  set is the full `GL(n, F₂)` and step 3 enumerates millions of
-  candidates. The `max_outer_per_sigma` kwarg short-circuits this; on
-  monomial APN at `n ≥ 5` the decision will return `false` even if
-  EA-equivalent. The `:ortho_derivative` strategy is the correct route
-  for those quadratic-APN cases; [`are_affine_equivalent`](@ref) is a
-  fallback when affine drift is not relevant.
+`are_ea_equivalent` never returns a **silent** wrong answer:
+
+- `true` is always backed by a witness (Heggebakk certificate, verified
+  ortho-derivative equivalence, LUT equality, or an affine-equivalence
+  witness — affine equivalence implies EA-equivalence).
+- `false` is returned when soundly provable: exhaustive (uncapped)
+  Heggebakk search, mismatching partition signatures, or a differing
+  EA-invariant (algebraic degree for degrees ≥ 2, extended Walsh
+  spectrum, component degree spectrum).
+- When the partition search is **capped** (degenerate partitions — e.g.
+  signature `[2ⁿ-1, 1]` monomial APN, or `[2ⁿ-8, 7, 1]` degree-4 APN
+  permutations at n = 6) and no invariant separates the pair and no
+  affine witness exists, the decision is *inconclusive*: the function
+  emits an `@warn` and returns a best-effort `false`. Earlier versions
+  returned this `false` silently, indistinguishable from a proof.
+  For pairs inside the CCZ-class of a quadratic APN, the complete
+  alternative is the orbit method ([`ea_class_orbits`](@ref)).
+
+Two functions of algebraic degree ≤ 1 are always EA-equivalent
+(`G = F ⊕ (G ⊕ F)` with affine drift `G ⊕ F`), and a degree ≤ 1
+function is never EA-equivalent to one of degree ≥ 2.
 """
 
 # ---------------------------------------------------------------------------
@@ -114,22 +123,53 @@ function are_ea_equivalent(
         s = _ea_auto_strategy(F, G)
     end
     if s === :heggebakk
-        # Heggebakk's partition search is permutation-only.
-        (is_permutation(F) && is_permutation(G)) || return false
-        cert = _ea_search(
-            F,
-            G;
-            k = k,
-            max_outer = max_outer_per_sigma,
-            want_certificate = false,
-        )
-        return cert !== nothing
+        if is_permutation(F) && is_permutation(G)
+            capped = Ref(false)
+            cert = _ea_search(
+                F,
+                G;
+                k = k,
+                max_outer = max_outer_per_sigma,
+                want_certificate = false,
+                capped = capped,
+            )
+            cert !== nothing && return true
+            # Exhaustive (uncapped) search ⇒ sound negative.
+            capped[] || return false
+        end
+        # Capped search, or non-permutation inputs (Heggebakk inapplicable):
+        # decide by sound invariants / witnesses, else warn.
+        return _ea_inconclusive_fallback(F, G)
     elseif s === :ortho_derivative
         return _are_ea_equivalent_via_ortho(F, G)
     end
     throw(
         ArgumentError("are_ea_equivalent: unknown strategy $(repr(strategy))"),
     )
+end
+
+# Sound decision chain for pairs the Heggebakk search cannot settle.
+# Every `false` here is certified by an EA-invariant; every `true` by a
+# witness. Only the final warned `false` is best-effort.
+function _ea_inconclusive_fallback(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
+    dF = algebraic_degree(F)
+    dG = algebraic_degree(G)
+    # All degree ≤ 1 functions form one EA-class (drift absorbs the difference).
+    dF ≤ 1 && dG ≤ 1 && return true
+    # Degree is an EA-invariant on {≥ 2} and {≤ 1} is EA-closed.
+    (dF ≤ 1) != (dG ≤ 1) && return false
+    dF != dG && return false
+    # Extended Walsh spectrum and component degree spectrum are EA-invariants
+    # of arbitrary functions.
+    absolute_walsh_spectrum(F) != absolute_walsh_spectrum(G) && return false
+    component_degree_spectrum(F) != component_degree_spectrum(G) && return false
+    # Affine equivalence implies EA-equivalence (positive witness).
+    are_affine_equivalent(F, G) && return true
+    @warn "are_ea_equivalent: inconclusive — the bounded partition search was \
+capped and no invariant separates the pair; returning best-effort `false`. \
+For members of a quadratic APN's CCZ-class use `ea_class_orbits` for a \
+complete decision; otherwise external code-equivalence tooling is required." maxlog = 1
+    return false
 end
 
 # Quadratic APN uses the ortho-derivative test; else the Heggebakk search.
@@ -157,7 +197,10 @@ end
         -> NamedTuple{(:L1, :A2, :A_drift), ...} | Nothing
 
 Return an EA-equivalence certificate on success or `nothing` on
-failure. The certificate is a named tuple
+failure. `nothing` means *no certificate found*, not a proof of
+EA-inequivalence — the bounded search may have been capped (see the
+soundness note in the module docstring). The certificate is a named
+tuple
 
   - `L1::F2LinearMap{N,T}` — outer linear bijection.
   - `A2::F2LinearMap{N,T}` — inner linear bijection.
@@ -202,6 +245,7 @@ function _ea_search(
     k::Int = 4,
     max_outer::Int = 10^6,
     want_certificate::Bool = false,
+    capped::Base.RefValue{Bool} = Ref(false),
 ) where {N,T}
     n_size = 1 << N
 
@@ -210,14 +254,22 @@ function _ea_search(
     partG = ea_partition(G, k)
     sort(partF.bucket_sizes) == sort(partG.bucket_sizes) || return nothing
 
+    # Signatures match, so at least one bucket map exists; an empty result
+    # can only mean the map count exceeded the cap.
     sigmas = enumerate_bucket_maps(partF, partG; max_maps = max_outer)
-    isempty(sigmas) && return nothing
+    if isempty(sigmas)
+        capped[] = true
+        return nothing
+    end
 
     for sigma in sigmas
         outers = outer_permutations(partF, partG, sigma, T)
         # Skip σ if the outer count exceeds the cap (guards degenerate
-        # searches).
-        length(outers) > max_outer && continue
+        # searches). The result is then inconclusive, not a proof.
+        if length(outers) > max_outer
+            capped[] = true
+            continue
+        end
 
         for L1_lut in outers
             L1_cols = T[L1_lut[(1<<i)+1] for i = 0:(N-1)]

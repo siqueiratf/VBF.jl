@@ -698,6 +698,19 @@ For a zero-sum 3-to-1 function `T`, find a **canonical** triplicate `C` and an
 invertible F₂-linear `L` with `C = T ∘ L` (so `C` is the canonical
 representative of `T`'s linear-equivalence class), or `nothing` if `T` is not a
 zero-sum 3-to-1 function. (Ports Ivković–Kaleyski's `alg2`.)
+
+!!! note "`nothing` for genuine zero-sum 3-to-1 inputs is possible and correct"
+    The fibres of a zero-sum 3-to-1 function, each completed with 0, form a
+    spread of 2-dimensional subspaces of `F₂ⁿ`. A canonical representative
+    `C = T ∘ L` exists **iff** that spread is linearly equivalent to the
+    Desarguesian β-coset spread `{ {i, βi, β²i} }`. Non-Desarguesian fibre
+    spreads exist: the ortho-derivative of `kim_apn()` is a zero-sum 3-to-1
+    function (trivial 0-fibre, all 21 fibres zero-sum) whose spread is *not*
+    linearly equivalent to the β-coset spread (verified by exhaustive search
+    over basis images), so it has no canonical triplicate representative and
+    this function returns `nothing`. To enumerate linear self-equivalences of
+    such functions use [`linear_equivalences_general`](@ref) instead of the
+    3-to-1 machinery.
 """
 function canonical_3to1_representative(T::SBox{N,S}) where {N,S}
     Tt = _zero_sum_triplicate(T)

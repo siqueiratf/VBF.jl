@@ -17,15 +17,13 @@ The reconstruction of the candidate map `L` and the final
 `(L₁, L₂)` ↔ `(L_A, L_B)` convention: only maps that genuinely fix (or
 relate) the graph survive.
 
-!!! note "Permutation ortho-derivative required"
-    These functions obtain the linear (self-)equivalences of the
-    ortho-derivative via `linear_equivalences`, which is
-    permutations-only. When the ortho-derivative is **not** a
-    permutation (e.g. non-bijective quadratic APN such as `x³` over
-    `GF(2⁴)`, whose ortho-derivative is many-to-one) the search yields
-    an empty result. A LAT-based equivalence search would handle that
-    case; implementing it (a separate algorithm) would lift this
-    restriction.
+The linear (self-)equivalences of the ortho-derivative come from
+`linear_equivalences` when both ortho-derivatives are permutations and
+from [`linear_equivalences_general`](@ref) otherwise (non-bijective
+ortho-derivatives — e.g. every quadratic APN in even dimension, whose
+ortho-derivative is many-to-one). Earlier versions used the
+permutation-only search unconditionally and silently returned an empty
+automorphism list in the even-dimension case.
 """
 
 # From the (L1, L2) ortho-derivative maps, enumerate CCZ maps G_src → G_dst.
@@ -42,7 +40,13 @@ function _ortho_derivative_maps(
     s_dst = F_dst.lut
     s_src = F_src.lut
 
-    for eq in linear_equivalences(o_dst, o_src)   # o_src = L1 ∘ o_dst ∘ L2
+    # o_src = L1 ∘ o_dst ∘ L2; the permutation-only search is faster when it
+    # applies, the general backtracking covers many-to-one ortho-derivatives.
+    eqs =
+        is_permutation(o_dst) && is_permutation(o_src) ?
+        linear_equivalences(o_dst, o_src) :
+        linear_equivalences_general(o_dst, o_src)
+    for eq in eqs
         L_A = eq.L2
         L_B = eq.L1
         L_A_inv = inv(L_A)
@@ -122,4 +126,75 @@ function enumerate_ea_classes_apn_quadratic(F::SBox{N,T}) where {N,T}
         end
     end
     return classes
+end
+
+# Full sorted point set of the span of a basis of packed 2n-bit points.
+function _span_point_set(basis, ::Val{M}) where {M}
+    pts = UInt32[0]
+    for b in basis
+        pts = vcat(pts, UInt32[p ⊻ UInt32(b) for p in pts])
+    end
+    return sort!(pts)
+end
+
+"""
+    ea_class_orbits(F::SBox{N,T}) -> NamedTuple
+
+**All** EA-classes inside the CCZ-class of a quadratic APN `F`, as
+orbits of the `n`-dimensional Walsh-zero subspaces of `Γ_F` under the
+CCZ-automorphism group of the graph (acting in the Walsh domain by
+`transpose(inv(L))`). Returns
+
+    (; bases, nspaces, nauts, orbits)
+
+where `bases` are the subspace bases (`extract_linear_subspaces`
+order, matching [`enumerate_ccz_class`](@ref)'s representative order),
+`nauts` the number of validated graph automorphisms, and
+`orbits::Vector{Vector{Int}}` the orbit partition — one orbit per
+EA-class, quadratic or not.
+
+Soundness: every merge comes from an automorphism validated with
+`graph_xor_equivalence`, so `length(orbits)` is always an **upper
+bound** on the number of EA-classes. Exactness rests on the
+automorphism list being complete, which holds for quadratic APN because
+every CCZ self-equivalence of the graph induces a linear
+self-equivalence of the ortho-derivative
+([Canteaut-Couvreur-Perrin 2022](@cite Canteaut_202205)); the lift
+enumerates all of them (× all constant offsets). Empirically this
+reproduces the full EA-class census of Calderini 2020 Table 1 (all 13
+quadratic n=6 CCZ-classes, counts 3..92) exactly.
+
+Cost: subspace extraction + `nauts × nspaces` subspace images; seconds
+for n = 6.
+"""
+function ea_class_orbits(F::SBox{N,T}) where {N,T}
+    Z = walsh_zeroes(F)
+    bases = extract_linear_subspaces(Z, N; max_bits = 2N)
+    nb = length(bases)
+    auts = automorphisms_from_ortho_derivative(F)
+    spans = [_span_point_set(b, Val(2N)) for b in bases]
+    key = Dict{Vector{UInt32},Int}(s => i for (i, s) in enumerate(spans))
+    parent = collect(1:nb)
+    function find(i)
+        while parent[i] != i
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        end
+        return i
+    end
+    for L in auts
+        Dm = transpose(inv(L))
+        for (i, s) in enumerate(spans)
+            img = sort!(UInt32[UInt32(Dm(p)) for p in s])
+            j = get(key, img, 0)
+            j == 0 && continue    # cannot happen for validated automorphisms
+            ri, rj = find(i), find(j)
+            ri != rj && (parent[ri] = rj)
+        end
+    end
+    orbits_d = Dict{Int,Vector{Int}}()
+    for i = 1:nb
+        push!(get!(orbits_d, find(i), Int[]), i)
+    end
+    return (; bases, nspaces = nb, nauts = length(auts), orbits = collect(values(orbits_d)))
 end

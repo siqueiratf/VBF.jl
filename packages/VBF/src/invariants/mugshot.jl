@@ -9,8 +9,17 @@ computed spectra of `π_F` — the signed Walsh spectrum and the DDT
 spectrum — into a comparable tuple.
 
 For non-quadratic APN (where the ortho-derivative is undefined), the
-mugshot falls back to F's own spectra: absolute Walsh, degree, sigma
-multiplicities, and thickness (when F is a permutation).
+mugshot falls back to F's own spectra: absolute Walsh, **component**
+degree spectrum, sigma multiplicities, and thickness (when F is a
+permutation). The component degree spectrum is the multiset of
+algebraic degrees of the 2ⁿ-1 nonzero components `x ↦ ⟨b, F(x)⟩`,
+with degrees ≤ 1 collapsed to 1: under `G = A₁∘F∘A₂ ⊕ A_drift` the
+component `⟨b, G⟩ = ⟨A₁ᵀb, F⟩∘A₂ ⊕ ⟨b, A_drift⟩` where `b ↦ A₁ᵀb` is a
+bijection of the nonzero masks, affine pre-composition preserves the
+degree, and adding the affine `⟨b, A_drift⟩` preserves degrees ≥ 2 and
+maps the class {degree ≤ 1} to itself — hence the multiset is a genuine
+EA-invariant. (The per-*coordinate* `degree_spectrum` used before is
+basis-dependent and is **not** EA-invariant.)
 
 # Use cases
 
@@ -29,8 +38,10 @@ Tagged-union-style return type of [`apn_ea_mugshot`](@ref).
 # Fields by kind
 - `kind = :quadratic` — `(:walsh::Spectrum, :ddt::Spectrum)` of `π_F`.
 - `kind = :non_quadratic` — `(:abs_walsh::Spectrum, :degree::Spectrum,
-  :sigma::Spectrum, :thickness::Vector{Int})` of `F`. The thickness
-  vector is empty when `F` is not a permutation.
+  :sigma::Spectrum, :thickness::Vector{Int})` of `F`, where `:degree`
+  is the EA-invariant **component** degree spectrum (see the module
+  docstring). The thickness vector is empty when `F` is not a
+  permutation.
 """
 struct APNEAMugshot
     kind::Symbol
@@ -52,6 +63,35 @@ function Base.show(io::IO, m::APNEAMugshot)
         length(m.fields),
         " components}",
     )
+end
+
+"""
+    component_degree_spectrum(F::SBox{N,T}) -> Spectrum
+
+Multiset of the algebraic degrees of the `2ⁿ - 1` nonzero components
+`x ↦ ⟨b, F(x)⟩` of `F`, with degrees ≤ 1 collapsed to 1. A genuine
+EA-invariant (unlike the per-coordinate [`degree_spectrum`](@ref),
+which is basis-dependent); see the module docstring for the argument.
+Computed from a single ANF pass: the coefficient of monomial `m` in
+`⟨b, F⟩` is `⟨b, a[m]⟩` where `a = anf(F)`.
+"""
+function component_degree_spectrum(F::SBox{N,T}) where {N,T}
+    n_size = 1 << N
+    a = anf(F)
+    # Monomial masks ordered by decreasing weight so the first hit is the degree.
+    order = sort(collect(1:(n_size-1)); by = m -> count_ones(m), rev = true)
+    spec = Spectrum()
+    for b = 1:(n_size-1)
+        deg = 0
+        for m in order
+            if parity(UInt(b) & UInt(a[m+1])) == 1
+                deg = count_ones(m)
+                break
+            end
+        end
+        add!(spec, max(deg, 1))
+    end
+    return spec
 end
 
 """
@@ -87,7 +127,7 @@ function apn_ea_mugshot(F::SBox{N,T}) where {N,T}
         return APNEAMugshot(:quadratic, (walsh = walsh_spec, ddt = ddt_spec))
     else
         abs_walsh = absolute_walsh_spectrum(F)
-        deg_spec = degree_spectrum(F)
+        deg_spec = component_degree_spectrum(F)
         sig = sigma_multiplicities(F)
         thk = is_permutation(F) ? thickness_spectrum(F) : Int[]
         return APNEAMugshot(
