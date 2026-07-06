@@ -65,6 +65,10 @@ function theorem3_paper_f1_inverse_lut(m::Int, i::Int; modulus::Int = primitive_
     [paper_F1inv(x) for x in 0:N-1]
 end
 
+# TODO(promote-to-core): inverse_permutation_lut inverts a raw permutation LUT.
+# VBF core has `compositional_inverse(::SBox)` and `is_permutation`; a
+# LUT-level `inverse_permutation_lut` (no SBox wrapping) would be a natural
+# core helper. Kept paper-local for now (core is frozen).
 function inverse_permutation_lut(lut::Vector{Int})
     N = length(lut)
     lut_inv = fill(-1, N)
@@ -85,6 +89,83 @@ function theorem3_lut(m::Int, i::Int; modulus::Int = primitive_polynomial(m))
 
     lut_F1inv = inverse_permutation_lut(theorem3_f1_lut(m, i; modulus = modulus))
     [F2(lut_F1inv[x+1]) for x in 0:N-1]
+end
+
+"""
+    theorem3_paper_explicit_lut(m, i; modulus) -> Vector{Int}
+
+The explicit closed form of F' as printed in the Theorem 3 statement (tex eq.
+l.588–590), which the derivation multiplies out at l.666–669:
+
+  F'(x) = [ x + tr_{m/3}(x^{2(2^i+1)} + x^{4(2^i+1)})
+              + tr(x)·tr_{m/3}(x^{2^i+1} + x^{2^{2i}(2^i+1)}) ]^{2^i+1}
+
+(the bracket is F₁⁻¹(x) = F₁⁵(x), then raised by F₂ = Gold). Implemented
+literally so it can be checked against the permutation-inverse construction.
+"""
+function theorem3_paper_explicit_lut(m::Int, i::Int; modulus::Int = primitive_polynomial(m))
+    m % 6 == 0 || throw(ArgumentError("theorem3_lut: 6 must divide m, got m=$m"))
+    gcd(i, m) == 1 || throw(ArgumentError("theorem3_lut: need gcd(i,m)=1, got i=$i, m=$m"))
+    gold_exp = (1 << i) + 1
+    N = 1 << m
+    tr3(x) = gf_relative_trace(x, m, 3; modulus = modulus)
+    trr(x) = gf_trace(x, m; modulus = modulus)
+    pw(x, e) = gf_pow(x, e, m; modulus = modulus)
+
+    out = Vector{Int}(undef, N)
+    for x in 0:N-1
+        a1 = tr3(pw(x, 2 * gold_exp) ⊻ pw(x, 4 * gold_exp))
+        a2 = tr3(pw(x, gold_exp) ⊻ pw(x, (1 << (2i)) * gold_exp))
+        inner = x ⊻ a1 ⊻ (trr(x) == 1 ? a2 : 0)
+        out[x+1] = pw(inner, gold_exp)
+    end
+    out
+end
+
+"""
+    theorem3_explicit_formula_check(; m, i, io) -> NamedTuple
+
+Verify the paper's explicit F' expansion (tex l.588–590 / l.666–669) matches the
+permutation-inverse construction F₂∘F₁⁻¹, exhaustively over GF(2^m).
+"""
+function theorem3_explicit_formula_check(; m::Int = 6, i::Int = 1, io::IO = devnull)
+    modulus = primitive_polynomial(m)
+    constr = theorem3_lut(m, i; modulus = modulus)
+    explicit = theorem3_paper_explicit_lut(m, i; modulus = modulus)
+    N = length(constr)
+    mism = count(x -> constr[x] != explicit[x], 1:N)
+    ok = mism == 0
+
+    print_section("Theorem 3 — explicit F' expansion vs. construction (GF(2^$m), i=$i)", io)
+    print_kv("elements checked", N, io)
+    print_check("explicit F' (l.588–590 / l.666–669) = F₂∘F₁⁻¹ (mismatches=$mism)", ok, io)
+    print_kv("completeness", "exhaustive", io)
+
+    (; ok, checked = N, mismatch_count = mism)
+end
+
+"""
+    theorem3_ccz_to_gold_check(; m, i, io) -> NamedTuple
+
+The paper's Conclusion states every function of Theorems 1–4 is CCZ-equivalent
+to a Gold function. Verify that directly for Theorem 3's F' at GF(2^m) using the
+(recently fixed) `are_ccz_equivalent` oracle, matching F' against `gold_apn(m, i)`.
+This is a real CCZ/EA test — it replaces the earlier `deg == 4` heuristic as the
+evidence for inequivalence-to-known / equivalence-to-Gold. F' is degree 4 (non-
+quadratic) and a non-permutation, so this exercises the fixed non-permutation
+path of the oracle.
+"""
+function theorem3_ccz_to_gold_check(; m::Int, i::Int, io::IO = devnull)
+    modulus = primitive_polynomial(m)
+    F = SBox{m}(theorem3_lut(m, i; modulus = modulus))
+    G = gold_apn(m, i; modulus = modulus)
+    is_ccz = are_ccz_equivalent(F, G)
+
+    print_section("Theorem 3 — CCZ-equivalence to Gold x^{2^$i+1} (GF(2^$m))", io)
+    print_check("F' is CCZ-equivalent to gold_apn($m, $i)", is_ccz, io)
+    print_kv("deg(F')", algebraic_degree(F), io)
+
+    (; is_ccz, m, i)
 end
 
 """
@@ -181,8 +262,12 @@ function theorem3_report(io::IO = stdout)
     theorem3_f1_inverse_formula_check(; m = 6, i = 1, io = io)
     theorem3_f1_inverse_formula_check(; m = 6, i = 5, io = io)
     theorem3_f8_check(; io = io)
+    theorem3_explicit_formula_check(; m = 6, i = 1, io = io)
+    theorem3_explicit_formula_check(; m = 6, i = 5, io = io)
     theorem3_check(; m = 6, i = 1, io = io)
     theorem3_check(; m = 6, i = 5, io = io)
+    theorem3_ccz_to_gold_check(; m = 6, i = 1, io = io)
+    theorem3_ccz_to_gold_check(; m = 6, i = 5, io = io)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

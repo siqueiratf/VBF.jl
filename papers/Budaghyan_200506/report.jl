@@ -21,14 +21,15 @@ Scope:
 - skipped: CCZ-class enumeration, timing tables
 """
 function paper_report(io::IO = stdout)
-    print_header(io)
+    paper_banner(io)
     println(io, "Julia version : ", VERSION)
     println(io, "Date          : ", Dates.today())
     println(io)
     println(io, "Scope: Theorems 1–4, Remark 4, Proposition 4 criterion")
     println(io, "       CCZ-class enumeration and timing tables: not executed")
     println(io, "Checks: Theorem 3 F1⁻¹ formula tested exhaustively on GF(2^6);")
-    println(io, "        Theorem 4 reproduced via permutation inversion (see notes below)")
+    println(io, "        Theorem 3 CCZ-equivalence to Gold verified at n=6 (fixed oracle);")
+    println(io, "        Theorem 4 explicit F' formula tested against F2∘F1⁻¹ (see notes below)")
 
     theorem1_report(io)
     remark4_report(io)

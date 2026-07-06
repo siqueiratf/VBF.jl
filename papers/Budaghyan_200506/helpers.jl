@@ -1,29 +1,22 @@
 # Implements paper-local helpers for Budaghyan–Carlet–Pott (2005/2006).
 # Paper: Budaghyan, Carlet, Pott (2006), "New Classes of Almost Bent and Almost
 #        Perfect Nonlinear Polynomials", IEEE Trans. IT 52(3), pp. 762–777.
-# Section: General — field utilities, trace functions, report formatting
+# Section: General — trace-component truth tables, boolean algebraic degree
 #
 # Pseudocode:
-#   1. gf_trace(x, n)      = x + x^2 + x^4 + ... + x^{2^{n-1}}  ∈ {0,1}
-#   2. gf_relative_trace(x, m, n) = x + x^{2^n} + x^{2^{2n}} + ... + x^{2^{(m/n−1)n}}
-#   3. gold_lut(n, i)      = [x ↦ x^{2^i+1}] on GF(2^n)
-#   4. boolean_alg_degree  = algebraic degree of a GF(2)-valued truth table
-# VBF API used: gf_mul, gf_pow, primitive_polynomial, mobius!, SBox,
-#               differential_uniformity, linearity, algebraic_degree
+#   1. boolean_alg_degree  = algebraic degree of a GF(2)-valued truth table
+#   2. trace_component_tt(F, n) = truth table of x ↦ Tr(F(x))  ∈ {0,1}
+# VBF API used: gf_trace, primitive_polynomial, mobius!, print_banner,
+#               print_section, print_check, print_kv
 
 using VBF
 using Dates
 
-"""
-    gold_lut(n, i; modulus) -> Vector{Int}
-
-LUT for Gold function x^{2^i+1} over GF(2^n). Requires gcd(i, n) = 1.
-"""
-function gold_lut(n::Int, i::Int; modulus::Int = primitive_polynomial(n))
-    exp = (1 << i) + 1
-    [gf_pow(x, exp, n; modulus = modulus) for x in 0:(1<<n)-1]
-end
-
+# TODO(promote-to-core): boolean_alg_degree is a generic Boolean-function
+# invariant (Möbius transform + max nonzero Hamming weight). It duplicates
+# algebraic_degree's internals for a raw truth table; promote a
+# `truth_table_algebraic_degree`-style helper to VBF core and route this
+# through it. Kept paper-local for now (core is frozen).
 """
     boolean_alg_degree(tt) -> Int
 
@@ -57,10 +50,8 @@ end
 
 # ── Report utilities ───────────────────────────────────────────────────────────
 
-function print_header(io::IO = stdout)
-    println(io, "=" ^ 72)
-    println(io, "Budaghyan, Carlet, Pott (2006): New Classes of Almost Bent and")
-    println(io, "Almost Perfect Nonlinear Polynomials. IEEE Trans. IT 52(3):762–777")
-    println(io, "=" ^ 72)
-end
-
+paper_banner(io::IO = stdout) = print_banner(
+    io,
+    "Budaghyan, Carlet, Pott (2006): New Classes of Almost Bent and",
+    "Almost Perfect Nonlinear Polynomials. IEEE Trans. IT 52(3):762–777",
+)
