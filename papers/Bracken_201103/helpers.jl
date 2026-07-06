@@ -14,13 +14,7 @@
 
 using VBF
 
-function print_header(io::IO = stdout)
-    println(io, "=" ^ 72)
-    println(io, "Bracken, Byrne, Markin, McGuire (2011): A Few More Quadratic APN Functions")
-    println(io, "Cryptography and Communications 3:43–53, 2011")
-    println(io, "=" ^ 72)
-end
-
+# Header/banner is rendered via core `print_banner` (see report.jl).
 """
     bracken_lut(k, s, u, v, w; modulus) -> Vector{Int}
 
@@ -58,13 +52,21 @@ function bracken_lut(k::Int, s::Int, u::Int, v::Int, w::Int;
 end
 
 """
-    gf_subfield_elem(n, k, i; modulus) -> Int
+    subfield_elem(n, k, i; modulus) -> Int
 
 The i-th nonzero element of GF(2^k) embedded in GF(2^n) (requires k ∣ n), i.e.
 u^(i·(2^n−1)/(2^k−1)) where u = 2 is the primitive element. Index i ∈ 0..2^k−2.
+
+Note: this indexes GF(2^k)* by *powers of the primitive element* u=2, which is a
+different ordering from core `subfield_elements(n, k)` (that returns the whole
+subfield, including 0, sorted by integer value). The two are therefore not
+interchangeable by indexing.
+
+TODO(promote-to-core): candidate for VBF core as a power-indexed companion to
+`subfield_elements`. Not added to core here to keep the core frozen.
 """
-function gf_subfield_elem(n::Int, k::Int, i::Int;
-                           modulus::Int = primitive_polynomial(n))::Int
+function subfield_elem(n::Int, k::Int, i::Int;
+                        modulus::Int = primitive_polynomial(n))::Int
     norm = ((1 << n) - 1) ÷ ((1 << k) - 1)
     gf_pow(2, (i * norm) % ((1 << n) - 1), n; modulus)
 end

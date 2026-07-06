@@ -17,8 +17,8 @@
     @test differential_uniformity(F8W_6) == 2
 
     # Family 8 (v≠0, w≠0, vw≠1): quadrinomial (new); check vw≠1 explicitly
-    v6 = gf_subfield_elem(6, 2, 0; modulus = modulus6)   # u^21 ∈ GF(4)
-    w6 = gf_subfield_elem(6, 2, 1; modulus = modulus6)   # u^42 ∈ GF(4)
+    v6 = subfield_elem(6, 2, 0; modulus = modulus6)   # u^21 ∈ GF(4)
+    w6 = subfield_elem(6, 2, 1; modulus = modulus6)   # u^42 ∈ GF(4)
     @test gf_mul(v6, w6, 6; modulus = modulus6) != 1
     F8_6 = theorem1_sbox(2, 1, 1, 2; modulus = modulus6)
     @test differential_uniformity(F8_6) == 2

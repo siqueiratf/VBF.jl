@@ -39,8 +39,8 @@ the v_idx-th and w_idx-th nonzero elements of GF(2^k) (0 → zero element).
 function theorem1_sbox(k::Int, s::Int, v_idx::Int, w_idx::Int;
                         modulus::Int = primitive_polynomial(3k))
     n = 3k
-    v = v_idx == 0 ? 0 : gf_subfield_elem(n, k, v_idx - 1; modulus)
-    w = w_idx == 0 ? 0 : gf_subfield_elem(n, k, w_idx - 1; modulus)
+    v = v_idx == 0 ? 0 : subfield_elem(n, k, v_idx - 1; modulus)
+    w = w_idx == 0 ? 0 : subfield_elem(n, k, w_idx - 1; modulus)
     SBox(bracken_lut(k, s, 2, v, w; modulus))
 end
 

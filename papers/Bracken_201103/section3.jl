@@ -35,11 +35,14 @@ For Family 8: v acts as both the v-term and w-term (paper uses a single coeffici
 """
 function table2_n6_instances()
     modulus = primitive_polynomial(6)
-    v6 = gf_subfield_elem(6, 2, 0; modulus)  # u^21, generator of GF(4)*
+    v6 = subfield_elem(6, 2, 0; modulus)  # u^21, generator of GF(4)*
     [
         (; family = "1",  label = "n=6 Family 1  (v=0, w=0)", sbox = theorem1_sbox(2, 1, 0, 0; modulus)),
         (; family = "7",  label = "n=6 Family 7  (v=0, w≠0)", sbox = theorem1_sbox(2, 1, 0, 1; modulus)),
         (; family = "8W", label = "n=6 Family 8W (v≠0, w=0)", sbox = theorem1_sbox(2, 1, 1, 0; modulus)),
+        # Family 8 uses independent v,w (two distinct GF(4)* elements) — a valid
+        # Theorem 2.1 member, but NOT the paper's literal single-coefficient n=6
+        # display form vu⁵x¹⁰+vx¹⁷, where one coefficient v feeds both terms.
         (; family = "8",  label = "n=6 Family 8  (v≠0, w≠0)", sbox = theorem1_sbox(2, 1, 1, 2; modulus)),
     ]
 end
@@ -56,7 +59,7 @@ function table2_n12_instances()
     modulus = primitive_polynomial(12)
     # GF(16) in GF(2^12): norm = (2^12−1)/(2^4−1) = 4095/15 = 273
     v12 = 1                                           # v = u^0 = 1 ∈ GF(16)
-    w12 = gf_subfield_elem(12, 4, 0; modulus)         # w = u^273 ∈ GF(16)
+    w12 = subfield_elem(12, 4, 0; modulus)           # w = u^273 ∈ GF(16)
     [
         (; family = "8",  label = "n=12 Family 8:  u^16 x^768 + u x^33 + x^257 + u^290 x^544",
            sbox = theorem1_sbox(4, 5, 1, 5; modulus)),
@@ -92,8 +95,20 @@ const TABLE3_PAPER_DELTA_RANKS_N12 = Dict(
 function section3_report(io::IO = stdout)
     print_section("Section 3 — Equivalence (CCZ-inequivalence evidence)", io)
 
+    println(io, "  " * "!"^68)
+    println(io, "  NOVELTY-GAP MARKER — read before trusting any 'NEW / CCZ-inequivalent' claim:")
+    println(io, "    [computed] n=6 Δ-ranks (below) are computed here by VBF.jl.delta_rank.")
+    println(io, "    [loaded]   n=12 Δ-ranks (Table 3) are TRANSCRIBED from the paper's")
+    println(io, "               original Magma computation — NOT computed in this repo")
+    println(io, "               (VBF.delta_rank guards n≤7; n=12 is a 2^24×2^24 matrix).")
+    println(io, "    [UNVERIFIED] Family 7 vs Family 8W are NOT separated in this repo:")
+    println(io, "               Δ-rank PROVABLY cannot split them (the paper reports EQUAL")
+    println(io, "               Δ-ranks for 7/8W/8). A rigorous split needs Feulner canonical")
+    println(io, "               form / automorphism group — out of scope for this reproduction.")
+    println(io, "  " * "!"^68)
+
     # ── Table 2, n=6: APN check and Δ-rank distinguisher ───────────────────
-    println(io, "  Table 2 (n=6, k=2, s=1): four subfamilies — APN check + Δ-rank")
+    println(io, "  [computed] Table 2 (n=6, k=2, s=1): four subfamilies — APN check + Δ-rank")
     n6_cases   = table2_n6_instances()
     n6_dranks  = Dict{String,Int}()
     for c in n6_cases
@@ -128,7 +143,7 @@ function section3_report(io::IO = stdout)
     println(io)
 
     # ── Table 3, n=12: loaded paper values ─────────────────────────────────
-    println(io, "  Table 3 (n=12): delta-ranks — loaded from paper (Cannon–Nebe–Steel, Magma)")
+    println(io, "  [loaded] Table 3 (n=12): delta-ranks — from paper (Cannon–Nebe–Steel, Magma)")
     println(io, "  (Δ-rank for n=12 requires a 2^24×2^24 matrix; out-of-scope for VBF.jl.)")
     for (fam, dr) in sort(collect(TABLE3_PAPER_DELTA_RANKS_N12), by = x -> x[2])
         print_kv("  " * fam, dr, io)
