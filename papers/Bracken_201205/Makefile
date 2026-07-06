@@ -34,7 +34,7 @@ help:
 	@echo 'Targets: test  report  section2  section3  section4  clean_results'
 	@echo 'Notes:'
 	@echo '  - section2 : permutation check (n=6,12,15)'
-	@echo '  - section3 : differential uniformity (n=6 fast; n=15 ~30 s)'
+	@echo '  - section3 : differential uniformity (n=6 fast; n=15 ~1 s, O(2^n) mem)'
 	@echo '  - section4 : Walsh spectrum bound (n=6, n=15)'
 	@echo '  - n=6 (k=2,s=4): degenerate monomial; n=15 (k=5,s=1,t=1): first non-degenerate APN'
 	@echo '  - Theorem 1.1 t=2 non-degenerate (n=30) is out-of-scope'

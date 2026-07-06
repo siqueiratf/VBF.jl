@@ -12,12 +12,7 @@
 
 using VBF
 
-function print_header(io::IO = stdout)
-    println(io, "=" ^ 72)
-    println(io, "Bracken, Tan, Tan (2012): Binomial Differentially 4 Uniform Permutations")
-    println(io, "  with High Nonlinearity — Finite Fields Appl. 18 (2012) 537–546")
-    println(io, "=" ^ 72)
-end
+# Report banner uses core `print_banner` (VBF, exported); see report.jl.
 
 """
     bracken_binomial_lut(k, s; modulus) -> Vector{Int}
@@ -62,6 +57,9 @@ Streaming linearity (max |LAT[a,b]| outside (0,0)): computes one LAT column at a
 time via Walsh-Hadamard transform, reusing a single work vector. O(2^n) memory vs
 O(2^{2n}) for the full LAT matrix. Required for n≥13 where LAT exceeds available RAM.
 """
+# TODO(promote-to-core): this streaming linearity is generic (no paper-specific
+# logic) and duplicates what a memory-light `linearity` in VBF could offer.
+# Candidate to move into packages/VBF; kept local for now (core is frozen).
 function linearity_rowwise(F::SBox)
     lut = F.lut
     n   = length(lut)
