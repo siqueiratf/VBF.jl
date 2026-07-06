@@ -92,10 +92,11 @@ function family_f2_lut(m::Int, alpha::Int;
     SBox{2 * m}(lut)
 end
 
-function s_of_f_bv(F::SBox{N}) where {N}
-    mask = (1 << N) - 1
-    Z = walsh_zeroes(F)
-    sort!(unique!(Int[Int(z & mask) for z in Z]))
+# Strip trailing zero counts from a subspace-count signature so it can be
+# compared against the paper's trimmed N_F vectors (e.g. [1365, 100100, 140664]).
+function trim_signature(sig::Vector{Int})
+    last_nz = findlast(!=(0), sig)
+    last_nz === nothing ? Int[] : sig[1:last_nz]
 end
 
 function paper_banner(io::IO = stdout)
