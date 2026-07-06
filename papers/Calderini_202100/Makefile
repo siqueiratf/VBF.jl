@@ -4,8 +4,8 @@ ROOT := $(abspath $(MAKEFILE_DIR)/../..)
 JULIA_PROJECT := --project=$(ROOT)
 
 .PHONY: help test report theorem3_1 theorem4_4 theorem5_1 theorem5_4 \
-        theorem5_6 theorem6_2 section6_1 section6_1_deep theorem7_1 \
-        theorem7_2 section7_example proposition7_5 clean_results
+        theorem5_6 theorem6_2 section6_1 section6_1_deep section6_1_n12 \
+        theorem7_1 theorem7_2 section7_example proposition7_5 clean_results
 
 default: help
 
@@ -43,6 +43,12 @@ section6_1_deep:
 	  'include(joinpath("$(MAKEFILE_DIR)", "section6_1.jl")); \
 	   print_header(); section6_1_report(full_search=true); section6_1_n12_report()'
 
+# Section 6.1.3 aggregate n=12 sweep, rank-screened + threaded (julia -t auto)
+section6_1_n12:
+	$(JULIA) -t auto $(JULIA_PROJECT) -e \
+	  'include(joinpath("$(MAKEFILE_DIR)", "section6_1.jl")); \
+	   print_header(); section6_1_n12_sweep()'
+
 theorem7_1:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/theorem7_1.jl
 
@@ -63,5 +69,5 @@ clean_results:
 help:
 	@echo 'Paper: Calderini-Budaghyan-Carlet (2021) — On Known APN and AB Constructions'
 	@echo 'Targets: test  report  theorem3_1  theorem4_4  theorem5_1  theorem5_4'
-	@echo '         theorem5_6  theorem6_2  section6_1  section6_1_deep  theorem7_1'
-	@echo '         theorem7_2  section7_example  proposition7_5  clean_results'
+	@echo '         theorem5_6  theorem6_2  section6_1  section6_1_deep  section6_1_n12'
+	@echo '         theorem7_1  theorem7_2  section7_example  proposition7_5  clean_results'

@@ -27,7 +27,11 @@
 #   (~256k SBox builds + DDTs at n=10 plus mugshots, est. 15-30 min) is opt-in:
 #   section6_1_report(full_search=true) or `make section6_1_deep`.
 # Section 6.1.3 (n=12): targeted case checks in section6_1_n12_report below;
-#   the aggregate sweep (~900k builds x ~11 ms, est. days) is skipped.
+#   the full aggregate sweep is section6_1_n12_sweep (opt-in, threaded — run
+#   `make section6_1_n12`, i.e. julia -t auto). It screens ~862k candidates
+#   with the rank-based quadratic APN test (is_quadratic_apn_rank; early-exit
+#   Jacobian rank, far cheaper than the DDT on non-APN candidates) over LUTs
+#   assembled from precomputed GF(2^6) base tables.
 # Section 6.1.4 (n=16): skipped. Single DDT at n=16 is ~4 s (2^32 entries) and
 #   the sweep needs ~3*10^7 builds (est. years of CPU); the published outcomes
 #   are again Prop 5.8 / Cor 5.7 patterns, verified here at m=4,5,6.
@@ -344,8 +348,216 @@ function section6_1_n12_report(io::IO = stdout; deep::Bool = true)
     println(io, "        theorem5_6_report(m=6) (Prop 5.8 / Cor 5.7 patterns)")
 
     all_ok = ok_struct && ok_B && ok_C && ok_A_apn && ok_A_new
-    print_kv("completeness", "targeted spot-checks at n=12 (aggregate sweep est. days)", io)
+    print_kv("completeness",
+             "targeted spot-checks at n=12 (aggregate sweep: make section6_1_n12)", io)
     (; all_ok, ok_struct, ok_B, ok_C, ok_A_apn, ok_A_new, deep = true)
+end
+
+# Threaded EA-mugshot set of a vector of SBoxes.
+function _threaded_mugshot_set(fs::Vector)
+    out = Vector{APNEAMugshot}(undef, length(fs))
+    Threads.@threads for idx in eachindex(fs)
+        out[idx] = apn_ea_mugshot(fs[idx])
+    end
+    Set(out)
+end
+
+"""
+    section6_1_n12_sweep([io]) -> NamedTuple
+
+Section 6.1.3 aggregate search at n=12 (m=6, i=1): exhaustive F1/F2 sweep over
+(h,k,r,b,c) — ~862k candidates — screened with `is_quadratic_apn_rank`
+(Jacobian-rank APN test for quadratics, early exit) on LUTs assembled from
+precomputed GF(2^6) multiplication/power tables. APN survivors are classified
+by EA-mugshot against Gold, hexanomial, Taniguchi, Zhou-Pott, Theorem 6.2 and
+the F1(b=0,h=2,r=4) class. Run threaded: `julia -t auto` / `make section6_1_n12`.
+"""
+function section6_1_n12_sweep(io::IO = stdout)
+    m, i  = 6, 1
+    mod_m = primitive_polynomial(m)
+    len   = 1 << m
+    nn    = 2m
+    print_section("Section 6.1.3 — n=12 aggregate F1/F2 sweep " *
+                  "(rank-screened, $(Threads.nthreads()) threads)", io)
+
+    # --- GF(2^6) tables ---
+    M = [gf_mul(a, b, m; modulus = mod_m) for a in 0:(len - 1), b in 0:(len - 1)]
+    powtab(e) = Int[gf_pow(v, e, m; modulus = mod_m) for v in 0:(len - 1)]
+    sz = len * len
+    XY = Vector{Int}(undef, sz)
+    A  = Vector{Int}(undef, sz)
+    xi = powtab(1 << i)
+    for x in 0:(len - 1), y in 0:(len - 1)
+        idx = (x | (y << m)) + 1
+        XY[idx] = M[x + 1, y + 1]
+        A[idx]  = M[xi[x + 1] + 1, x + 1]        # x^{2^i+1}
+    end
+
+    # --- reference EA-mugshot sets at n=12 (threaded) ---
+    t_refs = time()
+    gold_fs = [gold_apn(nn, k) for k in 1:(nn - 1) if gcd(k, nn) == 1]
+    hex_fs  = SBox{nn}[]
+    for ih in 1:(m - 1)
+        gcd(ih, m) == 1 || continue
+        mod_n = primitive_polynomial(nn)
+        d = first(x for x in 1:(1 << nn) - 1
+                  if gf_pow(x, 1 << m, nn; modulus = mod_n) != x)
+        for c in 0:(1 << nn) - 1
+            hexanomial_condition(m, ih, c; modulus = mod_n) || continue
+            H = hexanomial_sbox(m, ih, c, d; modulus = mod_n)
+            is_quadratic_apn_rank(H) && push!(hex_fs, H)
+        end
+    end
+    tan_fs = SBox{nn}[]
+    for it in (1, 5), a in 0:1, b in 1:(len - 1)
+        bivariate_carlet_condition(m, it, a, b; modulus = mod_m) || continue
+        T = taniguchi_apn(m, it, a, b; modulus = mod_m)
+        is_quadratic_apn_rank(T) && push!(tan_fs, T)
+    end
+    zp_fs = SBox{nn}[]
+    for iz in (1, 5), j in (0, 2), alpha in 1:(len - 1)
+        gf_is_dth_power(alpha, 3, m; modulus = mod_m) && continue
+        push!(zp_fs, zhou_pott_sbox(m, iz, j, alpha; modulus = mod_m))
+    end
+    t62_fs = SBox{nn}[]
+    for b in 0:(len - 1), c in 0:(len - 1)
+        theorem6_2_condition(m, i, b, c; modulus = mod_m) || continue
+        push!(t62_fs, theorem6_2_sbox(m, i, b, c; modulus = mod_m))
+    end
+    h2r4_fs = SBox{nn}[]
+    for c in 1:(len - 1)
+        F = f1_sbox(m, i, 2, 0, 4, 0, c; modulus = mod_m)
+        is_quadratic_apn_rank(F) && push!(h2r4_fs, F)
+    end
+    refs = [:gold       => _threaded_mugshot_set(gold_fs),
+            :hexanomial => _threaded_mugshot_set(hex_fs),
+            :taniguchi  => _threaded_mugshot_set(tan_fs),
+            :zhou_pott  => _threaded_mugshot_set(zp_fs),
+            :thm62      => _threaded_mugshot_set(t62_fs),
+            :f1_h2r4    => _threaded_mugshot_set(h2r4_fs)]
+    for (name, set) in refs
+        print_kv("$(name) EA-classes at n=12", length(set), io)
+    end
+    print_kv("reference-set build time (s)", round(time() - t_refs; digits = 1), io)
+
+    # --- case list: (form, h, k, r, b-range) ---
+    cases = Tuple{Symbol,Int,Int,Int}[]
+    for h in 0:(m - 1), k in 0:(m - 1), r in 0:(m - 1)
+        push!(cases, (:F1, h, k, r))
+    end
+    for h in 0:(m - 1), r in 0:(m - 1)
+        push!(cases, (:F1_b0, h, 0, r))
+    end
+    for k in 0:(m - 1), r in 0:(m - 1)
+        push!(cases, (:F2, 0, k, r))
+    end
+
+    # --- threaded rank-screen over all candidates ---
+    t_sweep = time()
+    case_survivors = Vector{Vector{Tuple{Int,Int,SBox{nn,UInt16}}}}(undef, length(cases))
+    case_tested    = Vector{Int}(undef, length(cases))
+    Threads.@threads for ci in eachindex(cases)
+        form, h, k, r = cases[ci]
+        px  = powtab(1 << (i + h))                 # x^{2^{i+h}}
+        py  = powtab(1 << h)                       # y^{2^h}
+        qx  = powtab(1 << k)                       # x^{2^k}
+        qy  = powtab(1 << (i + k))                 # y^{2^{i+k}}
+        dr  = powtab(((1 << i) + 1) * (1 << r))    # y^{(2^i+1)2^r}
+        Bh  = Vector{Int}(undef, sz)
+        Ck  = Vector{Int}(undef, sz)
+        DrY = Vector{Int}(undef, sz)
+        for x in 0:(len - 1), y in 0:(len - 1)
+            idx = (x | (y << m)) + 1
+            Bh[idx]  = M[px[x + 1] + 1, py[y + 1] + 1]
+            Ck[idx]  = M[qx[x + 1] + 1, qy[y + 1] + 1]
+            DrY[idx] = dr[y + 1]
+        end
+        bs = form == :F1 ? (1:(len - 1)) : (0:0)
+        lut = Vector{Int}(undef, sz)
+        found = Tuple{Int,Int,SBox{nn,UInt16}}[]
+        tested = 0
+        for b in bs, c in 1:(len - 1)
+            if form == :F2
+                @inbounds for idx in 1:sz
+                    G = A[idx] ⊻ Ck[idx] ⊻ M[c + 1, DrY[idx] + 1]
+                    lut[idx] = XY[idx] | (G << m)
+                end
+            elseif form == :F1_b0
+                @inbounds for idx in 1:sz
+                    G = A[idx] ⊻ Bh[idx] ⊻ M[c + 1, DrY[idx] + 1]
+                    lut[idx] = XY[idx] | (G << m)
+                end
+            else
+                @inbounds for idx in 1:sz
+                    G = A[idx] ⊻ Bh[idx] ⊻ M[b + 1, Ck[idx] + 1] ⊻
+                        M[c + 1, DrY[idx] + 1]
+                    lut[idx] = XY[idx] | (G << m)
+                end
+            end
+            tested += 1
+            F = SBox{nn}(lut)
+            is_quadratic_apn_rank(F) && push!(found, (b, c, F))
+        end
+        case_survivors[ci] = found
+        case_tested[ci]    = tested
+    end
+    n_tested = sum(case_tested)
+    survivors = [(cases[ci]..., b, c, F)
+                 for ci in eachindex(cases) for (b, c, F) in case_survivors[ci]]
+    print_kv("candidates screened", n_tested, io)
+    print_kv("APN survivors", length(survivors), io)
+    print_kv("screen time (s)", round(time() - t_sweep; digits = 1), io)
+
+    # --- threaded classification of survivors ---
+    t_cls = time()
+    mgs = Vector{APNEAMugshot}(undef, length(survivors))
+    Threads.@threads for si in eachindex(survivors)
+        mgs[si] = apn_ea_mugshot(survivors[si][7])
+    end
+    counts     = Dict{Symbol,Int}()
+    case_class = Dict{Tuple{Symbol,Int,Int,Int},Set{Symbol}}()
+    for si in eachindex(survivors)
+        form, h, k, r, b, c, _ = survivors[si]
+        cls = _classify(mgs[si], refs)
+        cls == :new && (cls = :unknown)
+        counts[cls] = get(counts, cls, 0) + 1
+        push!(get!(case_class, (form, h, k, r), Set{Symbol}()), cls)
+    end
+    print_kv("classification time (s)", round(time() - t_cls; digits = 1), io)
+    for (cls, cnt) in sort(collect(counts); by = first)
+        print_kv("    class $(cls)", cnt, io)
+    end
+
+    # --- checks against the published Section 6.1.3 outcomes ---
+    ok_classified = !haskey(counts, :unknown)
+    print_check("every n=12 APN survivor falls in a reference class", ok_classified, io)
+    f1b_classes = union(Set{Symbol}(),
+                        (case_class[key] for key in keys(case_class)
+                         if key[1] == :F1)...)
+    ok_f1b_hex = f1b_classes == Set([:hexanomial])
+    print_check("F1 b!=0 produces only hexanomial classes", ok_f1b_hex, io)
+    ok_h2r4 = get(case_class, (:F1_b0, 2, 0, 4), Set{Symbol}()) == Set([:f1_h2r4])
+    print_check("F1 b=0 (h=2,r=4) is its own class ('could be inequivalent')", ok_h2r4, io)
+    ok_h3r0 = get(case_class, (:F1_b0, 3, 0, 0), Set{Symbol}()) == Set([:thm62])
+    print_check("F1 b=0 (h=3,r=0) gives the Theorem 6.2 class", ok_h3r0, io)
+    ok_h5r4 = :taniguchi in get(case_class, (:F1_b0, 5, 0, 4), Set{Symbol}())
+    print_check("F1 b=0 (h=5,r=4) gives Taniguchi", ok_h5r4, io)
+    ok_k1r2 = :taniguchi in get(case_class, (:F2, 0, 1, 2), Set{Symbol}())
+    print_check("F2 (k=1,r=2) gives Taniguchi", ok_k1r2, io)
+    ok_k3r0 = get(case_class, (:F2, 0, 3, 0), Set{Symbol}()) == Set([:thm62])
+    print_check("F2 (k=3,r=0) gives the Theorem 6.2 class", ok_k3r0, io)
+    k4r2 = get(case_class, (:F2, 0, 4, 2), Set{Symbol}())
+    ok_k4r2 = k4r2 == Set([:f1_h2r4])
+    print_check("F2 (k=4,r=2) == F1(b=0,h=2,r=4) class — settles the 'second case " *
+                "for b=0' wording (it is NOT the Thm 6.2 case)", ok_k4r2, io)
+    print_kv("F2(k=4,r=2) observed classes", k4r2, io)
+
+    all_ok = ok_classified && ok_f1b_hex && ok_h2r4 && ok_h3r0 &&
+             ok_h5r4 && ok_k1r2 && ok_k3r0 && ok_k4r2
+    print_kv("completeness", "exhaustive over (h,k,r,b,c) at n=12, i=$i", io)
+    (; all_ok, n_tested, n_survivors = length(survivors), counts, case_class,
+       ok_classified, ok_f1b_hex, ok_h2r4, ok_h3r0, ok_h5r4, ok_k1r2,
+       ok_k3r0, ok_k4r2)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
