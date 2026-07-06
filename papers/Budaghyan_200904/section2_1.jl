@@ -84,6 +84,26 @@ function _Tir(a::Int, α::Int, i::Int, r::Int, n::Int, M::Int)
 end
 
 """
+    g_in_kernel(n, r, i, j) -> Bool
+
+Theorem-1 membership test for the single-term perturbation `g(x) = b_j·x^{2^i+1}`
+(with `b_j = 2ʲ`) added to the Gold `F(x) = x^{2^r+1}`: `true` iff
+`tr(T_i^r(a, b_j)) = 0` for every `a` with `tr(a^{-(2^r+1)}) = 0`. By Theorem 1
+this holds **iff** `F + g` is APN, so it is the algebraic oracle behind the
+dependence search (each kernel vector is a superposition of such members).
+"""
+function g_in_kernel(n::Integer, r::Integer, i::Integer, j::Integer)
+    nn = Int(n); M = primitive_polynomial(nn); base = (1 << r) + 1
+    b = 1 << j
+    for a = 1:((1 << nn) - 1)
+        gf_trace(gf_inv(gf_pow(a, base, nn; modulus = M), nn; modulus = M), nn; modulus = M) == 0 ||
+            continue
+        gf_trace(_Tir(a, b, i, r, nn, M), nn; modulus = M) == 0 || return false
+    end
+    true
+end
+
+"""
     dependence_search(io; n, r, save_results) -> NamedTuple
 
 Build W = (tr(T_i^r(a,b_j)))_{a: tr(a^{-3})=0} over the standard basis b_j=2ʲ,
@@ -120,7 +140,7 @@ function dependence_search(io::IO = stdout; n::Integer = 5, r::Integer = 1, save
     # Verify a few kernel vectors: reconstruct g(x)=Σ c_{ij} b_j x^{2^i+1}, check F+g APN.
     F = gold_apn(nn, r)
     verified = 0
-    checks = min(kdim, 8)
+    checks = kdim                              # exhaustive over the kernel basis
     for k = 1:checks
         v = ker[k]
         glut = zeros(Int, 1 << nn)
@@ -134,7 +154,7 @@ function dependence_search(io::IO = stdout; n::Integer = 5, r::Integer = 1, save
         Fg = SBox{nn}([F.lut[x + 1] ⊻ glut[x + 1] for x = 0:((1 << nn) - 1)])
         differential_uniformity(Fg) == 2 && (verified += 1)
     end
-    print_check("all $checks tested kernel vectors give F+g APN", verified == checks, io)
+    print_check("all $checks kernel basis vectors give F+g APN (exhaustive over basis)", verified == checks, io)
 
     result = (; n = nn, r, num_A = length(A), kdim, checks, verified)
     if save_results
