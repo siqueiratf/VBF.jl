@@ -33,4 +33,6 @@ papers/*.pdf
 # Local planning notes, never committed.
 **/PLAN.md
 
-
+.env
+.env.local
+.env.*.local
