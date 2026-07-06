@@ -68,7 +68,7 @@ export apply_tu, core, twist
 export are_ccz_equivalent
 
 # tier 7 — APN-specific invariants
-export ortho_derivative, is_quadratic_apn
+export ortho_derivative, is_quadratic_apn, is_quadratic_apn_rank
 export ortho_integral
 export sigma_multiplicities
 export APNEAMugshot, apn_ea_mugshot

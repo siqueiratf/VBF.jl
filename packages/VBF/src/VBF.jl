@@ -60,6 +60,7 @@ include("spectra/anomaly.jl")
 
 # 4. invariants — EA/CCZ invariants
 include("invariants/ortho_derivative.jl")
+include("invariants/quadratic_apn_rank.jl")
 include("invariants/ortho_integral.jl")
 include("invariants/sigma_multiplicities.jl")
 include("invariants/mugshot.jl")
