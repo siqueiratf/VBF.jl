@@ -32,4 +32,6 @@ export build_corpus_store!, register_corpus!
 
 # σ-signature CCZ classification + novelty oracle
 export sigma_key, sigma_hash, build_sigma_index!, classify_ccz, is_novel
+export ccz_fingerprint_key, ccz_fingerprint_hash, build_ccz_fingerprint_index!
+export ccz_fingerprint_index_path, classify_ccz_fingerprint, is_novel_fingerprint
 export populate_ccz_equivalence_classes!, sigma_index_path

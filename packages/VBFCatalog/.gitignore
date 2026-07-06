@@ -1,6 +1,7 @@
 # Regenerable σ-index side store (build with build_sigma_index!). Large (one row
 # per catalogued function — millions) and derived; never committed.
 corpora/ccz_sigma_index.sqlite
+corpora/ccz_fingerprint_index.sqlite
 # Large 2025 bulk corpus (3.78M). Regenerate: data-build/import_beierle2025.jl
 # (needs papers/Kuznetsov_202606/catalogs/apn8_blp2025.anf), or host externally.
 corpora/beierle2025_n8.sqlite
