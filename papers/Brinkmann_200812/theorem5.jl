@@ -36,8 +36,19 @@ function theorem5_n4_report(io::IO = stdout)
     print_check(io, "F2 ≁ x³ (Gold) — non-power class", !are_ea_equivalent(F2, G3))
     println(io, "  F2 algebraic degree = $(algebraic_degree(F2)) (≠ 2 confirms non-Gold)")
     println(io, "  F2 is from the Budaghyan-Carlet-Pott family [ref 5], eq. (5).")
-    println(io, "  Note: are_ea_equivalent(F2, formula5_n4()) = false for non-canonical inputs;")
-    println(io, "        degree argument (F2 deg=3, Gold deg=2) confirms distinct EA-classes.")
+
+    # F2 and the closed-form BCP eq.(5) construction are the *same* CCZ class
+    # (n=4 has a single CCZ class — Theorem 6). With the corrected CCZ oracle
+    # this is decided directly, replacing the earlier degree-argument hand-wave.
+    F5 = formula5_n4()
+    print_check(io, "F2 ~ formula5_n4() CCZ-equivalent (same n=4 CCZ class)",
+                are_ccz_equivalent(F2, F5))
+    println(io, "  Note: are_ea_equivalent(F2, formula5_n4()) returns false, but this is")
+    println(io, "        *undecided*, not a genuine EA-inequivalence: both are deg-3")
+    println(io, "        non-permutations, and the auto EA strategy falls back to the")
+    println(io, "        permutation-only Heggebakk search (VBF ea/api.jl), which bails")
+    println(io, "        to false on non-permutation inputs. The decidable CCZ oracle")
+    println(io, "        above confirms they lie in the same class.")
 end
 
 """

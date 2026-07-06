@@ -12,6 +12,14 @@
 
 include(joinpath(@__DIR__, "helpers.jl"))
 
+# Table 4 counts, transcribed verbatim from the paper (tex lines 393-395).
+# n=4,5 are infeasible to enumerate; stored as exact digit strings so a dropped
+# digit (there was a 23-vs-24 digit transcription bug at n=5) is caught by
+# test/test_section6.jl.
+const APN_COUNT_N3 = "688128"
+const APN_COUNT_N4 = "18940805775360"
+const APN_COUNT_N5 = "110823678910407691468800"
+
 """
     count_apn_n1() -> Int
 
@@ -75,16 +83,16 @@ function section6_report(io::IO = stdout)
     n2 = count_apn_n2()
     print_check(io, "n=2: #APN = $n2 (expected 192)", n2 == 192)
 
-    println(io, "  n=3: #APN = 688128 (from paper; exhaustive ~2 min — run section6_n3 target)")
-    println(io, "  n=4: #APN = 18940805775360 (from paper Table 4; infeasible to compute)")
-    println(io, "  n=5: #APN = 11082367891040769146800 (from paper Table 4; infeasible)")
+    println(io, "  n=3: #APN = $APN_COUNT_N3 (from paper; exhaustive ~2 min — run section6_n3 target)")
+    println(io, "  n=4: #APN = $APN_COUNT_N4 (from paper Table 4; infeasible to compute)")
+    println(io, "  n=5: #APN = $APN_COUNT_N5 (from paper Table 4; infeasible)")
     println(io)
     print_kv(io, "Table 4 (paper)", "n | #APN")
     print_kv(io, "n=1", "4  (100%)")
     print_kv(io, "n=2", "192  (75%)")
-    print_kv(io, "n=3", "688128  (≈4.1%)")
-    print_kv(io, "n=4", "18940805775360  (≈1.0×10⁻⁴%)")
-    print_kv(io, "n=5", "11082367891040769146800  (≈7.6×10⁻²⁴%)")
+    print_kv(io, "n=3", "$APN_COUNT_N3  (≈4.1%)")
+    print_kv(io, "n=4", "$APN_COUNT_N4  (≈1.0×10⁻⁴%)")
+    print_kv(io, "n=5", "$APN_COUNT_N5  (≈7.6×10⁻²⁴%)")
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
