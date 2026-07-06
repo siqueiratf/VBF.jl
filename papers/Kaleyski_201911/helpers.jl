@@ -16,6 +16,16 @@ function print_header(io::IO = stdout)
 end
 
 """
+    is_swap_degenerate(s::SBox) -> Bool
+
+`true` when `F(0) == F(1)`, in which case the two-point swap at {0,1} is a no-op
+(`G = F`) and Theorem 17's `F(1)=1` normalisation hypothesis cannot be met. The
+paper excludes this via Observation 7 (`F(u₁) ≠ F(u₂)`, i.e. `v_i ≠ 0`); such
+functions must be filtered out before calling `normalize_apn`/`theorem17_holds`.
+"""
+is_swap_degenerate(s::SBox) = Int(s.lut[1]) == Int(s.lut[2])
+
+"""
     normalize_apn(s::SBox{N}) -> SBox{N}
 
 EA-normalize `s` to satisfy F(0)=0, F(1)=1:
@@ -24,13 +34,20 @@ EA-normalize `s` to satisfy F(0)=0, F(1)=1:
 
 Required by Theorem 17 (Eq. 29). Power APN functions already satisfy both
 conditions automatically (0^k=0, 1^k=1 in any field).
+
+Throws `ArgumentError` if `F(0) == F(1)` (degenerate): no output-only transform
+can yield `F(1)=1` there, and the two-point swap at {0,1} is a no-op. Pre-filter
+with [`is_swap_degenerate`](@ref).
 """
 function normalize_apn(s::SBox{N}) where {N}
     lut = Int.(s.lut)
     v0 = lut[1]           # F(0)
     lut = xor.(lut, v0)   # step 1: F(0) = 0
     v1 = lut[2]           # F(1) after shift
-    if v1 != 0 && v1 != 1
+    v1 == 0 && throw(ArgumentError(
+        "normalize_apn: F(0) == F(1) (degenerate); no output transform yields " *
+        "F(1)=1. Filter with is_swap_degenerate first."))
+    if v1 != 1
         inv_v1 = gf_inv(v1, N)
         lut = [gf_mul(y, inv_v1, N) for y in lut]
     end
@@ -86,4 +103,20 @@ function theorem17_holds(s::SBox{N}) where {N}
     s2 = compute_s2(s)
     holds = (6 * dd10 == s1 + s2)
     return (s1 = s1, s2 = s2, dd10 = dd10, holds = holds)
+end
+
+"""
+    formula34(n::Int) -> Int
+
+Formula (34) from Kaleyski (2019): closed form for S1(x^3) = Σ_y DD_{x^3}(y, y^3⊕1)
+as a function of the parity of `n` (and of `n/2`). Also equals S2(x^3).
+"""
+function formula34(n::Int)::Int
+    if isodd(n)
+        return 2 * (2^(n-1) - 1)
+    elseif isodd(n ÷ 2)   # n even, n/2 odd
+        return 2 * (2^(n-1) + 2^(n÷2) - 1)
+    else                   # n even, n/2 even
+        return 2 * (2^(n-1) - 2^(n÷2) - 1)
+    end
 end

@@ -15,17 +15,7 @@
 include(joinpath(@__DIR__, "helpers.jl"))
 using VBFCatalog
 
-
-# Formula (34) inline — avoid double-include of table2.jl
-function _formula34_local(n::Int)::Int
-    if isodd(n)
-        return 2 * (2^(n-1) - 1)
-    elseif isodd(n ÷ 2)
-        return 2 * (2^(n-1) + 2^(n÷2) - 1)
-    else
-        return 2 * (2^(n-1) - 2^(n÷2) - 1)
-    end
-end
+# formula34 comes from helpers.jl (shared with table2.jl).
 
 
 """
@@ -41,7 +31,11 @@ function conjecture21_report(; io::IO = stdout)
     println(io, "  S1(F) = S2(F) = formula34(n)  [same as x^3].")
     println(io)
 
-    names = apn_catalog_names()
+    # Conjecture 21 concerns *power* APN functions only. Catalog power entries are
+    # exactly those declaring a `monomial_exponent`; non-power APN (trinomials,
+    # bivariate, ...) are out of scope and must be excluded.
+    names = filter(n -> haskey(apn_catalog_metadata(n), "monomial_exponent"),
+                   apn_catalog_names())
     rows = NamedTuple[]
     all_match = true
 
@@ -51,7 +45,7 @@ function conjecture21_report(; io::IO = stdout)
     for name in sort(names)
         s = load_apn_function(name)
         N = inputbits(s)
-        expected = _formula34_local(N)
+        expected = formula34(N)
         s1 = compute_s1(s)
         match = (s1 == expected)
         all_match &= match

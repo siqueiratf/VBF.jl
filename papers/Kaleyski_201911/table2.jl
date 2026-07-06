@@ -14,23 +14,7 @@
 # VBF API used: SBox, gf_monomial_lut, primitive_polynomial, ddt (via helpers)
 
 include(joinpath(@__DIR__, "helpers.jl"))
-
-
-"""
-    formula34(n::Int) -> Int
-
-Formula (34) from Kaleyski (2019): value of S1(x^3) = Σ_y DD_{x^3}(y, y^3⊕1)
-as a function of n parity.
-"""
-function formula34(n::Int)::Int
-    if isodd(n)
-        return 2 * (2^(n-1) - 1)
-    elseif isodd(n ÷ 2)   # n even, n/2 odd
-        return 2 * (2^(n-1) + 2^(n÷2) - 1)
-    else                   # n even, n/2 even
-        return 2 * (2^(n-1) - 2^(n÷2) - 1)
-    end
-end
+# formula34 lives in helpers.jl (shared with conjecture21.jl).
 
 
 """
