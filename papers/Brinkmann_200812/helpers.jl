@@ -11,8 +11,9 @@
 #   5. table2_luts()         — EA-canonical n=4 APN representatives (Table 2)
 #   6. n5_power_sboxes()     — five APN permutations for n=5 (Table 1 classes)
 #   7. n5_all_seven()        — all seven n=5 EA-class representatives (Theorem 5)
-# VBF API used: gf_mul, gf_pow, primitive_polynomial, SBox, differential_uniformity,
-#               algebraic_degree, is_permutation, are_ea_equivalent, are_ccz_equivalent
+# VBF API used: gf_mul, gf_pow, gf_monomial_lut, primitive_polynomial, SBox,
+#               differential_uniformity, algebraic_degree, is_permutation,
+#               are_ea_equivalent, are_ccz_equivalent
 
 using VBF
 using Dates
@@ -23,7 +24,7 @@ using Dates
 x ↦ xᵈ over GF(2ⁿ) with the canonical primitive polynomial modulus.
 """
 function power_sbox(n::Int, d::Int; modulus::Int = primitive_polynomial(n))
-    SBox{n}([gf_pow(x, d, n; modulus = modulus) for x in 0:((1 << n) - 1)])
+    SBox{n}(gf_monomial_lut(n, d; modulus = modulus))
 end
 
 """
