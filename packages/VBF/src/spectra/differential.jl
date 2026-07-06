@@ -55,13 +55,23 @@ end
 Multiset of DDT entries excluding the trivial row `a = 0`. The most
 common entry in the spectrum is `0`; the highest is the differential
 uniformity.
+
+Computed one input difference at a time (like [`differential_uniformity`](@ref)),
+so it uses `O(2ᴺ)` memory instead of materialising the full `2ᴺ × 2ᴺ` DDT.
 """
 function differential_spectrum(s::SBox)
-    d = ddt(s)
-    n = size(d, 1)
+    lut = s.lut
+    fieldsize = length(lut)
+    counts = zeros(Int, fieldsize)
     sp = Spectrum()
-    @inbounds for a = 2:n, b = 1:n      # skip row a=0
-        add!(sp, d[a, b])
+    @inbounds for a = 1:(fieldsize-1)      # skip row a=0
+        fill!(counts, 0)
+        for x = 0:(fieldsize-1)
+            counts[(Int(lut[x+1]) ⊻ Int(lut[(x⊻a)+1]))+1] += 1
+        end
+        for b = 1:fieldsize
+            add!(sp, counts[b])
+        end
     end
     sp
 end
