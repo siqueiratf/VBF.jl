@@ -69,12 +69,36 @@ stays read-only and writes nothing.
 
 ## 3. Output
 
-**Chat only.** Relay the agent's verdict inline to the user. Do **not** write any
-`REVIEW.md` or other file unless the user explicitly asks. Lead with the summary
-verdict(s) (Complete / Mostly complete / Partial / Missing / Blocked) and the
-concrete next-action checklist; keep the full per-item breakdown available but
-don't bury the verdict under it. Surface any **catalog gaps** and **reuse
-violations** in the summary — they are the actionable follow-ups.
+Relay the agent's verdict inline to the user. Lead with the summary verdict(s)
+(Complete / Mostly complete / Partial / Missing / Blocked) and the concrete
+next-action checklist; keep the full per-item breakdown available but don't bury
+the verdict under it. Surface any **catalog gaps** and **reuse violations** in the
+summary — they are the actionable follow-ups.
+
+### 3a. Write the per-paper README (standing step — every review)
+
+After relaying the verdict, **the launcher (main thread) writes** a
+`papers/<ID>/README.md` for each reviewed paper, built from the agent's findings.
+The reviewer subagent stays read-only; the file write happens here, not inside the
+review pass. One README per paper; overwrite on re-review.
+
+Structure the README as:
+
+1. **Header** — paper citation, reproduction path, one-line verdict.
+2. **Issue Catalog**, split into exactly two subsections:
+   - **Paper Issues** — flaws/errors in the ORIGINAL paper (wrong formula, false
+     claim, table/theorem typo, unmet stated condition). Cite the exact paper
+     location and give the computed counter-evidence. No fix plan (not ours).
+   - **Reproduction Issues** — errors introduced in OUR implementation (wrong
+     constant, stale catalog/API reference, failing test, mis-scoped claim,
+     helper duplicating core). Each MUST carry: **Location** (file:line/function),
+     **Symptom** (test name + actual vs expected), **Root cause**, and a numbered
+     **Resolution plan**.
+   - If a subsection is empty, write "None found." — do not omit the heading.
+3. **Items reproduced exactly**, **Test results**, **Catalog status**, and any
+   **Library-reuse note**, for context.
+
+Then tell the user the README path(s) written.
 
 ---
 
@@ -99,7 +123,9 @@ Run the review first; act on it only after the user chooses to.
 ## Notes
 
 - The reviewer agent is **read-only**. All mutation (catalog writes, helper
-  refactors) happens in named follow-up steps, never inside the review pass.
+  refactors) happens in named follow-up steps, never inside the review pass. The
+  standing `papers/<ID>/README.md` write (step 3a) is done by the launcher/main
+  thread after the agent returns — not by the reviewer agent.
 - Keep this skill in sync with the agents: if the reviewer agent's name, the
   `apn-catalog-updater` name, the `papers/<ID>/input/` layout, or the catalog path
   `packages/VBFCatalog/data-raw/apn_catalog/n<N>_apn.toml` changes, update the

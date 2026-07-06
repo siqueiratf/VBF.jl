@@ -333,3 +333,49 @@ The PLAN.md is the contract for the session — keep it current if scope changes
 | `papers/CanteautCouvreurPerrin2022_orthoderivative.jl` | single-file | `reproduce()` + `report()` |
 | `papers/Beierle_202201/` | **canonical multi-file reference** | `theorem1.jl`, `algorithm1.jl`, `lemma4.jl`, `paper_report()` |
 | `papers/Yu_202211d/` | multi-file, full | `PLAN.md`, `helpers.jl`, `conjecture2_search.jl`, `Makefile`, `test/` |
+
+---
+
+## Recurring pitfalls / guardrails
+
+Patterns seen across many prior reproductions. Assume they will recur.
+
+### Paper formulas are often buggy — verify, correct, document
+
+Published explicit formulas, table entries, and exponents frequently contain
+typos. **Never transcribe a formula and assume it is right.** Always evaluate it
+and check the claimed property (APN / differential uniformity / spectrum). If it
+fails to verify:
+
+1. Suspect a paper typo before suspecting your own code.
+2. Derive the corrected form (common fixes: an exponent should be `2^m+1` not
+   `2^{m+1}`; a permutation formula only works as the composition
+   `F' = F2 ∘ F1^{-1}`, not the printed closed form; a stated nonlinearity /
+   spectrum row is off).
+3. Verify the corrected form computationally.
+4. Record the discrepancy explicitly in `PLAN.md` / `paper_report()` as
+   "paper bug: <section/table>, stated X, correct Y".
+
+Seen in `Li_202402`, `Budaghyan_200506` (Thm 3/4), `Zha_201401` (Table 1),
+`Budaghyan_202009` (Prop 6), `Li_202207` / `Zheng_202211` (exponent),
+`Gologlu_202207`.
+
+### Magma-only invariants are out-of-scope
+
+Γ-rank / Δ-rank at large `n` and the paper's timing tables generally require
+Magma and do not reproduce in-repo. Declare them **out-of-scope in `PLAN.md`**
+up front rather than attempting them. If a small-`n` rank is feasible, compute
+it and label it; otherwise state "Magma-only, not reproduced" (or "loaded from
+Magma" if the paper supplies the value).
+
+Seen in `Budaghyan_202011`, `Li_202207`, `Taniguchi_201909`, `Kaleyski_202203`.
+
+### Field construction: conway vs primitive polynomial
+
+Some dimensions need `conway_polynomial(n)` rather than `primitive_polynomial(n)`
+to match the paper's field (e.g. `n=8` → `conway_polynomial(8) = 285`). If a
+construction that should be APN verifies under one modulus but not the other,
+the field polynomial is the likely culprit — try the Conway polynomial and
+confirm the intended field before debugging the construction further.
+
+Seen in `Budaghyan_202101`.
