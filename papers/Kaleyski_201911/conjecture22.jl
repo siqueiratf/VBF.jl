@@ -46,8 +46,16 @@ function conjecture22_report(; ns::Vector{Int} = [5,6,7,8], limit::Int = typemax
 
         n_fail = 0
         n_total = 0
+        n_skip = 0
         for row in apn_n
             s = VBFCatalog.load_sbox(db, row.id)
+            # Observation 7: the swap needs F(u₁) ≠ F(u₂). For the {0,1} swap this
+            # means F(0) ≠ F(1); a degenerate function has G = F (no genuine swap),
+            # so exclude it rather than feed it to the F(1)=1 normalisation.
+            if is_swap_degenerate(s)
+                n_skip += 1
+                continue
+            end
             sn = normalize_apn(s)
             r = theorem17_holds(sn)
             n_total += 1
@@ -59,9 +67,10 @@ function conjecture22_report(; ns::Vector{Int} = [5,6,7,8], limit::Int = typemax
                 n_fail += 1
             end
         end
-        pct = round(100 * n_fail / n_total; digits=1)
-        print_kv("n=$n", "$(n_fail)/$(n_total) fail condition ($(pct)% support conjecture)", io)
-        push!(summary, (; n, n_fail, n_total))
+        pct = n_total == 0 ? 0.0 : round(100 * n_fail / n_total; digits=1)
+        skip_note = n_skip == 0 ? "" : "; $(n_skip) degenerate F(0)=F(1) skipped"
+        print_kv("n=$n", "$(n_fail)/$(n_total) fail condition ($(pct)% support conjecture)$(skip_note)", io)
+        push!(summary, (; n, n_fail, n_total, n_skip))
     end
 
     no_counterexample = isempty(counterexamples)

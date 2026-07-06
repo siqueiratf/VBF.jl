@@ -64,12 +64,20 @@ function table1_report(; ns::Vector{Int} = [5,6,7,8], limit::Int = typemax(Int),
         fns = first(fns, limit)
         count_ok = 0
         count_total = 0
+        count_skip = 0
 
         println(io, "  n=$n ($(length(fns)) functions from catalog):")
         println(io, "    $(rpad("name",20))  $(lpad("S1",8))  $(lpad("S2",8))  $(lpad("6·DD(1,0)",10))  cond_fails")
         println(io, "    " * "─"^60)
 
         for (name, s) in fns
+            # Observation 7: exclude degenerate F(0)=F(1) (swap is a no-op, and the
+            # F(1)=1 normalisation cannot be met).
+            if is_swap_degenerate(s)
+                count_skip += 1
+                println(io, "    $(rpad(name,20))  $(lpad("—",8))  $(lpad("—",8))  $(lpad("—",10))  (degenerate, skipped)")
+                continue
+            end
             sn = normalize_apn(s)
             r = theorem17_holds(sn)
             lhs = 6 * r.dd10
@@ -82,7 +90,8 @@ function table1_report(; ns::Vector{Int} = [5,6,7,8], limit::Int = typemax(Int),
             push!(all_rows, (; n, name, s1=r.s1, s2=r.s2, dd10=r.dd10, condition_fails=fails))
             all_ok &= fails
         end
-        println(io, "    → $(count_ok)/$(count_total) fail Theorem 17 condition (no APN swap)")
+        skip_note = count_skip == 0 ? "" : "; $(count_skip) degenerate F(0)=F(1) skipped"
+        println(io, "    → $(count_ok)/$(count_total) fail Theorem 17 condition (no APN swap)$(skip_note)")
     end
 
     println(io)

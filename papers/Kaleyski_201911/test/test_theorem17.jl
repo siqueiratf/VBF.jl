@@ -22,4 +22,16 @@
     # Sanity: S1, S2 are non-negative integers
     @test r5.s1 isa Int && r5.s1 >= 0
     @test r5.s2 isa Int && r5.s2 >= 0
+
+    # Non-degenerate power functions are not flagged
+    @test !is_swap_degenerate(s5)
+    @test !is_swap_degenerate(s6)
+
+    # Degenerate F(0)=F(1): swap at {0,1} is a no-op — must be detected and refused,
+    # never silently normalised to an invalid F(1)=0 (Observation 7 precondition).
+    lut = Int.(s5.lut)
+    lut[2] = lut[1]                       # force F(1) = F(0)
+    sdeg = SBox(lut)
+    @test is_swap_degenerate(sdeg)
+    @test_throws ArgumentError normalize_apn(sdeg)
 end
