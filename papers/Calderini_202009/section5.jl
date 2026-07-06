@@ -259,13 +259,10 @@ function section5_1_analysis(; io::IO = stdout)
     print_check(io, "All $(length(perm_reps)) permutation reps ∈ {F₁,F₁⁻¹,F₂,F₃} classes", in4)
 
     print_section(io, "Component degrees and Walsh spectra of the APN permutations")
-    cd_ok = true
-    for (name, F) in perms
-        degsF = component_degrees(F)
-        cd_ok &= get(degsF, 3, 0) == 7 && get(degsF, 4, 0) == 56
-    end
-    degsD = component_degrees(D)
-    cd_ok &= get(degsD, 3, 0) == 7 && get(degsD, 4, 0) == 56
+    cd_ok = all(
+        sorted_pairs(component_degree_spectrum(F)) == [3 => 7, 4 => 56] for
+        F in (F1, F1inv, F2, F3, D)
+    )
     print_check(io, "Component degrees {*3^^7, 4^^56*} for F₁, F₁⁻¹, F₂, F₃, D", cd_ok)
 
     expected_spectra = Dict(

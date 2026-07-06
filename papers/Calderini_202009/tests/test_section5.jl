@@ -56,8 +56,9 @@
     @test degs == [2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4]   # Table 1 row 5 degrees
 
     # Component degrees {*3^^7, 4^^56*} for all APN permutations checked
+    # (core component_degree_spectrum — the EA-invariant promoted from here)
     for F in (D, F1, F2, F3)
-        cd = component_degrees(F)
+        cd = Dict(sorted_pairs(component_degree_spectrum(F)))
         @test get(cd, 3, 0) == 7
         @test get(cd, 4, 0) == 56
         @test sum(values(cd)) == 63

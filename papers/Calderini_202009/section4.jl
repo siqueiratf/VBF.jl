@@ -3,9 +3,9 @@
 # Section: 4 — Equivalence relations and linear codes
 #
 # Pseudocode:
-#   1. C₁(F) (CCZ code, VBF ccz_matrix), C₂/C₃/C₄ (helpers.jl, paper-exact
-#      column blocks — note VBF's ea_matrix mis-packs its y-columns and is
-#      not used here).
+#   1. C₁/C₂/C₃/C₄ = VBF core ccz_matrix / ea_matrix / ae_matrix /
+#      ae_perm_matrix (the last three fixed/promoted from this reproduction:
+#      ea_matrix's y-columns previously landed in the wrong row block).
 #   2. Theorem 5 demos via weight enumerators (equivalent codes ⟹ equal WE):
 #      equal WE for pairs the theorem says are code-equivalent, and an
 #      UNEQUAL WE(C₂) proving Kim ≁EA Dillon at the code level.
@@ -35,9 +35,9 @@ function verify_code_dimensions(F::SBox{N,T}) where {N,T}
     expected_C3 = (2N + 1, 3n_size - 2)
     expected_C4 = (2N + 1, 3n_size - 1)
     ok1 = size(ccz_matrix(F)) == expected_C1
-    ok2 = size(c2_matrix(F)) == expected_C2
-    ok3 = size(c3_matrix(F)) == expected_C3
-    ok4 = is_permutation(F) ? size(c4_matrix(F)) == expected_C4 : false
+    ok2 = size(ea_matrix(F)) == expected_C2
+    ok3 = size(ae_matrix(F)) == expected_C3
+    ok4 = is_permutation(F) ? size(ae_perm_matrix(F)) == expected_C4 : false
     return (; ok1, ok2, ok3, ok4, expected_C1, expected_C2, expected_C3, expected_C4)
 end
 
@@ -61,11 +61,11 @@ function theorem5_demo(io::IO = stdout)
     print_check(io, "WE(C₁(Kim)) == WE(C₁(Dillon))  [CCZ-equivalent pair]", same_c1)
     ok &= same_c1
 
-    diff_c2 = code_weight_enumerator(c2_matrix(K)) != code_weight_enumerator(c2_matrix(D))
+    diff_c2 = code_weight_enumerator(ea_matrix(K)) != code_weight_enumerator(ea_matrix(D))
     print_check(io, "WE(C₂(Kim)) ≠ WE(C₂(Dillon))  [proves Kim ≁EA Dillon]", diff_c2)
     ok &= diff_c2
 
-    same_c3 = code_weight_enumerator(c3_matrix(D)) == code_weight_enumerator(c3_matrix(Dinv))
+    same_c3 = code_weight_enumerator(ae_matrix(D)) == code_weight_enumerator(ae_matrix(Dinv))
     print_check(io, "WE(C₃(Dillon)) == WE(C₃(Dillon⁻¹))  [D AE D⁻¹ ⟹ C₃ equiv]", same_c3)
     ok &= same_c3
     return ok
@@ -102,16 +102,16 @@ function theorem6_demo(io::IO = stdout)
     print_check(io, "C₄(F₁) dims $(dims.expected_C4) (z over ALL of F₂ⁿ)", dims.ok4)
     ok &= dims.ok1 && dims.ok2 && dims.ok3 && dims.ok4
 
-    same_c3 = code_weight_enumerator(c3_matrix(F1)) == code_weight_enumerator(c3_matrix(F1inv))
+    same_c3 = code_weight_enumerator(ae_matrix(F1)) == code_weight_enumerator(ae_matrix(F1inv))
     print_check(io, "WE(C₃(F₁)) == WE(C₃(F₁⁻¹))  [C₃ can NOT separate F₁ from F₁⁻¹]", same_c3)
     ok &= same_c3
 
-    w4 = code_weight_enumerator(c4_matrix(F1))
+    w4 = code_weight_enumerator(ae_perm_matrix(F1))
     n_size = 1 << inputbits(F1)
     all_iso = true
     for b = 0:(n_size - 1)
         lut = [F1inv.lut[x + 1] ⊻ typeof(F1inv.lut[1])(b) for x = 0:(n_size - 1)]
-        all_iso &= code_weight_enumerator(c4_matrix(SBox{6}(lut))) == w4
+        all_iso &= code_weight_enumerator(ae_perm_matrix(SBox{6}(lut))) == w4
     end
     print_check(
         io,
@@ -126,10 +126,10 @@ function theorem6_demo(io::IO = stdout)
     # so C₄(Dillon) ≅ C₄(F₂+b) for some b — their WEs must match for some b.
     D = dillon_apn_permutation()
     F2 = calderini_f2()
-    w4D = code_weight_enumerator(c4_matrix(D))
+    w4D = code_weight_enumerator(ae_perm_matrix(D))
     found = any(
         code_weight_enumerator(
-            c4_matrix(SBox{6}([F2.lut[x + 1] ⊻ UInt8(b) for x = 0:63])),
+            ae_perm_matrix(SBox{6}([F2.lut[x + 1] ⊻ UInt8(b) for x = 0:63])),
         ) == w4D for b = 0:63
     )
     print_check(io, "∃b: WE(C₄(F₂+b)) == WE(C₄(Dillon))  [D AE F₂, forward direction]", found)
