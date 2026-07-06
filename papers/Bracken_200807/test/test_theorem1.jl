@@ -29,6 +29,10 @@
     F_s5 = theorem1_sbox(3, 5, [0, 0]; modulus)
     @test differential_uniformity(F_s5) == 2
 
+    # Larger instance: n=10 (k=5, s=1) trinomial — APN on GF(1024) (~0.2s)
+    F_n10 = theorem1_sbox(5, 1, [0, 0, 0, 0])
+    @test differential_uniformity(F_n10) == 2
+
     # Round-trip: trinomial LUT == manually built LUT
     b2k  = gf_pow(b, 1 << k, n; modulus)
     e1, e2, e3 = 3, 24, 9   # 2^1+1, 2^4+2^3, 2^3+1

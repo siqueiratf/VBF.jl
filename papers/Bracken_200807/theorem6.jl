@@ -1,11 +1,11 @@
-# Implements Theorem 5 — CCZ equivalence and coding theory consequences.
+# Implements Theorem 6 — CCZ equivalence and coding theory consequences.
 # Paper: Bracken, Byrne, Markin, McGuire (2008),
 #        "New Families of Quadratic Almost Perfect Nonlinear Trinomials and Multinomials",
 #        Finite Fields and Their Applications 14 (2008), 703–714
 # Section: 5 — CCZ equivalence and coding theory
 #
 # Pseudocode:
-#   Theorem 5 (thm:code-ccz): f CCZ-equivalent to g iff [C_f] = [C_g]  (Dillon, proved here).
+#   Theorem 6 (thm:code-ccz): f CCZ-equivalent to g iff [C_f] = [C_g]  (Dillon, proved here).
 #   Computational consequences at n=6:
 #     1. Walsh spectra of Family 1 and Family 2 equal Gold x^3 spectrum.
 #     2. Family 1 (n=6) CCZ-equiv to Dillon T1 = x^3 + θ^{11}x^6 + θx^9.
@@ -51,9 +51,9 @@ function dillon_T2()
 end
 
 
-function theorem5_report(io::IO = stdout)
-    print_section("Theorem 5 — CCZ ↔ code equivalence + Walsh spectrum (Section 5)", io)
-    println(io, "  Theorem 5 (Dillon, proved in paper): f CCZ-equiv g iff [C_f]=[C_g].")
+function theorem6_report(io::IO = stdout)
+    print_section("Theorem 6 — CCZ ↔ code equivalence + Walsh spectrum (Section 5)", io)
+    println(io, "  Theorem 6 (Dillon, proved in paper): f CCZ-equiv g iff [C_f]=[C_g].")
     println(io, "  Computational consequences verified at n=6:")
     println(io)
 
@@ -109,12 +109,12 @@ function theorem5_report(io::IO = stdout)
 
     all_pass = t1_apn & t2_apn & ws_T1 & ws_T2 & ws_F1 & ws_F2_0 & ws_F2_v &
                ccz_F1_T1 & ccz_F2v_T2 & ccz_F2_0_G & !ccz_F1_G & !ccz_F2v_G & !ccz_T1_T2
-    print_check("All Theorem 5 checks pass", all_pass, io)
+    print_check("All Theorem 6 checks pass", all_pass, io)
     print_kv("completeness",
              "Walsh+CCZ exhaustive for n=6; general CCZ proof via code equiv out of scope (Magma)", io)
 end
 
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    theorem5_report()
+    theorem6_report()
 end
