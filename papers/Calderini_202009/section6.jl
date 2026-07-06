@@ -157,7 +157,7 @@ function remark5_verify(; io::IO = stdout, check_x57_ae::Bool = false)
         ctrl = are_affine_equivalent(power_sbox(7, 63), power_sbox(7, 125))
         print_check(io, "x^57 NOT affine-equivalent to x^78 (complete AE decision)", not_ae)
         print_check(io, "control: x^63 AE x^125 (coset-mates)", ctrl)
-        we_eq = code_weight_enumerator(c2_matrix(F57)) == code_weight_enumerator(c2_matrix(F78))
+        we_eq = code_weight_enumerator(ea_matrix(F57)) == code_weight_enumerator(ea_matrix(F78))
         print_check(io, "WE(C₂(x^57)) == WE(C₂(x^78)) (EA undecided at invariant level)", we_eq)
         ok &= not_ae && ctrl && we_eq
     end
