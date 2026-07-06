@@ -17,9 +17,12 @@ and is itself strictly contained in CCZ-equivalence.
 
 # Strategies
 
-`:auto` (default) routes by input shape: quadratic-APN permutations
-whose ortho-derivatives are themselves permutations route to
-`:ortho_derivative`; everything else routes to `:heggebakk`.
+`:auto` (default) routes by input shape: quadratic APN whose
+ortho-derivatives exist route to `:ortho_derivative`; everything else
+routes to `:heggebakk`. Within `:heggebakk`, permutation pairs use the
+partition search, while pairs with a non-permutation input use the
+complete inner-affine enumeration below (Heggebakk follows the
+functional inverse and cannot handle non-bijective inputs).
 
 - `:ortho_derivative` — for quadratic APN. By
   [Canteaut, Couvreur and Perrin (2022)](@cite Canteaut_202205), the
@@ -80,9 +83,17 @@ Decide EA-equivalence of `F` and `G`.
 
 SBoxes of different `N` or storage `T` return `false` without throwing.
 Non-permutation quadratic APN are handled via the ortho-derivative test;
-other non-permutations return `false`.
+all other non-permutation (and mixed permutation/non-permutation) pairs
+are decided by a complete enumeration of the inner affine map, exact up
+to the `max_inner_affine` cap (see below).
 
 `k` controls the partition level (default `4`, must be even and `≥ 4`).
+
+`max_inner_affine` bounds the inner-affine enumeration used for
+non-permutation inputs; an exhausted (uncapped) enumeration is a sound
+negative, whereas hitting the cap yields an honest inconclusive result
+(warn + best-effort `false`) rather than a silent `false`. The default
+`10^7` decides every `n ≤ 4` pair exhaustively.
 
 `max_outer_per_sigma` is a safety bound on the outer-permutation search
 size per bucket map; a bucket map yielding more than this many `L₁`
@@ -112,6 +123,7 @@ function are_ea_equivalent(
     strategy::Symbol = :auto,
     k::Int = 4,
     max_outer_per_sigma::Int = 10^6,
+    max_inner_affine::Int = 10^7,
 )
     inputbits(F) == inputbits(G) || return false
     storage_type(F) == storage_type(G) || return false
@@ -136,10 +148,13 @@ function are_ea_equivalent(
             cert !== nothing && return true
             # Exhaustive (uncapped) search ⇒ sound negative.
             capped[] || return false
+            # Capped permutation search: decide by sound invariants / witnesses.
+            return _ea_inconclusive_fallback(F, G)
         end
-        # Capped search, or non-permutation inputs (Heggebakk inapplicable):
-        # decide by sound invariants / witnesses, else warn.
-        return _ea_inconclusive_fallback(F, G)
+        # At least one input is a non-permutation: Heggebakk (which follows the
+        # functional inverse) does not apply. Decide by the complete
+        # inner-affine enumeration, which handles arbitrary functions.
+        return _ea_nonperm_decide(F, G; max_inner = max_inner_affine)
     elseif s === :ortho_derivative
         return _are_ea_equivalent_via_ortho(F, G)
     end
@@ -170,6 +185,140 @@ capped and no invariant separates the pair; returning best-effort `false`. \
 For members of a quadratic APN's CCZ-class use `ea_class_orbits` for a \
 complete decision; otherwise external code-equivalence tooling is required." maxlog = 1
     return false
+end
+
+# ---------------------------------------------------------------------------
+# Complete EA decision for arbitrary (possibly non-permutation) functions.
+#
+# F ~_EA G  ⟺  ∃ invertible affine A₂(x) = L₂x ⊕ c₂, invertible linear L₁ and
+# affine drift D with  G(x) = L₁(F(A₂(x))) ⊕ D(x).  The map `F ↦ L₁∘F∘A₂`
+# preserves the algebraic-degree decomposition, and the affine drift D can only
+# alter the degree-≤1 part; so, for a *fixed* inner A₂, an invertible outer L₁
+# with a suitable affine drift exists iff a single invertible linear L₁ carries
+# the degree-≥2 ANF of F∘A₂ onto that of G, coordinate-wise. That outer test is
+# a closed-form linear-algebra check (`_ea_outer_exists`), so the decision
+# reduces to enumerating the inner affine map A₂. The enumeration is exhaustive
+# up to `max_inner` inner maps (a sound negative); beyond it the answer is
+# reported as inconclusive rather than a silent `false`.
+#
+# Unlike Heggebakk this makes no bijectivity assumption, and it is exact for
+# non-permutation / non-quadratic inputs (e.g. the degree-3 non-permutation APN
+# at n = 4). It is not restricted to n = 4.
+function _ea_nonperm_decide(F::SBox{N,T}, G::SBox{N,T}; max_inner::Int) where {N,T}
+    res = _ea_nonperm_search(F, G; max_inner = max_inner)
+    res === :yes && return true
+    res === :no && return false            # exhaustive enumeration ⇒ sound `false`
+    return _ea_inconclusive_fallback(F, G) # :capped ⇒ honest, non-silent fallback
+end
+
+# Does an invertible linear L₁ carry the degree-≥2 ANF of F∘A₂ (packed table
+# `fp`) onto that of G (packed table `anfG`), coordinate-wise? Each monomial
+# `m` of degree ≥ 2 contributes the linear constraint L₁(fp[m+1]) = anfG[m+1]
+# (bit `j` of `fp[m+1]` is the coefficient of `m` in output coordinate `j`, and
+# L₁ acts on the packed output coordinates). Fold every constraint into a
+# partial linear map kept in reduced form; the constraints are realised by some
+# invertible L₁ iff they are consistent and the map is injective on their span
+# (`rank(bout) == length(bin)`), which always extends to an invertible map. The
+# residual degree-≤1 part is then absorbed by the affine drift.
+function _ea_outer_exists(
+    fp::Vector{T},
+    anfG::Vector{T},
+    himons::Vector{Int},
+    ::Val{N},
+) where {N,T}
+    bin = Int[]
+    bout = Int[]
+    @inbounds for m in himons
+        _lin_add!(bin, bout, fp[m+1], anfG[m+1]) || return false
+    end
+    return rank_f2(UInt32.(bout); nbits = N) == length(bin)
+end
+
+# Enumerate every invertible inner affine map A₂ and run the outer test.
+# Returns :yes (EA-equivalent, witnessed by A₂ + a fitting L₁), :no (exhaustive
+# search found none), or :capped (enumeration hit `max_inner`).
+function _ea_nonperm_search(F::SBox{N,T}, G::SBox{N,T}; max_inner::Int) where {N,T}
+    # Sound early negatives via EA-invariants (equal for EA-equivalent pairs).
+    dF = algebraic_degree(F)
+    dG = algebraic_degree(G)
+    # All functions of degree ≤ 1 form a single EA-class (drift absorbs them).
+    (dF ≤ 1 && dG ≤ 1) && return :yes
+    (dF ≤ 1) != (dG ≤ 1) && return :no
+    dF != dG && return :no
+    absolute_walsh_spectrum(F) != absolute_walsh_spectrum(G) && return :no
+    component_degree_spectrum(F) != component_degree_spectrum(G) && return :no
+
+    NN = 1 << N
+    himons = Int[m for m = 0:(NN-1) if count_ones(UInt(m)) ≥ 2]
+    anfG = mobius(G.lut)
+    Fl = F.lut
+
+    cols = Vector{T}(undef, N)   # columns (basis images) of the inner linear L₂
+    used = Int[]                 # chosen columns, for the independence test
+    count = Ref(0)
+    capped = Ref(false)
+    found = Ref(false)
+
+    # Is `v` independent of the columns chosen so far (keeps L₂ invertible)?
+    indep = function (v::Int)
+        v == 0 && return false
+        r = v
+        @inbounds for u in used
+            hb = 1 << (8 * sizeof(Int) - 1 - leading_zeros(u))
+            (r & hb) != 0 && (r ⊻= u)
+        end
+        r != 0
+    end
+
+    rec = function (i::Int)
+        (found[] || capped[]) && return
+        if i == N
+            # L₂ fully chosen; precompute L₂x, then sweep the input shift c₂.
+            lx = Vector{T}(undef, NN)
+            @inbounds for x = 0:(NN-1)
+                y = zero(T)
+                xi = x
+                j = 0
+                while xi != 0
+                    (xi & 1) == 1 && (y ⊻= cols[j+1])
+                    xi >>= 1
+                    j += 1
+                end
+                lx[x+1] = y
+            end
+            fp = Vector{T}(undef, NN)
+            @inbounds for c2 = 0:(NN-1)
+                count[] += 1
+                if count[] > max_inner
+                    capped[] = true
+                    return
+                end
+                cc = T(c2)
+                for x = 0:(NN-1)
+                    fp[x+1] = Fl[(lx[x+1]⊻cc)+1]
+                end
+                mobius!(fp)                       # packed ANF of F∘A₂
+                if _ea_outer_exists(fp, anfG, himons, Val(N))
+                    found[] = true
+                    return
+                end
+            end
+            return
+        end
+        @inbounds for img = 1:(NN-1)
+            indep(img) || continue
+            cols[i+1] = T(img)
+            push!(used, img)
+            rec(i + 1)
+            pop!(used)
+            (found[] || capped[]) && return
+        end
+    end
+    rec(0)
+
+    found[] && return :yes
+    capped[] && return :capped
+    return :no
 end
 
 # Quadratic APN uses the ortho-derivative test; else the Heggebakk search.

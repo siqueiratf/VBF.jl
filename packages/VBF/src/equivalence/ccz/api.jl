@@ -38,21 +38,18 @@ of [Canteaut and Perrin (2019)](@cite Canteaut_201906):
   degree-2 representatives against the quadratic one. EA preserves algebraic
   degree, so only degree-2 reps can match, and EA between two quadratic APN is
   the reliable ortho-derivative test.
-- **Neither quadratic APN, at least one a permutation** — the Canteaut–Perrin
-  enumeration of `F`'s CCZ-class with the (Heggebakk) EA backend, testing each
-  representative against the permutation side. This inherits Heggebakk's
+- **Neither quadratic APN, both permutations** — the Canteaut–Perrin
+  enumeration with the (Heggebakk) EA backend. This inherits Heggebakk's
   incompleteness on degenerate `k=4` partitions (signature `[2ⁿ-1, 1]`): for a
   class whose reps all have such partitions it can return `false` even when
   CCZ-equivalent.
-- **Neither quadratic APN, neither a permutation** — both CCZ-classes are
-  enumerated and their EA-class representatives are cross-matched. This decides
-  the pair whenever the common CCZ-class contains *any* EA-class that
-  `are_ea_equivalent` can settle — i.e. a quadratic-APN- or permutation-bearing
-  representative (the usual case, since almost every APN CCZ-class contains a
-  quadratic representative). It returns `false` (undecided) only for the residual
-  frontier where no representative on either side is quadratic or a permutation;
-  deciding those in general reduces to linear-code equivalence (Leon's
-  algorithm).
+- **Neither quadratic APN, not both permutations** — a positive
+  [`are_ea_equivalent`](@ref) result is a sufficient CCZ-certificate and is
+  returned as `true` (the complete non-permutation EA decision covers e.g.
+  degree-≥3 non-permutation APN). Otherwise the pair is not decided (returns
+  `false`); deciding CCZ-equivalence for EA-inequivalent non-permutations in
+  general reduces to linear-code equivalence (Leon's algorithm), a documented
+  frontier.
 """
 
 """
@@ -112,46 +109,24 @@ function are_ccz_equivalent(
     Gq && return _ccz_match_quadratic(F, G, max_class_reps)
     Fq && return _ccz_match_quadratic(G, F, max_class_reps)
 
-    # Neither side quadratic APN: Canteaut-Perrin enumeration. Enumerate
-    # F's CCZ-class into EA-class representatives and try to match G's
-    # class. `are_ea_equivalent` decides a pair only when a common EA-class
-    # is quadratic-APN- or permutation-bearing, so we must cross the
-    # enumeration against whichever side exposes such a representative.
-    reps_F = enumerate_ccz_class(F)
-    length(reps_F) > max_class_reps && return false
+    # EA-equivalence is a sufficient CCZ-certificate (EA ⊂ CCZ). The complete
+    # non-permutation EA decision settles many pairs — including degree-≥3
+    # non-permutation APN — that the permutation-only enumeration below cannot
+    # reach, keeping the two oracles consistent (EA-equiv ⇒ CCZ-equiv).
+    are_ea_equivalent(F, G; max_outer_per_sigma = ea_max_outer_per_sigma) &&
+        return true
 
-    # If G is a permutation, testing each F-rep against G directly suffices:
-    # Heggebakk decides permutation-vs-permutation, and `reps_F` covers the
-    # permutation EA-class of the (shared, if equivalent) CCZ-class.
-    if is_permutation(G)
-        for rep in reps_F
-            rep == G && return true             # cheap exact-LUT path
-            are_ea_equivalent(
-                rep,
-                G;
-                max_outer_per_sigma = ea_max_outer_per_sigma,
-            ) && return true
-        end
-        return false
-    end
-
-    # G is not a permutation. Enumerate G's class too and cross-match EA-
-    # classes across both enumerations: a shared EA-class that is
-    # quadratic-APN- (ortho-derivative) or permutation- (Heggebakk) bearing
-    # is decided by `are_ea_equivalent`, recovering CCZ-equivalence whenever
-    # the common CCZ-class has any decidable EA-representative. (The
-    # symmetric permutation fast path above is the F-permutation case.)
-    reps_G = enumerate_ccz_class(G)
-    length(reps_G) > max_class_reps && return false
-    for rf in reps_F
-        for rg in reps_G
-            rf == rg && return true             # cheap exact-LUT path
-            are_ea_equivalent(
-                rf,
-                rg;
-                max_outer_per_sigma = ea_max_outer_per_sigma,
-            ) && return true
-        end
+    # Neither side quadratic APN: permutation-only Canteaut-Perrin enumeration.
+    (is_permutation(F) && is_permutation(G)) || return false
+    reps = enumerate_ccz_class(F)
+    length(reps) > max_class_reps && return false
+    for rep in reps
+        rep == G && return true                 # cheap exact-LUT path
+        are_ea_equivalent(
+            rep,
+            G;
+            max_outer_per_sigma = ea_max_outer_per_sigma,
+        ) && return true
     end
     return false
 end
