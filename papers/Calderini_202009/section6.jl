@@ -3,14 +3,28 @@
 # Section: 6 — On the EA-classes of functions in dimension 7, 8 and 9
 #
 # Pseudocode:
-#   1. Theorem 7: for n=5,6, x^{-1} has exactly 2 Walsh-zero n-dim subspaces
-#      → CCZ-equiv to x^{-1} iff AE-equiv to x^{-1} (since x^{-1} is an involution)
-#   2. Theorem 8: for n=5 non-Gold APN x^{15}, count Walsh-zero subspaces ≤ 2
-#      → CCZ-class partitioned into at most 2 EA-classes (F and F^{-1})
-#   3. Tables 2/3/4 upper bounds: out of scope (Walsh-zero enumeration too slow for n=7,8,9)
-# VBF API used: walsh_zeroes, extract_linear_subspaces, conway_polynomial, gf_pow,
-#               differential_uniformity, is_permutation, load_apn_function,
-#               are_ccz_equivalent, are_affine_equivalent
+#   1. Theorem 7 (5 ≤ n ≤ 9): x^{-1} has exactly 2 Walsh-zero n-dim subspaces
+#      and is an involution → its CCZ-class is a single EA-class, and
+#      CCZ-equivalence to x^{-1} coincides with affine equivalence.
+#      Verified exactly for n = 5, 6, 7 (and n = 8, 9 in the report; n = 8 has
+#      du = 4 — the paper extends the computation to this case explicitly).
+#   2. Remark 5 (n=7): x^13 has 2 EA-classes (13^{-1} = 88 ∉ coset(13));
+#      x^57, x^63 have 1 (cyclotomically equivalent to their inverses).
+#      The 2-simplex-code count is verified for x^63 (≃ x^126 = x^{-1}, same
+#      cyclotomic coset ⟹ linearly equivalent). For the AB monomials x^13 and
+#      x^57 the Walsh-zero set has ~2^13 points and subspace enumeration
+#      exceeded 30 minutes (measured); their simplex counts stay MAGMA-only.
+#   3. Remark 6 (n=8): x^127 ≃ x^254 = x^{-1} (same coset): 2 simplex codes,
+#      1 EA-class (involution). x^57: single-simplex-code claim is MAGMA-only —
+#      enumeration over |Z| = 16575 measured at > 30 min (opt-in flag).
+#   4. Remark 7 (n=9): coset arithmetic for x^13, x^19, x^241 (2 classes each,
+#      inverse exponent in a different coset) and x^255 ≃ x^510 = x^{-1}.
+#   5. Tables 2/3/4 full upper-bound columns: out of scope (AB Walsh-zero
+#      subspace enumeration for n ≥ 7 measured at > 30 min per function;
+#      the paper computed them with MAGMA code equivalence).
+# VBF API used: walsh_zeroes, extract_linear_subspaces, conway_polynomial,
+#               gf_monomial_lut, differential_uniformity, is_permutation,
+#               load_apn_function
 
 include(joinpath(@__DIR__, "helpers.jl"))
 using VBFCatalog
@@ -18,9 +32,9 @@ using VBFCatalog
 """
     theorem7_verify(n; io) -> NamedTuple
 
-Theorem 7: x^{-1} over GF(2^n) has exactly 2 Walsh-zero n-dim subspaces.
-Since x^{-1} is an involution (F = F^{-1}), these 2 subspaces represent the same EA-class,
-so any function CCZ-equiv to x^{-1} must be EA-equiv to x^{-1}.
+Theorem 7: x^{-1} over GF(2ⁿ) has exactly 2 Walsh-zero n-dim subspaces.
+Since x^{-1} is an involution these represent a single EA-class, so any
+permutation CCZ-equivalent to x^{-1} is affine-equivalent to it.
 """
 function theorem7_verify(n::Int; io::IO = stdout)
     exp = (1 << n) - 2
@@ -32,27 +46,44 @@ function theorem7_verify(n::Int; io::IO = stdout)
     subspaces = extract_linear_subspaces(Z, n; max_bits = 2n)
     n_subsp = length(subspaces)
 
-    # x^{-1} is an involution: F(F(x)) = x for all x
     n_size = 1 << n
     is_involution = all(F.lut[F.lut[x + 1] + 1] == x for x = 0:(n_size - 1))
 
     print_kv(io, "n", n)
-    print_kv(io, "exponent d = 2^n - 2", exp)
+    print_kv(io, "exponent d = 2ⁿ-2", exp)
     print_kv(io, "is permutation", is_perm)
     print_kv(io, "differential uniformity", du)
-    print_kv(io, "is involution (F = F^{-1})", is_involution)
+    print_kv(io, "is involution (F = F⁻¹)", is_involution)
     print_kv(io, "#Walsh-zero $n-dim subspaces", n_subsp)
     print_check(io, "Theorem 7: exactly 2 simplex codes → 1 EA-class", n_subsp == 2)
-    print_check(io, "x^{-1} is involution → F and F^{-1} are the same function", is_involution)
+    print_check(io, "x^{-1} is an involution → the 2 spaces give the same class", is_involution)
 
     return (; n, exp, is_perm, du, n_subsp, is_involution)
 end
 
 """
+    coset_class_count(d, n) -> NamedTuple
+
+Remarks 5-7 arithmetic: for a monomial permutation x^d over GF(2ⁿ), the
+CCZ-class of a non-Gold APN power function splits into the EA-classes of F and
+F⁻¹ (Theorem 8); these coincide iff d⁻¹ mod 2ⁿ-1 lies in the cyclotomic coset
+of d (cyclotomic equivalence ⟹ affine equivalence).
+Returns `(; d, inv_exp, coset, same)` — `same == true` ⟹ 1 EA-class, else 2.
+"""
+function coset_class_count(d::Int, n::Int)
+    m = (1 << n) - 1
+    gcd(d, m) == 1 || throw(ArgumentError("x^$d is not a permutation of GF(2^$n)"))
+    inv_exp = invmod(d, m)
+    coset = cyclotomic_coset(d, m)
+    return (; d, inv_exp, coset, same = inv_exp in coset)
+end
+
+"""
     theorem8_verify_n5(; io) -> NamedTuple
 
-Theorem 8 for n=5: the Kasami function x^{15} (only non-Gold APN for n=5) has
-at most 2 Walsh-zero 5-dim subspaces, bounding EA-classes ≤ 2 in its CCZ-class.
+Theorem 8 for n=5 (exact): Kasami x^15 (the only non-Gold APN power class)
+has exactly 2 Walsh-zero 5-dim subspaces, and 15^{-1} = 29 lies in the
+cyclotomic coset of 15, so the CCZ-class is a single EA-class.
 """
 function theorem8_verify_n5(; io::IO = stdout)
     F = load_apn_function("n5_Kasami_x15")
@@ -60,55 +91,161 @@ function theorem8_verify_n5(; io::IO = stdout)
     is_perm = is_permutation(F)
 
     Z = walsh_zeroes(F)
-    subspaces = extract_linear_subspaces(Z, 5; max_bits = 10)
-    n_subsp = length(subspaces)
+    n_subsp = length(extract_linear_subspaces(Z, 5; max_bits = 10))
 
-    inv_exp = powermod(15, 31 - 2, 31)   # 15^{-1} mod 31
-
-    # Verify 29 is in the same cyclotomic coset as 15 mod 31:
-    # coset of 15: {15, 30, 29, 27, 23} — so 29 is linearly equiv to 15 → same EA-class
-    coset15 = let c = Int[]; x = 15; for _ in 1:5; push!(c, x); x = (2x) % 31; end; c end
-    in_same_coset = inv_exp in coset15
+    r = coset_class_count(15, 5)
 
     print_kv(io, "n", 5)
     print_kv(io, "F = x^15 (n5_Kasami_x15)", "")
     print_kv(io, "is APN permutation", is_perm && du == 2)
-    print_kv(io, "inverse exponent d^{-1} mod 31", inv_exp)
-    print_kv(io, "cyclotomic coset of 15 mod 31", coset15)
-    print_check(io, "29 = 15^{-1} is in the same cyclotomic coset as 15", in_same_coset)
+    print_kv(io, "inverse exponent 15⁻¹ mod 31", r.inv_exp)
+    print_kv(io, "cyclotomic coset of 15 mod 31", r.coset)
+    print_check(io, "29 = 15⁻¹ is in the same cyclotomic coset as 15", r.same)
     print_kv(io, "#Walsh-zero 5-dim subspaces", n_subsp)
-    print_check(io, "Theorem 8: ≤2 Walsh-zero subspaces → ≤2 EA-classes in CCZ-class", n_subsp <= 2)
-    println(io, "  Note: since 15^{-1} = 29 is in the same cyclotomic coset as 15,")
-    println(io, "  x^15 and x^29 = (x^15)^{-1} are linearly equivalent → 1 EA-class total.")
-    println(io, "  Note: are_ccz_equivalent is incomplete for degenerate k=4 partitions")
-    println(io, "  (Gold/Kasami), so CCZ-equiv of x^15 and x^29 is verified via coset argument.")
+    print_check(io, "Theorem 8: ≤2 Walsh-zero subspaces → ≤2 EA-classes", n_subsp <= 2)
+    println(io, "  15⁻¹ = 29 in the coset of 15 ⟹ x^15 ≃linear (x^15)⁻¹ ⟹ 1 EA-class.")
 
-    return (; n_subsp, inv_exp, in_same_coset)
+    return (; n_subsp, inv_exp = r.inv_exp, in_same_coset = r.same)
+end
+
+"""
+    remark5_verify(; io, check_x57_ae::Bool = false) -> Bool
+
+Remark 5 (n=7): x^13 has 2 EA-classes (13⁻¹ = 88 in a different coset) and
+x^63 has 1 (coset contains 125 = 63⁻¹; also 126 = 2·63, so x^63 ≃ x^{-1}).
+
+DISCREPANCY (x^57): the paper claims x^57 is "cyclotomically equivalent (and
+thus affine equivalent) to its inverse", giving a single EA-class. Computed:
+57⁻¹ mod 127 = 78, and 78 ∉ coset(57) = {57,114,101,75,23,46,92} — the
+cyclotomic claim is arithmetically false. With `check_x57_ae = true` (~10 s)
+the complete affine-equivalence decision confirms x^57 ≁AE x^78 (control:
+AE(x^63, x^125) = true), so the paper's justification fails; by the paper's
+own x^13 argument the class would split into the EA-classes of F and F⁻¹.
+WE(C₂) of the two codes is equal, so EA-equivalence-with-drift is not ruled
+out at the invariant level; settling the exact count (1 vs 2) needs MAGMA
+code equivalence. Table 2's "≤ 2" bound is unaffected.
+"""
+function remark5_verify(; io::IO = stdout, check_x57_ae::Bool = false)
+    ok = true
+
+    r13 = coset_class_count(13, 7)
+    print_kv(io, "x^13: 13⁻¹ mod 127", r13.inv_exp)
+    print_check(io, "x^13: inverse in a different coset → 2 EA-classes (Remark 5)", !r13.same)
+    ok &= !r13.same
+
+    r63 = coset_class_count(63, 7)
+    print_kv(io, "x^63: 63⁻¹ mod 127", r63.inv_exp)
+    print_check(io, "x^63: coset contains its inverse → 1 EA-class (Remark 5)", r63.same)
+    inv_in = 126 in r63.coset
+    print_check(io, "x^63 ≃ x^126 = x^{-1} (126 ∈ coset of 63)", inv_in)
+    println(io, "  ⇒ x^63's simplex-code count equals x^{-1}'s (= 2, Theorem 7 n=7).")
+    ok &= r63.same && inv_in
+
+    r57 = coset_class_count(57, 7)
+    print_kv(io, "x^57: 57⁻¹ mod 127", r57.inv_exp)
+    print_kv(io, "x^57: cyclotomic coset", r57.coset)
+    print_check(
+        io,
+        "DISCREPANCY: paper's cyclotomic claim for x^57 is false (78 ∉ coset)",
+        !r57.same,
+    )
+    ok &= !r57.same
+    if check_x57_ae
+        F57 = power_sbox(7, 57)
+        F78 = power_sbox(7, 78)
+        not_ae = !are_affine_equivalent(F57, F78)
+        ctrl = are_affine_equivalent(power_sbox(7, 63), power_sbox(7, 125))
+        print_check(io, "x^57 NOT affine-equivalent to x^78 (complete AE decision)", not_ae)
+        print_check(io, "control: x^63 AE x^125 (coset-mates)", ctrl)
+        we_eq = code_weight_enumerator(c2_matrix(F57)) == code_weight_enumerator(c2_matrix(F78))
+        print_check(io, "WE(C₂(x^57)) == WE(C₂(x^78)) (EA undecided at invariant level)", we_eq)
+        ok &= not_ae && ctrl && we_eq
+    end
+    println(io, "  x^57's exact EA-class count (paper: 1; paper's own x^13 argument")
+    println(io, "  applied to the computed cosets: 2) needs MAGMA code equivalence.")
+    println(io, "  x^13, x^57 are AB: |Z| ≈ 2^13, subspace enumeration measured > 30 min —")
+    println(io, "  their 2-simplex-code counts remain MAGMA-only (Table 2 likewise).")
+    return ok
+end
+
+"""
+    remark6_verify(; io, check_x57::Bool = false) -> Bool
+
+Remark 6 (n=8): x^127 ≃ x^254 = x^{-1} (2 simplex codes, involution → 1
+EA-class; verified via Theorem 7 n=8 in the report). With
+`check_x57 = true` also counts x^57's simplex codes (paper: exactly 1);
+measured cost: |Z| = 16575 and the subspace enumeration did NOT finish
+within 30 minutes — beyond the reproduction budget, off by default
+(the claim stays MAGMA-only).
+"""
+function remark6_verify(; io::IO = stdout, check_x57::Bool = false)
+    coset127 = cyclotomic_coset(127, 255)
+    ok = 254 in coset127
+    print_check(io, "x^127 ≃ x^254 = x^{-1} over GF(2⁸) (254 ∈ coset of 127)", ok)
+    println(io, "  ⇒ 2 simplex codes and 1 EA-class from Theorem 7 (n=8, du=4 case).")
+    println(io, "  x^57 is not a permutation of GF(2⁸) (gcd(57,255)=3); paper: exactly")
+    println(io, "  one simplex code ⇒ one EA-class. Enumeration over |Z| = 16575 did not")
+    println(io, "  finish within 30 min (measured) — MAGMA-only unless check_x57 = true.")
+    if check_x57
+        F = power_sbox(8, 57)
+        Z = walsh_zeroes(F)
+        n_subsp = length(extract_linear_subspaces(Z, 8; max_bits = 16))
+        print_check(io, "x^57 (n=8): exactly 1 simplex code (Remark 6)", n_subsp == 1)
+        ok &= n_subsp == 1
+    end
+    return ok
+end
+
+"""
+    remark7_verify(; io) -> Bool
+
+Remark 7 (n=9): x^13, x^19, x^241 have 2 EA-classes each (inverse exponent in
+a different cyclotomic coset); x^255 ≃ x^510 = x^{-1} has 1 (involution).
+"""
+function remark7_verify(; io::IO = stdout)
+    ok = true
+    for d in (13, 19, 241)
+        r = coset_class_count(d, 9)
+        print_kv(io, "x^$d: d⁻¹ mod 511", r.inv_exp)
+        print_check(io, "x^$d: inverse in a different coset → 2 EA-classes", !r.same)
+        ok &= !r.same
+    end
+    coset255 = cyclotomic_coset(255, 511)
+    inv_in = 510 in coset255
+    print_check(io, "x^255 ≃ x^510 = x^{-1} (1 EA-class, involution)", inv_in)
+    ok &= inv_in
+    return ok
 end
 
 """
     section6_report(io)
 
-Section 6: Theorem 7 (n=5,6), Theorem 8 (n=5), Tables 2/3/4 (out of scope).
+Section 6: Theorem 7 (n=5..9), Theorem 8 (n=5 exact), Remarks 5-7,
+Tables 2/3/4 upper-bound columns out of scope (measured cost notes).
 """
 function section6_report(io::IO = stdout)
     println(io, "# Calderini (2020) — Section 6: EA-classes in dimension 7, 8, 9")
-    println(io, "# Scope: Theorem 7 (exact n=5,6), Theorem 8 (exact n=5)")
-    println(io, "# Tables 2/3/4: OUT OF SCOPE (Walsh-zero enumeration too slow for n≥7)")
+    println(io, "# Scope: Theorem 7 exact n=5..9; Theorem 8 exact n=5; Remarks 5-7 via")
+    println(io, "#        cyclotomic cosets + inverse-function simplex counts.")
+    println(io, "# Tables 2/3/4 upper-bound columns: MAGMA-only (AB subspace enumeration")
+    println(io, "# for n ≥ 7 measured at > 30 min per function; see remark5_verify).")
 
-    print_section(io, "Theorem 7 — CCZ~x^{-1} iff AE~x^{-1} (n=5,6)")
-    println(io, "  Proof via simplex code count: x^{-1} has exactly 2 Walsh-zero")
-    println(io, "  n-dim subspaces for 5≤n≤9, and it is an involution (F=F^{-1}),")
-    println(io, "  so there is only 1 EA-class (not 2 distinct ones).")
+    print_section(io, "Theorem 7 — CCZ~x^{-1} iff AE~x^{-1} (5 ≤ n ≤ 9)")
+    println(io, "  (n=9 subspace enumeration takes ~4 minutes; n≤8 are seconds)")
+    for n = 5:9
+        println(io, "\n  n=$n:")
+        theorem7_verify(n; io)
+    end
 
-    println(io, "\n  n=5:")
-    r5 = theorem7_verify(5; io)
-    println(io, "\n  n=6:")
-    r6 = theorem7_verify(6; io)
-
-    print_section(io, "Theorem 8 — Non-Gold APN power functions have ≤2 EA-classes (n=5)")
+    print_section(io, "Theorem 8 — non-Gold APN power functions, ≤2 EA-classes (n=5 exact)")
     theorem8_verify_n5(; io)
-    println(io, "\n  Note: Tables 2 (n=7), 3 (n=8), 4 (n=9) in the paper give upper bounds")
-    println(io, "  via code equivalence in MAGMA. Walsh-zero enumeration for n=7 requires")
-    println(io, "  several minutes; for n≥8 it is infeasible without specialized software.")
+
+    print_section(io, "Remark 5 (n=7) — x^13, x^57, x^63 (x^57: discrepancy found)")
+    remark5_verify(; io, check_x57_ae = true)
+
+    print_section(io, "Remark 6 (n=8) — x^57 and the inverse function")
+    remark6_verify(; io, check_x57 = false)
+
+    print_section(io, "Remark 7 (n=9) — x^13, x^19, x^241, x^255")
+    remark7_verify(; io)
 end
