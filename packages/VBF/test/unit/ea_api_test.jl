@@ -123,8 +123,9 @@ end
     F = load_apn_function("n5_Gold_x3")
     @test are_ea_equivalent(F, F)   # reflexive — :auto picks :ortho_derivative
     @test are_ea_equivalent(F, F; strategy = :ortho_derivative)
-    # :heggebakk explicitly still short-circuits.
-    @test !are_ea_equivalent(F, F; strategy = :heggebakk)
+    # :heggebakk's capped search is no longer a silent false negative: the
+    # sound fallback chain (here the affine witness F = F) decides true.
+    @test are_ea_equivalent(F, F; strategy = :heggebakk)
 end
 
 end

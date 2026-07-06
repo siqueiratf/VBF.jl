@@ -39,6 +39,7 @@ export affine_map_from_masks, affine_map_from_range_and_image
 
 # tier 6 — equivalence
 export are_linear_equivalent, are_linearly_equivalent_general
+export linear_equivalences_general
 export linear_representative
 export linear_equivalences, self_linear_equivalences, self_affine_equivalences
 export are_sets_linear_equivalent
@@ -59,7 +60,8 @@ export ea_equivalences, partition_automorphisms, permutation_order
 export FunctionGraph, ccz_equivalent_function
 export graph_image_by, graph_xor_equivalence
 export ccz_block_decomposition, ea_mapping
-export ccz_matrix, ea_matrix
+export ccz_matrix, ea_matrix, ae_matrix, ae_perm_matrix
+export code_weight_enumerator
 export walsh_zeroes, walsh_zeroes_size
 export thickness, thickness_spectrum, enumerate_ccz_class
 export is_ccz_equivalent_to_permutation
@@ -71,13 +73,13 @@ export are_ccz_equivalent
 export ortho_derivative, is_quadratic_apn, is_quadratic_apn_rank
 export ortho_integral
 export sigma_multiplicities
-export APNEAMugshot, apn_ea_mugshot
+export APNEAMugshot, apn_ea_mugshot, component_degree_spectrum
 export gamma_rank, delta_rank
 export bent_components, nonbent_components, nonbent_signature
 export image_set, image_subspaces, pi_multiset
 export ccz_equivalent_quadratic_function
 export automorphisms_from_ortho_derivative, ea_mappings_from_ortho_derivative
-export enumerate_ea_classes_apn_quadratic
+export enumerate_ea_classes_apn_quadratic, ea_class_orbits
 export switching_neighbors
 export search_quadratic_apn
 export trims, apn_trims, trim_spectrum

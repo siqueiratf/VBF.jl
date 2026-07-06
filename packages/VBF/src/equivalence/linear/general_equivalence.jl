@@ -40,6 +40,121 @@ function _lin_add!(bin::Vector{Int}, bout::Vector{Int}, u::Integer, v::Integer)
 end
 
 """
+    linear_equivalences_general(F::SBox{N,T}, G::SBox{N,T})
+        -> Vector{NamedTuple{(:L1, :L2), ...}}
+
+Collect **all** invertible pairs `(L₁, L₂)` with `G = L₁∘F∘L₂`, for
+arbitrary (possibly non-permutation) `F, G` — the collect-all companion
+of [`are_linearly_equivalent_general`](@ref) and the non-permutation
+counterpart of [`linear_equivalences`](@ref) (same `(L₁, L₂)`
+convention). Solutions whose propagated constraints do not fully
+determine `L₁` (image span of `F∘L₂` below full rank) are skipped —
+this cannot occur when `F`'s image spans `F₂ⁿ`.
+
+Used by [`automorphisms_from_ortho_derivative`](@ref) to enumerate the
+linear self-equivalences of non-bijective ortho-derivatives (every
+quadratic APN in even dimension).
+"""
+function linear_equivalences_general(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
+    out = NamedTuple{(:L1, :L2),Tuple{F2LinearMap{N,T},F2LinearMap{N,T}}}[]
+    differential_spectrum(F) == differential_spectrum(G) || return out
+    absolute_walsh_spectrum(F) == absolute_walsh_spectrum(G) || return out
+    NN = 1 << N
+    Fl = F.lut
+    Gl = G.lut
+    L2 = fill(-1, NN)
+    L2[1] = 0
+    used = Int[]
+    sols = Vector{Tuple{Vector{Int},Vector{Int},Vector{Int}}}()
+
+    indep = function (v::Int)
+        v == 0 && return false
+        r = v
+        @inbounds for u in used
+            hb = 1 << (8 * sizeof(Int) - 1 - leading_zeros(u))
+            r & hb != 0 && (r ⊻= u)
+        end
+        r != 0
+    end
+
+    rec = function (i::Int, bin::Vector{Int}, bout::Vector{Int})
+        if i == N
+            rank_f2(UInt32.(bout); nbits = N) == length(bin) &&
+                push!(sols, (copy(used), copy(bin), copy(bout)))
+            return
+        end
+        b = 1 << i
+        @inbounds for img = 1:(NN-1)
+            indep(img) || continue
+            bin2 = copy(bin)
+            bout2 = copy(bout)
+            newpos = Int[]
+            ok = true
+            for x = 0:(NN-1)
+                x >> i == 0 || continue
+                nx = x ⊻ b
+                L2[nx+1] = L2[x+1] ⊻ img
+                push!(newpos, nx)
+                if !_lin_add!(bin2, bout2, Fl[L2[nx+1]+1], Gl[nx+1])
+                    ok = false
+                    break
+                end
+            end
+            if ok
+                push!(used, img)
+                rec(i + 1, bin2, bout2)
+                pop!(used)
+            end
+            for p in newpos
+                L2[p+1] = -1
+            end
+        end
+    end
+
+    bin = Int[]
+    bout = Int[]
+    _lin_add!(bin, bout, Fl[1], Gl[1])
+    rec(0, bin, bout)
+
+    for (l2imgs, sbin, sbout) in sols
+        M2 = F2LinearMap{N,T}(T.(l2imgs))
+        # Reconstruct L₁ from the propagated constraints L₁(sbin[k]) = sbout[k];
+        # skip if underdetermined (constraint span below full rank).
+        length(sbin) == N || continue
+        cols = Vector{T}(undef, N)
+        determined = true
+        for i = 0:(N-1)
+            r = 1 << i
+            o = 0
+            changed = true
+            while changed && r != 0
+                changed = false
+                for k in eachindex(sbin)
+                    p = sbin[k]
+                    hb = 1 << (8 * sizeof(Int) - 1 - leading_zeros(p))
+                    if r & hb != 0
+                        r ⊻= p
+                        o ⊻= sbout[k]
+                        changed = true
+                    end
+                end
+            end
+            if r != 0
+                determined = false
+                break
+            end
+            cols[i+1] = T(o)
+        end
+        determined || continue
+        M1 = F2LinearMap{N,T}(cols)
+        is_invertible(M1) || continue
+        all(M1(Fl[M2(T(x))+1]) == Gl[x+1] for x = 0:(NN-1)) &&
+            push!(out, (L1 = M1, L2 = M2))
+    end
+    return out
+end
+
+"""
     are_linearly_equivalent_general(F::SBox{N,T}, G::SBox{N,T}) -> Bool
 
 Decide whether invertible F₂-linear maps `L₁, L₂` exist with `G = L₁∘F∘L₂`,
