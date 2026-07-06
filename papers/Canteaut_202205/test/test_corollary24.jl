@@ -10,16 +10,17 @@
     @test verify_corollary24_apn(F6)
 
     # Non-APN check: n=6 x^5 is NOT APN (diff-unif > 2)
-    lut6 = gf_monomial_lut(6, 5)
-    G6 = SBox{6,UInt8}(UInt8.(lut6))
-    if differential_uniformity(G6) != 2
-        @test verify_corollary24_non_apn(G6)
-    end
+    G6 = SBox{6,UInt8}(UInt8.(gf_monomial_lut(6, 5)))
+    @test differential_uniformity(G6) != 2
+    @test verify_corollary24_non_apn(G6)
 
-    # For n=5, x^5 IS APN (Gold i=2): verify rank n-1 for all nonzero a
-    lut5 = gf_monomial_lut(5, 5)
-    G5 = SBox{5,UInt8}(UInt8.(lut5))
-    if differential_uniformity(G5) == 2
-        @test verify_corollary24_apn(G5)
-    end
+    # For n=5, x^5 IS APN (Gold k=2): verify rank n-1 for all nonzero a
+    G5 = SBox{5,UInt8}(UInt8.(gf_monomial_lut(5, 5)))
+    @test differential_uniformity(G5) == 2
+    @test verify_corollary24_apn(G5)
+
+    # Multirank non-APN quadratic
+    Q = pseudo_random_multirank_quadratic(6)
+    @test differential_uniformity(Q) > 2
+    @test verify_corollary24_non_apn(Q)
 end

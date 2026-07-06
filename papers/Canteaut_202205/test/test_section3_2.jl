@@ -1,26 +1,22 @@
-@testset "section3_2" begin
+@testset "section3_2 (Proposition 16)" begin
     include(joinpath(@__DIR__, "..", "section3_2.jl"))
 
     N = 5
-    T = UInt8
     F = gold_apn(N)
+    T = storage_type(F)
+    A0, B0 = _demo_maps(N, T)
+    @test verify_proposition16(F, A0, B0)
 
-    # Swap e0 and e1
-    A0_cols = UInt8[2, 1, 4, 8, 16]
-    A0 = F2LinearMap{N,T}(A0_cols)
-
-    # Cyclic shift
-    B0_cols = UInt8[T(1) << ((j+1) % N) for j in 0:(N-1)]
-    B0 = F2LinearMap{N,T}(B0_cols)
-
-    @test verify_section3_2(F, A0, B0)
-
-    # Identity maps should also satisfy the relation trivially
+    # Identity maps satisfy the relation trivially
     Id = identity_linear_map(N, T)
-    @test verify_section3_2(F, Id, Id)
+    @test verify_proposition16(F, Id, Id)
 
-    # Round-trip: Jac_lin (A0 ∘ F ∘ B0)(x) at x=0 should be zero
-    G = SBox{N,T}(UInt8[A0(F.lut[B0(x)+1]) for x in 0:(1<<N)-1])
-    cols_G0 = jac_lin_cols(G, 0)
-    @test all(c == 0 for c in cols_G0)  # Jac_lin at 0 is always zero
+    # Non-APN multirank quadratic
+    Q = pseudo_random_multirank_quadratic(6)
+    A0q, B0q = _demo_maps(6, storage_type(Q))
+    @test verify_proposition16(Q, A0q, B0q)
+
+    # Jac_lin at 0 is always zero
+    G = SBox{N,T}(T[A0(F.lut[B0(x)+1]) for x in 0:(1<<N)-1])
+    @test all(c == 0 for c in jac_lin_cols(G, 0))
 end
