@@ -3,21 +3,11 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../..)
 JULIA_PROJECT := --project=$(ROOT)
 
-.PHONY: help test report section4 algorithm1 theorem4 theorem6 table2 table3 phase2 clean_results \
-        survey basis searchers clean_build
+.PHONY: help test report section4 algorithm1 theorem4 theorem6 table2 table3 phase2 novelty clean_results
 
 # Overridable parameters
 sample_size ?= 100
 seed        ?= 42
-
-# GPGPU extension parameters / toolchain
-n        ?= 8
-class    ?= 22
-HIPCC    ?= /opt/rocm/bin/hipcc
-GPU_ARCH ?= native
-HIPFLAGS ?= -O3 -munsafe-fp-atomics --offload-arch=$(GPU_ARCH)
-CXX      ?= g++
-CXXFLAGS ?= -O3 -fopenmp
 
 default: help
 
@@ -58,51 +48,19 @@ phase2:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "report.jl")); phase2_report()'
 
-clean_results:
-	rm -rf "$(MAKEFILE_DIR)/results"
-
-# ── GPGPU extension (BBL2021 class census) ────────────────────────────────────
-# dim(V_A) feasibility map across all classes
-survey:
-	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/survey.jl
-
-# generate bilinear-row basis for (n, class): basis_n<n>_c<class>_rows.bin
-basis:
-	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/generate_rows.jl $(n) $(class)
-
-# build the GPU searcher (one source, -DDIM_N per dimension) + CPU classifier
-searchers: apn_search_n8 apn_search_n7 fast_checker
-
-apn_search_n8: apn_search.cpp
-	$(HIPCC) $(HIPFLAGS) -DDIM_N=8 -o $@ $<
-
-apn_search_n7: apn_search.cpp
-	$(HIPCC) $(HIPFLAGS) -DDIM_N=7 -o $@ $<
-
-fast_checker: fast_checker.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $<
-
-clean_build:
-	rm -f apn_search_n8 apn_search_n7 fast_checker
-
-# ── Phase 2: novelty oracle ───────────────────────────────────────────────────
-# fetch known dim-8 quadratic-APN catalogs (BLP22; add full=1 for the 2025 3.78M set)
-catalog:
-	./fetch_catalog.sh $(if $(filter 1,$(full)),--full,)
-
-# representation sanity + paper-novelty validation + build/cache the σ-index oracle
+# representation sanity + paper-novelty validation against the σ-index oracle.
+# The large external census catalogs (BLP22/BLP25) are populated by the GPGPU
+# census pipeline, which lives on the `gpgpu` branch; without them this target
+# reports the catalog as missing and validates only the in-repo reps.
 novelty:
 	$(JULIA) $(JULIA_PROJECT) -t auto $(MAKEFILE_DIR)/novelty_report.jl
 
-# pack a large decimal-text catalog into compact lossless .anf (~24× smaller).
-# usage: make pack in=catalogs/apn8_blp2025.txt [out=catalogs/apn8_blp2025.anf]
-pack:
-	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/pack_catalog.jl $(in) $(out)
+clean_results:
+	rm -rf "$(MAKEFILE_DIR)/results"
 
 help:
 	@echo 'Paper: Kuznetsov (2026) — Quadratic APN Functions via Gröbner Basis Search'
-	@echo 'Paper targets:  test  report  section4  algorithm1  theorem4  theorem6  table2  table3  phase2  clean_results'
-	@echo '                (theorem6 audits the Main result; needs the σ-index: make catalog full=1 + build_sigma_index!)'
-	@echo 'GPGPU targets:  survey  basis  searchers  clean_build'
-	@echo 'Phase-2 targets: catalog [full=1]  novelty'
-	@echo 'Params:         sample_size=$(sample_size)  seed=$(seed)  n=$(n)  class=$(class)  GPU_ARCH=$(GPU_ARCH)'
+	@echo 'Paper targets:  test  report  section4  algorithm1  theorem4  theorem6  table2  table3  phase2  novelty  clean_results'
+	@echo '                (theorem6 audits the Main result against the σ-index oracle)'
+	@echo 'Params:         sample_size=$(sample_size)  seed=$(seed)'
+	@echo 'Note: the GPGPU APN-census pipeline (searchers, catalog fetch/pack) lives on the `gpgpu` branch.'
