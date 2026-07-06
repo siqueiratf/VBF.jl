@@ -119,6 +119,60 @@ end
     @test t < 1.0
 end
 
+@testset "are_ea_equivalent: non-permutation degree-3 APN (Brinkmann n=4)" begin
+    # Regression for the false-negative sibling of the CCZ non-permutation bug.
+    # F2 (Brinkmann–Leander 2008, Table 2) and G (Budaghyan–Carlet–Pott eq. 5,
+    # i=1) are degree-3 NON-permutation APN on GF(2^4) and are EA-equivalent.
+    # Heggebakk (permutation-only) used to route this pair to a silent
+    # best-effort `false`; the complete inner-affine enumeration now decides it.
+    F2 = SBox{4, UInt8}(UInt8[0, 0, 0, 1, 0, 2, 4, 7, 0, 4, 6, 3, 8, 14, 11, 12])
+    G  = SBox{4, UInt8}(UInt8[0, 1, 15, 8, 10, 12, 1, 1, 15, 10, 12, 15, 10, 8, 12, 8])
+    F1 = SBox{4, UInt8}(UInt8[0, 0, 0, 1, 0, 2, 4, 7, 0, 4, 6, 3, 8, 14, 10, 13])
+    Gold = SBox{4, UInt8}(UInt8[gf_pow(x, 3, 4) for x in 0:15])   # x³, degree 2
+
+    @test !is_permutation(F2) && !is_permutation(G)
+    @test algebraic_degree(F2) == 3 && algebraic_degree(G) == 3
+    @test differential_uniformity(F2) == 2 && differential_uniformity(G) == 2
+
+    # The core fix: EA-equivalent, decided (not warned), in both directions.
+    @test are_ea_equivalent(F2, G)
+    @test are_ea_equivalent(G, F2)                     # symmetry
+    @test are_ea_equivalent(F2, F2)                    # reflexivity, non-perm
+
+    # EA-equivalence must imply CCZ-equivalence (consistency of the oracles).
+    @test are_ccz_equivalent(F2, G)
+    @test are_ccz_equivalent(G, F2)
+
+    # Sound negatives: F1 ≈ Gold x³ but F1, F2, Gold sit in distinct EA-classes
+    # of the single n=4 APN CCZ-class (verified by exhaustive enumeration).
+    @test are_ea_equivalent(F1, Gold)                  # Table 2: F1 ~EA~ x³
+    @test !are_ea_equivalent(F1, F2)
+    @test !are_ea_equivalent(F2, Gold)
+    @test !are_ea_equivalent(G, Gold)
+
+    # Symmetry and EA ⇒ CCZ consistency across every pair of the reps.
+    reps = [F1, F2, G, Gold]
+    for a in reps, b in reps
+        @test are_ea_equivalent(a, b) == are_ea_equivalent(b, a)
+        !are_ea_equivalent(a, b) || @test are_ccz_equivalent(a, b)
+    end
+end
+
+@testset "are_ea_equivalent: minimal non-permutation reproducer" begin
+    # Smallest honest reproducer exercising the new inner-affine enumeration:
+    # a degree-3 NON-permutation base (so :auto avoids the quadratic ortho path)
+    # transformed by an invertible affine inner map plus a nonzero affine drift.
+    F = SBox{4, UInt8}(UInt8[0, 1, 15, 8, 10, 12, 1, 1, 15, 10, 12, 15, 10, 8, 12, 8])
+    @test !is_permutation(F) && algebraic_degree(F) == 3
+    L1 = F2LinearMap{4, UInt8}(UInt8[0x2, 0x4, 0x8, 0x1])   # invertible
+    L2 = F2LinearMap{4, UInt8}(UInt8[0x3, 0x1, 0x8, 0x4])   # invertible, non-identity
+    drift = UInt8[UInt8((0x5 & x) ⊻ (count_ones(x) & 1)) for x in 0:15]  # affine (linear)
+    G = SBox{4, UInt8}(UInt8[L1(F.lut[L2(UInt8(x)) + 1]) ⊻ drift[x + 1] for x in 0:15])
+    @test G.lut != F.lut                                    # a genuine transform
+    @test are_ea_equivalent(F, G)
+    @test are_ea_equivalent(G, F)
+end
+
 @testset "are_ea_equivalent: monomial APN is now decided via :auto routing" begin
     F = load_apn_function("n5_Gold_x3")
     @test are_ea_equivalent(F, F)   # reflexive — :auto picks :ortho_derivative
