@@ -215,6 +215,21 @@ function gf_inv(
     gf_pow(a, (1 << n) - 2, n; modulus = modulus)
 end
 
+"""
+    gf_inv_zero_safe(a::Integer, n::Integer; modulus = primitive_polynomial(n)) -> Int
+
+Multiplicative inverse with the cryptographic convention `0⁻¹ = 0`.
+Equivalent to `a == 0 ? 0 : gf_inv(a, n; modulus)`.
+"""
+function gf_inv_zero_safe(
+    a::Integer,
+    n::Integer;
+    modulus::Integer = primitive_polynomial(n),
+)
+    Int(a) == 0 && return 0
+    gf_pow(a, (1 << n) - 2, n; modulus = modulus)
+end
+
 # Monomial lookup table
 
 """

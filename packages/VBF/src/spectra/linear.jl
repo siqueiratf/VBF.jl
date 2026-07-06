@@ -100,6 +100,25 @@ function linearity(s::SBox)
 end
 
 """
+    nonlinearity(s::SBox) -> Int
+
+Distance from `s` to the closest affine function:
+`NL(s) = 2^(N-1) - linearity(s) / 2`.
+
+# Examples
+```jldoctest
+julia> using VBF
+
+julia> nonlinearity(load_literature_sbox("AES"))
+112
+
+julia> nonlinearity(load_literature_sbox("PRESENT"))
+4
+```
+"""
+nonlinearity(s::SBox) = (1 << (inputbits(s) - 1)) - linearity(s) ÷ 2
+
+"""
     walsh_power_moment(s, k; shift_a=0, shift_b=0) -> Int
 
 The (shifted) `k`-th Walsh power moment
