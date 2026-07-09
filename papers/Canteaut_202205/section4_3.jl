@@ -61,8 +61,10 @@ end
     open_butterfly(alpha, beta) -> SBox{6}
 
 The generalized open butterfly H_{α,β} over (F₂³)² with
-T_y(x) = (x + αy)³ + βy³, in its involutive form
-H(x, y) = (T_{T_y⁻¹(x)}(y), T_y⁻¹(x))  [CDP17].
+T_y(x) = (x + αy)³ + βy³ [CDP17].
+The paper prints H(x,y) = (T_y⁻¹(x), T_{T_y⁻¹(x)}(y)), but that ordering is
+not an involution. The correct involutive form swaps the two components:
+H(x,y) = (T_{T_y⁻¹(x)}(y), T_y⁻¹(x)). Verified computationally: H∘H = id.
 Input packing: v = (x << 3) | y.
 """
 function open_butterfly(alpha::Int, beta::Int)
@@ -76,7 +78,7 @@ function open_butterfly(alpha::Int, beta::Int)
     for v in 0:63
         x, y = v >> 3, v & 7
         u = Tinv(x, y)          # T_y⁻¹(x)
-        w = T(y, u)             # T_u(y)
+        w = T(y, u)             # T_{T_y⁻¹(x)}(y)
         lut[v+1] = (w << 3) | u
     end
     return SBox{6}(lut)

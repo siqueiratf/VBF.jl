@@ -194,21 +194,33 @@ function ea_recovery_quadratic(
     rdist_G = rank_distribution(rt_G, N)
     rdist_F != rdist_G && return nothing
 
-    # Step 2: Minimum-rank reference set from F (Section 3.4.2)
-    r_min = minimum(keys(rdist_F))
-    W = [a for a in 1:((1<<N)-1) if rt_F[a+1] == r_min]
-    V = [a for a in 1:((1<<N)-1) if rt_G[a+1] == r_min]
-    (length(W) < s || length(V) < s) && return nothing
+    # Step 2: Reference vectors from the least-frequently-occurring rank
+    # (Section 3.4.2, line 791). Sort nonzero ranks by frequency ascending,
+    # then by rank value for deterministic tie-breaking.
+    sorted_by_freq = sort(collect(rdist_F); by = p -> (p.second, p.first))
 
-    # Step 3: Choose s linearly independent reference vectors from W
+    # Collect s linearly independent reference vectors from F, starting with
+    # the rarest rank and spilling to the next if needed (Remark 28).
     refs_w = Int[]
-    for w in W
-        if _lin_indep([refs_w; w], T)
-            push!(refs_w, w)
-            length(refs_w) == s && break
+    ref_ranks = Int[]
+    for (rank, _) in sorted_by_freq
+        candidates = [a for a in 1:((1<<N)-1) if rt_F[a+1] == rank]
+        for w in candidates
+            if _lin_indep([refs_w; w], T)
+                push!(refs_w, w)
+                push!(ref_ranks, rank)
+                length(refs_w) == s && break
+            end
         end
+        length(refs_w) == s && break
     end
     length(refs_w) < s && return nothing
+
+    # Build per-slot search pools for G: each slot i draws from vectors whose
+    # rank matches the i-th reference vector's rank (Remark 28 generalization).
+    V_pools = [Int[a for a in 1:((1<<N)-1) if rt_G[a+1] == ref_ranks[i]]
+               for i in 1:s]
+    any(isempty, V_pools) && return nothing
 
     n2 = N * N
     n_unknowns = 2 * n2
@@ -253,9 +265,9 @@ function ea_recovery_quadratic(
         return nothing
     end
 
-    # Step 4: Brute-force search over linearly independent s-tuples from V
+    # Step 4: Brute-force search over linearly independent s-tuples
     if s == 2
-        for v1 in V, v2 in V
+        for v1 in V_pools[1], v2 in V_pools[2]
             _lin_indep([v1, v2], T) || continue
             guesses += 1
             guesses > max_guesses && return nothing
@@ -263,9 +275,9 @@ function ea_recovery_quadratic(
             triple !== nothing && return triple
         end
     else # s == 3
-        for v1 in V, v2 in V
+        for v1 in V_pools[1], v2 in V_pools[2]
             _lin_indep([v1, v2], T) || continue
-            for v3 in V
+            for v3 in V_pools[3]
                 _lin_indep([v1, v2, v3], T) || continue
                 guesses += 1
                 guesses > max_guesses && return nothing
