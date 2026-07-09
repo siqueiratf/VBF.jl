@@ -3,7 +3,7 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../..)
 JULIA_PROJECT := --project=$(ROOT)
 
-.PHONY: help test report clean_results \
+.PHONY: help test report clean_results table7_full \
         proposition14 section3_2 proposition18 proposition22 corollary24 \
         proposition25 algorithm1 proposition35_36 section4_3 section4_4
 
@@ -46,6 +46,11 @@ section4_3:
 section4_4:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/section4_4.jl
 
+table7_full:
+	$(JULIA) $(JULIA_PROJECT) -e \
+	  'include(joinpath("$(MAKEFILE_DIR)", "section4_4.jl")); \
+	   section4_4_report(; verify_min_ea = true)'
+
 clean_results:
 	rm -rf "$(MAKEFILE_DIR)/results"
 
@@ -54,3 +59,4 @@ help:
 	@echo 'Targets: test  report  proposition14  section3_2  proposition18'
 	@echo '         proposition22  corollary24  proposition25  algorithm1'
 	@echo '         proposition35_36  section4_3  section4_4  clean_results'
+	@echo '  table7_full — Table 7 min #EA sweep for all 13 Banff functions (~25-30 min)'
