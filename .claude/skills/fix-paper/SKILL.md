@@ -79,7 +79,7 @@ forward that constraint into the prompt.
 
 ## 4. Output
 
-Relay the agent's report to the user. Lead with:
+Relay the fixer agent's report to the user. Lead with:
 
 - **Per paper:** issues fixed / skipped / needs-manual-intervention
 - **Test results:** pass/fail after fixes
@@ -90,9 +90,47 @@ what decision the user needs to make.
 
 ---
 
-## 5. Follow-up (explicit, opt-in)
+## 5. Auto-commit via Git Agent (mandatory post-step)
 
-After fixing:
+After the fixer agent completes and **at least one issue was fixed**, immediately
+spawn the **`git-committer`** subagent via the Agent tool with
+`subagent_type: "git-committer"`.
+
+**This step is automatic** — do not ask the user for confirmation. The git-committer
+handles its own safety checks (runs `make test` before committing).
+
+### Pre-condition
+
+Only dispatch the git-committer if:
+- The fixer agent reported at least one fix.
+- The fixer agent's test run passed (or was not run due to missing Makefile —
+  the git-committer will run tests itself as its own pre-condition).
+
+If the fixer's tests **failed**, skip the git-committer step and report the
+failure to the user. Do not commit broken code.
+
+### Dispatch
+
+Prompt the git-committer with:
+
+> Create atomic commits for the fixes in paper `<ID>`. The following issues
+> were fixed: <list of issue numbers and one-line summaries from the fixer
+> report>. Repository root is `<repo_root>`. Run `make test` before committing.
+
+### Report
+
+After the git-committer returns, append its commit report to the output:
+
+- **Commits created:** (list of short hashes and subjects)
+- **Uncommitted files:** (if any)
+
+If the git-committer halted due to test failure, report that clearly.
+
+---
+
+## 6. Follow-up (explicit, opt-in)
+
+After fixing and committing:
 - If tests still fail, offer to investigate further.
 - If the user wants, offer to re-run `/review-paper <ID>` to regenerate the
   README with updated status.
@@ -104,9 +142,10 @@ After fixing:
 ## Notes
 
 - This skill is the **write** counterpart to `review-paper` (read-only).
-  The pipeline is: `/review-paper` → README with issues → `/fix-paper` → issues
-  resolved.
+  The pipeline is: `/review-paper` → README with issues → `/fix-paper` →
+  issues resolved → `git-committer` → atomic commits.
 - The fixer agent never touches Paper Issues — only Reproduction Issues.
 - The fixer agent never modifies `papers/<ID>/input/` source material.
-- Keep this skill in sync with the `paper-issue-fixer` agent definition and
-  the README format produced by `review-paper`.
+- The git-committer never modifies files — it only stages and commits.
+- Keep this skill in sync with the `paper-issue-fixer` and `git-committer`
+  agent definitions and the README format produced by `review-paper`.

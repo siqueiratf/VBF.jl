@@ -121,6 +121,13 @@ Produce a structured report with these sections:
 If tests fail after fixes, diagnose and attempt a second fix pass. If still
 failing, report the failure clearly — do not claim success.
 
+## Important: do NOT commit
+
+You are a **fix agent**, not a commit agent. Do not run `git add` or
+`git commit`. The **`git-committer`** agent runs after you and handles
+all staging and committing. Your job ends after fixing files and running
+tests.
+
 ## Final aggregate output
 
 If multiple paper IDs were provided, end with:
