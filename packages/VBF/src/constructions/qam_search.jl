@@ -183,23 +183,43 @@ function is_cyclic_qam(M::AbstractMatrix{<:Integer}, m::Integer)
 end
 
 """
-    search_qam(n, m; limit=typemax(Int), max_evaluations=1<<22) -> Vector{SBox{n}}
+    search_qam(n, m; limit=typemax(Int), max_evaluations=1<<22, confirm=false)
+        -> Vector{SBox{n}}
 
 Search for quadratic APN functions over `GF(2ⁿ)` with `GF(2ᵐ)` coefficients by
 the QAM method: enumerate the cyclic derivative matrices ([`qam_from_cyclic`](@ref))
 — each free variable ranges over the subfield its orbit closes into — keep those
-that are QAMs ([`is_qam`](@ref)), recover each as a function ([`qam_to_sbox`](@ref)),
-and return the distinct ones up to EA-class ([`apn_ea_mugshot`](@ref)). At most
-`limit` classes are returned; the scan stops after `max_evaluations` candidates
-(a guard for large `(n,m)` — the enumeration is exhaustive only when it completes
-within that budget). Practical for small `(n,m)`; see the module docstring for
-the acceleration the reference uses at `n = 8, 10`.
+that are QAMs ([`is_qam`](@ref)), and recover each as a function
+([`qam_to_sbox`](@ref)). At most `limit` results are returned; the scan stops after
+`max_evaluations` candidates (a guard for large `(n,m)` — the enumeration is
+exhaustive only when it completes within that budget).
+
+# Deduplication, and what the result count means
+
+By default the results are deduplicated by [`apn_ea_mugshot`](@ref), which is
+**necessary but not sufficient** for EA-equivalence. Gold `x³` and `x⁵` over `F₂⁵`
+share a mugshot while being EA- and CCZ-**inequivalent**, as do `x³` and `x⁹` over
+`F₂⁷` — and no cheaper invariant separates them either (their Γ- and Δ-ranks
+coincide too). So the default result is **one function per mugshot**, and
+`length(search_qam(n, m))` is a **lower bound** on the number of EA-classes, not a
+count of them. At `n = 7, m = 1` it reports 14 where the truth is 15.
+
+Pass `confirm = true` to split each mugshot bucket with the complete decision for
+quadratic APN ([`ea_mappings_from_ortho_derivative`](@ref) is non-empty iff the
+pair is EA-equivalent), giving one function per genuine EA-class. This is exact but
+costs an EA decision per colliding candidate, so it is affordable only for small
+`(n, m)` — an exhaustive `n = 7` sweep produces ~30k candidates over 14 mugshots
+and would pay tens of thousands of decisions.
+
+Practical for small `(n,m)`; see the module docstring for the acceleration the
+reference uses at `n = 8, 10`.
 """
 function search_qam(
     n::Integer,
     m::Integer;
     limit::Integer = typemax(Int),
     max_evaluations::Integer = 1 << 22,
+    confirm::Bool = false,
 )
     nn = Int(n)
     orbits = qam_cyclic_orbits(nn, m)
@@ -213,7 +233,10 @@ function search_qam(
     sizes = length.(subfields)
 
     found = SBox{nn,_storage_for(nn)}[]
-    seen = Set{APNEAMugshot}()
+    # mugshot ⇒ the classes already found under it. With `confirm=false` a bucket
+    # holds at most one function (mugshot-dedup); with `confirm=true` it holds one
+    # per genuine EA-class, split by the complete quadratic-APN decision.
+    buckets = Dict{APNEAMugshot,Vector{SBox{nn,_storage_for(nn)}}}()
     vals = zeros(Int, k)
     counter = zeros(Int, k)
     evals = 0
@@ -225,8 +248,17 @@ function search_qam(
         if is_cyclic_qam(M, m)  # Theorem-3-accelerated test
             S = qam_to_sbox(M)
             mug = apn_ea_mugshot(S)
-            if !(mug in seen)
-                push!(seen, mug)
+            bucket = get!(() -> SBox{nn,_storage_for(nn)}[], buckets, mug)
+            isnew = if isempty(bucket)
+                true
+            elseif confirm
+                # Mugshot equality does not imply EA-equivalence — settle it.
+                !any(c -> !isempty(ea_mappings_from_ortho_derivative(S, c)), bucket)
+            else
+                false
+            end
+            if isnew
+                push!(bucket, S)
                 push!(found, S)
                 length(found) >= limit && break
             end
