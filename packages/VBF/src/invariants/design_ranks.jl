@@ -11,10 +11,17 @@ For an APN function `F : F₂ⁿ → F₂ⁿ`, two CCZ-invariant integers come f
 The development `dev(S)` of a set `S ⊆ F₂^{2n}` takes the translates `S + v` as
 blocks; its incidence matrix over `F₂^{2n}` is `B[p, q] = [p ⊕ q ∈ S]`. The
 **Γ-rank** is `rank_{F₂} B` for `S = G_F`, the **Δ-rank** for `S = D_F`. Both are
-invariant under CCZ-equivalence, and `Δ-rank ≤ 2^{n+1}`. They distinguish
-CCZ-classes that share differential and Walsh spectra — e.g. Taniguchi's two new
-`F₂⁸` families have equal ortho-derivative fingerprints but Γ-ranks 13700 vs
-13798.
+invariant under CCZ-equivalence, and `Δ-rank ≤ 2^{n+1}`. Their value is that they
+are CCZ-invariants of *arbitrary* APN functions, so they can separate classes
+that the cheaper spectral invariants cannot: the differential and Walsh spectra
+are not complete CCZ-invariants, and [`apn_ea_mugshot`](@ref) only certifies
+*EA*-inequivalence (see its docstring — a mugshot mismatch does **not** imply
+CCZ-inequivalence).
+
+Taniguchi's two new `F₂⁸` families are reported with Γ-ranks 13700 and 13798
+([Taniguchi, 2019](@cite Taniguchi_201909)); note that those two families are
+*also* separated by their ortho-derivative fingerprints, so they are not an
+example of a pair that needs the design ranks.
 
 The matrix is `2^{2n} × 2^{2n}`, so the rank is tractable for `n ≤ 6` (instant to
 seconds), heavy for `n = 7` (minutes), and impractical for `n = 8` (≈512 MB) —
