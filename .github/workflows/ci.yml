@@ -27,33 +27,33 @@ jobs:
       fail-fast: false
       matrix:
         paper:
-          - Beierle_202107
-          - Beierle_202201
-          - Beierle_202508
-          - Biryukov_200300
-          - Bracken_200807
-          - Bracken_201103
-          - Bracken_201205
-          - Brinkmann_200812
-          - Budaghyan_200506
-          - Budaghyan_202008
-          - Budaghyan_202009
-          - Budaghyan_202011
-          - Calderini_202009
-          - Canteaut_202205
-          - Gologlu_202207
-          - Ichanska_202400
-          - Kaleyski_201911
-          - Kaleyski_202203
-          - Kalgin_202000
-          - Kuznetsov_202606
-          - Li_201408
-          - Li_202402
-          - Taniguchi_201909
-          - Yu_202012
-          - Yu_202211d
-          - Yu_202512
-          - Zheng_202211
+          - 2003/Biryukov_200300
+          - 2005/Budaghyan_200506
+          - 2008/Bracken_200807
+          - 2008/Brinkmann_200812
+          - 2011/Bracken_201103
+          - 2012/Bracken_201205
+          - 2014/Li_201408
+          - 2019/Kaleyski_201911
+          - 2019/Taniguchi_201909
+          - 2020/Budaghyan_202008
+          - 2020/Budaghyan_202009
+          - 2020/Budaghyan_202011
+          - 2020/Calderini_202009
+          - 2020/Kalgin_202000
+          - 2020/Yu_202012
+          - 2021/Beierle_202107
+          - 2022/Beierle_202201
+          - 2022/Canteaut_202205
+          - 2022/Gologlu_202207
+          - 2022/Kaleyski_202203
+          - 2022/Yu_202211d
+          - 2022/Zheng_202211
+          - 2024/Ichanska_202400
+          - 2024/Li_202402
+          - 2025/Beierle_202508
+          - 2025/Yu_202512
+          - 2026/Kuznetsov_202606
     steps:
       - name: Check out source
         uses: actions/checkout@v5
