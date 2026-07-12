@@ -9,7 +9,7 @@
 #     2. If L linear: F_L = 0  ⟺  L = 0 or L(x) = x
 #   Corollary IV.2(ii):
 #     3. For DO APN F and linear L, M: F_L = F_M  ⟺  L = M or L(x) = M(x) ⊕ x
-# VBF API used: gold_apn, SBox, differential_uniformity
+# VBF API used: gold_apn, terms_to_lut, zero_linear_map, identity_linear_map
 
 include(joinpath(@__DIR__, "helpers.jl"))
 using Dates
@@ -24,11 +24,11 @@ function section4_check_theoremIV1(; io::IO = devnull)
     n = 5
     mod = primitive_polynomial(n)
 
-    G1 = gold_lut(n, 1; modulus = mod)
+    G1 = gold_apn(n, 1; modulus = mod).lut
 
     L_zero = zero_map_lut(n)
     L_id   = identity_map_lut(n)
-    L_frob = linear_monomial_lut(n, 1, 1; modulus = mod)  # L(x) = x²
+    L_frob = terms_to_lut([(1, 2)], n, mod)  # L(x) = x²
 
     shift_zero = isotopic_shift_lut(G1, L_zero)
     shift_id   = isotopic_shift_lut(G1, L_id)
@@ -50,20 +50,20 @@ end
     section4_check_corollaryIV2(; io) -> NamedTuple
 
 Verify Corollary IV.2(ii): F_L = F_M iff M = L or M(x) = L(x) ⊕ x.
-Tested on G_1 = x³ over GF(2⁵) with L(x) = x², M(x) = x² ⊕ x.
+Tested on G_1 = x³ over GF(2⁵) with L(x) = x², M(x) = x² ⊕ x, N(x) = x⁴.
 """
 function section4_check_corollaryIV2(; io::IO = devnull)
     n = 5
     mod = primitive_polynomial(n)
 
-    G1 = gold_lut(n, 1; modulus = mod)
+    G1 = gold_apn(n, 1; modulus = mod).lut
 
     # L(x) = x²
-    L = linear_monomial_lut(n, 1, 1; modulus = mod)
+    L = terms_to_lut([(1, 2)], n, mod)
     # M(x) = x² ⊕ x  (= L(x) ⊕ x)
     M = [L[x+1] ⊻ x for x in 0:(1<<n)-1]
-    # N(x) = x³ (different from L and L⊕id)
-    N_map = linear_monomial_lut(n, 2, 1; modulus = mod)  # x⁴ ≠ x² or x²⊕x
+    # N(x) = x⁴ (different from L and L⊕id)
+    N_map = terms_to_lut([(1, 4)], n, mod)
 
     shift_L = isotopic_shift_lut(G1, L)
     shift_M = isotopic_shift_lut(G1, M)
