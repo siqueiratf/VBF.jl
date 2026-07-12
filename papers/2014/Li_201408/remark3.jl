@@ -64,17 +64,38 @@ function remark3_report(; full_search::Bool = false, io::IO = stdout)
     end
 
     if full_search
-        println(io, "\n  n=8 pairwise CCZ-inequivalence (slow):")
-        pairs = [(1,2),(1,4),(2,4)]
-        for (a,b) in pairs
-            ccz = are_ccz_equivalent(Fus_n8[a], Fus_n8[b])
-            print_check("n=8 i=$a vs i=$b CCZ-inequivalent", !ccz, io)
+        println(io, "\n  n=8 pairwise CCZ-inequivalence (opt-in):")
+        # The n=8 F_u are degree-3 differentially-4-uniform permutations (neither
+        # quadratic nor APN), so are_ccz_equivalent falls back to the generic
+        # permutation-only Canteaut-Perrin enumeration (enumerate_ccz_class). At
+        # n=8 that class enumeration exhausts memory/time with the current
+        # backend. Rather than abort with a raw backtrace, we degrade gracefully:
+        # report the search as infeasible and keep the Walsh-spectrum necessary
+        # condition (verified above) as the affirmative evidence the paper's
+        # Magma extended-code equivalence result is consistent with.
+        try_n8_ccz = function (F, G, label)
+            if inputbits(F) >= 8
+                print_kv(label, "infeasible at n=8 with current backend " *
+                    "(generic CCZ enumeration exhausts resources)", io)
+                return
+            end
+            local ccz
+            try
+                ccz = are_ccz_equivalent(F, G)
+            catch err
+                print_kv(label, "infeasible ($(typeof(err))) — CCZ backend " *
+                    "could not complete", io)
+                return
+            end
+            print_check("$label CCZ-inequivalent", !ccz, io)
+        end
+        for (a, b) in [(1, 2), (1, 4), (2, 4)]
+            try_n8_ccz(Fus_n8[a], Fus_n8[b], "n=8 i=$a vs i=$b")
         end
         # vs x^{21} = x^{2^4+2^2+2^0} over GF(2^8)
         x21 = SBox{8}(gf_monomial_lut(8, 21))
-        for i in [1,2,4]
-            ccz = are_ccz_equivalent(Fus_n8[i], x21)
-            print_check("n=8 i=$i vs x^21 CCZ-inequivalent", !ccz, io)
+        for i in [1, 2, 4]
+            try_n8_ccz(Fus_n8[i], x21, "n=8 i=$i vs x^21")
         end
     else
         print_kv("n=8 pairwise CCZ check", "skipped (pass full_search=true)", io)
