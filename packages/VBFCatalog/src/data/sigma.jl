@@ -89,7 +89,8 @@ end
 
 # --- index build ------------------------------------------------------------
 
-const _SIGMA_STRATEGY = "ortho-derivative-sigma"
+const _SIGMA_STRATEGY = "ortho-derivative-sigma"                     # legacy: σ-bucketed, unconfirmed
+const _SIGMA_STRATEGY_CONFIRMED = "ortho-derivative-sigma-confirmed" # σ-bucketed, EA-confirmed
 
 """
     build_sigma_index!(db; rebuild=true) -> NamedTuple
@@ -189,9 +190,24 @@ end
 """
     classify_ccz(F::SBox; index) -> (status, source, member_idx)
 
-Look up `σ(F)` in the `ccz_sigma_index` side store (see [`sigma_index_path`](@ref)). Returns `(:known, source, member_idx)` for
-the first catalog match, or `(:new, nothing, nothing)` if σ is absent (a rigorous
-CCZ-inequivalence certificate against the entire indexed catalog).
+Look up `σ(F)` in the `ccz_sigma_index` side store (see [`sigma_index_path`](@ref)).
+
+The two verdicts are **not** symmetric, and the asymmetry is the whole point:
+
+  * `(:new, nothing, nothing)` — σ is absent from the index. This is a **rigorous
+    CCZ-inequivalence certificate** against every indexed function: σ is a
+    CCZ-invariant, so a mismatch cannot be an artefact.
+  * `(:sigma_match, source, member_idx)` — σ collides with that member. This is
+    **NOT proof of equivalence**, only a candidate. σ is necessary, not
+    sufficient: Gold `x³` and `x⁹` over `F₂⁷` share a σ (and a Γ-rank, and a
+    Δ-rank) yet are CCZ-inequivalent, as do `x³` and `x⁵` over `F₂⁵`.
+
+To settle a `:sigma_match`, confirm it against the candidate's LUT with the
+complete decision for quadratic APN — `VBF.ea_mappings_from_ortho_derivative(F, G)`
+is non-empty iff `F ~EA G`, and EA = CCZ for quadratic APN (Yoshiara).
+
+The status was formerly `:known`, which invited callers to read a σ collision as
+"already in the catalog" and silently discard a genuinely new class.
 """
 function classify_ccz(F::SBox; index::SQLite.DB = _open_sigma_index())
     h = sigma_hash(F)
@@ -200,7 +216,7 @@ function classify_ccz(F::SBox; index::SQLite.DB = _open_sigma_index())
         "SELECT source, member_idx FROM ccz_sigma_index WHERE sigma_hash = " *
         _sql_quote(h) * " LIMIT 1",
     )
-        return (:known, String(r.source), Int(r.member_idx))
+        return (:sigma_match, String(r.source), Int(r.member_idx))
     end
     (:new, nothing, nothing)
 end
@@ -208,8 +224,13 @@ end
 """
     is_novel(F::SBox; index) -> Bool
 
-`true` iff `σ(F)` is absent from the `ccz_sigma_index` side store — i.e. `F` is CCZ-inequivalent
-to every function in the indexed catalog (a new quadratic-APN CCZ class).
+`true` iff `σ(F)` is absent from the `ccz_sigma_index` side store — i.e. `F` is
+CCZ-inequivalent to every indexed function (a new quadratic-APN CCZ class). This
+direction is rigorous.
+
+`false` means only "σ collides with something indexed" — **not** that `F` is
+known. Confirm a collision before treating it as a duplicate; see
+[`classify_ccz`](@ref).
 """
 is_novel(F::SBox; index::SQLite.DB = _open_sigma_index()) = classify_ccz(F; index = index)[1] === :new
 
@@ -218,37 +239,83 @@ is_novel(F::SBox; index::SQLite.DB = _open_sigma_index()) = classify_ccz(F; inde
 """
     populate_ccz_equivalence_classes!(db) -> Int
 
-Group every `is_quadratic` APN `functions` row by `σ` and record one
-`equivalence_classes` row (kind `"CCZ"`, `discriminator` = σ-hash, `canonical_id`
-= lowest member id) per class, with all members in `class_members`
-(strategy `"ortho-derivative-sigma"`). Returns the number of classes written.
+Record the CCZ classes of the `is_quadratic` APN `functions` rows into
+`equivalence_classes` (kind `"CCZ"`, `canonical_id` = lowest member id) with all
+members in `class_members` (strategy `"ortho-derivative-sigma-confirmed"`).
+Returns the number of classes written.
+
+σ is used to **bucket**, not to decide. A σ collision does not imply
+CCZ-equivalence — Gold `x³`/`x⁹` over `F₂⁷` and `x³`/`x⁵` over `F₂⁵` each share a
+σ while being CCZ-inequivalent — so every bucket with more than one member is
+split by the complete decision for quadratic APN
+(`VBF.ea_mappings_from_ortho_derivative` is non-empty iff EA-equivalent; EA = CCZ
+here by Yoshiara). Buckets of size 1 need no confirmation: σ-mismatch against
+everything else is already a certificate.
+
+Grouping on σ alone (as this did before) silently merged those Gold pairs into
+single classes.
 """
 function populate_ccz_equivalence_classes!(db::SQLite.DB)
-    SQLite.execute(db, "DELETE FROM class_members WHERE strategy = " * _sql_quote(_SIGMA_STRATEGY))
+    SQLite.execute(db, "DELETE FROM class_members WHERE strategy IN (" *
+        _sql_quote(_SIGMA_STRATEGY) * ", " * _sql_quote(_SIGMA_STRATEGY_CONFIRMED) * ")")
     SQLite.execute(db, "DELETE FROM equivalence_classes WHERE kind = 'CCZ'")
-    # group (n, sigma_hash) -> sorted member ids
-    groups = Dict{Tuple{Int,String},Vector{Int}}()
+
+    # 1) bucket by (n, σ) — a necessary condition, cheap
+    buckets = Dict{Tuple{Int,String},Vector{Int}}()
+    sboxes = Dict{Int,Any}()
     for r in DBInterface.execute(
         db, "SELECT id, n, lut_blob FROM functions WHERE is_apn = 1 AND is_quadratic = 1")
         id = Int(r.id); n = Int(r.n)
-        h = sigma_hash(_sbox_from_blob(Vector{UInt8}(r.lut_blob), n))
-        push!(get!(groups, (n, h), Int[]), id)
+        s = _sbox_from_blob(Vector{UInt8}(r.lut_blob), n)
+        sboxes[id] = s
+        push!(get!(buckets, (n, sigma_hash(s)), Int[]), id)
     end
-    nclasses = 0
-    for ((n, h), ids) in groups
-        sort!(ids)
-        canon = ids[1]
-        SQLite.execute(db, string(
-            "INSERT INTO equivalence_classes (kind, n, canonical_id, discriminator) VALUES (",
-            "'CCZ', ", n, ", ", canon, ", ", _sql_quote(h), ")"))
-        cid = 0
-        for rr in DBInterface.execute(db, "SELECT last_insert_rowid() id"); cid = Int(rr.id); end
-        for fid in ids
-            SQLite.execute(db, string(
-                "INSERT INTO class_members (class_id, function_id, strategy) VALUES (",
-                cid, ", ", fid, ", ", _sql_quote(_SIGMA_STRATEGY), ")"))
+
+    # 2) split each multi-member bucket into true CCZ classes.
+    #    The buckets are independent and the EA decision dominates the cost
+    #    (finding the maps for an equivalent n=8 pair takes minutes, while
+    #    refuting one is instant), so confirm them in parallel. Singletons need
+    #    no confirmation: a σ-mismatch against everything else already certifies
+    #    the class. DB writes stay on this thread — SQLite is not reentrant here.
+    bkeys = collect(keys(buckets))
+    splits = Vector{Vector{Vector{Int}}}(undef, length(bkeys))
+    Threads.@threads for bi in eachindex(bkeys)
+        ids = sort(buckets[bkeys[bi]])
+        if length(ids) == 1
+            splits[bi] = [ids]
+            continue
         end
-        nclasses += 1
+        classes = Vector{Int}[]
+        for id in ids
+            placed = false
+            for cls in classes
+                if !isempty(ea_mappings_from_ortho_derivative(sboxes[id], sboxes[cls[1]]))
+                    push!(cls, id)
+                    placed = true
+                    break
+                end
+            end
+            placed || push!(classes, [id])
+        end
+        splits[bi] = classes
+    end
+
+    nclasses = 0
+    for (bi, (n, h)) in enumerate(bkeys)
+        for cls in splits[bi]
+            canon = cls[1]
+            SQLite.execute(db, string(
+                "INSERT INTO equivalence_classes (kind, n, canonical_id, discriminator) VALUES (",
+                "'CCZ', ", n, ", ", canon, ", ", _sql_quote(h), ")"))
+            cid = 0
+            for rr in DBInterface.execute(db, "SELECT last_insert_rowid() id"); cid = Int(rr.id); end
+            for fid in cls
+                SQLite.execute(db, string(
+                    "INSERT INTO class_members (class_id, function_id, strategy) VALUES (",
+                    cid, ", ", fid, ", ", _sql_quote(_SIGMA_STRATEGY_CONFIRMED), ")"))
+            end
+            nclasses += 1
+        end
     end
     nclasses
 end
