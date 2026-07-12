@@ -15,24 +15,44 @@ using Dates
 
 Print a full reproduction report for Budaghyan et al. (2020).
 Scope:
-  - Exact:   Theorem IV.1, Corollary IV.2, Proposition V.3, Lemma VI.6
-  - Exact:   Theorem VI.3 new n=9 APN (explicit parameters from Section VII-B)
-  - Bounded: Section VII-D n=6 monomial-shift coverage (1-term L only)
-  - Loaded:  x⁹ + Tr(x³) over GF(2^8) verified APN (reference function)
-  - Not run: Full n=6..12 search (exhaustive, computationally heavy)
-  - Not run: Γ-rank computation (requires n=9 size matrices, out-of-scope)
+  - Exact:   Theorem IV.1, Corollary IV.2
+  - Exact:   Theorem V.1 (i)+(ii), scanned over all 1-/2-term linear L at n=6
+  - Exact:   Theorem VI.3 — conditions (i),(ii),(iii) and the iff, both directions
+  - Exact:   Theorem VI.3 new n=9 APN (explicit parameters from Section VII-B),
+             LUT-identical to Table I row 8
+  - Exact:   Table I — all 8 rows, pairwise CCZ-inequivalent by ortho-derivative
+             mugshot (EA = CCZ for quadratic APN, Yoshiara)
+  - Partial: Proposition V.3 (q = 2 only; the paper states it for any prime power q)
+  - Partial: Lemma VI.6 (cases (i), (ii), (iv) of 5; (iii) and (v) not implemented)
+  - Loaded:  x⁹ + Tr(x³) over GF(2^8) verified APN (the 2006 function itself; the
+             paper's isotopic-shift derivation of it is NOT reproduced — README R8)
+  - Not run: Section VII-D (every quadratic APN over GF(2⁶) is a shift of x³) —
+             needs general linear L (~2³⁶) plus the Proposition VI.1 normalisation
+  - Not run: Γ-rank column of Table I (VBF's design_ranks throws for n > 7;
+             not needed — the mugshot separates all 8 rows)
 """
 function paper_report(io::IO = stdout)
     n9_mod = primitive_polynomial(9)
-    print_header(io, "Budaghyan et al. (2020) — Isotopic Shifts", 9, n9_mod)
+    print_banner(
+        io,
+        "Paper: Budaghyan, Calderini, Carlet, Coulter, Villa (2020) —",
+        "       Constructing APN Functions Through Isotopic Shifts.",
+        "       IEEE Trans. Inf. Theory 66(8):5299-5309",
+        "Field: GF(2^9), modulus = $n9_mod = 0x$(string(n9_mod, base = 16)) (x⁹+x⁴+1)",
+        "Julia: $(VERSION),  date: $(Dates.today())",
+    )
     println(io)
     println(io, "Scope:")
-    println(io, "  Exact:   Theorem IV.1, Corollary IV.2, Proposition V.3, Lemma VI.6")
+    println(io, "  Exact:   Theorem IV.1, Corollary IV.2")
+    println(io, "  Exact:   Theorem V.1 (i)+(ii) over all 1-/2-term linear L at n=6")
+    println(io, "  Exact:   Theorem VI.3 conditions (i),(ii),(iii) — iff, both directions")
     println(io, "  Exact:   Theorem VI.3 new n=9 APN (Section VII-B explicit params)")
-    println(io, "  Bounded: Section VII-D n=6 monomial-shift coverage (1-term L)")
-    println(io, "  Loaded:  x⁹ + Tr(x³) over GF(2^8) verified APN")
-    println(io, "  Not run: full n=6..12 exhaustive search")
-    println(io, "  Not run: Γ-rank (n=9 matrix too large for this VBF build)")
+    println(io, "  Exact:   Table I — all 8 rows, pairwise CCZ-inequivalent (mugshot)")
+    println(io, "  Partial: Proposition V.3 (q=2 only)")
+    println(io, "  Partial: Lemma VI.6 (cases (i),(ii),(iv) of 5)")
+    println(io, "  Loaded:  x⁹ + Tr(x³) over GF(2^8) verified APN (not its shift derivation)")
+    println(io, "  Not run: Section VII-D full coverage claim (~2³⁶ general linear L)")
+    println(io, "  Not run: Γ-rank (design_ranks throws for n > 7; mugshot suffices)")
 
     section4_report(io)
     section5_report(io)
@@ -41,7 +61,7 @@ function paper_report(io::IO = stdout)
     table1_report(io)
 
     println(io)
-    println(io, "=" ^ 64)
+    println(io, "=" ^ 72)
     println(io, "Done.")
 end
 
