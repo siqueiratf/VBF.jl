@@ -28,11 +28,12 @@ function paper_report(io::IO = stdout; save_results::Bool = false)
     println(io, "  Date:  ", Dates.today())
     println(io)
     println(io, "  Reproduction scope:")
-    println(io, "    Theorem 17    — exact verification on Gold x^3 n=5..8")
+    println(io, "    Theorem 17    — exact: biconditional on Gold x^3 n=4..8 (n=4 positive)")
     println(io, "    Table 2       — exact: formula (34) vs DDT for n=1..10, formula to n=20")
     println(io, "    Table 1       — bounded demo: catalog APN functions n=5..8")
-    println(io, "    Conjecture 21 — bounded demo: catalog power APN functions")
-    println(io, "    Conjecture 22 — bounded demo: all catalog APN n=5..8")
+    println(io, "    Conjecture 21 — bounded demo: catalog power APN functions (S1 and S2)")
+    println(io, "    Conjecture 22 — bounded demo: all catalog APN n=5..8, all swap pairs")
+    println(io, "                    (exhaustive over pairs for n≤6, sampled for n=7,8)")
 
     r_thm17  = theorem17_demo(; io)
     r_table2 = table2_report(; io)
@@ -41,11 +42,12 @@ function paper_report(io::IO = stdout; save_results::Bool = false)
     r_c22    = conjecture22_report(; ns=[5,6,7,8], io)
 
     print_section("Summary", io)
+    print_check("Theorem 17 biconditional matches ground truth (n=4..8)", r_thm17.biconditional_ok, io)
     print_check("Theorem 17 condition fails for Gold x^3 n=5..8",     r_thm17.all_fail,     io)
     print_check("Table 2: formula (34) matches DDT for n=2..10",       r_table2.all_match,   io)
     print_check("Table 1: Theorem 17 cond. fails for all catalog APN", r_table1.all_ok,      io)
-    print_check("Conjecture 21: power APN share S1 with x^3",          r_c21.all_match,      io)
-    print_check("Conjecture 22: no counterexample in catalog n=5..8",  r_c22.no_counterexample, io)
+    print_check("Conjecture 21: power APN share S1 and S2 with x^3",   r_c21.all_match,      io)
+    print_check("Conjecture 22: no APN swap in catalog n=5..8",        r_c22.no_counterexample, io)
 
     result = (;
         theorem17  = r_thm17,
@@ -59,13 +61,20 @@ function paper_report(io::IO = stdout; save_results::Bool = false)
         mkpath(joinpath(@__DIR__, "results"))
         open(joinpath(@__DIR__, "results", "report.toml"), "w") do f
             TOML.print(f, Dict(
-                "paper"           => "Kaleyski_201911",
-                "theorem17_ok"    => r_thm17.all_fail,
-                "table2_ok"       => r_table2.all_match,
-                "table1_ok"       => r_table1.all_ok,
-                "conjecture21_ok" => r_c21.all_match,
-                "conjecture22_ok" => r_c22.no_counterexample,
-                "total_checked"   => r_c22.total_checked,
+                "paper"                     => "Kaleyski_201911",
+                "theorem17_ok"              => r_thm17.all_fail,
+                "theorem17_biconditional_ok" => r_thm17.biconditional_ok,
+                "theorem17_positive_case"   => r_thm17.positive_case,
+                "table2_ok"                 => r_table2.all_match,
+                "table1_ok"                 => r_table1.all_ok,
+                "table1_asymmetric_reps"    => r_table1.n_asym,
+                "conjecture21_ok"           => r_c21.all_match,
+                "conjecture21_power_fns"    => length(r_c21.rows),
+                "conjecture22_ok"           => r_c22.no_counterexample,
+                # every catalog APN n=5..8, including the 26 with F(0)=F(1) that the
+                # old code skipped; `total_swaps` counts (function, pair) combinations
+                "total_checked"             => r_c22.total_checked,
+                "total_swaps"               => r_c22.total_swaps,
             ))
         end
     end
