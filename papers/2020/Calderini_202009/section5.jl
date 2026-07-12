@@ -17,9 +17,15 @@
 #      VBF's dillon_apn_permutation() is AE to F₂ (not F₁/F₃).
 #   4. Component degrees {*3^^7, 4^^56*} and the per-component Walsh-spectrum
 #      multiset (5 types, multiplicities 21,21,7,7,7) for the APN permutations.
+#   5. Catalog cross-reference: the 14 CCZ classes = 13 `APN-rep` rows + n6_Kim,
+#      and row 14 ↔ `reprs6_13` decided on CCZ invariants (Γ-/Δ-rank, extended
+#      Walsh + DDT spectra, #Walsh-zero 6-subspaces) — not `are_ccz_equivalent`,
+#      which is inconclusive on this non-quadratic pair.
 # VBF API used: kim_apn, dillon_apn_permutation, are_ccz_equivalent,
 #               are_affine_equivalent, algebraic_degree, enumerate_ccz_class,
-#               differential_uniformity, is_permutation, ortho_derivative, lat, ddt
+#               differential_uniformity, is_permutation, ortho_derivative, lat, ddt,
+#               gamma_rank, delta_rank, absolute_walsh_spectrum,
+#               differential_spectrum, walsh_zeroes, extract_linear_subspaces
 
 include(joinpath(@__DIR__, "helpers.jl"))
 using VBFCatalog
@@ -92,13 +98,91 @@ end
 """
     load_n6_ccz_reps() -> Vector{SBox}
 
-Load the 14 CCZ-class representatives for n=6 APN functions from VBFCatalog.
+Load the n=6 APN CCZ-class representatives of the `APN-rep` family from
+VBFCatalog. This family holds **13** of the 14 classes: `reprs6_4` (the Kim
+class, Table 1 row 5) is catalogued declaratively as `n6_Kim` in the `APN`
+family instead, so it is not returned here — see `n6_ccz_class_census`.
 """
 function load_n6_ccz_reps()
     db = load_catalog()
     fns = list_functions(db; n = 6, is_apn = true, family = "APN-rep")
     sort!(fns, by = f -> f.id)
     return [load_sbox(db, f.id) for f in fns]
+end
+
+"""
+    n6_ccz_class_census(io) -> Bool
+
+Catalog cross-reference for the 14 CCZ classes of Table 1: 13 `APN-rep`
+entries (`reprs6_0`…`reprs6_3`, `reprs6_5`…`reprs6_13`) plus `n6_Kim` for
+row 5, whose sboxU representative `reprs6_4` merges into the `APN` family at
+build time. 13 + 1 = 14.
+"""
+function n6_ccz_class_census(io::IO = stdout)
+    db = load_catalog()
+    reps_meta =
+        sort!(list_functions(db; n = 6, is_apn = true, family = "APN-rep"), by = f -> f.id)
+    ok = length(reps_meta) == 13
+    print_check(io, "Catalog lists 13 APN-rep CCZ-class representatives", ok)
+    kim = find_function(db; canonical_name = "n6_Kim")
+    has_kim = kim !== nothing && kim.n == 6 && kim.is_apn
+    print_check(io, "Row 5 (Kim) is catalogued separately as n6_Kim (family $(has_kim ? kim.family : "?"))", has_kim)
+    total = length(reps_meta) + (has_kim ? 1 : 0)
+    print_check(io, "⇒ all 14 Table-1 CCZ classes are in the catalog (13 + Kim)", total == 14)
+    for f in reps_meta
+        println(
+            io,
+            "  $(f.id) | $(f.canonical_name) | deg $(f.algebraic_degree) | perm $(f.is_permutation)",
+        )
+    end
+    has_kim && println(
+        io,
+        "  $(kim.id) | $(kim.canonical_name) | deg $(kim.algebraic_degree) | perm $(kim.is_permutation)",
+    )
+    return ok && has_kim && total == 14
+end
+
+"""
+    row14_catalog_crosscheck(io) -> Bool
+
+Table 1 row 14 (the Edel–Pott cubic) ↔ catalog entry `reprs6_13`, decided on
+**CCZ invariants only**: Γ-rank 1300, Δ-rank 152, extended Walsh spectrum, DDT
+spectrum and the number of Walsh-zero 6-dim subspaces (25).
+
+`are_ccz_equivalent` is deliberately NOT used here: it is inconclusive on this
+pair (no quadratic member ⇒ no ortho-derivative route) and currently reports a
+best-effort `false`, which would be a false negative. Row 14 is the only
+non-quadratic entry among the 14 known n=6 APN CCZ classes, and it is the only
+degree-3 entry in the catalog for n=6 — together with the matching invariants
+this identifies the two functions' class.
+"""
+function row14_catalog_crosscheck(io::IO = stdout)
+    F14 = table1_row14()
+    R13 = load_sbox(load_catalog(), "reprs6_13")
+    inv(F) = (
+        deg = algebraic_degree(F),
+        du = differential_uniformity(F),
+        gamma = gamma_rank(F),
+        delta = delta_rank(F),
+        walsh = sorted_pairs(absolute_walsh_spectrum(F)),
+        ddt = sorted_pairs(differential_spectrum(F)),
+        wz6 = length(extract_linear_subspaces(walsh_zeroes(F), 6; max_bits = 12)),
+    )
+    a, b = inv(F14), inv(R13)
+    print_kv(io, "Γ-rank (row 14 / reprs6_13)", (a.gamma, b.gamma))
+    print_kv(io, "Δ-rank (row 14 / reprs6_13)", (a.delta, b.delta))
+    print_kv(io, "#Walsh-zero 6-subspaces", (a.wz6, b.wz6))
+    print_check(io, "Both are APN of degree 3", a.deg == b.deg == 3 && a.du == b.du == 2)
+    print_check(io, "Γ-rank = 1300 for both", a.gamma == b.gamma == 1300)
+    print_check(io, "Δ-rank = 152 for both", a.delta == b.delta == 152)
+    print_check(io, "Extended Walsh spectra agree", a.walsh == b.walsh)
+    print_check(io, "DDT spectra agree", a.ddt == b.ddt)
+    print_check(io, "#Walsh-zero 6-dim subspaces = 25 for both", a.wz6 == b.wz6 == 25)
+    ok = a == b && a.gamma == 1300 && a.delta == 152 && a.wz6 == 25 && a.deg == 3
+    print_check(io, "Row 14 ↔ reprs6_13: all CCZ invariants match", ok)
+    println(io, "  (invariant-based identification; are_ccz_equivalent is inconclusive on")
+    println(io, "   this pair — non-quadratic, so the ortho-derivative route does not apply)")
+    return ok
 end
 
 """
@@ -300,13 +384,11 @@ function section5_report(io::IO = stdout)
     print_section(io, "Table 1 — EA-classes per CCZ-class (paper polynomials, Conway ζ)")
     table1_check(io)
 
-    print_section(io, "Catalog cross-reference (VBFCatalog n=6 APN-rep entries)")
-    db = load_catalog()
-    reps_meta = sort!(list_functions(db; n = 6, is_apn = true, family = "APN-rep"), by = f -> f.id)
-    print_check(io, "Catalog lists 14 CCZ-class representatives", length(reps_meta) == 14)
-    for f in reps_meta
-        println(io, "  $(f.id) | $(f.canonical_name) | deg $(f.algebraic_degree) | perm $(f.is_permutation)")
-    end
+    print_section(io, "Catalog cross-reference (VBFCatalog n=6 APN CCZ classes)")
+    n6_ccz_class_census(io)
+
+    print_section(io, "Table 1 row 14 ↔ catalog reprs6_13 (CCZ invariants)")
+    row14_catalog_crosscheck(io)
 
     print_section(io, "Section 5.1 — Dillon's APN permutation")
     section5_1_analysis(; io)

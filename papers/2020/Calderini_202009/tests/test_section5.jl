@@ -95,4 +95,17 @@
     creps = load_n6_ccz_reps()
     @test length(creps) == 13
     @test all(differential_uniformity(r) == 2 for r in creps)
+    @test n6_ccz_class_census(devnull)          # 13 + n6_Kim = 14 CCZ classes
+
+    # Row 14 ↔ reprs6_13, on CCZ invariants only (are_ccz_equivalent is
+    # inconclusive on this non-quadratic pair and reports a best-effort false).
+    R13 = load_sbox(load_catalog(), "reprs6_13")
+    @test algebraic_degree(R13) == 3
+    @test differential_uniformity(R13) == 2
+    @test gamma_rank(F14) == gamma_rank(R13) == 1300
+    @test delta_rank(F14) == delta_rank(R13) == 152
+    @test sorted_pairs(absolute_walsh_spectrum(F14)) == sorted_pairs(absolute_walsh_spectrum(R13))
+    @test sorted_pairs(differential_spectrum(F14)) == sorted_pairs(differential_spectrum(R13))
+    @test length(extract_linear_subspaces(walsh_zeroes(R13), 6; max_bits = 12)) == 25
+    @test row14_catalog_crosscheck(devnull)
 end
