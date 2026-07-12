@@ -1,6 +1,7 @@
 using Test
 using VBF
 
+include("test_definition1.jl")
 include("test_equivalences.jl")
 include("test_proposition1.jl")
 include("test_proposition2.jl")

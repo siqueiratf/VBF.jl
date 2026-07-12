@@ -3,8 +3,8 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../../..)
 JULIA_PROJECT := --project=$(ROOT)
 
-.PHONY: help test report clean_results \
-        equivalences lemma1 proposition1 proposition2 proposition3 \
+.PHONY: help test report \
+        definition1 equivalences lemma1 proposition1 proposition2 proposition3 \
         proposition4 proposition5 proposition6
 
 default: help
@@ -15,6 +15,9 @@ test:
 
 report:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/report.jl
+
+definition1:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/definition1.jl
 
 equivalences:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/equivalences.jl
@@ -40,9 +43,6 @@ proposition5:
 proposition6:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/proposition6.jl
 
-clean_results:
-	rm -rf "$(MAKEFILE_DIR)/results"
-
 help:
 	@echo 'Paper: Canteaut, Perrin, Tian (2019) — If a Generalised Butterfly is APN then it Operates on 6 Bits'
-	@echo 'Targets: test  report  equivalences  lemma1  proposition1  proposition2  proposition3  proposition4  proposition5  proposition6  clean_results'
+	@echo 'Targets: test  report  definition1  equivalences  lemma1  proposition1  proposition2  proposition3  proposition4  proposition5  proposition6'
