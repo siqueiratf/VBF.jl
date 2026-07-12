@@ -62,11 +62,16 @@ functional inverse and cannot handle non-bijective inputs).
 - When the partition search is **capped** (degenerate partitions — e.g.
   signature `[2ⁿ-1, 1]` monomial APN, or `[2ⁿ-8, 7, 1]` degree-4 APN
   permutations at n = 6) and no invariant separates the pair and no
-  affine witness exists, the decision is *inconclusive*: the function
-  emits an `@warn` and returns a best-effort `false`. Earlier versions
-  returned this `false` silently, indistinguishable from a proof.
-  For pairs inside the CCZ-class of a quadratic APN, the complete
-  alternative is the orbit method ([`ea_class_orbits`](@ref)).
+  affine witness exists, the decision is *inconclusive* and the function
+  **throws** [`InconclusiveEquivalence`](@ref) rather than answering.
+  Earlier versions returned a best-effort `false` here — first silently,
+  then with a warning — but callers act on the `Bool`, and a novelty check
+  reading that `false` as "inequivalent" manufactures a discovery. Pass
+  `on_inconclusive = :best_effort` to restore it, or `:missing` to
+  propagate the uncertainty. For pairs inside the CCZ-class of a quadratic
+  APN the complete alternative is the orbit method
+  ([`ea_class_orbits`](@ref)); for two quadratic APN,
+  [`ea_mappings_from_ortho_derivative`](@ref) decides exactly.
 
 Two functions of algebraic degree ≤ 1 are always EA-equivalent
 (`G = F ⊕ (G ⊕ F)` with affine drift `G ⊕ F`), and a degree ≤ 1
@@ -91,9 +96,13 @@ to the `max_inner_affine` cap (see below).
 
 `max_inner_affine` bounds the inner-affine enumeration used for
 non-permutation inputs; an exhausted (uncapped) enumeration is a sound
-negative, whereas hitting the cap yields an honest inconclusive result
-(warn + best-effort `false`) rather than a silent `false`. The default
-`10^7` decides every `n ≤ 4` pair exhaustively.
+negative, whereas hitting the cap is *undecided* and throws
+[`InconclusiveEquivalence`](@ref). The default `10^7` decides every
+`n ≤ 4` pair exhaustively.
+
+`on_inconclusive` controls what an undecided query does: `:throw`
+(default), `:best_effort` (the old `false` — use only where a false
+negative is harmless), or `:missing`.
 
 `max_outer_per_sigma` is a safety bound on the outer-permutation search
 size per bucket map; a bucket map yielding more than this many `L₁`
@@ -124,6 +133,7 @@ function are_ea_equivalent(
     k::Int = 4,
     max_outer_per_sigma::Int = 10^6,
     max_inner_affine::Int = 10^7,
+    on_inconclusive::Symbol = :throw,
 )
     inputbits(F) == inputbits(G) || return false
     storage_type(F) == storage_type(G) || return false
@@ -149,12 +159,17 @@ function are_ea_equivalent(
             # Exhaustive (uncapped) search ⇒ sound negative.
             capped[] || return false
             # Capped permutation search: decide by sound invariants / witnesses.
-            return _ea_inconclusive_fallback(F, G)
+            return _ea_inconclusive_fallback(F, G; on_inconclusive = on_inconclusive)
         end
         # At least one input is a non-permutation: Heggebakk (which follows the
         # functional inverse) does not apply. Decide by the complete
         # inner-affine enumeration, which handles arbitrary functions.
-        return _ea_nonperm_decide(F, G; max_inner = max_inner_affine)
+        return _ea_nonperm_decide(
+            F,
+            G;
+            max_inner = max_inner_affine,
+            on_inconclusive = on_inconclusive,
+        )
     elseif s === :ortho_derivative
         return _are_ea_equivalent_via_ortho(F, G)
     end
@@ -163,10 +178,32 @@ function are_ea_equivalent(
     )
 end
 
+"""
+    InconclusiveEquivalence <: Exception
+
+Thrown when an equivalence query cannot be decided: the bounded search was capped
+without finding a witness, and no invariant separates the pair. Neither `true` nor
+`false` is justified.
+
+This exists because the alternative — reporting "don't know" as `false` — is a
+false negative, and a false negative in a novelty check manufactures a discovery.
+Catch it, or pass `on_inconclusive = :best_effort` to opt back into the old best-effort
+behaviour.
+"""
+struct InconclusiveEquivalence <: Exception
+    msg::String
+end
+Base.showerror(io::IO, e::InconclusiveEquivalence) =
+    print(io, "InconclusiveEquivalence: ", e.msg)
+
 # Sound decision chain for pairs the Heggebakk search cannot settle.
-# Every `false` here is certified by an EA-invariant; every `true` by a
-# witness. Only the final warned `false` is best-effort.
-function _ea_inconclusive_fallback(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
+# Every `false` here is certified by an EA-invariant; every `true` by a witness.
+# The final case is genuinely undecided and says so — see `on_inconclusive`.
+function _ea_inconclusive_fallback(
+    F::SBox{N,T},
+    G::SBox{N,T};
+    on_inconclusive::Symbol = :throw,
+) where {N,T}
     dF = algebraic_degree(F)
     dG = algebraic_degree(G)
     # All degree ≤ 1 functions form one EA-class (drift absorbs the difference).
@@ -180,11 +217,19 @@ function _ea_inconclusive_fallback(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
     component_degree_spectrum(F) != component_degree_spectrum(G) && return false
     # Affine equivalence implies EA-equivalence (positive witness).
     are_affine_equivalent(F, G) && return true
-    @warn "are_ea_equivalent: inconclusive — the bounded partition search was \
-capped and no invariant separates the pair; returning best-effort `false`. \
-For members of a quadratic APN's CCZ-class use `ea_class_orbits` for a \
-complete decision; otherwise external code-equivalence tooling is required." maxlog = 1
-    return false
+
+    msg = "the bounded partition search was capped and no invariant separates \
+the pair, so equivalence is undecided. Do not read this as inequivalence. For \
+members of a quadratic APN's CCZ-class use `ea_class_orbits` (or \
+`ea_mappings_from_ortho_derivative`, which is complete for quadratic APN) for an \
+exact decision; otherwise external code-equivalence tooling is required. Pass \
+`on_inconclusive = :best_effort` to restore the old best-effort `false`, or \
+`:missing` to propagate the uncertainty."
+    on_inconclusive === :throw && throw(InconclusiveEquivalence(msg))
+    on_inconclusive === :missing && return missing
+    on_inconclusive === :best_effort && return false
+    throw(ArgumentError("are_ea_equivalent: unknown on_inconclusive = \
+$(repr(on_inconclusive)) (expected :throw, :best_effort or :missing)"))
 end
 
 # ---------------------------------------------------------------------------
@@ -204,11 +249,17 @@ end
 # Unlike Heggebakk this makes no bijectivity assumption, and it is exact for
 # non-permutation / non-quadratic inputs (e.g. the degree-3 non-permutation APN
 # at n = 4). It is not restricted to n = 4.
-function _ea_nonperm_decide(F::SBox{N,T}, G::SBox{N,T}; max_inner::Int) where {N,T}
+function _ea_nonperm_decide(
+    F::SBox{N,T},
+    G::SBox{N,T};
+    max_inner::Int,
+    on_inconclusive::Symbol = :throw,
+) where {N,T}
     res = _ea_nonperm_search(F, G; max_inner = max_inner)
     res === :yes && return true
     res === :no && return false            # exhaustive enumeration ⇒ sound `false`
-    return _ea_inconclusive_fallback(F, G) # :capped ⇒ honest, non-silent fallback
+    # :capped ⇒ undecided; do not launder it into a negative
+    return _ea_inconclusive_fallback(F, G; on_inconclusive = on_inconclusive)
 end
 
 # Does an invertible linear L₁ carry the degree-≥2 ANF of F∘A₂ (packed table

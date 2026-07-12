@@ -56,6 +56,7 @@ export ea_multiplicities, ea_partition, ea_partition_signature
 export enumerate_bucket_maps, outer_permutations, outer_permutations_all
 export inner_permutation
 export are_ea_equivalent, ea_equivalence_certificate
+export InconclusiveEquivalence
 export ea_equivalences, partition_automorphisms, permutation_order
 export FunctionGraph, ccz_equivalent_function
 export graph_image_by, graph_xor_equivalence

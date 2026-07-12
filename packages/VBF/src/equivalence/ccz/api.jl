@@ -46,23 +46,38 @@ of [Canteaut and Perrin (2019)](@cite Canteaut_201906):
 - **Neither quadratic APN, not both permutations** — a positive
   [`are_ea_equivalent`](@ref) result is a sufficient CCZ-certificate and is
   returned as `true` (the complete non-permutation EA decision covers e.g.
-  degree-≥3 non-permutation APN). Otherwise the pair is not decided (returns
-  `false`); deciding CCZ-equivalence for EA-inequivalent non-permutations in
-  general reduces to linear-code equivalence (Leon's algorithm), a documented
-  frontier.
+  degree-≥3 non-permutation APN). Otherwise the pair is **not decided**, and
+  the function throws [`InconclusiveEquivalence`](@ref): EA-inequivalence does
+  not imply CCZ-inequivalence (EA ⊊ CCZ), so a `false` here would be a
+  fabricated negative. Deciding this case in general reduces to linear-code
+  equivalence (Leon's algorithm), a documented frontier. Pass
+  `on_inconclusive = :best_effort` for the old `false`.
+
+# A `false` is not always a proof
+
+Every `false` this function returns is either a failed necessary CCZ-invariant
+(sound) or an exhausted class enumeration (sound). Every case it *cannot* settle
+now raises rather than answering — because the caller cannot tell a proof from a
+guess, and a novelty pipeline reading "not equivalent" from a guess invents a
+discovery. This is not hypothetical: it is how four "new" APN functions were
+added to this repo's catalog and later had to be withdrawn.
 """
 
 """
     are_ccz_equivalent(F::SBox, G::SBox; strategy = :auto,
                         ea_max_outer_per_sigma = 10^6,
-                        max_class_reps = 10^4) -> Bool
+                        max_class_reps = 10^4,
+                        on_inconclusive = :throw) -> Bool
 
 Decide CCZ-equivalence of `F` and `G`.
 
-`max_class_reps` caps the number of EA-class representatives we'll
-enumerate from `F`'s CCZ-class; the search short-circuits if exceeded
-(returning `false`). `ea_max_outer_per_sigma` is forwarded to each
-EA-equivalence call.
+`max_class_reps` caps the number of EA-class representatives enumerated from
+`F`'s CCZ-class. Exceeding it means the class was **not** exhausted, so no
+conclusion is available and the query is inconclusive (it used to return
+`false`). `ea_max_outer_per_sigma` is forwarded to each EA-equivalence call.
+
+`on_inconclusive` controls what an undecided query does: `:throw` (default),
+`:best_effort` (the old `false`), or `:missing`.
 
 Permutations only at v0.1.
 
@@ -85,6 +100,7 @@ function are_ccz_equivalent(
     strategy::Symbol = :auto,
     ea_max_outer_per_sigma::Int = 10^6,
     max_class_reps::Int = 10^4,
+    on_inconclusive::Symbol = :throw,
 )
     inputbits(F) == inputbits(G) || return false
     storage_type(F) == storage_type(G) || return false
@@ -94,7 +110,7 @@ function are_ccz_equivalent(
     # CCZ = EA on the quadratic-APN class (Yoshiara 2012): the fast path.
     Fq = is_quadratic_apn(F)
     Gq = is_quadratic_apn(G)
-    Fq && Gq && return are_ea_equivalent(F, G)
+    Fq && Gq && return are_ea_equivalent(F, G; on_inconclusive = on_inconclusive)
 
     s = strategy == :auto ? :canteaut_perrin : strategy
     s === :canteaut_perrin || throw(
@@ -113,22 +129,60 @@ function are_ccz_equivalent(
     # non-permutation EA decision settles many pairs — including degree-≥3
     # non-permutation APN — that the permutation-only enumeration below cannot
     # reach, keeping the two oracles consistent (EA-equiv ⇒ CCZ-equiv).
-    are_ea_equivalent(F, G; max_outer_per_sigma = ea_max_outer_per_sigma) &&
-        return true
+    # A `false` here is *not* a CCZ-negative (EA ⊊ CCZ), so it only means "no
+    # EA-certificate"; the decision continues below.
+    are_ea_equivalent(
+        F,
+        G;
+        max_outer_per_sigma = ea_max_outer_per_sigma,
+        on_inconclusive = :best_effort,
+    ) && return true
 
-    # Neither side quadratic APN: permutation-only Canteaut-Perrin enumeration.
-    (is_permutation(F) && is_permutation(G)) || return false
+    # Neither side quadratic APN: the Canteaut-Perrin enumeration needs
+    # permutations. For a non-permutation pair we have no decision procedure —
+    # EA-inequivalence does NOT imply CCZ-inequivalence (EA ⊊ CCZ), so a `false`
+    # here would be a fabricated negative, not a result.
+    if !(is_permutation(F) && is_permutation(G))
+        return _ccz_undecided(
+            "neither input is a permutation and neither is quadratic APN, so the \
+Canteaut-Perrin enumeration does not apply and no EA-certificate was found. \
+EA-inequivalence does not imply CCZ-inequivalence.",
+            on_inconclusive,
+        )
+    end
     reps = enumerate_ccz_class(F)
-    length(reps) > max_class_reps && return false
+    if length(reps) > max_class_reps
+        return _ccz_undecided(
+            "the CCZ-class enumeration exceeded max_class_reps = $max_class_reps \
+before the class was exhausted, so no conclusion is available. Raise \
+max_class_reps to decide.",
+            on_inconclusive,
+        )
+    end
     for rep in reps
         rep == G && return true                 # cheap exact-LUT path
         are_ea_equivalent(
             rep,
             G;
             max_outer_per_sigma = ea_max_outer_per_sigma,
+            on_inconclusive = :best_effort,
         ) && return true
     end
+    # The class was enumerated exhaustively and G matched no representative ⇒
+    # a sound negative.
     return false
+end
+
+# A CCZ query the implementation cannot settle. Mirrors `are_ea_equivalent`'s
+# `on_inconclusive`, so uncertainty is never silently reported as `false`.
+function _ccz_undecided(why::AbstractString, on_inconclusive::Symbol)
+    on_inconclusive === :best_effort && return false
+    on_inconclusive === :missing && return missing
+    on_inconclusive === :throw && throw(InconclusiveEquivalence(
+        "are_ccz_equivalent: " * why * " Pass `on_inconclusive = :best_effort` to \
+restore the old best-effort `false`, or `:missing` to propagate the uncertainty."))
+    throw(ArgumentError("are_ccz_equivalent: unknown on_inconclusive = \
+$(repr(on_inconclusive)) (expected :throw, :best_effort or :missing)"))
 end
 
 function _ccz_match_quadratic(F::SBox, Gq::SBox, max_class_reps::Int)
@@ -137,7 +191,9 @@ function _ccz_match_quadratic(F::SBox, Gq::SBox, max_class_reps::Int)
     for r in reps
         r == Gq && return true
         is_quadratic_apn(r) || continue
-        are_ea_equivalent(r, Gq) && return true
+        # A `false` from any single representative is not a CCZ-negative; only
+        # exhausting the class is. Keep the loop going rather than throwing.
+        are_ea_equivalent(r, Gq; on_inconclusive = :best_effort) && return true
     end
     return false
 end
