@@ -19,17 +19,9 @@ Count b∈GF(2ⁿ)* such that P(x)=x^{2^m+1}+x+b has no root in GF(2ⁿ).
 """
 function count_rootless_b(n::Int, m::Int)
     gcd(m, n) == 1 || error("need gcd(m,n)=1")
-    mod = primitive_polynomial(n)
-    e = (1 << m) + 1
-    count = 0
-    for b = 1:(1<<n)-1
-        has_root = false
-        for x = 0:(1<<n)-1
-            gf_pow(x, e, n; modulus=mod) ⊻ x ⊻ b == 0 && (has_root = true; break)
-        end
-        has_root || (count += 1)
-    end
-    count
+    # Fact 1 counts the b for which x^{2^m+1} + x + b is rootless — the a=1 case of
+    # the paper's single projective-polynomial test (see helpers.jl).
+    count(b -> projective_polynomial_rootless(n, m, 1, b), 1:(1<<n)-1)
 end
 
 """
