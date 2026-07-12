@@ -49,7 +49,10 @@ function observation1_report(io::IO = stdout)
     ea_ineq = m3 != m7
     print_check("C_3 ≠ C_7 (EA-mugshots differ → not EA-equivalent)", ea_ineq, io)
 
-    println(io, "  NOTE: CCZ-inequivalence to all known APN functions requires Γ-rank")
-    println(io, "        comparison (Table III). Γ-rank for n=10 needs Magma.")
-    println(io, "        Paper: Γ(C_3)=166068, Γ(C_7)=166168 — loaded from Table III.")
+    println(io, "  NOTE: the paper establishes CCZ-inequivalence to all known APN functions")
+    println(io, "        via Γ-rank (Table III): Γ(C_3)=166068, Γ(C_7)=166168 — transcribed,")
+    println(io, "        not recomputed. VBF exports `gamma_rank` but guards it to n ≤ 7")
+    println(io, "        (invariants/design_ranks.jl); at n=10 the incidence matrix is")
+    println(io, "        2^20×2^20 over F2 (~137 GB dense). See table3.jl for what we can")
+    println(io, "        and cannot verify in-repo.")
 end
