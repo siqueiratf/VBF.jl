@@ -8,6 +8,7 @@
 using Dates
 
 include(joinpath(@__DIR__, "helpers.jl"))
+include(joinpath(@__DIR__, "definition1.jl"))
 include(joinpath(@__DIR__, "equivalences.jl"))
 include(joinpath(@__DIR__, "proposition1.jl"))
 include(joinpath(@__DIR__, "proposition2.jl"))
@@ -25,18 +26,26 @@ Prints structured results for all reproducible claims, sweeping every i
 with gcd(i,n)=1 for n=3 (i∈{1,2}) and n=5 (i∈{1,2,3,4}).
 
 Reproduction scope:
-  - Sec 2.2     — exact: Frobenius and β↔β′ affine-equivalence identities
-  - Prop 1      — exact: Helleseth–Kholosha counts |S₀|,|S₁|,|S₃| + trace criterion
-  - Prop 2      — exact: linearised-equation solution counts, all (U,V,C)
-  - Lemma 1     — exact: Tr(B^τ)=0 exhaustive n=3, n=5
-  - Prop 3      — exact: APN ⟹ β∈{β₁,β₂} exhaustive; α=1 never APN (DU ≥ 4)
-  - Prop 4      — exact: APN ⟺ β∈{β₁,β₂} ∧ trace cond; bridge to Prop 5
-  - Prop 5      — exact: APN ↔ refined_trace_cond
-  - Prop 6+Thm1 — exact: n=5 exhaustive sweeps find zero APN butterflies
+  - Def 1        — exact: closed butterfly V_R *and* open butterfly H_R
+                   (permutation, involution, deg = n+1, DU(H_R)=DU(V_R), H_R CCZ≅ V_R)
+  - Sec 2.2      — exact: exponent (2^i+1)·2^t twist, Frobenius and β↔β′ identities
+                   (the twist's partner is (α^{2^t}, β), not "the same α, β" — see P2)
+  - Prop 1       — exact: Helleseth–Kholosha counts |S₀|,|S₁|,|S₃| + trace criterion
+  - Prop 2       — exact: linearised-equation solution counts, all (U,V,C)
+  - Lemma 1      — exact: statement formula = λ^{q-1}(λ+Q)/Q^q = p^q+p^{q-1}, Tr(B^τ)=0
+  - Prop 3       — exact: APN ⟹ β∈{β₁,β₂} exhaustive; α=1 never APN (DU ≥ 4)
+  - Prop 4       — exact: APN ⟺ β∈{β₁,β₂} ∧ trace cond; bridge to Prop 5
+                   (the displayed formula's spurious α is a paper bug — see P1)
+  - Prop 5       — exact: APN ↔ refined_trace_cond
+  - Prop 6       — exact: the counting argument (Im(F_D), T, i₁, i₃, Eq. (6)–(8),
+                   |T|=|Im(F_D)\\{0,1}|, the bounds and the closing contradiction)
+  - Thm 1        — exact: no APN butterfly for n=5 by LUT, and rtc_count = 0 for
+                   n = 5,7,9,11,13,15 (all coprime i) via the refined trace condition
 """
 function paper_report(io::IO = stdout)
     cases = ((3, 1), (3, 2), (5, 1), (5, 2), (5, 3), (5, 4))
     paper_banner(io)
+    definition1_report(io; cases = ((3, 1), (3, 2)))
     equivalences_report(io; cases)
     proposition1_report(io; cases)
     proposition2_report(io; cases)
