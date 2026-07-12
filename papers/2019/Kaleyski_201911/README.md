@@ -1,15 +1,25 @@
 # Kaleyski_201911 — Changing APN Functions at Two Points
 
-**Paper:** N. Kaleyski, "Changing APN functions at two points," arXiv:1911.02608 /
-Des. Codes Cryptogr. 88(8):1387–1416, 2019.
+**Paper:** N. Kaleyski, *Changing APN functions at two points*, Des. Codes
+Cryptogr. 88(8), 2019.
 
-**Reproduction:** `papers/Kaleyski_201911/`
+**Reproduction:** `papers/Kaleyski_201911/` — `helpers.jl`, `theorem17.jl`,
+`table1.jl`, `table2.jl`, `conjecture21.jl`, `conjecture22.jl`, `report.jl`.
 
-**Verdict:** **Mostly complete** — the paper's central computable claims
-(Theorem 17 / Eq. 29, formula (34) / Table 2, Conjectures 21 & 22, structural
-Table 1) are correctly implemented and pass 47/47 tests. `Δ_F`/DDT indexing
-matches the paper exactly. One genuine soundness gap in the `F(0)=F(1)`
-degenerate case; several theoretical sections reasonably not reproduced.
+**Verdict:** **Partial.** The arithmetic that is implemented is correct —
+Theorem 17's biconditional is confirmed in both directions (the non-vacuous n=4
+positive case included), and all 20 Table 2 values match the paper.
+
+*Status after the R1–R9 fix pass:* Observation 7 is now fully implemented (all
+three affine maps), so Conjecture 22 is tested over **all** swap pairs
+(exhaustive at n=5, n=6; sampled at n=7, n=8 — 42520 swaps, 0 APN), no catalog
+function is discarded, Conjecture 21 covers n=4..10 and checks both S₁ and S₂,
+and the test suite is no longer vacuous (804 assertions; a hardcoded
+`holds = false` now fails). Still missing: Example 9, Table 1's row-by-row
+content (needs Edel–Pott representatives — Open Question 1), the
+Walsh-derivation chain (Props 12–16) and the paper's main power-function theorem
+(Prop 26). The original README's self-assessment ("Mostly complete", "Paper
+Issues: None found") was not supportable and is superseded by this file.
 
 ---
 
@@ -17,113 +27,330 @@ degenerate case; several theoretical sections reasonably not reproduced.
 
 ### Paper Issues
 
-None found. The paper's stated hypotheses are consistent (it explicitly
-restricts to `F(u₁)≠F(u₂)` via Observation 7 / `v_i≠0`); the gap below is in the
-reproduction not enforcing that precondition.
+**P1. Example 9's degree claim is false.**
+
+The paper (Example 9) states, for `F(x) = x³ + (x²+x+1)·Tr(x³)` over F₁₆:
+*"All APN functions obtained by swapping two values of F have algebraic degree
+2."*
+
+Computed exhaustively — twice, once with VBF and once with an independent
+hand-rolled GF(2⁴)/Möbius/DDT implementation — under **both** n=4 primitive
+polynomials. With modulus `x⁴+x+1`, `F` has `du(F)=2, deg(F)=3` (matching the
+paper), and there are exactly three APN swaps:
+
+| swap `(u₁,u₂)` | algebraic degree |
+|---|---|
+| (0, 1) | 2 |
+| (0, 6) | **3** |
+| (0, 7) | **3** |
+
+Two of the three have degree 3, so the claim is false. This collapses the
+example's purpose: it exists to show swapping is *strictly weaker* than a
+general two-point change (swap ⇒ degree 2 only; general change ⇒ degree 3). In
+fact swapping also reaches degree 3.
+
+The charitable reading — "the paper means only the (0,1) swap" — does not save
+it: `swap(F,0,6)` is EA-equivalent (via the paper's own Observation 7, with
+`A₂(x)=6x`) to the (0,1)-swap of `F'(x)=F(6x)`, which is a valid normalized
+EA-representative of `F` (`F'(0)=0, F'(1)=1`), and algebraic degree is
+EA-invariant.
+
+The paper's *second* Example 9 claim is correct and confirmed: `u₁=α⁴=3,
+u₂=α²=4, v=1` gives `du=2, deg=3`.
 
 ### Reproduction Issues
 
-> **Status:** all three items below **resolved** (this branch). 47/47 tests pass;
-> `results/report.toml` all-green.
+**R1. [RESOLVED] `normalize_apn` implements only half of Observation 7.** *(root
+cause of R2, R3, R4)*
 
-1. **[RESOLVED] `normalize_apn` violates its own contract on `F(0)=F(1)` degenerate case (27 functions)**
-   - **Location:** `helpers.jl:18-27` (`normalize_apn`); consumed by
-     `conjecture22_report`, `table1_report`.
-   - **Symptom:** Docstring promises `F(0)=0, F(1)=1`. Function applies only
-     output shift+scale (no input transform). When `F(0)=F(1)` (n=6:1, n=7:9,
-     n=8:17 catalog functions = 27 total), shifting `F(0)→0` forces `F(1)=0`, and
-     the guard `if v1 != 0 && v1 != 1` silently leaves `F(1)=0`. Theorem 17's
-     `F(1)=1` hypothesis is then violated but `theorem17_holds` runs anyway.
-     Independent cross-check: the literal `{0,1}`-swap of these 27 is a **no-op**
-     (`G=F`, still APN, `differential_uniformity==2`), yet the arithmetic returns
-     `holds=false` — flagged as 27 biconditional "mismatches". Conjecture 22's
-     conclusion ("no counterexample") stays correct but for an **unsound reason**
-     on these 27.
-   - **Root cause:** Missing enforcement of the paper's `F(u₁)≠F(u₂)`
-     precondition; output-only normalization cannot achieve `F(1)=1` when
-     `F(0)=F(1)`.
-   - **Impact contained:** test suite exercises only n=5 (conjecture22) and n=5,6
-     limit=3 (table1) — never hits the 9 n=7 / 17 n=8 cases.
-   - **Resolution (applied):**
-     1. Added `is_swap_degenerate(s)` predicate to `helpers.jl`.
-        `normalize_apn` now **throws `ArgumentError`** on `F(0)=F(1)` instead of
-        silently emitting an invalid `F(1)=0`.
-     2. `conjecture22_report` and `table1_report` pre-filter degenerate functions,
-        counting/reporting them as "degenerate F(0)=F(1) skipped" (n=6:1, n=7:9,
-        n=8:17 = 27 total, confirmed end-to-end).
-     3. Added `test_theorem17.jl` cases: `is_swap_degenerate` on power fns is
-        `false`; a constructed degenerate SBox is detected and `normalize_apn`
-        `@test_throws ArgumentError`.
+*Fixed: `helpers.jl:96` `normalize_apn(s, u1=0, u2=1)` now applies all three of
+Observation 7's maps — the input map `A₂(x) = x(u₁+u₂) + u₁` alongside the output
+scaling `A₁` and shift `A`. `(0,1)` makes `A₂` the identity, so the previous
+behaviour is preserved exactly. Validated end-to-end: over every genuine pair of
+n=4 x³ (105), n=5 x³ (496) and n=6 `reprs6_13` (1976), Eq. 29 on
+`normalize_apn(F,u₁,u₂)` agrees with `differential_uniformity(swap(F,u₁,u₂))==2`
+— **0 mismatches**.*
 
-2. **[RESOLVED] `formula34` duplicated as `_formula34_local`**
-   - **Location:** `conjecture21.jl:20-28` (local copy to avoid double-include).
-   - **Symptom:** Two definitions of the same closed form; drift risk.
-   - **Root cause:** Include-ordering workaround.
-   - **Resolution (applied):** `formula34` moved into `helpers.jl` (shared by
-     `table2.jl` and `conjecture21.jl`); `_formula34_local` removed; both call
-     sites reference the single definition.
+- **Location:** `papers/Kaleyski_201911/helpers.jl:42-55`
+- **Symptom:** Only the output maps (`A₁` scaling, `A` shift) are applied. The
+  input affine map `A₂(x) = x(u₁+u₂) + u₁` — the mechanism that carries an
+  arbitrary `(u₁,u₂)` swap onto the normalized `(0,1)` swap — is absent.
+- **Root cause:** Observation 7 has three components; the implementation ships
+  two. Without `A₂` the reproduction is permanently pinned to whichever single
+  LUT the catalog happens to store.
+- **Resolution plan:**
+  1. Add the input map `A₂(x) = x(u₁+u₂) + u₁` to `normalize_apn`, taking
+     `(u₁,u₂)` as arguments.
+  2. Return the normalized representative together with the applied maps so
+     callers can swap at an arbitrary pair.
+  3. Re-run `test/runtests.jl`; the existing assertions must still pass.
 
-3. **[RESOLVED] `conjecture21_report` tested non-power APN against the power-only formula**
-   - **Location:** `conjecture21.jl` — iterated all of `apn_catalog_names()` with
-     no power-function filter.
-   - **Symptom:** After catalog growth (546→550), 3 non-power APN
-     (`n6_Kim`, `n6_Bracken2008_fam1_trinomial`, `n8_Calderini2021_thm62`) entered
-     the list; their genuine `S1 ≠ formula34(n)` flipped `conjecture21_ok` to
-     `false`. Latent bug — Conjecture 21 governs only power functions (per its own
-     docstring); the failing functions are outside its scope. **Not caused by the
-     de-dup** (formula byte-identical); surfaced when regenerating the report.
-   - **Root cause:** Missing power-function filter; relied on the curated name list
-     historically containing only power functions.
-   - **Resolution (applied):** Filter to catalog entries declaring a
-     `monomial_exponent` (authoritative power-function marker). Now tests 24 power
-     APN, all match; `conjecture21_ok = true`.
+**R2. [RESOLVED] Conjecture 22 is tested at exactly one swap point, not over all
+pairs.**
+
+*Fixed: `conjecture22.jl:60` now loops over swap pairs — exhaustively for
+n ≤ `exhaustive_max_n` (default 6), sampled above that (`pair_samples`, default
+16, plus `(0,1)`; all-pairs at n=7 is ≈3.9M swaps). Fresh run: n=5 → 1488 genuine
+swaps, n=6 → 31623, n=7 → 8372 sampled, n=8 → 1037 sampled; **0 APN swaps
+anywhere**. `total_swaps` = 42520.*
+
+- **Location:** `papers/Kaleyski_201911/conjecture22.jl:50-69`
+- **Symptom:** The code loads one catalog representative, applies output-only
+  normalization, and evaluates Eq. 29 **once** — i.e. only the `(0,1)` swap. The
+  previous README's claim that it "confirms Conjecture 22 for all 546 catalog
+  APN" means 548 *swaps*, not 548 × C(2ⁿ,2) ≈ millions of them.
+- **Root cause:** R1 (no `A₂`, so no way to reach other pairs).
+- **Resolution plan:**
+  1. After R1, loop over all `(u₁,u₂)` with `F(u₁) ≠ F(u₂)`.
+  2. Exhaustive for n=5 and n=6; sampled for n=7 and n=8 (cost note below).
+  3. Assert zero APN swaps. Verified during review: n=5 → 1488 genuine swaps, 0
+     APN; n=6 → 31623 genuine swaps, 0 APN; n=4 control → 15 APN swaps, as the
+     paper's Observation 27 requires.
+
+**R3. [RESOLVED] `is_swap_degenerate` discards 26 catalog functions entirely.**
+
+*Fixed: the skip branches are gone. `is_swap_degenerate(s, u1, u2)` is now a
+property of the **pair**, and `first_genuine_pair` / `genuine_pairs`
+(`helpers.jl:36,56`) find the pairs where a swap is not a no-op. `table1.jl:98`
+normalises each `F(0)=F(1)` function at its first genuine pair;
+`conjecture22.jl` swaps all 26 of them at real pairs. All **574** catalog APN
+functions for n=5..8 are now covered (the "548" in the old artifacts was the
+non-degenerate subset, 574 − 26).*
+
+- **Location:** `papers/Kaleyski_201911/conjecture22.jl:55-58`,
+  `papers/Kaleyski_201911/table1.jl:76-80`
+- **Symptom:** `F(0)=F(1)` causes the whole function to be dropped (n=6: 1,
+  n=7: 8, n=8: 17 = **26** functions), contributing zero evidence toward
+  Conjecture 22.
+- **Root cause:** `F(0)=F(1)` makes only the **(0,1)** swap a no-op. The
+  function still has ~2^(2n−1) other legitimate swap pairs. R1 again.
+- **Resolution plan:**
+  1. After R1, choose any `(u₁,u₂)` with `F(u₁) ≠ F(u₂)` and normalize through
+     `A₂` instead of skipping the function.
+  2. Remove the degenerate-skip branch; assert all 548 functions are covered.
+
+**R4. [PARTIALLY RESOLVED] Table 1 never exhibits the S₁≠S₂ asymmetry that
+defines it.**
+
+*Step 1 done: with `A₂` in place the asymmetry is reachable and appears.
+`table1.jl:113` now normalises each function at `rep_samples` further genuine
+pairs and counts the representatives with S₁ ≠ S₂. Exhaustive check over all
+pairs: n=5 → **465 / 1488** representatives have S₁ ≠ S₂; n=6 → **1048 / 31623**.
+`reprs6_13` yields (S₁,S₂) = (54,66) and (66,54) — the paper's own n=6 "2.1" row.
+The report's sampled scan reports 19 asymmetric representatives.*
+
+*Step 2 (reproduce Table 1 row-by-row against the real Edel–Pott representatives,
+or stop calling it Table 1) is **still open** — see Open Questions 1. Interim: the
+file header now states plainly that this is not a row-by-row reproduction of
+Table 1 and that what is reproduced is Observation 18's premise (S₁+S₂ > 12).*
+
+- **Location:** `papers/Kaleyski_201911/table1.jl:14-18`
+- **Symptom:** The paper's Table 1 is full of asymmetric rows (n=6 "2.1" →
+  54/66; n=6 "2.9" → 66/90; n=7 "1.2" → 126/382; n=8 "4.1" → 318/766), and the
+  paper explicitly remarks *"the two values may differ in the general case."*
+  Scanning all catalog reps gives **0/548** with `S₁ ≠ S₂` (n=5: 0/3, n=6: 0/15,
+  n=7: 0/485, n=8: 0/45).
+- **Root cause:** R1. S₁/S₂ are not EA-invariant — they depend on the chosen
+  normalized representative, and without `A₂` only one representative is ever
+  reachable.
+- **Resolution plan:**
+  1. After R1, recompute S₁/S₂ across representatives and confirm asymmetric
+     cases appear.
+  2. The file's current caveat ("exact numerical S1/S2 values will differ") is
+     too weak — the qualitative content is missing too. Either reproduce Table 1
+     against the real Edel–Pott representatives, or stop describing the output
+     as Table 1. **Needs a decision — see Open Questions.**
+
+**R5. [RESOLVED] The Theorem 17 test suite is vacuous and cannot detect a broken
+implementation.**
+
+*Fixed: `test/test_theorem17.jl:11-31` adds the n=4 positive case — `F = x³` over
+F₁₆ gives S₁=6, S₂=6, 6·Δ(1,0)=12, so Eq. 29 **holds** and `swap(F,0,1)` is APN
+(`differential_uniformity == 2`, computed independently of Eq. 29). Both halves
+of the biconditional are asserted over **every** genuine pair at n=4 (105 pairs,
+15 APN swaps — Observation 27) and at n=5 (496 pairs, 0 APN swaps).
+`theorem17.jl:52` now cross-checks every demo row against ground truth via
+`swap_is_apn`. **Non-vacuity verified**: stubbing `theorem17_holds` to return
+`holds = false` fails 16 assertions (it previously passed 47/47).*
+
+- **Location:** `papers/Kaleyski_201911/test/test_theorem17.jl:8,16`,
+  `papers/Kaleyski_201911/test/test_table1.jl:13`,
+  `papers/Kaleyski_201911/theorem17.jl:39`
+- **Symptom:** Every assertion has the form `@test !r.holds` /
+  `@test row.condition_fails`, and `theorem17.jl:39` hard-asserts
+  `@assert !r.holds`. Across all 548 catalog functions Eq. 29 holds **0 times**.
+  **A `theorem17_holds` that hardcoded `holds = false` would pass 47/47 tests.**
+- **Root cause:** The only discriminating case is n ≤ 4, where Eq. 29 genuinely
+  holds — and it is never tested. (It does hold; verified during review.)
+- **Resolution plan:**
+  1. Add the n=4 positive case: `F = x³` over F₁₆ gives `S₁=6, S₂=6,
+     6·Δ(1,0)=12`, so Eq. 29 **holds** and `G = swap(F,0,1)` **is APN**.
+  2. Assert both halves of the biconditional (condition ⇔ `G` is APN).
+  3. Keep the existing negative assertions; they are correct, just insufficient.
+
+**R6. [RESOLVED] `conjecture21.jl` silently excludes all of n=5.**
+
+*Fixed: `helpers.jl:127` `power_exponent(s)` is a mathematical monomial test —
+`F(0)=0`, `F(1)=1`, and `F(g·x) = F(g)·F(x)` on the generator `g=2`, then
+`k = log_g F(g)`; `O(2ⁿ)`. `conjecture21.jl:40` uses it instead of the TOML key.
+Power APN found: **28** (the 24 with `monomial_exponent` plus `n4_Gold_x3`,
+`n5_Gold_x3`, `n5_Gold_x5`, `n5_Kasami_x15`). Coverage is now n ∈ [4,5,6,7,8,9,10]
+and all 28 match `formula34(n)`. Kept paper-local per scope; the core
+`is_power_function` promotion is still an open library-reuse item.*
+
+*Aside for the catalog maintainer: `n8_Kasami_x57`'s LUT is `x⁶` under the
+canonical modulus, not `x⁵⁷` (6 ∉ the cyclotomic coset of 57 mod 255). Still a
+power APN (`x⁶` is linear-equivalent to `x³`), so Conjecture 21 is unaffected —
+but the name does not match the data.*
+
+- **Location:** `papers/Kaleyski_201911/conjecture21.jl:37`
+- **Symptom:** Dimensions actually covered are `[6,7,8,9,10]`. The paper states
+  it verified Conjecture 21 for `1 ≤ n ≤ 10`.
+- **Root cause:** The power-function filter tests
+  `haskey(apn_catalog_metadata(name), "monomial_exponent")` — a **TOML-encoding
+  proxy, not a mathematical test**. `packages/VBFCatalog/data-raw/apn_catalog/n5_apn.toml`
+  stores its three power APN (`n5_Gold_x3`, `n5_Gold_x5`, `n5_Kasami_x15`) as raw
+  `lut` with no `monomial_exponent` key, so n=5 is skipped without a word.
+- **Resolution plan:**
+  1. Replace the metadata proxy with a mathematical power-function test (see
+     Library-reuse note — this wants an `is_power_function` in core).
+  2. Confirm coverage becomes `[5,6,7,8,9,10]`.
+
+**R7. [RESOLVED] Conjecture 21 checks S₁ only.**
+
+*Fixed: `conjecture21.jl:53` computes S₂ from the same DDT and requires
+`s1 == expected && s2 == expected`; the printed table gained an S₂ column.
+`test/test_conjecture21.jl` (new, wired into `runtests.jl`) asserts
+`row.s1 == row.s2 == formula34(row.n)` for all 28 power functions.*
+
+- **Location:** `papers/Kaleyski_201911/conjecture21.jl:50`
+- **Symptom:** Only `compute_s1` is called. Conjecture 21 asserts that *both*
+  `Σ_y Δ_F(y, F(y)+1)` and `Σ_y Δ_F(y+1, F(y))` equal the `x³` value.
+- **Root cause:** Half the claim is simply not evaluated. (No correctness bug —
+  S₂ was verified during review to match for all 24 power functions — but it is
+  an unchecked half.)
+- **Resolution plan:** Compute `compute_s2` alongside and assert both.
+
+**R8. [RESOLVED] Stale artifacts and inaccurate README claims.**
+
+*Fixed: `results/report.toml` regenerated from a fresh `paper_report(;
+save_results=true)`. `total_checked` is now **574**, not 548 — 548 was the count
+of *non-degenerate* functions under the old skip-the-degenerate code; after R3
+all 574 catalog APN for n=5..8 are checked (574 = 548 + 26). New keys:
+`total_swaps = 42520`, `theorem17_biconditional_ok`, `theorem17_positive_case`,
+`table1_asymmetric_reps`, `conjecture21_power_fns`. The 27-vs-26 and "S1+S2 > 12"
+prose claims were already corrected by this README; `table1.jl` now does assert
+Observation 18's premise (`test_table1.jl:28`).*
+
+- **Location:** `papers/Kaleyski_201911/results/report.toml`, and the previous
+  `README.md`
+- **Symptom / expected:**
+  - `report.toml` says `total_checked = 550`; a fresh run gives **548**.
+  - Previous README said 27 degenerate functions (n=7: 9); the actual count is
+    **26** (n=7: **8**).
+  - Previous README said Table 1 "verifies `S1+S2 > 12` (Observation 18 logic)";
+    `table1.jl` contains no such check — it tests `!r.holds`.
+  - Previous README cited a 550-function biconditional cross-check that exists
+    in no committed file.
+- **Root cause:** Artifacts and prose drifted from the code.
+- **Resolution plan:**
+  1. Regenerate `results/report.toml` (550 → 548).
+  2. This README supersedes the stale claims; keep it in sync on re-review.
+
+**R9. [RESOLVED] `print_header` duplicates core `print_banner`.**
+
+*Fixed: `helpers.jl:12` `print_header` now delegates to core `print_banner`.*
+
+- **Location:** `papers/Kaleyski_201911/helpers.jl:11-16`
+- **Symptom:** Hand-rolls a 72-wide `=`-ruled banner.
+- **Root cause:** Duplicates `print_banner(io, lines...; width=72)` at
+  `packages/VBF/src/io/report.jl:33`.
+- **Resolution plan:** Call `print_banner`. (Cosmetic; other papers already do.)
 
 ---
 
-## Items reproduced exactly
+## Items reproduced exactly (context)
 
-- **Theorem 17 (Eq. 29)** — `helpers.jl:theorem17_holds` computes `6·Δ_F(1,0)`
-  vs `S1+S2` from the DDT. Indexing verified: `Δ_F(a,b)=ddt[a+1,b+1]`,
-  `S1=Σ_y Δ_F(y,F(y)⊕1)`, `S2=Σ_y Δ_F(y⊕1,F(y))`. Cross-check confirmed the
-  biconditional `differential_uniformity(G)==2 ⟺ theorem17_holds` for all 550
-  non-degenerate catalog APN n=5..8 (0 mismatches).
-- **Formula (34) / Table 2** — `table2.jl:formula34`; DDT-verified n=2..10,
-  matches paper values 30,78,126,222,510,1086 (n=5..10) exactly.
-- **Conjecture 21** — `conjecture21.jl` verifies `S1(F)=formula34(n)` for all
-  catalog power APN; `report.toml` `conjecture21_ok=true`.
-- **Conjecture 22** — `conjecture22.jl` confirms Theorem 17 condition fails for
-  all 546 catalog APN n=5..8; no counterexample.
-- **Table 1 (structural)** — `table1.jl` computes S1,S2 and verifies
-  `S1+S2 > 12` (Observation 18 logic).
+| Paper item | Evidence |
+|---|---|
+| Formula (34) / Example 19 | `helpers.jl` `formula34`; DDT-verified n=2..10 |
+| **Table 2** (n=1..20) | all 20 values checked against the LaTeX table — **all match** |
+| Theorem 17 / Eq. (29) | `helpers.jl` `theorem17_holds`; biconditional cross-checked against `differential_uniformity(swap(F,u₁,u₂))` |
+| **Observation 7** | `helpers.jl` `normalize_apn(s,u₁,u₂)` — all three maps `A₁, A₂, A` (R1) |
+| Conjecture 21 (S₁ **and** S₂, n=4..10) | 28 catalog power APN, all match `formula34(n)` (R6, R7) |
+| Observation 27 (n=4 half) | 15 APN swaps of `x³` over F₁₆; `test_conjecture22.jl` control |
 
-## Not reproduced (reasonable — theoretical/out-of-scope)
+Independently strengthened during review (all passed): Theorem 17 end-to-end
+(built `G = swap(F,0,1)`, compared `differential_uniformity(G)==2` against
+Eq. 29 for all 548 catalog APN n=5..8 → **0 mismatches**); Theorem 17 at n=4
+(non-vacuous, holds); Conjecture 22 exhaustively over all pairs at n=5 and n=6
+(**0 APN swaps**, with the n=4 control finding the expected 15). All of this is
+now *in the committed suite* rather than a review-time side-check.
 
-- **Table 1 exact numeric (S1,S2) pairs** per Edel-Pott index — repo uses catalog
-  representatives (superset) + inequality check only; acknowledged in
-  `table1.jl:14-18`. S1,S2 are representative-dependent.
-- **Walsh-transform derivation chain** (Props 12–16; Obs 11,15) — only final
-  Eq. 29 evaluated.
-- **§3 general two-point change** (Prop 4, Cor 5, Prop 6).
-- **§6 power-function proof** (Obs 23–27, Prop 26), **§7 equivalence**
-  (Props 28–30) — theoretical.
+## Not reproduced
 
-## Test results
+Example 9; Proposition 4 (the four APN conditions); Corollary 5; Proposition 6;
+Observation 8; the entire Walsh-derivation chain
+(Lemma 10, Observation 11, **Props 12, 13, 14**, Observation 15, **Prop 16**) —
+all are concrete numeric identities over Walsh spectra, directly checkable with
+`walsh_transform`/`lat`; **most of Section 6** (Observations 23–25 and
+**Proposition 26** — *"swapping two points of any power function cannot give APN
+for n ∉ {1,2,4}"*, the paper's main hard theorem; Observation 27's n=4 half *is*
+now covered); Observation 20's positive half. Section 7 (Props 28–30) is
+reasonably skipped as purely theoretical.
 
-- `julia --project=. papers/Kaleyski_201911/test/runtests.jl` → **47/47 pass**
-  (theorem17 13/13, table2 9/9, table1 21/21, conjecture22 4/4; ~5s).
-- `results/report.toml`: all five claim flags `true`, `total_checked=546`.
+## Test results (as run)
+
+All Julia run through a 2 GiB-capped cgroup wrapper; `make` bypassed (its
+`JULIA ?= julia` would escape the cap). No OOM; nothing skipped for memory.
+
+| Command | Result |
+|---|---|
+| `test/runtests.jl` (before fixes) | PASS 47/47 — but vacuous (R5) |
+| `test/runtests.jl` (after fixes) | **PASS 804/804** in 4.6 s (653 + 9 + 27 + 99 + 16) |
+| non-vacuity check | `theorem17_holds` stubbed to `holds = false` → **16 failures** (n=4 positive case + the 15 APN swaps) |
+| `report.jl` | all 6 flags `true`; `total_checked = 574` functions, `total_swaps = 42520` |
+
+Conjecture 22 coverage: n=5 (1488 swaps) and n=6 (31623 swaps) exhaustive over
+all pairs; n=7 (8372) and n=8 (1037) sampled — all-pairs at n=7 is ≈3.9M swaps
+and at n=8 ≈1.5M, skipped for CPU time only. Raise `exhaustive_max_n` to force
+them.
 
 ## Catalog status
 
-**N/A** — no new APN functions claimed. Paper is a construction/characterization
-using pre-existing APN inputs (power functions + Edel–Pott 2009 switching
-classes). No catalog-gap records.
+**N/A — no new APN functions claimed.** This is a non-existence/characterization
+paper; all APN inputs are pre-existing (power functions; Edel–Pott switching
+classes). Example 9's degree-3 APN `G` over F₁₆ is not a novelty claim — every
+APN function over F₁₆ is CCZ-equivalent to `x³`, and `n4_apn.toml` already
+carries `n4_Gold_x3`. **No catalog-gap records.**
+
+Unrelated observations for the catalog maintainer: (a) `n5_apn.toml` and
+`n4_apn.toml` store power functions as `lut` without `monomial_exponent`, unlike
+n6–n10 — that inconsistency is what broke R6 (now worked around paper-locally);
+(b) `n8_Kasami_x57`'s LUT is `x⁶`, not `x⁵⁷`, under the canonical modulus.
 
 ## Library-reuse note
 
-`helpers.jl` correctly reuses VBF core (`SBox`, `ddt`, `gf_inv`, `gf_mul`,
-`print_section`, `print_check`, `print_kv`, `gf_monomial_lut`,
-`primitive_polynomial`, `inputbits`). Paper-specific helpers (`normalize_apn`,
-`compute_s1/s2`, `theorem17_holds`, `formula34`) correctly kept local. Minor:
-`print_header` (`helpers.jl:11`) hand-rolls a banner where core `print_banner`
-exists (optional). No promote-to-core candidates.
+- `print_header` → core `print_banner` (R9). **Done.**
+- **Promote-to-core candidate (still open):** a mathematical
+  `is_power_function(sbox)` / exponent-recovery predicate. Core has
+  `known_apn_monomials` and `gf_monomial_lut` but no way to *ask* whether a given
+  LUT is a monomial. Implemented paper-locally for now as
+  `helpers.jl::power_exponent` / `is_power_function` (multiplicativity on the
+  generator, `O(2ⁿ)`); it belongs in `packages/VBF/src/`.
+- Correctly paper-local (not flagged): `is_swap_degenerate`, `normalize_apn`,
+  `genuine_pairs`, `first_genuine_pair`, `swap_points`, `swap_is_apn`,
+  `compute_s1`, `compute_s2`, `theorem17_holds`, `formula34`.
+
+## Open questions (need a decision before fixing)
+
+1. **Table 1 normalization is under-determined in the paper.** S₁/S₂ are not
+   EA-invariant — they depend on the chosen normalized representative. Kaleyski's
+   Table 1 uses Edel–Pott's specific polynomial representatives, but the paper
+   never states which normalization was applied to reach `F(0)=0, F(1)=1`.
+   Exactly reproducing Table 1 needs (a) the Edel–Pott LUTs from [10] and (b) a
+   normalization decision. Reproduce against the real Edel–Pott representatives,
+   or accept a structural surrogate that stops claiming to be Table 1?
+2. **Should Example 9 be reproduced at all**, given P1? Recommended: reproduce it
+   *as a paper-issue witness* (compute the three APN swaps and their degrees),
+   since that is a genuine, defensible finding.

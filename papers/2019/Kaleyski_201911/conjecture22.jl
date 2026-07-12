@@ -5,37 +5,77 @@
 #
 # Pseudocode:
 #   For each APN function F in the catalog (n=5..8):
-#   1. Normalize F to F'  with F'(0)=0, F'(1)=1 (via EA output transform)
-#   2. Compute S1(F'), S2(F'), DD_{F'}(1,0)
-#   3. Check: 6·DD_{F'}(1,0) ≠ S1(F')+S2(F')  (Theorem 17 condition FAILS)
-#   If condition fails for ALL functions → Conjecture 22 supported for these n
-# VBF API used: SBox, ddt, normalize_apn (via helpers)
+#   For each pair (u₁,u₂) with F(u₁) ≠ F(u₂)  [Observation 7's precondition]:
+#   1. Normalize: F' = A₁ ∘ F ∘ A₂ + A  with F'(0)=0, F'(1)=1  (Observation 7),
+#      so that swap(F', 0, 1) is EA-equivalent to swap(F, u₁, u₂)
+#   2. Compute S1(F'), S2(F'), Δ_{F'}(1,0)
+#   3. Theorem 17: swap(F, u₁, u₂) is APN  ⟺  6·Δ_{F'}(1,0) = S1(F')+S2(F')
+#   If the condition fails for ALL pairs of ALL F → Conjecture 22 supported.
+#
+# Exhaustive over all pairs for n ≤ exhaustive_max_n (default 6); sampled above
+# that (all-pairs at n=7 is ≈3.9M swaps — too slow for a test suite).
+# VBF API used: SBox, ddt, differential_uniformity
 # Catalog API used: load_catalog, list_functions, load_sbox
 
 include(joinpath(@__DIR__, "helpers.jl"))
 using VBFCatalog
+using Random
+
+
+"""
+    swap_pairs_for(s::SBox, n::Int; exhaustive::Bool, pair_samples::Int, rng) -> Vector{Tuple{Int,Int}}
+
+Pairs `(u₁,u₂)` at which to test the two-point swap of `s`. Exhaustive mode
+returns every pair with `F(u₁) ≠ F(u₂)`; sampled mode returns `(0,1)` (when it is
+genuine) plus `pair_samples` further pairs drawn without replacement.
+"""
+function swap_pairs_for(s::SBox, n::Int; exhaustive::Bool, pair_samples::Int, rng)
+    pairs = genuine_pairs(s)
+    exhaustive && return pairs
+    k = min(pair_samples, length(pairs))
+    idx = randperm(rng, length(pairs))[1:k]
+    sel = pairs[idx]
+    # keep the paper's canonical (0,1) swap in the sample whenever it is genuine
+    if !is_swap_degenerate(s, 0, 1) && (0, 1) ∉ sel
+        pushfirst!(sel, (0, 1))
+    end
+    return sel
+end
 
 
 """
     conjecture22_report(; ns::Vector{Int} = [5,6,7,8], limit::Int = typemax(Int),
-                          io::IO = stdout) -> NamedTuple
+                          exhaustive_max_n::Int = 6, pair_samples::Int = 16,
+                          seed::Int = 20191102, io::IO = stdout) -> NamedTuple
 
-Verify Conjecture 22 for all catalog APN functions in given dimensions.
-`limit` caps functions per dimension for fast testing.
-Reports any counterexample found (would disprove the conjecture).
+Verify Conjecture 22 for all catalog APN functions in the given dimensions, over
+*all* two-point swaps (not merely the `(0,1)` one). `limit` caps functions per
+dimension for fast testing.
+
+Functions with `F(0) = F(1)` are **not** skipped: `F(0)=F(1)` only makes the
+`(0,1)` swap a no-op, and Observation 7 lets us normalise at any other pair.
+
+`no_counterexample` ignores n < 5 (the conjecture is stated for n ≥ 5), so passing
+`ns=[4]` gives a control that is *expected* to find APN swaps (Observation 27).
 """
-function conjecture22_report(; ns::Vector{Int} = [5,6,7,8], limit::Int = typemax(Int),
+function conjecture22_report(; ns::Vector{Int} = [5, 6, 7, 8],
+                               limit::Int = typemax(Int),
+                               exhaustive_max_n::Int = 6,
+                               pair_samples::Int = 16,
+                               seed::Int = 20191102,
                                io::IO = stdout)
     print_section("Conjecture 22 — no APN function admits an APN two-point swap (n≥5)", io)
     println(io, "  Conjecture 22: for any APN F over F_{2^n} with n≥5,")
     println(io, "  no G obtained by swapping two points of F is APN.")
-    println(io, "  By Theorem 17 (after EA normalisation): check 6·DD_F(1,0) ≠ S1+S2.")
+    println(io, "  Theorem 17 + Observation 7: for each pair (u₁,u₂) with F(u₁)≠F(u₂),")
+    println(io, "  normalise F at (u₁,u₂) and check 6·Δ_F'(1,0) ≠ S1(F')+S2(F').")
     println(io)
 
     db = load_catalog()
     all_fns = VBFCatalog.list_functions(db)
 
-    total_checked = 0
+    total_checked = 0     # functions
+    total_swaps = 0       # (function, pair) combinations
     counterexamples = NamedTuple[]
     summary = NamedTuple[]
 
@@ -43,50 +83,55 @@ function conjecture22_report(; ns::Vector{Int} = [5,6,7,8], limit::Int = typemax
         apn_n = filter(r -> r.is_apn && r.n == n, all_fns)
         isempty(apn_n) && continue
         apn_n = first(apn_n, limit)
+        exhaustive = n <= exhaustive_max_n
+        rng = MersenneTwister(seed + n)
 
-        n_fail = 0
-        n_total = 0
-        n_skip = 0
+        n_swaps = 0
+        n_apn_swaps = 0
         for row in apn_n
             s = VBFCatalog.load_sbox(db, row.id)
-            # Observation 7: the swap needs F(u₁) ≠ F(u₂). For the {0,1} swap this
-            # means F(0) ≠ F(1); a degenerate function has G = F (no genuine swap),
-            # so exclude it rather than feed it to the F(1)=1 normalisation.
-            if is_swap_degenerate(s)
-                n_skip += 1
-                continue
-            end
-            sn = normalize_apn(s)
-            r = theorem17_holds(sn)
-            n_total += 1
+            pairs = swap_pairs_for(s, n; exhaustive, pair_samples, rng)
             total_checked += 1
-            if r.holds
-                name = something(row.canonical_name, "id$(row.id)")
-                push!(counterexamples, (; n, name, s1=r.s1, s2=r.s2, dd10=r.dd10))
-            else
-                n_fail += 1
+            for (u1, u2) in pairs
+                sn = normalize_apn(s, u1, u2)
+                r = theorem17_holds(sn)
+                n_swaps += 1
+                total_swaps += 1
+                if r.holds
+                    n_apn_swaps += 1
+                    name = something(row.canonical_name, "id$(row.id)")
+                    push!(counterexamples,
+                          (; n, name, u1, u2, s1 = r.s1, s2 = r.s2, dd10 = r.dd10))
+                end
             end
         end
-        pct = n_total == 0 ? 0.0 : round(100 * n_fail / n_total; digits=1)
-        skip_note = n_skip == 0 ? "" : "; $(n_skip) degenerate F(0)=F(1) skipped"
-        print_kv("n=$n", "$(n_fail)/$(n_total) fail condition ($(pct)% support conjecture)$(skip_note)", io)
-        push!(summary, (; n, n_fail, n_total, n_skip))
+        mode = exhaustive ? "all pairs" : "$(pair_samples)+1 sampled pairs/function"
+        print_kv("n=$n",
+            "$(length(apn_n)) functions, $(n_swaps) genuine swaps ($mode) → " *
+            "$(n_apn_swaps) APN swaps", io)
+        push!(summary, (; n, n_functions = length(apn_n), n_swaps, n_apn_swaps, exhaustive))
     end
 
-    no_counterexample = isempty(counterexamples)
+    no_counterexample = !any(cx -> cx.n >= 5, counterexamples)
     println(io)
-    print_check("No counterexample found: Conjecture 22 supported for n ∈ $ns", no_counterexample, io)
+    print_check("No APN two-point swap found: Conjecture 22 supported for n ∈ $ns",
+                no_counterexample, io)
     print_kv("total functions checked", total_checked, io)
-    if !no_counterexample
-        print_kv("COUNTEREXAMPLES", length(counterexamples), io)
+    print_kv("total swaps checked", total_swaps, io)
+    if !isempty(counterexamples)
+        n_lt5 = count(cx -> cx.n < 5, counterexamples)
+        n_lt5 > 0 && print_kv("APN swaps at n<5 (expected — Observation 27)", n_lt5, io)
         for cx in counterexamples
-            println(io, "    !! n=$(cx.n) $(cx.name): S1=$(cx.s1), S2=$(cx.s2), 6·DD(1,0)=$(6*cx.dd10)")
+            cx.n < 5 && continue
+            println(io, "    !! n=$(cx.n) $(cx.name) at (u₁,u₂)=($(cx.u1),$(cx.u2)): " *
+                        "S1=$(cx.s1), S2=$(cx.s2), 6·Δ(1,0)=$(6*cx.dd10)")
         end
     end
     print_kv("completeness",
-        "bounded demo — catalog APN n=5..8 only; does not cover all APN functions", io)
+        "bounded demo — catalog APN n=5..8; exhaustive over pairs for n≤$(exhaustive_max_n), " *
+        "sampled above (all-pairs at n=7 is ≈3.9M swaps)", io)
 
-    return (; summary, total_checked, counterexamples, no_counterexample)
+    return (; summary, total_checked, total_swaps, counterexamples, no_counterexample)
 end
 
 
