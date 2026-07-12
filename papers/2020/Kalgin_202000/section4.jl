@@ -12,13 +12,19 @@
 #   4. New n=7 function: given in paper as univariate polynomial over GF(2^7)
 #      with primitive element a (min poly x^7+x+1). Convert via polynomial_to_lut.
 #   5. Verify: new function is APN (differential_uniformity=2), quadratic (deg=2),
-#      CCZ-distinct from Gold in n=7 (different apn_ea_mugshot).
+#      and CCZ-inequivalent to the other 487 known n=7 quadratic APN classes
+#      (sigma-mismatch certificate against the catalog's 488 representatives).
 #
 # VBF API used: is_qam, qam_to_sbox, quadratic_apn_matrix, apn_ea_mugshot,
-#               gold_apn, differential_uniformity, algebraic_degree,
+#               ea_mappings_from_ortho_derivative, gold_apn,
+#               differential_uniformity, algebraic_degree,
 #               polynomial_to_lut, primitive_polynomial
+# VBFCatalog API used: load_catalog, list_functions, load_sbox, sigma_hash,
+#               classify_ccz
 
 include(joinpath(@__DIR__, "helpers.jl"))
+
+using VBFCatalog
 
 # ── Cyclic matrix T ──────────────────────────────────────────────────────────
 
@@ -60,13 +66,13 @@ end
 # ── Cyclic search ────────────────────────────────────────────────────────────
 
 """
-    cyclic_apn_search(n; remove_e_n, limit) -> Vector{SBox}
+    cyclic_raw_qam_solutions(n; remove_e_n, limit) -> Vector{SBox}
 
-Search for APN functions with the cyclic matrix T structure for dimension n.
-Backtracks over unknown positions, using is_qam at completion.
-Returns up to limit APN SBox-es (deduplicated by EA-class internally).
+Every completion of the cyclic matrix T that is a QAM, as an SBox — *no*
+deduplication. Backtracks over the unknown positions and calls `is_qam` at
+completion.
 """
-function cyclic_apn_search(
+function cyclic_raw_qam_solutions(
     n::Int;
     remove_e_n::Bool = false,
     limit::Int = typemax(Int),
@@ -75,15 +81,11 @@ function cyclic_apn_search(
     upos = unknown_positions(known)
     field_size = 1 << n
     results = SBox[]
-    seen_sigs = Set{Any}()
 
     function rec!(k)
         length(results) >= limit && return
         if k > length(upos)
-            is_qam(M) || return
-            f = qam_to_sbox(M)
-            sig = apn_ea_mugshot(f)
-            sig ∉ seen_sigs && (push!(seen_sigs, sig); push!(results, f))
+            is_qam(M) && push!(results, qam_to_sbox(M))
             return
         end
         i, j = upos[k]
@@ -97,6 +99,25 @@ function cyclic_apn_search(
 
     rec!(1)
     results
+end
+
+"""
+    cyclic_apn_search(n; remove_e_n, limit) -> Vector{SBox}
+
+Search for APN functions with the cyclic matrix T structure for dimension n:
+one representative per CCZ-class among the QAM completions of T.
+
+Deduplication goes through [`dedup_ea`](@ref), which buckets on `apn_ea_mugshot`
+and then **confirms** each bucket with the exact EA decision. Using mugshot
+equality alone as the class test (as this did before) collapses Gold x^3 and x^5
+at n=5 into one class and reports 1 instead of 2.
+"""
+function cyclic_apn_search(
+    n::Int;
+    remove_e_n::Bool = false,
+    limit::Int = typemax(Int),
+)
+    dedup_ea(cyclic_raw_qam_solutions(n; remove_e_n = remove_e_n, limit = limit))
 end
 
 # ── New n=7 function (§4) ────────────────────────────────────────────────────
@@ -129,18 +150,67 @@ function new_apn_function_n7()
     SBox{n}(lut)
 end
 
+# ── Novelty / CCZ-classification of the new n=7 function ─────────────────────
+
+"""
+    n7_sigma_classification(F::SBox{7}) -> NamedTuple
+
+Classify a quadratic APN `F` in 7 variables against **every** n=7 quadratic APN
+representative in the catalog (the 488 known CCZ-classes) using the
+ortho-derivative signature σ.
+
+σ is a CCZ-invariant, so a σ-**mismatch** is a rigorous CCZ-inequivalence
+certificate; a σ-**match** is only a candidate (`classify_ccz` returns
+`:sigma_match`, not `:known`, for exactly this reason). The single σ-match is
+therefore settled with the exact decision `are_ea_equivalent_quadratic`.
+
+Returns `(; total, matches, mismatches, ea_confirmed, sigma)` where `matches` are
+the catalog ids sharing F's σ and `ea_confirmed` the subset actually EA-equivalent
+to `F`.
+"""
+function n7_sigma_classification(F::SBox{7})
+    db = load_catalog()
+    h = sigma_hash(F)
+    total = 0
+    matches = Int[]
+    for r in list_functions(db; n = 7, is_apn = true)
+        (r.is_quadratic == 1 || r.is_quadratic === true) || continue
+        total += 1
+        sigma_hash(load_sbox(db, r.id)) == h && push!(matches, Int(r.id))
+    end
+    confirmed = Int[]
+    for id in matches
+        S = load_sbox(db, id)
+        are_ea_equivalent_quadratic(F, SBox{7}(Int.(S.lut))) && push!(confirmed, id)
+    end
+    (;
+        total = total,
+        matches = matches,
+        mismatches = total - length(matches),
+        ea_confirmed = confirmed,
+        sigma = h,
+    )
+end
+
 # ── Section report ───────────────────────────────────────────────────────────
 
 """
     section4_report(io; save_results) -> NamedTuple
 
 §4 reproduction:
-- Verify cyclic T for n=3,4,5 gives ≥1 APN function.
+- Verify the cyclic T construction for n=3,4,5 covers *all* CCZ-classes of
+  quadratic APN functions (1/1, 1/1, 2/2) — the paper's coverage claim.
 - Verify the new n=7 function from the paper is APN and quadratic.
-- Verify it is CCZ-distinct from Gold n=7.
+- Verify it is CCZ-inequivalent to the other 487 known n=7 classes (σ-mismatch).
 """
 function section4_report(io::IO = stdout; save_results::Bool = false) :: NamedTuple
     print_section("§4 — Cyclic matrix T construction", io)
+
+    # The paper (§4, p. 12): "For n = 3, 4 and 5 this construction covered all
+    # CCZ-classes of quadratic APN functions. For n = 6 it covered 11 out of 13."
+    # Known totals of quadratic-APN CCZ-classes: n=3 → 1, n=4 → 1, n=5 → 2
+    # (Brinkmann–Leander 2008; the two are Gold x^3 and Gold x^5).
+    known_classes = Dict(3 => 1, 4 => 1, 5 => 2)
 
     # n=3: T has no unknowns → unique function
     M3, known3 = kalgin_T(3)
@@ -153,20 +223,39 @@ function section4_report(io::IO = stdout; save_results::Bool = false) :: NamedTu
     M4, known4 = kalgin_T(4)
     upos4 = unknown_positions(known4)
     print_kv("n=4 cyclic T unknowns", length(upos4), io)
-    fns4 = cyclic_apn_search(4; limit = 50)
-    print_kv("n=4 cyclic T search: EA-classes found", length(fns4), io)
-    print_check("n=4 cyclic T: ≥1 APN function found", length(fns4) >= 1, io)
+    raw4 = cyclic_raw_qam_solutions(4)
+    fns4 = dedup_ea(raw4)
+    print_kv("n=4 cyclic T: raw QAM solutions", length(raw4), io)
+    print_kv("n=4 cyclic T: CCZ-classes (EA-confirmed)", length(fns4), io)
+    print_check(
+        "n=4 cyclic T covers all $(known_classes[4]) quadratic-APN CCZ-class(es)",
+        length(fns4) == known_classes[4],
+        io,
+    )
 
     # n=5: 2 unknowns
     M5, known5 = kalgin_T(5)
     upos5 = unknown_positions(known5)
     print_kv("n=5 cyclic T unknowns", length(upos5), io)
-    fns5 = cyclic_apn_search(5; limit = 100)
-    print_kv("n=5 cyclic T search: EA-classes found", length(fns5), io)
-    print_check("n=5 cyclic T: ≥1 APN function found", length(fns5) >= 1, io)
+    raw5 = cyclic_raw_qam_solutions(5)
+    fns5 = dedup_ea(raw5)
+    print_kv("n=5 cyclic T: raw QAM solutions", length(raw5), io)
+    print_kv("n=5 cyclic T: CCZ-classes (EA-confirmed)", length(fns5), io)
+    print_check(
+        "n=5 cyclic T covers all $(known_classes[5]) quadratic-APN CCZ-class(es)",
+        length(fns5) == known_classes[5],
+        io,
+    )
+    g5_3 = gold_apn(5, 1)   # x^3
+    g5_5 = gold_apn(5, 2)   # x^5
+    hits_x3 = any(f -> are_ea_equivalent_quadratic(f, g5_3), fns5)
+    hits_x5 = any(f -> are_ea_equivalent_quadratic(f, g5_5), fns5)
+    print_check("n=5 cyclic T: one class is EA-equivalent to Gold x^3", hits_x3, io)
+    print_check("n=5 cyclic T: one class is EA-equivalent to Gold x^5", hits_x5, io)
     print_kv(
         "  note",
-        "standard T for n=5 covers $(length(fns5)) CCZ-class(es); paper §4 claims all 3 via general construction",
+        "the 12 raw n=5 solutions share one apn_ea_mugshot but split into 2 EA-classes; " *
+        "mugshot equality is necessary, not sufficient — deduping on it reports 1",
         io,
     )
 
@@ -180,21 +269,49 @@ function section4_report(io::IO = stdout; save_results::Bool = false) :: NamedTu
     print_check("new n=7 function: APN (differential_uniformity = 2)", du7 == 2, io)
     print_check("new n=7 function: quadratic (algebraic_degree = 2)", deg7 == 2, io)
 
-    # CCZ-distinctness from Gold
-    gold7 = gold_apn(7)
-    sig_new = apn_ea_mugshot(F7)
-    sig_gold = apn_ea_mugshot(gold7)
-    distinct = sig_new != sig_gold
-    print_check("new n=7 function: CCZ-distinct from Gold n=7", distinct, io)
-    print_kv("completeness note", "exhaustive classification (488 classes) is out-of-scope", io)
+    # CCZ-classification against the full n=7 corpus (488 classes), via σ.
+    cls = n7_sigma_classification(F7)
+    print_kv("n=7 quadratic-APN classes in catalog", cls.total, io)
+    print_kv("σ(F7)", cls.sigma[1:16] * "…", io)
+    print_kv("catalog reps with σ ≠ σ(F7)", cls.mismatches, io)
+    print_kv("catalog reps with σ = σ(F7)", length(cls.matches), io)
+    print_check(
+        "new n=7 function: CCZ-inequivalent to $(cls.mismatches) of the $(cls.total) " *
+        "known classes (σ-mismatch is a rigorous certificate)",
+        cls.mismatches == cls.total - 1,
+        io,
+    )
+    print_check(
+        "new n=7 function: σ occurs exactly once among the $(cls.total) classes",
+        length(cls.matches) == 1,
+        io,
+    )
+    print_check(
+        "the single σ-match is EA-confirmed to be F7's own class (id $(cls.matches))",
+        cls.ea_confirmed == cls.matches,
+        io,
+    )
+    print_kv(
+        "  note",
+        "the class is present in the repo corpus as reprs7_487; the paper's claim is " *
+        "inequivalence to the other 487, which the σ-mismatches certify. Beierle–Leander " *
+        "found the same class independently (§2.3).",
+        io,
+    )
+    distinct = sigma_hash(F7) != sigma_hash(gold_apn(7))
 
     result = (;
         n3_is_apn = n3_apn,
         n4_ea_classes = length(fns4),
         n5_ea_classes = length(fns5),
+        n5_covers_gold_x3 = hits_x3,
+        n5_covers_gold_x5 = hits_x5,
         new_n7_du = du7,
         new_n7_deg = deg7,
         new_n7_distinct_from_gold = distinct,
+        n7_catalog_classes = cls.total,
+        n7_sigma_mismatches = cls.mismatches,
+        n7_sigma_matches = length(cls.matches),
     )
 
     if save_results
