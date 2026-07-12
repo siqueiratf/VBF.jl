@@ -20,6 +20,7 @@ Manifest.toml
 .idea/
 *.swp
 *~
+*.sh
 LocalPreferences.toml
 .CondaPkg/
 
