@@ -13,14 +13,15 @@ monomial_exponent = 3
 
 [[apn_functions]]
 name              = "n6_Kasami_x48"
-description       = "Kasami APN x^48 over GF(2^6) (corresponds to i=5 via 2^(2i) - 2^i + 1 ≡ 48 mod 63). Not a permutation."
+description       = "Kasami APN x^48 over GF(2^6) (corresponds to i=5 via 2^(2i) - 2^i + 1 ≡ 48 mod 63). Not a permutation. NOT A DISTINCT CCZ CLASS: 48 = 3*2^4 mod 63 lies in the cyclotomic coset of 3, so x^48 = (x^3)^(2^4) is LINEARLY equivalent to n6_Gold_x3 -- same CCZ class (verified: are_ea_equivalent and are_ccz_equivalent both true; identical ortho-derivative mugshot; Gamma-rank 1102 for both). Retained as the named Kasami-exponent representative of that class; class-counting code must not count it as a second class. Calderini (2020) Table 1 correspondingly lists a single Gold class for n=6."
 n                 = 6
 m                 = 6
 is_permutation    = false
 algebraic_form    = "x^48 in GF(2^6), modulus x^6 + x + 1"
 bib_key = "Nyberg_199400"
-source            = "Nyberg, EUROCRYPT 1994 (general APN treatment); Kasami exponent family."
+source            = "Nyberg, EUROCRYPT 1994 (general APN treatment); Kasami exponent family. CCZ-equivalence to n6_Gold_x3 flagged independently by the Calderini_202009 and Budaghyan_202008 reproduction reviews."
 monomial_exponent = 48
+ccz_equivalent_to = "n6_Gold_x3"
 
 [[apn_functions]]
 name              = "n6_Kim"
