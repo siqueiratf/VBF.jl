@@ -3,7 +3,7 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../../..)
 JULIA_PROJECT := --project=$(ROOT)
 
-.PHONY: help test report theorem2 proposition1 algorithm1 table1 table2 table3 table4 clean_results
+.PHONY: help test report theorem1 theorem2 example1 proposition1 algorithm1 table1 table2 table3 table3_full table4
 
 max_evaluations ?= 16777216
 
@@ -16,9 +16,17 @@ test:
 report:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/report.jl
 
+theorem1:
+	$(JULIA) $(JULIA_PROJECT) -e \
+	  'include("$(MAKEFILE_DIR)/theorem1.jl"); theorem1_report()'
+
 theorem2:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include("$(MAKEFILE_DIR)/theorem2.jl"); theorem2_report()'
+
+example1:
+	$(JULIA) $(JULIA_PROJECT) -e \
+	  'include("$(MAKEFILE_DIR)/example1.jl"); example1_report()'
 
 proposition1:
 	$(JULIA) $(JULIA_PROJECT) -e \
@@ -40,16 +48,20 @@ table3:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include("$(MAKEFILE_DIR)/table3.jl"); table3_report()'
 
+# Table 3 with the COMPLETE EA decision on the two claimed n=8 CCZ-equivalences.
+# ~9 min: ea_mappings_from_ortho_derivative costs ~265 s per positive pair at n=8.
+table3_full:
+	$(JULIA) $(JULIA_PROJECT) -e \
+	  'include("$(MAKEFILE_DIR)/table3.jl"); table3_report(; full_ea=true)'
+
 table4:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include("$(MAKEFILE_DIR)/table4.jl"); table4_report()'
 
-clean_results:
-	rm -rf "$(MAKEFILE_DIR)/results"
-
 help:
 	@echo 'Paper: Yu, Kaleyski, Budaghyan, Li (2020)'
 	@echo '  Classification of quadratic APN functions with F₂ coefficients, n≤9'
-	@echo 'Targets: test  report  theorem2  proposition1  algorithm1'
-	@echo '         table1  table2  table3  table4  clean_results'
+	@echo 'Targets: test  report  theorem1  theorem2  example1  proposition1  algorithm1'
+	@echo '         table1  table2  table3  table3_full  table4'
 	@echo 'Params:  max_evaluations (default: 2^24)'
+	@echo 'Note:    table3_full runs the complete EA decision (~9 min)'
