@@ -1,6 +1,6 @@
 JULIA ?= julia
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-ROOT := $(abspath $(MAKEFILE_DIR)/../..)
+ROOT := $(abspath $(MAKEFILE_DIR)/../../..)
 JULIA_PROJECT := --project=$(ROOT)
 
 .PHONY: help test report section2 section3 section4 clean_results
