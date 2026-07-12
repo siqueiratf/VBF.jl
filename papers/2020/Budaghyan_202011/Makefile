@@ -4,7 +4,7 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../../..)
 JULIA_PROJECT := --project=$(ROOT)
 
-.PHONY: help test report observation1 proposition1 theorem4 table3 clean_results
+.PHONY: help test report observation1 proposition1 lemma3 theorem2 lemma4 corollary1 table3 clean_results
 
 n ?= 10
 
@@ -21,25 +21,43 @@ observation1:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "helpers.jl")); \
 	   include(joinpath("$(MAKEFILE_DIR)", "observation1.jl")); \
-	   print_header(); observation1_report()'
+	   print_banner(PAPER_BANNER...); observation1_report()'
 
 proposition1:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "helpers.jl")); \
 	   include(joinpath("$(MAKEFILE_DIR)", "proposition1.jl")); \
-	   print_header(); proposition1_report()'
+	   print_banner(PAPER_BANNER...); proposition1_report()'
 
-theorem4:
+lemma3:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "helpers.jl")); \
-	   include(joinpath("$(MAKEFILE_DIR)", "theorem4.jl")); \
-	   print_header(); theorem4_report(; n=$(n))'
+	   include(joinpath("$(MAKEFILE_DIR)", "lemma3.jl")); \
+	   print_banner(PAPER_BANNER...); lemma3_report()'
+
+theorem2:
+	$(JULIA) $(JULIA_PROJECT) -e \
+	  'include(joinpath("$(MAKEFILE_DIR)", "helpers.jl")); \
+	   include(joinpath("$(MAKEFILE_DIR)", "theorem2.jl")); \
+	   print_banner(PAPER_BANNER...); theorem2_report(; n=$(n))'
+
+lemma4:
+	$(JULIA) $(JULIA_PROJECT) -e \
+	  'include(joinpath("$(MAKEFILE_DIR)", "helpers.jl")); \
+	   include(joinpath("$(MAKEFILE_DIR)", "lemma4.jl")); \
+	   print_banner(PAPER_BANNER...); lemma4_report(; n=$(n))'
+
+corollary1:
+	$(JULIA) $(JULIA_PROJECT) -e \
+	  'include(joinpath("$(MAKEFILE_DIR)", "helpers.jl")); \
+	   include(joinpath("$(MAKEFILE_DIR)", "corollary1.jl")); \
+	   print_banner(PAPER_BANNER...); corollary1_report(; n=$(n))'
 
 table3:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "helpers.jl")); \
 	   include(joinpath("$(MAKEFILE_DIR)", "table3.jl")); \
-	   print_header(); table3_report()'
+	   print_banner(PAPER_BANNER...); table3_report()'
 
 clean_results:
 	rm -rf "$(MAKEFILE_DIR)/results"
@@ -52,9 +70,12 @@ help:
 	@echo '  test          Run all tests'
 	@echo '  report        Full paper report'
 	@echo '  observation1  Verify C_3, C_7 APN over GF(2^10)'
-	@echo '  proposition1  Verify system E_i ↔ APN criterion for all i ∈ 1..9'
-	@echo '  theorem4      Verify four Theorem 4 i-values give APN (param: n=10)'
-	@echo '  table3        Table III: Walsh spectra + EA-mugshot comparison'
+	@echo '  proposition1  Verify E_i trivial => C_i APN for all i in 1..9'
+	@echo '  lemma3        Verify P(N) has exactly the roots {0,1,S,S+1}'
+	@echo '  theorem2      Verify the four Theorem 2 i-values give APN (param: n=10)'
+	@echo '  lemma4        Verify the odd-k i-values of Lemma 4 (param: n=10)'
+	@echo '  corollary1    Verify the 8 claimed cases; item 8 is a paper erratum'
+	@echo '  table3        Table III: all rows + ortho-derivative novelty comparison'
 	@echo ''
 	@echo 'Parameters:'
-	@echo '  n=$(n)   (dimension for theorem4 target)'
+	@echo '  n=$(n)   (dimension for theorem2 / lemma4 / corollary1)'

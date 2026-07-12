@@ -1,24 +1,25 @@
 # Implements shared helpers for the Budaghyan–Helleseth–Kaleyski (2020) reproduction.
 # Paper: Budaghyan, Helleseth, Kaleyski (2020), "A New Family of APN Quadrinomials",
 #        IEEE Trans. Inf. Theory 66(11):7081–7087
-# Section: General — field utilities, quadrinomial builder, report formatting
+# Section: General — field utilities, quadrinomial builder
 #
 # Pseudocode:
 #   1. β ← α^((2^n−1)/3) in GF(2^n), the primitive element of GF(2^2)
-#   2. C(x) ← x^3 + β·(x^(2^i+1))^(2^k) + β²·x^(3·2^m) + (x^(2^(i+m)+2^m))^(2^k)
+#   2. C(x) ← x^3 + a·(x^(2^i+1))^(2^k) + b·x^(3·2^m) + c·(x^(2^(i+m)+2^m))^(2^k)
+#      (the F13 quadrinomial of Corollary 1; a, b, c ∈ GF(4))
 #   3. y ∈ β·GF(2^m) iff y^(2^m) = β·y  (for n=2m, m odd, 3∤m)
-# VBF API used: gf_pow, gf_mul, primitive_polynomial, SBox
+#   4. E_i^(k): a^3(x^2+x) ∈ β·GF(2^m) and (a^(2^i+1)(x^(2^i)+x))^(2^k) ∈ β·GF(2^m)
+# VBF API used: gf_pow, gf_mul, primitive_polynomial, terms_to_lut, SBox, print_banner
 
 using VBF
 
 # ── Report formatting ────────────────────────────────────────────────────────
+# The banner itself is VBF's `print_banner`; only the paper's title lines live here.
 
-function print_header(io::IO = stdout)
-    println(io, "=" ^ 72)
-    println(io, "Budaghyan, Helleseth, Kaleyski (2020): A New Family of APN Quadrinomials")
-    println(io, "IEEE Trans. Inf. Theory 66(11):7081–7087, November 2020")
-    println(io, "=" ^ 72)
-end
+const PAPER_BANNER = (
+    "Budaghyan, Helleseth, Kaleyski (2020): A New Family of APN Quadrinomials",
+    "IEEE Trans. Inf. Theory 66(11):7081–7087, November 2020",
+)
 
 # ── GF(2^n) field helpers ────────────────────────────────────────────────────
 
@@ -52,52 +53,85 @@ end
 # ── Quadrinomial builder ─────────────────────────────────────────────────────
 
 """
-    build_ci_sbox(n, i, k=0) -> SBox{n}
+    ci_exponents(n, i, k) -> (e2, e3, e4)
 
-Builds the S-box for the F13 quadrinomial
+The three non-cubic exponents of the F13 quadrinomial, reduced mod (2^n − 1):
 
-    C(x) = x^3 + β·(x^(2^i+1))^(2^k) + β²·x^(3·2^m) + (x^(2^(i+m)+2^m))^(2^k)
+    e2 = (2^i + 1)·2^k,   e3 = 3·2^m,   e4 = (2^(i+m) + 2^m)·2^k
 
-with (a, b, c) = (β, β², 1) over GF(2^n), n = 2m. Exponents are reduced mod (2^n−1).
+Computed in `Int128` so that `i + m` may exceed 62 without wrapping (the paper's
+experimental range reaches n = 46, where i = n−1 gives i + m = 3n/2 − 1 = 68).
+A reduced exponent of 0 is reported as 2^n − 1 so that `x ↦ x^e` still maps 0 ↦ 0.
 """
-function build_ci_sbox(n::Int, i::Int, k::Int = 0; modulus::Int = primitive_polynomial(n))
-    m  = n ÷ 2
-    q  = (1 << n) - 1
-    b, b2 = beta_in_gfn(n; modulus)
-    e2 = (Int64(2^i + 1) * Int64(1 << k)) % q
-    e3 = (Int64(3)       * Int64(1 << m)) % q
-    e4 = (Int64(2^(i+m) + 2^m) * Int64(1 << k)) % q
-    SBox{n}([
-        gf_pow(x, 3,  n; modulus) ⊻
-        gf_mul(b,  gf_pow(x, e2, n; modulus), n; modulus) ⊻
-        gf_mul(b2, gf_pow(x, e3, n; modulus), n; modulus) ⊻
-        gf_pow(x, e4, n; modulus)
-        for x in 0:(1 << n) - 1
-    ])
+function ci_exponents(n::Int, i::Int, k::Int)
+    m = n ÷ 2
+    q = Int128(1) << n - 1
+    ii, kk = mod(i, n), mod(k, n)   # 2^n ≡ 1 (mod 2^n−1), so only i, k mod n matter
+    reduce_exp(e) = (r = Int(mod(e, q)); r == 0 ? Int(q) : r)
+    e2 = reduce_exp(((Int128(1) << ii) + 1) * (Int128(1) << kk))
+    e3 = reduce_exp(Int128(3) * (Int128(1) << m))
+    e4 = reduce_exp(((Int128(1) << (ii + m)) + (Int128(1) << m)) * (Int128(1) << kk))
+    return e2, e3, e4
 end
 
 """
-    system_Ei_trivial(n, i) -> Bool
+    build_ci_sbox(n, i, k=0; a, b, c, modulus) -> SBox{n}
 
-Returns true iff the system E_i (Proposition 1, Eq. 2) has only trivial solutions
-x ∈ GF(2), i.e., no (a ≠ 0, x ∉ GF(2)) pair satisfies both conditions:
-    a^3·(x^2+x) ∈ β·GF(2^m)  and  a^(2^i+1)·(x^(2^i)+x) ∈ β·GF(2^m).
+Builds the S-box for the F13 quadrinomial of Corollary 1,
 
-Exhaustive over all a ∈ GF(2^n)*, x ∈ GF(2^n) \\ GF(2).
+    C(x) = x^3 + a·(x^(2^i+1))^(2^k) + b·x^(3·2^m) + c·(x^(2^(i+m)+2^m))^(2^k)
+
+over GF(2^n), n = 2m, with a, b, c ∈ GF(4). Coefficients default to the
+(a, b, c) = (β, β², 1) of Observation 1 / eq. (1); a zero coefficient drops its
+term, so `build_ci_sbox(10, 3, 2; b=0, c=0)` is the binomial B(x) = x^3 + β·x^36
+of Corollary 1 item 1.
 """
-function system_Ei_trivial(n::Int, i::Int; modulus::Int = primitive_polynomial(n))
+function build_ci_sbox(
+    n::Int, i::Int, k::Int = 0;
+    a::Union{Int,Nothing} = nothing,
+    b::Union{Int,Nothing} = nothing,
+    c::Union{Int,Nothing} = nothing,
+    modulus::Int = primitive_polynomial(n),
+)
+    β, β² = beta_in_gfn(n; modulus)
+    ca = a === nothing ? β  : a
+    cb = b === nothing ? β² : b
+    cc = c === nothing ? 1  : c
+    e2, e3, e4 = ci_exponents(n, i, k)
+    terms = Tuple{Int,Int}[(1, 3)]
+    ca != 0 && push!(terms, (ca, e2))
+    cb != 0 && push!(terms, (cb, e3))
+    cc != 0 && push!(terms, (cc, e4))
+    SBox{n}(terms_to_lut(terms, n, modulus))
+end
+
+"""
+    system_Ei_trivial(n, i; k=0) -> Bool
+
+Returns true iff the system E_i^(k) has only trivial solutions x ∈ GF(2), i.e.
+no (a ≠ 0, x ∉ GF(2)) pair satisfies both conditions:
+
+    a^3·(x^2+x) ∈ β·GF(2^m)   and   (a^(2^i+1)·(x^(2^i)+x))^(2^k) ∈ β·GF(2^m).
+
+`k = 0` is the system E_i of Proposition 1 (eq. 2); general `k` is system (16),
+whose odd-k instance is Lemma 4's system (17). Exhaustive over a ∈ GF(2^n)*,
+x ∈ GF(2^n) \\ GF(2).
+"""
+function system_Ei_trivial(n::Int, i::Int; k::Int = 0, modulus::Int = primitive_polynomial(n))
     m  = n ÷ 2
     q  = (1 << n) - 1
     b, _ = beta_in_gfn(n; modulus)
     check(y) = in_beta_coset(y, b, n, m; modulus)
-    ei1 = (1 << i) + 1  # exponent 2^i + 1
+    ei1 = (1 << i) + 1       # exponent 2^i + 1
+    tk  = 1 << mod(k, n)     # the 2^k Frobenius power applied to the second equation
     for a in 1:q
         a3  = gf_pow(a, 3, n; modulus)
         ai1 = gf_pow(a, ei1, n; modulus)
         for x in 2:q  # skip x ∈ {0, 1} = GF(2)
-            A = gf_mul(a3,  gf_pow(x, 2, n; modulus) ⊻ x, n; modulus)
+            A = gf_mul(a3, gf_pow(x, 2, n; modulus) ⊻ x, n; modulus)
+            check(A) || continue
             B = gf_mul(ai1, gf_pow(x, 1 << i, n; modulus) ⊻ x, n; modulus)
-            check(A) && check(B) && return false  # non-trivial solution found
+            check(gf_pow(B, tk, n; modulus)) && return false  # non-trivial solution
         end
     end
     true
