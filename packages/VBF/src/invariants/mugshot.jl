@@ -105,7 +105,19 @@ Two EA-equivalent functions have equal mugshots:
 
     F ~_EA G  ⇒  apn_ea_mugshot(F) == apn_ea_mugshot(G).
 
-Equal mugshots are *necessary but not sufficient* for EA-equivalence.
+Equal mugshots are *necessary but not sufficient* for EA-equivalence: Gold `x³`
+and `x⁵` over `F₂⁵` share a mugshot but are EA- (and CCZ-) inequivalent. So a
+mugshot is a **bucketing key, not a decision procedure** — confirm a bucket with
+[`are_ea_equivalent`](@ref) before collapsing it, or class counts come out too
+low.
+
+Nor does a mugshot *mismatch* certify CCZ-inequivalence. The mugshot is computed
+from different data for quadratic and non-quadratic `F` (ortho-derivative spectra
+vs. the function's own), and algebraic degree is **not** a CCZ-invariant: the Kim
+function (degree 2) and Dillon's APN permutation (degree 4) have different
+mugshots and are nonetheless CCZ-equivalent. A mismatch certifies
+EA-inequivalence only; for CCZ it is conclusive just when both functions are
+quadratic APN, where CCZ and EA coincide (Yoshiara).
 """
 function apn_ea_mugshot(F::SBox{N,T}) where {N,T}
     deg = algebraic_degree(F)
