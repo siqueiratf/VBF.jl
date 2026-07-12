@@ -1,5 +1,6 @@
 using Test
 using Nemo
+using VBF
 
 include("../algorithm1.jl")
 include("../corollary1_n6n7n8.jl")
