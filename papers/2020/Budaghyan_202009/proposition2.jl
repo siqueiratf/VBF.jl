@@ -121,7 +121,7 @@ function proposition2_random_check(;
     ntrials::Int = 50,
     seed::Int = 42,
 )
-    F = gold_x3(n)
+    F = gold_apn(n, 1)
     sz = 1 << n
     rng = let s = seed
         function rng_next()
@@ -154,11 +154,68 @@ function proposition2_random_check(;
     (; all_ok, mismatches, n, K, ntrials)
 end
 
+"""
+    proposition2_positive_check(; io) -> NamedTuple
+
+Proposition 2 on a **true-APN** instance.
+
+The random checks above only ever exercise the negative side: at n=5, m_F = 15
+forces the Corollary 2 bound to 6, so no K ≤ 2 modification of x³ can possibly be
+APN and every `cond == direct` assertion degenerates to `false == false`.
+
+The positive instance is Section IV-A's Example (b): n=5, `U = {0,…,7} = ⟨1,α,α²⟩`,
+all eight points shifted by `v = α²⁵ = 25`. There, `G` is APN, so
+`check_apn_conditions` must return **true** — an implementation hard-wired to
+`false` passes the random checks and fails here. The neighbouring shifts
+`v = 24, 26` give a non-APN `G` and must return **false**, so a hard-wired `true`
+fails too.
+"""
+function proposition2_positive_check(; io::IO = stdout)
+    n = 5
+    F = gold_apn(n, 1)
+    U = collect(0:7)
+
+    print_section("Proposition 2 — positive (APN) instance, n=$n", io)
+
+    v = 25                       # α²⁵, the unique APN uniform shift of this U
+    G = apply_modifications(F, U, fill(v, length(U)))
+    cond = check_apn_conditions(F, U, fill(v, length(U)))
+    direct = differential_uniformity(G) == 2
+    pos_ok = cond && direct
+    print_kv("U", U, io)
+    print_kv("v = α²⁵", v, io)
+    print_check("G is APN (direct) AND check_apn_conditions says true", pos_ok, io)
+
+    # Negative controls in the same family, so the check cannot be vacuous either way.
+    negatives = [24, 26]
+    neg_ok = true
+    for vn in negatives
+        Gn = apply_modifications(F, U, fill(vn, length(U)))
+        cn = check_apn_conditions(F, U, fill(vn, length(U)))
+        dn = differential_uniformity(Gn) == 2
+        neg_ok &= (cn == dn) && !dn
+    end
+    print_check("controls v ∈ $negatives: G not APN AND check_apn_conditions says false",
+        neg_ok, io)
+
+    # Full agreement over every uniform shift of this U (32 cases, both outcomes present).
+    agree = all(
+        check_apn_conditions(F, U, fill(vv, length(U))) ==
+        (differential_uniformity(apply_modifications(F, U, fill(vv, length(U)))) == 2)
+        for vv = 0:31
+    )
+    print_check("check_apn_conditions ↔ direct APN test on all 32 uniform shifts of U",
+        agree, io)
+
+    (; all_ok = pos_ok && neg_ok && agree, n, U, v)
+end
+
 function proposition2_report(; io::IO = stdout)
     print_header(io)
     r1 = proposition2_random_check(; io, n = 5, K = 1, ntrials = 50)
     r2 = proposition2_random_check(; io, n = 5, K = 2, ntrials = 30)
-    return (; r1, r2)
+    r3 = proposition2_positive_check(; io)
+    return (; r1, r2, r3)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
