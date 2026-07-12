@@ -42,14 +42,20 @@ end
 """
     sf_set(F) -> Vector{Int}
 
-S_F = {λ ∈ F₂ⁿ : ZW(λ) ≠ ∅} ∪ {0} — support set for Procedure 2 (Section 3, eq. 4).
+S_F = {λ ∈ F₂ⁿ⋆ : ZW(λ) ≠ ∅} ∪ {0} — support set for Procedure 2 (Section 3, eq. 4).
+
+The inner scan runs over the *full* input space `a = 0:(2ⁿ-1)`, matching the
+paper's ZW(λ) = {a ∈ F₂ⁿ : W_{F_λ}(a) = 0} (a = 0 included). Checked on Gold
+n=4/5/6, Kasami n=5, Kim, Dillon, x⁻¹ n=6 and Table-1 row 14: S_F is unchanged
+by including a = 0 (no APN component has W_{F_λ}(0) = 0), so this is a
+definitional alignment, not a behavioural change.
 """
 function sf_set(F::SBox{N,T}) where {N,T}
     n_size = 1 << N
     L = lat(F)
     S = Int[0]
     for λ = 1:(n_size - 1)
-        if any(L[a + 1, λ + 1] == 0 for a = 1:(n_size - 1))
+        if any(L[a + 1, λ + 1] == 0 for a = 0:(n_size - 1))
             push!(S, λ)
         end
     end
