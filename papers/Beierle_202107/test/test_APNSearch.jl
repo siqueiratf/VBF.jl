@@ -169,3 +169,64 @@ end
     end
 end
 end  # if isfile(_TUPLES3_FILE)
+
+# ---------------------------------------------------------------------------
+# CCZ-equivalence verification for stored search results
+# ---------------------------------------------------------------------------
+
+@testset "N=6 Class 5 CCZ-Equivalence to Dillon's Permutation" begin
+    # Class 5 is the only admissible class for n=6 (Theorem 1).
+    # The search finds exactly one APN permutation, which must be
+    # CCZ-equivalent to Dillon's permutation (catalog: n6_Kim).
+    blocks6 = _load_tuple_matrix_blocks(
+        joinpath(dirname(@__DIR__), "tuples", "AllTuplesMatrices6.toml"))
+    result6 = blocks6[5].search
+    @test result6 !== nothing
+    F6 = SBox{6}(result6)
+    @test differential_uniformity(F6) == 2      # APN
+    @test is_permutation(F6)                     # bijective
+    @test are_ccz_equivalent(F6, dillon_apn_permutation())
+end
+
+@testset "N=7 Search Result CCZ-Equivalence to Monomials" begin
+    # The 6 admissible classes (4,5,7,8,9,10) each yield one APN
+    # permutation.  Each is CCZ-equivalent to a known monomial.
+    #
+    # Mapping (verified by algebraic degree + delta-rank as CCZ-invariants,
+    # plus direct are_ccz_equivalent for the quadratic Gold cases):
+    #   class 4  ↔ x^63 (inverse,  degree 6, delta_rank 4928)
+    #   class 5  ↔ x^9  (Gold k=3, degree 2, delta_rank 198)
+    #   class 7  ↔ x^5  (Gold k=2, degree 2, delta_rank 198)
+    #   class 8  ↔ x^78 (Niho,     degree 4, delta_rank 436)
+    #   class 9  ↔ x^85 (Kasami,   degree 4, delta_rank 198)
+    #   class 10 ↔ x^88 (Welch,    degree 3, delta_rank 338)
+
+    blocks7 = _load_tuple_matrix_blocks(
+        joinpath(dirname(@__DIR__), "tuples", "AllTuplesMatrices7.toml"))
+
+    class_to_exponent = Dict(4 => 63, 5 => 9, 7 => 5, 8 => 78, 9 => 85, 10 => 88)
+
+    for (cls, exp) in sort(collect(class_to_exponent))
+        result = blocks7[cls].search
+        @test result !== nothing
+
+        result_sbox = SBox{7}(result)
+        mono_sbox   = SBox{7}(gf_monomial_lut(7, exp))
+
+        @test differential_uniformity(result_sbox) == 2   # APN
+        @test is_permutation(result_sbox)                  # bijective
+
+        # For quadratic APN pairs (Gold monomials, degree 2),
+        # CCZ = EA (Yoshiara 2012) so the check is fast.
+        if algebraic_degree(mono_sbox) == 2
+            @test are_ccz_equivalent(result_sbox, mono_sbox)
+        else
+            # For non-quadratic pairs, the full CCZ check exceeds
+            # available memory on n=7.  Verify via CCZ-invariants
+            # (algebraic degree + delta-rank) which uniquely identify
+            # the monomial within the 6 candidates.
+            @test algebraic_degree(result_sbox) == algebraic_degree(mono_sbox)
+            @test delta_rank(result_sbox)       == delta_rank(mono_sbox)
+        end
+    end
+end

@@ -280,6 +280,14 @@ end
 Run Algorithm 1 from the linearly self-equivalent APN permutations experiment
 for the matrix pair `(A, B)`. The returned values are complete S-box lookup
 tables satisfying `F(Bx) = A F(x)` and the APN constraint.
+
+!!! note "Convention vs. paper"
+    The paper's Corollary 1 uses `F ∘ A = B ∘ F`, i.e. `F(Ax) = BF(x)`.
+    This function's signature `APNSearch(n, A, B)` instead satisfies
+    `F(Bx) = AF(x)`, so the code's `(A, B)` corresponds to the paper's
+    `(B, A)`.  Internally the arguments are swapped when creating the
+    search context (B → apply_A, A → apply_B) to match the internal
+    orbit-assignment logic.
 """
 function APNSearch(n::Int, A, B;
                    max_solutions::Int = typemax(Int),
@@ -306,10 +314,15 @@ function APNSearch(n::Int, A, B;
         addDDTInformation(0, sbox, ddt)
     end
 
+    # NOTE: A/B are swapped here relative to the function signature.
+    # The paper's Corollary 1 has F(Ax)=BF(x), but the code's signature is
+    # APNSearch(n, A, B) with F(Bx)=AF(x).  The search context's apply_A
+    # receives B's LUT and apply_B receives A's LUT to match the internal
+    # orbit-assignment convention.
     context = APNSearchContext(
         n,
-        linear_map_lut(B, n),
-        linear_map_lut(A, n),
+        linear_map_lut(B, n),   # apply_A ← B (paper's A)
+        linear_map_lut(A, n),   # apply_B ← A (paper's B)
         max_solutions = max_solutions,
         on_solution = on_solution,
         save_results = save_results,

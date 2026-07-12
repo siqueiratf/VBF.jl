@@ -1,6 +1,11 @@
 using TOML
 using Nemo
 
+# Convention note: The paper's Corollary 1 states F(Ax) = BF(x).
+# In the code, APNSearch(n, A, B) finds F such that F(Bx) = AF(x),
+# i.e. the code's (A, B) corresponds to the paper's (B, A).
+# See the docstring and swap comment in algorithm1.jl for details.
+
 @doc"""
     even_hamming_weight_differences(space_size::Int) -> Vector{Int}
 
