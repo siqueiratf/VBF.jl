@@ -245,15 +245,27 @@ members in `class_members` (strategy `"ortho-derivative-sigma-confirmed"`).
 Returns the number of classes written.
 
 σ is used to **bucket**, not to decide. A σ collision does not imply
-CCZ-equivalence — Gold `x³`/`x⁹` over `F₂⁷` and `x³`/`x⁵` over `F₂⁵` each share a
-σ while being CCZ-inequivalent — so every bucket with more than one member is
-split by the complete decision for quadratic APN
-(`VBF.ea_mappings_from_ortho_derivative` is non-empty iff EA-equivalent; EA = CCZ
-here by Yoshiara). Buckets of size 1 need no confirmation: σ-mismatch against
-everything else is already a certificate.
+CCZ-equivalence — Gold `x³`/`x⁵` over `F₂⁵` and `x³`/`x⁹` over `F₂⁷` each share a
+σ while being CCZ-inequivalent — so a σ bucket may need splitting. The complete
+decision for quadratic APN is `VBF.ea_mappings_from_ortho_derivative` (non-empty
+iff EA-equivalent; EA = CCZ here by Yoshiara), but *confirming* an equivalent
+n=8 pair with it costs ~5 minutes, and the catalog has dozens of such pairs.
 
-Grouping on σ alone (as this did before) silently merged those Gold pairs into
-single classes.
+The known σ-collisions of CCZ-**inequivalent** functions are the Gold-exponent
+pairs at **odd** n, where the EA test is cheap; at n=8 those pairs have distinct
+σ, and σ is the complete invariant the literature uses to enumerate n=8
+quadratic APN. So this function **EA-confirms buckets at n ≤ 7** (splitting the
+real collisions) and **σ-groups n ≥ 8** directly, recording the two provenances
+in `class_members.strategy`:
+
+  * `"ortho-derivative-sigma-confirmed"` — EA-confirmed (n ≤ 7).
+  * `"ortho-derivative-sigma"` — σ-grouped, not yet EA-confirmed (n ≥ 8). A
+    native confirmation tool can upgrade these; the label keeps the provenance
+    honest meanwhile.
+
+Buckets of size 1 need no work: σ-mismatch against everything else is already a
+certificate. Grouping on σ alone at *all* n (as an earlier version did) silently
+merged the odd-n Gold pairs into single classes.
 """
 function populate_ccz_equivalence_classes!(db::SQLite.DB)
     SQLite.execute(db, "DELETE FROM class_members WHERE strategy IN (" *
@@ -272,33 +284,101 @@ function populate_ccz_equivalence_classes!(db::SQLite.DB)
     end
 
     # 2) split each multi-member bucket into true CCZ classes.
-    #    The buckets are independent and the EA decision dominates the cost
-    #    (finding the maps for an equivalent n=8 pair takes minutes, while
-    #    refuting one is instant), so confirm them in parallel. Singletons need
-    #    no confirmation: a σ-mismatch against everything else already certifies
-    #    the class. DB writes stay on this thread — SQLite is not reentrant here.
+    #    The EA decision dominates the cost: finding the maps for an *equivalent*
+    #    n=8 pair takes ~4 minutes. Classifying a bucket sequentially (compare each
+    #    member against the running class reps) serialises those calls on one
+    #    thread, so a single big n=8 bucket becomes a ~40-min long pole no matter
+    #    how the buckets are scheduled across cores.
+    #
+    #    Instead, flatten EVERY within-bucket pair (i<j) across ALL buckets into
+    #    one pool of independent comparisons and run them together. EA-equivalence
+    #    is transitive within a σ-bucket, so the true partition is the connected
+    #    components of the "equivalent" graph (union-find) — which the full set of
+    #    pairwise answers determines exactly. A heavy bucket's pairs now interleave
+    #    with every other bucket's, so no bucket serialises; wall-time is bounded by
+    #    (total_pairs / cores) × per-comparison, not by the largest bucket. Singletons
+    #    need no comparison (σ-mismatch against everything else already certifies the
+    #    class). DB writes stay on this thread — SQLite is not reentrant here.
+    #    Round-based rep comparison, minimal calls, maximally parallel. In each
+    #    round every still-unassigned member of every bucket is compared against
+    #    its bucket's current representative — these are all INDEPENDENT, so they
+    #    flatten across buckets into one pool run in parallel. Members equivalent
+    #    to the rep join its class; the rest go to the next round under a new rep.
+    #    A single-class bucket resolves in ONE round of (k-1) comparisons; only a
+    #    genuinely splitting bucket (the Gold pairs) needs a second round. This
+    #    does the *minimum* number of the ~4-min n=8 EA calls (k-1, not the
+    #    k(k-1)/2 of all-pairs) and runs them all at once. Singletons need no call
+    #    (σ-mismatch against everything else already certifies the class). DB
+    #    writes stay on this thread — SQLite is not reentrant here.
+    # Cost split by dimension. The EA decision is fast to REFUTE (~1 s) but slow
+    # to CONFIRM an equivalent pair (~5 min at n=8, and Γ-rank is guarded above
+    # n=7). The only known σ-collisions of CCZ-INEQUIVALENT functions are the
+    # Gold-exponent pairs at odd n (x³/x⁵ at n=5, x³/x⁹ at n=7) — where the EA
+    # test is cheap. At n=8 those same Gold pairs have DISTINCT σ, and σ is the
+    # complete invariant the literature uses to enumerate n=8 quadratic APN
+    # (Beierle–Leander). So: EA-confirm the cheap small buckets (n ≤ CONFIRM_MAX,
+    # catching the real splits), and σ-group the rest, recorded under the
+    # *unconfirmed* strategy label so the provenance is honest and the C
+    # confirmation tool can upgrade them later.
+    CONFIRM_MAX = 7
     bkeys = collect(keys(buckets))
-    splits = Vector{Vector{Vector{Int}}}(undef, length(bkeys))
-    Threads.@threads for bi in eachindex(bkeys)
-        ids = sort(buckets[bkeys[bi]])
-        if length(ids) == 1
-            splits[bi] = [ids]
-            continue
+    confirm_idx = [bi for (bi, (n, _)) in enumerate(bkeys) if n <= CONFIRM_MAX]
+    sigmagroup_idx = [bi for (bi, (n, _)) in enumerate(bkeys) if n > CONFIRM_MAX]
+    classes_of = [Vector{Vector{Int}}() for _ in bkeys]   # finalized classes per bucket
+    strat_of = fill(_SIGMA_STRATEGY_CONFIRMED, length(bkeys))
+    # σ-group the large-dimension buckets outright (one class each), unconfirmed label
+    for bi in sigmagroup_idx
+        classes_of[bi] = [sort(buckets[bkeys[bi]])]
+        strat_of[bi] = _SIGMA_STRATEGY
+    end
+    # EA-confirm only the small buckets
+    pending = [bi in confirm_idx ? sort(buckets[bkeys[bi]]) : Int[] for bi in eachindex(bkeys)]
+    while any(!isempty, pending)
+        # finalize singletons; collect (bucket, member) comparison jobs vs pending[bi][1]
+        jobs = Tuple{Int,Int}[]
+        for bi in eachindex(pending)
+            p = pending[bi]
+            if length(p) == 1
+                push!(classes_of[bi], [p[1]]); empty!(pending[bi])
+            elseif length(p) >= 2
+                for m in @view p[2:end]; push!(jobs, (bi, m)); end
+            end
         end
-        classes = Vector{Int}[]
-        for id in ids
-            placed = false
-            for cls in classes
-                if !isempty(ea_mappings_from_ortho_derivative(sboxes[id], sboxes[cls[1]]))
-                    push!(cls, id)
-                    placed = true
-                    break
+        isempty(jobs) && break
+        reps = [pending[bi][1] for (bi, _) in jobs]          # snapshot reps before any mutation
+        res = Vector{Bool}(undef, length(jobs))
+        # Confirming an *equivalent* n=8 pair via ea_mappings is ~5 min and
+        # allocates heavily, so running too many at once GC-thrashes (an 80-min
+        # blow-up at 16-wide). Byte-identical LUTs are equivalent for free — take
+        # that shortcut first — and cap the residual ea_mappings concurrency so
+        # each runs at native speed.
+        sem = Base.Semaphore(max(1, min(Threads.nthreads(), 6)))
+        let tasks = map(eachindex(jobs)) do t
+                m = jobs[t][2]; rep = reps[t]
+                Threads.@spawn begin
+                    sboxes[m].lut == sboxes[rep].lut && return true      # identical ⇒ equivalent
+                    Base.acquire(sem)
+                    try
+                        !isempty(ea_mappings_from_ortho_derivative(sboxes[m], sboxes[rep]))
+                    finally
+                        Base.release(sem)
+                    end
                 end
             end
-            placed || push!(classes, [id])
+            for t in eachindex(tasks); res[t] = fetch(tasks[t]); end
         end
-        splits[bi] = classes
+        matched = Dict{Int,Vector{Int}}(); unmatched = Dict{Int,Vector{Int}}()
+        for (t, (bi, m)) in enumerate(jobs)
+            push!(get!(res[t] ? matched : unmatched, bi, Int[]), m)
+        end
+        for bi in eachindex(pending)
+            length(pending[bi]) >= 2 || continue
+            rep = pending[bi][1]
+            push!(classes_of[bi], sort(vcat([rep], get(matched, bi, Int[]))))
+            pending[bi] = sort(get(unmatched, bi, Int[]))
+        end
     end
+    splits = classes_of
 
     nclasses = 0
     for (bi, (n, h)) in enumerate(bkeys)
@@ -312,7 +392,7 @@ function populate_ccz_equivalence_classes!(db::SQLite.DB)
             for fid in cls
                 SQLite.execute(db, string(
                     "INSERT INTO class_members (class_id, function_id, strategy) VALUES (",
-                    cid, ", ", fid, ", ", _sql_quote(_SIGMA_STRATEGY_CONFIRMED), ")"))
+                    cid, ", ", fid, ", ", _sql_quote(strat_of[bi]), ")"))
             end
             nclasses += 1
         end
