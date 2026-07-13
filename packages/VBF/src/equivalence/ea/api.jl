@@ -62,14 +62,13 @@ functional inverse and cannot handle non-bijective inputs).
 - When the partition search is **capped** (degenerate partitions — e.g.
   signature `[2ⁿ-1, 1]` monomial APN, or `[2ⁿ-8, 7, 1]` degree-4 APN
   permutations at n = 6) and no invariant separates the pair and no
-  affine witness exists, the decision is *inconclusive* and the function
-  **throws** [`InconclusiveEquivalence`](@ref) rather than answering.
-  Earlier versions returned a best-effort `false` here — first silently,
-  then with a warning — but callers act on the `Bool`, and a novelty check
-  reading that `false` as "inequivalent" manufactures a discovery. Pass
-  `on_inconclusive = :best_effort` to restore it, or `:missing` to
-  propagate the uncertainty. For pairs inside the CCZ-class of a quadratic
-  APN the complete alternative is the orbit method
+  affine witness exists, the decision is *inconclusive*. By default the
+  function **warns and returns a best-effort `false`** — keeping the `Bool`
+  contract so existing predicate callers are not broken — but callers act on
+  that `Bool`, and a novelty check reading it as "inequivalent" manufactures a
+  discovery. Code that needs certainty must pass `on_inconclusive = :throw`
+  (raise [`InconclusiveEquivalence`](@ref)) or `:missing`. For pairs inside the
+  CCZ-class of a quadratic APN the complete alternative is the orbit method
   ([`ea_class_orbits`](@ref)); for two quadratic APN,
   [`ea_mappings_from_ortho_derivative`](@ref) decides exactly.
 
@@ -96,13 +95,13 @@ to the `max_inner_affine` cap (see below).
 
 `max_inner_affine` bounds the inner-affine enumeration used for
 non-permutation inputs; an exhausted (uncapped) enumeration is a sound
-negative, whereas hitting the cap is *undecided* and throws
-[`InconclusiveEquivalence`](@ref). The default `10^7` decides every
-`n ≤ 4` pair exhaustively.
+negative, whereas hitting the cap is *undecided* (see `on_inconclusive`).
+The default `10^7` decides every `n ≤ 4` pair exhaustively.
 
-`on_inconclusive` controls what an undecided query does: `:throw`
-(default), `:best_effort` (the old `false` — use only where a false
-negative is harmless), or `:missing`.
+`on_inconclusive` controls what an undecided query does: `:best_effort`
+(default — warn and return `false`), `:throw` (raise
+[`InconclusiveEquivalence`](@ref)), or `:missing`. Use `:throw` in novelty or
+classification code where a guessed `false` would be unsafe.
 
 `max_outer_per_sigma` is a safety bound on the outer-permutation search
 size per bucket map; a bucket map yielding more than this many `L₁`
@@ -133,7 +132,7 @@ function are_ea_equivalent(
     k::Int = 4,
     max_outer_per_sigma::Int = 10^6,
     max_inner_affine::Int = 10^7,
-    on_inconclusive::Symbol = :throw,
+    on_inconclusive::Symbol = :best_effort,
 )
     inputbits(F) == inputbits(G) || return false
     storage_type(F) == storage_type(G) || return false
@@ -202,7 +201,7 @@ Base.showerror(io::IO, e::InconclusiveEquivalence) =
 function _ea_inconclusive_fallback(
     F::SBox{N,T},
     G::SBox{N,T};
-    on_inconclusive::Symbol = :throw,
+    on_inconclusive::Symbol = :best_effort,
 ) where {N,T}
     dF = algebraic_degree(F)
     dG = algebraic_degree(G)
@@ -253,7 +252,7 @@ function _ea_nonperm_decide(
     F::SBox{N,T},
     G::SBox{N,T};
     max_inner::Int,
-    on_inconclusive::Symbol = :throw,
+    on_inconclusive::Symbol = :best_effort,
 ) where {N,T}
     res = _ea_nonperm_search(F, G; max_inner = max_inner)
     res === :yes && return true
