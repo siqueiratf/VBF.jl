@@ -18,7 +18,7 @@
 #               print_check, print_kv
 # Reuses biprojective_sbox from the Gologlu_202207 reproduction.
 
-include(joinpath(@__DIR__, "..", "Gologlu_202207", "helpers.jl"))
+include(joinpath(@__DIR__, "..", "..", "2022", "Gologlu_202207", "helpers.jl"))
 include(joinpath(@__DIR__, "helpers.jl"))
 
 _gologlu_f1(m, i; modulus) =
