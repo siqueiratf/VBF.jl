@@ -2,6 +2,14 @@
 # quadratic-APN row, populate equivalence_classes for the functions reps, and
 # validate. Also registers the Simon-Berg corpus if its side store exists but
 # wasn't recorded in bulk_corpora.
+#
+# --functions-only indexes ONLY the functions table (~600 σ, seconds) and skips
+# the corpora (~230k members, hours) and the equivalence_classes population. The
+# skipped corpora are recorded in sigma_coverage, so the oracle still refuses to
+# answer at n=8 rather than returning an uncertified `:new`. Every corpus is n=8,
+# so at every other dimension this index is exactly as complete as the full one —
+# which is why it is enough for the n=7 / n=9 paper reproductions in CI, where
+# the full build does not fit in the job budget.
 using VBF
 using VBFCatalog
 import SQLite
@@ -35,9 +43,16 @@ function ensure_simonberg_registered!(db::SQLite.DB)
     true
 end
 
-function main()
+function main(; functions_only::Bool = false)
     db = load_catalog()
     try
+        if functions_only
+            println("functions-only build: corpora SKIPPED (recorded in sigma_coverage; n=8 lookups will refuse)")
+            t = @elapsed stats = build_sigma_index!(db; rebuild = true, corpora = String[])
+            println("σ-index built in $(round(t;digits=1))s: functions=$(stats.functions) ",
+                    "distinct=$(stats.distinct)")
+            return
+        end
         ensure_simonberg_registered!(db) && println("registered simonberg_gf4_n8")
         println("corpora indexed: ", list_corpora(db))
         t = @elapsed stats = build_sigma_index!(db; rebuild = true)
@@ -50,4 +65,4 @@ function main()
     end
 end
 
-main()
+main(; functions_only = "--functions-only" in ARGS)
