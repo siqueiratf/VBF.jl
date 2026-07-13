@@ -23,7 +23,14 @@
         @test differential_uniformity(H) == 2
         @test algebraic_degree(H) == 4
     end
-    @test !are_ea_equivalent(H1, H2)
+    # These are degree-4 non-quadratic permutations: no complete EA-decision
+    # procedure exists for them (the Leon code-equivalence frontier), so the
+    # bounded Heggebakk search returns a best-effort `false` here rather than a
+    # proof — asked for it explicitly (`on_inconclusive = :best_effort`) so this
+    # does not silently depend on the global default. The inequivalence itself is
+    # certified externally by Prop 40 / Calderini 2020, which the best-effort
+    # negative agrees with; it is not a local proof.
+    @test !are_ea_equivalent(H1, H2; on_inconclusive = :best_effort)
 
     # full Section 4.3 reproduction (≈ 5–10 min: 222 thickness-spectrum
     # extractions + affine partition of 512 permutations). Set
