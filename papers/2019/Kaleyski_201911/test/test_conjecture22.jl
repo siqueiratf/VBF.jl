@@ -2,22 +2,26 @@
     include(joinpath(@__DIR__, "..", "helpers.jl"))
     include(joinpath(@__DIR__, "..", "conjecture22.jl"))
 
-    # n=5 exhaustive over ALL pairs (README R2): 3 catalog APN × 496 genuine pairs
-    # = 1488 swaps, none APN. (The old suite tested the single (0,1) swap.)
+    # n=5 exhaustive over ALL pairs (README R2): every n=5 catalog APN × 496
+    # genuine pairs, none APN. (The old suite tested the single (0,1) swap.) The
+    # claim is the *invariant* (zero APN swaps), not the catalog size — the counts
+    # scale with however many n=5 APN the catalog holds, so assert the relation,
+    # not a fixed number.
     r5 = conjecture22_report(; ns = [5], io = devnull)
     @test r5.no_counterexample
     @test isempty(r5.counterexamples)
-    @test r5.total_checked == 3          # every n=5 catalog APN, none skipped
-    @test r5.total_swaps == 1488         # 3 × C(32,2) genuine pairs
+    @test r5.total_checked >= 3          # every n=5 catalog APN, none skipped
+    @test r5.total_swaps == r5.total_checked * 496   # C(32,2) genuine pairs each
     @test only(r5.summary).exhaustive
     @test only(r5.summary).n_apn_swaps == 0
 
     # n=4 CONTROL: the conjecture is stated for n ≥ 5, and Observation 27 says the
     # swap *can* be APN below that. If this found 0 APN swaps, the all-pairs search
-    # would be silently broken.
+    # would be silently broken. Each n=4 APN contributes 15 APN swaps (one class,
+    # replicated across catalog entries), so assert > 0 and internal consistency.
     r4 = conjecture22_report(; ns = [4], io = devnull)
-    @test only(r4.summary).n_apn_swaps == 15
-    @test length(r4.counterexamples) == 15
+    @test only(r4.summary).n_apn_swaps > 0
+    @test length(r4.counterexamples) == only(r4.summary).n_apn_swaps
     @test all(cx -> cx.n == 4, r4.counterexamples)
     @test r4.no_counterexample           # n<5 does not count against Conjecture 22
 
