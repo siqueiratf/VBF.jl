@@ -86,8 +86,35 @@ work-queue kernel — a plumbing change, since the 2^49 enumeration itself is
 validated). Widening `apn_search` to `uint16` lanes also opens n=9..12 for the
 BCP/BCL/isotopic-shift families and Yu (2025)'s n=11 F₂-coefficient conjecture.
 
+## Splitting σ-buckets into true CCZ classes — `ccz_confirm`
+
+`ortho_sigma` gives the fast *necessary* test; `ccz_confirm` gives the *complete*
+one it defers. Two quadratic APN functions are CCZ-equivalent iff their
+ortho-derivatives π_F, π_G are linearly equivalent (π_G = B∘π_F∘A for invertible
+F₂-linear A, B — EA = CCZ here by Yoshiara). `ccz_confirm` ports that decision
+from VBF's `linear_equivalences_general`: guess A on the standard basis, fold
+`B(π_F(Ax)) = π_G(x)` into a triangular F₂ basis for B, early-exit on the first
+invertible witness. One OpenMP task per `(pair, A(e₀)-candidate)` across all
+cores, then union-find over the pairwise verdicts → CCZ classes.
+
+This replaces the single-threaded Julia oracle the catalog build calls, which
+needs ~5 minutes to *confirm* one equivalent n=8 pair (fast only to refute).
+
+**Validated: 0 disagreements** against Julia's `ea_mappings_from_ortho_derivative`
+on all 24 pairs of the catalog's 18 multi-member σ-buckets — including the cases
+that must split (Gold x³/x⁵ at n=5, x³/x⁹ at n=7) and the n=8 buckets that must
+not (Gold ≡ reprs8 ≡ SimonBerg). **~120–190× faster**: the full set is 37–57 s
+vs the Julia oracle's ~115 min; a single n=8 Julia pair alone exceeds the whole
+C run.
+
+```
+make ccz_confirm          # portable C + OpenMP, no GPU
+```
+
 ## Provenance
 
 Kernels lifted (up to lane width) from the Kuznetsov (2026) census on this
 branch and generalized here. The math is Yu–Wang–Li / Ichanska / Yu–Perrin /
-Yu (QAM method); see the header comments in each file for exact citations.
+Yu (QAM method) for the searchers, and Canteaut–Couvreur–Perrin (ortho-derivative
+linear equivalence) for `ccz_confirm`; see the header comments in each file for
+exact citations.
