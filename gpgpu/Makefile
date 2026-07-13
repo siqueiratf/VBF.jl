@@ -44,10 +44,15 @@ ortho_sigma: ortho_sigma.c            # n=8 default
 	$(CC) $(CFLAGS) -o $@ $<
 fast_checker: fast_checker.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
+# ccz_confirm: split a σ-bucket into true CCZ classes by the complete
+# ortho-derivative linear-equivalence decision (OpenMP; portable C, any n).
+# ~120-190x faster than the single-threaded Julia ea_mappings it replaces.
+ccz_confirm: ccz_confirm.c
+	$(CC) $(CFLAGS) -fopenmp -o $@ $<
 
 searchers: apn_search_n8 apn_search_n9 apn_search_n10 apn_search_n11 apn_search_n12 \
            qam_dfs_cpu qam_dfs_gpu
-tools: ortho_sigma fast_checker
+tools: ortho_sigma fast_checker ccz_confirm
 all: searchers tools
 
 # ── plan generation (the one codebase-coupled step; needs VBF + the paper reductions) ──
