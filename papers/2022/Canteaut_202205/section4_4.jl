@@ -15,9 +15,10 @@
 #   (e) All ortho-derivatives have trivial thickness spectrum {0:1} except
 #       π_{x³} = {0:1, 3:9, 6:54} and π_κ = {0:1, 6:5}, so both are
 #       CCZ-equivalent to permutations.
-#   (f) The catalog's 15 quadratic 6-bit APN functions partition into 13
-#       EA-classes with the same mugshots as the Banff list (same-bucket
-#       pairs verified EA-equivalent with the core algorithm).
+#   (f) The catalog's quadratic 6-bit APN functions (≥ 15; the paper worked with
+#       15, more named family reps have since been added, all landing in the same
+#       classes) partition into 13 EA-classes with the same mugshots as the Banff
+#       list (same-bucket pairs verified EA-equivalent with the core algorithm).
 #
 # The Table 7 "min #EA" lower-bound column (distinct thickness spectra across
 # every EA representative of each CCZ-class) is verified for κ in

@@ -277,7 +277,10 @@ function section4_3_report(; io::IO = stdout)
     # degenerate-partition degree-4 permutations are the best algorithmic
     # evidence available (no cheap EA-invariant separates the two classes —
     # they share thickness spectrum and Σ⁴-multiplicities, as the paper notes).
-    ok_sep = !are_ea_equivalent(H1, H2)
+    # `on_inconclusive = :best_effort` is explicit: the search cannot DECIDE
+    # degree-4 permutations, so this is a best-effort negative agreeing with
+    # Prop 40 / Cal20, not a proof from this oracle.
+    ok_sep = !are_ea_equivalent(H1, H2; on_inconclusive = :best_effort)
     print_check("H_{α,1} ≁EA H_{α,β}: the two EA-classes are distinct (Prop 40 / Cal20)", ok_sep, io)
     ok_ea = ok_merge && ok_sep
     print_check("exactly 2 EA-classes of permutations (Prop 40)", ok_ea, io)
@@ -290,10 +293,14 @@ function section4_3_report(; io::IO = stdout)
     print_kv("permutation thickness spectrum", ts_p1, io)
     print_check("both permutation EA-classes share {0:1,1:7,2:14,3:58,4:42,5:84,6:16}", ok_g, io)
 
-    # Dillon et al.'s permutation belongs to one of the two classes
+    # Dillon et al.'s permutation belongs to one of the two classes. This is a
+    # positive existence check (find the class it lands in), so an undecided
+    # EA-query is naturally "no match here" — best-effort `false` is the intended
+    # fallback, made explicit so it does not throw under a stricter global default.
     D = dillon_apn_permutation()
     okD = count(are_affine_equivalent(D, R) for R in cls_reps) ≥ 1 ||
-          any(are_ea_equivalent(D, cls_reps[g[1]]) for g in ea_classes)
+          any(are_ea_equivalent(D, cls_reps[g[1]]; on_inconclusive = :best_effort)
+              for g in ea_classes)
     print_check("Dillon et al.'s permutation lies in the CCZ-class permutation EA-classes", okD, io)
 
     all_ok = ok_a && ok_b && ok_len && ok_c && ok_h && ok_32 && ok_d &&

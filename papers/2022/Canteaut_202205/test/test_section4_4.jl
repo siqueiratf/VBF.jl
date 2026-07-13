@@ -14,10 +14,14 @@
     @test length(Set(apn_ea_mugshot(F) for F in fns)) == 13
     @test !are_ea_equivalent(fns[9], fns[10])
 
-    # catalog: 15 quadratic 6-bit APN → 13 EA-classes, one bucket of 3
+    # catalog: the quadratic 6-bit APN reps fall into exactly 13 EA-classes (the
+    # paper's Table 6-7 claim). The rep COUNT is a catalog-snapshot number, not a
+    # paper invariant — it grows as named family representatives are added, all of
+    # which land in one of the 13 classes — so assert ≥ the 15 the paper worked
+    # with, and require the class count (13) to be exactly preserved regardless.
     db = load_catalog()
     quad_fns = filter(f -> f.is_quadratic, list_functions(db; n = 6, is_apn = true))
-    @test length(quad_fns) == 15
+    @test length(quad_fns) >= 15
 
     sboxes = [load_sbox(db, f.id) for f in quad_fns]
     buckets = Dict()
@@ -25,7 +29,12 @@
         push!(get!(buckets, apn_ea_mugshot(sb), Any[]), sb)
     end
     @test length(buckets) == 13
-    @test any(length(v) == 3 for v in values(buckets))
+    # the buckets partition every catalog rep, and — since there are more reps
+    # than classes — at least one class is realised by multiple reps (the
+    # mugshot-dedup is non-trivial). The specific size distribution is a snapshot
+    # detail, so assert the invariant relation, not a fixed bucket size.
+    @test sum(length(v) for v in values(buckets)) == length(quad_fns)
+    @test count(v -> length(v) > 1, values(buckets)) >= 1
 
     # catalog classes coincide with the Banff classes
     @test Set(keys(buckets)) == Set(apn_ea_mugshot(F) for F in fns)
