@@ -88,28 +88,126 @@ BCP/BCL/isotopic-shift families and Yu (2025)'s n=11 F₂-coefficient conjecture
 
 ## Splitting σ-buckets into true CCZ classes — `ccz_confirm`
 
-`ortho_sigma` gives the fast *necessary* test; `ccz_confirm` gives the *complete*
-one it defers. Two quadratic APN functions are CCZ-equivalent iff their
-ortho-derivatives π_F, π_G are linearly equivalent (π_G = B∘π_F∘A for invertible
-F₂-linear A, B — EA = CCZ here by Yoshiara). `ccz_confirm` ports that decision
-from VBF's `linear_equivalences_general`: guess A on the standard basis, fold
-`B(π_F(Ax)) = π_G(x)` into a triangular F₂ basis for B, early-exit on the first
-invertible witness. One OpenMP task per `(pair, A(e₀)-candidate)` across all
-cores, then union-find over the pairwise verdicts → CCZ classes.
+`ortho_sigma` groups quadratic APN by the σ signature, a CCZ-invariant. That is
+only a *necessary* condition: Gold x³/x⁵ over F₂⁵ and x³/x⁹ over F₂⁷ share a σ
+(and Γ- and Δ-rank) yet are CCZ-inequivalent. Every multi-member σ-bucket must
+therefore be **split** by a complete decision. `ccz_confirm` is that decision,
+in native multithreaded C — the operation that is the multi-hour bottleneck when
+run pairwise from Julia (`VBF.ea_mappings_from_ortho_derivative`).
 
-This replaces the single-threaded Julia oracle the catalog build calls, which
-needs ~5 minutes to *confirm* one equivalent n=8 pair (fast only to refute).
+### The complete decision
 
-**Validated: 0 disagreements** against Julia's `ea_mappings_from_ortho_derivative`
-on all 24 pairs of the catalog's 18 multi-member σ-buckets — including the cases
-that must split (Gold x³/x⁵ at n=5, x³/x⁹ at n=7) and the n=8 buckets that must
-not (Gold ≡ reprs8 ≡ SimonBerg). **~120–190× faster**: the full set is 37–57 s
-vs the Julia oracle's ~115 min; a single n=8 Julia pair alone exceeds the whole
-C run.
+By Yoshiara, CCZ = EA for quadratic APN; by Canteaut–Couvreur–Perrin (2022),
+two quadratic APN `F, G` are EA-equivalent **iff** their ortho-derivatives
+`π_F, π_G` are *linearly* equivalent — i.e. there are invertible F₂-linear
+`A, B` with `π_G = B ∘ π_F ∘ A`. This is exactly the non-empty condition of
+VBF's `ea_mappings_from_ortho_derivative`, which enumerates those linear
+equivalences (`linear_equivalences` / `linear_equivalences_general`) and lifts
+them to CCZ maps of the graph. `ccz_confirm` decides the same predicate.
+
+### The linear-equivalence method
+
+For each function it first builds `π_F` exactly as VBF does
+(`ortho_derivative`): per non-zero `a`, take the DDT row, form the affine
+hyperplane `H_a = {b ≠ 0 : DDT(a,b) ≠ DDT(a,0)}`, and set `π_F(a)` to the
+smallest non-zero vector with `⟨π_F(a), b⟩ = 1` for all `b ∈ H_a` (π_F(0)=0).
+
+It then decides `π_G = B ∘ π_F ∘ A` with the propagation-pruned backtracking of
+VBF's `linear_equivalences_general` (the non-permutation search — every
+quadratic APN in even dimension has a many-to-one π): guess `A = L₂` on the
+standard basis (each image independent of the previous, so `L₂` stays
+invertible) and, for every point of the span fixed so far, fold the constraint
+`B(π_F(L₂ x)) = π_G(x)` into a partial linear `B = L₁` kept as a triangular F₂
+basis. A branch dies on the first inconsistency; a complete `L₂` whose forced
+`L₁` is fully-determined and invertible (validated `π_G = L₁ ∘ π_F ∘ L₂`) is a
+witness. We need only **existence** (non-empty), so the search early-exits on
+the first witness — this is precisely the "records a solution" condition of the
+collect-all routine, hence identical yes/no. The general search subsumes the
+permutation variant VBF uses for odd-`n` Gold (linear-equivalence existence is
+one predicate; both VBF routines are complete deciders of it), so a single code
+path reproduces every dispatch branch.
+
+### Parallelism (and why not GPU)
+
+The top of that backtracking branches over `L₂(e₀)` in `2ⁿ−1` independent
+subtrees. `ccz_confirm` emits one OpenMP task per `(pair, L₂(e₀)-candidate)` over
+**all** pairs of **all** buckets and runs them in one dynamic parallel-for; a
+per-pair "found" flag lets an equivalent pair short-circuit the moment any
+subtree yields a witness, while an inequivalent pair exhausts its subtrees spread
+across every core. This turns the exact pairs that are slow single-threaded
+(minutes to first witness, or full exhaustion) into a few seconds. Pairwise
+verdicts then feed union-find → CCZ classes.
+
+GPU is **not** warranted here: the working set is one 2ⁿ≤256-entry LUT per
+function, far too small to amortize a HIP launch, and the whole catalog test set
+finishes in seconds on CPU. The GPU target on this branch is the *upstream* APN
+search (`apn_search.cpp`, `qam_dfs.cpp`), not this per-bucket confirmer.
+
+### Run it
 
 ```
-make ccz_confirm          # portable C + OpenMP, no GPU
+make ccz_confirm
+./ccz_confirm luts.tsv buckets.tsv
+#   luts.tsv    lines:  ID <tab> N <tab> NAME <tab> v0 v1 ... v_{2^N-1}
+#   buckets.tsv lines:  N  <tab> SIGMAHASH <tab> id,id,...
+# emits  "PAIR id1 id2 0|1"  per pair and  "CLASS N sigma8 id id ..."  per class.
 ```
+
+Correctness is validated against Julia's `ea_mappings_from_ortho_derivative`
+pair-by-pair; see "ccz_confirm: validation and speedup" at the end.
+
+## ccz_confirm: validation and speedup
+
+Test set = every multi-member σ-bucket of the catalog's quadratic-APN
+`functions` rows: **18 buckets, 24 pairs** (sizes 2–3, all n≤8, 15 of them n=8),
+extracted from `BFA_catalog.sqlite`.
+
+**Correctness — 0 disagreements.** For every one of the 24 pairs the C verdict
+equals Julia's decision:
+
+- `ccz_confirm` vs `VBF.ea_mappings_from_ortho_derivative(F, G)` non-empty (the
+  full collect-all + graph-lift decision — the routine the catalog actually
+  calls): **24/24 identical, 0 disagreements.**
+- `ccz_confirm` vs `VBF.are_linear_equivalent(π_F, π_G)` (the raw
+  linear-equivalence of the ortho-derivatives the EA=CCZ test reduces to):
+  **24/24 identical, 0 disagreements.**
+- On all 24 pairs `ea_mappings`-non-empty `==` `are_linear_equivalent`, exactly
+  as Canteaut–Couvreur–Perrin (2022) guarantees for quadratic APN.
+
+Both known σ-collisions split correctly — **n=5 Gold x³ vs x⁵ INEQUIVALENT** and
+**n=7 Gold x³ vs x⁹ INEQUIVALENT** (2 classes each) — while every n=8 bucket is a
+single true CCZ class: **n=8 Gold x³ ≡ reprs8_0 ≡ SimonBerg class 26** and
+**Gold x⁹ ≡ reprs8_1 ≡ SimonBerg class 1** are EQUIVALENT and do **not** split.
+Net partition of the test set: 20 CCZ classes from 18 σ-buckets (only n5 and n7
+refine).
+
+**Speedup.** Same machine (Ryzen 7 9700X, 16 threads), identical LUT inputs, a
+concurrent unrelated 16-thread catalog build sharing the box for both sides:
+
+| operation (full 24-pair set) | wall |
+|---|---|
+| `ccz_confirm`, 16 threads | **37–57 s** (varies with concurrent machine load) |
+| `ccz_confirm`, 1 thread | > 300 s (dominated by the two inequivalent exhaustions) |
+| Julia `ea_mappings_from_ortho_derivative`, single-thread (as the catalog runs it) | **6896 s** (≈115 min; per n=8 pair 265–543 s — it enumerates *all* lifted CCZ maps × all constant offsets) |
+| Julia `are_linear_equivalent(π_F,π_G)`, single-thread (the raw ortho-derivative test) | **1569 s** |
+
+So against `ea_mappings` — the routine actually invoked per pair during a catalog
+rebuild — `ccz_confirm` is **≈120–190×** faster wall-to-wall (6896 s → 37–57 s);
+the per-rebuild σ-bucket confirm drops from ~2 hours to under a minute. Even
+against the far cheaper raw `are_linear_equivalent` path it is **≈30–40×**
+faster. A single n=8 `ea_mappings` pair (e.g. Gold x³ vs reprs8_0, 510 s) alone
+takes ~9× the entire 24-pair C run. The win is purely (a) native code and (b)
+splitting each pair's `L₂(e₀)` branch across all cores with an early-exit flag —
+the several n=8 pairs where Julia's single-threaded search needs 100–540 s to
+reach the first witness / exhaust are exactly the ones this parallelization
+collapses. (Both sides were measured with a concurrent unrelated 16-thread
+catalog build sharing the box, so the ratio is if anything conservative for the
+C side.)
+
+Reproduce: dump the buckets' LUTs to `luts.tsv` / `buckets.tsv`
+(`ID⇥N⇥NAME⇥lut` and `N⇥σ⇥id,id,…`) and run `./ccz_confirm luts.tsv buckets.tsv`;
+diff the `PAIR`/`CLASS` lines against `VBF.ea_mappings_from_ortho_derivative`.
+
 
 ## Provenance
 
