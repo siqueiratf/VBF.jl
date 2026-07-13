@@ -143,14 +143,18 @@ function table4_verify()
         )
     end
 
-    # 5. LIMIT (b): f₇ is treated as KNOWN by the paper, yet reads :new ⟹ the n=9 catalog
-    #    is missing known families. A `:new` verdict is therefore NOT world-novelty.
+    # 5. LIMIT (b), now CLOSED: f₇ is treated as KNOWN by the paper. It used to read
+    #    :new — proof the n=9 catalog was missing known families, so a `:new` verdict
+    #    was NOT world-novelty. The known-families import (n9_Yu2020_f7_known + the Gold
+    #    / Budaghyan n=9 reps) added it, so f₇ now reads :sigma_match. The lesson stands
+    #    in general (`:new` means "not in OUR index", not "new to mathematics") — this
+    #    check now asserts the hole is closed rather than that it exists.
     f7 = sbox_from_exponents(n, TABLE4_FUNCTIONS[7][1])
     push!(
         checks,
-        ("limit (b) confirmed: f₇ — which the PAPER treats as KNOWN — also reads :new, " *
-         "proving the n=9 catalog is missing known families (so :new ≠ world-novelty)",
-         classify_ccz(f7)[1] === :new),
+        ("limit (b) closed: f₇ — which the PAPER treats as KNOWN — now reads :sigma_match, " *
+         "not :new (the known-families import filled the n=9 catalog hole it used to expose)",
+         classify_ccz(f7)[1] === :sigma_match),
     )
 
     # Guard against a vacuous novelty test: the catalog lookup must actually be able to

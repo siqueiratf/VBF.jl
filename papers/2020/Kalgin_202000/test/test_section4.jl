@@ -93,10 +93,10 @@
     # functions; the certificate is that σ(F7) differs from 487 of the 488 and
     # coincides with exactly one — which is F7's own class (EA-confirmed).
     cls = n7_sigma_classification(F7)
-    @test cls.total == 488                       # the full known n=7 corpus
-    @test length(cls.matches) == 1               # σ-uniqueness
-    @test cls.mismatches == 487                  # 487 inequivalence certificates
-    @test cls.ea_confirmed == cls.matches        # the σ-match is genuinely F7's class
+    @test cls.total >= 488                        # the known n=7 corpus (grows as the catalog gains named reps)
+    @test length(cls.matches) == 1                # σ-uniqueness — the paper's actual claim
+    @test cls.mismatches == cls.total - 1         # every other entry is an inequivalence certificate
+    @test cls.ea_confirmed == cls.matches         # the σ-match is genuinely F7's class
     @test cls.sigma == sigma_hash(F7)
     # …and σ discriminates here rather than being constant across the corpus:
     @test sigma_hash(F7) != sigma_hash(gold_apn(7, 1))
