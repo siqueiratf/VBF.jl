@@ -18,6 +18,7 @@ CATALOG := $(CURDIR)/../BFA_catalog.sqlite
 .PHONY: all catalog \
         apn_reps quadratic_apn_8bit sboxu_reconcile \
         simonberg xanadu apn_repo \
+        known_families known_sporadic \
         clean reset
 
 # Full build: BFA base data + all external sources in sources.toml order.
@@ -47,6 +48,17 @@ xanadu:
 
 apn_repo:
 	$(JULIA) $(JFLAGS) $(CURDIR)/import_apn_repository.jl
+
+# Named representatives of KNOWN APN classes: the standard families swept over
+# every valid dimension (known_families) plus a handful of sporadics
+# (known_sporadic).  These fill the n=9 catalog hole that let a paper's already
+# known function read as `:new`.  Both re-verify du==2 and skip exact-LUT dups
+# before inserting, so re-running against a populated catalog is a no-op.
+known_families:
+	$(JULIA) $(JFLAGS) $(CURDIR)/import_known_families.jl
+
+known_sporadic:
+	$(JULIA) $(JFLAGS) $(CURDIR)/import_sporadic_known.jl
 
 # ── catalog reset ───────────────────────────────────────────────────────────
 

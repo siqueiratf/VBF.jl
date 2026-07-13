@@ -63,13 +63,14 @@ function known_family_instances(n::Int)
         gcd(i, n) == 1 || continue
         push_ok!("n$(n)_Gold_i$(i)", () -> gold_apn(n, i), "Gold_196801",
                  "Gold x^(2^$i+1) over GF(2^$n); gcd($i,$n)=1.")
-        i >= 2 && push_ok!("n$(n)_Kasami_i$(i)", () -> kasami_apn(n, i), "Kasami_197100",
+        i >= 2 && push_ok!("n$(n)_Kasami_i$(i)", () -> kasami_apn(n, i), "Kasami_197105",
                  "Kasami x^(2^(2*$i)-2^$i+1) over GF(2^$n); gcd($i,$n)=1.")
     end
     if isodd(n)
-        push_ok!("n$(n)_Welch", () -> welch_apn(n), "Dobbertin_199900",
+        # Dobbertin_199905b is the Welch case, Dobbertin_199905 the Niho case.
+        push_ok!("n$(n)_Welch", () -> welch_apn(n), "Dobbertin_199905b",
                  "Welch x^(2^t+3), n=2t+1=$n.")
-        push_ok!("n$(n)_Niho", () -> niho_apn(n), "Dobbertin_199901",
+        push_ok!("n$(n)_Niho", () -> niho_apn(n), "Dobbertin_199905",
                  "Niho exponent, n=2t+1=$n.")
         push_ok!("n$(n)_Inverse", () -> inverse_apn(n), "Nyberg_199400",
                  "Inverse x^(2^$n-2), n odd.")
