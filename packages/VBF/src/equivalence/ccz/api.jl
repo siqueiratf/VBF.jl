@@ -46,21 +46,26 @@ of [Canteaut and Perrin (2019)](@cite Canteaut_201906):
 - **Neither quadratic APN, not both permutations** — a positive
   [`are_ea_equivalent`](@ref) result is a sufficient CCZ-certificate and is
   returned as `true` (the complete non-permutation EA decision covers e.g.
-  degree-≥3 non-permutation APN). Otherwise the pair is **not decided**, and
-  the function throws [`InconclusiveEquivalence`](@ref): EA-inequivalence does
-  not imply CCZ-inequivalence (EA ⊊ CCZ), so a `false` here would be a
-  fabricated negative. Deciding this case in general reduces to linear-code
-  equivalence (Leon's algorithm), a documented frontier. Pass
-  `on_inconclusive = :best_effort` for the old `false`.
+  degree-≥3 non-permutation APN). Otherwise the pair is **not decided**:
+  EA-inequivalence does not imply CCZ-inequivalence (EA ⊊ CCZ), so a `false`
+  here would be a fabricated negative. Deciding this case in general reduces to
+  linear-code equivalence (Leon's algorithm), a documented frontier. See
+  `on_inconclusive` for how undecided is reported.
 
 # A `false` is not always a proof
 
-Every `false` this function returns is either a failed necessary CCZ-invariant
-(sound) or an exhausted class enumeration (sound). Every case it *cannot* settle
-now raises rather than answering — because the caller cannot tell a proof from a
-guess, and a novelty pipeline reading "not equivalent" from a guess invents a
-discovery. This is not hypothetical: it is how four "new" APN functions were
-added to this repo's catalog and later had to be withdrawn.
+Every `false` this function returns from a *decided* query is either a failed
+necessary CCZ-invariant (sound) or an exhausted class enumeration (sound). But
+some pairs it cannot settle. By default an undecided query **warns and returns a
+best-effort `false`** (`on_inconclusive = :best_effort`) — the caller cannot tell
+that guess from a proof, so a novelty pipeline reading "not equivalent" from it
+can invent a discovery (this is not hypothetical — it is how four "new" APN
+functions were added to this repo's catalog and later withdrawn). Code that needs
+certainty must pass `on_inconclusive = :throw` (raise
+[`InconclusiveEquivalence`](@ref)) or `:missing`, or use a complete decision
+(for quadratic APN, [`ea_mappings_from_ortho_derivative`](@ref) /
+[`ea_class_orbits`](@ref)). The default stays a `Bool` so existing predicate
+callers are not broken.
 """
 
 """
@@ -76,8 +81,9 @@ Decide CCZ-equivalence of `F` and `G`.
 conclusion is available and the query is inconclusive (it used to return
 `false`). `ea_max_outer_per_sigma` is forwarded to each EA-equivalence call.
 
-`on_inconclusive` controls what an undecided query does: `:throw` (default),
-`:best_effort` (the old `false`), or `:missing`.
+`on_inconclusive` controls what an undecided query does: `:best_effort` (default
+— warn and return `false`), `:throw` (raise [`InconclusiveEquivalence`](@ref)),
+or `:missing`.
 
 Permutations only at v0.1.
 
@@ -100,7 +106,7 @@ function are_ccz_equivalent(
     strategy::Symbol = :auto,
     ea_max_outer_per_sigma::Int = 10^6,
     max_class_reps::Int = 10^4,
-    on_inconclusive::Symbol = :throw,
+    on_inconclusive::Symbol = :best_effort,
 )
     inputbits(F) == inputbits(G) || return false
     storage_type(F) == storage_type(G) || return false
