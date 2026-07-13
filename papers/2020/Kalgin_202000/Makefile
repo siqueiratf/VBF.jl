@@ -12,9 +12,22 @@ save_results ?= false
 seed         ?= 42
 full_search  ?= false
 
+# §4's novelty oracle (classify_ccz) reads the σ-index side store, which is
+# regenerable and therefore not committed (682 MB fully built). Build the
+# functions-only slice if it is absent: this paper's lookups are n=7 and every
+# bulk corpus is n=8, so that slice answers them exactly as the full index does,
+# in seconds rather than hours. A file target, not .PHONY — an existing full
+# index is left untouched.
+SIGMA_INDEX := $(ROOT)/packages/VBFCatalog/corpora/ccz_sigma_index.sqlite
+
+$(SIGMA_INDEX):
+	$(JULIA) $(JULIA_PROJECT) -e 'using Pkg; Pkg.instantiate()'
+	$(JULIA) $(JULIA_PROJECT) -e 'using VBFCatalog; \
+	  build_sigma_index!(load_catalog(); rebuild = true, corpora = String[])'
+
 default: help
 
-test:
+test: $(SIGMA_INDEX)
 	$(JULIA) $(JULIA_PROJECT) -e 'using Pkg; Pkg.instantiate()'
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/test/runtests.jl
 
