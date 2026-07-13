@@ -17,7 +17,7 @@
 #               print_section, print_check, print_kv
 
 # Gologlu helpers first: both files define print_header and ours must win.
-include(joinpath(@__DIR__, "..", "Gologlu_202207", "helpers.jl"))
+include(joinpath(@__DIR__, "..", "..", "2022", "Gologlu_202207", "helpers.jl"))
 include(joinpath(@__DIR__, "helpers.jl"))
 
 """
