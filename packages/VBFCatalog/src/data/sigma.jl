@@ -52,6 +52,19 @@ const _SIGMA_INDEX_DDL =
     "CREATE TABLE IF NOT EXISTS ccz_sigma_index " *
     "(sigma_hash TEXT NOT NULL, n INTEGER NOT NULL, source TEXT NOT NULL, member_idx INTEGER)"
 
+# What the index actually covers. A σ-ABSENCE is only a novelty certificate
+# against the functions that were indexed, so a PARTIAL index silently converts
+# "known" into `:new` — the exact failure that put four withdrawn functions into
+# this catalog (8022d09). The build therefore records every source it indexed and
+# every source it SKIPPED, and the oracle refuses to answer at a dimension whose
+# coverage has a hole rather than returning an uncertified `:new`.
+# `n = -1` marks the functions table, which spans all dimensions.
+const _SIGMA_COVERAGE_DDL =
+    "CREATE TABLE IF NOT EXISTS sigma_coverage " *
+    "(source TEXT NOT NULL, n INTEGER NOT NULL, indexed INTEGER NOT NULL)"
+
+const _COVERAGE_ALL_N = -1
+
 """
     sigma_index_path() -> String
 
@@ -67,8 +80,39 @@ function _open_sigma_index(; create::Bool = false)
     end
     create && mkpath(_corpora_dir())
     s = SQLite.DB(p)
-    create && SQLite.execute(s, _SIGMA_INDEX_DDL)
+    if create
+        SQLite.execute(s, _SIGMA_INDEX_DDL)
+        SQLite.execute(s, _SIGMA_COVERAGE_DDL)
+    end
     s
+end
+
+# Sources that were deliberately NOT indexed and that could hold an n-bit match.
+# An index built before sigma_coverage existed has no such table; those builds
+# always covered everything (the defaults index the functions table and every
+# corpus), so treat a missing table as "no gaps".
+function _sigma_gaps(idx::SQLite.DB, n::Integer)
+    has_table = false
+    for _ in DBInterface.execute(idx,
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='sigma_coverage'")
+        has_table = true
+    end
+    has_table || return String[]
+    gaps = String[]
+    for r in DBInterface.execute(idx, string(
+            "SELECT source FROM sigma_coverage WHERE indexed = 0 AND n IN (",
+            Int(n), ", ", _COVERAGE_ALL_N, ")"))
+        push!(gaps, String(r.source))
+    end
+    gaps
+end
+
+function _assert_sigma_coverage(idx::SQLite.DB, n::Integer)
+    gaps = _sigma_gaps(idx, n)
+    isempty(gaps) && return
+    error("σ-index does not cover n=$n: the source(s) $(join(gaps, ", ")) were not " *
+          "indexed, so a σ-absence at this dimension is NOT a novelty certificate. " *
+          "Rebuild with build_sigma_index!(load_catalog()) to index them.")
 end
 
 # --- decoding helpers -------------------------------------------------------
@@ -98,6 +142,13 @@ const _SIGMA_STRATEGY_CONFIRMED = "ortho-derivative-sigma-confirmed" # σ-bucket
 (Re)build `ccz_sigma_index` over every `is_quadratic` APN `functions` row and
 every bulk-corpus member (σ computed in parallel). Returns
 `(; functions, corpus_members, total, distinct)`.
+
+`corpora` / `include_functions` narrow the build; what was left out is recorded
+in `sigma_coverage`, and [`classify_ccz`](@ref) then REFUSES to answer at a
+dimension a skipped source could have matched, instead of returning an
+uncertified `:new`. Every bulk corpus is n=8, so `corpora = String[]` yields an
+index that is exactly as complete as the full one at every n ≠ 8 and costs
+seconds instead of hours — that is what CI builds.
 """
 function build_sigma_index!(
     db::SQLite.DB;
@@ -176,6 +227,37 @@ function build_sigma_index!(
     end
 
     SQLite.execute(idx, "CREATE INDEX IF NOT EXISTS ix_sigma_hash ON ccz_sigma_index(sigma_hash)")
+
+    # Record coverage: the functions table (all n) plus every corpus the catalog
+    # knows about, flagged indexed or skipped. Read back by `_assert_sigma_coverage`.
+    # `rebuild = false` keeps the rows an earlier build wrote, so its coverage
+    # survives too — otherwise a narrow top-up would mark a source it did not
+    # touch as skipped and the oracle would refuse a dimension it can in fact
+    # answer. A rebuild wipes the rows, so only this run's scope counts.
+    prev = Dict{String,Bool}()
+    if !rebuild
+        for r in DBInterface.execute(idx, "SELECT source, indexed FROM sigma_coverage")
+            prev[String(r.source)] = Int(r.indexed) == 1
+        end
+    end
+    covered(src, now) = now || get(prev, src, false)
+
+    SQLite.execute(idx, "DELETE FROM sigma_coverage")
+    SQLite.transaction(idx) do
+        SQLite.execute(idx, string(
+            "INSERT INTO sigma_coverage (source, n, indexed) VALUES (",
+            _sql_quote("functions"), ", ", _COVERAGE_ALL_N, ", ",
+            Int(covered("functions", include_functions)), ")"))
+        for name in list_corpora(db)
+            info = corpus_info(db, name)
+            info === nothing && continue
+            SQLite.execute(idx, string(
+                "INSERT INTO sigma_coverage (source, n, indexed) VALUES (",
+                _sql_quote(name), ", ", Int(info.n), ", ",
+                Int(covered(name, name in names)), ")"))
+        end
+    end
+
     total = nfun + ncorp
     distinct = 0
     for r in DBInterface.execute(idx, "SELECT COUNT(DISTINCT sigma_hash) c FROM ccz_sigma_index")
@@ -208,8 +290,13 @@ is non-empty iff `F ~EA G`, and EA = CCZ for quadratic APN (Yoshiara).
 
 The status was formerly `:known`, which invited callers to read a σ collision as
 "already in the catalog" and silently discard a genuinely new class.
+
+Throws if the index does not cover `F`'s dimension (see `sigma_coverage`): an
+absence proves nothing against sources that were never indexed, so a partial
+index must refuse rather than answer `:new`.
 """
-function classify_ccz(F::SBox; index::SQLite.DB = _open_sigma_index())
+function classify_ccz(F::SBox{N}; index::SQLite.DB = _open_sigma_index()) where {N}
+    _assert_sigma_coverage(index, N)
     h = sigma_hash(F)
     for r in DBInterface.execute(
         index,
