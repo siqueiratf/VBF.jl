@@ -18,9 +18,27 @@ using Test
     gf4_n4      = count(r -> r.n == 4, gf4)
     gf4_perm    = count(r -> r.is_permutation == 1, gf4)
 
+    # Named representatives of KNOWN APN classes (families + sporadics), imported to
+    # close the n=9 novelty hole. Like APN-rep/CCZ-rep-GF4 these are importer-backed
+    # rather than declared in a data-raw TOML, so — same as those — the expected
+    # counts are read back from the DB by family rather than reconstructed from a
+    # source list.
+    known       = list_functions(db; family = "known-family")
+    n_known     = length(known)
+    known_n8    = count(r -> r.n == 8, known)
+    known_n4    = count(r -> r.n == 4, known)
+    known_perm  = count(r -> r.is_permutation == 1, known)
+
+    spor        = list_functions(db; family = "known-sporadic")
+    n_spor      = length(spor)
+    spor_n8     = count(r -> r.n == 8, spor)
+    spor_n4     = count(r -> r.n == 4, spor)
+    spor_perm   = count(r -> r.is_permutation == 1, spor)
+
     # No filter: Literature + declarative APN + sboxU reps + GF(4) CCZ reps
+    #            + known-family/known-sporadic representatives
     total_expected = length(literature_sbox_names()) + length(apn_catalog_names()) +
-                     n_reps + n_gf4
+                     n_reps + n_gf4 + n_known + n_spor
     all_rows = list_functions(db)
     @test length(all_rows) == count_functions(db)
     @test length(all_rows) == total_expected
@@ -37,7 +55,7 @@ using Test
     n8_lit = count(name -> literature_sbox_metadata(name)["n"] == 8, literature_sbox_names())
     n8_apn = count(name -> apn_catalog_metadata(name)["n"] == 8, apn_catalog_names())
     eight = list_functions(db; n = 8)
-    @test length(eight) == n8_lit + n8_apn + reps_n8 + gf4_n8
+    @test length(eight) == n8_lit + n8_apn + reps_n8 + gf4_n8 + known_n8 + spor_n8
     @test all(r.n == 8 for r in eight)
     @test Set(["AES", "AES_inv"]) ⊆ Set([r.canonical_name for r in eight])
 
@@ -45,19 +63,24 @@ using Test
     n4_lit = count(n -> literature_sbox_metadata(n)["n"] == 4, literature_sbox_names())
     n4_apn = count(n -> apn_catalog_metadata(n)["n"] == 4, apn_catalog_names())
     four = list_functions(db; n = 4)
-    @test length(four) == n4_lit + n4_apn + reps_n4 + gf4_n4
+    @test length(four) == n4_lit + n4_apn + reps_n4 + gf4_n4 + known_n4 + spor_n4
 
-    # By is_apn: all reps and all GF(4) CCZ reps are APN (and all literature is non-APN)
-    @test count_functions(db; is_apn = true) == length(apn_catalog_names()) + n_reps + n_gf4
+    # By is_apn: all reps, GF(4) CCZ reps, and known-family/sporadic entries are APN
+    # (and all literature is non-APN)
+    @test count_functions(db; is_apn = true) ==
+          length(apn_catalog_names()) + n_reps + n_gf4 + n_known + n_spor
     @test count_functions(db; is_apn = false) == length(literature_sbox_names())
 
     # By is_permutation
     perm_apn = count(n -> apn_catalog_metadata(n)["is_permutation"], apn_catalog_names())
     perm_lit = count(n -> literature_sbox_metadata(n)["is_permutation"], literature_sbox_names())
-    @test count_functions(db; is_permutation = true) == perm_lit + perm_apn + reps_perm + gf4_perm
+    @test count_functions(db; is_permutation = true) ==
+          perm_lit + perm_apn + reps_perm + gf4_perm + known_perm + spor_perm
     @test count_functions(db; is_permutation = false) == length(literature_sbox_names()) +
-                                                          length(apn_catalog_names()) + n_reps + n_gf4 -
-                                                          (perm_lit + perm_apn + reps_perm + gf4_perm)
+                                                          length(apn_catalog_names()) + n_reps + n_gf4 +
+                                                          n_known + n_spor -
+                                                          (perm_lit + perm_apn + reps_perm + gf4_perm +
+                                                           known_perm + spor_perm)
 
     # By bib_key
     serpents = list_functions(db; bib_key = "Anderson_199800")
