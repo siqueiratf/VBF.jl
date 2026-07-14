@@ -174,31 +174,65 @@ function section4_3_report(; io::IO = stdout)
     print_check("all 256 cross pairs (Vᵢ,Uⱼ) yield permutations", ok_256, io)
     all512 = vcat(perms, [compositional_inverse(P) for P in perms])
 
-    # greedy affine partition of all 512 (are_affine_equivalent is complete
-    # for permutations); duplicates are assigned by LUT lookup
-    lut_class = Dict{Vector{UInt8},Int}()
+    # Affine partition of all 512 (the 256 forward permutations, then their 256
+    # inverses), by canonical form. `affine_representative` is a canonical form
+    # for permutations — F ~A G iff their representatives agree — so the partition
+    # is a bucketing on it, not the pairwise scan the greedy version did (1276
+    # `are_affine_equivalent` calls, each recomputing up to 2ⁿ linear
+    # representatives internally).
+    #
+    # Only the FORWARDS are canonicalised. Affine equivalence commutes with
+    # inversion — Q = A₁∘P∘A₂ ⟹ Q⁻¹ = A₂⁻¹∘P⁻¹∘A₁⁻¹, again affine — so the class
+    # of P⁻¹ is determined by the class of P alone, and one canonical form per
+    # CLASS (not per permutation) places all 256 inverses. That is 256 + 4
+    # canonical forms rather than 512. The step is a theorem, so it is spot-checked
+    # below rather than taken on faith.
+    #
+    # Classes are numbered by first appearance, forwards before inverses — the
+    # order the greedy loop discovered them in — so `class_of`, which keys the
+    # Prop 40 union-find below, is unchanged, not merely equivalent up to
+    # relabelling.
+    nfw = length(perms)
+    class_of_key = Dict{Vector{UInt8},Int}()
+    class_key = Vector{Vector{UInt8}}()
     classes = Vector{Vector{Int}}()
     class_of = zeros(Int, length(all512))
-    for (i, P) in enumerate(all512)
-        key = collect(P.lut)
-        if haskey(lut_class, key)
-            class_of[i] = lut_class[key]
-            push!(classes[class_of[i]], i)
-            continue
-        end
-        for (ci, cls) in enumerate(classes)
-            if are_affine_equivalent(all512[cls[1]], P)
-                class_of[i] = ci
-                break
-            end
-        end
-        if class_of[i] == 0
+    assign! = function (k, i)
+        ci = get!(class_of_key, k) do
             push!(classes, Int[])
-            class_of[i] = length(classes)
+            push!(class_key, k)
+            length(classes)
         end
-        push!(classes[class_of[i]], i)
-        lut_class[key] = class_of[i]
+        class_of[i] = ci
+        push!(classes[ci], i)
+        ci
     end
+    for i = 1:nfw
+        assign!(collect(affine_representative(all512[i]).lut), i)
+    end
+    # the inverse-class key of each forward class, from that class's rep alone
+    inv_key_of_class =
+        [collect(affine_representative(compositional_inverse(all512[cls[1]])).lut)
+         for cls in classes]
+    for i = 1:nfw
+        assign!(inv_key_of_class[class_of[i]], nfw + i)
+    end
+
+    # the inversion shortcut is sound by the conjugation identity above; check it
+    # where it is cheap — for a non-representative member of each class, the
+    # inverse's canonical form must be the one predicted from the class alone.
+    ok_invthm = all(
+        let j = findfirst(i -> i <= nfw && i != cls[1], cls),
+            m = j === nothing ? cls[1] : cls[j]      # a FORWARD member, not the rep
+
+            collect(affine_representative(compositional_inverse(all512[m])).lut) ==
+            inv_key_of_class[c]
+        end
+        for (c, cls) in enumerate(classes) if c <= length(inv_key_of_class)
+    )
+    print_check("class of P⁻¹ is fixed by the class of P (inversion shortcut, spot-check)",
+                ok_invthm, io)
+
     ok_e4 = length(classes) == 4
     print_check("the 512 permutations fall into exactly 4 affine classes 𝒜₀..𝒜₃", ok_e4, io)
     print_kv("affine class sizes", sort(map(length, classes); rev = true), io)
@@ -219,20 +253,26 @@ function section4_3_report(; io::IO = stdout)
         ok_f_basic &= good
         print_check("$nm: APN involution of degree n-2 = 4 (Remark 41)", good, io)
     end
+    # Which affine class each butterfly lands in. Equal canonical forms IS affine
+    # equivalence (same decision as are_affine_equivalent, one canonical form
+    # instead of a scan over the class reps), and the butterflies are permutations
+    # — asserted just above — so the canonical form is defined for them.
     cls_reps = [distinct[cls[1]] for cls in classes]
-    m1 = [are_affine_equivalent(H1, R) for R in cls_reps]
-    m2 = [are_affine_equivalent(H2, R) for R in cls_reps]
+    kH1 = collect(affine_representative(H1).lut)
+    kH2 = collect(affine_representative(H2).lut)
+    m1 = [k == kH1 for k in class_key]
+    m2 = [k == kH2 for k in class_key]
     i1 = something(findfirst(m1), 0)
     i2 = something(findfirst(m2), 0)
     ok_f = count(m1) == 1 && count(m2) == 1 && i1 != i2 && i1 > 0 && i2 > 0
     print_check("H_{α,1} and H_{α,β} lie in two distinct affine classes (𝒜₀, 𝒜₁)", ok_f, io)
 
-    # inversion structure: 𝒜₀, 𝒜₁ closed under inversion; the other two swap
+    # inversion structure: 𝒜₀, 𝒜₁ closed under inversion; the other two swap.
+    # The inverse of a permutation is a permutation, so its class is again a
+    # canonical-key lookup; 0 if it lands outside the four classes.
     inv_map = [
-        something(
-            findfirst(cls -> are_affine_equivalent(compositional_inverse(R), distinct[cls[1]]), classes),
-            0,
-        ) for R in cls_reps
+        get(class_of_key, collect(affine_representative(compositional_inverse(R)).lut), 0)
+        for R in cls_reps
     ]
     others = [k for k in eachindex(cls_reps) if k != i1 && k != i2]
     ok_inv = ok_e4 && ok_f && inv_map[i1] == i1 && inv_map[i2] == i2 &&
@@ -298,14 +338,14 @@ function section4_3_report(; io::IO = stdout)
     # EA-query is naturally "no match here" — best-effort `false` is the intended
     # fallback, made explicit so it does not throw under a stricter global default.
     D = dillon_apn_permutation()
-    okD = count(are_affine_equivalent(D, R) for R in cls_reps) ≥ 1 ||
+    okD = haskey(class_of_key, collect(affine_representative(D).lut)) ||
           any(are_ea_equivalent(D, cls_reps[g[1]]; on_inconclusive = :best_effort)
               for g in ea_classes)
     print_check("Dillon et al.'s permutation lies in the CCZ-class permutation EA-classes", okD, io)
 
     all_ok = ok_a && ok_b && ok_len && ok_c && ok_h && ok_32 && ok_d &&
-             ok_perm && ok_256 && ok_e4 && ok_f_basic && ok_f && ok_inv &&
-             ok_ea && ok_g && okD
+             ok_perm && ok_256 && ok_invthm && ok_e4 && ok_f_basic && ok_f &&
+             ok_inv && ok_ea && ok_g && okD
     print_check("Section 4.3 overall", all_ok, io)
 
     return (;
