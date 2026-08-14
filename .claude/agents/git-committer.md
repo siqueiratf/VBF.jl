@@ -41,6 +41,10 @@ agent's report.
 4. **README `[RESOLVED]` markers** — include in the commit of the fix they
    document. If multiple issues were resolved, the README update can go with
    the last fix commit.
+5. **New, untracked `papers/<Paper_ID>/README.md`** — always commit it. A
+   review README that is still untracked is an omission, not a scratch file.
+   Commit it with the first fix for that paper, or on its own with
+   `docs(papers): ...` if there is no related fix.
 
 ### Commit message format
 
@@ -75,7 +79,11 @@ You receive: a paper ID and a summary of what was fixed.
 - **Never force-push.** Never `--amend`. Never `reset --hard`.
 - **Never stage files outside `papers/<Paper_ID>/`** unless the fixer explicitly
   modified them (e.g., a shared helper in `packages/`). Verify with `git diff`.
-- **Never commit untracked files** you did not verify belong to the fix.
+- **Never commit untracked files** you did not verify belong to the fix — with
+  one standing exception: every `README.md` under the repo, `papers/` included,
+  is tracked. If `git status` shows an untracked README, stage and commit it.
+- **Never leave a README uncommitted.** Before reporting success, check
+  `git status --porcelain | grep README` is empty.
 - **Never modify files.** You are a commit agent, not a fix agent. If something
   looks wrong in the diff, report it — don't edit.
 - **Always use `git add <specific files>`**, never `git add -A` or `git add .`.

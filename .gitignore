@@ -29,6 +29,11 @@ docs/src/api/
 
 # Source PDFs of cited papers are copyrighted and never committed.
 papers/*.pdf
+
+# READMEs are always tracked — including the per-paper review summaries under
+# papers/<year>/<Paper_ID>/. Never let a broader pattern below hide one.
+!README.md
+!**/README.md
 /apn-lib/
 
 # Claude Code — session-local, never committed.

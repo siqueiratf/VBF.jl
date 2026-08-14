@@ -100,6 +100,9 @@ Structure the README as:
 
 Then tell the user the README path(s) written.
 
+READMEs are tracked files: `git add` each one you wrote and commit it
+(`docs(papers): ...`) so no review summary is left untracked.
+
 ---
 
 ## 4. Follow-ups (explicit, opt-in — never automatic)
