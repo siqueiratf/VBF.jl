@@ -33,6 +33,7 @@ MODE="full"
 case "${1:-}" in
     --staged) MODE="staged" ;;
     --structure-only) MODE="structure-only" ;;
+    --list-watched) MODE="list-watched" ;;
     "") ;;
     *) echo "catalog-check: unknown argument '$1'" >&2; exit 2 ;;
 esac
@@ -55,6 +56,13 @@ WATCHED=(
     "packages/VBFCatalog/src/"
     "packages/VBFCatalog/corpora/"
 )
+
+# One source of truth for the watched set: the CI job, the pre-commit hook and
+# .githooks/claude-commit-guard all read it from here rather than restating it.
+if [[ "$MODE" == "list-watched" ]]; then
+    printf '%s\n' "${WATCHED[@]}"
+    exit 0
+fi
 
 red()  { printf '\033[31m%s\033[0m\n' "$*"; }
 bold() { printf '\033[1m%s\033[0m\n' "$*"; }

@@ -51,6 +51,14 @@ CLAUDE.md
 .env.local
 .env.*.local
 
+# Project-scoped Claude Code settings are shared, not personal: they carry the
+# PreToolUse guard that keeps a half-updated catalog from reaching CI, so the
+# rule has to travel with the checkout. Rescued from the blanket `*.json` above.
+# The personal override, .claude/settings.local.json, stays ignored — it is
+# matched by its own rule and by `*.json`, and this exact-path negation does not
+# touch it.
+!.claude/settings.json
+
 # READMEs are always tracked — including the per-paper review summaries under
 # papers/<year>/<Paper_ID>/README.md. Git resolves a path by the LAST matching
 # pattern, so this block must stay at the very bottom of the file: a negation

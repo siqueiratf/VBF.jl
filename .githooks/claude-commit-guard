@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+#
+# Claude Code PreToolUse guard for `git commit`.
+#
+# .githooks/pre-commit already gates catalog commits on .githooks/catalog-check.
+# That hook has two holes this guard closes:
+#
+#   1. `git commit --no-verify` (and `-n`) skips it entirely.
+#   2. It only runs when the clone has `core.hooksPath = .githooks`. That is
+#      local git config, not something a checkout carries, so a fresh clone —
+#      or a session in one — is unprotected. CI's catalog-check job runs only
+#      the structural half, so the test items would not be run anywhere.
+#
+# Wired up as a PreToolUse/Bash hook in .claude/settings.json. Reads the hook
+# payload on stdin and answers with a PreToolUse permission decision.
+#
+# Failure policy: silent (allow) for anything that is not a catalog-touching
+# commit, so a bug here cannot wedge unrelated Bash calls. Once a commit IS
+# found to stage catalog paths, it fails CLOSED — a missing dependency denies
+# rather than waves it through. python3 is already a hard requirement of
+# catalog-check, so depending on it here adds no new constraint.
+#
+# Test it standalone:
+#   echo '{"tool_input":{"command":"git commit -m x"}}' | .githooks/claude-commit-guard
+set -uo pipefail
+
+payload="$(cat)"
+
+PY=""
+command -v python3 >/dev/null 2>&1 && PY="python3"
+
+# --- Extract the command -----------------------------------------------------
+# Without python3 we cannot parse JSON; fall back to matching the raw payload so
+# the git-commit detection below still triggers and we can fail closed.
+if [[ -n "$PY" ]]; then
+    cmd="$("$PY" -c 'import json,sys
+try:
+    print(json.load(sys.stdin).get("tool_input", {}).get("command", ""))
+except Exception:
+    pass' <<<"$payload" 2>/dev/null)"
+else
+    cmd="$payload"
+fi
+[[ -z "$cmd" ]] && exit 0
+
+# --- Is this a git commit? ---------------------------------------------------
+# Matches `git commit`, `git -C dir commit`, and any position in a compound
+# command (`cd x && git commit ...`). Anything else is none of our business.
+grep -qE '(^|[;&|]|\s)git(\s+-[^;&|]*)?\s+commit(\s|$)' <<<"$cmd" || exit 0
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+CHECK="$ROOT/.githooks/catalog-check"
+[[ -x "$CHECK" ]] || exit 0
+
+deny() {
+    if [[ -n "$PY" ]]; then
+        "$PY" -c 'import json,sys
+print(json.dumps({"hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": sys.argv[1]}}))' "$1"
+    else
+        # No python3: emit a minimal, single-line reason that needs no escaping.
+        printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"This commit stages catalog pipeline files, but python3 is missing so the catalog gate cannot run. Install python3, or bypass deliberately with VBF_SKIP_CATALOG_CHECK=1 and say so in the commit message."}}'
+    fi
+    exit 0
+}
+
+# --- Does this commit touch the catalog pipeline? ----------------------------
+mapfile -t watched < <("$CHECK" --list-watched 2>/dev/null)
+[[ ${#watched[@]} -eq 0 ]] && exit 0
+
+staged="$(git -C "$ROOT" diff --cached --name-only --diff-filter=ACMR 2>/dev/null)"
+[[ -z "$staged" ]] && exit 0
+
+touched=""
+for path in "${watched[@]}"; do
+    hit="$(grep -F "$path" <<<"$staged" || true)"
+    [[ -n "$hit" ]] && touched="$touched$hit"$'\n'
+done
+[[ -z "${touched//[[:space:]]/}" ]] && exit 0
+
+# From here on the commit is catalog-touching: fail closed.
+[[ -z "$PY" ]] && deny "python3 missing"
+
+touched_list="$(sed '/^$/d;s/^/  /' <<<"$touched")"
+
+REBUILD="Fix the cause, do not route around it:
+    make -C packages/VBFCatalog/data-build catalog   # rebuild the DB from data-raw
+    git add packages/VBFCatalog/BFA_catalog.sqlite
+    make -C packages/VBFCatalog/data-build check     # until 'catalog-check: OK'
+
+To bypass deliberately, set VBF_SKIP_CATALOG_CHECK=1 in the environment and say
+so in the commit message — do not reach for --no-verify."
+
+# --- Hole 1: --no-verify / -n ------------------------------------------------
+# Strip quoted segments first so a -n inside a commit message is not read as a
+# flag. `--no-edit`, `--amend` and friends do not match the single-dash pattern.
+unquoted="$(sed "s/'[^']*'//g; s/\"[^\"]*\"//g" <<<"$cmd")"
+if grep -qE -- '--no-verify|(^|\s)-[A-Za-z]*n[A-Za-z]*(\s|$)' <<<"$unquoted"; then
+    deny "Refusing: --no-verify/-n would skip the catalog gate, and this commit stages catalog pipeline files:
+
+$touched_list
+BFA_catalog.sqlite is a tracked build product of data-raw/, and the catalog test
+items rebuild their expected counts from data-raw/ and compare them to that DB.
+Committing one without the other is exactly what breaks catalog_queries_test in CI.
+
+Re-run the commit without --no-verify.
+
+$REBUILD"
+fi
+
+# --- Hole 2: is the repo pre-commit hook actually active? --------------------
+# If it is, it runs catalog-check --staged itself and a failure aborts the
+# commit; re-running the gate here would just run the Julia suite twice.
+hooks_path="$(git -C "$ROOT" config --get core.hooksPath 2>/dev/null || true)"
+if [[ "$hooks_path" == ".githooks" && -x "$ROOT/.githooks/pre-commit" ]]; then
+    exit 0
+fi
+
+# Not active — run the gate here rather than letting the commit through unchecked.
+output="$("$CHECK" --staged 2>&1)"
+[[ $? -eq 0 ]] && exit 0
+
+deny "This commit stages catalog pipeline files and the catalog gate failed.
+
+This clone has no active pre-commit hook — core.hooksPath is '${hooks_path:-unset}',
+not '.githooks' — so the gate ran here instead. Enable it once per clone with:
+    git config core.hooksPath .githooks
+
+$output
+
+$REBUILD"

@@ -48,6 +48,23 @@ Primary sources:
   `make -C packages/VBFCatalog/data-build check` until it prints
   `catalog-check: OK` — before committing, in the same commit. Enable the hook
   that enforces this once per clone: `git config core.hooksPath .githooks`.
+  **Never commit a catalog change with `--no-verify`/`-n`.** That flag skips the
+  gate outright, and the gate is the only thing standing between a half-updated
+  `data-raw/` and a `catalog_queries_test` count mismatch 40 minutes into CI.
+  Two layers enforce this and neither is optional:
+  `.githooks/pre-commit` (runs the gate on every catalog-touching commit) and
+  `.githooks/claude-commit-guard` (a Claude Code `PreToolUse` hook, wired up in
+  `.claude/settings.json`, that refuses `--no-verify` on such a commit and runs
+  the gate itself when the clone never enabled `core.hooksPath`). If the gate is
+  genuinely wrong, fix the gate — do not route around it. The one sanctioned
+  bypass is `VBF_SKIP_CATALOG_CHECK=1`, which prints loudly and must be
+  justified in the commit message.
+  Adding a family, or changing how many rows one holds, is not done until every
+  total in `packages/VBF/test/unit/catalog_queries_test.jl` that counts it has
+  been updated too — total, per-`n`, `is_apn`, `is_permutation`. The gate
+  reconstructs those same sums from `data-raw/` and fails on the exact figure
+  that would otherwise surface as a bare CI count mismatch, and it separately
+  refuses any family the test never names.
 - Every `README.md` in the repo is a tracked file, `papers/<year>/<Paper_ID>/`
   review summaries included. Commit the README you write or edit in the same
   pass; an untracked or uncommitted README is an omission, not a scratch file.
