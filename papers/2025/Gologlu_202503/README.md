@@ -1,186 +1,265 @@
 # Gologlu_202503 — Equivalences of Biprojective Almost Perfect Nonlinear Functions
 
-**Paper**: Faruk Göloğlu, Lukas Kölsch. "Equivalences of biprojective almost perfect nonlinear functions." *The Electronic Journal of Combinatorics* (submitted Feb 2024, accepted Mar 2025).
+**Paper**: Göloğlu, Kölsch. "Equivalences of biprojective almost perfect nonlinear
+functions." *Electronic Journal of Combinatorics*, 2025.
 
-**Reproduction path**: `papers/Gologlu_202503/`
+**Reproduction path**: `papers/2025/Gologlu_202503/`
 
-**Verdict**: Complete.
+**Verdict**: Mostly complete
 
-Every computational claim in the paper is reproduced and passes: the new APN family **F₄** (Theorem 3.3) is verified APN exhaustively over all 504 admissible parameter triples at its smallest realisable dimension `m = 6` (`n = 12`), and — via the Lemma 2.1 F₂-kernel criterion, which sidesteps the DDT entirely — also at `n = 20` and `n = 28`. Theorem C.3 (F₄ is 3-to-1 with the classical Walsh spectrum), the group-theoretic machinery (Lemmas 4.5, 4.7, A.1, Theorem 4.8), the within- and between-family (in)equivalence results (Theorems 5.1, 6.1, Cor. 5.2), and Appendix B (Lemmas B.1/B.2, Theorem B.3) all check out.
+Mathematically the strongest reproduction in the 2024-2026 set: every claim that could be
+independently checked came out exactly as the reproduction says, **including all three "paper
+bug" claims**, which were re-derived by hand *and* numerically during this review. The verdict
+is not "Complete" only because `make test` / `make report` are **broken by a Makefile path
+bug**, this README's paths and commands were stale after the `papers/<year>/` reorganisation,
+and the catalog gap the previous revision prepared is still open.
 
-Four issues were found in the paper (one substantive typo in Appendix C, three errors in the *explicit witness maps* printed inside proofs — none of which affects any theorem's conclusion). All are listed below with the corrected statements, and each correction is verified pointwise.
-
-The paper publishes **no code and no data**: every result is proved by hand. There is therefore no author artifact to load, and every number in this reproduction is freshly generated.
+> **Environment note**: Julia is not installed in the review environment, so no test
+> entrypoint could be executed — and `make test` / `make report` would fail as written even
+> with Julia present (reproduction issue 1). Every claim below was re-derived independently in
+> Python/C and cross-checked against the PDF.
 
 ---
 
 ## Paper Issues
 
-### 1. Appendix C — the "classical" extended Walsh spectrum is stated with a wrong multiplicity
+All three are confirmed independently — by hand derivation *and* by numerical
+counter-example.
+
+### 1. Appendix C — the classical extended Walsh spectrum multiplicity is wrong
 
 - **Location**: Appendix C, the paragraph after Definition C.1.
-- **Stated**: the classical extended Walsh spectrum contains `0`, `2^{n/2}`, `2^{(n+2)/2}` precisely `(2ⁿ−1)·2^{n−2}`, `(2ⁿ−1)·2^{n+1}/3`, and `(2ⁿ−1)·2ⁿ/3` times respectively.
-- **Correct**: the last multiplicity is `(2ⁿ−1)·2^{n−2}/3`, not `(2ⁿ−1)·2ⁿ/3` (off by a factor of 4).
-- **Why it cannot be right as printed**: the three printed multiplicities sum to `5·2^{n−2}(2ⁿ−1)`, but there are only `2ⁿ(2ⁿ−1) = 4·2^{n−2}(2ⁿ−1)` pairs `(b ≠ 0, a)` in the multiset. The printed spectrum is impossible for *any* function. With the corrected entry the sum is exactly `2ⁿ(2ⁿ−1)`.
-- **Evidence**: `theoremC_3.jl` computes the spectrum from core `lat` for a Gold function at `n = 6` (whose spectrum *is* the classical one by definition) and for F₄ at `n = 12`. Both match the corrected multiset and neither matches the printed one. Independent of the paper, the arithmetic identity `Σ printed ≠ #{(b≠0,a)}` is asserted in `test/test_theoremC_3.jl` for `n = 6, 8, 10, 12`.
-- **Impact**: none on Theorem C.3's substance (F₄ *is* 3-to-1 and *does* have the classical Walsh spectrum). Only the definition of "classical" is misprinted.
+- **Printed**: `2^{(n+2)/2}` with multiplicity `(2ⁿ−1)·2ⁿ/3`. **Correct**:
+  `(2ⁿ−1)·2^{n−2}/3`.
+- **Counter-evidence**: the printed multiset sums to `5·2^{n−2}(2ⁿ−1)`, but only
+  `2ⁿ(2ⁿ−1) = 4·2^{n−2}(2ⁿ−1)` pairs `(b≠0, a)` exist. At n=12: printed sum **20,966,400**
+  versus actual **16,773,120**. Measured spectra: Gold `x³` on `F₂⁶` →
+  `{0:1008, 8:2688, 16:336}` (the corrected form predicts 336, the printed one 1344); 𝓕₄ at
+  n=12 → `{0:4193280, 64:11182080, 128:1397760}`; Example 4.2's `G` on `F₂⁸` →
+  `{0:16320, 16:43520, 32:5440}`. All match the corrected form, none the printed one.
+  Cross-confirmed by Taniguchi et al.'s independent statement of the same spectrum in their
+  Remark 3.6.2.
+- **Impact**: none on Theorem C.3's substance.
 
-### 2. Proof of Theorem 5.1(a),(b) — the explicit `q ↔ q̄` maps do not satisfy the identity
+### 2. Proof of Theorem 5.1(a),(b) — the printed `L₄` in the `q ↔ q̄` maps is wrong
 
-- **Location**: proof of Theorem 5.1, the paragraph beginning "For functions `F_q`, `F_{q'}` in the families `F₁`, `F₂` …".
-- **Stated**: with `M₁ = M₄ = L₂ = L₃ = 0`, `M₂ = M₃ = x^{q̄}`, `L₁ = x`, the paper sets `L₄ = x^{q̄}` for `F₁` and `L₄ = x^{q}` for `F₂`.
-- **Correct**: `L₄ = x^{q}` for `F₁` and `L₄ = x^{q²}` for `F₂`.
-- **Derivation**: with `X = y^{q̄}`, `Y = x^{q̄}` and `q q̄ ≡ 1`,
-  - `F₁`: `g(y^{q̄}, x^{q̄}) = y^{q+q̄} + x^{q̄}y^{q} + x^{q+q̄} = [g_{q̄}(x,y)]^{q}` ⇒ `L₄ = x^{q}`.
-  - `F₂`: `g(y^{q̄}, x^{q̄}) = x^{q̄}y^{q²} + x^{q²}y^{q̄} = [g_{q̄}(x,y)]^{q²}` ⇒ `L₄ = x^{q²}`.
-- **Evidence**: `theorem5_1.jl` evaluates both the printed and the corrected map on all `2¹⁰` points at `m = 5`. The printed one fails; the corrected one holds. `M` and `L₁` as printed are correct.
-- **Impact**: none on the conclusion. `F_q ≅ F_{q̄}` is true — `theorem4_8.jl`'s search independently finds monomial-shaped witnesses and re-verifies them pointwise, and the class count `φ(m)/2` comes out right.
+- **Location**: proof of Theorem 5.1, the paragraph "For functions `F_q, F_{q′}` in the
+  families `𝓕₁, 𝓕₂` …".
+- **Printed**: `L₄ = x^{q̄}` for 𝓕₁ and `L₄ = x^{q}` for 𝓕₂. **Correct**: `x^{q}` and
+  `x^{q²}`.
+- **Derivation**, with `M(x,y) = (y^{q̄}, x^{q̄})` and `q q̄ ≡ 1`:
+  𝓕₁ `g_q(M) = y^{q+q̄} + x^{q̄}y^{q} + x^{q+q̄} = [g_{q̄}(x,y)]^{q}`;
+  𝓕₂ `g_q(M) = x^{q̄}y^{q²} + x^{q²}y^{q̄} = [g_{q̄}(x,y)]^{q²}`.
+- **Numerical counter-evidence**: over all `2^{2m}` points, at **m=5 and m=7**, for **every**
+  admissible `k`, the printed `L₄` fails and the corrected one holds (20/20 cases).
+- **Impact**: none — `F_q ≅ F_{q̄}` still holds.
 
-### 3. Proof of Theorem 5.1(c)(i) — wrong coefficient in the F₄ map
+### 3. Proof of Theorem 5.1(c)(i) — wrong coefficient in the 𝓕₄ map
 
-- **Location**: proof of Theorem 5.1, "Family `F₄`" paragraph.
-- **Stated**: `F_{q,B,a} ∘ M = L ∘ F_{q̄, B, B^{Q+1}/a}` with `M₁ = M₄ = x^{q̄}`, `L₁ = x`, `L₄ = (B^Q/a)·x^Q`.
-- **Correct**: `L₄ = (a/B)·x^Q`. Everything else (`M`, `L₁`, the target `a′ = B^{Q+1}/a`) is right.
-- **Derivation**: `g(x^{q̄}, y^{q̄}) = x^Q y^{q̄} + (a/B)·x^{q̄} y^Q`, while `L₄(g′(x,y)) = c·x^{q̄}y^Q + c·(a′/B)^Q·x^Q y^{q̄}` (using `Q² ≡ 1`). Comparing coefficients gives `c = a/B` and `(a′/B)^Q = B/a`, i.e. `a′ = B^{Q+1}/a^Q = B^{Q+1}/a` since `a ∈ K^×`.
-- **Evidence**: `theorem5_1.jl`, `theorem5_1_c` — both variants evaluated on all `2¹²` points at `m = 6`. The printed coefficient fails; `(a/B)` holds.
-- **Impact**: none on the conclusion.
+- **Location**: proof of Theorem 5.1, the "Family 𝓕₄" paragraph.
+- **Printed**: `L₄ = (B^Q/a)·x^Q`. **Correct**: `L₄ = (a/B)·x^Q`. (`M₁=M₄=x^{q̄}`, `L₁=x`,
+  and the target `a′ = B^{Q+1}/a` are all correct.)
+- **Derivation**: `g_{q,a/B}(x^{q̄},y^{q̄}) = x^Q y^{q̄} + (a/B)x^{q̄}y^Q`, while
+  `c·x^Q ∘ g′ = c·x^{q̄}y^Q + c(a′/B)^Q x^Q y^{q̄}` (using `Q² ≡ 1`), so `c = a/B` and
+  `(a′/B)^Q = B/a ⟺ a′ = B^{Q+1}/a`.
+- **Numerical counter-evidence**: at m=6, k=1, over the 252 admissible `(B,a)`, the printed
+  `L₄` holds only in the degenerate case `a² = B^{Q+1}` (e.g. B=2, a=22, a′=22) — **1/8** in
+  the sample — while `(a/B)` holds **8/8**. The printed `B^Q/a` equals `a′/B`, i.e. the
+  *target's* parameters were used.
+- **Bonus finding, not in the previous revision**: the paper only checks
+  `B^{Q+1}/a ∈ F_Q` and never re-checks `B^{q̄+r̄} ≠ a′^{q̄+1}`. This was verified to hold for
+  **252/252** admissible triples at m=6, so the omission is harmless there — worth recording
+  as verified rather than assumed.
 
-### 4. Theorem B.3's target lies outside Table 2.1's stated Zhou–Pott parameter range
+### 4 and 5. Theorem B.3's `j = 0` target versus Table 2.1's `0 < j < m`; Eq. (A.6) transposition
 
-- **Location**: Theorem B.3 vs. Table 2.1 (Zhou–Pott "Notes" column).
-- **Issue**: the construction turns a Carlet function into `(xy, (1,0,0,u)_q)`. In Table 2.1's Zhou–Pott form `((1,0,0,d)_q, (0,0,1,0)_r)` that is `r = 2⁰`, i.e. **`j = 0`** — but Table 2.1 requires `0 < j < m`. Additionally the resulting pair has its two **output coordinates swapped** relative to the Table 2.1 ordering.
-- **Impact**: none. An output-coordinate swap is an F₂-linear permutation of the codomain, hence an EA-equivalence; and Lemma A.1 explicitly speaks of "a Zhou–Pott function with `j ≠ 0`", showing `j = 0` members are contemplated elsewhere in the paper. At `j = 0` the admissibility condition `d ≠ a^{q+1}(b^q+b)^{1−r}` degenerates to "`d` is a non-cube", which is exactly what the construction delivers — so the target really is APN. Table 2.1's `0 < j` and Theorem B.3's usage are simply inconsistent as written.
-- **Evidence**: `theoremB_3.jl` builds the map, verifies `L ∘ C ∘ M + N = (ZP with outputs swapped)` on all `2⁸` points, and confirms the `j = 0` target is APN with `u` a non-cube.
-
-### 5. (Cosmetic) Eq. (A.6) transposes the Taniguchi second component
-
-- **Location**: Appendix A, Eq. (A.6).
-- **Issue**: Eq. (A.6) writes the Taniguchi second component as `x^{q²}y`, while Table 2.1 and the proof of Theorem 6.1 use `x·y^{q²}`. The two differ by swapping `x` and `y`.
-- **Impact**: none — the conclusion drawn from the equation (`c₂ = c₃ = 0`) is the same either way. Recorded only because the two conventions coexist in the paper.
-
-### Not a bug — but worth recording
-
-- **`(q, m) ≠ (2, 4)`** (Theorem 6.1, for Taniguchi and F₁) is *necessary*, and its necessity is stronger than the paper spells out: at `m = 4` **every** Taniguchi / F₁ / Zhou–Pott instance has `l ≡ 2 = m/2 (mod 4)`, so Theorem 4.8's standing hypothesis `l₁ ≠ m/2` fails for all of them. And indeed `ZP(q=2, r=4, d=2)` and `F₁(q=8)` **are** genuinely CCZ-equivalent at `m = 4` — confirmed with core `are_ccz_equivalent` (exact, `n = 8`), not merely by an invariant. Since `F₁(q=8)` is the `q̄`-partner of `F₁(q=2)` at `m = 4` and hence in the same CCZ class, excluding the pair `(2,4)` does exclude the whole class, so the paper's phrasing is consistent. This is run as the *necessity control* in `theorem6_1.jl`.
+- As documented in the previous revision. The textual inconsistency is confirmed, but neither
+  has mathematical impact.
 
 ---
 
 ## Reproduction Issues
 
-### 1. `input/*.tex` is an OCR conversion, and one formula is mangled [RESOLVED]
+### 1. `Makefile` `ROOT` is one directory too shallow — `make test` and `make report` are broken
 
-- **Location**: `input/Göloğlu e Kölsch - 2025 - …tex`, Table 2.1, Gold row (`m` even).
-- **Symptom**: the tex reads `b = Σ_{i=0}^{k-1} a^{2^{2}}` — an exponent with no dependence on the summation index. The tex also contains an `\includegraphics` where a displayed formula should be (Appendix A, F₄ case), confirming it is a machine conversion of the PDF rather than the authors' source.
-- **Resolution**: the **PDF** (authoritative, p. 5) prints `b = Σ_{i=0}^{k-1} a^{2^i}`. `helpers.jl:gold_even` follows the PDF. The reading was also settled independently by brute force before the PDF was consulted: over `m ∈ {4,6,8}` and every admissible `(k,a)`, `Σ_{i<k} a^{2^i}` always lands in the APN-valid set for `b`, while the plausible alternative `Σ_{i<k} a^{2^{2i}}` (which coincides at `k = 1`, hiding the problem) fails for **every** admissible `a` at `m = 4, k = 3`. Both readings are asserted in `test/test_lemma2_1.jl` — one APN, one not.
+- **Location**: `papers/2025/Gologlu_202503/Makefile:4` —
+  `ROOT := $(abspath $(MAKEFILE_DIR)/../..)`.
+- **Symptom**: it resolves to `/home/tiago/VBF.jl/papers`, which has **no `Project.toml`**
+  (verified absent), so `--project=$(ROOT)` activates an empty environment and `using VBF`
+  cannot resolve from the workspace. **Verified**: this is the **only** one of 38 paper
+  Makefiles with `../..`; the other 37 — including `Beierle_202508/Makefile:4` and
+  `Taniguchi_202501/Makefile:4` — use `../../..`.
+- **Root cause**: the paper directory was moved from `papers/Gologlu_202503/` to
+  `papers/2025/Gologlu_202503/` and the Makefile was not updated.
+- **Resolution plan**:
+  1. Change line 4 to `ROOT := $(abspath $(MAKEFILE_DIR)/../../..)`.
+  2. Re-run `make test` and `make report` and confirm the counts the previous revision quoted
+     (12 test sets / 210 assertions / 78 `[PASS]`), which were produced under the old layout.
 
-### 2. Column/bit-index mismatch in the Lemma 4.7 matrix code [RESOLVED]
+### 2. Cross-paper duplication of the biprojective primitive, with an *inconsistent packing convention*
 
-- **Location**: `lemma4_7.jl` (during development).
-- **Symptom**: `dim C_GL(M)` came out as `2m` instead of the predicted `4m`, and the exhaustive `m = 2` count gave `|C| = 12` instead of `180`.
-- **Root cause**: `M × M` is encoded as `(x << m) | y`, so the `x`-half occupies the *high* bits — but the matrix columns were being listed `x`-half first, i.e. indexed opposite to the bit positions the matrix-vector product used. The swap matrix came out as the identity.
-- **Resolution**: introduced `map_columns`, which indexes every column by its bit position. All of Lemma 4.7 then verifies, including the exhaustive `m = 2` check (`|C_GL(M)| = |GL(2,F₄)| = 180`, `|N_GL(M)| = |ΓL(2,F₄)| = 360`, both enumerated over all 20160 elements of `GL(4,2)`).
+- **Location**: `helpers.jl:119-129` (`biproj_eval`), `helpers.jl:143-153` (`bipair_sbox`)
+  versus `papers/2022/Gologlu_202207/helpers.jl:27` (`biprojective_sbox`).
+- **Symptom**: two independent implementations of "evaluate a `(q,r)`-biprojective pair →
+  `SBox{2m}`". Worse, they disagree on the identification of `M × M` with `F₂^{2m}`: the 2022
+  file packs `x | (y<<m) → f | (g<<m)`; the 2025 file packs `(x<<m) | y → (f<<m) | g`. The
+  **existing n=12 catalog entries** (`n12_CalderiniLiVilla2023_F1/F2`) use the
+  2022/Calderini convention, so a 𝓕₄ LUT emitted under the 2025 convention would not be
+  byte-comparable with its neighbours. They remain CCZ-equivalent, but exact-LUT dedup would
+  miss.
+- **Root cause**: no core primitive, so each paper rolled its own.
+- **Resolution plan**:
+  1. **Promote to core**: `biprojective_sbox(m, k, coeff_f, l, coeff_g; modulus, packing = :y_high)`
+     in `packages/VBF/src/constructions/`, with the packing convention documented and
+     defaulted to the one the catalog already uses.
+  2. Rewrite `papers/2022/Gologlu_202207/helpers.jl` and
+     `papers/2025/Gologlu_202503/helpers.jl:143` to call it.
+  3. Pin the convention in the 𝓕₄ catalog record below so it matches
+     `n12_CalderiniLiVilla2023_*`.
+  4. The `D_f^u` / `D_g^u` Lemma-2.1 kernel criterion (`helpers.jl:163-222`) should ride
+     along — it is the only thing that makes n=20/28 tractable, and it is fully general.
 
-### 3. Theorem 4.8's restricted search initially only handled the matched-exponent case [RESOLVED]
+### 3. `f4_parameters` re-evaluates its inner iterables and materialises the whole product
 
-- **Location**: `theorem4_8.jl`.
-- **Symptom**: the `q ↔ q̄` equivalences could not be found, because they live in the `k₁ ≡ −k₂` branch of the theorem, where the `L`-degrees become `2^{t+k}` and the two middle coefficients of the target are swapped.
-- **Resolution**: `linear_equiv_thm48` now implements both sign branches and both `L`-shapes (`L₂=L₃=0` and `L₁=L₄=0`). Every candidate produced by the coefficient algebra is re-verified **pointwise** with `el_identity_holds`, so a bug there can only cause a miss, never a false positive.
+- **Location**: `helpers.jl:423-430`.
+- **Symptom**: `for k = 1:(fld.m-1), B in noncubes(fld), a in kstar(fld)` re-evaluates
+  `noncubes(fld)` once per `k` and `kstar(fld)` once per `(k,B)` pair. At m=14
+  (`theorem3_3.jl` with `full_search=true`, which calls `f4_parameters(BiField(14))` and then
+  uses only `first(ps)`): `kstar` is rebuilt about 65,500 times, each enumerating
+  `subfield_elements(14,7)` over 16,384 elements (roughly `10⁹` operations), and the returned
+  vector holds about 8.3M triples (roughly 200 MB).
+- **Root cause**: a convenience full-enumeration API used where only one element is needed.
+- **Resolution plan**:
+  1. Hoist `nc = noncubes(fld)` and `ks = kstar(fld)` out of the loop.
+  2. Add `f4_first_parameter(fld)` — or make `f4_parameters` lazy / `Channel`-based — and use
+     it in `theorem3_3.jl:186-190`, `lemma4_5.jl` and `lemmaA_1.jl`, which all take only the
+     first element.
 
-### 4. Everything under `results/` is opt-in
+### 4. `centralizer_classes` enumerates `2^{4m}` tuples before the projective filter
 
-`theorem3_3.jl` writes `results/theorem3_3_m6.txt` (the admissible F₄ parameter list) only under `save_results=true`; `report.jl` writes `results/paper_report.txt` likewise. Nothing is written by default. `results/` is git-ignored.
+- **Location**: `helpers.jl:568` — `for c1 = 0:(N-1), c2 = 0:(N-1), c3 = 0:(N-1), c4 = 0:(N-1)`
+  then `cs[idx] == 1 || continue`.
+- **Symptom**: the docstring promises `1 + 2^m + 2^{2m} + 2^{3m}` candidates, but the loop
+  actually visits `2^{4m}` and discards. At m=5 that is 1,048,576 visits for 33,825 useful
+  ones (a factor of 31 wasted); `lemmaA_1_report` calls it for many instances.
+  `theorem4_8.jl:80` and `theorem5_1.jl:63` have the same pattern.
+- **Root cause**: projective normalisation implemented as a filter rather than as the
+  generator.
+- **Resolution plan**: generate the projective representatives directly — branch on the index
+  of the first nonzero coordinate — and reuse them across all four call sites.
+
+### 5. The reuse note overstated the audit
+
+- **Location**: the previous revision's "Library-Reuse Note" — *"No core primitive was
+  reimplemented."*
+- **Symptom**: true against `VBF` exports, but it missed issue 2 (cross-paper duplication) and
+  did not mention `frob` (`helpers.jl:61`), `primitive_element` (`helpers.jl:624`) or
+  `prime_factors` (`helpers.jl:591`) — all generic.
+- **Resolution plan**: superseded by the Library-Reuse Note below.
 
 ---
 
-## Items Reproduced
+## Items Reproduced Exactly
 
-| Paper object | File | What was checked | Evidence |
-|---|---|---|---|
-| Lemma 2.1 (APN criterion) | `lemma2_1.jl` | criterion ⇔ `differential_uniformity == 2` | 57 biprojective pairs at `m = 3,4,5`; 36 APN + 21 deliberately inadmissible; **zero disagreements** with the ground-truth DDT |
-| Lemma 3.2 (gcd identities) | `lemma3_2.jl` | all six gcds, plus `gcd(k+m/2, m) = 2` | exhaustive for `m ≡ 2 (mod 4)`, `m ≤ 22`, all admissible `k` (28 pairs); all 37 inadmissible `k` break the identities |
-| **Theorem 3.3 — F₄ is APN (NEW FAMILY)** | `theorem3_3.jl` | APN for every admissible `(k,B,a)` | **exhaustive: all 504 triples at `m=6` (`n=12`)** are APN; DDT-confirmed on the full `2¹²` LUT; **`n=20` and `n=28`** confirmed via the Lemma 2.1 kernel criterion (`full_search=true`) |
-| Theorem 3.3 hypotheses are necessary | `theorem3_3.jl` | both conditions | `B` a cube ⇒ DU = 8; `B^{q+r} = a^{q+1}` ⇒ DU = 8 (42 such `(B,a)` pairs exist per `k` at `m=6`) |
-| Theorem C.2/C.3 (3-to-1, Walsh) | `theoremC_3.jl` | `F(x,y) = F(ωx, ω²y)`; `is_3_to_1`; extended Walsh spectrum | identity holds for all `ω ∈ F₄^×`; image size `= (2¹²−1)/3 + 1 = 1366`; spectrum matches the **corrected** classical multiset (see Paper Issue 1) |
-| Lemma 4.5 (`Z^{(q,r)} ≤ Aut_EL(F)`) | `lemma4_5.jl` | `F(ax,ay) = (a^{q+1}f, a^{r+1}g)` | 47 pairs at `m = 3..6`, exhaustive over `a ∈ M^×` and all `(x,y)`; `|Z^{(q,r)}| = 2^m − 1` |
-| Lemma 4.7 (normalizer/centralizer) | `lemma4_7.jl` | `C_GL(M_P) = C_GL(M) ≅ GL(2,M)`; `N ≅ ΓL(2,M)` | `dim_F₂ C = 4m` for `m = 3,4,5` (solved as an F₂ linear system via core `kernel_f2`); **exhaustive at `m = 2`**: all 20160 elements of `GL(4,2)` enumerated ⇒ `|C| = 180`, `|N| = 360` |
-| Lemma A.1 + condition (C) | `lemmaA_1.jl` | `[C_F : Z^{(q,r)}]` per family | Taniguchi → **1**; Zhou–Pott (`j≠0`), F₁, F₂, Carlet, **F₄** → **3** — exactly as Lemma A.1 predicts. `p ∤ index` for every instance. F₄'s three classes are exactly the `Z_ω^{(q,r)}`, `ω ∈ F₄^×` |
-| Theorem 4.8 (shape theorem) | `theorem4_8.jl` | exponent condition; restricted search | positive: `F₁(q) ≅ F₁(q̄)` witnesses found and pointwise-verified; negative: every corpus pair violating the exponent condition is CCZ-inequivalent |
-| Theorem 5.1(a),(b) | `theorem5_1.jl` | `φ(m)/2` classes for F₁, F₂ | `m = 5`: exactly 2 classes each = `φ(5)/2`; corrected `q ↔ q̄` maps verified pointwise (see Paper Issue 2) |
-| Theorem 5.1(c) / Cor. 5.2 | `theorem5_1.jl` | F₄ class count at `m = 6` | 252 admissible `(B,a)` at `k=1` collapse to **exactly 1 CCZ class** (restricted-shape orbit = upper bound, distinct mugshots = lower bound, and they meet). `(c)(ii)` and `(c)(iii)` (`≤ m` choices of `a′`; observed max = 6) hold. Consistent with Cor. 5.2's `[1, 6]` — see caveat below |
-| Theorem 5.1(d) (Carlet, `m` odd) | `theorem5_1.jl` | all same-`q` Carlet functions EL-equivalent; `φ(m)/2` classes | Lemma B.2's `G`-orbit covers all 10912 root-free tuples at `m=5`, giving the explicit `M` for every pair; 2 classes = `φ(5)/2` |
-| Theorem 6.1 (between families) | `theorem6_1.jl` | pairwise CCZ-inequivalence | `m = 5` (`n = 10`): **160/160** cross-family pairs separated by distinct ortho-derivative mugshots, across Gold, Carlet, Taniguchi, F₁, F₂. With `full_search=true`, `m = 6` adds F₄: **28/28** separated |
-| Lemma B.1 | `lemmaB_2.jl` | `#root-free = (2^m+1)2^m(2^m−1)²/3` | enumerated: 1176 (`m=3`), 20400 (`m=4`), 338272 (`m=5`, opt-in) — all match |
-| Lemma B.2 | `lemmaB_2.jl` | `G` transitive; `|Stab| = 3(2^m−1)` | orbit = whole root-free set; `|Stab| = 21 / 45 / 93` for `m = 3/4/5` |
-| Theorem B.3 | `theoremB_3.jl` | Carlet (`m` even) is EA-equiv to Zhou–Pott | `L ∘ C ∘ M + N = ZP` verified pointwise on all `2⁸` inputs at `m = 4` (see Paper Issue 4 for the `j=0` / coordinate-swap bookkeeping) |
-
-### Caveat: Theorem 5.1(c), Cor. 5.2 and Theorem 6.1-with-F₄ cannot be tested *in range*
-
-F₄ requires `m ≡ 2 (mod 4)`, while Theorems 4.8, 5.1, 6.1 and Cor. 5.2 all require `m ≠ 6` (at `m = 6` there is no primitive prime divisor of `2⁶ − 1 = 63` — the Zsygmondy exception — so the Sylow argument that drives the whole method collapses; `primitive_prime_divisor(6) === nothing` is asserted in the tests). The two conditions have **no computationally reachable overlap**: the next case is `m = 10`, i.e. `n = 20`, where a DDT has `2⁴⁰` cells and an ortho-derivative mugshot is out of reach.
-
-So the F₄ *equivalence* numbers reported at `m = 6` are labelled **outside the theorem's stated range** throughout. They are *consistent* with Cor. 5.2's bounds `[1, 6]` (the observed count is 1, meeting the lower bound), but they are not a test of them. The F₄ *APN* claim (Theorem 3.3), which carries no `m ≠ 6` hypothesis, **is** tested in range and at `n = 20, 28` as well.
-
----
+| Paper item | Independent result |
+|------------|--------------------|
+| **Theorem 3.3 (new family 𝓕₄)** | At m=6 (n=12, modulus `primitive_polynomial(6)=67`): 42 non-cubes, `\|K^×\|=7`, **504 admissible (k,B,a)**; **all 504 APN** by the Lemma 2.1 kernel criterion; DDT-confirmed du=2, deg=2 on the full `2¹²` LUT for sampled triples. `test_theorem3_3.jl` asserts exactly 504 ✓ |
+| Theorem 3.3 hypotheses necessary | `B` a cube → not APN (6/6); `B^{q+r}=a^{q+1}` (42 such pairs per `k`) → not APN (6/6) ✓ |
+| m=2 and m=4 admit no 𝓕₄ | m=2: `B^{q+r}=a^{q+1}=1` always; m=4: `m≢2 (mod 4)` ✓ |
+| **Theorem C.3** | n=12: `is_3_to_1` ✓, image size **1366** = `(2¹²−1)/3+1` ✓, extended Walsh spectrum `{0:4193280, 64:11182080, 128:1397760}` = the **corrected** classical multiset ✓ |
+| Lemma B.1 | root-free counts **1176** (m=3, k=1,2) and **20400** (m=4, k=1,3) = `(2^m+1)2^m(2^m−1)²/3` ✓ |
+| Theorem 5.1(c)(ii)/(iii) at m=6 | 252 admissible `(B,a)` at k=1; every `B′` occurs in one class; max **6** = `m` choices of `a′` per `B` ✓ |
+| Theorem 5.1(c) class count | All 252 collapse to **exactly 1 class** under the Theorem 4.8 restricted shape (262,080 projective invertible tuples × 6 twists) — matching `test_theorem5_1.jl`'s `c.classes == 1`, and inside Corollary 5.2's `[1,6]` ✓ |
+| Theorem 6.1 necessity control (m=4) | `ZP(k=1,j=2,d=2)` and `F₁(k=3)` have **identical** ortho-derivative fingerprints — necessary for the CCZ-equivalence the reproduction asserts via `are_ccz_equivalent` ✓ |
+| Table 2.1 Gold-even reading | PDF p. 5 prints `b = Σ_{i=0}^{k−1} a^{2^i}`; the `.tex` OCR shows `a^{2^2}`. The reproduction's `gold_even` (`helpers.jl:316-322`) follows the PDF ✓ |
 
 ## Test Results
 
 | Command | Result |
-|---|---|
-| `julia --project=. papers/Gologlu_202503/test/runtests.jl` | **PASS** — 12 test sets, **210 assertions**, 0 failures (~40 s) |
-| `make -C papers/Gologlu_202503 report` | **PASS** — 78 `[PASS]`, 0 `[FAIL]` |
-| `make -C papers/Gologlu_202503 report full_search=true` | **PASS** — adds F₄ at `n = 20` / `n = 28`, Lemma B.2 at `m = 5`, Theorem 6.1 with F₄ at `m = 6`; 0 failures |
+|---------|--------|
+| `make -C papers/2025/Gologlu_202503 test` | **Not run** — Julia unavailable; and it would fail as written even with Julia present (reproduction issue 1) |
+| Independent re-derivation (Python/C) of Theorem 3.3 at m=6, Theorem C.3 at n=12, Lemma B.1, Theorem 5.1(a)(b)(c) at m=4,5,6,7, and Theorem 6.1's m=4 control | **All confirmed**, including all three paper bugs |
 
-Per-file: `lemma2_1` 13, `lemma3_2` 12, `theorem3_3` 22, `theoremC_3` 21, `lemma4_5` 10, `lemma4_7` 22, `lemmaA_1` 26, `theorem4_8` 16, `theorem5_1` 23, `theorem6_1` 15, `lemmaB_2` 14, `theoremB_3` 16.
+## Catalog Status — Family 𝓕₄ (Theorem 3.3)
 
-**Every test set contains at least one discriminating negative.** No suite here asserts only "this never happens":
+**Status: missing.** `packages/VBFCatalog/data-raw/apn_catalog/n12_apn.toml` contains only
+`n12_CalderiniLiVilla2023_F1` and `n12_CalderiniLiVilla2023_F2`. The previous revision
+prepared a record but the TOML was never updated.
 
-- `lemma2_1` — 36 APN *and* 21 non-APN pairs; a criterion returning a constant fails.
-- `lemma3_2` — all 37 `k` with `gcd(k,m) ≠ 1` break the identities.
-- `theorem3_3` — violating either hypothesis of Theorem 3.3 yields DU = 8, checked on the real DDT.
-- `theoremC_3` — the printed Appendix C multiset is shown *impossible* by arithmetic, and a Taniguchi function at `n = 6` is APN but **not** 3-to-1, so `is_3_to_1` is discriminating.
-- `lemma4_5` — a wrong exponent, and the non-biprojective perturbation `F + (x², 0)`, both lose the automorphism.
-- `lemma4_7` — a transvection does *not* centralise `M`; both `4m` and the exhaustive `m=2` counts are computed, never transcribed.
-- `lemmaA_1` — **both** predicted index values (1 and 3) occur in the corpus, and suppressing the `N`-part collapses the Carlet index 3 → 1.
-- `theorem4_8` / `theorem6_1` — the positive control (`F₁(q)` and `F₁(q̄)` share a mugshot) proves the invariant *does* collapse equivalent functions, so "160/160 separated" is a real result; the `m = 4` necessity control exhibits a genuine CCZ-equivalence via exact `are_ccz_equivalent`.
-- `theorem5_1` — the maps **as printed** are asserted to fail and the corrected ones to hold.
-- `lemmaB_2` — a polynomial *with* a root is shown to lie outside the orbit.
-- `theoremB_3` — for `m` odd there are no non-cubes at all, so the even-`m` hypothesis is essential.
+### Catalog-gap record
 
-No local `print_check` is defined anywhere in this folder (the four emitters come from core and none of them throws), so no `@test` is decorative.
+- **target file**: `packages/VBFCatalog/data-raw/apn_catalog/n12_apn.toml`
+- **name**: `n12_GologluKolsch2025_F4`
+- **n / m**: `12` / `12`
+- **is_permutation**: `false` (3-to-1; image size 1366)
+- **algebraic_form**: `Bivariate F(x,y) = (x^{q+1} + B*y^{q+1},  x^{qQ}*y + (a/B)*x*y^{qQ})
+  over M = GF(2^6), q = 2^k = 2, Q = 2^{m/2} = 8, r = qQ = 16, B = 2 (a non-cube), a = 1 in
+  K^x = GF(2^3)^x; modulus x^6+x+1 (=67)`
+- **bib_key**: `Gologlu_202503`
+- **source**: `Göloğlu & Kölsch, "Equivalences of biprojective almost perfect nonlinear
+  functions", Electron. J. Combin. (2025), Theorem 3.3 and Table 2.1 (last row).
+  Representative m=6, k=1, B=2, a=1 built by family_f4(BiField(6), 1, 2, 1) then bipair_sbox
+  in papers/2025/Gologlu_202503/helpers.jl.`
+- **lut**: 4096 entries. **Two candidate encodings — pick the one matching the existing n=12
+  entries:**
+  - `(x<<6)|y → (f<<6)|g` (this paper's `bipair_sbox`): starts
+    `[0, 128, 1024, 1920, 384, 2816, 3392, 1216, 3072, 2304, 3008, 3520, 2176, 1920, 1920, 2944, …]`,
+    ends `[…, 3043, 2287, 1012, 1016, 3881, 1573, 4094, 1522]`, **sha256 of the
+    comma-space-joined decimal list =
+    `ec1425f4303aa1b7c1ef24030c531b0e1bdc8c2870ef8b35cb1e9fd4313a505a`**
+  - `x|(y<<6) → f|(g<<6)` (**the convention already used by `n12_CalderiniLiVilla2023_*` —
+    recommended**): starts `[0, 1, 8, 15, 3, 22, 59, 40, 24, 18, 54, 58, 17, 15, 15, 23, …]`,
+    ends `[…, 2827, 653, 3931, 1755, 355, 2289, 1283, 3223]`, **sha256 =
+    `6b0d2363f8278ce0fb2fe4f5dad57d1229769ae90110ffd70474ece0fb24d555`**
+- **verified properties** (independent computation, n=12): `differential_uniformity = 2` (full
+  `2¹²` DDT), `algebraic_degree = 2`, 3-to-1, image size 1366, extended Walsh spectrum
+  `{0:4193280, 64:11182080, 128:1397760}` (classical).
+- **equivalence evidence** — ortho-derivative fingerprint (OD differential spectrum + OD Walsh
+  spectrum), a sound EA⇒CCZ certificate since all compared functions are quadratic APN:
 
----
-
-## Catalog Status
-
-**Nothing was added to the APN catalog** (out of scope for this task). The paper's new family produces one catalog-gap record:
-
-### Catalog-gap record — Family F₄ (Theorem 3.3)
-
-| Field | Value |
-|---|---|
-| **name** | `n12_GologluKolsch2025_F4` |
-| **n**, **m** | 12, 12 |
-| **bib_key** | `Gologlu_202503` |
-| **source** | Göloğlu & Kölsch, *Equivalences of biprojective APN functions*, Electron. J. Combin. (2025), **Theorem 3.3** and Table 2.1, last row |
-| **construction** | Bivariate over `M = GF(2⁶)`, `F = M × M ≅ GF(2¹²)`. `F(x,y) = (x^{q+1} + B·y^{q+1},  x^{r}y + (a/B)·x·y^{r})` with `q = 2^k`, `r = 2^{k+m/2} = qQ`, `Q = 2^{m/2}`. Conditions: `m ≡ 2 (mod 4)`, `gcd(k,m) = 1`, `B ∈ M^× ∖ (M^×)³` (a non-cube), `a ∈ K^× = GF(2^{m/2})^×`, and `B^{q+r} ≠ a^{q+1}`. |
-| **representative** | `m = 6`, `k = 1` (`q = 2`, `r = 16`), `B = 2`, `a = 1`, **modulus `x⁶+x+1` (= 67)** — i.e. `VBF.primitive_polynomial(6)`. Packing: `z = (x << 6) \| y → (f << 6) \| g`. Reproduce with `family_f4(BiField(6), 1, 2, 1)` then `bipair_sbox`; the LUT is not inlined here (4096 entries). |
-| **properties** | APN (`differential_uniformity == 2` on the full `2¹²` DDT), quadratic (`algebraic_degree == 2`), **not** a permutation, **3-to-1** (image size 1366), classical (Gold-like) extended Walsh spectrum. |
-| **equivalence evidence** | CCZ-**inequivalent** to both existing `n = 12` catalog entries (`n12_CalderiniLiVilla2023_F1`, `n12_CalderiniLiVilla2023_F2`): all three are quadratic APN, so by Yoshiara's theorem (the paper's Theorem 4.2) CCZ = EA, and their `apn_ea_mugshot` (ortho-derivative Walsh + DDT spectra) differ — a *sound* inequivalence proof. Within F₄ itself, all 504 admissible triples at `m = 6` fall into a **single** CCZ class, so one representative suffices. Novelty against families *not* in the catalog is Theorem 6.1's business, verified here at `m = 6`: F₄ is separated from Gold, Zhou–Pott and Taniguchi (28/28 cross-family pairs). |
-| **caveat for whoever ingests this** | The class count at `m = 6` is 1, so F₄ contributes exactly **one** new `n = 12` function, not 504. The family's advertised exponential growth (Cor. 5.2) only bites for `m ≥ 10`, i.e. `n ≥ 20`. |
-
----
+  𝓕₄ OD-DDT =
+  `{0:10284120, 2:4972275, 4:1217160, 6:246393, 8:40320, 10:7560, 12:1386, 14:1134, 16:945, 18:756, 20:693, 22:378}`
+  — **distinct from every one of**:
+  `n12_CalderiniLiVilla2023_F1`
+  `{0:10231011, 2:5093109, 4:1162917, 6:228501, 8:42462, 10:2268, 12:6615, 16:1134, 20:3969, 22:1134}`;
+  `n12_CalderiniLiVilla2023_F2`
+  `{0:10172943, 2:5089491, 4:1269000, 6:211509, 8:26829, 10:3006, 12:288, 16:18, 18:36}`;
+  Gold monomials `x³`/`x³³` `{0:9832095, 2:6220305, 6:716625, 8:4095}` and
+  `x¹²⁹`/`x²⁰⁴⁹` `{0:10077795, 2:5225220, 4:1253070, 6:212940, 8:4095}`;
+  biprojective Gold (m=6 even form) `{0:9832095, 2:6220305, 6:716625, 8:4095}`;
+  Taniguchi (m=6, k=1, d=6)
+  `{0:10161144, 2:5117994, 4:1247967, 6:214578, 8:28728, 10:2268, 12:441}`;
+  Zhou–Pott (m=6, k=1, j=2, d=2)
+  `{0:10120950, 2:5169087, 4:1263276, 6:191835, 8:25452, 10:2268, 12:189, 36:63}`;
+  Carlet (m=6, k=1)
+  `{0:10278072, 2:4954194, 4:1252503, 6:237384, 8:42462, 10:7938, 20:567}`.
+- **caveat for the updater**: the entire 𝓕₄ family collapses to **one** CCZ class at m=6, so
+  exactly **one** entry, not 504. The family's exponential growth (Corollary 5.2) only starts
+  at m=10 (n=20). Also: `Gologlu_202207`'s families 𝓕₁/𝓕₂ do not exist at m=6 (𝓕₁ needs
+  `gcd(3k,6)=1`, 𝓕₂ needs `m` odd), so they are correctly absent from the comparison.
 
 ## Library-Reuse Note
 
-No core primitive was reimplemented. `helpers.jl` contains only paper-specific algebra (the biprojective 4-tuple representation, the `D_f^u` maps of Lemma 2.1, the Table 2.1 family constructors and their admissibility predicates, the `G`-action of Appendix B, and the `C_F` enumeration of Lemma A.1).
+- **Flagged duplicate**: reproduction issue 2 — `biproj_eval` / `bipair_sbox` versus
+  `papers/2022/Gologlu_202207/helpers.jl:biprojective_sbox`, with divergent packing
+  conventions.
+- **Borderline, not violations**: `gmul` / `gpow` / `ginv` / `gdiv` (`helpers.jl:50-53`);
+  `f4star` (`helpers.jl:78-81`, which could use `subfield_elements(m,2)`).
+- **Promote-to-core candidates**:
+  1. `biprojective_sbox` plus the `D_f^u` Lemma-2.1 kernel APN criterion (issue 2).
+  2. `frob(fld, x, e)` = `x^{2^e}` with automatic exponent reduction (`helpers.jl:61`) — core
+     has `gf_pow` but no Frobenius helper.
+  3. `primitive_element(fld)` (`helpers.jl:624`) — core has `primitive_polynomial` but no
+     generator finder.
+  4. `extended_walsh_spectrum` (`theoremC_3.jl:52-60`).
+  5. `primitive_prime_divisor` (`helpers.jl:615`).
 
-Core functions used directly: `gf_mul`, `gf_pow`, `gf_inv`, `gf_trace`, `gf_is_dth_power`, `in_subfield`, `subfield_elements`, `primitive_polynomial`, `kernel_f2`, `rank_f2`, `SBox`, `differential_uniformity`, `algebraic_degree`, `is_permutation`, `is_3_to_1`, `image_set`, `lat`, `ddt`, `ortho_derivative` (via `apn_ea_mugshot`), `apn_ea_mugshot`, `are_ccz_equivalent`, `gold_apn`, and the report emitters `print_banner` / `print_section` / `print_check` / `print_kv`.
+No `VBF` core primitive is reimplemented within the paper directory itself.
 
-The one architecturally interesting reuse: **Lemma 2.1's APN criterion is implemented on top of core `kernel_f2`**, because `D_f^u` and `D_g^u` are F₂-linear in `(x,y)` — so "exactly two solutions" is "kernel of dimension 1" on a `2m × 2m` matrix. That turns an `O(2^{2n})` DDT into an `O(2^m · m³)` rank computation and is the only reason F₄ can be certified APN at `n = 20` and `n = 28` at all.
+## Open Questions
 
-### Promote-to-core candidates
-
-Two paper-local helpers look general enough to be worth core status if a second paper needs them (**not** added here, per scope):
-
-1. **`extended_walsh_spectrum(S)`** (`theoremC_3.jl`) — the multiset `{{|W_F(b,a)| : b ∈ F^×, a ∈ F}}`. Core's `absolute_walsh_spectrum` excludes only the single entry `(0,0)` rather than the whole `b = 0` column, so it contributes `2ⁿ − 1` spurious zeros and cannot be compared against the literature's "classical spectrum" multiplicities without correction. A core `extended_walsh_spectrum` (or a keyword on the existing one) would stop every future paper folder from rediscovering this.
-2. **`primitive_prime_divisor(m)`** (`helpers.jl`) — the Zsygmondy primitive prime divisor of `2^m − 1`, returning `nothing` at `m = 6`. It is the object that explains every `m ≠ 6` hypothesis in this literature, and it is pure number theory with no paper-specific content.
-
-Neither is a *missing* primitive that blocked the reproduction; both are small conveniences.
+- Which packing convention should the 𝓕₄ catalog entry use — this paper folder's
+  `(x<<m)|y`, or the catalog-incumbent `x|(y<<m)`? It affects exact-LUT dedup only.
+- The test counts quoted in the previous revision (12 test sets / 210 assertions / 78
+  `[PASS]`) were produced under the pre-`papers/<year>/` layout and should be regenerated
+  after reproduction issue 1 is fixed.
