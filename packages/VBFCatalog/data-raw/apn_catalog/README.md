@@ -22,6 +22,27 @@ APN database lands in artifacts in a later phase.
 | `bib_key`        | string           | yes      | resolves into the `bibliography` table           |
 | `source`         | string           | yes      | human-readable citation                          |
 
+## Adding or changing an entry (do not stop at the TOML)
+
+`../../BFA_catalog.sqlite` is committed and is built from these files, and
+`packages/VBF/test/unit/catalog_{queries,content}_test.jl` reconstruct their
+expected counts from these TOMLs and compare them against that DB. An entry
+added here but not built into the DB therefore fails CI — silently as far as
+this directory is concerned, since nothing here looks wrong.
+
+So every change here is a three-step change:
+
+```bash
+$EDITOR n8_apn.toml                                    # 1. the entry
+make -C ../../data-build catalog                       # 2. rebuild the DB
+make -C ../../data-build check                         # 3. gate: must print catalog-check: OK
+git add n8_apn.toml ../../BFA_catalog.sqlite           #    both, one commit
+```
+
+`make check` also runs the catalog test items; `make check-structure` is the
+fast half (no Julia needed) and is what the pre-commit hook runs first. Enable
+the hook once per clone with `git config core.hooksPath .githooks`.
+
 `is_apn` and `is_quadratic` are *derived* at build time
 (`differential_uniformity == 2` and `algebraic_degree ≤ 2`); the loader
 verifies APN-ness and refuses entries that fail.
