@@ -1,68 +1,69 @@
 # Zheng_202211 — Constructing New APN Functions Through Relative Trace Functions
 
-**Paper**: Zheng, Kan, Li, Peng, Tang. "Constructing new APN functions through relative trace
-functions." arXiv:2101.11535, 2022.
+**Paper**: Zheng, Kan, Li, Peng, Tang. "Constructing New APN Functions Through Relative Trace
+Functions." 2022.
 
 **Reproduction path**: `papers/2022/Zheng_202211/`
 
 **Verdict**: Partial
 
-One of the seven items of Theorem 3.3 is reproduced (item iii = family F15), plus Lemma 2.1.
-Items i, ii, iv, v, vi and vii, Theorem 3.10, Corollary 1's two infinite families, both
-Table III sporadic instances, and Remarks 3.4–3.8 are all missing. The reproduction also
-imposes a condition (`gcd(3,m)=1`) that Theorem 3.3 iii) does not require, and its
-CCZ-inequivalence claim is checked against a 2-element slice of a catalog that holds only 4
-monomials at `n=10`. Everything omitted was verified here to be cheap — items i–vii,
-Corollary 1 and the Remark 3.6 sporadic all check in seconds at `n=10`.
+Only item iii) of Theorem 3.3 (family F15) is implemented, and it carries an extra
+`gcd(3,m)=1` condition the theorem does not require — which excludes a valid m=3 instance
+that is verifiably APN. Six of the seven theorem items, an entire second results section
+(Corollary 1 / Theorem 3.10 and the Appendix), both sporadic instances, all of Table III, and
+Lemmas 3.1/3.2 are missing. Every one of those runs in seconds and was verified here. The
+novelty check compares against an n=10 catalog that lacks 7 of the paper's own 13 Table III
+representatives. Two genuine flaws in the publication were found, both of which this
+reproduction is well-placed to document.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test` could
-> not be executed. The committed `results/report.toml` and `results/theorem3_3.toml` record a
-> prior in-repo pass; all load-bearing values were independently re-derived in Python.
+> **Environment note**: Julia is not installed in the review environment, so
+> `test/runtests.jl` could not be executed. The committed artifacts `results/report.toml`
+> (`lemma2_1_agree=true`, `du=2`) and `results/theorem3_3.toml` (`n10_du=2`, `n14_du=2`)
+> record a prior in-repo pass; the independent Python run below agrees on every value.
 
 ---
 
 ## Paper Issues
 
-### P1. Theorem 3.3 item iv) states a different condition from its own proof, and Remark 3.8 applies only to the proof's version
+### 1. Theorem 3.3 item iv): the statement and the proof use different, non-equivalent conditions, and Remark 3.8 is false for the stated one
 
-- **Location**: statement at tex line 316 — "iv) `gcd(3,m)=1`, `3s ≡ 1 mod n`, `b` not a cube,
-  `c / b^{2^{2s}−2^s+1} ∈ F_{2^m}`"; proof at tex line 372 — "iv) … `b` is a non-cube … and
-  `c^{2^{2s}−2^s+1} / b ∈ F*_{2^m}`". The numerator and denominator are swapped.
-- **Consequence**: Remark 3.8 (tex line 455) says "there does not exist elements satisfying
-  the conditions in iv)". That is true for the **proof's** condition — since `s` is odd,
-  `3 | 2^{2s} − 2^s + 1`, so `c^{2^{2s}−2^s+1}` is always a cube while `λ·b` with `b` a
-  non-cube never is, making the constraint set empty. It is **false** for the **statement's**
-  condition.
-- **Counter-evidence**: at `m=5, n=10, s=7` (`3·7 ≡ 1 mod 10`, `s` odd, `gcd(3,5)=1`),
-  `k = 2^{14} − 2^7 + 1 ≡ 912 mod 1023`; take any non-cube `b` and any `λ ∈ F*_{2^5}`, and set
-  `c = λ b^{912}`. Eight such `(a,b,c)` with `a ∉ F_{2^5}` were sampled: **all 8 gave `δ = 2`**
-  — witnesses exist, so item iv as stated is non-vacuous and true.
-- **Recommended wording**: "Theorem 3.3 iv) and its proof state reciprocal conditions;
-  Remark 3.8's vacuity claim holds for the proof's version only."
+- **Location**: Theorem 3.3 iv) at `.tex:316` states `c / b^{2^{2s}−2^s+1} ∈ F_{2^m}`; the
+  proof of iv) at `.tex:372` and `.tex:389-397` uses `c^{2^{2s}−2^s+1} / b ∈ F_{2^m}^*`.
+  Remark 3.8 (`.tex:455`) asserts "there does not exist elements satisfying the conditions in
+  iv)".
+- **Computed counter-evidence** at n=10, m=5, s=7 (`3s ≡ 1 mod 10`),
+  `E = 2^14 − 2^7 + 1 = 16257`:
+  - *Proof's condition*: an **exhaustive** scan over all 682 non-cube `b ∈ F*_{2^10}` × all
+    1022 `c` finds **zero** admissible pairs → Remark 3.8 is correct for this reading.
+  - *Theorem-statement condition*: admissible pairs are plentiful, e.g.
+    `(b,c) = (72,63), (928,1), (205,27), (738,29), (721,13), (897,63), (637,44), (66,8)`, and
+    **all 8 give δ = 2** → Remark 3.8 is **false** for the reading printed in the theorem.
+- **Short proof of the vacuity**, which the paper does not give: for odd `s`, `2^s ≡ 2` and
+  `2^{2s} ≡ 1 (mod 3)`, so `3 | E`. Hence `c^E` is always a cube; since
+  `gcd(3, 2^m−1) = 1` for odd `m`, every element of `F*_{2^m}` is a cube; therefore
+  `c^E/b ∈ F*_{2^m}` forces `b` to be a cube, contradicting "b non-cube". The proof of iv)
+  thus derives "c is a non-cube" from a hypothesis that can never be met.
 
-### P2. Example 1 / Table III's last row is under-specified and false for a generic primitive element
+### 2. Example 1 / the last row of Table III is stated for an arbitrary primitive element, but is not invariant under that choice
 
-- **Location**: tex lines 648–654 (Example 1) and tex line 703 (Table III last row,
-  `α Tr_m^n(x^3) + α^q Tr_m^n(α x^5 + α^{369} x^{4q+1})`, condition column: "`α` primitive in
-  `F*_{2^{10}}`").
-- **Counter-evidence**: sweeping **all 600** primitive elements of `F_{2^{10}}`, the function
-  is APN for exactly **20** of them (in both the `x^10+x^3+1` and the Magma/Conway
-  `x^10+x^6+x^5+x^3+x^2+x+1` representation) — two Frobenius orbits, not all primitives.
-  Concretely, under `x^10+x^3+1` with `z = 2` the function has `δ = 4`; under the
-  Conway/Magma polynomial with `z = 2` it has `δ = 2`. The `a`-parameter is irrelevant (APN for
-  all 40 sampled `a ∉ F_{2^5}` once `z` is right).
-- Example 1 also never says what `a` is; only Table III reveals `a = α`.
-- **Impact on this repo**: anyone implementing Example 1 with VBF's default
-  `primitive_polynomial(10)` and `z = 2` gets a non-APN function and concludes the paper is
-  wrong. The correct statement is "with `z` the default generator of Magma's `GF(2^10)`".
+- **Location**: Example 1 (`.tex:648-654`) — "Let z be a primitive element in `F*_{2^10}`.
+  Then `h_s(x) = a Tr(bx³)+a^q Tr(gx⁵+ex^{4q+1})` is APN over `F_{2^10}`, where `b=1, g=z,
+  e=z^369`" — and the corresponding Table III row (`.tex:703`).
+- **Computed counter-evidence** over `GF(2^10)` with modulus `x^10+x^3+1`: of the **600**
+  primitive elements `z`, only **20** give δ=2 (e.g. `z = 23, 41, 42, 61, 72, 77, 98, 100,
+  117, 277, …`). For `z = 2` — the generator itself — the function has **δ = 4**, i.e. it is
+  not APN.
+- **Control**: the other sporadic instance of the paper (Remark 3.6, `.tex:701`) is APN for
+  **all 600** primitive `α`, so this is specific to Example 1's exponent 369 (and to whichever
+  `z` and modulus the authors' Magma session happened to use), not a general artefact of the
+  representation used here.
 
-### P3. No other issues
+### 3. Editorial contradiction in Remark 3.11
 
-Theorem 3.3 items i, ii, iii, v, vi and vii were all verified at `m=5, n=10` (8 random
-admissible `(a,b,c)` each, `δ=2` in every case, 0 failures). Corollary 1 cases 1) and 2) were
-verified at `m=5, n=10` (15 random `(a,b)` each, in both field representations, 0 failures).
-Remark 3.6's sporadic function `α Tr(x^3) + α^q Tr(α^{11} x^9)` is APN (`δ=2`). Item iii holds
-at `m=3` too (`gcd(3,m)=3`), consistent with the theorem's hypothesis being only "`m` odd".
+- **Location**: Remark 3.11 (`.tex:526`) writes "We expect that Γ does indeed empty for any
+  odd positive integer m", which contradicts both the preceding sentence ("Numerical
+  experiments suggest that Γ is always nonempty", `.tex:520`) and Open Problem 2 ("Show that
+  Γ is always nonempty", `.tex:528`).
 
 ---
 
@@ -70,222 +71,244 @@ at `m=3` too (`gcd(3,m)=3`), consistent with the theorem's hypothesis being only
 
 ### 1. `verify_f15_conditions` imposes `gcd(3,m)=1`, which Theorem 3.3 iii) does not require
 
-- **Location**: `theorem3_3.jl:36` (`cond_gcd3m = gcd(3, m) == 1`), documented as a condition
-  at `theorem3_3.jl:26`, echoed in the report line `theorem3_3.jl:128`, and asserted in
-  `test/test_theorem3_3.jl` (`@test r_cond.cond_gcd3m`).
-- **Symptom**: Theorem 3.3's hypotheses are "`n = 2m`, `m ≥ 1` odd, `a ∉ F_q`, `bc ≠ 0`, `s`
-  odd" plus item iii's "`s=3`, `b` non-cube, `c/b³ ∈ F*_{2^m}`". `gcd(3,m)=1` appears only in
-  item **iv**. The reproduction would report `all_ok = false` for the perfectly valid
-  `m = 3, 9, 15, …`. Counter-evidence: at `m=3, n=6`, 18 admissible `(a,b)` pairs all give
-  `δ = 2`.
-- **Root cause**: the condition was borrowed from a neighbouring item (or from the
-  Budaghyan–Helleseth–Kaleyski family F14, which does need `3 ∤ m`).
+- **Location**: `theorem3_3.jl:36` (`cond_gcd3m = gcd(3, m) == 1`), folded into `all_ok` at
+  `:41`; also asserted in `test/test_theorem3_3.jl` (`@test r_cond.cond_gcd3m`) and stated in
+  the file header comment (`theorem3_3.jl:7`) and `helpers.jl:32`.
+- **Symptom**: Theorem 3.3 (`.tex:312`) requires only "n=2m, m ≥ 1 **odd**, a ∉ F_q, bc ≠ 0,
+  s odd" plus iii)'s "b non-cube, c/b³ ∈ F_{2^m}". `gcd(3,m)=1` appears **only** in item iv).
+  Table II's F15 row (`.tex:266`) likewise lists only "m odd, a ∉ F_q, b not a cube".
+  Counter-evidence: `m=3` (n=6, `gcd(3,3)=3`), `a=2`, `b=2`, `c=b³=8`, modulus `x⁶+x+1`:
+  `a ∉ F_{2^3}` ✔, `b` non-cube ✔, `c/b³ = 1 ∈ F*_{2^3}` ✔, and **δ = 2, deg = 2** — but
+  `verify_f15_conditions(3, 2, 2).all_ok == false`.
+- **Root cause**: condition iv)'s `gcd(3,m)=1` was mis-attributed to iii).
 - **Resolution plan**:
-  1. Drop `cond_gcd3m` from `verify_f15_conditions`, or keep it as an informational field that
-     does not enter `all_ok`.
-  2. Update the docstring at `theorem3_3.jl:24-29` to list Theorem 3.3's actual hypotheses
-     (`m` odd, `s=3` odd, `a ∉ F_q`, `bc ≠ 0`, `b` non-cube, `c/b³ ∈ F*_{2^m}`).
-  3. Add `m = 3` to the `m_values` sweep as a cheap regression (`n=6`).
-  4. Update `test/test_theorem3_3.jl` accordingly.
+  1. Drop `cond_gcd3m` from `verify_f15_conditions`'s `all_ok`, or make it an informational
+     field.
+  2. Fix the header comment and `helpers.jl:32`.
+  3. Extend `m_values` to `[3,5,7]` and add a regression test asserting δ=2 at m=3.
+  4. If `gcd(3,m)=1` is wanted for item iv), add it in a dedicated `theorem3_3_case_iv`
+     routine.
 
-### 2. The `streaming` switch is dead code and the printed method label is wrong
+### 2. Six of the seven Theorem 3.3 items are missing
 
-- **Location**: `theorem3_3.jl:54` (`streaming::Bool = (2m >= 13)`), `:59`
-  (`du = differential_uniformity(F)` — ignores `streaming`), `:60-62` (prints
-  `"streaming row-by-row DDT"` or `"full DDT"`), plus the claims at `:11`, `:15`, `:49`, `:152`.
-- **Symptom**: the same call is made either way. `VBF.differential_uniformity`
-  (`packages/VBF/src/spectra/differential.jl:106-120`) is *always* row-by-row with a single
-  `2^n` counts buffer — so the `"full DDT"` label printed for `n ≤ 12` is the inaccurate one,
-  and the reported scope line "exact: APN at n=14 (streaming DDT, avoids OOM)" describes a
-  mechanism that does not exist in the reproduction.
-- **Root cause**: the kwarg was designed before it was discovered that core already streams.
+- **Location**: `theorem3_3.jl` implements only case iii). `zheng_lut(m, s, a, b, c)`
+  (`helpers.jl:35`) is already general in `s`, so the gap is purely in the driver and the
+  condition predicates.
+- **Symptom**: `theorem3_3_report` prints only the F15 line; `results/theorem3_3.toml`
+  records only `n10_du` and `n14_du`.
+- **Root cause**: a scope decision, not documented as such — `report.jl` lists only
+  "Hexanomial families" and "sporadic instances" as out of scope; items i, ii, iv, v, vi, vii
+  are not mentioned.
 - **Resolution plan**:
-  1. Delete the `streaming` kwarg and its branch, or
-  2. keep it only as a reporting note and change the label to
-     `"VBF differential_uniformity (row-by-row, O(2^n) memory)"` for all `n`;
-  3. fix the scope lines at `theorem3_3.jl:151-154` and `report.jl:22-25`.
+  1. Add a `case_conditions(m, s)` table encoding i)-vii)'s `(s, predicate(b,c))`.
+  2. Loop `zheng_lut` over sampled admissible `(b,c)` per case and assert δ=2.
+  3. Add Remark 3.4's four equivalence assertions via `apn_ea_mugshot`.
+  4. Add case iv) under **both** readings, asserting the theorem-statement reading is
+     non-empty while the proof reading is empty — documenting paper issue 1.
 
-### 3. The CCZ-inequivalence claim is checked against a 2-function slice of the catalog
+### 3. Corollary 1, Theorem 3.10, Lemmas 3.1/3.2, Example 1, Remarks 3.4-3.8 and Table III are absent
 
-- **Location**: `theorem3_3.jl:84` —
-  `rows = filter(r -> r.is_quadratic, list_functions(db; is_apn = true, n = 10))`.
-- **Symptom**: `n10_apn.toml` holds only `Gold x3`, `Gold x9`, `Kasami x57`, `Dobbertin x339`;
-  only the two Golds are quadratic, so `apn_ea_mugshot` is compared against 2 functions. The
-  paper's claim (Remark 3.4 + Table III) is inequivalence to **13** representatives, including
-  F3 (two rows), F4 (two rows), the six Taniguchi F12 representatives, F14 (`s=3,7`), and
-  Edel–Kyureghyan–Pott `x^3 + α^{341}x^{36}`. The printed check "F15 EA-mugshot distinct from
-  all catalog n=10 APN [CCZ-inequiv proxy]" therefore overstates its evidence.
-- **Root cause**: catalog coverage at `n=10` is thin and the script silently inherits it.
+- **Location**: no file covers Section 3B or Section 4.
+- **Symptom**: the paper's second and third headline results (two infinite hexanomial
+  families) and both sporadic instances have no executable counterpart.
+- **Root cause**: scope.
 - **Resolution plan**:
-  1. Add `table3.jl` constructing the Table III representatives directly from the tex (they
-     are all explicit): `x^{2^i+1}` for `i=1,3`; `x^{57}`; `x^{339}`;
-     `x^6+x^{33}+α^{31}x^{192}`; `x^{33}+x^{72}+α^{31}x^{258}`; `x^3+Tr_1^{10}(x^9)`;
-     `x^3+α^{-1}Tr_1^{10}(α^3x^9)`; the six Taniguchi F12 instances (`VBF.taniguchi_apn` /
-     `taniguchi_apn_representatives` already exist); `x^3+α^{341}x^{36}`; F14 with `s=3,7`.
-  2. Compare `apn_ea_mugshot(F15)` against all of them and report the count of comparisons
-     made, not just "all catalog".
-  3. Print the number of representatives compared, so the check cannot silently degrade when
-     the catalog is thin.
-  4. Rename the check to "EA-mugshot distinct from the N Table III representatives".
+  1. Add `corollary1.jl` building `a Tr(bx³)+a^q Tr(gx⁵+ex^{4q+1})` for both parameter sets,
+     asserting δ=2 and `apn_ea_mugshot` equality with `n10_Taniguchi_m1_a1_b6` / `_b7`, plus
+     mutual inequality.
+  2. Add `lemma3_1.jl` and `lemma3_2.jl` as exhaustive predicate checks (cheap at n=6,10,14).
+  3. Add `table3.jl` building all 13 Table III representatives and asserting pairwise mugshot
+     distinctness.
+  4. Add `example1.jl` with the primitive-element scan documenting paper issue 2.
 
-### 4. Six of the seven items of Theorem 3.3, plus Theorem 3.10, Corollary 1, and both sporadic instances, are missing
+### 4. Lemma 2.1 is exercised on only one `(F, G)` pair, and is re-parametrised
 
-- **Location**: only item iii exists (`helpers.jl:63` `f15_sbox`, `theorem3_3.jl`);
-  `report.jl:39-41` declares Section 3B, the sporadic instances, and the `n=14` CCZ test out of
-  scope.
-- **Symptom**: the reproduction covers roughly one seventh of Section 3A plus Lemma 2.1. Yet
-  everything except the code-isomorphism tests is cheap: items i, ii, iv, v, vi, vii,
-  Corollary 1 (both cases) and the Remark 3.6 sporadic function were each verified at `n=10`
-  in seconds.
-- **Root cause**: scope set to the single "new family F15" headline.
+- **Location**: `lemma2_1.jl:29` (`bilinear_components`) and `:56` (`lemma2_1_is_apn`)
+  hard-code `F=bx³, G=cx^{2^s+1}`, and index by `(x,u)` rather than the paper's `(x,d)` with
+  `Δ_{d,F}(x) = F(dx)+F(dx+d)+F(d)`.
+- **Symptom**: the file's stated claim is Lemma 2.1 ("F, G arbitrary quadratic, iff"), but
+  the code only tests one instance; the "iff" direction (a non-APN case) is exercised only by
+  the degenerate `c=0`.
+- **Root cause**: specialisation. The re-parametrisation itself is sound — `x ↦ dx` is a
+  bijection — so the check is mathematically equivalent, just not readable side-by-side with
+  `.tex:172-181`.
 - **Resolution plan**:
-  1. Add `theorem3_3_all_items.jl` with a `zheng_fs(m,s,a,b,c)` builder and a per-item
-     admissible-parameter generator for i…vii; assert `δ=2` over a seeded sample, with
-     `limit`/`max_evaluations` knobs.
-  2. Add an explicit item-iv note reproducing P1: emit witnesses for the *statement's*
-     condition and show the *proof's* condition is empty (`3 | 2^{2s}−2^s+1` for odd `s`).
-  3. Add `corollary1.jl` for `h_s(x) = a Tr(bx^3) + a^q Tr(g x^5 + e x^{4q+1})` cases 1) and
-     2), asserting `δ=2` and mutual EA-inequivalence (their OD spectra differ:
-     `{0:633733,…}` vs `{0:631811,…}`), plus the paper's claim that both land in Taniguchi's
-     F12 (compare with `VBF.taniguchi_apn`).
-  4. Add `example1.jl` and `remark3_6.jl` for the two Table III sporadic rows — and
-     **hard-code the modulus and generator**, documenting P2 (only 20 of 600 primitive `z`
-     work; use `conway_polynomial(10) = 0b10001101111` with `z = 2`).
-  5. Add `remark3_4.jl` asserting the stated equivalences (vii ≅ `x^3`, vi ≅ i, v ∈ F10) via
-     mugshots.
+  1. Generalise `bilinear_components` to take `F, G` as closures or `(coef, exp)` term lists.
+  2. Add a randomised agreement test
+     `lemma2_1_criterion(F,G,a) == (differential_uniformity == 2)` over random quadratics at
+     n=6 — exactly this was run here: 60/60 agree.
+  3. Rename to `(x, d)` to mirror the paper.
 
-### 5. `print_header` bypasses `print_banner`
+### 5. The `streaming` keyword is dead and the printed method label is wrong
 
-- **Location**: `helpers.jl:15-20` hand-rolls `"=" ^ 72` banners.
-- **Root cause**: boilerplate drift.
-- **Resolution plan**: use `VBF.print_banner(io, title, venue)` as
-  `papers/2022/Li_202207/helpers.jl:17` does.
+- **Location**: `theorem3_3.jl:54` (`streaming::Bool = (2m >= 13)`), `:59-62`.
+- **Symptom**: both branches execute the identical `differential_uniformity(F)`; only
+  `method_tag` changes. The n=10 report line prints "[full DDT]", but
+  `differential_uniformity` (`packages/VBF/src/spectra/differential.jl:106-120`) never
+  materialises a DDT matrix — it is row-by-row for every `n`. So the report attributes two
+  different algorithms to one code path, and mislabels the `n ≤ 12` one.
+- **Root cause**: a leftover parameter.
+- **Resolution plan**:
+  1. Delete the `streaming` kwarg, and the `test_theorem3_3.jl` call site passing
+     `streaming = false`.
+  2. Print a single accurate label, e.g. `"row-by-row DDT (VBF differential_uniformity)"`.
+  3. If a genuine memory-bounded path is wanted at `n ≥ 16`, add it to core rather than to
+     the paper.
+
+### 6. The CCZ-inequivalence proxy is far weaker than the paper's Table III claim
+
+- **Location**: `theorem3_3.jl:83-91` —
+  `filter(r -> r.is_quadratic, list_functions(db; is_apn=true, n=10))`.
+- **Symptom**: the comparison set is the **11** quadratic n=10 catalog entries
+  (`n10_Gold_x3/x9/i7/i9`, `n10_Kasami_i9`, `n10_Taniguchi_m1_a1_b1/b6/b7`,
+  `n10_Taniguchi_m2_a1_b1/b8/b9`). The paper's Table III also contains two F3
+  representatives, two F4 representatives, two F14 (Budaghyan–Helleseth–Kaleyski)
+  representatives and the Edel–Kyureghyan–Pott sporadic `x³+α³⁴¹x³⁶` — **none of which is in
+  the catalog**. So `distinct_from_all = true` currently means "distinct from
+  Gold/Kasami/Taniguchi", not "new".
+- **Root cause**: reliance on catalog coverage that does not exist at n=10.
+- **Resolution plan**:
+  1. Build the seven missing Table III representatives locally — all verified APN here — and
+     include them in the comparison.
+  2. Keep the catalog scan as an additional check.
+  3. State explicitly in the report that mugshot distinctness certifies CCZ-inequivalence
+     only because both sides are quadratic APN (Yoshiara).
+
+### 7. Invalid justification for the `b=2` default
+
+- **Location**: `helpers.jl:61` — "b=2: non-cube when 3 | 2^n−1 (holds for all n here since
+  3 | 2^{2m}−1)".
+- **Symptom**: `3 | 2^n − 1` only guarantees that non-cubes *exist*; it says nothing about
+  `2`. The default happens to be safe because `2` is primitive under both
+  `PRIMITIVE_POLYNOMIALS[10] = x^10+x^3+1` and `PRIMITIVE_POLYNOMIALS[14]` (both confirmed to
+  have `2` of full order), and `verify_f15_conditions` re-checks with `gf_is_dth_power` at
+  runtime.
+- **Resolution plan**: replace the comment with "2 is a generator under this modulus, hence
+  `log(2)=1 ≢ 0 (mod 3)`, hence non-cube — re-checked at runtime by `gf_is_dth_power`".
 
 ---
 
 ## Items Reproduced Exactly
 
-| Item | Evidence |
-|------|----------|
-| **F15 / Theorem 3.3 iii)** `f_3(x) = a Tr_m^n(b x³) + a^q Tr_m^n(b³ x⁹)` | Expanded correctly to `(ab)x³ + (ab^q)x^{3q} + (a^q c)x^9 + (a^q c^q)x^{9q}` (`helpers.jl:35-52`). `δ = 2` verified at **n = 10** (full check) and **n = 14** (quadratic-APN kernel test, all 16383 directions) with `a = b = 2`, `c = b³`, matching `results/theorem3_3.toml` (`n10_du = 2`, `n14_du = 2`) |
-| **Parameter family validated beyond the reproduction's single point** | 12 random `(a, b, λ)` with `a ∉ F_{2^5}`, `b` non-cube, `c = λ b³`, `λ ∈ F*_{2^5}` — all `δ = 2`, 0 failures |
-| **Theorem 3.3's side conditions** | `a ∉ F_q` via `in_subfield`, `b` non-cube via `gf_is_dth_power(b,3,n)` — correct use of core, and both hold for the defaults (`a = b = 2` is primitive under `primitive_polynomial(2m)`) |
-| **Lemma 2.1** | The `P`/`Q` split `B_s(x,u) = a·P + a^q·Q` with `P, Q ∈ F_{2^m}` and `a + a^q ≠ 0 ⇒ (B=0 ⟺ P=Q=0)` is a faithful restatement; `lemma2_1_is_apn` cross-checks against `differential_uniformity`, and the tests verify `P, Q ∈ F_{2^m}`, symmetry, and the trivial solutions `x ∈ {0,u}` |
+| Paper item | Status |
+|------------|--------|
+| Theorem 3.3 **item iii)** = family F15, `f₃(x)=a·Tr(bx³)+a^q·Tr(b³x⁹)` | fully reproduced; APN verified at n=10 (δ=2) and n=14 (repository: δ=2; an independent 400-direction sample at n=14: max DDT = 2) |
+| Lemma 2.1, *instantiated* for `F=bx³, G=cx^{2^s+1}` | partially reproduced (reproduction issue 4) |
+| Table II, F15 row (function form and conditions) | reproduced, except for the added `gcd(3,m)=1` (reproduction issue 1) |
+| "new up to CCZ" (Tables II/III) | partially — mugshot versus catalog only (reproduction issue 6) |
+
+### Verified as reproducible but not implemented
+
+All of the following were computed at n=10 and each runs in seconds:
+
+| Missing item | Independent result |
+|--------------|--------------------|
+| Thm 3.3 i) (s=m−2=3, `c⁴/b ∈ F_q`) | 8/8 sampled `(b,c)` → δ=2; a **single** ortho-derivative class |
+| Thm 3.3 ii) (s=(m−2)⁻¹ mod n = 7) | 8/8 → δ=2; single class |
+| Thm 3.3 iii) (s=3, `c/b³ ∈ F_q`) | 8/8 → δ=2; single class |
+| Thm 3.3 v) (s=m=5, `c ∉ F_q`) | 8/8 → δ=2 |
+| Thm 3.3 vi) (s=m+2=7, `bc ∈ F_q`) | 8/8 → δ=2 |
+| Thm 3.3 vii) (s=n−1=9, `c²/b ∉ F_q`) | 8/8 → δ=2 |
+| Remark 3.4: i) ≡ BHK F14 (s=3) | ortho-derivative signatures **equal** ✔ |
+| Remark 3.4: ii) ≡ F14 (s=7) | equal ✔ |
+| Remark 3.4: vi) ≡ i) | equal ✔ |
+| Remark 3.4: vii) ≡ Gold `x³` | equal ✔ |
+| Remark 3.4: iii) ≠ i) | **distinct** ✔ — this is the novelty of F15 |
+| Lemma 3.1 | n=6/10/14: the hypothesis holds for 13/61/253 values of `c`; **0** counterexamples |
+| Lemma 3.2 | n=10 (s=7): 122 `x`, 0 counterexamples; n=14 (s=5): 506 `x`, 0 counterexamples |
+| Lemma 2.1 as a *general* iff | 60/60 random quadratic `(F,G)` with random `a ∉ F_q` at n=6 |
+| Corollary 1, case 1 (`g=1, e=1/b^{2q−2}`) | δ=2; ortho-derivative class = **`n10_Taniguchi_m1_a1_b6`** |
+| Corollary 1, case 2 (`g=e=b`) | δ=2; class = **`n10_Taniguchi_m1_a1_b7`**; distinct from case 1 |
+| Remark 3.4's "exactly 6 CCZ-inequivalent Taniguchi F12 over `F_2^10`" (Kaspers–Zhou) | reproduced: 11 valid `β` in `F₃₂` per `i ∈ {1,2}`; **exactly 6** ortho-derivative classes (sizes 1,5,5,1,5,5) |
+| Remark 3.6 sporadic (`α Tr(x³)+α^q Tr(α¹¹x⁹)`) | δ=2 for **all 600** primitive `α`; class absent from the catalog |
+| Table III, 13 rows | 12/13 reproduce as APN with pairwise-distinct ortho-derivative classes; the 13th is Example 1 (paper issue 2) |
+
+**Also missing**: Theorem 3.9, Theorem 3.10 (both parts plus the whole Appendix), Corollary 1
+(the two infinite hexanomial families), Example 1, Remarks 3.5, 3.7, 3.8, and Open Problems
+1-3.
 
 ## Test Results
 
 | Command | Result |
 |---------|--------|
-| `make -C papers/2022/Zheng_202211 test` | **Not run** — `julia` is not installed in the review environment |
-| Committed `results/report.toml` | `lemma2_1_agree = true`, `lemma2_1_du = 2`, `theorem3_3_conditions_ok = true`, `theorem3_3_apn_ok = true` |
-| Committed `results/theorem3_3.toml` | `n10_du = 2`, `n14_du = 2` |
-| Independent re-verification: F15 `δ=2` at `n=10` (both moduli) and `n=14`; items i–vii at `m=5`; item iii at `m=3`; Corollary 1 both cases; Remark 3.6 sporadic; Example 1 primitive-element sweep (20/600) | **All confirmed** |
+| `julia papers/2022/Zheng_202211/test/runtests.jl` | **Not run** — `julia` unavailable. The committed `results/report.toml` and `results/theorem3_3.toml` record a prior in-repo pass |
+| Independent Python: F15 at m=3/5/7; Theorem 3.3 items i-vii at n=10; Remark 3.4's four equivalences; Lemmas 3.1/3.2 at n=6/10/14; Lemma 2.1 general iff at n=6; Corollary 1 both cases; the 6 Taniguchi F12 classes; Example 1's 600-element primitive scan; Remark 3.6's 600-element scan; full Table III reconstruction; catalog comparison against the 11 quadratic n=10 entries | **Agrees with every committed value** |
 
 ## Catalog Status
 
-`n10_apn.toml` contains only 4 monomials (`Gold x3`, `Gold x9`, `Kasami x57`,
-`Dobbertin x339`). Quadratic OD differential spectra at `n=10`:
-`Gold x3 = {0:595386, 2:416361, 6:35805}`,
-`Gold x9 = {0:713031, 2:211761, 4:92070, 6:15345, 8:5115, 12:10230}`.
+| Claimed-new object | Status | Evidence |
+|--------------------|--------|----------|
+| **F15** `a Tr(bx³)+a^q Tr(b³x⁹)`, n=10 (Table II "new", Table III row 11) | **missing** | δ=2, deg=2; ortho-derivative DDT `{0:625239, 2:334986, 4:76725, 6:11160, 8:465, 1024:1}` matches none of the 11 quadratic n=10 catalog entries, and is distinct from all 12 other Table III rows built here |
+| **Remark 3.6 sporadic** `α Tr(x³)+α^q Tr(α¹¹x⁹)`, n=10 (Table III row 12) | **missing** | δ=2 for all 600 primitive `α`; ortho-derivative DDT `{0:641514, 2:304296, 4:89280, 6:13020, 8:465, 1024:1}` — no catalog match |
+| **Example 1 sporadic**, n=10 (Table III row 13) | **missing** (with a *valid* primitive) | with `z=23`, modulus 1033: δ=2, ortho-derivative DDT `{0:633454, 2:322958, 4:77562, 6:13020, 8:1333, 10:186, 12:62, 1024:1}` — no catalog match. See paper issue 2 for the primitive-element caveat |
+| **Corollary 1 case 1** (`g=1, e=1/b^{2q−2}`) | **not-new** | class = `n10_Taniguchi_m1_a1_b6` — matching the paper's own admission that these lie in family F12 |
+| **Corollary 1 case 2** (`g=e=b`) | **not-new** | class = `n10_Taniguchi_m1_a1_b7` |
 
-| Claimed-new object | Formula | APN verified | Family validated | Novelty checked | Catalog status |
-|---|---|---|---|---|---|
-| F15 (Thm 3.3 iii), `n=10` | yes | yes (`n=10`, `n=14`) | yes (12 random admissible params) | partial (2 catalog functions only) | **missing** |
-| Remark 3.6 sporadic, `n=10` | no | — | — | no | **missing** |
-| Example 1 sporadic, `n=10` | no | — | — | no | **missing** |
-| Corollary 1 case 1, `n=10` | no | — | — | — | missing, but the paper says ≅ Taniguchi F12 |
-| Corollary 1 case 2, `n=10` | no | — | — | — | missing, but the paper says ≅ Taniguchi F12 |
-
-### Catalog-gap record 1
+### Catalog-gap records (3 entries)
 
 ```
-target file      : packages/VBFCatalog/data-raw/apn_catalog/n10_apn.toml
-name             = "n10_Zheng2022_F15"
+target file : packages/VBFCatalog/data-raw/apn_catalog/n10_apn.toml
+
+[[apn_functions]]
+name = "n10_Zheng2022_F15"
 n = 10, m = 10, is_permutation = false
-algebraic_form   = "a*Tr_5^10(b*x^3) + a^32*Tr_5^10(b^3*x^9) = (a*b)x^3 + (a*b^32)x^96 + (a^32*b^3)x^9 + (a^32*b^96)x^288 in GF(2^10), a = b = 2 (primitive), modulus x^10+x^3+1 (=1033)"
-bib_key          = "Zheng_202211"
-source           = "Zheng, Kan, Li, Peng, Tang (2022), 'Constructing new APN functions through relative trace functions', Theorem 3.3 item iii) = family F15 of Table II (new). LUT from papers/2022/Zheng_202211/helpers.jl f15_sbox(5; a=2, b=2)."
-lut              : generate with f15_sbox(5; a = 2, b = 2, modulus = primitive_polynomial(10))  [1024 entries]
-equivalence evidence:
-  differential_uniformity = 2 (verified n=10 exhaustively; the family also verified APN at n=14)
-  algebraic_degree = 2
-  ortho-derivative differential spectrum = {0:624216, 2:334986, 4:76725, 6:11160, 8:465}
-    (identical under modulus 1033 and under Conway 1135, as expected for a CCZ invariant)
-  distinct from every existing n10_apn.toml entry:
-    n10_Gold_x3      {0:595386, 2:416361, 6:35805}
-    n10_Gold_x9      {0:713031, 2:211761, 4:92070, 6:15345, 8:5115, 12:10230}
-    n10_Kasami_x57   (not quadratic)
-    n10_Dobbertin_x339 (not quadratic)
-  note: the paper claims CCZ-inequivalence to all 13 Table III representatives; only
-        the two catalog Golds were machine-checked here.
-```
+algebraic_form : "a*Tr_5^10(b*x^3) + a^q*Tr_5^10(b^3*x^9) over GF(2^10), q=2^5,
+                  a = b = alpha (primitive, = 2), modulus x^10+x^3+1 (=1033);
+                  expands to (ab)x^3 + (a b^q)x^{96} + (a^q b^3)x^9 + (a^q b^{3q})x^{288}"
+bib_key : Zheng_202211
+source  : Zheng, Kan, Li, Peng, Tang (2022), Theorem 3.3 item iii) / Table II family F15 /
+          Table III row 11. Verified APN (differential_uniformity=2, algebraic_degree=2).
+          Also APN and quadratic at n=6 (m=3) and n=14 (m=7).
+lut : first 16 = [0,493,380,968,95,827,698,647,456,681,363,339,202,290,1008,321]
+      sha256(csv)[:16] = 35647e6265573ef6   (regenerate via papers/2022/Zheng_202211/helpers.jl
+      f15_sbox(5; a=2, b=2, modulus=1033))
+equivalence evidence : OD-DDT = {0:625239, 2:334986, 4:76725, 6:11160, 8:465, 1024:1};
+      distinct from all 11 quadratic n=10 catalog entries and from Gold x^3/x^9, F3, F4,
+      F14(s=3), F14(s=7), the Edel-Kyureghyan-Pott sporadic, all 6 Taniguchi F12 classes,
+      and both Corollary-1 families.
 
-### Catalog-gap record 2
-
-```
-target file      : packages/VBFCatalog/data-raw/apn_catalog/n10_apn.toml
-name             = "n10_Zheng2022_rem36_sporadic"
+[[apn_functions]]
+name = "n10_Zheng2022_rem36_sporadic"
 n = 10, m = 10, is_permutation = false
-algebraic_form   = "z*Tr_5^10(x^3) + z^32*Tr_5^10(z^11*x^9) in GF(2^10), z = 2 primitive, modulus x^10+x^6+x^5+x^3+x^2+1 (Conway, =1135)"
-bib_key          = "Zheng_202211"
-source           = "Zheng et al. (2022), Table III row 'sporadic, see Remark 3.6' (b = 1 a cube, c = z^11 with c^4/b in U; property P_{m-2})."
-lut              : generate as [ z*Tr(x^3) + z^32*Tr(z^11*x^9) ] over modulus 1135, z = 2
-equivalence evidence:
-  differential_uniformity = 2 (verified exhaustively)
-  ortho-derivative differential spectrum = {0:640491, 2:304296, 4:89280, 6:13020, 8:465}
-  distinct from n10_Gold_x3, n10_Gold_x9, and from n10_Zheng2022_F15 above
-```
+algebraic_form : "alpha*Tr_5^10(x^3) + alpha^q*Tr_5^10(alpha^11 * x^9) over GF(2^10),
+                  alpha primitive (=2), modulus x^10+x^3+1 (=1033)"
+bib_key : Zheng_202211
+source  : Zheng et al. (2022), Remark 3.6 / Table III row 12 ("sporadic"). Verified APN
+          for ALL 600 primitive elements alpha of GF(2^10) under this modulus.
+lut : first 16 = [0,821,99,427,66,691,684,672,991,352,404,470,474,673,284,154]
+      sha256(csv)[:16] = ecfee37f931b9bc5
+equivalence evidence : OD-DDT = {0:641514, 2:304296, 4:89280, 6:13020, 8:465, 1024:1};
+      no catalog match; distinct from F15 and from all Table III rows.
 
-### Catalog-gap record 3
-
-```
-target file      : packages/VBFCatalog/data-raw/apn_catalog/n10_apn.toml
-name             = "n10_Zheng2022_ex1_sporadic"
+[[apn_functions]]
+name = "n10_Zheng2022_ex1_sporadic"
 n = 10, m = 10, is_permutation = false
-algebraic_form   = "z*Tr_5^10(x^3) + z^32*Tr_5^10(z*x^5 + z^369*x^129) in GF(2^10), z = 2, modulus x^10+x^6+x^5+x^3+x^2+1 (Conway/Magma default, =1135)"
-bib_key          = "Zheng_202211"
-source           = "Zheng et al. (2022), Example 1 / Table III last row (b=1, g=z, e=z^369)."
-lut              : generate as above over modulus 1135 with z = 2
-equivalence evidence:
-  differential_uniformity = 2 (verified exhaustively, Conway representation)
-  ortho-derivative differential spectrum = {0:632431, 2:322958, 4:77562, 6:13020, 8:1333, 10:186, 12:62}
-  distinct from n10_Gold_x3, n10_Gold_x9, n10_Zheng2022_F15, n10_Zheng2022_rem36_sporadic
-  CRITICAL: the modulus and generator are load-bearing. Under VBF's default
-  primitive_polynomial(10) = x^10+x^3+1 with z = 2 this function has
-  differential_uniformity = 4. Only 20 of the 600 primitive elements yield an
-  APN function in either representation (see Paper Issue P2).
+algebraic_form : "z*Tr_5^10(x^3) + z^q*Tr_5^10(z*x^5 + z^369*x^{4q+1}) over GF(2^10),
+                  q=2^5, modulus x^10+x^3+1 (=1033), z = 23 (a primitive element for which
+                  the construction is APN -- NOT every primitive element works, see note)"
+bib_key : Zheng_202211
+source  : Zheng et al. (2022), Example 1 / Table III row 13. Verified APN
+          (differential_uniformity = 2, algebraic_degree = 2).
+note    : the paper states this for an arbitrary primitive z; under modulus 1033 only
+          20 of the 600 primitive elements yield an APN function (z = 2 gives delta = 4).
+lut : first 16 = [0,77,393,409,583,907,698,811,490,617,585,407,157,671,586,21]
+      sha256(csv)[:16] = 679086b7512c226d
+equivalence evidence : OD-DDT = {0:633454, 2:322958, 4:77562, 6:13020, 8:1333, 10:186,
+      12:62, 1024:1}; no catalog match.
 ```
+
+**Side note for a different reproduction**: the **BHK F14** representative at n=10
+(`x³+ωx⁹+ω²x^{3q}+x^{9q}`, `ω=α³⁴¹`) is also APN and also absent from the catalog
+(ortho-derivative DDT `{0:638724, 2:313131, 4:80910, 6:14415, 8:1395, 1024:1}`) — that
+belongs to the `Budaghyan_202011` reproduction, not this one.
 
 ## Library-Reuse Note
 
-Duplicates a core export:
-
-- `zheng_lut` — `helpers.jl:35-52` — is a hand-rolled 4-term univariate polynomial LUT
-  builder, exactly `VBF.terms_to_lut(terms, n, modulus; powtab)`
-  (`packages/VBF/src/representations/univariate.jl:331`, exported at `exports.jl:21`). Fix
-  target: `terms_to_lut([(ab,3),(abq,3q),(aqc,2^s+1),(aqcq,(2^s+1)q)], n, modulus)`, which
-  also gets `monomial_power_table` amortisation for free at `n = 14`.
-- `print_header` — `helpers.jl:15-20` — should call `VBF.print_banner`.
-
-Legitimately paper-specific (not flagged): `bilinear_components` and `lemma2_1_is_apn`
-(`lemma2_1.jl:29-107`) implement Lemma 2.1's specific `(P,Q)` subfield split, which core does
-not have; `verify_f15_conditions` composes existing core predicates.
-
-Good reuse already present: `in_subfield`, `gf_is_dth_power`, `differential_uniformity`,
-`apn_ea_mugshot`, `primitive_polynomial`, `print_section`/`print_check`/`print_kv`,
-`load_catalog`/`list_functions`/`load_sbox`.
-
-Promote-to-core candidate: a relative-trace-form LUT builder
-`trace_form_lut(a, F_terms, G_terms, m, n)` for `a·Tr_m^n(F(x)) + a^q·Tr_m^n(G(x))` — this
-shape recurs across the Zheng, Budaghyan–Helleseth–Kaleyski (F14) and Taniguchi (F12)
-reproductions. Alternatively, just use `gf_relative_trace` (already exported) inside
-`terms_to_lut`.
-
-## Open Questions
-
-1. `report.jl:22-25` and `theorem3_3.jl:151-154` describe the scope as "exact: APN at n=14
-   (streaming DDT)". Should the scope statement be rewritten now that core always streams
-   (issue 2)?
-2. Should the reproduction pin the Magma/Conway modulus (`conway_polynomial(10) = 1135`)
-   globally, given that Table III and Example 1 are only correct in Magma's default field
-   (P2)? `helpers.jl:36` currently defaults to `primitive_polynomial(2m)`.
+| Helper | Line | Verdict |
+|--------|------|---------|
+| `zheng_lut` | `helpers.jl:35-52` | **reuse violation** — hand-rolls a 4-term polynomial evaluation with `gf_mul`/`gf_pow` per point. Should be `terms_to_lut([(ab,3),(abq,3q),(aqc,2^s+1),(aqcq,(2^s+1)q)], n, modulus)` (`packages/VBF/src/representations/univariate.jl:331`), optionally with a shared `monomial_power_table` |
+| `lemma2_1_is_apn` power tables | `lemma2_1.jl:63-65` | **reuse violation** — `sq_lut`, `pow_s_lut` and `frob_lut` each duplicate `gf_monomial_lut(n, d; modulus)` (`packages/VBF/src/representations/finite_field.jl:252`) |
+| `print_header` | `helpers.jl:15-20` | **reuse violation** — hand-rolls the `"="^72` banner; should call `print_banner`. The same pattern appears in 8+ other papers — a repo-wide cleanup candidate |
+| `bilinear_components` | `lemma2_1.jl:29` | paper-specific, but see reproduction issue 4 (should be generic in `F`, `G`) |
+| `verify_f15_conditions`, `f15_sbox` | — | legitimately paper-specific; correctly reuse `in_subfield` and `gf_is_dth_power` |
+| `table2_mugshot_comparison` | `theorem3_3.jl:74` | correctly reuses `apn_ea_mugshot`, `load_catalog`, `list_functions`, `load_sbox` |
