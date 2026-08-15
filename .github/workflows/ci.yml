@@ -83,9 +83,25 @@ jobs:
       - name: Run paper tests
         run: make -C papers/${{ matrix.paper }} test
 
+  catalog-check:
+    # Structural half of .githooks/catalog-check — the same gate the pre-commit
+    # hook runs, as a backstop for clones that never enabled the hook. Needs no
+    # Julia and finishes in seconds, so a data-raw change committed without its
+    # rebuilt BFA_catalog.sqlite is named as such here instead of surfacing 40
+    # minutes later as a bare count mismatch in catalog_queries_test.
+    name: Catalog sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Check data-raw against the committed catalog
+        run: .githooks/catalog-check --structure-only
+
   test:
     name: Test • Julia ${{ matrix.julia }} • ${{ matrix.os }}
-    needs: [paper-tests]
+    needs: [paper-tests, catalog-check]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:

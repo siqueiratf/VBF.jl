@@ -1,0 +1,295 @@
+#!/usr/bin/env bash
+#
+# Catalog pipeline gate.
+#
+# A change under packages/VBFCatalog/data-raw/ is not self-contained: the
+# committed BFA_catalog.sqlite is built from those TOMLs, and packages/VBF's
+# catalog test items reconstruct their expected counts from the TOMLs and
+# compare them against the DB. Commit one without the other and CI fails in
+# catalog_queries_test / catalog_content_test with a bare count mismatch that
+# says nothing about the cause.
+#
+# This script is that missing check. Two phases:
+#
+#   1. Structure — data-raw <-> BFA_catalog.sqlite agreement, plus the exact
+#      family sums catalog_queries_test reconstructs. Needs python3 + the
+#      stdlib only, runs in well under a second, and reports the desync in
+#      the terms that caused it ("n8_Foo is in n8_apn.toml but not in the DB —
+#      rebuild the catalog").
+#   2. Tests — the catalog test items, run for real via ReTestItems.
+#
+# Usage:
+#   .githooks/catalog-check              # both phases, always
+#   .githooks/catalog-check --staged     # pre-commit: only if staged files touch the catalog
+#   .githooks/catalog-check --structure-only    # phase 1 only (no Julia needed)
+#
+# Escape hatches (both print loudly; use them only when you know why):
+#   VBF_SKIP_CATALOG_CHECK=1   skip entirely
+#   VBF_SKIP_CATALOG_TESTS=1   run phase 1, skip phase 2
+#   VBF_CATALOG_TESTS='regex'  override which test items phase 2 runs
+set -uo pipefail
+
+MODE="full"
+case "${1:-}" in
+    --staged) MODE="staged" ;;
+    --structure-only) MODE="structure-only" ;;
+    "") ;;
+    *) echo "catalog-check: unknown argument '$1'" >&2; exit 2 ;;
+esac
+
+ROOT="$(git rev-parse --show-toplevel)" || exit 2
+cd "$ROOT" || exit 2
+
+DB="packages/VBFCatalog/BFA_catalog.sqlite"
+APN_DIR="packages/VBFCatalog/data-raw/apn_catalog"
+LIT_TOML="packages/VBFCatalog/data-raw/literature_sboxes.toml"
+QUERIES_TEST="packages/VBF/test/unit/catalog_queries_test.jl"
+CATALOG_SRC="packages/VBFCatalog/src/data/catalog.jl"
+
+# Paths whose change can desync the catalog. Keep in sync with the CI job and
+# with the rule in AGENTS.md.
+WATCHED=(
+    "packages/VBFCatalog/data-raw/"
+    "packages/VBFCatalog/BFA_catalog.sqlite"
+    "packages/VBFCatalog/data-build/"
+    "packages/VBFCatalog/src/"
+    "packages/VBFCatalog/corpora/"
+)
+
+red()  { printf '\033[31m%s\033[0m\n' "$*"; }
+bold() { printf '\033[1m%s\033[0m\n' "$*"; }
+
+if [[ "${VBF_SKIP_CATALOG_CHECK:-}" == "1" ]]; then
+    red "catalog-check: SKIPPED via VBF_SKIP_CATALOG_CHECK=1 — the catalog is not verified."
+    exit 0
+fi
+
+# --- Should we run at all? ---------------------------------------------------
+
+if [[ "$MODE" == "staged" ]]; then
+    staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+    touched=""
+    for path in "${WATCHED[@]}"; do
+        hit="$(printf '%s\n' "$staged" | grep -F "$path" || true)"
+        [[ -n "$hit" ]] && touched="$touched$hit"$'\n'
+    done
+    [[ -z "${touched//[[:space:]]/}" ]] && exit 0
+
+    bold "catalog-check: staged changes touch the catalog pipeline:"
+    printf '%s' "$touched" | sed '/^$/d;s/^/  /'
+
+    # Phases 1 and 2 read the working tree, so a partially staged catalog file
+    # means the thing verified is not the thing committed. Refuse rather than
+    # report a pass that does not cover the commit.
+    unstaged="$(git diff --name-only -- "${WATCHED[@]}")"
+    if [[ -n "$unstaged" ]]; then
+        red "catalog-check: FAILED — catalog files have unstaged changes:"
+        printf '%s\n' "$unstaged" | sed 's/^/  /'
+        echo
+        echo "This check verifies the working tree, so a partial stage would be checked"
+        echo "but not committed. Stage them (git add) or stash them, then commit again."
+        exit 1
+    fi
+fi
+
+# --- Phase 1: structure ------------------------------------------------------
+
+if ! command -v python3 >/dev/null 2>&1; then
+    red "catalog-check: FAILED — python3 not found; cannot run the structure check."
+    exit 1
+fi
+
+bold "catalog-check [1/2]: data-raw <-> $DB"
+python3 - "$DB" "$APN_DIR" "$LIT_TOML" "$QUERIES_TEST" "$CATALOG_SRC" <<'PY'
+import hashlib, pathlib, re, sqlite3, sys, tomllib
+
+db_path, apn_dir, lit_toml, queries_test, catalog_src = (pathlib.Path(a) for a in sys.argv[1:6])
+
+problems = []
+def fail(msg, *, fix=None):
+    problems.append((msg, fix))
+
+for p in (db_path, apn_dir, lit_toml):
+    if not p.exists():
+        print(f"  missing: {p}", file=sys.stderr)
+        sys.exit(2)
+
+# ---- sources ----------------------------------------------------------------
+apn = {}          # name -> (entry, file)
+for f in sorted(apn_dir.glob("n*_apn.toml")):
+    for e in tomllib.loads(f.read_text()).get("apn_functions", []):
+        name = e.get("name")
+        if name in apn:
+            fail(f"duplicate declarative name {name!r} ({apn[name][1].name} and {f.name})")
+        apn[name] = (e, f)
+
+lit = {e["name"]: e for e in tomllib.loads(lit_toml.read_text()).get("sboxes", [])}
+
+# ---- catalog ----------------------------------------------------------------
+con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+con.row_factory = sqlite3.Row
+rows = {}         # family -> {canonical_name: row}
+for r in con.execute("SELECT * FROM functions"):
+    rows.setdefault(r["family"], {})[r["canonical_name"]] = r
+bib_keys = {r[0] for r in con.execute("SELECT bib_key FROM bibliography")}
+
+# ---- schema version ---------------------------------------------------------
+m = re.search(r"^const SCHEMA_VERSION\s*=\s*(\d+)", catalog_src.read_text(), re.M)
+if m:
+    want = int(m.group(1))
+    got = con.execute("SELECT schema_version FROM schema_meta LIMIT 1").fetchone()
+    got = got[0] if got else None
+    if got != want:
+        fail(f"schema_version is {got} in the DB but {want} in {catalog_src.name}",
+             fix="rebuild the catalog: make -C packages/VBFCatalog/data-build catalog")
+
+# ---- declarative families must match their TOMLs exactly --------------------
+def compare(family, source, label):
+    have = rows.get(family, {})
+    missing = sorted(set(source) - set(have))
+    orphan = sorted(set(have) - set(source))
+    for n in missing:
+        fail(f"{n!r} is declared in {label} but has no {family!r} row in the catalog",
+             fix="the catalog was not rebuilt after the TOML change — see the rebuild note below")
+    for n in orphan:
+        fail(f"{n!r} is a {family!r} row in the catalog but is not declared in {label}",
+             fix="the entry was removed from the TOML without rebuilding the catalog")
+    for n in sorted(set(source) & set(have)):
+        e, r = source[n], have[n]
+        e = e[0] if isinstance(e, tuple) else e
+        for field, want in (("n", e.get("n")), ("m", e.get("m")),
+                            ("is_permutation", int(bool(e.get("is_permutation")))),
+                            ("bib_key", e.get("bib_key"))):
+            if want is not None and r[field] != want:
+                fail(f"{n}: {field} is {r[field]!r} in the catalog but {want!r} in the TOML")
+        if e.get("bib_key") and e["bib_key"] not in bib_keys:
+            fail(f"{n}: bib_key {e['bib_key']!r} has no bibliography row",
+                 fix="add the entry to data-raw/bibliography.bib and rebuild")
+        lut = e.get("lut")
+        if lut is not None:
+            # canonical_lut_bytes: ceil(n/8) little-endian bytes per entry, input order.
+            per = -(-int(e["n"]) // 8)
+            blob = b"".join(int(v).to_bytes(per, "little") for v in lut)
+            if hashlib.sha256(blob).hexdigest() != r["lut_sha256"]:
+                fail(f"{n}: the TOML LUT does not hash to the catalog's lut_sha256",
+                     fix="the LUT was edited in place without rebuilding the catalog")
+            if bytes(r["lut_blob"]) != blob:
+                fail(f"{n}: the TOML LUT does not match the catalog's lut_blob")
+
+compare("APN", apn, "data-raw/apn_catalog/")
+compare("Literature", lit, "data-raw/literature_sboxes.toml")
+
+for n, (e, f) in apn.items():
+    r = rows.get("APN", {}).get(n)
+    if r is not None and r["is_apn"] != 1:
+        fail(f"{n}: catalog row has is_apn = {r['is_apn']}")
+
+# ---- every family must be accounted for in catalog_queries_test -------------
+# Importer-backed families (APN-rep, CCZ-rep-GF4, known-family, known-sporadic)
+# are not declared in a TOML, so the test reads their counts back from the DB by
+# name. A family the test never names is a family missing from its sums — that is
+# exactly how catalog_queries_test broke when known-family/known-sporadic landed.
+test_src = queries_test.read_text()
+for family in sorted(rows):
+    if f'"{family}"' not in test_src:
+        fail(f"family {family!r} exists in the catalog but is never named in "
+             f"{queries_test.name}",
+             fix="its rows are missing from that test's totals — thread the family "
+                 "through every sum (total, n=4, n=8, is_apn, is_permutation)")
+
+# ---- the sums catalog_queries_test asserts ----------------------------------
+# Mirrors the test: declarative families are counted from the TOMLs, importer
+# families from the DB. A mismatch here is the CI failure, reported early.
+IMPORTER = ("APN-rep", "CCZ-rep-GF4", "known-family", "known-sporadic")
+imp = [r for f in IMPORTER for r in rows.get(f, {}).values()]
+
+def db_count(where=""):
+    return con.execute(f"SELECT COUNT(*) FROM functions {where}").fetchone()[0]
+
+perm_toml = sum(1 for e in lit.values() if e.get("is_permutation")) + \
+            sum(1 for e, _ in apn.values() if e.get("is_permutation"))
+checks = [
+    ("total functions", len(lit) + len(apn) + len(imp), db_count()),
+    ("n = 4", sum(1 for e in lit.values() if e["n"] == 4)
+            + sum(1 for e, _ in apn.values() if e["n"] == 4)
+            + sum(1 for r in imp if r["n"] == 4), db_count("WHERE n = 4")),
+    ("n = 8", sum(1 for e in lit.values() if e["n"] == 8)
+            + sum(1 for e, _ in apn.values() if e["n"] == 8)
+            + sum(1 for r in imp if r["n"] == 8), db_count("WHERE n = 8")),
+    ("is_apn = true", len(apn) + len(imp), db_count("WHERE is_apn = 1")),
+    ("is_apn = false", len(lit), db_count("WHERE is_apn = 0")),
+    ("is_permutation = true", perm_toml + sum(1 for r in imp if r["is_permutation"] == 1),
+     db_count("WHERE is_permutation = 1")),
+]
+width = max(len(label) for label, _, _ in checks)
+for label, expected, actual in checks:
+    ok = expected == actual
+    print(f"  {'ok ' if ok else 'BAD'} {label:<{width}}  sources {expected:>5}   catalog {actual:>5}")
+    if not ok:
+        fail(f"{label}: sources say {expected}, catalog says {actual} "
+             f"(catalog_queries_test asserts these are equal)")
+
+# ---- report -----------------------------------------------------------------
+if not problems:
+    print(f"  ok  {len(apn)} declarative APN + {len(lit)} literature + {len(imp)} imported "
+          f"entries agree with the catalog")
+    sys.exit(0)
+
+print()
+sys.stdout.flush()
+print(f"catalog-check: FAILED — {len(problems)} problem(s):", file=sys.stderr)
+seen = set()
+for msg, fix in problems:
+    print(f"  - {msg}", file=sys.stderr)
+    if fix and fix not in seen:
+        seen.add(fix)
+        print(f"    {fix}", file=sys.stderr)
+print("""
+The committed catalog is built from data-raw, so a data-raw change is only half
+the commit. Rebuild and stage the DB:
+
+    make -C packages/VBFCatalog/data-build catalog     # full rebuild (needs the
+                                                       # external sources; see
+                                                       # data-build/Makefile)
+    git add packages/VBFCatalog/BFA_catalog.sqlite
+""", file=sys.stderr)
+sys.exit(1)
+PY
+structure=$?
+[[ $structure -ne 0 ]] && exit $structure
+
+# --- Phase 2: the catalog test items ----------------------------------------
+
+if [[ "$MODE" == "structure-only" ]]; then
+    echo "catalog-check: structure only (--structure-only); test items not run."
+    exit 0
+fi
+
+# Every test item whose expectations depend on catalog contents. Adding a
+# catalog-reading test item? Add it here.
+TESTS="${VBF_CATALOG_TESTS:-catalog_content|catalog_queries|catalog_schema|apn_catalog|apn_reps_catalog|literature_sboxes|simonberg_catalog|corpus|sigma_coverage|sigma_multiplicities|ccz_fingerprint}"
+
+if [[ "${VBF_SKIP_CATALOG_TESTS:-}" == "1" ]]; then
+    red "catalog-check: test items SKIPPED via VBF_SKIP_CATALOG_TESTS=1."
+    exit 0
+fi
+
+if ! command -v julia >/dev/null 2>&1; then
+    red "catalog-check: FAILED — julia not on PATH, so the catalog test items cannot run."
+    echo
+    echo "The structure check above passed, but it is a fast proxy, not the suite."
+    echo "Install Julia 1.12, or commit with VBF_SKIP_CATALOG_TESTS=1 and say so in"
+    echo "the commit message / PR — CI will run them either way."
+    exit 1
+fi
+
+bold "catalog-check [2/2]: test items /$TESTS/"
+VBF_TEST_NAME="$TESTS" julia --startup-file=no --project=packages/VBF \
+    -e 'using Pkg; Pkg.test()'
+tests=$?
+if [[ $tests -ne 0 ]]; then
+    red "catalog-check: FAILED — catalog test items did not pass (exit $tests)."
+    exit $tests
+fi
+
+bold "catalog-check: OK"
