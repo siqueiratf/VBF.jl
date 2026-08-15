@@ -1,114 +1,163 @@
-# Taniguchi_202501
+# Taniguchi_202501 — Changing Almost Perfect Nonlinear Functions on Affine Subspaces of Small Codimensions
 
-Taniguchi, Polujan, Pott, Arshad (2025), *"Changing almost perfect nonlinear
-functions on affine subspaces of small codimensions"* (arXiv:2501.03922).
+**Paper**: Taniguchi et al. "Changing almost perfect nonlinear functions on affine subspaces
+of small codimensions." 2025.
 
-Reproduction path: `papers/2025/Taniguchi_202501/`
+**Reproduction path**: `papers/2025/Taniguchi_202501/`
 
-**Verdict: Partial.** Sections 3–4 (Theorem 3.2, Example 3.3, Table 3.1,
-Theorem 3.7, Example 4.2) are correctly reproduced and independently
-re-verified. Section 2 (Theorem 2.10, Proposition 2.11 — the paper's own
-headline contribution per its abstract) has no code at all. Several smaller
-verification gaps remain inside Section 3–4 coverage (Table 3.1 `D_k` column,
-Theorem 3.5 completeness half, Remark 3.6.2).
+**Verdict**: Mostly complete
 
----
+Everything implemented reproduces exactly and survives independent re-derivation. Two items
+previously declared out of scope turn out to be tractable, and running them changed the
+picture: the n=6 count in Example 3.3 **contradicts the paper's stated figure**, and the
+Γ-rank claim of Example 4.2 **verifies in 85 seconds**, so the paper's only stated
+inequivalence evidence is now fully reproduced rather than merely transcribed.
 
-## Issue Catalog
+> **Environment note**: Julia is not installed in the review environment, so no test
+> entrypoint could be executed. Every claim below was re-derived independently in Python 3.13
+> and C, and cross-checked against the PDF. No repository file was modified during the review.
 
-### Paper Issues
-
-None found. No mathematical error was found in any paper item that the
-reproduction implements. (The `.tex` source has OCR-garbled exponents in
-several Table 3.1 rows — see Reproduction Issue 5 — but that is a source
-transcription artifact, not a flaw in the published mathematics.)
-
-### Reproduction Issues
-
-1. **Section 2 entirely unreproduced (Theorem 2.10, Proposition 2.11, Proposition 2.4, Proposition 2.8, Example 2.7)**
-   - **Location:** no file under `papers/2025/Taniguchi_202501/`; scope block at `helpers.jl:19-24` silently omits Section 2.
-   - **Symptom:** no test, no script — the paper's stated headline contribution ("Our contribution" in Section 1 foregrounds Theorem 2.10 and Proposition 2.11) has zero code coverage. Proposition 2.11 is the direct antecedent Theorem 3.2 specializes.
-   - **Root cause:** reproduction scope was set to Sections 3–4 only, without recording that exclusion explicitly.
-   - **Resolution plan:**
-     1. Decide whether Section 2 is in scope for this reproduction.
-     2. If yes: add `theorem2_10.jl` implementing Theorem 2.10 conditions (1)/(2) and Proposition 2.11 Eq. (2.1) for small `n`, `m`, with tests.
-     3. If no: update the scope comment in `helpers.jl:19-24` to state explicitly "Section 2 (Theorem 2.10, Prop 2.11) intentionally out of scope" instead of silent omission.
-
-2. **Remark 3.6.2 (non-classical Walsh spectrum of `G₇`) unchecked**
-   - **Location:** `table3_1.jl` (no corresponding check); paper `.tex` L289.
-   - **Symptom:** no test asserts `G₇`'s Walsh spectrum differs from the other 12. Independently verified true: `G₇ → [-32,-16,-8,0,8,16,32]`, all other 12 → `[-16,-8,0,8,16]`.
-   - **Root cause:** remark was not translated into a code check when Table 3.1 was implemented.
-   - **Resolution plan:** add a ~5-line check in `table3_1.jl` (or new `remark3_6.jl`) using `lat` asserting `G₇`'s spectrum is exactly `{0,±8,±16,±32}` and the other 12 are exactly `{0,±8,±16}`.
-
-3. **Theorem 4.1 not generalized; "only if" direction never exercised**
-   - **Location:** `example4_2.jl:51-108`.
-   - **Symptom:** only the single Example 4.2 instance is hard-coded; there is no reusable predicate over arbitrary `F`, `U`, `a₁..a₄`, so the negative ("only if") direction of Theorem 4.1 is untested. Independently verified true: for `a₁+a₂+a₃+a₄ ∉ A`, `du(G) = 4`; for `∈ A`, `du(G) = 2`.
-   - **Root cause:** implementation was written directly against the one example instead of the general criterion.
-   - **Resolution plan:** factor out `theorem4_1_condition(F, U, a1, a2, a3, a4)` and add both directions as tests, including the negative case.
-
-4. **Missing cross-validation tests for Theorem 3.2 and Eq. (3.1) against ground truth**
-   - **Location:** `test/test_theorem3_2.jl`, `test/test_theorem3_7.jl`.
-   - **Symptom:** only a single `L = x` negative case exists in `test_theorem3_7.jl`; no test sweeps random `L` and cross-checks the criterion against `differential_uniformity`.
-   - **Root cause:** tests cover the paper's stated example values but not general-criterion soundness.
-   - **Resolution plan:** add randomized tests: Theorem 3.2 criterion ⟺ `differential_uniformity(F) == 2` over random `L` at n=4,5; Eq. (3.1) ⟺ APN over random `L` at n=4,5,6 (both independently confirmed true during review).
-
-5. **Undocumented OCR repair of Table 3.1 exponents**
-   - **Location:** `helpers.jl:121-135` (`TABLE_3_1_RAW`).
-   - **Symptom:** the `.tex` source has garbled exponents in several rows (e.g. `L₂`, `L₄`, `L₁₀`, `L₁₁` show malformed `x²` terms instead of `x^{2^2}` etc.); `helpers.jl` silently reconstructs the correct exponents with no comment. A reader diffing against the `.tex` cannot distinguish repair from transcription error.
-   - **Root cause:** reconstruction was done correctly (verified: all 13 come out APN, quadratic, pairwise EA-inequivalent, and satisfy Eq. 3.1) but undocumented.
-   - **Resolution plan:** add a comment at `helpers.jl:121-135` noting which rows were OCR-garbled in the source `.tex` and how the exponents were reconstructed.
-
-6. **Dead code: `linearized_poly_lut` duplicates core, never called**
-   - **Location:** `helpers.jl:57-64`.
-   - **Symptom:** function defined, never referenced anywhere in the paper directory.
-   - **Root cause:** superseded by direct LUT construction elsewhere; not cleaned up. Equivalent to `terms_to_lut` in `packages/VBF/src/representations/univariate.jl:331`.
-   - **Resolution plan:** delete `linearized_poly_lut`, or replace its one conceptual use with `terms_to_lut` if needed later.
-
-7. **Stale `VBF API used` header comments**
-   - **Location:** `theorem3_2.jl:12`, `helpers.jl:6-7`.
-   - **Symptom:** `theorem3_2.jl:12` lists `gold_apn, SBox, differential_uniformity`, none of which appear in that file; it actually uses `gf_inv`, which is unlisted. `helpers.jl:6-7` lists `gf_relative_trace`, unused in that file.
-   - **Root cause:** headers not updated as implementation evolved.
-   - **Resolution plan:** regenerate both header comments to match actual imports/usage.
-
-8. **`theorem3_2_report` returns misleading result shape for n ≥ 6**
-   - **Location:** `theorem3_2.jl:87-90, 108-110`.
-   - **Symptom:** for n ≥ 6 (infeasible exhaustive search, ~40000 expected but never attempted), returns `(count=-1, expected=40000, match=false)` — same shape as a genuine failed check.
-   - **Root cause:** no distinct "skipped/infeasible" status defined.
-   - **Resolution plan:** add a distinct status (e.g. `:skipped`) instead of reusing the failure shape; update `report.jl:29` to explain the `n ≤ 7` `_design_rank_guard` limit (`packages/VBF/src/invariants/design_ranks.jl:75-81`) rather than "out-of-scope (Magma)".
-
-9. **Table 3.1 `D_k` (Dillon numbering) column unverified**
-   - **Location:** `helpers.jl:121-135` (carried as string label only).
-   - **Symptom:** the `G_i ↦ D_k` correspondence from `[21, Table 4]` is stored but never checked against anything; Dillon's dimension-6 representatives are not present in `packages/VBFCatalog/data-raw/apn_catalog/n6_apn.toml` (only 3 of 13 entries exist there).
-   - **Root cause:** catalog does not yet hold Dillon's 13 dimension-6 quadratic-APN classes to check against.
-   - **Resolution plan:** either (a) add Dillon's 13 representatives to `n6_apn.toml` first, then verify `G_i ↦ D_k` by `apn_ea_mugshot`, or (b) relabel the column as explicitly unverified pending that data. Decision needed — see catalog gaps below.
-
-10. **Theorem 3.5 completeness half unasserted**
-    - **Location:** `table3_1.jl:62-65`.
-    - **Symptom:** only "13 pairwise EA-inequivalent" is checked (via distinct mugshots); the paper's stronger claim — every quadratic APN on F₂⁶ has this form, i.e. these are *all* dimension-6 quadratic-APN EA classes — is never asserted or cited.
-    - **Root cause:** completeness was assumed rather than stated/checked in-repo.
-    - **Resolution plan:** add an explicit comment/assertion citing that dimension 6 has exactly 13 quadratic-APN EA classes, so "13 distinct" ⇒ "all of them" is made explicit rather than implicit.
+> **Supersedes a previous revision** on two points, both corrected below: the catalog status
+> (the Example 4.2 entry **exists**) and the Γ-rank feasibility (it is **computable**, and
+> correct).
 
 ---
 
-## Items reproduced exactly
+## Paper Issues
 
-- **Theorem 3.2** (H-equivalence characterization) — `theorem3_2.jl:21-35`; cross-validated against `differential_uniformity` on 4000 random `L` at n=4,5, exact agreement.
-- **Example 3.3** counts — n=4: 448, n=5: 4608, exact match.
-- **Table 3.1** — all 13 `G_i` APN, quadratic; field/modulus 91 confirmed.
-- **Theorem 3.7 / Eq. (3.1)** — all 13 entries satisfy the doubled criterion; cross-validated against `differential_uniformity` at n=4,5,6.
-- **Remark 3.8** — Table 3.1 polynomials satisfy Theorem 3.7, confirmed.
-- **Example 4.2** (n=8) — `A`, cosets, simplified form, APN status all match exactly.
+### 1. Example 3.3's n=6 figure is imprecise
 
-## Test results
+- **Location**: PDF p. 11, Example 3.3 — *"for `F(x) = x³` on `F₂⁶`, we found about 40 000
+  such mappings `L`."*
+- **Computed counter-evidence**: an exhaustive count over all `2³⁰` linearized `L` with
+  `L(e₀)=0` gives **35,648**, reproduced identically under two different moduli (`91` and
+  `97`), so the count is intrinsic. That is **11 % below** the paper's figure.
+- **Caveat**: this assumes the paper counted with the same `L(e₀)=0` normalisation. A
+  different normalisation would give a multiple, which could explain the gap — see Open
+  Questions.
 
-- `julia --project=. papers/2025/Taniguchi_202501/test/runtests.jl` — all pass: `theorem3_2_test` 3/3, `table3_1_test` 28/28, `theorem3_7_test` 14/14, `example4_2_test` 5/5.
-- `make report`, `make theorem3_2 n=4`, `make theorem3_2 n=5` — all pass, match paper values (448, 4608; n=5 timed 8.27s).
+### Not paper flaws — source artifacts
 
-## Catalog status
+The shipped `.tex` is an OCR conversion with two classes of corruption, both resolved against
+the PDF: (i) Table 3.1 exponents (`x^{2^2}`→`x^2`, `x^{2^3}`→`x^{23}`, etc.) — the
+reproduction's `TABLE_3_1_RAW` matches the PDF exactly; (ii) Theorem 3.2's "`L` an
+`F_{2^2}`-linear mapping" — the PDF (p. 10) reads "`F₂`-linear", which is what the
+reproduction implements.
 
-- **Dimension 6 (Table 3.1, `G_1..G_13`):** `G₁`, `G₅` present in `n6_apn.toml` (Gold/Kasami, Kim). `G₂,G₃,G₄,G₆..G₁₃` (11 classes) missing from catalog — Dillon's classes, not new to literature, but catalog-worthy for completeness. **Blocked on open question:** `G_i ↦ D_k` correspondence unverified (see Reproduction Issue 9).
-- **Dimension 8 (Example 4.2, `G`):** missing from `n8_apn.toml`. Catalog-gap record prepared (LUT, `du=2`, `algebraic_degree=2`, mugshot-distinct from all 4 existing n=8 entries). Caveat: dimension 8 has a large known quadratic-APN landscape — "absent from catalog" ≠ "new to literature"; paper only claims EA-inequivalence to `x³`. Γ-rank values (13842/11818) unverifiable in-repo (`_design_rank_guard` rejects n≥8).
+**No mathematical error was found in any paper item the reproduction implements.**
 
-## Library-reuse note
+---
 
-Good citizen overall — uses `gf_mul/pow/inv/trace`, `conway_polynomial`, `SBox`, `differential_uniformity`, `algebraic_degree`, `apn_ea_mugshot`, report emitters throughout. One dead duplicate (`linearized_poly_lut`, Issue 6). Two promote-to-core candidates identified: a generic polar/bilinear form `B_F(x,a) = F(x+a)+F(x)+F(a)+F(0)` (core currently has none, only paper-specific `bilinear_form_gold`), and a fast `(coeff, exponent)`-list point evaluator `evaluate_terms(terms, x, n; modulus)` (core only has string-based `evaluate_polynomial` and whole-LUT `terms_to_lut`, both unusable for the ~10⁹-call n=5 search in `theorem3_2.jl`).
+## Reproduction Issues
+
+The previous revision listed 10 issues, all re-checked and confirmed: Section 2 entirely
+unreproduced; Remark 3.6.2 unchecked; Theorem 4.1 not generalized; missing cross-validation
+sweeps; undocumented OCR repair; dead `linearized_poly_lut`; stale `VBF API used` headers;
+misleading `n ≥ 6` return shape; the `D_k` column unverified; Theorem 3.5 completeness
+unasserted. Three are added here.
+
+### 11. Example 3.3 at n=6 is wrongly declared infeasible
+
+- **Location**: `theorem3_2.jl:53` (`if n <= 5`), `:87-90`, `:108-110`; the scope line at
+  `helpers.jl:20`.
+- **Symptom**: `theorem3_2_report(n=6)` prints "exhaustive count infeasible" and returns
+  `(count=-1, expected=40000, match=false)`. Actual cost: `2³⁰ = 1,073,741,824` candidates,
+  about **4 minutes** in C on 8 cores; a table-driven Julia version is comparable.
+- **Root cause**: the inner check was written without hoisting `B_F(x, a+e₀)` — which depends
+  only on `x ∈ T₀` and `a⊕e₀` — out of the candidate loop, making the naive cost look about
+  1000× worse than it is.
+- **Resolution plan**:
+  1. Precompute `Btab[i][c] = x_i²·c + x_i·c²` for `x_i ∈ T₀`, `c ∈ GF(2ⁿ)` once
+     (`2ⁿ⁻¹ × 2ⁿ` ints).
+  2. Precompute the Frobenius table `fr[j][x] = x^{2^j}` and evaluate `L` on `T₀` once per
+     candidate.
+  3. Add `make theorem3_2 n=6 full_search=true`; assert the result is **35,648**, and record
+     the discrepancy with the paper's "about 40 000" (paper issue 1).
+
+### 12. Γ-rank is declared out of scope but is computable — and the claim is correct
+
+- **Location**: `example4_2.jl:108`
+  (`[loaded] Γ-rank(G) = 13842 ≠ Γ-rank(F) = 11818 (paper claim)`), `report.jl`'s note
+  "`Γ-ranks out-of-scope (Magma)`", `helpers.jl:24`; and the core guard at
+  `packages/VBF/src/invariants/design_ranks.jl:75-81` with its docstring at `:26-28`.
+- **Symptom**: the paper's only stated inequivalence evidence for Example 4.2 is transcribed,
+  never computed; the `n8_Taniguchi2025_ex4_2` catalog description asserts it is unverifiable.
+- **Counter-evidence**: both were computed with a plain bit-packed F₂ Gaussian elimination on
+  the `2¹⁶ × 2¹⁶` development matrix: **Γ-rank(x³) = 11818 in 81 s** and
+  **Γ-rank(G) = 13842 in 85 s**, 512 MB peak. Both match the paper exactly. The tool was
+  validated first against the repository's own documented value
+  `gamma_rank(gold_apn(5,1)) = 330`.
+- **Root cause**: `_design_rank_guard` refuses `N > 7` based on an over-pessimistic cost
+  estimate ("hours"; the docstring at `:26-28` calls n=8 "impractical (≈512 MB) — the
+  literature computes the latter with Magma").
+- **Resolution plan**:
+  1. Raise the guard to `N ≤ 8` with a documented ~90 s / 512 MB cost and a `Base.@warn`
+     above n=7.
+  2. Add `gamma_rank` assertions in `test/test_example4_2.jl`: `gamma_rank(G) == 13842`,
+     `gamma_rank(SBox(F_lut)) == 11818`.
+  3. Change `example4_2.jl:108` from `[loaded] … (paper claim)` to a computed `print_check`,
+     and correct the `n8_Taniguchi2025_ex4_2` description in `n8_apn.toml`.
+
+### 13. Remark 3.6.2 is confirmed but still unchecked in code
+
+- **Location**: `table3_1.jl` — no Walsh check.
+- **Symptom**: all 13 extended Walsh spectra were measured: `G₇` →
+  `{0:828, 8:2944, 16:256, 32:4}`, i.e. values `{0, ±8, ±16, ±32}`; the other twelve →
+  `{0:1008, 8:2688, 16:336}`, the classical spectrum. So `G₇` is indeed the unique
+  non-classical one, exactly as Remark 3.6.2 states — a real gap with a real expected value.
+- **Resolution plan**: add the assertion with those two literal spectra.
+
+---
+
+## Items Reproduced Exactly
+
+| Paper item | File | Independent result |
+|------------|------|--------------------|
+| Field pinning | `helpers.jl:28-29` | `91 = x⁶+x⁴+x³+x+1` and `285 = x⁸+x⁴+x³+x²+1` — exactly the paper's moduli; α=2 primitive for both; both equal `conway_polynomial(6/8)` ✓ |
+| **Table 3.1** (13 `L_i`) | `helpers.jl:121-135` | matches **PDF p. 12 exactly**, row by row, including the two rows with a genuinely absent `x^{2²}` term (`L₆`, `L₁₃`). All 13 `G_i = x³ + Tr(x)L_i(x)` are **du = 2, deg = 2**, with **13 distinct** ortho-derivative fingerprints ⇒ 13 EA classes ✓ |
+| **Theorem 3.7 / Eq. (3.1)** | `theorem3_7.jl:20-48` | `2·LHS = 2·RHS = 62` for all 13 entries ✓ (the paper's Remark 3.8 confirmed). Also 0/400 disagreements between Eq. (3.1) and du=2 over random `L` |
+| **Example 3.3**, n=4 / n=5 | `theorem3_2.jl:41-93` | **448** and **4608**, exactly; independently recomputed in C and shown invariant under both the modulus (19/25, 37/41) and the choice of `e₀` (8,9,10,11) ✓ |
+| **Example 4.2** (n=8) | `example4_2.jl` | `β = α⁸⁵ = 214`, `β² = α¹⁷⁰ = 215`, `β²+β+1 = 0`; four cosets of size 64; **`A = {0, 1, 214, 215}`** exactly as the paper states; `a₁+a₂+a₃+a₄ = α⁸⁵ ∈ A`; `G` is **du = 2, deg = 2**; the closed form `G(x) = x³ + α⁸⁵·Tr₁⁸(x)·Tr₂⁸(x)` matches the coset construction **pointwise**; `G` and `x³` have **different** ortho-derivative fingerprints ⇒ EA-inequivalent, hence CCZ-inequivalent since both are quadratic ✓ |
+| Catalog entry `n8_Taniguchi2025_ex4_2` | `n8_apn.toml:56-64` | its 256-entry `lut` is **byte-identical** to the independently computed `G` ✓ |
+
+## Test Results
+
+| Command | Result |
+|---------|--------|
+| `make -C papers/2025/Taniguchi_202501 test` | **Not run** — Julia unavailable |
+| Independent re-derivation (Python 3.13 + gcc) of Table 3.1, Theorem 3.7, Example 3.3 at n=4/5/6, Example 4.2 including both Γ-ranks, and the 13 extended Walsh spectra | **All confirmed**; one paper-level imprecision found (paper issue 1) |
+
+## Catalog Status
+
+| Claimed item | Status |
+|--------------|--------|
+| **Example 4.2, `G` on `F₂⁸`** | **present** — `n8_Taniguchi2025_ex4_2` in `packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml`. Its LUT was independently recomputed and is byte-identical. Formula reproduced ✓ / APN property verified ✓ / parameter family n/a (a single example) / novelty claim: the paper only asserts EA-inequivalence to `x³`, verified here two independent ways — the ortho-derivative fingerprint **and** Γ-rank 13842 ≠ 11818. **Full claim reproduced.** The entry's description should be corrected per reproduction issue 12 |
+| **Table 3.1, `G₁…G₁₃` on `F₂⁶`** | **not-new / partially present.** These are the 13 known Dillon quadratic-APN EA classes in dimension 6, so no novelty is claimed. `n6_apn.toml` holds only 3 entries (`n6_Gold_x3`, `n6_Kasami_x48`, `n6_Kim`). The remaining ~10 classes are a **catalog completeness gap**, but the `G_i ↦ D_k` labelling cannot be verified until Dillon's representatives (paper ref [21, Table 4]) are in the repository. **No gap record emitted** — the mapping is an open question, and emitting `n6_Taniguchi2025_G*` names would wrongly imply novelty. Recommend adding Dillon's 13 representatives under their own `bib_key` first, then checking the correspondence with `apn_ea_mugshot`. All 13 `G_i` were confirmed pairwise EA-inequivalent, so they *are* a complete set of representatives |
+
+Note: a related n=6 gap is recorded in `papers/2021/Calderini_202100/README.md`
+(`n6_EdelPott_switch`); both point at the same underlying under-population of `n6_apn.toml`.
+
+## Library-Reuse Note
+
+- **Duplicating core**: `helpers.jl:57-64` `linearized_poly_lut` duplicates `VBF.terms_to_lut`
+  (`packages/VBF/src/representations/univariate.jl:331`) — terms
+  `[(coeffs[i+1], 1<<i) …]`. It is also **dead code** (never called). `helpers.jl:40-52`
+  `linearized_poly_eval` is the pointwise version and *is* hot-path-justified (called about
+  `10⁹` times in the n=5 search), so keep it but note the relationship.
+- **Borderline, not violations**: `bilinear_form_gold` (`:69-73`), `trace_zero_elements` /
+  `trace_one_element` (`:78-92`), `alpha_power` (`:115`), `build_g_lut` (`:97-110`),
+  `paper_modulus` (`:31-35`) — all paper-specific or thin `gf_*` wrappers.
+- **Promote-to-core candidates**:
+  1. A generic polar form `B_F(x,a) = F(x+a)+F(x)+F(a)+F(0)` — core has none;
+     `bilinear_form_gold` is the Gold-specialised version.
+  2. `evaluate_terms(terms, x, n; modulus)` — a fast `(coeff, exponent)`-list *point*
+     evaluator, since core offers only the string-parsing `evaluate_polynomial` and the
+     whole-LUT `terms_to_lut`, neither usable inside a `10⁹`-call loop.
+  3. Raising `gamma_rank` to n=8 (reproduction issue 12).
+
+## Open Questions
+
+- Did the authors count `L` *without* the `L(e₀)=0` normalisation at n=6? The gap between
+  35,648 and "about 40 000" is 11 %, which a different normalisation might explain.
+- Should Dillon's 13 dimension-6 quadratic-APN representatives be added to `n6_apn.toml`,
+  unblocking the `D_k` column check?
