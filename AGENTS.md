@@ -39,6 +39,12 @@ Primary sources:
 - Never add a dependency from `VBF` to `VBFCatalog`.
 - Keep generated results, local overrides, credentials, and copyrighted paper
   inputs out of git.
+- Every `README.md` in the repo is a tracked file, `papers/<year>/<Paper_ID>/`
+  review summaries included. Commit the README you write or edit in the same
+  pass; an untracked or uncommitted README is an omission, not a scratch file.
+  Never add an ignore pattern that hides one — the negations at the bottom of
+  the root `.gitignore` must stay last, and a nested `.gitignore` must mirror
+  them rather than ignore a directory that holds a README.
 
 ## Test Commands
 

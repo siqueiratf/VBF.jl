@@ -4,4 +4,6 @@ apn_search_n7
 fast_checker
 # generated basis files (regenerate: make basis n=.. class=..)
 *.bin
-catalogs/
+catalogs/*
+# READMEs stay tracked (see the root .gitignore); keep this negation last.
+!catalogs/README.md

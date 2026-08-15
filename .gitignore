@@ -30,10 +30,6 @@ docs/src/api/
 # Source PDFs of cited papers are copyrighted and never committed.
 papers/*.pdf
 
-# READMEs are always tracked — including the per-paper review summaries under
-# papers/<year>/<Paper_ID>/. Never let a broader pattern below hide one.
-!README.md
-!**/README.md
 /apn-lib/
 
 # Claude Code — session-local, never committed.
@@ -54,3 +50,14 @@ CLAUDE.md
 .env
 .env.local
 .env.*.local
+
+# READMEs are always tracked — including the per-paper review summaries under
+# papers/<year>/<Paper_ID>/README.md. Git resolves a path by the LAST matching
+# pattern, so this block must stay at the very bottom of the file: a negation
+# placed above a broader pattern is silently overridden by it. Keep new ignore
+# rules above this block, and mirror these negations in any nested .gitignore
+# that could match a README. Note that a directory-level ignore (e.g.
+# `/apn-lib/`) still hides everything inside it — git never descends into it, so
+# no negation can rescue a README there. Never ignore a papers/ README that way.
+!README.md
+!**/README.md
