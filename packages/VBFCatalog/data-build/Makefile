@@ -15,7 +15,7 @@ JULIA   ?= julia
 JFLAGS  ?= --startup-file=no --project=$(CURDIR)
 CATALOG := $(CURDIR)/../BFA_catalog.sqlite
 
-.PHONY: all catalog \
+.PHONY: all catalog check check-structure \
         apn_reps quadratic_apn_8bit sboxu_reconcile \
         simonberg xanadu apn_repo \
         known_families known_sporadic \
@@ -26,6 +26,20 @@ all: catalog
 
 catalog:
 	$(JULIA) $(JFLAGS) $(CURDIR)/build_catalog.jl
+
+# ── verification ────────────────────────────────────────────────────────────
+# Run this after ANY catalog change, before committing.  `check` verifies that
+# data-raw and the committed BFA_catalog.sqlite agree and then runs the catalog
+# test items; `check-structure` is the first half only (no Julia required).
+# The same script backs the pre-commit hook — enable it once with
+# `git config core.hooksPath .githooks`.
+CHECK := $(CURDIR)/../../../.githooks/catalog-check
+
+check:
+	$(CHECK)
+
+check-structure:
+	$(CHECK) --structure-only
 
 # ── individual external-source targets ─────────────────────────────────────
 # Each runs its importer against the *existing* catalog (no rebuild from
