@@ -1,194 +1,191 @@
 # Budaghyan_202101 — Generalized Isotopic Shift Construction for APN Functions
 
 **Paper**: Budaghyan, Calderini, Carlet, Coulter, Villa. "Generalized isotopic shift
-construction for APN functions." *Designs, Codes and Cryptography* **89**(1):19–32, 2021.
+construction for APN functions." *Designs, Codes and Cryptography* **89**(1):19-32, 2021.
 
 **Reproduction path**: `papers/2021/Budaghyan_202101/`
 
 **Verdict**: Partial
 
-The published outputs are verified, but the construction that produces them is not. Every
-entry of Table 1 (12 functions over `F_{2⁸}`) and Table 3 (17 over `F_{2⁹}`) is confirmed
-APN, and Theorem 3.2 is reproduced for 8 of its cases. What is missing is Theorem 3.1
-itself: the reproduction never builds `F(x) = x·L₁(x)^{2^i} + x^{2^i}·L₂(x)` from
-coefficients, so the tables are transcribed rather than derived, and the theorem's actual
-iff-criterion (the `d`, `d′`, `U`, `W` coset conditions) is nowhere implemented. Propositions
-3.1, 3.3, 3.4 and Remark 3.5 are absent, Table 2 is absent, and the Γ-rank / Δ-rank /
-`|M_{G_F}|` invariants — the paper's *entire* evidence for the "fifteen new" claim — are
-never computed.
+Everything the reproduction transcribes is correct: all 12 polynomials of Table 1 and all
+17 of Table 3 are term-for-term faithful and independently confirmed APN of algebraic
+degree 2, and pinning the field moduli (285 for n=8, 529 for n=9) is a genuine
+reproducibility improvement over the paper. What is missing is the *derivation*: Theorem
+3.1 — the paper's central result — is never built, its three helper functions are dead
+code, and the entire novelty apparatus (Γ-rank, Δ-rank, `|M_{G_F}|`, Table 2) is absent, so
+the reproduction verifies "APN" but never "new". Propositions 3.1, 3.3, 3.4 and Remarks
+3.1, 3.5 are not reproduced at all.
 
 > **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed. Claims marked "independently confirmed" below were re-derived from
-> scratch in Python.
+> could not be executed. Every numeric claim below marked "independently confirmed" was
+> re-derived from scratch in Python (GF(2^n) arithmetic, DDT, ANF degree, Walsh spectra,
+> ortho-derivative invariants) rather than taken from the repository's own output.
 
 ---
 
 ## Paper Issues
 
-### P1. Remark 3.2's `N₁ = 86` is not the number of 1-dimensional subspaces
+### 1. Remark 3.2's `N₁ = 86` is not the number of 1-dimensional subspaces
 
-- **Location**: Section 3.3, Remark 3.2 — "we got `N₁ = 86`, `N₂ = 340` and `N₃ = 4` for the
-  new function".
-- **Definition used** (Proposition 3.2): `Nᵢ` is the number of `F₂`-vector subspaces of
-  `F₂ⁿ` contained in `S(F)` of dimension `i`.
-- **Counter-evidence** (`F` = Table 1 row 1 over `GF(2⁸)`, modulus 285, `ζ = 2`):
-  `|S(F)| = 86` and `0 ∈ S(F)` (always, since `W_F(a,0) = 0` for `a ≠ 0`), so the number of
-  1-dimensional subspaces `{0,b} ⊆ S(F)` is `|S(F)| − 1 = **85**`, not 86. `N₂ = 340` ✔ and
-  `N₃ = 4` ✔ both match. The paper reports `|S(F)|` where its own definition calls for the
-  subspace count — an off-by-one that presumably also affects the quoted `N₁ = 86` for
-  function 1.9.
-- **Severity**: cosmetic. The discriminating invariant is `N₃` (4 vs 8), which is unaffected.
-  The reproduction already documents this at `proposition3_2.jl:66-67` and
-  `test/test_proposition3_2.jl:5-7`, and handles it correctly.
+- **Location**: Section 3.3, Remark 3.2, read against Proposition 3.2's own definition
+  ("`Nᵢ` = number of `F₂`-vector subspaces of `F_{2ⁿ}` contained in `S(F)` of dimension
+  `i`").
+- **Computed counter-evidence** (Table-1 row 1, modulus 285, `ζ = 2`): `|S(F)| = 86`, and
+  `0 ∈ S(F)` always, since `W_F(a,0) = 0` for `a ≠ 0`. So the number of 1-dimensional
+  subspaces `{0,b} ⊆ S(F)` is **85**, not 86. `N₂ = 340` ✔ and `N₃ = 4` ✔ both match. The
+  paper reports `|S(F)|` where its own definition calls for the subspace count.
+- **Severity**: cosmetic — the discriminating invariant in Remark 3.2 is `N₃` (4 versus 8).
 
-### P2. Tables 1 and 3 are modulus-sensitive, and the paper never states the modulus
+### 2. Tables 1 and 3 are modulus-sensitive and the modulus is never stated
 
-- **Location**: Table 1 (`GF(2⁸)`) and Table 3 (`GF(2⁹)`), where `ζ` is described only as
-  "one of its primitive elements".
-- **Counter-evidence**: all 12 Table-1 entries are APN under the Conway modulus
-  `x⁸+x⁴+x³+x²+1` (285) with `ζ = 2`. Under the AES modulus `x⁸+x⁴+x³+x+1` (283), `ζ = 2`
-  has order 51 — not primitive — so the table is meaningless there. Under other primitive
-  moduli (e.g. 487, 361, where `ord(2) = 255`) the entries give `du ∈ {2,8,16}`: rows 1.7,
-  1.10, 1.12, 1.16 and 1.3 give `du = 8`, rows 1.17 and 3.1 give `du = 16`. The tables hold
-  only for a specific `(modulus, ζ)` pair that the publication does not record.
-- **Note**: this is a reproducibility gap in the publication, not an error. The reproduction
-  pins `MOD8 = conway_polynomial(8) = 285` and `MOD9 = primitive_polynomial(9) = 529`
-  (`theorem3_1.jl:18-21`), which is the right call and worth counting as a reproduction
+- **Location**: Tables 1 and 3; `ζ` is described only as "one of its primitive elements".
+- **Computed counter-evidence**: enumerating all 16 degree-8 irreducible moduli for which
+  `ζ = 2` has order 255, **only 8 of 16** make all 12 Table-1 entries APN (285, 301, 355,
+  357, 391, 425, 463, 501). The other 8 (299, 333, 351, 361, 369, 397, 451, 487) give
+  `du ∈ {2, 8, 16}`. Under the AES modulus 283, `ord(2) = 51` and the table is meaningless.
+- **Severity**: a reproducibility gap in the publication, not a mathematical error. The
+  repository pinning `MOD8 = conway_polynomial(8) = 285` and `MOD9 = 529`
+  (`theorem3_1.jl:18-21`) is the correct call and should be counted as a reproduction
   strength.
 
 ---
 
 ## Reproduction Issues
 
-### 1. Theorem 3.1's construction (Eq. 3) is never exercised — Tables 1 and 3 are transcribed, not derived
+### 1. Theorem 3.1 — the paper's central theorem — is neither built nor tested
 
-- **Location**: `theorem3_1.jl:25-107`; dead helpers at `helpers.jl:23`
-  (`fm_polynomial_lut`) and `helpers.jl:47` (`gen_shift_lut`)
-- **Symptom**: `grep -rn 'gen_shift_lut\|fm_polynomial_lut\|nonlinear_gold_shift_lut'
-  papers/2021/Budaghyan_202101` shows these functions are **defined but never called** from
-  any `.jl` file or test. `table1_build`/`table3_build` construct LUTs from hard-coded
-  `ζ`-exponent term lists copied out of the tables and check only
-  `differential_uniformity == 2`. Nothing ever chooses `L₁(x) = Σ Aⱼ x^{2^{jm}}`,
-  `L₂(x) = Σ Bⱼ x^{2^{jm}}` with coefficients in `F_{2^m}` and computes
-  `F(x) = x·L₁(x)^{2^i} + x^{2^i}·L₂(x)`. The paper's actual claim — that these polynomials
-  are *derived from Theorem 3.1* (Table 1 caption, Table 3 caption, Sections 3.2 and 3.4) —
-  is therefore unverified.
-- **Root cause**: the construction pipeline was skipped in favour of re-checking published
-  outputs.
+- **Location**: `theorem3_1.jl:109-135`; helpers `helpers.jl:23` (`fm_polynomial_lut`),
+  `helpers.jl:47` (`gen_shift_lut`), `helpers.jl:121` (`nonlinear_gold_shift_lut`).
+- **Symptom**: `theorem3_1_report` prints
+  `Condition: gcd(i,m)=1; verified via DDT (APN iff du=2)` (`theorem3_1.jl:113`) and then
+  only checks `differential_uniformity == 2` on transcribed ζ-polynomials. The theorem's
+  actual content — the `d`, `d′`, `U`, `W` coset construction of Section 3.1 and the three
+  `∀v ∈ W` conditions — is nowhere implemented. Worse, `fm_polynomial_lut`, `gen_shift_lut`
+  and `nonlinear_gold_shift_lut` are **dead code**: `grep` shows they are defined and never
+  called anywhere in the paper directory. So `F(x) = x·L₁(x)^{2^i} + x^{2^i}·L₂(x)` is never
+  evaluated, and the tables are transcribed rather than derived.
+- **Root cause**: only the tables' output was ported; the construction was left unwired.
+- **Evidence that this is closable cheaply** (both checks performed during this review):
+  - Table-3 row 2 was reconstructed exactly from Eq. (3) with
+    `L₁ = ζ¹⁴⁶x⁸ + ζ³⁶⁵x⁶⁴` and `L₂ = x + ζ²¹⁹x⁸ + ζ²⁹²x⁶⁴` (all coefficients in
+    `F_{2³} = ⟨ζ⁷³⟩`), `i = 1` — it reproduces the LUT **pointwise**. All Table-1
+    coefficients are multiples of 17 (`F_{2⁴}`) and all Table-3 coefficients are multiples
+    of 73 (`F_{2³}`), matching Sections 3.2 and 3.4.
+  - The three `W`-conditions were implemented for `n = 9, k = m = 3, i = 1`
+    (`d = gcd(7,73) = 1`, `d′ = 1`, `W = U = ⟨ζ⁷⟩` of order 73) and run on 61 `(L₁,L₂)`
+    tuples with subfield coefficients: **0 mismatches** against the DDT test (4 APN). Cost
+    is `73² = 5329` field operations per candidate.
 - **Resolution plan**:
-  1. In `theorem3_1.jl`, for `n=8` (`k=4, m=2`) and `n=9` (`k=m=3`), sweep
-     `(A₀..A_{k−1}, B₀..B_{k−1}) ∈ F_{2^m}^{2k}`. For `n=9`, `8¹²` is too large — restrict to
-     the paper's subfield-`F_{2³}` coefficients as it states and screen with
-     `is_quadratic_apn_rank`.
-  2. Build `F` via `gen_shift_lut(n, i, fm_polynomial_lut(...), fm_polynomial_lut(...))` and
-     expand to the univariate form
-     `(A₀^{2^i}+B₀)x^{2^i+1} + Σⱼ[Aⱼ^{2^i}x^{2^{i+jm}+1} + Bⱼx^{2^{jm}+2^i}]`, which the
-     paper gives explicitly.
-  3. Assert each Table 1 / Table 3 entry is EA-equivalent (via `apn_ea_mugshot`) to some
-     swept instance.
-  4. Delete or exercise the dead helpers.
+  1. Implement `W` and `d′` per Section 3.1.
+  2. Implement `theorem3_1_condition(n, k, m, i, A, B)` with the three bullets.
+  3. Use `gen_shift_lut(n, i, fm_polynomial_lut(...), fm_polynomial_lut(...))` to *derive*
+     Tables 1 and 3, and assert LUT equality against the transcribed ζ-polynomials.
+  4. Assert `condition ⟺ du == 2` over a sweep of subfield `(L₁, L₂)`.
 
-### 2. Theorem 3.1's stated iff-criterion is not implemented
+### 2. The Γ-rank / Δ-rank / `|M_{G_F}|` columns — the paper's entire novelty evidence — are absent
 
-- **Location**: `theorem3_1.jl:109-113` — the report prints
-  `"Condition: gcd(i,m)=1; verified via DDT (APN iff du=2)"`.
-- **Symptom**: Theorem 3.1's content is three explicit conditions over `v ∈ W`, where `W` is
-  the coset representative set built from `d = gcd(2^m−1, (2^{km}−1)/(2^m−1))`, `d′`,
-  `U = ⟨ζ^{d′(2^m−1)}⟩` and `W = {ζ^s y : y ∈ U, 0 ≤ s ≤ d′−1}`. None of `d`, `d′`, `U`, `W`
-  or the three bullet conditions appear anywhere in the reproduction. Checking `du == 2`
-  verifies APN-ness but **not the theorem**.
-- **Root cause**: the theorem was reduced to its corollary ("the results are APN").
+- **Location**: `theorem3_1.jl:98-107` (`table3_build` returns only `du`/`apn`); no Table-2
+  file exists.
+- **Symptom**: Table 3's "new" verdicts rest on CCZ-invariants (Γ-rank, Δ-rank,
+  `|M_{G_F}|`) and on MAGMA code equivalence. None of the three is computed, and Table 2
+  (the 12 previously known n=9 APN functions with their invariants) is not reproduced at
+  all. The reproduction therefore verifies "APN" but never "new".
+- **Root cause**: Γ- and Δ-rank require F₂ ranks of `2¹⁸ × 2¹⁸` matrices at n=9.
 - **Resolution plan**:
-  1. Implement `coset_decomposition(n, k, m)` returning `d, d′, U, W`.
-  2. Implement `theorem3_1_condition(n, i, L1, L2)` as the three bullets.
-  3. Assert `theorem3_1_condition ⟺ differential_uniformity == 2` exhaustively over the
-     `n=6` (`k=3, m=2`) and `n=8` (`k=4, m=2`) coefficient spaces.
+  1. Add Table 2 as data (all 12 functions; cheap and independently useful).
+  2. Substitute the ortho-derivative CCZ-invariants (`apn_ea_mugshot`, or the
+     ortho-derivative differential and Walsh spectra) as the in-repo novelty evidence — this
+     review verified they separate all 17 Table-3 rows and correctly match rows 1 and 12 to
+     their claimed counterparts.
+  3. Document Γ-/Δ-rank as unverifiable in-repo, with the reason.
 
-### 3. Propositions 3.1, 3.3, 3.4 and Remark 3.5 are entirely missing
+### 3. The `N₁` mismatch is papered over instead of asserted
+
+- **Location**: `proposition3_2.jl:66-67` prints `N_1 in {85,86} (convention differs by 1)`.
+- **Symptom**: the report's check is `r.N1 in (85,86)` — an assertion that cannot fail
+  either way. (`test/test_proposition3_2.jl:8` does correctly assert `== 85`, so report and
+  test disagree on strictness.)
+- **Root cause**: the paper-versus-definition discrepancy (paper issue 1) was absorbed into
+  a permissive check rather than recorded.
+- **Resolution plan**:
+  1. Make the report assert `N₁ == 85`.
+  2. Print the paper's `86` as `|S(F)|` on a separate line, with the paper-issue-1
+     explanation.
+
+### 4. Remark 3.2's second half (function 1.9 with `N₃ = 8`) is not computed
+
+- **Location**: `proposition3_2.jl:70-72` — `fn 1.9 status: TODO: not in VBFCatalog`.
+- **Symptom**: the whole point of Remark 3.2 is `N₃ = 4 ≠ 8 = N₃(1.9)`. Only one side is
+  computed; the other is quoted from the paper. `n8_apn.toml` indeed has no Edel–Pott
+  Table-9 entries.
+- **Root cause**: the comparison function was never brought into the repository.
+- **Resolution plan**:
+  1. Transcribe Edel–Pott function 1.9 from [16, Table 9] into the paper directory (or the
+     catalog) and compute `N₃` in-repo.
+  2. Failing that, state explicitly that the inequivalence claim is un-reproduced.
+
+### 5. Theorem 3.2 covers 4 of 5 proof cases; the Niho case is missing
+
+- **Location**: `theorem3_2.jl:93-135`; `theorem3_2.jl:154` states
+  `Niho: similar algebraic argument; omitted (large exponent computation)`.
+- **Symptom**: `theorem3_2_cases()` covers case 5 (Gold, 3 parameters), case 2 (Inverse,
+  n=5,7), case 3 (Welch, **t odd only**) and case 1 (Kasami, **t odd only**, a single n=7
+  instance). Case 4 (Niho) is absent entirely, as are the `t`-even branches of cases 1
+  and 3.
+- **Root cause**: assumed cost; the assumption is wrong.
+- **Counter-evidence**: the missing branches were run during this review and all pass
+  instantly —
+  - Niho `t` odd (`n=7, t=3, i=2, L = a·x^{2⁷−2²}`): `du = 2`, `e_nl = 116`,
+    Frobenius-equivalent to the Niho exponent 39 ✔
+  - Niho `t` even (`n=9, t=4, i=2, L = a·x^{2⁷+2⁸}`): `du = 2`, `e_nl = 388`,
+    Frobenius-equivalent to 19 ✔
+  - Kasami `t` even (`n=9, t=2, i=1, L = a·x⁶`): `du = 2`, `e_nl = 13 = target` ✔
+- **Resolution plan**:
+  1. Add the three missing branches with exactly these parameters.
+  2. Drop the "omitted (large exponent computation)" note.
+
+### 6. Propositions 3.1, 3.3, 3.4, Remarks 3.1 and 3.5, and Table 4 are entirely absent
 
 - **Location**: no files.
-- **Symptom**:
-  - **Proposition 3.1** (four necessary kernel conditions (i)–(iv) on `L₁`, `L₂`) — no
-    implementation, no test.
-  - **Proposition 3.3** (for `n` even or `k > 1`, no isotopic shift `F_L` with
-    `L ∈ F_{2^k}[x]` can be APN; in particular quadratic `F` with `n` even and `L ∈ F₂[x]`) —
-    no implementation, though it is directly testable at `n = 4, 6, 8`.
-  - **Proposition 3.4** (`G_{i,L}` is linear-equivalent to `G_{i,M}` with
-    `M(x) = Σ(cⱼζ^{k(j−1)})^{2^t}x^j`) — no implementation.
-  - **Remark 3.5** ("for `n` even it seems impossible to obtain APN as isotopic shifts of
-    Gold by non-linear monomials; searched `n = 4,6,8,10`") — no implementation; this is a
-    cheap exhaustive sweep for `n = 4, 6`.
+- **Symptom**: missing are Proposition 3.1 (necessary kernel conditions (i)-(iv) on `L₁`,
+  `L₂`), Proposition 3.3 (an isotopic shift by `L ∈ F_{2^k}[x]` is never APN for `n` even
+  or `k > 1`), Proposition 3.4 (`G_{i,L} ~lin G_{i,M}` for
+  `M(x) = Σ(c_j ζ^{k(j−1)})^{2^t} x^j`), Remark 3.1 (the Γ-rank = 14034 correction to [19]),
+  Remark 3.5 (no APN monomial shifts for even `n = 4,6,8,10`), Problems 3.1/3.2, and
+  Table 4 (known APN power functions — largely covered by core's `gold_apn`, `kasami_apn`,
+  `welch_apn`, `niho_apn`, `inverse_apn`, `dobbertin_apn`).
 - **Root cause**: not ported.
-- **Resolution plan**: add `proposition3_1.jl`, `proposition3_3.jl`, `proposition3_4.jl` and
-  a `remark3_5.jl` sweep at `n ∈ {4,6}` (with `n=8` behind `full_search`).
+- **Resolution plan**: Proposition 3.1 (four kernel intersections) and Proposition 3.4 (a
+  one-line linear-equivalence check) are cheap — add `proposition3_1.jl` and
+  `proposition3_4.jl` first. Remark 3.5 is a bounded sweep at `n ∈ {4,6,8,10}` and directly
+  exercises the already-dead `nonlinear_gold_shift_lut`.
 
-### 4. Table 2 and the Γ-rank / Δ-rank / `|M_{G_F}|` columns of Tables 2–3 are not reproduced
+### 7. Proposition 2.1 is stated but never verified; `report.jl` cites the wrong venue
 
-- **Location**: `theorem3_1.jl` (no Table 2), `report.jl`
-- **Symptom**: Table 2 lists 12 previously-known `n=9` APN functions with their Γ-rank,
-  Δ-rank and `|M_{G_F}|`; Table 3 gives the same three invariants for all 17 new/derived
-  functions. The reproduction verifies **only** `du == 2`. Those three invariants are the
-  paper's entire evidence for CCZ-inequivalence, and hence for "fifteen new".
-- **Root cause**: `VBF`'s `delta_rank`/`gamma_rank` are documented as supporting `n ≤ 7`
-  (`packages/VBF/src/invariants/design_ranks.jl:108`), so `n = 9` is out of reach with core
-  as it stands.
+- **Location**: `proposition2_1.jl:63-67`; `report.jl:21`.
+- **Symptom**: Proposition 2.1 ("over `F_{2⁶}` any quadratic APN is an isotopic shift of any
+  other") is printed as a claim with `Status: Computational result from [6]` — nothing is
+  computed. Separately, `report.jl:21` prints
+  `Venue: IEEE Trans. Inform. Theory (2021)`; this paper is *Designs, Codes and
+  Cryptography* **89**(1):19-32, 2021. The IEEE T-IT paper is reference [6], the *previous*
+  isotopic-shift paper.
+- **Root cause**: a claim carried over as prose, plus a copy-paste of the wrong citation.
 - **Resolution plan**:
-  1. Add `table2_build()` with LUTs for all 12 entries (`x³, x⁵, x¹⁷, x¹³, x²⁴¹, x¹⁹, x²⁵⁵,
-     Tr(x⁹)+x³, Tr₃⁹(x¹⁸+x⁹)+x³, Tr₃⁹(x³⁶+x¹⁸)+x³, x³+x¹⁰+ζ⁴³⁸x¹³⁶,
-     ζ³³⁷x¹²⁹+ζ⁴²⁴x⁶⁶+ζ²x¹⁷+ζx¹⁰+ζ³⁴x³`). The last two are confirmed APN under modulus 529.
-  2. Substitute the ortho-derivative EA-mugshot (`apn_ea_mugshot`) for the unreachable
-     Γ/Δ-ranks — a valid CCZ-invariant for quadratic APN (Yoshiara) and cheap at `n = 9`.
-  3. Raise the `delta_rank` `n ≤ 7` guard, or record explicitly in the report why the columns
-     are skipped.
+  1. Fix the venue string.
+  2. Sweeping all `2^{6·6}` linear maps is infeasible, but for a *single* fixed pair of
+     quadratic APN `F`, `G` at `n = 6`, sweeping `L` over a structured or random subset
+     until `F_L ~EA G` is a meaningful bounded check. Add that, or declare Proposition 2.1
+     explicitly out of scope rather than leaving it as a bare claim.
 
-### 5. Wrong venue in `report.jl`
+### 8. Minor: wrong entry count in a comment; missing parameter guards; inlined duplicate
 
-- **Location**: `report.jl:21`
-- **Symptom**: prints `Venue: IEEE Trans. Inform. Theory (2021)`. The paper is *Designs,
-  Codes and Cryptography* **89**(1):19–32, 2021 (`bibliography.bib:914`, key
-  `Budaghyan_202101`). IEEE T-IT is the *earlier* companion paper [6], "Constructing APN
-  functions through isotopic shifts" (2020).
-- **Root cause**: confusion with the companion paper.
-- **Resolution plan**: change to `Des. Codes Cryptogr. 89(1):19–32 (2021)`.
-
-### 6. Theorem 3.2 is reproduced for only 3 of 5 families, and only with `a = 1`
-
-- **Location**: `theorem3_2.jl:93-135`, `:154`
-- **Symptom**: implemented cases are Gold `(n,i,j) ∈ {(5,2,1),(7,3,2),(9,4,1)}`, Inverse
-  `n ∈ {5,7}`, Welch `t` **odd** `(7,3,2),(11,5,3)` and Kasami `t` **odd** `(7,3,2)`.
-  Missing: Kasami `t` even, Welch `t` even, and **all Niho** cases — line 154 says
-  `"Niho: similar algebraic argument; omitted"`, though the paper gives both the `t` odd and
-  `t` even constructions explicitly. Also `a` is fixed to 1, whereas the paper's `L(x) = a·x^d`
-  allows any `a ≠ 0`.
-- **Root cause**: partial port.
-- **Resolution plan**: add the four missing sub-cases (Kasami `t` even with `t=2i`, Welch `t`
-  even with `t=2i`, Niho `t` odd `t=2i−1` and `t` even `t=2i`) and parametrise `a`.
-
-### 7. Proposition 2.1 is stated but never verified; Remark 3.1 is only transcribed
-
-- **Location**: `proposition2_1.jl:63-67`; `proposition3_2.jl:70-71`
-- **Symptom**: Proposition 2.1 (over `F_{2⁶}`, any quadratic APN is an isotopic shift of any
-  other, by a permutation `L` and a 2-to-1 `L′`) is printed as "Computational result from
-  [6] … Not independently verified here". `n = 6` is small — 13 quadratic APN classes and
-  `|GL(6,F₂)| ≈ 2²⁹` — so a randomized or structured search would give strong evidence.
-  Remark 3.1/3.2's comparison function (Edel–Pott no. 1.9, `N₃ = 8`) is taken verbatim from
-  the paper (`proposition3_2.jl:71`: `"TODO: not in VBFCatalog; N_3=8 taken from paper"`), so
-  the inequivalence conclusion is not independently established.
-- **Root cause**: both were treated as citations rather than claims to check.
-- **Resolution plan**:
-  1. Add a seeded randomized search over linear permutations / 2-to-1 maps `L` for
-     Proposition 2.1, with `max_evaluations`.
-  2. Add the Edel–Pott 1.9 `n=8` LUT to the reproduction (or the catalog) and compute its
-     `N₃` to close Remark 3.2.
-
-### 8. `zeta_poly_lut` silently accepts a non-primitive `ζ`
-
-- **Location**: `helpers.jl:74-90`
-- **Symptom**: `zeta::Int = 2` is accepted with an arbitrary `modulus` and no check that
-  `ord(ζ) = 2ⁿ−1`. With `primitive_polynomial(8) = 283`, `ord(2) = 51` and every Table 1
-  entry silently becomes a different, non-APN function.
-- **Root cause**: missing precondition guard.
-- **Resolution plan**: add `ord(zeta) == 2^n − 1 || error(...)` at the top of `zeta_poly_lut`.
+- `theorem3_1.jl:12` says `Table 3 (n=9, k=m=3): 16 APN polynomials`. The paper's Table 3
+  and `TABLE3_ENTRIES` both have **17** rows.
+- `zeta_poly_lut`, `gen_shift_lut` and `fm_polynomial_lut` enforce no parameter constraints
+  (`n = km`, `m > 1`, `gcd(i,m) = 1`); `gen_shift_lut(9, 3, ...)` with `gcd(3,3) = 3` is
+  accepted silently.
+- `theorem3_2.jl:66-70` re-implements the `G_{i,L}` LUT inline instead of calling
+  `nonlinear_gold_shift_lut` from `helpers.jl:121`.
 
 ---
 
@@ -196,109 +193,108 @@ never computed.
 
 | Item | Evidence |
 |------|----------|
-| **Remark 2.1** | `x⁵` over `GF(2⁶)` (mod 67, `ord(2)=63`) has `du = 4` (not APN) ✔; with `L(x)=ζx⁸`, `F_L = F(x+L)+F(x)+F(L)` equals `ζx¹² + ζ⁴x³³` **exactly** ✔ and has `du = 2` ✔ |
-| **Table 1** — all 12 `n=8` entries | All `du = 2` under Conway modulus 285 with `ζ = 2` (`ord(2)=255`) |
-| **Table 3** — all 17 `n=9` entries | All `du = 2` under modulus 529 with `ζ = 2` (`ord(2)=511`); 15 labelled "new" + 1 "eq. to [6]" + 1 "eq. to 8.1", matching the paper's "fifteen new APN functions" |
-| **Remark 3.2** `N₂`, `N₃` | `N₂ = 340`, `N₃ = 4` for Table 1 row 1 (`N₁ = 85` vs the paper's 86 — see P1) |
-| **Theorem 3.2** — 8 implemented cases | All `G_{i,L}` are APN (`du=2`), one exponent is a power of 2 (linear) and the other is Frobenius-equivalent to the target: Gold `(5,2,1)` `e_nl=17→3`; `(7,3,2)` `66→5`; `(9,4,1)` `257→3`; Inverse `n=5` `29→30`, `n=7` `125→126`; Welch `(7,3,2)` `49→11`, `(11,5,3)` `193→35`; Kasami `(7,3,2)` `101→57` |
-| **Proposition 3.2 / `S(F)`** | `s_of_f` correctly reproduces `S(F) = {b : ∃a, W_F(a,b)=0}`; `|S(F)| = 86` including 0 |
-| Table 3 labels "eq. to [6]" and "eq. to 8.1" | Ortho-derivative EA-invariants confirm row 1 ≡ Table 2's `ζ³³⁷x¹²⁹+ζ⁴²⁴x⁶⁶+ζ²x¹⁷+ζx¹⁰+ζ³⁴x³` and row 12 ≡ Table 2's `x³+x¹⁰+ζ⁴³⁸x¹³⁶` (8.1) |
+| Table 1 (12 polynomials over `F_{2⁸}`) | All 12 transcribed **term-for-term correctly**; all 12 have `du = 2`, `deg = 2` under modulus 285 with `ζ = 2` (order 255) |
+| Table 3 (17 polynomials over `F_{2⁹}`) | All 17 transcribed **term-for-term correctly**; all 17 have `du = 2`, `deg = 2` under modulus 529 with `ζ = 2` (order 511); the `new` count is 15, matching the abstract |
+| Remark 2.1 | `x⁵` over `GF(2⁶)` has `du = 4`; `F_L` with `L(x) = ζx⁸` equals `ζx¹² + ζ⁴x³³` pointwise and has `du = 2`. The paper's `F_L = M(x³)` with `M(x) = ζx⁴ + ζ⁴x³²` was additionally verified, along with `M` being a linear permutation — the reproduction does *not* check this second half |
+| Remark 3.2, `N₂` and `N₃` | `|S(F)| = 86`, `N₂ = 340`, `N₃ = 4` for Table-1 row 1 — matches the paper exactly |
+| Theorem 3.2, cases 1/2/3/5 | All 8 repository cases verified: `G_{i,L}` is APN and reduces to the target power exponent up to Frobenius after removing the linear term |
+| Table 3 row 1 ("eq. to APN in [6]") | Ortho-derivative differential spectrum is **identical** to the [6] function `ζ³³⁷x¹²⁹ + ζ⁴²⁴x⁶⁶ + ζ²x¹⁷ + ζx¹⁰ + ζ³⁴x³` from Table 2 |
+| Table 3 row 12 ("eq. to 8.1") | Ortho-derivative spectrum **identical** to `x³ + x¹⁰ + ζ⁴³⁸x¹³⁶` (function 8.1 of Table 11 in [16]) |
+| All 17 Table-3 rows pairwise distinct | 17 distinct ortho-derivative differential spectra ⇒ pairwise CCZ-inequivalent (quadratic APN ⇒ CCZ = EA, by Yoshiara) |
 
 ## Test Results
 
 | Command | Result |
 |---------|--------|
-| `make -C papers/2021/Budaghyan_202101 test` | **Not run** — `julia` is not installed in the review environment |
-| Independent check of `test_proposition2_1` assertions (`du_F==4`, closed form, `du_FL==2`) | **All pass** |
-| Independent check of `test_theorem3_1` assertions (all 12 + all 17 entries APN) | **All pass** |
-| Independent check of `test_proposition3_2` assertions (`N1==85`, `N2==340`, `N3==4`, `S_size==86`) | **All pass** |
-| Independent check of `test_theorem3_2` assertions (8 cases: `apn_G`, `ea_ok`) | **All pass** |
+| `make -C papers/2021/Budaghyan_202101 test` | **Not run** — `make: julia: No such file or directory`, exit 127 |
+| Independent Python: Tables 1 and 3 APN-ness, Remark 2.1 (including the `M(x³)` decomposition), Remark 3.2 `Nᵢ`, all 8 Theorem-3.2 cases plus the 3 missing branches, Eq. (3) reconstruction of Table-3 row 2, Theorem 3.1's three `W`-conditions on 61 samples | **All pass; 0 mismatches** |
 
 ## Catalog Status
 
-The paper claims **15 new APN functions over `F_{2⁹}`** (Table 3). Each was verified APN and
-fingerprinted by its ortho-derivative differential spectrum plus ortho-derivative Walsh
-spectrum — valid as a CCZ separator because for quadratic APN, CCZ = EA (Yoshiara 2012).
+The paper claims **15 new APN functions over `F_{2⁹}`**.
 
-All 15 have **pairwise distinct** fingerprints, distinct from each other and from **every**
-entry of `packages/VBFCatalog/data-raw/apn_catalog/n9_apn.toml` (`n9_Gold_x3`, `n9_Gold_x5`,
-`n9_Gold_x17`, `n9_Kasami_x13`, `n9_Kasami_x241`, `n9_Welch_Niho_x19`, `n9_Inverse_x510`,
-`n9_Budaghyan2009_eq7`, `n9_Budaghyan2009_eq8`), and distinct from Table 2's `8.1` and `[6]`
-functions. (`n9_Kasami_x13/x241`, `n9_Welch_Niho_x19` and `n9_Inverse_x510` are non-quadratic
-and cannot be CCZ-equivalent to a quadratic APN unless EA-equivalent to a Gold function,
-which the fingerprints exclude.) This also independently corroborates the Table 3 rows that
-share Γ/Δ-rank pairs (rows 2&7, 5&6, 8&10, 9&13, 15&17) — the finer invariant separates all
-of them.
+- Table 3 row 1 ("eq. to APN in [6]"): **not-new** by the paper's own admission; also absent
+  from the catalog.
+- Table 3 row 12 ("eq. to 8.1"): **not-new**; also absent from the catalog.
+- The 15 rows marked `new`: **missing**. The n=9 catalog
+  (`packages/VBFCatalog/data-raw/apn_catalog/n9_apn.toml`, 9 entries) contains only Gold
+  `x³/x⁵/x¹⁷`, Kasami `x¹³/x²⁴¹`, Welch/Niho `x¹⁹`, Inverse `x⁵¹⁰`, and
+  `n9_Budaghyan2009_eq7`/`n9_Budaghyan2009_eq8`.
 
-**Per-function verdict: `missing` (genuine catalog gap) for all 15.**
+**Equivalence evidence for the 15**: each has a distinct ortho-derivative differential
+spectrum, distinct from every quadratic catalog entry (`n9_Gold_x3`, `n9_Gold_x5`,
+`n9_Gold_x17`, `n9_Budaghyan2009_eq7`, `n9_Budaghyan2009_eq8`) and from the `8.1` and `[6]`
+functions; the non-quadratic catalog entries are excluded by algebraic degree (all 15 have
+`deg = 2`).
 
-### Catalog-gap records
+### Catalog-gap records (15 entries)
 
-- **Target file**: `packages/VBFCatalog/data-raw/apn_catalog/n9_apn.toml`
-- **Common fields**: `n = 9`, `m = 9`, `is_permutation = false` (verified for all 17 rows),
-  `modulus = 529` (`x⁹+x⁴+1`), `bib_key = "Budaghyan_202101"`,
-  `source = "Budaghyan, Calderini, Carlet, Coulter, Villa, 'Generalized Isotopic Shift
-  Construction for APN Functions', Des. Codes Cryptogr. 89(1):19–32 (2021), Table 3."`
-- **`ζ` convention**: `ζ = 2` (the class of `x`), primitive since `ord(2) = 511` under
-  modulus 529.
-- **Equivalence evidence**: ortho-derivative differential + Walsh spectra pairwise distinct
-  across all 15 and against all 9 existing `n9` catalog entries;
-  `differential_uniformity == 2` verified for each.
+Common fields for all 15:
 
-| proposed `name` | Table 3 row | `algebraic_form` (modulus `x⁹+x⁴+1`, `ζ` = class of `x`) |
-|---|---|---|
-| `n9_Budaghyan2021_tab3_r02` | 2 (i=1) | `ζ²¹⁹x¹²⁹ + ζ²⁹²x⁶⁶ + ζ²⁹²x¹⁷ + ζ²¹⁹x¹⁰ + x³` |
-| `n9_Budaghyan2021_tab3_r03` | 3 (i=1) | `ζ³⁶⁵x¹²⁹ + ζ²⁹²x⁶⁶ + ζ³⁶⁵x¹⁷ + ζ⁷³x¹⁰ + x³` |
-| `n9_Budaghyan2021_tab3_r04` | 4 (i=1) | `ζ³⁶⁵x¹²⁹ + ζ³⁶⁵x⁶⁶ + ζ¹⁴⁶x¹⁷ + ζ³⁶⁵x¹⁰ + x³` |
-| `n9_Budaghyan2021_tab3_r05` | 5 (i=1) | `ζ³⁶⁵x¹²⁹ + ζ²¹⁹x⁶⁶ + ζ²⁹²x¹⁷ + ζ⁷³x¹⁰ + x³` |
-| `n9_Budaghyan2021_tab3_r06` | 6 (i=1) | `ζ⁷³x¹²⁹ + ζ³⁶⁵x⁶⁶ + ζ⁷³x¹⁷ + ζ⁷³x¹⁰ + x³` |
-| `n9_Budaghyan2021_tab3_r07` | 7 (i=1) | `ζ³⁶⁵x¹²⁹ + ζ⁴³⁸x⁶⁶ + ζ²⁹²x¹⁰ + x³` |
-| `n9_Budaghyan2021_tab3_r08` | 8 (i=1) | `ζ³⁶⁵x¹²⁹ + x⁶⁶ + ζ⁴³⁸x¹⁰ + x³` |
-| `n9_Budaghyan2021_tab3_r09` | 9 (i=1) | `ζ⁷³x¹²⁹ + ζ²⁹²x⁶⁶ + x¹⁰ + x³` |
-| `n9_Budaghyan2021_tab3_r10` | 10 (i=1) | `ζ⁷³x¹²⁹ + x⁶⁶ + ζ²¹⁹x¹⁷ + x³` |
-| `n9_Budaghyan2021_tab3_r11` | 11 (i=2) | `ζ¹⁴⁶x²⁵⁷ + ζ⁴³⁸x⁶⁸ + ζ⁴³⁸x¹² + x⁵` |
-| `n9_Budaghyan2021_tab3_r13` | 13 (i=2) | `ζ⁷³x²⁵⁷ + ζ¹⁴⁶x⁶⁸ + x³³ + x⁵` |
-| `n9_Budaghyan2021_tab3_r14` | 14 (i=2) | `ζ³⁶⁵x²⁵⁷ + ζ⁴³⁸x⁶⁸ + ζ³⁶⁵x³³ + ζ⁴³⁸x¹² + x⁵` |
-| `n9_Budaghyan2021_tab3_r15` | 15 (i=2) | `ζ¹⁴⁶x²⁵⁷ + ζ²¹⁹x⁶⁸ + ζ⁷³x³³ + x¹² + x⁵` |
-| `n9_Budaghyan2021_tab3_r16` | 16 (i=2) | `ζ⁷³x²⁵⁷ + ζ²¹⁹x⁶⁸ + ζ³⁶⁵x³³ + x⁵` |
-| `n9_Budaghyan2021_tab3_r17` | 17 (i=4) | `ζ²⁹²x³ + ζ¹⁴⁶x⁸⁰ + ζ⁷³x²⁴ + x¹⁷` |
+```
+n                 = 9
+m                 = 9
+is_permutation    = false            # verified: none is bijective
+bib_key           = "Budaghyan_202101"
+source            = "Budaghyan, Calderini, Carlet, Coulter, Villa, 'Generalized isotopic
+                     shift construction for APN functions', Des. Codes Cryptogr.
+                     89(1):19-32 (2021), Table 3 (row <k>), marked 'new'. Instance of
+                     Theorem 3.1: F(x) = x*L1(x)^{2^i} + x^{2^i}*L2(x) with L1, L2
+                     F_{2^3}-polynomials. LUT = terms_to_lut over GF(2^9) with modulus
+                     x^9+x^4+1 (=529) and zeta = 2 (ord 511). Re-verified:
+                     differential_uniformity = 2, algebraic_degree = 2."
+target file       = packages/VBFCatalog/data-raw/apn_catalog/n9_apn.toml
+```
 
-**Secondary gaps** (not claimed new by this paper, but absent and notable):
+Per-entry. `name` follows the existing `n<N>_<Author><Year>_<tag>` convention;
+`algebraic_form` is the paper's exact polynomial; `lut` is the deterministic 512-entry
+output of `zeta_poly_lut(9, terms; modulus = 529, zeta = 2)`, pinned here by its first six
+values and by a SHA-256 prefix of the comma-joined LUT so the updater can verify.
 
-- Table 2's `8.1` (`x³ + x¹⁰ + ζ⁴³⁸x¹³⁶`, the previously-unclassified `n=9` example) —
-  **missing** from `n9_apn.toml`; APN verified (`du=2`, modulus 529), fingerprint distinct
-  from all existing entries. Proposed `n9_EdelPott_8_1`.
-- Table 2's `[6]` function `ζ³³⁷x¹²⁹+ζ⁴²⁴x⁶⁶+ζ²x¹⁷+ζx¹⁰+ζ³⁴x³` — **missing**; APN verified;
-  fingerprint distinct. Proposed `n9_Budaghyan2020_isoshift`.
-- Table 2's `1.2` = `Tr₁⁹(x⁹) + x³` — **missing** (`n9_apn.toml` has `eq7`/`eq8`, which are
-  Table 2's 1.4 and 1.3, but not 1.2).
+| name | Table-3 row, `i` | `algebraic_form` (ζ = generator, modulus 529) | lut[0:6] | sha256-16 |
+|------|------------------|----------------------------------------------|----------|-----------|
+| `n9_Budaghyan2021_t3r2`  | 2, i=1  | `ζ^219 x^129 + ζ^292 x^66 + ζ^292 x^17 + ζ^219 x^10 + x^3` | 0,1,107,3,427,302 | `f0598ddca9b00d50` |
+| `n9_Budaghyan2021_t3r3`  | 3, i=1  | `ζ^365 x^129 + ζ^292 x^66 + ζ^365 x^17 + ζ^73 x^10 + x^3` | 0,333,43,177,39,334 | `88ba82d0e4dec07d` |
+| `n9_Budaghyan2021_t3r4`  | 4, i=1  | `ζ^365 x^129 + ζ^365 x^66 + ζ^146 x^17 + ζ^365 x^10 + x^3` | 0,336,266,486,28,392 | `2d1811514639364b` |
+| `n9_Budaghyan2021_t3r5`  | 5, i=1  | `ζ^365 x^129 + ζ^219 x^66 + ζ^292 x^17 + ζ^73 x^10 + x^3` | 0,1,485,250,441,50 | `ea2448f53875fd05` |
+| `n9_Budaghyan2021_t3r6`  | 6, i=1  | `ζ^73 x^129 + ζ^365 x^66 + ζ^73 x^17 + ζ^73 x^10 + x^3` | 0,332,495,356,165,378 | `3a64a9864928f486` |
+| `n9_Budaghyan2021_t3r7`  | 7, i=1  | `ζ^365 x^129 + ζ^438 x^66 + ζ^292 x^10 + x^3` | 0,333,252,153,44,473 | `341368fed4578da9` |
+| `n9_Budaghyan2021_t3r8`  | 8, i=1  | `ζ^365 x^129 + x^66 + ζ^438 x^10 + x^3` | 0,336,36,30,443,381 | `1c828404c73ae277` |
+| `n9_Budaghyan2021_t3r9`  | 9, i=1  | `ζ^73 x^129 + ζ^292 x^66 + x^10 + x^3` | 0,332,239,87,498,148 | `dd0fe81c4ae07492` |
+| `n9_Budaghyan2021_t3r10` | 10, i=1 | `ζ^73 x^129 + x^66 + ζ^219 x^17 + x^3` | 0,1,174,10,22,133 | `982e689b1792be0c` |
+| `n9_Budaghyan2021_t3r11` | 11, i=2 | `ζ^146 x^257 + ζ^438 x^68 + ζ^438 x^12 + x^5` | 0,333,323,468,21,385 | `1c3331abaee060c7` |
+| `n9_Budaghyan2021_t3r13` | 13, i=2 | `ζ^73 x^257 + ζ^146 x^68 + x^33 + x^5` | 0,28,490,158,342,429 | `b4749ff414384e1c` |
+| `n9_Budaghyan2021_t3r14` | 14, i=2 | `ζ^365 x^257 + ζ^438 x^68 + ζ^365 x^33 + ζ^438 x^12 + x^5` | 0,1,508,505,189,349 | `ad7aa6362aba33c7` |
+| `n9_Budaghyan2021_t3r15` | 15, i=2 | `ζ^146 x^257 + ζ^219 x^68 + ζ^73 x^33 + x^12 + x^5` | 0,333,284,318,312,449 | `e3f0d199026a5c08` |
+| `n9_Budaghyan2021_t3r16` | 16, i=2 | `ζ^73 x^257 + ζ^219 x^68 + ζ^365 x^33 + x^5` | 0,29,27,261,495,453 | `9e928e96205bff32` |
+| `n9_Budaghyan2021_t3r17` | 17, i=4 | `ζ^292 x^3 + ζ^146 x^80 + ζ^73 x^24 + x^17` | 0,1,506,375,241,205 | `c73b3da593f5389d` |
 
-**Cross-paper observation**: Table 1's `n=8` row 1.3
-(`ζ¹⁵³x¹²⁹+ζ²²¹x⁷²+ζ¹⁷⁰x³³+ζ¹⁰²x²⁴+x¹²+x⁹+ζ¹³⁶x³`) has the **same ortho-derivative
-fingerprint** as the existing catalog entry `n8_Taniguchi2025_ex4_2`. If `n=8` Table 1
-entries are ever added, 1.3 must be flagged **not-new / duplicate**. The other 11 Table-1
-entries have fingerprints distinct from every `n8_apn.toml` entry.
+### Cross-paper catalog observation (read-only)
+
+Table-1 row 12 of this paper (Edel–Pott function **1.3**,
+`ζ¹⁵³x¹²⁹ + ζ²²¹x⁷² + ζ¹⁷⁰x³³ + ζ¹⁰²x²⁴ + x¹² + x⁹ + ζ¹³⁶x³` over modulus 285) has
+**identical** extended Walsh spectrum `{0:16320, 16:43520, 32:5440}`, ortho-derivative
+differential spectrum `{0:38592, 2:21426, 4:4590, 6:654, 8:18}`, ortho-derivative Walsh
+spectrum and `|S(F)| = 86` to the catalog entry `n8_Taniguchi2025_ex4_2`. This is strong —
+not conclusive — evidence that the Taniguchi 2025 Example 4.2 function is EA-equivalent to
+Edel–Pott 1.3. Worth settling with the repository's `are_ccz_equivalent`.
 
 ## Library-Reuse Note
 
 | Helper (`helpers.jl:line`) | VBF symbol to call | Verdict |
 |---|---|---|
-| `zeta_poly_lut` (:74) | `terms_to_lut(terms, n, modulus)` with `coef = gf_pow(zeta, k, n; modulus)` | **duplicate** — the body is `terms_to_lut` plus `ζ`-exponent decoding; keep only the decoding layer |
-| `fm_polynomial_lut` (:23) | `terms_to_lut` with exponents `2^{jm}` | **duplicate**, and dead code |
-| `gen_shift_lut` (:47) | — | paper-specific (Eq. 3), but dead code |
-| `nonlinear_gold_shift_lut` (:121) | — | paper-specific (Eq. 4), but dead code; `theorem3_2.jl:67-69` re-implements it inline instead of calling it |
-| `isotopic_shift_lut` (:97) | — | legitimately paper-specific (Eq. 1) |
-| `s_of_f` (:108) | correctly wraps `walsh_zeroes` | fine |
-| `paper_banner` (:135) | correctly wraps `print_banner` | fine |
+| `zeta_poly_lut` (:74) | `terms_to_lut(terms, n, modulus)` | **duplicate of the evaluation loop** — the ζ-exponent decoding is paper-specific, but the body should be `terms_to_lut([(gf_pow(2, ce, n; modulus), pw) for ...], n, modulus)` |
+| `fm_polynomial_lut` (:23) | `terms_to_lut` with terms `[(A_j, 2^{jm})]` | **duplicate** *and* dead code |
+| `gen_shift_lut` (:47), `nonlinear_gold_shift_lut` (:121) | — | paper-specific, but **dead code** (never called) |
+| `isotopic_shift_lut` (:97) | — | paper-specific ✔ — **promote-to-core candidate**: the isotopic shift `F_L(x) = F(x+L(x)) + F(x) + F(L(x))` is the shared primitive of `Budaghyan_202000`, `Budaghyan_202101` and `Calderini_202100`'s family F11 |
+| `s_of_f` (:108) | — | a thin, correct wrapper over `walsh_zeroes` (the `(a<<N)|b` packing was verified against `lat`) ✔ |
 
-Promote-to-core candidates:
+Good reuse elsewhere: `gf_mul`, `gf_pow`, `primitive_polynomial`, `conway_polynomial`,
+`gf_monomial_lut`, `walsh_zeroes`, `subspace_count_signature`, `differential_uniformity`,
+`SBox`, and the `print_*` family.
 
-- `isotopic_shift(F_lut, L_lut)` — `F_L(x) = F(x+L(x)) + F(x) + F(L(x))` is a general
-  construction used by at least three papers in this repo (Budaghyan_202101,
-  Calderini_202100 §3, and the 2020 T-IT companion); belongs in
-  `packages/VBF/src/constructions/`.
-- Raise `delta_rank`/`gamma_rank` beyond `n ≤ 7` (or add a documented `n ≤ 9` path) so
-  Tables 2 and 3's invariants become reproducible.
-- An `is_primitive_element(ζ, n; modulus)` guard in
-  `packages/VBF/src/representations/finite_field.jl` would prevent issue-8-class bugs across
-  all `ζ`-exponent papers.
+## Open Questions
+
+- Is `packages/VBFCatalog` the right home for Edel–Pott's n=8 Table-9 functions (needed for
+  reproduction issue 4)? If so, 11 more of this paper's Table-1 entries become candidate
+  additions.

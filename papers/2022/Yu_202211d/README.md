@@ -1,189 +1,173 @@
 # Yu_202211d — Constructing More Quadratic APN Functions with the QAM Method
 
-**Paper**: Yu, Perrin. "Constructing more quadratic APN functions with the QAM method."
-*Designs, Codes and Cryptography*, 2022.
+**Paper**: Yu, Perrin. "Constructing more quadratic APN functions with the QAM method." 2022.
 
 **Reproduction path**: `papers/2022/Yu_202211d/`
 
 **Verdict**: Mostly complete
 
-The best-structured reproduction in the 2021–2022 set. Every theorem, definition and
-proposition has an executable counterpart, the infeasible parts are honestly labelled, and
-the reproduction independently found and worked around a genuine flaw in the paper
-(Theorem 6's exclusion set — see P1). The remaining gap is that the paper's *quantitative*
-corpus claims (5412 classes, Walsh-spectrum multiplicities 5084/324/4, cross-corpus
-disjointness, and the Conjecture-3 arithmetic) are never checked, even though the corpora are
-already registered in VBFCatalog and the infrastructure is all present.
+The strongest structure in the 2022 batch: the QAM correspondence, Theorem 2, Proposition 3,
+Theorem 6 and the eq. (5)/(6) redundancy are all reproduced and independently confirmed, and
+the reproduction already caught a genuine flaw in the paper's Theorem 6 exclusion set. The
+one substantive gap is that the paper's four *quantitative* corpus claims are never
+evaluated — even though all four reproduce exactly, as verified here. Two smaller defects: an
+`exhaustive` flag that can never be true, and a tautological test.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test` could
-> not be executed. The committed `results/report.toml` (Julia 1.12.6, 2026-06-06) records a
-> full prior pass with every check `true`; independent Python re-derivation confirms the
-> load-bearing values.
+> **Environment note**: Julia is not installed in the review environment, so
+> `test/runtests.jl` could not be executed. The committed `results/report.toml` (Julia
+> 1.12.6, generated 2026-06-06) records every check as `true`; every value below was
+> re-derived independently in Python and agrees.
 
 ---
 
 ## Paper Issues
 
-### P1. Theorem 6's excluded set is too small — the "only if" direction is false as written
+### 1. Theorem 6 / eq. (2): the excluded set is too small
 
-- **Location**: tex line 341 — "for all `(λ_1,…,λ_{n-1},μ_1,μ_2) ≠ (0,0,⋯,0,0,1,1,0)`" — and
-  proof step 1 (line 346), which excludes only that single tuple.
-- **Counter-evidence**: taking `H_8` = the genuine QAM of `x^3` in the normal basis
-  `γ = g^11` (a QAM, so condition (2) must hold), condition (2) is violated for **63**
-  additional tuples, all with `μ = (1,0)` and `λ_{n-1} = 1` (e.g.
-  `λ = 0b1000001, 0b1000010, 0b1000011, …`). Violation distribution:
-  `Counter({((1,0), λ_{n-1}=1): 63})`.
-- **Correct statement**: the excluded family is `{ μ = (1,0) and λ_{n-1} = 1 }` (`2^{n-2}`
-  tuples), which is exactly what Theorem 4(i) forces.
-- **Credit**: the reproduction already found and documented this — `theorem6_model.jl:19-33`
-  and the guard at `theorem6_model.jl:92`.
+The reproduction already flagged this; here is the hard counter-evidence.
 
-Nothing else. Conjecture 3's seven product estimates all recompute exactly
-(`7×100×154×87×20×2×3×64×90×29×3 = 563976483840000 ≈ 2^49.0`, …,
-`158369767920000 ≈ 2^47.17`); all seven stated products and all seven `≈2^x` values are
-correct. The `W_1` spectrum `{N_0=16320, N_16=43520, N_32=5440}` is exactly the extended Walsh
-spectrum of `x^3` on `F_2^8` (verified under both modulus 285 and 283). And
-`|A|=7, |B|=2^7−2^4, |{c_i}|=3, |G|=2^7−2^5` all follow from `dim V = dim U = 5`, which is
-confirmed.
+- **Location**: `.tex:341`, the quantifier line after eq. (2) — "for all
+  `(λ₁,…,λ_{n-1},μ₁,μ₂) ≠ (0,0,…,0,0,1,1,0)`" — plus proof step 1) at `.tex:346`.
+- **Computed counter-evidence**: on the seed `H_8` — which *is* a QAM — condition (★) fails
+  for **63** distinct `(λ,μ)` beyond the single excluded vector, namely every `λ` with
+  `λ₇=1` and `(λ₁…λ₆) ≠ 0` paired with `μ=(1,0)` (`63 = 2^{n-2}−1`). With the whole family
+  `{μ=(1,0), λ_{n-1}=1}` excluded, violations drop to **0**. So "If `H_n` is a QAM, then (2)
+  is obviously true" is false as literally written; only the family-wide exclusion is
+  correct, which is what Theorem 4(i) actually gives.
+- **Credit**: the repository's reading in `theorem6_model.jl:19-28` and its implementation at
+  `:92` are the correct ones.
+
+### 2. Editorial inconsistencies
+
+- `.tex:315` "we haven't realized the new model" contradicts `.tex:378-397`, which presents
+  it as an operational improvement; `.tex:397` has "Similarly property holds" and "aviod"
+  typos. No mathematical impact.
+
+### Checked and found correct (not paper issues)
+
+- **Conjecture 3**: all **seven** product estimates are arithmetically exact
+  (563976483840000 = 2^49.00, 955102533525504 = 2^49.76, 966313344761856 = 2^49.78,
+  781247805456384 = 2^49.47, 739769049169920 = 2^49.39, 903337795584000 = 2^49.68,
+  158369767920000 = 2^47.17).
+- **Section 3.2 counting**: `3 + 2·245 + 6301 = 6794`; `1 + 245 + 6301 = 6547`;
+  `6547 − 2 − 1133 = 5412`; `21113 + 5412 = 26525`; `8192 + 12921 = 21113`. All consistent.
+- **Δ/Γ-rank class counts**: `7+21+45+6+31+482+2363+2831+1008 = 6794`. Consistent.
 
 ---
 
 ## Reproduction Issues
 
-### 1. The paper's headline corpus statistics are never checked against the corpus that is already loaded
+### 1. The paper's quantitative corpus claims are never checked
 
-- **Location**: `catalog_validation.jl:41-77` (samples 50 of 5412 for `δ=2` / degree 2 /
-  `is_qam` only); `paper_invariants.jl:70-89` defines `PAPER_WALSH_SPECTRA` and
-  `paper_walsh_class` but applies them only to the Gold seed
-  (`paper_invariants.jl:176-179`).
-- **Symptom**: Section 3.2's central claims — 5412 distinct EA-classes; extended Walsh classes
-  occurring 5084 / 324 / 4 times (which sum to exactly 5412); "no function we found was in the
-  Beierle–Leander or the earlier QAM data set" — have zero executable coverage, although
-  `yuperrin2022_qam_n8`, `beierleleander2022_n8` and `yuwangli2014_qam_n8` are all registered
-  corpora (`packages/VBFCatalog/data-build/import_quadratic_apn_8bit.jl:107,125,152`).
-- **Root cause**: catalog validation was scoped as a smoke test rather than as the
-  reproduction of Section 3.2.
+*Largest gap.*
+
+- **Location**: `paper_invariants.jl:70-89` defines `PAPER_WALSH_SPECTRA` and
+  `paper_walsh_class`, but they are applied only to the Gold `x³` seed
+  (`paper_invariants.jl:177`). `catalog_validation.jl:47-52` checks only δ=2, deg=2 and
+  `is_qam` on a 50-function sample.
+- **Symptom**: `results/report.toml` records `walsh_class_seed = "W1"` and nothing about the
+  5412 corpus. The paper's two headline numbers are unverified.
+- **Root cause**: the scaffolding exists but is never wired to the corpus.
+- **Independent verification — both PASS**:
+  - Extended Walsh spectrum over all 5412 corpus members: **W₁ = 5084, W₂ = 324, W₃ = 4** —
+    *exactly* the paper's Section 3.2 multiplicities. Roughly 3.5 minutes in pure Python;
+    seconds in Julia.
+  - Distinct ortho-derivative fingerprints over all 5412: **5410** distinct by the `π_F`
+    **differential** spectrum alone; the 2 collisions (members `{880, 2701}` and
+    `{1837, 5151}`) split as soon as the `π_F` **Walsh** spectrum is added → **5412 distinct
+    (Walsh, differential) pairs**, exactly the paper's "5412 new EA-equivalence classes".
+    That is precisely `apn_ea_mugshot`.
 - **Resolution plan**:
-  1. Add `section3_2_corpus.jl`: compute `apn_ea_mugshot` for all 5412 corpus members and
-     assert 5412 distinct mugshots (the paper's "5412 new EA-classes").
-  2. In the same file, compute `paper_walsh_class` for all 5412 and assert the multiset
-     `{W1:5084, W2:324, W3:4}`.
-  3. Add a cross-corpus check: the mugshot sets of `yuperrin2022_qam_n8` vs
-     `beierleleander2022_n8` and vs `yuwangli2014_qam_n8` are disjoint.
-  4. Expose all three behind `limit`/`max_evaluations` knobs per `AGENTS.md:63`, defaulting to
-     a sample and offering `full_search=true`.
-  5. Add a `conjecture3_arithmetic.jl` (or a test) asserting the seven products and their
-     `log2` roundings — roughly 20 lines, exactly reproducing a paper table.
+  1. Add `corpus_walsh_report()` in `paper_invariants.jl` iterating
+     `corpus_function(db, CORPUS_NAME, i)` and tallying `paper_walsh_class` → assert
+     `(5084, 324, 4)`.
+  2. Add `corpus_class_count()` tallying `apn_ea_mugshot` into a `Set` → assert `5412`.
+  3. Mark both as exact reproductions in `report.jl`'s summary.
+  4. Keep them behind a `full=true` flag if runtime matters.
 
-### 2. The `exhaustive` flag in `small_search_full` is a budget heuristic, not a statement about the search
+### 2. The `exhaustive` flag is wrong at n=4
 
-- **Location**: `small_searches.jl:21` —
-  `exhaustive = n_classes < limit && max_evaluations > 1 << 24 - 1`, with the comment
-  "exhaustive when search terminated naturally (not by budget or limit)".
-- **Symptom**: `results/report.toml` records `n4_full.exhaustive = false` even though the `n=4`
-  quadratic-APN classification (a single Gold class) *is* complete; conversely the flag can
-  read `true` merely because a large budget was passed. `VBF.search_qam_full` returns only a
-  vector, so the caller cannot know why it stopped.
-- **Root cause**: the underlying API does not report a termination reason.
+- **Location**: `small_searches.jl:18` —
+  `exhaustive = n_classes < limit && max_evaluations > 1 << 24 - 1`.
+- **Symptom**: `results/report.toml` records
+  `[results.small_searches.n4_full] exhaustive = false`, even though the n=4 full QAM search
+  *is* exhaustive.
+- **Root cause**: two bugs. (a) In Julia `<<` binds **looser** than `-`, so `1 << 24 - 1`
+  parses as `1 << 23` = 8388608, not `2^24 − 1`. (b) `small_searches_report` (`:46`) defaults
+  `max_evaluations = 1 << 22` = 4194304, which is below even that, so the branch can never be
+  true from the report path. Separately, the flag is derived from the *budget* rather than
+  from whether the search terminated naturally.
 - **Resolution plan**:
-  1. Either extend `search_qam_full` (`packages/VBF/src/constructions/qam_search.jl:302`) to
-     return `(reps, evaluated, exhausted)`, or
-  2. rename the field to `budget_allows_exhaustive` and document it, and
-  3. cite the `search_qam_full` docstring guarantee ("`n=5` → single Gold class, `n=6` → 13
-     classes") for the completeness claims instead of the heuristic.
+  1. Have `search_qam_full` return a `terminated_naturally` flag and propagate it.
+  2. Failing that, write `max_evaluations ≥ (1 << 24)` with explicit parentheses.
+  3. Raise the report's default `max_evaluations` for n=4.
+  4. Assert `r4.exhaustive` in `test/runtests.jl`.
 
-### 3. Proposition 3's dependent cardinalities are checked for one `x_12` only
+### 3. The "13 classes on `F_{2^6}`" test is tautological
 
-- **Location**: `test/test_proposition3_partitions.jl` loops
-  `for x13 in prop3_candidates_x13()` asserting `|{c_i}| = 3`, but `|G| = 96` is only checked
-  for `prop3_cardinalities()`'s default `x12 = first(B)`.
-- **Symptom**: asymmetric coverage of a symmetric claim.
-- **Root cause**: oversight.
-- **Resolution plan**: add the mirror loop
-  `for x12 in prop3_candidates_x12(); @test length(prop3_candidates_x6(x12)) == 96; end`.
+- **Location**: `test/test_paper_invariants.jl` —
+  `cls = search_qam_full(6; limit = 13, …); @test length(cls) == 13`; the same pattern
+  appears at `paper_invariants.jl:132`.
+- **Symptom**: the assertion is satisfied by the `limit` argument, not by the mathematics. It
+  cannot detect a search that would have found 14, and it does not establish the "13" used by
+  Conjecture-1 fact (3).
+- **Root cause**: `limit` used as both a cap and an expectation.
+- **Resolution plan**:
+  1. Run with `limit = typemax(Int)` (or `limit = 20`) and assert `== 13`.
+  2. Keep `distinct_ccz_lower_bound(cls) == 13` as the separation claim.
 
-### 4. `print_header` bypasses the VBF report emitters
+### 4. Conjecture 3's arithmetic is not checked, and Conjecture 1's supporting facts are absent
 
-- **Location**: `helpers.jl:192-196` uses raw `println` where `print_banner` (a VBF export,
-  used correctly by `papers/2022/Li_202207/helpers.jl:17`) is the convention.
-- **Root cause**: boilerplate drift.
-- **Resolution plan**: replace with `print_banner(io, title, venue)`.
+- **Symptom**: the seven product estimates are trivially assertable (they are exact — see
+  above), and Conjecture-1 supporting facts (1), (2) and (3) are not represented at all.
+- **Resolution plan**: assert the seven products and their `log2` values; add the
+  Conjecture-1 facts.
+
+### 5. Library-reuse violations
+
+See the Library-Reuse Note below — `f2_span`, `print_header` and `f2_decompose` all duplicate
+core functionality.
 
 ---
 
 ## Items Reproduced Exactly
 
-| Item | Evidence |
-|------|----------|
-| **Conjecture 2's `H_8`** | `h8_base()` (`conjecture2_search.jl:83-86`) builds `B_{x³}(α_u, α_v) = α_u²α_v + α_uα_v²` on the normal basis `α_u = γ^{2^{u-1}}, γ = g^{11}`, modulus 285. The upper-left 6×6 block matches the paper's literal `g`-power matrix **entry for entry** (`g^34, g^81, g^83, g^170, g^106; g^68, g^162, g^166, g^85; g^136, g^69, g^77; g^17, g^138; g^34`). The full seed is a QAM |
-| **`base_matches_paper()` / `conjecture2_recovers_seed()`** | Both confirmed true |
-| **`qam_hits == 1`** (`test/test_conjecture2.jl`) | Sweeping all 256 values of `x_13` with the other 12 entries at the `x³` seed, exactly **one** value keeps `H_8` a QAM — `x_13 = 107`, matching `results/report.toml` (`x13 = 107`, `reduced_x13 = 3`) |
-| **Proposition 3** | `V = Span(g^34,g^81,g^83,g^170,g^106)` and `U = Span(g^34,g^68,g^162,g^166,g^85)` both have `dim = 5`; hence `|A|=7, |B|=112, |{c_i}|=3, |G|=96` — matching the paper and the artifact |
-| **Theorem 2 (transvection)** | `congruence_transvection` + `reduce_x13_into_A` implement `H' = PᵗHP` for the exact `P` printed in the paper's proof; the artifact records `reduction_same_qam = true`, `reduction_ea_equiv = true` |
-| **Theorem 6** | `new_model_is_qam` matches `is_qam` on 2000/2000 (`n=5`), 2000/2000 (`n=6`), 600/600 (`n=8`) proper-block random matrices, per the artifact |
-| **eq. (5) vs eq. (6)** | `redundancy_comparison` shows both select 43008 pairs (`= 224 × 192`), with 1 vs 224 span constructions — the paper's stated payoff, correctly formalised |
-| **Definition QAM / Theorem 1 correspondence** | Delegated to `VBF.is_qam` / `qam_to_sbox` / `quadratic_apn_matrix` with round-trip tests — the right call |
-| **Class invariants (Definition 2, Σ₄, Γ/Δ-ranks)** | All delegated to VBF; the 13 `F_2^6` classes are separated by the ortho-derivative fingerprint (artifact: `n6_classes = 13`, `n6_distinct_fingerprints = 13`); `walsh_class_seed = "W1"` — independently confirmed, `x³` on `F_2^8` has spectrum `{0:16320, 16:43520, 32:5440} = W_1` |
+| Paper item | Status | Independent evidence |
+|------------|--------|----------------------|
+| Definition 1 (QAM) | fully reproduced | `is_qam` |
+| Theorem 1 (Yu–Wang–Li correspondence) | fully reproduced | `qam_correspondence.jl` round-trip |
+| Definition 2 (ortho-derivative) | fully reproduced | `ortho_derivative`, `apn_ea_mugshot` |
+| Conjecture 2 — the literal `H_8` 6×6 `g`-power block | fully reproduced | normal basis `γ = g^11`, modulus 285, `g = 2` (order 255): the computed block **equals** the paper's matrix exactly; the full `H_8` is a QAM |
+| Theorem 2 (`H′ = PᵗHP` ⇒ EA-equivalent, QAM-preserving) | fully reproduced | `congruence_transvection` + `reduce_x13_into_A` (`x₁₃`: 107 → 3 ∈ A) |
+| Proposition 3 cardinalities | fully reproduced | `dim V = dim U = 5` → `|A| = 7`, `|B| = 112`, `|{c₁,c₂,c₃}| = 3`, `|G| = 96`; `A = {1,2,3,8,9,10,11}` |
+| Definition 3 (proper), Theorem 4, Lemma 5, Theorem 6 | reproduced **with a correction** | see paper issue 1 |
+| eq. (5) versus eq. (6) redundancy | fully reproduced | `224·192 = 43008` valid `(x₁₃, x₇)` pairs, identical under both formulations |
+| The 5412-function corpus | loaded and count-checked | `yuperrin2022_qam_n8` = 5412 members, all quadratic APN |
 
 ## Test Results
 
 | Command | Result |
 |---------|--------|
-| `make -C papers/2022/Yu_202211d test` | **Not run** — `julia` is not installed in the review environment |
-| Committed `results/report.toml` (prior run, Julia 1.12.6) | Full pass, all checks `true` |
-| Independent re-verification: `H_8` 6×6 block match, seed is a QAM, `dim V = dim U = 5`, unique QAM-preserving `x_13 = 107`, 63 Theorem-6 counterexample tuples, `W_1` spectrum, all seven Conjecture-3 products | **All confirmed** |
+| `julia papers/2022/Yu_202211d/test/runtests.jl` | **Not run** — `julia` unavailable. The committed `results/report.toml` records every check `true` |
+| Independent Python: `H_8` block reconstruction, `is_qam(H_8)`, Proposition-3 cardinalities, the Theorem-6 exclusion-set counterexample count, the eq.(5)/(6) pair count, the Conjecture-3 products, the full-corpus Walsh classification, and the full-corpus ortho-derivative fingerprint count | **All confirmed** |
 
 ## Catalog Status
 
-The paper claims 5412 **new** quadratic APN functions on `F_2^8`, delivered as a data set
-rather than as closed forms. They live in the VBFCatalog corpus `yuperrin2022_qam_n8` (5412
-members, per `packages/VBF/test/unit/corpus_test.jl:62`), which is the correct home — the
-curated `n8_apn.toml` is for named representatives, not 5412 LUTs.
+No individually-named new APN function is claimed; the paper's contribution is the
+5412-member set, which is **present** as the bulk corpus `yuperrin2022_qam_n8`
+(`packages/VBFCatalog/corpora/yuperrin2022_qam_n8.sqlite`, 5412 members, verified quadratic
+APN, with a Walsh-spectrum distribution matching the paper).
 
-- **Status: present** (as a corpus), for all 5412.
-- **No catalog-gap records emitted.** If a *representative* of the Yu–Perrin set is wanted in
-  `n8_apn.toml`, pick corpus member 1 and add it with `bib_key = "Yu_202211"` — that is a
-  curation decision, not a gap.
-- **Caveat**: the SQLite corpus could not be queried without Julia, so "present" rests on
-  `corpus_test.jl:62` and `results/report.toml` (`count = 5412, count_ok = true`).
+**No catalog gaps.**
 
 ## Library-Reuse Note
 
-Duplicates a core export:
-
-- `f2_span(vecs)` — `helpers.jl:75-84` — duplicates `VBF.span_from_basis`
-  (`packages/VBF/src/linalg/subspace_search.jl:152`, exported at `exports.jl:32`). Used at
-  `helpers.jl:95`, `helpers.jl:118`, `theorem6_model.jl:148`, `theorem6_model.jl:161`. Fix
-  target: `span_from_basis(UInt32.(vecs))` (returns a `Vector{UInt32}`; wrap in `Set` if
-  membership tests are hot).
-- `print_header` — `helpers.jl:192-196` — should call `VBF.print_banner`.
-
-Borderline:
-
-- `f2_decompose` (`proposition3_partitions.jl:71-81`) brute-forces `2^k` combinations;
-  `VBF.solve_f2(A::Vector{T}, b::T; nbits)` (`packages/VBF/src/linalg/linear_system.jl:177`)
-  solves the same system. Worth switching, though `k=5` makes it harmless.
-
-Legitimately paper-specific (not flagged): `h8_base`, `h8_from_vars`, `H8_VAR_POSITION`,
-`gold3_polar`, `nontrivial_coset_reps`, `coset_involution_half`, `is_proper`,
-`new_model_is_qam`, `congruence_transvection`, `extended_walsh_spectrum`,
-`PAPER_WALSH_SPECTRA`.
-
-Promote-to-core candidates:
-
-1. `toml_safe` + `write_results_toml` (`helpers.jl:150-188`) — byte-for-byte duplicated in
-   `papers/2025/Beierle_202508/helpers.jl`. Belongs next to `print_banner` in
-   `packages/VBF/src/io/`.
-2. `nontrivial_coset_reps` / `coset_involution_half` (`helpers.jl:94-130`) — generic `F_2`
-   coset partitioning, useful to any search paper; belongs in
-   `packages/VBF/src/linalg/subspace_search.jl`.
-3. `extended_walsh_spectrum` with the `b ≠ 0` convention (`paper_invariants.jl:57-66`) — a
-   standard invariant; core has `absolute_walsh_spectrum` but not this convention.
-
-## Open Questions
-
-1. Is the corpus-vs-paper statistical reproduction (issue 1) deliberately out of scope, or
-   simply not yet written? The infrastructure is all present.
-2. `report.jl:70-74` defines `using_now()` with a comment about avoiding a `Dates` dependency,
-   while `paper_invariants.jl:25` already does `using Random` and
-   `papers/2021/Calderini_202100/helpers.jl` uses `Dates`. Intentional?
+| Helper | Line | Verdict |
+|--------|------|---------|
+| `f2_span` | `helpers.jl:75-84` | **reuse violation** — duplicates `span_from_basis` (`packages/VBF/src/linalg/subspace_search.jl:152`); the only difference is `Set{Int}` versus `Vector{UInt32}` |
+| `print_header` | `helpers.jl:192-196` | **reuse violation** — hand-rolled; should call `print_banner` |
+| `f2_decompose` | `proposition3_partitions.jl:71` | **reuse violation (minor)** — brute-force over `2^k`; should use `solve_f2` |
+| `toml_safe` / `write_results_toml` | `helpers.jl:150-188` | **promote-to-core** — a byte-identical concept appears in `papers/2025/Beierle_202508/helpers.jl` |
+| `normal_basis` | `helpers.jl:50` | **promote-to-core** — also in `papers/2025/Yu_202512/helpers.jl` and `papers/2024/Ichanska_202400/helpers.jl` |
+| `gold3_polar` | `helpers.jl:62` | **promote-to-core candidate** — a generic "polar/bilinear form of a quadratic on an arbitrary basis"; `quadratic_apn_matrix` only handles the *standard* basis |
+| `nontrivial_coset_reps`, `coset_involution_half`, `is_proper`, `new_model_is_qam`, `congruence_transvection` | — | legitimately paper-specific; correctly built on `rank_f2`, `is_qam`, `qam_to_sbox` |

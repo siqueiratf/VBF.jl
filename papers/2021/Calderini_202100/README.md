@@ -1,62 +1,56 @@
 # Calderini_202100 — On Known Constructions of APN and AB Functions and Their Relation to Each Other
 
-**Paper**: Calderini, Budaghyan, Carlet. "On known constructions of APN and AB functions and
-their relation to each other." 2021.
+**Paper**: Calderini, Budaghyan, Carlet. "On known constructions of APN and AB functions
+and their relation to each other." 2021.
 
 **Reproduction path**: `papers/2021/Calderini_202100/`
 
 **Verdict**: Mostly complete
 
-Theorem 3.1, Theorem 4.3, Theorem 4.4, Theorem 6.2, Theorem 7.2, Proposition 7.5 and the
-Section 7 dimension-6 example are all reproduced, and where feasible they are checked
-*exhaustively* rather than by sampling — Theorem 6.2's iff-condition is verified over all
-256 `(b,c)` pairs at `m=4` with zero mismatches. The reproduction is honest about what it
-skips and it reuses `VBF` core well. The gaps are Theorem 4.1 / Proposition 4.2 (the general
-four-parameter form and its reduction), Theorem 5.1's general condition together with
-Remark 5.2, and Remark 7.3; plus Proposition 7.5 having no test and a `print_header` symbol
-collision that makes include order load-bearing.
+The widest coverage and the best library reuse of the 2021 batch: a file per theorem
+mirroring the paper's numbering, exhaustive condition-⟺-APN checks where feasible, and no
+helper duplicating a `VBF` export. Nine issues remain, mostly missing survey items. Two of
+them — Proposition 7.5 and the Section 7 CCZ link — are declared expensive or unverifiable
+when a cheap exact route exists; both are closable today with the evidence recorded below.
+One genuine defect was found in the paper itself (Theorem 5.1's iff-condition is inverted).
 
 > **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed. Claims marked "independently confirmed" below were re-derived from
-> scratch in Python; the expensive sweeps (`section6_1` at n=10/n=12, `theorem7_1_report` at
-> m=3) were out of reach and are marked unverifiable here.
+> could not be executed. Every numeric claim below marked "independently confirmed" was
+> re-derived from scratch in Python (GF(2^n) arithmetic, DDT, ANF degree, Walsh spectra,
+> ortho-derivative invariants, Γ-rank) rather than taken from the repository's own output.
 
 ---
 
 ## Paper Issues
 
-### P1. Theorem 5.1's iff-condition has the inclusion inverted — it should read `α ∉ S`
+### 1. Theorem 5.1's iff-condition has the inclusion inverted — it must read `α ∉ S`
 
-- **Location**: Section 5, Theorem 5.1 (attributed to [54], Zhou–Pott): "Then
-  `F(x,y) = (xy, G(x,y))` is APN if and only if
-  `α ∈ {u^{2^i+1}(t^{2^i}+t)^{1−2^j} : u,t ∈ F_{2^m}}`. In particular if `j` is even, then
-  `F` is APN if and only if `α` is not a cube."
-- **Counter-evidence** (`m = 4`, `i = 1`, modulus `x⁴+x+1`):
-  - `S \ {0} = {1, 8, 10, 12, 15}` for `j = 0` and for `j = 2` — exactly the 5 nonzero
-    **cubes** of `GF(2⁴)`.
-  - The `α` for which `F` is APN are `{2,3,4,5,6,7,9,11,13,14}` — exactly the 10
-    **non-cubes**, **disjoint** from `S`.
-  - So the literal "iff `α ∈ S`" contradicts the theorem's own "in particular" clause and
-    contradicts computation. The correct statement is `α ∉ S`.
-  - Consistency check for `j` odd (Remark 5.2): `S \ {0}` is all 15 nonzero elements and
-    **no** `α` gives an APN function (`j = 1` and `j = 3`: the APN-`α` list is empty). Under
-    the corrected reading `α ∉ S = ∅`, this exactly reproduces Remark 5.2's conclusion "the
-    family of Zhou–Pott is not defined then"; under the paper's literal reading it would
-    predict that *every* `α` works.
-- **Severity**: a real but local typo. The paper's downstream use (Corollary 5.7,
-  Section 6.1) relies on the corrected version.
+- **Location**: Section 5, Theorem 5.1 (attributed to [54], Zhou–Pott): "`F(x,y) = (xy, G(x,y))`
+  is APN if and only if `α ∈ {u^{2^i+1}(t^{2^i}+t)^{1−2^j} : u, t ∈ F_{2^m}}`."
+- **Computed counter-evidence** (`m = 4`, modulus `x⁴+x+1`, `i ∈ {1,3}`):
+  - For `j = 0` and `j = 2`: `S∖{0} = {1,8,10,12,15}`, exactly the 5 nonzero **cubes**.
+  - The APN `α` are `{2,3,4,5,6,7,9,11,13,14}`, exactly the 10 **non-cubes** — **disjoint
+    from `S`**.
+  - So the literal statement contradicts the theorem's own next sentence ("if `j` is even,
+    then `F` is APN iff `α` is not a cube") and contradicts computation.
+  - Consistency check for `j` odd (Remark 5.2): `S∖{0}` is all 15 nonzero elements, and
+    **zero** `α` give APN (`j = 1` and `j = 3` both yield an empty APN list). Under the
+    corrected reading `α ∉ S = ∅` this exactly reproduces Remark 5.2's "the family of
+    Zhou–Pott is not defined then"; under the literal reading it would predict that *every*
+    `α` works.
+- **Severity**: real but local — the corrected reading is what the rest of the paper
+  (Remark 5.2, Corollary 5.7) actually uses.
 
-### P2. Section 6.1.3's "second case for `b=0`" is ambiguous or mis-numbered
+### 2. Section 6.1.3's "second case for `b=0`" is ambiguous or mis-numbered
 
-- **Location**: Section 6.1.3 (`n = 2·6`), case `F₂`: "`k=4, r=2` is equivalent to the second
-  case for `b=0`."
-- The `b=0` cases listed for `n=12` are, in order: `(h=2,r=4)` "could be inequivalent to the
-  known cases", `(h=3,r=0)` "functions as in Theorem 6.2", `(h=5,r=4)` "Taniguchi". The
-  reproduction finds empirically (`section6_1.jl:330-343`) that `F₂(k=4,r=2)` matches the
-  **first**-listed `b=0` class `F₁(b=0,h=2,r=4)` and **not** the Theorem 6.2 class, and
-  documents the discrepancy in-line. This is a genuine ambiguity in the publication.
-- **Caveat**: the `n=12` mugshot comparison could not be re-run independently here, so this
-  is recorded as reported-by-the-reproduction rather than independently confirmed.
+- **Location**: Section 6.1.3 (n = 2·6), case `F₂`: "`k=4, r=2` is equivalent to the second
+  case for `b=0`". The `b=0` cases are listed as `h=2, r=4` (first), `h=3, r=0` (second,
+  "functions as in Theorem 6.2"), `h=5, r=4` (third).
+- **Status**: the reproduction (`section6_1.jl:332-343` and `:531-534`) asserts the
+  *empirical* match `F2(k=4,r=2) ≡ F1(b=0,h=2,r=4)` — the **first**-listed `b=0` case, not
+  the Theorem-6.2 one — and documents the discrepancy. This could not be verified
+  independently (the n=12 sweep is out of reach in Python), so it is recorded here as the
+  reproduction's own claim rather than as confirmed counter-evidence.
 
 ---
 
@@ -64,119 +58,163 @@ collision that makes include order load-bearing.
 
 ### 1. Theorem 4.1 and Proposition 4.2 are not implemented
 
-- **Location**: `helpers.jl:58-92` implements only the *post*-simplification form.
-- **Symptom**: Theorem 4.1 states
-  `G(x,y) = s·x^{2^i+2^j} + u·x^{2^i}y^{2^j} + v·x^{2^j}y^{2^i} + t·y^{2^i+2^j}` with the
-  condition "`G(X,1) = sX^{2^i+2^j} + uX^{2^i} + vX^{2^j} + t` has no zero in `F_{2^m}`".
-  Proposition 4.2 ([51], Taniguchi) reduces this to
-  `G′(x,y) = x^{2^k+1} + a·xy^{2^k} + b·y^{2^k+1}` with `k = i−j`, `a ∈ {0,1}`, `b ∈ F₂^*`.
-  Only `G′` (`bivariate_carlet_sbox`) exists; the general four-parameter `G` and the
-  reduction step are never built or checked.
-- **Root cause**: the reduction was taken on faith.
+- **Location**: no file; `helpers.jl:58-92` implements only the *reduced* form
+  `G' = x^{2^i+1} + a·x·y^{2^i} + b·y^{2^i+1}`.
+- **Symptom**: Theorem 4.1's general four-parameter
+  `G(x,y) = s x^{2^i+2^j} + u x^{2^i}y^{2^j} + v x^{2^j}y^{2^i} + t y^{2^i+2^j}` with its
+  condition ("`G(X,1)` has no zero in `F_{2^m}`") and Proposition 4.2's reduction to `G'`
+  (`k = i−j`, `a ∈ {0,1}`, `b ∈ F_{2^m}*`) are never built. `theorem4_4.jl` starts from the
+  already-reduced form, so the reduction step — the link between Carlet's bivariate
+  construction and Taniguchi's simplification — is assumed rather than shown.
+- **Root cause**: only the downstream reduced form was ported.
 - **Resolution plan**:
   1. Add `theorem4_1_sbox(m,i,j,s,u,v,t)` and `theorem4_1_condition`.
-  2. Assert `condition ⟺ du == 2` exhaustively at `m = 3` and `m = 4` over all `(s,u,v,t)`.
-  3. Assert every APN `theorem4_1_sbox` mugshot appears among `bivariate_carlet_sbox(m,k,a,b)`
-     mugshots (Proposition 4.2).
+  2. Verify condition ⟺ APN exhaustively at `m = 3` (and `m = 4` for `i−j` coprime to `m`).
+  3. Verify Proposition 4.2 by showing every APN Theorem-4.1 EA-mugshot appears among the
+     reduced `G'` mugshots.
 
-### 2. Theorem 5.1 is implemented only for `j ∈ {0,2}` and only via its "in particular" clause; Remark 5.2 is unverified
+### 2. Theorem 5.1 is implemented only via its "in particular" clause; Remark 5.2 is unverified
 
-- **Location**: `theorem5_1.jl:41-51`
-- **Symptom**: the loop is `for i in is, j in (0, 2)` and the assertion is
-  `is_cube == !apn`. The general set `S = {u^{2^i+1}(t^{2^i}+t)^{1−2^j}}` is never built and
-  `j` odd is never tested — so Remark 5.2 ("for `j` odd, `S = F_{2^m}` and the family is
-  undefined") has no counterpart, and the paper's Theorem-5.1 typo (P1) is silently bypassed
-  rather than flagged.
-- **Root cause**: implemented from the corollary rather than from the theorem.
+- **Location**: `theorem5_1.jl:216` — `for i in is, j in (0, 2)`.
+- **Symptom**: only even `j` is tested, and only against "non-cube ⟺ APN". The general set
+  `S = {u^{2^i+1}(t^{2^i}+t)^{1−2^j}}` is never constructed, so neither Theorem 5.1's actual
+  statement nor Remark 5.2's degeneracy argument is exercised — and paper issue 1 is
+  therefore invisible to the reproduction.
+- **Root cause**: the convenient corollary was implemented in place of the theorem.
 - **Resolution plan**:
-  1. Add `zhou_pott_condition_set(m,i,j)` returning `S`.
-  2. Assert `du == 2 ⟺ α ∉ S` for all `j ∈ 0:(m−1)` at `m = 4` (and `m = 6` behind a flag) —
-     this reproduces both Theorem 5.1 (corrected) and Remark 5.2.
-  3. Emit a `print_check` recording the paper's inverted-inclusion typo with counter-evidence.
+  1. Build `S` per the theorem.
+  2. Assert `S = cubes` for `j` even and `S = F_{2^m}` for `j` odd (Remark 5.2) at
+     `m = 4, 6`.
+  3. Assert `APN ⟺ α ∉ S` for all `j`, and add a `# NOTE (paper issue)` comment recording
+     the inverted inclusion.
 
-### 3. Remark 7.3 is missing
+### 3. Proposition 7.5 is skipped by default, untested, and absent from `report.jl`
 
-- **Location**: no file.
-- **Symptom**: Remark 7.3 gives an explicit substitution `L(x,y) = (αx, x+y)` (with `α ≠ 0,1`
-  and `α^{2^i+1}+α+1 ≠ 0`) showing Göloğlu's `F₂` is EA-equivalent to form (7.1), and that
-  `F₁` is of type (7.2). Neither is checked. `theorem7_1.jl` verifies the f1–f4 reduction only
-  at `m=3`, where `F₁`/`F₂` do not exist (`gcd(3i,m)=3`).
-- **Root cause**: omission.
-- **Resolution plan**: add `remark7_3.jl` — build `F₂ ∘ L` at `(m,i)=(5,1)`, divide the
-  components by `α^{2^i+1}+α+1` and `α^{2^{3i}}+α`, and assert the result matches the form
-  (7.1) coefficient pattern and that its EA-mugshot matches `F₂`'s.
-
-### 4. Proposition 7.5 and Theorem 7.4 have no test coverage and are absent from `report.jl`
-
-- **Location**: `proposition7_5.jl:83-89` (default `skip = true`); `test/runtests.jl` has no
-  `test_proposition7_5.jl`; `report.jl:6-16` does not `include` `proposition7_5.jl`.
-- **Symptom**: the only way to exercise Proposition 7.5 / Theorem 7.4 is
-  `make proposition7_5`. Neither `make test` nor `make report` touches them.
-- **Independent verification**: at `(m,i,j) = (5,3,1)`, `F_KL` is APN (`du=2`) and Göloğlu
-  `F₂(m=5,i=2)` is APN (`du=2`); applying `L(x,y) = (x^{2^{m−i}}, y)` to `F_KL`'s output gives
-  **exact LUT equality** with `F₂(m=5,i=2)`. The claim holds and is provable by LUT identity
-  rather than by mugshot comparison.
-- **Root cause**: the check was written as an expensive opt-in before the cheap identity was
-  found.
+- **Location**: `proposition7_5.jl:318` (`skip::Bool = true`); `report.jl:7-16` does not
+  include `proposition7_5.jl`; `test/runtests.jl` has no `test_proposition7_5.jl`.
+- **Symptom**: the paper's final result — Kaleyski–Li's Theorem 7.4 family is contained in
+  Göloğlu's `F₂` — is never executed by `make report` or `make test`, only via the opt-in
+  `make proposition7_5`.
+- **Root cause**: the check was written as an `apn_ea_mugshot` comparison at n=10 and then
+  skipped for cost.
+- **Counter-evidence that the cost objection is unfounded**: the paper's own proof is an
+  **exact identity**, and it was verified during this review: `L ∘ F_KL == F_G2` **as LUTs**
+  at `(m,i,j) = (5,3,1)`, with `L(x,y) = (x^{2^{m−i}}, y)`. That is an `O(2ⁿ)` comparison —
+  no mugshot at n=10 is needed. (The identity `2^{3(m−i)} = 2⁶ ≡ 2 (mod 2⁵−1)` from the
+  proof also holds.)
 - **Resolution plan**:
-  1. Add `test/test_proposition7_5.jl` asserting the **exact** identity `L ∘ F_KL == F_{G2}`
-     — fast, needing no mugshot and no `skip` flag.
-  2. Include `proposition7_5.jl` in `report.jl` with `skip=false`.
-  3. Also cover the second parameter family `(m,i) = (7+6l, 5+4l)` — the paper says "follows
-     in a similar way", so `l=0 → (m,i)=(7,5)` at `n=14` should at least be attempted behind
-     `full_search`.
+  1. Replace the mugshot comparison with the pointwise identity `L ∘ F_KL == F_G2` — cheap,
+     and it *is* the paper's proof.
+  2. Flip `skip` to `false`.
+  3. Add `test/test_proposition7_5.jl`.
+  4. Include it in `report.jl`.
 
-### 5. `print_header` collision with the Göloğlu reproduction makes include order load-bearing
+### 4. `theorem6_2_sbox` / `theorem6_2_condition` accept invalid parameters
 
-- **Location**: `theorem7_1.jl:47-48`, `theorem7_2.jl:22-23`, `proposition7_5.jl:23-24` vs.
-  `papers/2022/Gologlu_202207/helpers.jl:67`
-- **Symptom**: both files define `print_header(io::IO = stdout)` with identical signatures.
-  `proposition7_5.jl:23` carries an explicit comment ("Gologlu helpers first: both files
-  define print_header and ours must win"). Any reordering silently changes which banner is
-  printed, and Julia emits method-redefinition warnings on every run.
-- **Root cause**: two paper-local helpers claiming the same global name.
+- **Location**: `helpers.jl:214-236` and `helpers.jl:329-345`.
+- **Symptom**: Theorem 6.2 requires `n = 2m`, `m` **even**, `i < m/2`, `gcd(i,m) = 1`. Only
+  `theorem6_2_report` (`theorem6_2.jl:29-31`) enforces them; the builders silently accept
+  `m` odd, where `h = m ÷ 2` truncates and the formula is meaningless. The same applies to
+  `bivariate_carlet_sbox`, `hexanomial_sbox`, `pentanomial_sbox`, `zhou_pott_sbox`,
+  `f1_sbox` and `f2_sbox`, none of which guard `gcd(i,m) = 1` or `m` even.
+- **Root cause**: hypotheses live in the report drivers rather than the builders.
+- **Resolution plan**: move the `iseven(m)`, `i < m÷2` and `gcd(i,m) == 1` assertions into
+  the builder and condition functions themselves.
+
+### 5. `print_header` collides with the Göloğlu reproduction; include order is load-bearing
+
+- **Location**: `theorem7_1.jl:115-116`, `theorem7_2.jl:213-214` and
+  `proposition7_5.jl:281-282` each `include` `papers/2022/Gologlu_202207/helpers.jl` —
+  which defines its own `print_header` — *before* the Calderini `helpers.jl`, with an
+  explicit comment at `proposition7_5.jl:280` that "ours must win".
+- **Symptom**: correctness depends on include ordering and on repeated re-evaluation of the
+  same file; reversing two lines silently prints the wrong banner. Cross-paper `include`
+  also contradicts the `AGENTS.md` rule that shared math belongs in `packages/VBF/src/`.
+- **Root cause**: `biprojective_sbox` was needed from another paper directory and was
+  reached for directly instead of being promoted.
 - **Resolution plan**:
-  1. Rename to `calderini_print_header` / `gologlu_print_header`, or
-  2. Wrap each paper's helpers in a module.
+  1. Promote `biprojective_sbox` to `packages/VBF/src/constructions/`.
+  2. Drop both cross-paper includes.
+  3. Rename the paper-local banner to `calderini_print_header`.
 
-  (Both should in any case delegate to core's `print_banner`.)
+### 6. `kaleyski_li_sbox` re-implements `biprojective_sbox`, and its header comment states the wrong formula
 
-### 6. `theorem6_2_sbox` / `theorem6_2_condition` accept invalid parameters
+- **Location**: `proposition7_5.jl:292-310`; comment at `proposition7_5.jl:267`.
+- **Symptom**: `kaleyski_li_sbox(5,3,1)` was verified **identical** to
+  `biprojective_sbox(5, 3, (1,1,0,1), 1, (0,1,1,0))` — a pure duplication. Separately, the
+  header comment writes the Kaleyski–Li function as
+  `(x^{2^i+1} + x^{2^i}y + y^{2^i+1},  x^{2^i+1} + x²y + xy²)`; Theorem 7.4's second
+  component is `x²y + xy²` with **no** `x^{2^i+1}` term. The implementation is correct; the
+  comment is not.
+- **Root cause**: a local re-derivation of a function that already existed, plus a
+  transcription slip in its documentation.
+- **Resolution plan**:
+  1. Delete `kaleyski_li_sbox` and call `biprojective_sbox`.
+  2. Fix the header formula.
 
-- **Location**: `helpers.jl:214-236` and `:329-345`
-- **Symptom**: Theorem 6.2 requires `m` even and `i < m/2` with `gcd(i,m)=1`. The guards exist
-  only in `theorem6_2_report` (`theorem6_2.jl:32-34`), not in the builders. With odd `m`,
-  `h = m ÷ 2` truncates and produces a meaningless function without error. The same applies to
-  `bivariate_carlet_condition` (no `a ∈ {0,1}` check) and `f1_sbox`/`f2_sbox` (no
-  `gcd(i,m)=1` check).
-- **Root cause**: guards placed at the report layer instead of the construction layer.
-- **Resolution plan**: move the parameter guards into the builders in `helpers.jl`.
+### 7. Corollary 5.7's `c'` uses `b` where the paper derives `b^{2^i}`
 
-### 7. Sections 2–3 (the survey half of the paper) are declared out of scope
+- **Location**: `theorem5_6.jl:261` — `F2k = f2_sbox(m, i, k2, r2, b_t; ...)`.
+- **Symptom**: the proof of Corollary 5.7 ends at
+  `(xy, x^{2^i+1} + x^{2^i}y^{2^{2i}} + b^{2^i} y^{2^{2i}+2^{3i}})`, i.e. `c' = b^{2^i}`,
+  but the code passes `b_t`. The check only asserts EA-class equality, which may absorb the
+  difference (and Proposition 4.5-style arguments make many `c'` equivalent) — but the
+  literal transcription differs from the paper.
+- **Root cause**: the Frobenius power was dropped when transcribing the corollary.
+- **Resolution plan**: pass `gf_pow(b_t, 1<<i, m; modulus = mod_m)` and keep the mugshot
+  assertion. If the check still passes with plain `b_t`, record that as an additional
+  observation rather than keeping the wrong constant.
 
-- **Location**: `helpers.jl:45` — `"[skip] Tables 1-2 (survey content)"`
-- **Symptom**: Table 1 (six APN power families) and Table 2 (families F1–F15 with their
-  parameter conditions) are the paper's reference lists and are not reproduced. Several are
-  already in `VBF` (`gold_apn`, `kasami_apn`, `welch_apn`, `niho_apn`, `inverse_apn`,
-  `dobbertin_apn`, `taniguchi_apn`, `bcp_apn`, `bcl_apn`), so a cheap coverage report is
-  feasible.
-- **Root cause**: scoped out as survey material.
-- **Resolution plan**: add `table1.jl`/`table2.jl` instantiating each family at its smallest
-  legal parameters, asserting `du == 2`, asserting AB-ness where the paper claims it ("the
-  first four cases in Table 1, and for `n` odd all cases in Table 2 are also AB"), and marking
-  families with no `VBF` constructor as gaps.
+### 8. Remark 7.3, Remark 6.3's `F₁'`/`F₂'` normalisation, and the Sections 2-3 survey items are absent
 
-### 8. Section 7's CCZ link to the Edel–Pott function is unverified
+- **Location**: no files; `helpers.jl:45` declares Tables 1-2 out of scope.
+- **Symptom**: missing are Remark 7.3 (the explicit substitution `L(x,y) = (αx, x+y)`
+  showing `F₂` is EA-equivalent to form (7.1) — a cheap, exact check at `m = 5`), Remark
+  6.3's derived forms `F₁'`/`F₂'` (only APN-preservation under `(x,y) ↦ (y,x)` is checked,
+  `section6_1.jl:181-186`), Table 1 (known APN power functions — covered by core
+  constructors), Table 2 (the 15 known quadratic families F1-F15), and the
+  Brinkmann–Leander–Edel–Pott n=6 univariate formula given in Section 3.
+- **Root cause**: survey material treated as out of scope.
+- **Resolution plan**:
+  1. Add Remark 7.3 first — one substitution, exact LUT check.
+  2. For Table 2, a `families.md` cross-reference naming the `VBF` constructor for each of
+     F1-F15 is the cheapest faithful reproduction of a survey table.
 
-- **Location**: `section7_example.jl:97-98`
-- **Symptom**: the paper says `F′ = (B, G+f)` is CCZ-equivalent to the Edel–Pott non-quadratic
-  APN [39]. The reproduction prints
-  `[skip] ... no reference representative available in this repo`. The
-  Brinkmann–Leander–Edel–Pott function is written explicitly in the paper (Section 3, the
-  `x³ + α¹⁷(x¹⁷+x¹⁸+x²⁰+x²⁴) + …` expression) and would be a valuable `n6_apn.toml` addition.
-- **Root cause**: the reference representative was never transcribed.
-- **Resolution plan**: transcribe the BLEP function from the LaTeX, verify `du = 2` and
-  `deg = 3`, add it to `n6_apn.toml`, then close the CCZ check with `are_ccz_equivalent`.
+### 9. Section 7's CCZ link to the Edel–Pott function is declared unverifiable — but it is verifiable
+
+- **Location**: `section7_example.jl:431-432` — "no reference representative available in
+  this repo".
+- **Symptom**: the paper's central Section 7 claim (that `F'` is the unique known APN
+  function CCZ-inequivalent to both quadratic and power functions) is left unchecked.
+- **Root cause**: the check was framed as needing an external reference representative.
+- **Counter-evidence**: Γ-rank is a CCZ-invariant and is computable at n=6 (a `4096 × 4096`
+  F₂ rank). Computed during this review:
+
+  | function | deg | Γ-rank |
+  |----------|-----|--------|
+  | `n6_Gold_x3` | 2 | 1102 |
+  | `n6_Kasami_x48` | 2 | 1102 |
+  | `n6_Kim` | 2 | **1166** |
+  | `dillon_apn_permutation()` | 4 | **1166** |
+  | Section 7 `F = (B,G)` | 2 | **1166** |
+  | Section 7 `F' = (B,G+f)` | 3 | **1300** |
+
+  So `F'` is CCZ-**inequivalent** to Kim/Dillon, Gold and Kasami, and `F` lies in the
+  Kim/Dillon CCZ class. That is the essential content of the paper's claim.
+- **Resolution plan**:
+  1. Add the Γ-rank comparison to `section7_example.jl` (or use the repository's
+     `gamma_rank`, noting the `n ≥ 8` design-rank guard does not apply at n=6).
+  2. Add the Edel–Pott function to the catalog (see Catalog Status) and compare directly.
+
+### 10. Minor: sampling scope and unused Makefile target
+
+- `theorem5_4.jl` is explicitly a **seeded random sample** (150 tuples per `(m,i)`, seed
+  24301) — honestly labelled, but Theorem 5.4's `m` odd branch is only exercised at `m = 3`.
+- `section6_1_n10_sweep` (Section 6.1.2) and `section6_1_n12_sweep` (Section 6.1.3) are
+  opt-in; Section 6.1.4 (n=16) is skipped with a documented cost estimate. All three are
+  correctly labelled in `helpers.jl:36-44`.
+- The `Makefile` has a `clean_results` target, but nothing in the reproduction ever writes a
+  `results/` directory.
 
 ---
 
@@ -184,87 +222,93 @@ collision that makes include order load-bearing.
 
 | Item | Evidence |
 |------|----------|
-| **Theorem 3.1** (hexanomial APN iff no zero on the unit circle) | Exhaustive over all `(i,c)` at `m=2` (n=4) and `m=3` (n=6): **0 mismatches** between `hexanomial_condition` and `du==2`, matching `theorem3_1_report` |
-| **Theorem 4.3** (pentanomial class == hexanomial class) | Same sweep: pentanomial condition ⟺ APN with 0 mismatches; the ortho-derivative EA-class sets of the APN pentanomials and hexanomials are **identical** at `m=2` (1 class) and `m=3` (1 class) |
-| **Theorem 4.4** (bivariate Carlet ⊆ hexanomial class) | Bivariate-Carlet APN EA-class set ⊆ hexanomial set at `m=2,3` — in fact **equal** (1 class each). `bivariate_carlet_condition ⟺ du==2` for every `(i,a,b)` tested |
-| **Theorem 5.1** (`j` even) | `m=4, i=1, j∈{0,2}`: APN `α` = exactly the 10 non-cubes; `j∈{1,3}`: no APN `α` (see P1) |
-| **Theorem 6.2** (new APN family, iff-condition) | **Exhaustive over all 256 `(b,c) ∈ GF(2⁴)²` at `m=4, i=1`: 0 mismatches** between `(cX³+bX²+1)^{2^{m/2}+1}+X^{2^{m/2}+1}` having no zero and `du==2`. Exactly **10** APN pairs: `(1,6),(1,7),(8,4),(8,11),(10,2),(10,14),(12,3),(12,9),(15,5),(15,13)` — matching `theorem6_2_report`'s `apn_count` |
-| **Section 6.1.1 new-class claim** | All 10 APN `(b,c)` pairs share **one** ortho-derivative EA-class, distinct from `n8_Gold_x3`, `n8_Gold_x9`, `n8_Kasami_x57`, `n8_Taniguchi2025_ex4_2` — and additionally distinct from all **12** `n=8` Edel–Pott/Weng functions in Budaghyan_202101's Table 1 (i.e. from `[52]`/`[53]`, which the reproduction declares out of scope). This **strengthens** the reproduction's novelty argument |
-| **Theorem 7.2** (Göloğlu `F₁`, `F₂`) | `F₁`: `du=2` at `(m,i)=(4,1),(5,1),(5,2),(7,1)` (all `gcd(3i,m)=1`); `du=16` at `(3,1)` where `gcd(3i,m)=3`. `F₂`: `du=2` at `(5,1),(5,2),(7,1)` (`m` odd); `du=32` at `(4,1)` (`m` even); `du=16` at `(3,1)`. Matches the report's probes exactly |
-| **Proposition 7.5** | `L(x,y) = (x^{2^{m−i}},y)` applied to `F_KL(m=5,i=3,j=1)` gives an **exact LUT match** with Göloğlu `F₂(m=5,i=2)`; both `du=2` |
-| **Section 7 dimension-6 example** | `F=(B,G)`: `du=2`, `deg=2`. `F′=(B,G+f)` with the 27-term `f`: `du=2`, `deg=3`. The `_SECTION7_F_TERMS` transcription is **term-for-term correct** against the LaTeX |
-| Theorem 4.3 / 3.1 exact polynomial forms | `hexanomial_sbox` and `pentanomial_sbox` exponent sets match the LaTeX term-for-term |
-| Theorem 7.1 / 7.2 / 7.4 biprojective coefficient tuples | `_gologlu_f1 = (1,0,1,1)/(1,1,0,1)`, `_gologlu_f2 = (1,0,1,1)/(0,1,1,0)`, and `kaleyski_li_sbox` `f2 = x^{2^j}y + xy^{2^j}` with `j=1` — all match the LaTeX |
+| Theorem 3.1 (hexanomial) | Formula in `helpers.jl:103-125` matches term-for-term. Independent check at `m=2` (16 cases) and `m=3` (128 cases): condition ⟺ APN with **0 mismatches**; 4 and 36 APN instances respectively |
+| Theorem 4.3 (pentanomial) | Formula matches; same condition ⟺ APN with **0 mismatches** at `m = 2, 3` |
+| Theorem 6.2 | Formula and condition `(cX^{2^i+1}+bX^{2^i}+1)^{2^{m/2}+1} + X^{2^{m/2}+1}` match. Exhaustive `m=4, i=1` over all 256 `(b,c)`: **0 mismatches**, **10 APN pairs** — exactly what `section6_1_report` expects |
+| Theorem 6.2 novelty (Section 6.1.1) | The 10 APN pairs form **exactly one** EA class by ortho-derivative signature, distinct from Gold (2 classes), hexanomial (1), Taniguchi (3) and Zhou–Pott (2) at n=8 |
+| Theorem 5.1, "in particular" clause | `m=4`, `i ∈ {1,3}`, `j ∈ {0,2}`: non-cube `α` ⟺ APN, **0 violations** in 60 cases |
+| Theorem 7.2 (Göloğlu F1/F2) | `F1(m=4,i=1)`, `F1(m=5,i=1)`, `F2(m=5,i=1)`, `F2(m=5,i=2)` all `du = 2, deg = 2`. Out-of-hypothesis probes: `F1(m=3,i=1)` → `du = 16`, `F2(m=4,i=1)` → `du = 32`, the report's printed values |
+| Proposition 7.5 | **Stronger than the repository's own check**: `L(x,y) = (x^{2^{m−i}}, y)` maps `F_KL(m=5,i=3,j=1)` to Göloğlu `F2(m=5,i=2)` **exactly as LUTs**, not merely up to EA. Both `du = 2` |
+| Section 7 n=6 example | `F = (B,G)`: `du = 2`, `deg = 2`. `F' = (B, G+f)` with the 27-term switch: `du = 2`, `deg = 3`. All 27 `f`-terms transcribed correctly |
+| Theorem 7.1 forms f1-f4 | Coefficient tuples at `theorem7_1.jl:153-172` match (7.1)-(7.4) exactly |
+| Theorem 5.6 F1/F2/F3 | `f1_sbox`, `f2_sbox`, `zhou_pott_sbox` match the paper's canonical forms |
 
 ## Test Results
 
 | Command | Result |
 |---------|--------|
-| `make -C papers/2021/Calderini_202100 test` | **Not run** — `julia` is not installed in the review environment |
-| Independent re-derivation of `test_theorem3_1`, `test_theorem4_4` (m=3 parts), `test_theorem5_1`, `test_theorem6_2`, `test_theorem7_2`, `test_section7_example`, Prop. 7.5 | **All pass** |
-| `section6_1_n10_sweep`, `section6_1_n12_sweep`, `theorem7_1_report` (`m=3`, 262 144 functions), `theorem5_4_report` | **Unverifiable here** — too expensive to re-derive without Julia |
+| `make -C papers/2021/Calderini_202100 test` | **Not run** — `make: julia: No such file or directory`, exit 127 |
+| Independent Python: Thm 3.1/4.3 at `m=2,3`; Thm 6.2 exhaustive at `m=4`; Thm 5.1 at `m=4` for `j ∈ {0,1,2,3}` including the set `S`; Thm 6.2 EA-class versus Gold/hexanomial/Taniguchi/Zhou–Pott; Thm 7.2 at `(4,1),(5,1),(5,2)` plus probes; Prop 7.5 exact LUT identity; Section 7 example and Γ-ranks | **All pass**; one paper-level defect found (paper issue 1) |
+| Not reachable in Python | `section6_1_report` full sweep, `section6_1_n10/n12_sweep`, `theorem7_1_report` (262,144 functions at m=3), `theorem4_4_report` mugshot sets — **unverifiable in this environment** |
 
 ## Catalog Status
 
-The paper's only new-APN claim is in Section 6, after Theorem 6.2: "for `n=8` the functions
-as in Theorem 6.2 can produce a new APN function which is CCZ-inequivalent to the function
-given in the tables in [53] and in [52], and in particular which is not included in any of
-the known families."
+The paper claims **one new APN function** (Section 6.1.1 / Theorem 6.2 at n=8).
 
-- **`n=8` Theorem 6.2 function**: **present**. Catalog entry `n8_Calderini2021_thm62` in
-  `packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml`; its `lut` is **exactly**
-  `theorem6_2_sbox(m=4, i=1, b=1, c=6)` under modulus 19 (`x⁴+x+1`), the `(b,c)` pair
-  `theorem6_2_report` selects. All 10 APN `(b,c)` pairs at `m=4` fall in this single EA class.
-  Novelty evidence: its ortho-derivative fingerprint is distinct from `n8_Gold_x3`,
-  `n8_Gold_x9`, `n8_Kasami_x57`, `n8_Taniguchi2025_ex4_2`, and from all 12 `n=8`
-  Edel–Pott/Weng entries in Budaghyan Table 1.
-  **Full claim reproduced**: formula ✔, APN property ✔, parameter family validated
-  exhaustively over `GF(2⁴)²` ✔, novelty checked against Gold/hexanomial/Taniguchi/Zhou-Pott
-  *and* against the 12 known `[52]/[53]` `n=8` functions ✔.
+- Theorem 6.2 new n=8 class: **present** — `n8_Calderini2021_thm62` in
+  `packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml` (parameters `m=4, i=1, b=1, c=6`,
+  modulus 19). The catalog LUT was verified APN with `deg = 2`, and its ortho-derivative
+  signature is exactly the single class produced by the 10 valid `(b,c)` pairs
+  `{(1,6),(1,7),(8,4),(8,11),(10,2),(10,14),(12,3),(12,9),(15,5),(15,13)}`. Novelty versus
+  Gold/hexanomial/Taniguchi/Zhou–Pott was independently confirmed; the paper's further claim
+  of inequivalence to the external n=8 tables of [52] and [53] is **unverifiable** here
+  (those corpora are not in the repository).
+- Göloğlu F1/F2 (Theorem 7.2) and Kaleyski–Li (Theorem 7.4) are not claimed new by this
+  paper (they are [41]/[43]); they belong to `Gologlu_202207`'s scope.
 
-- **`n=12` `F₁(b=0, h=2, r=4)` class** (Section 6.1.3, "could be inequivalent to the known
-  cases"): **unverifiable** here. The reproduction's `section6_1_n12_sweep` classifies it as
-  its own class `:f1_h2r4`, distinct from Gold/hexanomial/Taniguchi/Zhou-Pott/Thm 6.2, but
-  this could not be re-derived independently. `n12_apn.toml` currently contains only
-  `n12_CalderiniLiVilla2023_F1/F2` (a different, later paper). **Recommendation**: once the
-  `n=12` sweep runs under Julia, emit a catalog-gap record for a representative of the
-  `f1_h2r4` class — a plausible genuine gap, but not asserted here without evidence.
+### Catalog-gap record (1 entry)
 
-- **Other constructions in this paper** (hexanomial/pentanomial Thm 3.1/4.3, Zhou–Pott
-  Thm 5.1, Taniguchi Thm 5.3, Göloğlu `F₁`/`F₂` Thm 7.2, Kaleyski–Li Thm 7.4) are explicitly
-  *known* families, not new-APN claims. No gap records required.
+The Brinkmann–Leander–Edel–Pott n=6 function — the **only known APN function
+CCZ-inequivalent to both quadratic and power functions** — is absent from `n6_apn.toml`,
+which has only `n6_Gold_x3`, `n6_Kasami_x48` and `n6_Kim`. It is produced exactly by this
+reproduction's `section7_example.jl` as `F' = (B, G+f)`.
 
-- **Additional gap worth noting** (from Section 3, not a new-APN claim): the
-  Brinkmann–Leander–Edel–Pott `n=6` non-quadratic APN function is written explicitly in the
-  LaTeX and is the only known APN function CCZ-inequivalent to both quadratic and power
-  functions. It is **absent** from `n6_apn.toml` (which has only `n6_Gold_x3`,
-  `n6_Kasami_x48`, `n6_Kim`). Adding it would also close issue 8.
+```toml
+name              = "n6_EdelPott_switch"
+description       = "The Brinkmann-Leander-Edel-Pott n=6 APN function: the only known APN function CCZ-inequivalent to both quadratic and power functions. Obtained as the Section 7 bivariate switch F' = (B(x,y), G(x,y)+f(x,y)) over GF(2^3) x GF(2^3), with B(x,y)=x^3+y^3+x^2 y+a^9 x y^2, G(x,y)=a^54 x^5 + a^54 x y^4 + a^45 y^5 and the 27-term Boolean switch f of Calderini-Budaghyan-Carlet (2021) Section 7. Re-verified: differential_uniformity = 2, algebraic_degree = 3, is_permutation = false. Inequivalence evidence: Gamma-rank = 1300, versus 1166 for n6_Kim and dillon_apn_permutation() and 1102 for n6_Gold_x3 and n6_Kasami_x48 -- Gamma-rank is a CCZ-invariant, so this function is CCZ-inequivalent to every existing n=6 catalog entry."
+n                 = 6
+m                 = 6
+is_permutation    = false
+algebraic_form    = "Bivariate F'(x,y) = (B(x,y), G(x,y)+f(x,y)) over GF(2^3), modulus x^3+x+1 (=11), a = generator (x); packed z = x|(y<<3) -> B|(G+f)<<3. Univariate form (Calderini et al. 2021, Section 3): x^3 + a^17(x^17+x^18+x^20+x^24) + a^14 Tr_1^2(x^21) + a^14 Tr_1^3(a^18 x^9) + a^14 Tr_1^6(a^52 x^3 + a^6 x^5 + a^19 x^7 + a^28 x^11 + a^2 x^13)."
+bib_key           = "Edel_200900"
+source            = "Edel and Pott, Adv. Math. Commun. 3(1):59-81 (2009); independently found by Brinkmann and Leander, Des. Codes Cryptogr. 49(1-3):273-288 (2008) (bib key Brinkmann_200812). LUT reproduced from papers/2021/Calderini_202100/section7_example.jl (section7_example_report), Section 7 of Calderini-Budaghyan-Carlet (2021)."
+lut               = [0, 57, 27, 52, 45, 22, 15, 2, 49, 45, 21, 31, 44, 18, 49, 57, 19, 62, 52, 47, 4, 11, 58, 35, 12, 36, 20, 10, 11, 33, 10, 54, 61, 61, 33, 23, 15, 13, 10, 30, 46, 43, 13, 62, 12, 43, 54, 7, 31, 43, 63, 29, 55, 33, 46, 14, 34, 51, 61, 58, 58, 41, 28, 57]
+```
+
+Target file: `packages/VBFCatalog/data-raw/apn_catalog/n6_apn.toml`. Note that this LUT is
+*not* a permutation and *not* injective — that is correct; it is the APN function, not
+Dillon's permutation.
 
 ## Library-Reuse Note
 
-Correct reuse (no action): `gf_mul`, `gf_pow`, `gf_is_dth_power`, `primitive_polynomial`,
-`SBox`, `differential_uniformity`, `algebraic_degree`, `apn_ea_mugshot`, `APNEAMugshot`,
-`is_quadratic_apn_rank`, `taniguchi_apn`, `taniguchi_apn_representatives`, `gold_apn`,
-`kasami_apn`, `print_banner`/`print_section`/`print_check`/`print_kv`. This reproduction is
-the strongest of the 2021 batch at reusing core.
+Reuse is excellent. `gf_mul`, `gf_pow`, `gf_is_dth_power`, `primitive_polynomial`, `SBox`,
+`differential_uniformity`, `algebraic_degree`, `apn_ea_mugshot`, `APNEAMugshot`,
+`is_quadratic_apn_rank`, `gold_apn`, `kasami_apn`, `taniguchi_apn`,
+`taniguchi_apn_representatives` and the `print_*` family are all used rather than
+reimplemented. **No helper duplicates a `VBF` export.**
 
-Flags:
+Flagged:
 
-| Item | Note |
-|------|------|
-| `helpers.jl:17` `print_header` | Collides with `papers/2022/Gologlu_202207/helpers.jl:67` — see issue 5. Not a *core* duplication, but a paper-to-paper symbol clash |
-| `theorem7_1.jl:47`, `theorem7_2.jl:22`, `proposition7_5.jl:23` | `include` another paper's `helpers.jl` for `biprojective_sbox`. Genuine reuse rather than duplication, but it makes a 2021 reproduction depend on a 2022 one |
-| `helpers.jl:58/103/136/189/214/245/278` | Seven near-identical `(x,y) ↦ (xy, G(x,y))` / univariate LUT builders. Internal redundancy only — each corresponds to a distinct paper form, so **not** a core-duplication violation |
+- `kaleyski_li_sbox` (`proposition7_5.jl:292`) duplicates `biprojective_sbox` — verified
+  LUT-identical (reproduction issue 6).
+- Cross-paper `include` of `papers/2022/Gologlu_202207/helpers.jl` at `theorem7_1.jl:115`,
+  `theorem7_2.jl:213` and `proposition7_5.jl:281` (reproduction issue 5).
 
 Promote-to-core candidates:
 
-- **`biprojective_sbox`** — currently in `papers/2022/Gologlu_202207/helpers.jl:27`, used by
-  Calderini_202100 (`theorem7_1`, `theorem7_2`, `proposition7_5`) and Göloğlu_202207.
-  Bi-projective polynomials `ax^{q+1}+bx^qy+cxy^q+dy^{q+1}` are a general APN construction
-  family; they belong in `packages/VBF/src/constructions/`.
-- **`bivariate_sbox(m, f, g)`** — a generic packer for `F(x,y) = (f(x,y), g(x,y))` over
-  `GF(2^m)×GF(2^m)` with the `index = x | (y<<m)` convention, hand-rolled seven times in
-  `helpers.jl` and again in `theorem5_4.jl:38-53` and `section7_example.jl:57-73`.
-- **Zhou–Pott and hexanomial/pentanomial families** — both listed in the paper's Table 2 as
-  standard infinite families; they would fit alongside the existing `gold_apn` /
-  `taniguchi_apn` / `bcp_apn` / `bcl_apn` constructors.
+- `biprojective_sbox(m, qi, coeff_f, rj, coeff_g)` → `packages/VBF/src/constructions/`;
+  already used by two paper directories.
+- The bivariate packer `(x,y) ↦ (xy, G(x,y))` with `index = x|(y<<m)` and
+  `value = (xy)|(G<<m)` — repeated verbatim in `bivariate_carlet_sbox`, `zhou_pott_sbox`,
+  `theorem6_2_sbox`, `f1_sbox`, `f2_sbox`, `_theorem5_4_sbox` and `kaleyski_li_sbox`. A
+  `bivariate_sbox(m, B, G)` builder in core would remove roughly 120 duplicated lines.
+- `zhou_pott_sbox` alongside the existing `taniguchi_apn` — Zhou–Pott is a named infinite
+  family (F10) and belongs with the other family constructors.
+
+## Open Questions
+
+- Is paper issue 2 (Section 6.1.3's "second case") a mis-numbering in the publication or a
+  genuine equivalence that could not be reached here? Confirming requires running
+  `make -C papers/2021/Calderini_202100 section6_1_n12`.
+- Should `n8_Taniguchi2025_ex4_2`'s novelty note be revised given the invariant coincidence
+  with Edel–Pott 1.3 reported under `Budaghyan_202101`?
