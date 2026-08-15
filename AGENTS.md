@@ -39,6 +39,15 @@ Primary sources:
 - Never add a dependency from `VBF` to `VBFCatalog`.
 - Keep generated results, local overrides, credentials, and copyrighted paper
   inputs out of git.
+- **Catalog changes are gated.** `packages/VBFCatalog/BFA_catalog.sqlite` is a
+  tracked build product of `data-raw/`, and the catalog test items rebuild their
+  expected counts from `data-raw/` and compare them against that DB — so editing
+  one without the other fails CI. After touching anything under
+  `packages/VBFCatalog/{data-raw,data-build,src,corpora}/` or the DB itself,
+  rebuild (`make -C packages/VBFCatalog/data-build catalog`) and run
+  `make -C packages/VBFCatalog/data-build check` until it prints
+  `catalog-check: OK` — before committing, in the same commit. Enable the hook
+  that enforces this once per clone: `git config core.hooksPath .githooks`.
 - Every `README.md` in the repo is a tracked file, `papers/<year>/<Paper_ID>/`
   review summaries included. Commit the README you write or edit in the same
   pass; an untracked or uncommitted README is an omission, not a scratch file.

@@ -52,16 +52,41 @@ Only after all four checks pass:
 - Append the new `[[apn_functions]]` block to the correct `n<N>_apn.toml`, matching
   the existing indentation/field alignment. If the file for that `n` does not
   exist, create it with the `schema_version = 1` header like its siblings.
-- Do not touch build scripts, `.sqlite` artifacts, or `src/` — the raw TOML is the
-  single source of truth; the catalog rebuilds from it.
+- Do not touch build scripts or `src/`. The raw TOML is the single source of
+  truth — but see below: `BFA_catalog.sqlite` is a **tracked build product** of
+  it, not a scratch file, and it does not rebuild itself.
 - Add nothing except the verified entries. One block per verified function.
 
-## Post-write confirmation
-After writing, reload and prove the entry is live:
-```bash
-julia --project=<root> -e 'using VBFCatalog; @assert "<name>" in apn_catalog_names(); load_apn_function("<name>")'
-```
-Report pass/fail with output.
+## Post-write: rebuild the catalog and run the gate (MANDATORY)
+
+A TOML edit alone is half a change. `packages/VBFCatalog/BFA_catalog.sqlite` is
+committed, and the catalog test items reconstruct their expected counts from the
+TOMLs and compare them against that DB — so a TOML-only change breaks
+`catalog_queries_test` and `catalog_content_test` in CI with a bare count
+mismatch. Never hand back a TOML edit without doing all three:
+
+1. Reload and prove the entry is live:
+   ```bash
+   julia --project=<root> -e 'using VBFCatalog; @assert "<name>" in apn_catalog_names(); load_apn_function("<name>")'
+   ```
+2. Rebuild the catalog so the DB matches the TOMLs:
+   ```bash
+   make -C packages/VBFCatalog/data-build catalog
+   ```
+   The rebuild is from scratch and re-runs the external importers, so the
+   source checkouts must be reachable (`BFA_SBOXU_PATH` etc. — see
+   `data-build/Makefile`). If you cannot rebuild, say so explicitly and report
+   the change as **incomplete**; do not present it as done.
+3. Run the gate and report its output verbatim:
+   ```bash
+   make -C packages/VBFCatalog/data-build check
+   ```
+   It must end in `catalog-check: OK`. Anything else means the catalog and the
+   sources disagree — fix that before reporting success.
+
+Also check whether the new entry changes any count a test hard-codes
+(`grep -rn "<n>" packages/VBF/test/unit/catalog_*_test.jl`); if it does, that
+test needs updating in the same change.
 
 ## Output
 Per candidate: **written** (name, file, verification evidence) /
