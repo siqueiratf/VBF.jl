@@ -14,14 +14,13 @@ brute-force counts exactly (n=5: 72 = 360/5; n=6: 32 = 192/6). But two of the th
 mis-report against the paper, the paper's single novel contribution is never tied to its
 claim, and one "paper error" recorded in the reproduction does not exist in the paper.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`,
-> `make report`, `make table2_n7` and `make table3` could not be executed. Every claim below
-> was re-derived independently in Python — field arithmetic, DDT, algebraic degree,
-> ortho-derivatives via the rank-`(n−1)` left-kernel construction, differential and
-> absolute-Walsh spectra, brute-force enumeration of `F₂`-coefficient quadratic homogeneous
-> APN at n=5,6, and a line-by-line port of `algorithm1.jl` / `algorithm2.jl` /
-> `algorithm3.jl` / `helpers.jl`. The port reproduces exhaustive ground truth, so the Table-2
-> mismatch below is a genuine property of the repository's `fn_set`, not a porting artifact.
+> **Re-review 2026-08-15, Julia 1.12.6**: every target below now executes. Both failures the
+> earlier Python port predicted reproduce **exactly** in real Julia, so the Table-2 and
+> Table-3 mismatches are confirmed genuine properties of the reproduction, not porting
+> artifacts. Three absolute-Walsh spectra quoted in this file have been corrected — the Python
+> port excluded the whole `b=0` column, while the repo's `absolute_walsh_spectrum`
+> (`packages/VBF/src/spectra/linear.jl:61`) excludes only `(0,0)`, making the `0` bucket
+> differ by exactly `2ⁿ−1`.
 
 ---
 
@@ -62,8 +61,16 @@ claim, and one "paper error" recorded in the reproduction does not exist in the 
 - **Evidence**: it requires all free variables in `F_n`, but the self-paired entry
   `H[0, n/2]` must satisfy `v^(2^(n/2)) = v`, i.e. lie in `GF(2^(n/2))`, whose nonzero
   elements have Frobenius orbit `≤ n/2 < n` and are therefore *excluded from `F_n` by
-  Definition 2*. Literally executed, Algorithm 3 returns 0 for n = 6, 8, 10 — yet Table 2
-  reports counts for all of them.
+  Definition 2*. Verified in Julia (2026-08-15): `F₆ ∩ GF(2³)* = ∅` (`fn_set(6)` =
+  `[2,3,6,7,8,9,10,11,24]`, `subfield_nonzero(3,6)` = `[1,22,23,34,35,52,53]`), so no
+  admissible self-paired value exists and Algorithm 3 as written admits **no** matrix for even
+  `n` — yet Table 2 reports counts for n = 6, 8, 10.
+
+  (Executing the literal variant through this repo's `update_diagonal!` returns **1** at n=6
+  and 0 at n=8, not 0 at both: on the self-paired diagonal the two symmetric writes hit the
+  same cell and the second overwrites the first, producing a matrix that silently violates
+  Theorem 1. `algorithm3.jl:39-44` sidesteps this by keeping `GF(2^{n/2})*` on the
+  self-paired diagonal — a documented, correct deviation from the printed pseudocode.)
 
 ### 4. Internal inconsistency in Definition 2's gloss
 
@@ -117,8 +124,12 @@ claim, and one "paper error" recorded in the reproduction does not exist in the 
 - **Root cause**: the paper (§4.2 and Conclusion) uses "the differential **and Walsh**
   spectra of their ortho-derivatives". `table3.jl` uses only the differential spectrum. The
   ortho-derivative absolute-Walsh spectra *do* separate them — `x³`:
-  `{0:317285, 8:652993, 16:517891, …, 128:22517}`; `x³³`:
-  `{0:384836, 8:743061, 16:405306, …, 136:22517}`.
+  `{0:319332, 8:652993, 16:517891, 24:497421, 32:427823, 40:427823, 48:337755, 56:247687,
+  64:180136, 72:90068, 80:180136, 88:135102, 96:67551, 104:45034, 112:45034, 128:22517}`;
+  `x³³`: `{0:386883, 8:743061, 16:405306, 24:452387, 32:405306, 40:315238, 48:450340,
+  56:180136, 64:225170, 72:202653, 80:202653, 88:112585, 104:45034, 112:22517, 120:22517,
+  136:22517}`. Verified in Julia that `(differential_spectrum, absolute_walsh_spectrum)` of
+  the ortho-derivative separates all 15 pairs at n=11.
 - **Resolution plan**:
   1. Use `σ = (differential_spectrum(π_F), absolute_walsh_spectrum(π_F))`.
   2. Re-assert pairwise distinctness — it then holds.
@@ -179,7 +190,7 @@ claim, and one "paper error" recorded in the reproduction does not exist in the 
   2. Assert σ-equality. This was verified here: the ortho-derivative differential spectrum
      `{0:633636, 2:322701, 4:75045, 6:13980, 8:1905, 10:285}` **and** the ortho-derivative
      absolute-Walsh spectrum
-     `{0:105660, 8:203700, 16:178575, 24:158100, 32:128917, 40:96390, 48:69000, 56:44400, 64:29606, 72:15930, 80:9003, 88:3936, 96:2265, 104:1110, 112:510, 120:150, 128:240, 136:60}`
+     `{0:106683, 8:203700, 16:178575, 24:158100, 32:128917, 40:96390, 48:69000, 56:44400, 64:29606, 72:15930, 80:9003, 88:3936, 96:2265, 104:1110, 112:510, 120:150, 128:240, 136:60}`
      are identical, while the LUTs differ.
   3. Attempt `ea_mappings_from_ortho_derivative` for a complete proof.
   4. Assert the "≤ n terms" claim (7 ≤ 10).
@@ -239,10 +250,37 @@ claim, and one "paper error" recorded in the reproduction does not exist in the 
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make test`, `make report`, `make table2_n7`, `make table3` | **Not run** — Julia unavailable |
-| Independent Python re-derivation of every numeric claim above, plus a line-by-line port of the four search files | **Port validated against exhaustive ground truth** (72 = 360/5 at n=5, 32 = 192/6 at n=6). Table 2 and Table 3 mismatches confirmed as genuine |
+Environment: Julia 1.12.6, project `/home/tiago/VBF.jl` instantiated. Review date 2026-08-15.
+
+### `make -C papers/2025/Yu_202512 test`
+
+Exit code **0**, wall time **5 s**. (Note: this paper's tests live in `tests/`, not `test/`.)
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---------|------|--------|------|-------|------|
+| `theorem1_test`    | 3  | 0 | 0 | 3  | 0.8s |
+| `proposition1_test`| 3  | 0 | 0 | 3  | 0.4s |
+| `example2_test`    | 10 | 0 | 0 | 10 | 0.3s |
+| `algorithm2_test`  | 4  | 0 | 0 | 4  | 0.6s |
+| `table1_test`      | 6  | 0 | 0 | 6  | 0.5s |
+| `table3_test`      | 9  | 0 | 0 | 9  | 0.6s |
+| **Total**          | **35** | **0** | **0** | **35** | |
+
+### Additional make targets executed
+
+| Target | Exit | Result |
+|--------|------|--------|
+| `make table2_n7` | 0 | **Reports 2 `[FAIL]`s.** `n=6: count: 1` → `[FAIL] n=6: count == 4 (paper)`; `n=7: count: 117` → `[FAIL] n=7: count == 78 (paper)`. |
+| `make table3`    | 0 | **Reports 2 `[FAIL]`s.** All 6 functions `[PASS]` quadratic APN over GF(2^11), then `[FAIL] F1 and F5: ortho-derivative spectra COLLIDE (unexpected)` and `[FAIL] all 6 ortho-derivative spectra pairwise distinct`. |
+| `make report`    | 0 | Runs all 11 sections. Theorem 1/2, Proposition 1, Example 1/2, Corollary 1, Algorithm 2, Table 1 all `[PASS]`; the same **3 `[FAIL]`s** appear. Prints `Julia version : 1.12.6`. |
+
+**The suite exits 0 while `make report` prints 3 `[FAIL]`s** — none of the three failing
+claims is asserted in `tests/`. `tests/test_table3.jl` asserts only APN-ness (lines 5–13);
+Table 2 has no test file at all. A green `make test` is therefore not evidence here.
+
+Every other value previously derived in Python was reproduced exactly by the repository's own
+Julia API, including the full 4-convention Table-2 count tables at n=6/7/8 and the exhaustive
+Algorithm-2 ground truth (360 QAMs → 72 at n=5; 192 → 32 at n=6).
 
 ## Catalog Status
 
