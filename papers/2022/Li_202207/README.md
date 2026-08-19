@@ -15,11 +15,6 @@ prints a PASS at m=2 where the paper's Theorem 3 is in fact vacuous. A stated hy
 two "our family covers X" claims) is unreproduced, even though the ortho-derivative part of
 it is cheap.
 
-> **Environment note**: Julia is not installed in the review environment, so the test suite
-> could not be executed, and no committed `results/` artifact exists for this paper. Every
-> load-bearing claim below was re-derived independently in Python against VBF's own
-> `PRIMITIVE_POLYNOMIALS` / `CONWAY_POLYNOMIALS` tables and the shipped catalog databases.
-
 ---
 
 ## Paper Issues
@@ -48,6 +43,22 @@ Items Reproduced).
   `{0:171178, 2:66297, …}`.
 - **Root cause**: a transcription error `2^{m+s}` → `2^{2m+s}`, propagated consistently into
   `find_valid_mu`, so the search never trips.
+- **Why the tests do not catch it** (established by execution, 2026-08-15): `tests/test_theorem3.jl:16-19`
+  and `:24-25` guard each loop with `found || continue`. With the repo's wrong `e_high` the m=2
+  iterations run and 10 assertions pass; with the paper's `L`, `find_valid_mu(2,1)` returns
+  `(-1, false)`, the m=2 branch is *skipped*, and the suite silently drops to 7 assertions —
+  still green. The suite is **structurally incapable of failing on this bug in either
+  direction**, so the 18/18 pass recorded under "Test Results" carries no evidence whatsoever
+  about Theorem 3. The pinned Table V row-12 regression test (step 3 below) is the only thing
+  that would close this.
+- **The wrong function is itself APN** (execution, 2026-08-15): `theorem3_sbox` with
+  `e_high = 2^{2m+s}` yields `du=2, deg=2` at m=2 (n=6, μ=6) and m=3 (n=9, μ=12). Its n=9
+  ortho-derivative DDT spectrum `{0:169939, 2:68040, 4:15561, 6:6034, 8:1533, 10:420, 12:126,
+  14:21, 16:84, 18:189, 20:126, 22:63, 26:7, 512:1}` differs from the paper's Theorem 3
+  instance and matches **no** n=9 catalog entry (TOML or sqlite). So the repository currently
+  prints PASS for a quadratic APN function that is CCZ-inequivalent to the one the paper
+  proves — not "not APN", but "APN and the wrong function". It must **not** be added to the
+  catalog under Li's name.
 - **Resolution plan**:
   1. Change both `e_high` sites to `1 << (m + s)`.
   2. Fix the five prose sites.
@@ -149,10 +160,33 @@ Items Reproduced).
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `julia papers/2022/Li_202207/tests/runtests.jl` | **Not run** — `julia` is absent (`find / -name julia -type f` returned nothing). No committed `results/` artifact exists for this paper |
-| Independent Python: Theorem 2 (m=2,3,4,5,6,7); Theorem 3 under both exponent variants (m=2,3,4; s=1,2,3); Table V row 12; the Edel–Pott and Beierle–Leander coverage claims; the `v`-set at m=3; catalog comparison at n=8 and n=9 | **All results as reported above** |
+Reviewed 2026-08-15 on Julia 1.12.6, project `/home/tiago/VBF.jl` (instantiated + precompiled).
+
+| | |
+|---|---|
+| Command | `make -C papers/2022/Li_202207 test` (tests live in `tests/`, not `test/`) |
+| Exit code | **0** |
+| Wall time | **3 s** (including `Pkg.instantiate()`) |
+
+| Testset | Pass | Broken | Fail/Error | Total | Time |
+|---------|-----:|-------:|-----------:|------:|-----:|
+| `theorem2_test` | 8 | 0 | 0 | 8 | 0.4s |
+| `theorem3_test` | 10 | 0 | 0 | 10 | 0.4s |
+| **Total** | **18** | **0** | **0** | **18** | — |
+
+No `results/` artifact is produced or committed for this paper.
+
+> **Caveat**: the green suite does **not** validate Theorem 3. The 10 passing assertions in
+> `theorem3_test` are computed with the wrong Frobenius exponent (Reproduction Issue 1), and
+> the suite is structurally blind to the bug — see the note under Issue 1.
+
+Re-verified 2026-08-15 with the repository's own Julia API (`gf_pow`/`gf_mul`,
+`differential_uniformity`, `algebraic_degree`, `ortho_derivative`+`ddt`, `apn_ea_mugshot`,
+`load_apn_function`, `load_catalog`/`list_functions`/`corpus_function`): Theorem 2
+(m=2,3,4,5,6,7); Theorem 3 under both exponent variants (m=1,2,3; s=1); Table V row 12; the
+Edel–Pott and Beierle–Leander coverage claims; the `v`-set at m=3; catalog comparison at n=8
+and n=9. **Every number reproduced exactly; no disagreement with the earlier Python
+derivation.**
 
 ## Catalog Status
 
