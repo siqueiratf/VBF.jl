@@ -13,7 +13,10 @@ include(joinpath(@__DIR__, "section2.jl"))
 include(joinpath(@__DIR__, "section3.jl"))
 include(joinpath(@__DIR__, "section4.jl"))
 include(joinpath(@__DIR__, "section5.jl"))
+include(joinpath(@__DIR__, "section6.jl"))
 include(joinpath(@__DIR__, "section7.jl"))
+include(joinpath(@__DIR__, "table2.jl"))
+include(joinpath(@__DIR__, "table4.jl"))
 
 function paper_report(io::IO = stdout; full_search::Bool = false)
     print_header(io)
@@ -22,10 +25,13 @@ function paper_report(io::IO = stdout; full_search::Bool = false)
     ok3 = section3_report(io)
     ok4 = section4_report(io; full_search)
     ok5 = section5_report(io)
+    ok6 = section6_report(io)
     ok7 = section7_report(io; full_search)
+    okA = table2_report(io)
+    okB = table4_report(io; full_search)
 
     println(io, "\n---")
-    all_ok = ok2 && ok3 && ok4 && ok5 && ok7
+    all_ok = ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && okA && okB
     status = all_ok ? "PASS" : "FAIL"
     println(io, "Overall: [$status]")
     return all_ok

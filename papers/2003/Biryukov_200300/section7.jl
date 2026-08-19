@@ -14,11 +14,15 @@
 #   Section 7 / Table 1 (counting-argument lower bound):
 #     l = smallest number of m-bit SPN layers whose representable-function count
 #         reaches the total number 2^n! of n-bit S-boxes, using the paper's
-#         formula (line 330):
-#           first layer     : (2^m!)^k                 [k = n/m arbitrary S-boxes]
-#           each next round  : |AGL(n,2)| * C_m^k       [1 affine mix + k S-boxes,
-#                                                        each in a distinct affine class]
-#         C_m = #affine classes of m-bit permutations (exact from Table 5 for m<=5).
+#         displayed formula:
+#           (2^m!)^k * ( (1/k!) * (2^m!/|AGL(m,2)|^2)^k * |AGL(n,2)| )^(l-1)
+#           first layer      : (2^m!)^k                [k = n/m arbitrary S-boxes]
+#           each next round  : |AGL(n,2)| * C_m^k / k! [1 affine mix + k S-boxes,
+#                                                       each in a distinct affine
+#                                                       class; /k! because the k
+#                                                       classes are unordered]
+#         C_m = #affine classes of m-bit permutations: exact (Table 5) for m<=4,
+#         the approximation 2^m!/|AGL(m,2)|^2 beyond (paper footnote 6).
 # VBF API used: linear_representative, affine_representative
 
 include(joinpath(@__DIR__, "helpers.jl"))
@@ -97,17 +101,25 @@ function agl_order(n::Int)
     (BigInt(2)^n) * g
 end
 
-# #affine equivalence classes of m-bit permutations: exact (Table 5) for m<=5,
-# else the paper's approximation 2^m! / |AGL(m,2)|^2 (footnote 6).
+# #affine equivalence classes of m-bit permutations.  Appendix C of the paper:
+# "for S-box sizes 3 and 4 we used exact values and for the larger sizes we used
+# the approximation" 2^m!/|AGL(m,2)|^2.  So the exact branch is gated at m <= 4,
+# matching the paper's own method rather than the largest m we happen to know.
+# This is immaterial to Table 1: the only column with m = 5 is (n,m) = (10,5),
+# and exact (2569966041123963092) vs approximate (2569966024555163104) both give
+# l = 39.
 function affine_class_count(m::Int)
-    haskey(TABLE5, m) && return TABLE5[m][2]
+    m <= 4 && haskey(TABLE5, m) && return TABLE5[m][2]
     div(factorial(BigInt(2)^m), agl_order(m)^2)
 end
 
-# Smallest number of layers l whose representable count reaches 2^n! (line 330).
+# Smallest number of layers l whose representable count reaches 2^n!.
+# Per-round factor is (1/k!)*(2^m!/|AGL(m,2)|^2)^k*|AGL(n,2)| from the paper's
+# displayed formula: the k S-boxes of a round must sit in k *distinct* affine
+# classes, and an unordered choice of k classes is counted k! times.
 function spn_layer_bound(n::Int, m::Int)
     k = div(n, m)
-    per_round = agl_order(n) * affine_class_count(m)^k
+    per_round = div(agl_order(n) * affine_class_count(m)^k, factorial(big(k)))
     target = factorial(BigInt(2)^n)
     total = factorial(BigInt(2)^m)^k          # l = 1 (first layer only)
     l = 1
@@ -131,12 +143,6 @@ const TABLE1 = [
     (12, 6, 2, 75),
     (16, 4, 4, 3196),
 ]
-
-# Our exact BigInt evaluation lands at or (by 1-3%) below the paper's values; the
-# paper's footnote 6 flags its use of approximations, so a small systematic gap on
-# the many-layer columns is expected.  Tolerance used for the pass/fail check.
-table1_within_tolerance(paper::Int, got::Int) =
-    got <= paper && (paper - got) <= cld(3 * paper, 100)
 
 function section7_report(io::IO = stdout; full_search::Bool = false)
     all_ok = true
@@ -169,17 +175,11 @@ function section7_report(io::IO = stdout; full_search::Bool = false)
     print_section(io, "Section 7 — SPN-layer lower bound (Table 1, counting argument)")
     for (n, m, k, lp) in TABLE1
         got = spn_layer_bound(n, m)
-        ok = table1_within_tolerance(lp, got)
-        exact = got == lp ? "exact" : "≈ (paper $lp)"
-        print_check(io, "n=$n, m=$m, k=$k → l=$got  [$exact]", ok)
+        ok = got == lp
+        print_check(io, "n=$n, m=$m, k=$k → l=$got (paper $lp)", ok)
         all_ok &= ok
     end
-    print_kv(
-        io,
-        "note",
-        "exact BigInt eval; ≤ paper by 1-3% on many-layer columns (paper uses approximations, footnote 6)",
-    )
-    print_kv(io, "completeness", "Table 5 exact for n≤2 (n≤3 with full_search); Table 1 all 8 columns")
+    print_kv(io, "completeness", "Table 5 exact for n≤2 (n≤3 with full_search); Table 1 all 8 columns exact")
 
     return all_ok
 end

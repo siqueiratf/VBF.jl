@@ -62,6 +62,16 @@ function section3_report(io::IO = stdout)
     )
 
     print_kv(io, "completeness", "exhaustive over stated pairs")
+    print_kv(
+        io,
+        "not run",
+        "Sect. 3.3 (birthday-paradox AE variant): a distinct probabilistic " *
+        "algorithm — 2^{3n/2} random 3-pair sets per S-box, expanded through " *
+        "odd linear combinations, then collided — with no core entry point and " *
+        "no printed numeric target beyond its O(n³·2^{3n/2}) estimate; it also " *
+        "cannot certify inequivalence, so it does not subsume Sect. 3.2 " *
+        "(0 collisions attempted)",
+    )
 
     return ok_stable && ok_diff_lin && ok_self && ok_ne && ok_ae_rep && ok_ar
 end
