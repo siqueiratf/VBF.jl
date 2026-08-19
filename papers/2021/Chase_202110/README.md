@@ -14,11 +14,6 @@ coverage claims stated in the paper's prose (the Section 5 pair-coverage claim i
 checked; the Section 4 claim is untested at n=9), plus one test that is weaker than the
 report check it shadows.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed. Every numeric claim below was re-derived independently in Python
-> from the `.tex` source and from the repository's own committed data, then compared against
-> what the reproduction hard-codes and asserts.
-
 ---
 
 ## Paper Issues
@@ -168,10 +163,34 @@ report check it shadows.
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make -C papers/2021/Chase_202110 test` | **Not run** — `julia` is not installed in the review environment |
-| Independent Python: Proposition 3.1 exhaustive at n=5; Section 6.1 full 5-dimensional Walsh-zero-space enumeration with the 32/32 split and twist bucketing; Section 6.2 full pipeline at n=9 with 19 pairs | **All matched the reproduction's hard-coded expectations** |
+Command: `make -C papers/2021/Chase_202110 test`
+(runs `julia --project=<repo root> papers/2021/Chase_202110/test/runtests.jl`)
+
+- Exit code: **0**
+- Wall time: **20 s**
+- Julia **1.12.6**; review re-run on **2026-08-15**
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---------|------|--------|------|-------|------|
+| `proposition2_2_test`    | 15 | 0 | 0 | 15 | 6.4s |
+| `proposition3_1_test`    | 42 | 0 | 0 | 42 | 0.3s |
+| `definition3_2_test`     |  8 | 0 | 0 |  8 | 1.2s |
+| `proposition4_1_test`    |  7 | 0 | 0 |  7 | 1.1s |
+| `proposition4_2_test`    | 16 | 0 | 0 | 16 | 0.6s |
+| `proposition4_3_test`    | 21 | 0 | 0 | 21 | 0.4s |
+| `section4_coverage_test` | 12 | 0 | 0 | 12 | 1.7s |
+| `proposition5_1_test`    |  5 | 0 | 0 |  5 | 0.5s |
+| `proposition5_2_test`    |  4 | 0 | 0 |  4 | 0.6s |
+| `proposition5_3_test`    |  4 | 0 | 0 |  4 | 0.8s |
+| `section6_1_test`        | 16 | 0 | 0 | 16 | 2.5s |
+| `section6_2_test`        |  4 | 0 | 0 |  4 | 2.2s |
+| **Total**                | **154** | **0** | **0** | **154** | — |
+
+(The log prints only `Pass | Total | Time`; Julia omits the `Broken`/`Fail` columns when
+those counts are zero.)
+
+Every value previously derived in Python was re-confirmed against this repository's own Julia
+API on 2026-08-15 — **23 checked claims, zero disagreements**.
 
 ## Catalog Status
 
