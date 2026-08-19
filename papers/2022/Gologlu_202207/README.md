@@ -15,11 +15,11 @@ inequivalence arguments. Table III is at 2 of 9 rows. The paper's *central novel
 with a written justification was skipped on a false premise, which hid a genuine error in
 the paper. A default report path also launches an n=14 computation that will not terminate.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed. Every numeric constant below was re-derived independently in Python
-> from the LaTeX definitions, using the same field conventions the repository uses
-> (`primitive_polynomial(m)`, packing `x|(y<<m) → f|(g<<m)`), and cross-checked against the
-> repository's own catalog SQLite.
+> Every numeric constant below was first re-derived independently in Python from the LaTeX
+> definitions, using the same field conventions the repository uses
+> (`primitive_polynomial(m)`, packing `x|(y<<m) → f|(g<<m)`), and has since been confirmed
+> byte-for-byte against the repository's own Julia API and catalog SQLite (2026-08-15, Julia
+> 1.12.6) — 41 reconciled claims, 0 substantive disagreements.
 
 ---
 
@@ -217,10 +217,28 @@ returns `[η₁, η₂, …, 0]`.
 
 ## Test Results
 
+Re-run on **2026-08-15** with **Julia 1.12.6**, project fully instantiated.
+
+**Command**: `make -C papers/2022/Gologlu_202207 test`
+**Exit code**: `0`  |  **Wall time**: `6 s` (includes `Pkg.instantiate()`; testset time 4.5 s)
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---------|------|--------|------|-------|------|
+| `theorem3_2_test` | 15 | 0 | 0 | 15 | 1.8 s |
+| `proposition3_4_test` | 5 | 0 | 0 | 5 | 1.1 s |
+| `table1_test` | 10 | 0 | 0 | 10 | 1.6 s |
+| **Total** | **30** | **0** | **0** | **30** | **4.5 s** |
+
+Additional entrypoints exercised during review (not part of `make test`):
+
 | Command | Result |
 |---------|--------|
-| `make -C papers/2022/Gologlu_202207 test` | **Not run** — `julia` unavailable |
-| Independent Python re-derivation of every constant in `test_theorem3_2.jl`, `test_proposition3_4.jl` and `test_table1.jl` | **All confirmed** |
+| `theorem3_2_report()` (defaults, `m_values=[5,7]`) | all 21 checks PASS, 4.7 s — includes **m=7 (n=14), i=1..6, F₁ and F₂, DU=2, deg=2** |
+| `table1_report(; include_table3=true)` | all 11 checks PASS, 5.7 s — Table I (9 rows) and Table III (`x³`, `x⁹`) match the paper exactly |
+| `make report` / `make full` / `proposition3_4_report()` | **NOT RUN** — `proposition3_4.jl:78` (`for m in [5,7]`) launches six `SBox{14}` `nonbent_signature` calls; measured cost is ≥ 20 min *per function for the k=2→3 step alone* plus a ≳1.6 GB intermediate (see reproduction issue 1) |
+
+Every constant originally derived in Python was confirmed byte-for-byte by the repository's
+own API — 41 reconciled claims, 0 substantive disagreements.
 
 ## Catalog Status
 
