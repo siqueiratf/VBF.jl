@@ -18,9 +18,11 @@
 #     (u^{2^i+1}·w)^2 + (u^{2^i+1}·w)^4 ≠ u  [confirms F1 is a permutation]
 #
 # VBF API used: gf_mul, gf_pow, primitive_polynomial, SBox, differential_uniformity,
-#               algebraic_degree
+#               algebraic_degree, are_ccz_equivalent, are_ea_equivalent, gold_apn,
+#               kasami_apn, kim_apn, apn_catalog_names, load_apn_function
 
 include(joinpath(@__DIR__, "helpers.jl"))
+using VBFCatalog
 
 """
     theorem3_lut(m, i; modulus) -> Vector{Int}
@@ -233,6 +235,61 @@ function theorem3_f8_check(; io::IO = devnull)
 end
 
 """
+    theorem3_ea_inequivalence_check(; m, i, io) -> NamedTuple
+
+The claim Theorem 3 actually makes: F' has algebraic degree 4, and since for
+`6 | m` no known APN function has algebraic degree 4, F' is **EA-inequivalent**
+to every known APN function. `theorem3_ccz_to_gold_check` verifies the
+*converse* half (F' *is* CCZ-equivalent to Gold) and says nothing about EA, so
+the novelty claim needs its own test.
+
+Runs `are_ea_equivalent(F', G; on_inconclusive = :throw)` — never
+`:best_effort`, whose guessed `false` would manufacture the claim — against
+every known APN in dimension `m`: the `n<m>_apn.toml` catalog entries plus the
+directly-constructed `gold_apn`, `kasami_apn` and (at m=6) `kim_apn`.
+
+The sound witness is the degree separation: every known APN at n=6 is quadratic,
+F' has degree 4, and algebraic degree is an EA-invariant for degrees ≥ 2, so the
+oracle decides each pair on an invariant rather than on a capped search.
+"""
+function theorem3_ea_inequivalence_check(; m::Int = 6, i::Int = 1, io::IO = devnull)
+    modulus = primitive_polynomial(m)
+    F = SBox{m}(theorem3_lut(m, i; modulus = modulus))
+    deg_F = algebraic_degree(F)
+
+    known = Pair{String,SBox}[]
+    for name in apn_catalog_names()
+        apn_catalog_metadata(name)["n"] == m || continue
+        push!(known, name => load_apn_function(name))
+    end
+    for k in 1:m-1
+        gcd(k, m) == 1 || continue
+        push!(known, "gold_apn($m,$k)" => gold_apn(m, k; modulus = modulus))
+        push!(known, "kasami_apn($m,$k)" => kasami_apn(m, k; modulus = modulus))
+    end
+    m == 6 && push!(known, "kim_apn()" => kim_apn())
+
+    print_section("Theorem 3 — EA-inequivalence to known APN (GF(2^$m), i=$i)", io)
+    print_kv("deg(F')", deg_F, io)
+    results = Tuple{String,Bool,Int}[]
+    all_inequiv = true
+    degrees_separate = true
+    for (name, G) in known
+        eq = are_ea_equivalent(F, G; on_inconclusive = :throw)
+        dg = algebraic_degree(G)
+        push!(results, (name, eq, dg))
+        eq && (all_inequiv = false)
+        dg == deg_F && (degrees_separate = false)
+        print_check("F' EA-inequivalent to $name (deg $dg)", !eq, io)
+    end
+    print_check("deg(F') = $deg_F separates F' from every known APN at n=$m",
+                degrees_separate, io)
+    print_kv("known APN compared", length(known), io)
+
+    (; deg_F, all_inequiv, degrees_separate, n_compared = length(known), results)
+end
+
+"""
     theorem3_check(; m, i, io) -> NamedTuple
 
 Verify Theorem 3 claims for one (m, i) pair:
@@ -268,6 +325,8 @@ function theorem3_report(io::IO = stdout)
     theorem3_check(; m = 6, i = 5, io = io)
     theorem3_ccz_to_gold_check(; m = 6, i = 1, io = io)
     theorem3_ccz_to_gold_check(; m = 6, i = 5, io = io)
+    theorem3_ea_inequivalence_check(; m = 6, i = 1, io = io)
+    theorem3_ea_inequivalence_check(; m = 6, i = 5, io = io)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
