@@ -14,10 +14,10 @@ at all. One test line materialises the whole of `GL(5,2)` (roughly 1 GB), `gold_
 for every `n ≥ 9`, and a hard-coded partition constant is both wrong and on a dead code path
 — which is why the paper's error in Section 5 stayed invisible.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed. Every `|K|`, partition size and Proposition-4 identity below was
-> re-derived independently in Python, and the Section 5 values were cross-checked against the
-> paper's PDF as well as its `.tex`.
+> Every `|K|`, partition size and Proposition-4 identity below was first re-derived
+> independently in Python (with the Section 5 values cross-checked against the paper's PDF as
+> well as its `.tex`), and has since been re-confirmed against the repository's own Julia API
+> on 2026-08-15 (Julia 1.12.6) — 17 reconciled values, zero disagreements.
 
 ---
 
@@ -287,10 +287,35 @@ for every `n ≥ 9`, and a hard-coded partition constant is both wrong and on a 
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make -C papers/2022/Kaleyski_202203 test` | **Not run** — `julia` unavailable |
-| Independent Python re-derivation of all `|K|` values, partition sizes and Proposition-4 identities | **All confirmed** (values above) |
+Reviewed 2026-08-15 on Julia 1.12.6, project `/home/tiago/VBF.jl` fully instantiated.
+
+```
+make -C papers/2022/Kaleyski_202203 test
+```
+
+**Exit code: 0** — **wall time: 11 s** — **36/36 assertions pass, 0 fail, 0 broken.**
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---|---|---|---|---|---|
+| `proposition4_test` | 4 | 0 | 0 | 4 | 2.2 s |
+| `algorithm1_test` | 9 | 0 | 0 | 9 | 0.7 s |
+| `algorithm2_test` | 6 | 0 | 0 | 6 | 3.8 s |
+| `algorithm3_test` | 6 | 0 | 0 | 6 | 0.4 s |
+| `section5_test` | 11 | 0 | 0 | 11 | 0.8 s |
+| **Total** | **36** | **0** | **0** | **36** | **11 s** |
+
+Peak memory: a re-run instrumented with `Sys.maxrss()` reported **1.70 GiB** peak RSS for the
+suite, and `@timed` on `test/test_algorithm2.jl` alone reported **1.38 GiB allocated /
+1.54 GiB peak RSS** — entirely attributable to `test/test_algorithm2.jl:18` (see reproduction
+issue 1). Timings are load-dependent: the same suite re-run under concurrent load took 21.9 s
+wall with `algorithm2_test` at 9.2 s.
+
+All 17 load-bearing values previously derived in Python were re-checked against the
+repository's own Julia API: **zero disagreements**.
+
+Separately, `make -C papers/2022/Kaleyski_202203 section5 n_values=[8] limit=3` was run and
+prints the predicted failure — `[FAIL] Gold x^3 n=8 partition = [185, 70, 1] (paper Section
+5)` against the actual `[170, 85, 1]` — while still **exiting 0** (see reproduction issue 7).
 
 ## Catalog Status
 
