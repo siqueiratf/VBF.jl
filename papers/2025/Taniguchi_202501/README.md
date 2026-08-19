@@ -13,9 +13,10 @@ picture: the n=6 count in Example 3.3 **contradicts the paper's stated figure**,
 Γ-rank claim of Example 4.2 **verifies in 85 seconds**, so the paper's only stated
 inequivalence evidence is now fully reproduced rather than merely transcribed.
 
-> **Environment note**: Julia is not installed in the review environment, so no test
-> entrypoint could be executed. Every claim below was re-derived independently in Python 3.13
-> and C, and cross-checked against the PDF. No repository file was modified during the review.
+> **Re-review 2026-08-15, Julia 1.12.6**: the suite now executes (50/50 pass, exit 0) and
+> every implemented item passes. One claim from the previous revision is **reversed**: the
+> Γ-rank of Example 4.2 is *not* computable with the repository's own tooling at n=8 — see
+> reproduction issue 12.
 
 > **Supersedes a previous revision** on two points, both corrected below: the catalog status
 > (the Example 4.2 entry **exists**) and the Γ-rank feasibility (it is **computable**, and
@@ -122,10 +123,34 @@ unasserted. Three are added here.
 
 ## Test Results
 
+Executed with Julia 1.12.6 on 2026-08-15 (project instantiated and precompiled).
+
+| | |
+|---|---|
+| Command | `make -C papers/2025/Taniguchi_202501 test` |
+| Exit code | `0` |
+| Wall time | 5 s |
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---------|-----:|-------:|-----:|------:|-----:|
+| `theorem3_2_test` | 3 | 0 | 0 | 3 | 0.5s |
+| `table3_1_test` | 28 | 0 | 0 | 28 | 2.1s |
+| `theorem3_7_test` | 14 | 0 | 0 | 14 | 0.1s |
+| `example4_2_test` | 5 | 0 | 0 | 5 | 0.5s |
+| **Total** | **50** | **0** | **0** | **50** | — |
+
+Additional targets run out-of-band (not part of `make test`):
+
 | Command | Result |
 |---------|--------|
-| `make -C papers/2025/Taniguchi_202501 test` | **Not run** — Julia unavailable |
-| Independent re-derivation (Python 3.13 + gcc) of Table 3.1, Theorem 3.7, Example 3.3 at n=4/5/6, Example 4.2 including both Γ-ranks, and the 13 extended Walsh spectra | **All confirmed**; one paper-level imprecision found (paper issue 1) |
+| `make -C papers/2025/Taniguchi_202501 theorem3_7` | all 13 entries `HOLDS  2·LHS=62  2·RHS=62`, `[PASS] Eq.(3.1) holds for all 13 Table 3.1 entries` |
+| `count_valid_L(4)` / `count_valid_L(5)` | `448` (0.3 s) / `4608` (10.4 s) — both exactly Example 3.3 |
+| `theorem3_2_report(; n=6)` | prints `n=6: exhaustive count infeasible (N^(n-1) = 1073741824)`, returns `(n = 6, count = -1, expected = 40000, match = false)` |
+
+Numbers marked *(C)* elsewhere in this file were originally derived out-of-repo in Python 3.13
+/ C and have since been re-derived with the repository's own Julia API **except where noted** —
+see reproduction issue 12, where the repo's own `gamma_rank` does **not** reproduce the C
+result within budget.
 
 ## Catalog Status
 
