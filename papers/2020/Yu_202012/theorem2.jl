@@ -99,7 +99,7 @@ function theorem2_examples()
     # (4) … but they DO land in the EA-class of the paper's function. Classification
     #     faithful up to EA.
     for n in [6, 7]
-        classes = search_qam(n, 1; max_evaluations = 1 << 24)
+        classes = search_solutions(search_qam(n, 1; max_evaluations = 1 << 24))
         gold_mug = apn_ea_mugshot(sbox_from_exponents(n, [3]))
 
         none_f2 = !isempty(classes) && all(!has_f2_coefficients(F) for F in classes)
@@ -114,7 +114,7 @@ function theorem2_examples()
     end
 
     # Every cyclic-QAM function recovered at n=6 is APN.
-    classes6 = search_qam(6, 1; max_evaluations = 1 << 24)
+    classes6 = search_solutions(search_qam(6, 1; max_evaluations = 1 << 24))
     push!(checks, ("n=6: all cyclic-QAM functions are APN",
                    all(differential_uniformity(F) == 2 for F in classes6)))
 

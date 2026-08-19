@@ -39,10 +39,18 @@ function table1_verify(; max_evaluations::Int = 1 << 24)
     end
 
     for n in [4, 6]
-        classes = search_qam(n, 1; max_evaluations = max_evaluations)
+        outcome = search_qam(n, 1; max_evaluations = max_evaluations)
+        classes = search_solutions(outcome)
         expected = TABLE1_EXPECTED_COUNTS[n]
-        ok = length(classes) == expected
-        push!(checks, ("n=$n: Algorithm 1 finds exactly $expected EA-class(es)", ok))
+        # A count check is only a check on the paper's figure if the sweep
+        # actually finished. If the budget stopped it, the count is a lower
+        # bound and the check would otherwise fail as "the paper is wrong".
+        if !is_exhausted(outcome)
+            push!(checks, ("n=$n: sweep did NOT complete — $(coverage_note(outcome))", false))
+        else
+            ok = length(classes) == expected
+            push!(checks, ("n=$n: Algorithm 1 finds exactly $expected EA-class(es) (sweep exhausted)", ok))
+        end
     end
 
     (; checks)
