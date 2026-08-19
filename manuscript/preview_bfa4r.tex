@@ -1,0 +1,32 @@
+% Proofing harness for bfa4r.tex. NOT part of the manuscript.
+% Its only job is to render the fragment so the layout can be checked.
+%
+%   JULIA_PROJECT=<scratch>/texenv julia -e 'using Tectonic; tectonic() do bin;
+%     run(`$bin -X compile manuscript/preview_bfa4r.tex --outdir <scratch>/build`); end'
+\documentclass[a4paper,10pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+\begin{document}
+\begin{center}
+  {\Large Proofing harness for \texttt{bfa4r.tex}}
+\end{center}
+\noindent This document exists only to render the fragment. Everything below the
+rule is \texttt{bfa4r.tex} exactly as delivered.
+
+\hrule\vspace{1em}
+
+\input{generated/bfa4r_facts}
+\input{bfa4r}
+
+\bibliographystyle{plainnat}
+\bibliography{../packages/VBFCatalog/data-raw/bibliography}
+\end{document}

@@ -307,7 +307,75 @@ Read this section before you use the table.
    entries at `n = 11` come from the family import only. The curated tier and
    the imported tier of the catalog therefore cover different dimensions.
 
-14. **BFA-4R is not here.** The rubric is not in this repository. The fragment
-    shows no BFA-4R column and no BFA-4R value. Recomputation status measures
-    what this work verified. BFA-4R measures the quality of the evidence that
-    the original publication gave. Keep the two apart.
+14. **BFA-4R is a separate artifact.** `apn_catalog.tex` shows no BFA-4R column
+    and no BFA-4R value, and it must stay that way. Recomputation status
+    measures what this work verified. BFA-4R measures the quality of the
+    evidence that the original publication gave. The two are different axes.
+    `bfa4r.tex` holds the BFA-4R table. Keep the two fragments apart.
+
+
+# `bfa4r.tex` — the BFA-4R table
+
+BFA-4R grades a **publication** on the computational evidence that the
+publication itself gave. It does not grade whether that evidence is correct.
+The catalog table grades a different thing: what this work verified again.
+Do not merge the two axes into one status.
+
+A clear example is in the data. `Kuznetsov_202606` gets a full mark on R1, R2
+and R3, but this repository refutes its central novelty claim. Good evidence
+and a correct result are different properties. This is why the two axes stay
+apart.
+
+## Files
+
+- `bfa4r.tex` — the fragment. Paste it into your paper.
+- `generate_bfa4r_table.jl` — the generator.
+- `generated/bfa4r_table.tex` — the 42 rows, in two panels.
+- `generated/bfa4r_evidence.tex` — the raw evidence for each cell.
+- `generated/bfa4r_facts.tex` — the counts that the caption uses.
+- `preview_bfa4r.tex` — a proofing harness. It is not part of your paper.
+
+## How to make the files again
+
+```bash
+julia --project=. manuscript/generate_bfa4r_table.jl
+```
+
+Use `--report` to print the result and write no file.
+
+## What your paper needs in its preamble
+
+`booktabs`, `array`, `tikz`. The fragment defines `\gf`, `\gh` and `\go` with
+`\providecommand`, so your own definitions win. The marks differ by fill
+geometry, so they stay correct in grayscale.
+
+## The four rules
+
+| Mark | R1 | R2 | R3 | R4 |
+|---|---|---|---|---|
+| full | a pseudocode or parameter signal is present, and the review records no underspecification | 2 or more tables and 3 or more invariant mentions | a persistent archive: Zenodo, figshare, a tagged release, a data DOI | two outside signals |
+| half | structure is present, but the review records an underspecification | some table or invariant evidence | a repository or a proprietary-tool script only | one outside signal |
+| open | neither signal | no table and no invariant mention | no artifact | no outside signal |
+
+## CAUTION: the marks are proposals, not an expert reading
+
+Each mark comes from a stated rule over the tracked files. A rule is a proxy.
+Read the evidence table before you trust a cell, and change any cell that the
+evidence does not support.
+
+One limit dominates. The files under `papers/<id>/input/` are automatic
+conversions from PDF to LaTeX. The `algorithm` environment and the `theorem`
+environment both occur 0 times in all 42 papers, so the conversion destroys the
+structural signal for R1. R1 therefore uses a text proxy and the review of the
+reproduction. The `tabular` environment survives the conversion 142 times, so
+the R2 table signal is sound. The URLs survive, so R3 is the most reliable
+column. R4 is the weakest: this repository can only see part of the outside
+world, and it does not detect a shared author between two papers.
+
+## Known gap in the sources
+
+`Gologlu_202503` has no entry in `packages/VBFCatalog/data-raw/bibliography.bib`.
+The table prints a dagger for it instead of a citation. Two more paper
+directories need an alias, and the generator records both in `BIB_ALIAS`:
+`Yu_202211d` resolves to `Yu_202211`, and `Kuznetsov_202606` resolves to
+`Kuznetsov_202600`. Each alias was confirmed by a title match.
