@@ -13,10 +13,6 @@ The gaps are one unchecked (and false) Remark 3 sub-claim, an undocumented searc
 inference, a missing integer-overflow guard, and Section 3 declared out of scope without
 stating why.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed. Every assertion in the test files was re-derived independently in
-> Python.
-
 ---
 
 ## Paper Issues
@@ -27,8 +23,13 @@ stating why.
 - **Evidence**: the statement reads `gcd(e(k, l-1), 2ⁿ-1) = 1`; the proof uses `e(l-1, k)`.
   Counter-evidence: `n=2, l=3, k=1` satisfies the printed condition (`e(1,2)=1`,
   `gcd(1,3)=1`), yet `x⁷` is not 0-APN over `GF(4)` — all four field elements are roots. A
-  wider scan (`l ≤ 8`, `k ≤ 5`, `n ≤ 40`) gives 61 such false positives for the printed
-  condition.
+  wider scan gives **101** printed-condition false positives over the feasible sub-range
+  `l ∈ 2..8`, `k ∈ 1..5`, `(l−1)k ≤ 12`, `n ≤ 40` (22 of the 35 `(l,k)` pairs), versus **0**
+  for the corrected condition. Biggest contributors: `(l=7,k=1)`→24, `(l=5,k=1)`→16,
+  `(l=3,k=1)`→14. The full `l ≤ 8, k ≤ 5` range is **not computable** with the repo's
+  `build_derivative_poly`, whose output polynomial has degree `e` (up to `2^40/31 ≈ 3.5·10^10`
+  bits) — see reproduction issue 8. (An earlier revision of this file reported "61"; that
+  figure is not reproducible and is superseded.)
 - **Credit**: the reproduction already detects and documents this (`helpers.jl:123-128`,
   `theorem1.jl:17-31`).
 
@@ -72,15 +73,18 @@ stating why.
 - **Location**: `remark2.jl:14,38` and `theorem1.jl:14` (`max_n = 100`); assertions at
   `remark2.jl:42-57` and `test/test_remark2.jl:5-15`.
 - **Symptom**: the paper says only "all dimensions `n` in some range". The counts 28/33 and
-  40/50 and the uncovered sets pin the range to `1:100`, which the reproduction hard-codes
-  without saying it is an inference. `1:100` was independently confirmed to be the unique
-  small range consistent with both experiments.
+  40/50 and the uncovered sets are consistent with `1:100`, which the reproduction hard-codes
+  without saying it is an inference. The range is **not** unique: a Julia sweep of
+  `max_n = 90..105` (2026-08-15) shows `1:99` reproduces 28/33 and 40/50 exactly as well, and
+  so does `2:101` — the next dimension satisfying either condition is `n = 101`. Only the
+  *window*, not the endpoint, is pinned.
 - **Root cause**: undocumented reverse-engineering of an unspecified parameter.
 - **Resolution plan**:
   1. Add a `print_kv` stating "paper's range unspecified; n ∈ 1:100 is the unique range
      reproducing 28/33 and 40/50".
-  2. Add a `@test` that `n ∈ 1:99` and `1:101` do *not* reproduce the counts, making the
-     inference explicit.
+  2. Add a `@test` that `n ∈ 1:101` does *not* reproduce the counts (it gives 29/34 and
+     41/51). Do **not** assert this for `1:99` — `1:99` *does* reproduce 28/33 and 40/50, so
+     such a test would fail.
 
 ### 2. `e_exponent` silently overflows
 
@@ -170,16 +174,42 @@ stating why.
 
 ## Test Results
 
+Executed 2026-08-15 on Julia 1.12.6 (`--project=/home/tiago/VBF.jl`, project instantiated).
+
+| Command | Exit code | Wall time |
+|---------|-----------|-----------|
+| `make -C papers/2022/Kaleyski_202200 test` | **0** | **3 s** |
+
+| Test set | Pass | Broken | Fail | Total | Time |
+|----------|------|--------|------|-------|------|
+| `theorem1_test` | 129 | 0 | 0 | 129 | 0.3 s |
+| `remark2_test`  | 6   | 0 | 0 | 6   | 0.5 s |
+| `remark3_test`  | 45  | 0 | 0 | 45  | 0.7 s |
+| **Total**       | **180** | **0** | **0** | **180** | — |
+
+No assertion is vacuous: the 129 `theorem1_test` assertions decompose as 8 (basic
+`e_exponent` + paper-bug) + 39 (Theorem 1 soundness, `n ≤ 20`) + 39 (poly-vs-direct
+cross-validation) + 43 (Remark 1 ⊆ Theorem 1, `n ≤ 50`), independently recomputed in Julia.
+
+Report targets also run clean:
+
 | Command | Result |
 |---------|--------|
-| `make -C papers/2022/Kaleyski_202200 test` | **Not run** — `julia` unavailable |
-| Independent Python re-derivation of every assertion in `test_theorem1.jl`, `test_remark2.jl` and `test_remark3.jl` | **All confirmed** |
+| `make -C papers/2022/Kaleyski_202200 theorem1` (`max_n=100`) | 3/3 `[PASS]`, 0 violations |
+| `make -C papers/2022/Kaleyski_202200 remark2`  (`max_n=100`) | 6/6 `[PASS]`, 28/33 + 40/50 + both uncovered sets exact |
+| `make -C papers/2022/Kaleyski_202200 remark3`                | 4/4 `[PASS]` |
+
+(`make report` / `make full` were deliberately not run.)
 
 ## Catalog Status
 
 The paper claims **0-APN** monomials, not APN, so there is no new-APN claim to catalog. The
-two families it *does* identify (Gold `e(2,k)`, Inverse `e(n−1,1)`) are already present
-(`n5_Gold_x3`, `n5_Inverse`, `n6_Gold_x3`, …). An exhaustive scan (reproduction issue 7)
+two families it *does* identify (Gold `e(2,k)`, Inverse `e(n−1,1)`) are already present:
+`n4_Gold_x3`, `n5_Gold_x3`, `n5_Gold_x5`, `n6_Gold_x3`, `n7_Gold_x3`, `n8_Gold_x3`,
+`n10_Gold_x3` for Gold, and `n7_Inverse_x126`, `n9_Inverse_x510` for Inverse. There is **no**
+`n5_Inverse` entry and none is needed: `e(4,1) = 15` and `n5_Kasami_x15` is that exact
+exponent (`x^30` = inverse is cyclotomic-equivalent to `x^15` mod 31). An exhaustive scan
+(reproduction issue 7)
 found no `e(l,k)` that is APN and inequivalent to a known family for `n ≤ 11`.
 
 **No catalog gaps.**
