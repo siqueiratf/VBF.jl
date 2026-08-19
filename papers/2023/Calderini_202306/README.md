@@ -16,14 +16,12 @@ the reproduction (notably an unenforced `gcd(k,m)=1` hypothesis that silently re
 non-APN functions), the paper's *central* claim (Table 3 / `N_F` at n=12) is not exercised by
 `make test` at all, and there is a real catalog gap at n=6.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed (`make: julia: No such file or directory`, exit 127). A previous
-> revision of this file claimed "78 tests passing"; that is **not verified here**, though the
-> assertion counts are internally consistent with the test sources (16 / 20 / 21 / 21).
-> Everything marked "independently verified" below was re-derived from the paper's
-> definitions in a standalone C implementation (GF(2^m) arithmetic, DDT, Walsh/LAT, non-bent
-> subspace signature `N_F`, ortho-derivative mugshots) rather than taken from the
-> repository's own output.
+> **Environment note**: reviewed 2026-08-15 with Julia 1.12.6; `make test` runs clean
+> (78/78, exit 0). The figures below were first derived independently in a standalone C
+> implementation and have since been re-checked against the repository's own Julia API — see
+> "Test Results" and the reconciliation there. No disagreement was found. (A previous
+> revision doubted the "78 tests passing" figure for want of a toolchain; it is **confirmed**,
+> with the per-file counts 16 / 20 / 21 / 21 exactly as recorded.)
 
 ---
 
@@ -336,11 +334,35 @@ novelty argument are fully confirmed.**
 
 ## Test Results
 
+Reviewed on 2026-08-15 with **Julia 1.12.6** (project `/home/tiago/VBF.jl`, fully instantiated
+and precompiled).
+
+**Command**: `make -C papers/2023/Calderini_202306 test`
+**Exit code**: `0`
+**Wall time**: 8 s (`Pkg.instantiate()` + `test/runtests.jl`)
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---|---|---|---|---|---|
+| `theorem3_test` | 16 | 0 | 0 | 16 | 0.6 s |
+| `theorem4_test` | 20 | 0 | 0 | 20 | 0.5 s |
+| `theorem5_test` | 21 | 0 | 0 | 21 | 0.8 s |
+| `table3_test`   | 21 | 0 | 0 | 21 | 3.8 s |
+| **Total**       | **78** | **0** | **0** | **78** | — |
+
+The earlier "78 tests passing" figure is **confirmed**: 16 + 20 + 21 + 21 = 78, all passing,
+no broken or failed assertions, and the per-file counts match the previously recorded
+16 / 20 / 21 / 21 exactly. Julia emits no aggregate line, so the total is the sum of the four
+`Test Summary:` blocks in the log.
+
+Additional targeted runs (not part of `make test`):
+
 | Command | Result |
-|---------|--------|
-| `make -C papers/2023/Calderini_202306 test` | **Blocked** — `make: julia: No such file or directory` (exit 127). Julia is not installed in the review environment |
-| Independent C reimplementation (GF(2^m) arithmetic, DDT, WHT/LAT, non-bent signature, ortho-derivative + its DDT/Walsh spectra) | **All load-bearing numbers reproduce** — every result cited above was recomputed from the paper's definitions, not from the repo's output |
-| Catalog LUT byte-comparison | `n12_CalderiniLiVilla2023_F1` and `n12_CalderiniLiVilla2023_F2` LUTs (4096 entries each) are **byte-identical** to independently generated `family_f1_lut(6,1,6; modulus=67)` / `family_f2_lut(6,6; modulus=67)` |
+|---|---|
+| `section4_1_build(full_search = true)` | **28.0 s** — `du1 = du2 = 2`, `N_F1 = [1365, 100100, 140664]`, `N_F2 = [1365, 100100, 144198, 192]`, both `match = true` against `TABLE3_F1`/`TABLE3_F2` |
+| `remark1_build(ms = [4])` (n = 8, α = 9 vs α = 1) | **passes** — `eq1 = true`, `eq2 = true`; `are_ccz_equivalent` took 84.2 s (F1) and 306.7 s (F2) |
+| Catalog LUT byte-comparison | `n12_CalderiniLiVilla2023_F1` / `_F2` LUTs (4096 entries each) **identical** to `family_f1_lut(6,1,6; modulus=67)` / `family_f2_lut(6,6; modulus=67)` |
+
+The independent C reimplementation that preceded this run agreed on every load-bearing number.
 
 ## Catalog Status
 
