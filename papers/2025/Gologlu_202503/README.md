@@ -14,10 +14,10 @@ is not "Complete" only because `make test` / `make report` are **broken by a Mak
 bug**, this README's paths and commands were stale after the `papers/<year>/` reorganisation,
 and the catalog gap the previous revision prepared is still open.
 
-> **Environment note**: Julia is not installed in the review environment, so no test
-> entrypoint could be executed — and `make test` / `make report` would fail as written even
-> with Julia present (reproduction issue 1). Every claim below was re-derived independently in
-> Python/C and cross-checked against the PDF.
+> **Environment note** (re-review 2026-08-15, Julia 1.12.6): `make test` **fails as written**
+> — confirmed, see Test Results — but the suite itself is sound: run with the project
+> corrected it is **210/210 pass in 103 s**. Every numeric claim below was originally derived
+> in Python/C and has now been re-verified against the repository's own Julia API.
 
 ---
 
@@ -35,8 +35,11 @@ counter-example.
   `2ⁿ(2ⁿ−1) = 4·2^{n−2}(2ⁿ−1)` pairs `(b≠0, a)` exist. At n=12: printed sum **20,966,400**
   versus actual **16,773,120**. Measured spectra: Gold `x³` on `F₂⁶` →
   `{0:1008, 8:2688, 16:336}` (the corrected form predicts 336, the printed one 1344); 𝓕₄ at
-  n=12 → `{0:4193280, 64:11182080, 128:1397760}`; Example 4.2's `G` on `F₂⁸` →
-  `{0:16320, 16:43520, 32:5440}`. All match the corrected form, none the printed one.
+  n=12 → `{0:4193280, 64:11182080, 128:1397760}`; the Table 2.1 Gold-even function
+  `gold_even(BiField(4), 1, 8)` on `F₂⁸` → `{0:16320, 16:43520, 32:5440}`. All match the
+  corrected form, none the printed one. (An earlier revision attributed the `F₂⁸` spectrum to
+  an "Example 4.2"; the paper contains no such example — only Theorem 4.2. The numbers are
+  correct, the label was not.)
   Cross-confirmed by Taniguchi et al.'s independent statement of the same spectrum in their
   Remark 3.6.2.
 - **Impact**: none on Theorem C.3's substance.
@@ -81,14 +84,23 @@ counter-example.
 ## Reproduction Issues
 
 ### 1. `Makefile` `ROOT` is one directory too shallow — `make test` and `make report` are broken
+      (CONFIRMED BY EXECUTION, 2026-08-15, Julia 1.12.6)
 
 - **Location**: `papers/2025/Gologlu_202503/Makefile:4` —
-  `ROOT := $(abspath $(MAKEFILE_DIR)/../..)`.
+  `ROOT := $(abspath $(MAKEFILE_DIR)/../..)`, consumed by `Makefile:5`
+  `JULIA_PROJECT := --project=$(ROOT)`.
+- **Observed failure** (exit code 2, 2 s):
+  `julia --project=/home/tiago/VBF.jl/papers .../test/runtests.jl` →
+  `ERROR: LoadError: ArgumentError: Package VBF not found in current path.`
+  `in expression starting at .../test/runtests.jl:2`
 - **Symptom**: it resolves to `/home/tiago/VBF.jl/papers`, which has **no `Project.toml`**
   (verified absent), so `--project=$(ROOT)` activates an empty environment and `using VBF`
-  cannot resolve from the workspace. **Verified**: this is the **only** one of 38 paper
-  Makefiles with `../..`; the other 37 — including `Beierle_202508/Makefile:4` and
-  `Taniguchi_202501/Makefile:4` — use `../../..`.
+  cannot resolve from the workspace. The `papers/Manifest.toml` that appears is an empty,
+  gitignored by-product of the failing `Pkg.instantiate()` step — not a legitimate separate
+  environment. **Verified**: this is the **only** one of **42** paper Makefiles with `../..`;
+  the other **41** — including `Beierle_202508/Makefile:4` and `Taniguchi_202501/Makefile:4` —
+  use `../../..`. `make report` is broken the same way: `report.jl` includes `helpers.jl`,
+  whose line 26 is `using VBF`.
 - **Root cause**: the paper directory was moved from `papers/Gologlu_202503/` to
   `papers/2025/Gologlu_202503/` and the Makefile was not updated.
 - **Resolution plan**:
@@ -175,10 +187,59 @@ counter-example.
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make -C papers/2025/Gologlu_202503 test` | **Not run** — Julia unavailable; and it would fail as written even with Julia present (reproduction issue 1) |
-| Independent re-derivation (Python/C) of Theorem 3.3 at m=6, Theorem C.3 at n=12, Lemma B.1, Theorem 5.1(a)(b)(c) at m=4,5,6,7, and Theorem 6.1's m=4 control | **All confirmed**, including all three paper bugs |
+Reviewed 2026-08-15 on Julia **1.12.6**, project fully instantiated.
+
+### As written — FAILS
+
+```console
+$ make -C papers/2025/Gologlu_202503 test
+julia --project=/home/tiago/VBF.jl/papers -e 'using Pkg; Pkg.instantiate()'
+     Project No packages added to or removed from `~/VBF.jl/papers/Project.toml`
+    Manifest No packages added to or removed from `~/VBF.jl/papers/Manifest.toml`
+julia --project=/home/tiago/VBF.jl/papers /home/tiago/VBF.jl/papers/2025/Gologlu_202503//test/runtests.jl
+ERROR: LoadError: ArgumentError: Package VBF not found in current path.
+- Run `import Pkg; Pkg.add("VBF")` to install the VBF package.
+in expression starting at /home/tiago/VBF.jl/papers/2025/Gologlu_202503/test/runtests.jl:2
+make: *** [Makefile:24: test] Error 1
+```
+
+Exit code **2**, wall time 2 s. Root cause: `Makefile:4`
+`ROOT := $(abspath $(MAKEFILE_DIR)/../..)` resolves to `/home/tiago/VBF.jl/papers`, which has
+**no `Project.toml`** — so `--project=` activates an empty environment. `papers/Manifest.toml`
+(empty `[deps]`, gitignored) is a side effect of the failing `Pkg.instantiate()` step, not a
+real separate environment. `make report` fails identically: `report.jl` includes `helpers.jl`,
+whose line 26 is `using VBF`.
+
+### With the project corrected — PASSES
+
+```console
+$ make -C papers/2025/Gologlu_202503 test JULIA_PROJECT=--project=/home/tiago/VBF.jl
+```
+
+Exit code **0**, wall time **103 s**.
+
+| Testset | Pass | Broken | Fail/Error | Total | Time |
+|---|---|---|---|---|---|
+| `lemma2_1_test`   | 13 | 0 | 0 | 13 | 1.3 s |
+| `lemma3_2_test`   | 12 | 0 | 0 | 12 | 0.4 s |
+| `theorem3_3_test` | 22 | 0 | 0 | 22 | 1.2 s |
+| `theoremC_3_test` | 21 | 0 | 0 | 21 | 1.8 s |
+| `lemma4_5_test`   | 10 | 0 | 0 | 10 | 0.7 s |
+| `lemma4_7_test`   | 22 | 0 | 0 | 22 | 1.0 s |
+| `lemmaA_1_test`   | 26 | 0 | 0 | 26 | 1.6 s |
+| `theorem4_8_test` | 16 | 0 | 0 | 16 | 9.8 s |
+| `theorem5_1_test` | 23 | 0 | 0 | 23 | 5.7 s |
+| `theorem6_1_test` | 15 | 0 | 0 | 15 | 73.0 s |
+| `lemmaB_2_test`   | 14 | 0 | 0 | 14 | 2.0 s |
+| `theoremB_3_test` | 16 | 0 | 0 | 16 | 2.2 s |
+| **Total (12 testsets)** | **210** | **0** | **0** | **210** | **103 s** |
+
+This confirms the "12 test sets / 210 assertions" the previous revision quoted from the
+pre-`papers/<year>/` layout. The suite's own assertions now independently confirm all three
+paper bugs: `test_theorem5_1.jl:12` `@test !row.paper_map_holds`, `test_theorem5_1.jl:19`
+`@test !c.ci_paper_ok`, and `test_theoremC_3.jl:11` `@test r.walsh_matches_paper == 0`.
+
+`make report`'s "78 `[PASS]`" was **not** re-run and remains the only unverified count here.
 
 ## Catalog Status — Family 𝓕₄ (Theorem 3.3)
 
@@ -224,8 +285,8 @@ prepared a record but the TOML was never updated.
   `{0:10231011, 2:5093109, 4:1162917, 6:228501, 8:42462, 10:2268, 12:6615, 16:1134, 20:3969, 22:1134}`;
   `n12_CalderiniLiVilla2023_F2`
   `{0:10172943, 2:5089491, 4:1269000, 6:211509, 8:26829, 10:3006, 12:288, 16:18, 18:36}`;
-  Gold monomials `x³`/`x³³` `{0:9832095, 2:6220305, 6:716625, 8:4095}` and
-  `x¹²⁹`/`x²⁰⁴⁹` `{0:10077795, 2:5225220, 4:1253070, 6:212940, 8:4095}`;
+  Gold monomials `x³`/`x²⁰⁴⁹` `{0:9832095, 2:6220305, 6:716625, 8:4095}` and
+  `x³³`/`x¹²⁹` `{0:10077795, 2:5225220, 4:1253070, 6:212940, 8:4095}`;
   biprojective Gold (m=6 even form) `{0:9832095, 2:6220305, 6:716625, 8:4095}`;
   Taniguchi (m=6, k=1, d=6)
   `{0:10161144, 2:5117994, 4:1247967, 6:214578, 8:28728, 10:2268, 12:441}`;
