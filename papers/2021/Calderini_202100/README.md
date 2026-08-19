@@ -14,10 +14,10 @@ them — Proposition 7.5 and the Section 7 CCZ link — are declared expensive o
 when a cheap exact route exists; both are closable today with the evidence recorded below.
 One genuine defect was found in the paper itself (Theorem 5.1's iff-condition is inverted).
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed. Every numeric claim below marked "independently confirmed" was
-> re-derived from scratch in Python (GF(2^n) arithmetic, DDT, ANF degree, Walsh spectra,
-> ortho-derivative invariants, Γ-rank) rather than taken from the repository's own output.
+> Every numeric claim below marked "independently confirmed" was re-derived from scratch in
+> Python (GF(2^n) arithmetic, DDT, ANF degree, Walsh spectra, ortho-derivative invariants,
+> Γ-rank) and then re-confirmed against this repository's own Julia API on 2026-08-15. The two
+> derivations agree on all 28 checked values.
 
 ---
 
@@ -235,11 +235,42 @@ One genuine defect was found in the paper itself (Theorem 5.1's iff-condition is
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make -C papers/2021/Calderini_202100 test` | **Not run** — `make: julia: No such file or directory`, exit 127 |
-| Independent Python: Thm 3.1/4.3 at `m=2,3`; Thm 6.2 exhaustive at `m=4`; Thm 5.1 at `m=4` for `j ∈ {0,1,2,3}` including the set `S`; Thm 6.2 EA-class versus Gold/hexanomial/Taniguchi/Zhou–Pott; Thm 7.2 at `(4,1),(5,1),(5,2)` plus probes; Prop 7.5 exact LUT identity; Section 7 example and Γ-ranks | **All pass**; one paper-level defect found (paper issue 1) |
-| Not reachable in Python | `section6_1_report` full sweep, `section6_1_n10/n12_sweep`, `theorem7_1_report` (262,144 functions at m=3), `theorem4_4_report` mugshot sets — **unverifiable in this environment** |
+Reviewed 2026-08-15 with **Julia 1.12.6** (project instantiated and precompiled).
+
+| | |
+|---|---|
+| Command | `make -C papers/2021/Calderini_202100 test` |
+| Exit code | **0** |
+| Wall time | **26 s** |
+| Result | **101 / 101 pass, 0 fail, 0 broken** |
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---------|-----:|-------:|-----:|------:|-----:|
+| `theorem3_1_test`       | 18 | 0 | 0 | 18 | 0.5s  |
+| `theorem4_4_test`       | 16 | 0 | 0 | 16 | 3.7s  |
+| `theorem5_1_test`       | 18 | 0 | 0 | 18 | 0.3s  |
+| `theorem5_4_test`       |  5 | 0 | 0 |  5 | 0.6s  |
+| `theorem5_6_test`       |  9 | 0 | 0 |  9 | 1.3s  |
+| `theorem6_2_test`       |  9 | 0 | 0 |  9 | 0.2s  |
+| `section6_1_test`       | 17 | 0 | 0 | 17 | 4.4s  |
+| `theorem7_1_test`       |  4 | 0 | 0 |  4 | 12.1s |
+| `theorem7_2_test`       |  2 | 0 | 0 |  2 | 0.2s  |
+| `section7_example_test` |  3 | 0 | 0 |  3 | 0.1s  |
+| **Total**               | **101** | **0** | **0** | **101** | **26s** |
+
+`test/runtests.jl` has no `test_proposition7_5.jl`, so Proposition 7.5 is **not** covered by
+this run (see reproduction issue 3).
+
+The items the previous revision recorded as "not reachable in Python" were all executed
+during this re-review:
+
+| Item | Result (Julia 1.12.6, 2026-08-15) |
+|---|---|
+| `section6_1_report()` (n=8, exhaustive over `(h,k,r,b,c)`, `i=1`) | **PASS**, 4.4s in-test. 10 valid `(b,c)`, 1 EA class, 120 APN sweep instances = 90 hexanomial + 20 new + 10 Taniguchi; all 7 published Section 6.1.1 outcomes reproduced |
+| `theorem7_1_report(m=3)` | **PASS**, 26.2s standalone. 43,904 APN instances in the normalized sweep → 2 EA classes; f1–f4 forms give 6,272 APN instances → the same 2 classes |
+| `theorem4_4_report(m=3)` / `(m=4)` | **PASS**. `m=3`: pentanomial = hexanomial = bivariate-Carlet, 1 class each. `m=4`: same, plus Proposition 4.5 verified — all 10 non-cube `b` share one EA class, for both `i=1` and `i=3` |
+| `section6_1_n12_report(deep=true)` (Section 6.1.3 targeted) | **PASS**, 41.7s. Settles paper issue 2 |
+| `section6_1_n10_sweep` / `section6_1_n12_sweep` (aggregate) | still opt-in; **not run** in this review (documented cost) |
 
 ## Catalog Status
 
