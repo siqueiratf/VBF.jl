@@ -184,15 +184,31 @@ end
 
 """
     search_qam(n, m; limit=typemax(Int), max_evaluations=1<<22, confirm=false)
-        -> Vector{SBox{n}}
+        -> SearchOutcome{SBox{n}}
 
 Search for quadratic APN functions over `GF(2ⁿ)` with `GF(2ᵐ)` coefficients by
 the QAM method: enumerate the cyclic derivative matrices ([`qam_from_cyclic`](@ref))
 — each free variable ranges over the subfield its orbit closes into — keep those
 that are QAMs ([`is_qam`](@ref)), and recover each as a function
-([`qam_to_sbox`](@ref)). At most `limit` results are returned; the scan stops after
-`max_evaluations` candidates (a guard for large `(n,m)` — the enumeration is
-exhaustive only when it completes within that budget).
+([`qam_to_sbox`](@ref)).
+
+# Return value
+
+A [`SearchOutcome`](@ref), **not** a bare vector — the three ways this scan can
+stop are not interchangeable:
+
+  * [`Exhausted`](@ref) — the odometer rolled all the way over. The result is
+    the complete list for the cyclic subspace, so an empty one is a proof that
+    the subspace holds no quadratic APN function.
+  * [`Found`](@ref) — stopped at `limit` results. The rest of the space is
+    unexamined.
+  * [`BudgetHit`](@ref) — stopped after `max_evaluations` candidates (a guard
+    for large `(n,m)`). Proves nothing about the remainder.
+
+Use [`search_solutions`](@ref) to get the functions, and
+[`proves_emptiness`](@ref) rather than `isempty` to ask whether the region was
+shown to be empty. Reading the old bare vector could not tell a completed sweep
+from a truncated one.
 
 # Deduplication, and what the result count means
 
@@ -201,8 +217,9 @@ By default the results are deduplicated by [`apn_ea_mugshot`](@ref), which is
 share a mugshot while being EA- and CCZ-**inequivalent**, as do `x³` and `x⁹` over
 `F₂⁷` — and no cheaper invariant separates them either (their Γ- and Δ-ranks
 coincide too). So the default result is **one function per mugshot**, and
-`length(search_qam(n, m))` is a **lower bound** on the number of EA-classes, not a
-count of them. At `n = 7, m = 1` it reports 14 where the truth is 15.
+`length(search_solutions(search_qam(n, m)))` is a **lower bound** on the number of
+EA-classes, not a count of them — even when the outcome is `Exhausted`. At
+`n = 7, m = 1` it reports 14 where the truth is 15.
 
 Pass `confirm = true` to split each mugshot bucket with the complete decision for
 quadratic APN ([`ea_mappings_from_ortho_derivative`](@ref) is non-empty iff the
@@ -240,6 +257,22 @@ function search_qam(
     vals = zeros(Int, k)
     counter = zeros(Int, k)
     evals = 0
+    # Which of the three exits fired. `:complete` means the odometer rolled all
+    # the way over — the only exit that licenses an Exhausted result.
+    stop = :complete
+    region = SearchRegion(
+        :cyclic_qam,
+        "cyclic_qam(n=$nn, m=$(Int(m)))";
+        size = prod(BigInt.(sizes)),
+        params = Dict{String,Any}(
+            "n" => nn,
+            "m" => Int(m),
+            "free_variables" => k,
+            "subfield_sizes" => sizes,
+            "confirm" => confirm,
+        ),
+    )
+    t0 = time()
     while true
         @inbounds for vi = 1:k
             vals[vi] = subfields[vi][counter[vi]+1]
@@ -260,11 +293,17 @@ function search_qam(
             if isnew
                 push!(bucket, S)
                 push!(found, S)
-                length(found) >= limit && break
+                if length(found) >= limit
+                    stop = :limit
+                    break
+                end
             end
         end
         evals += 1
-        evals >= max_evaluations && break
+        if evals >= max_evaluations
+            stop = :budget
+            break
+        end
         # odometer increment over the per-variable subfields
         p = 1
         while p <= k
@@ -273,14 +312,30 @@ function search_qam(
             counter[p] = 0
             p += 1
         end
-        p > k && break
+        p > k && break          # odometer rolled over ⇒ stop stays :complete
     end
-    found
+    el = time() - t0
+    if stop === :budget
+        return BudgetHit(
+            StopPoint(
+                :nodes,
+                "max_evaluations = $(Int(max_evaluations)) reached";
+                resume_key = Dict{String,Any}("counter" => copy(counter)),
+            ),
+            region,
+            found;
+            nodes_visited = evals,
+            elapsed_seconds = el,
+        )
+    elseif stop === :limit
+        return Found(found, region; nodes_visited = evals, elapsed_seconds = el)
+    end
+    return Exhausted(region, found; nodes_visited = evals, elapsed_seconds = el)
 end
 
 """
     search_qam_full(n; limit=typemax(Int), max_evaluations=1<<24,
-                    modulus=conway_polynomial(n)) -> Vector{SBox{n}}
+                    modulus=conway_polynomial(n)) -> SearchOutcome{SBox{n}}
 
 Construct quadratic APN functions on `F₂ⁿ` by the "guess and determine" search of
 [Yu, Wang and Li (2014)](@cite Yu_201411) over the **full** symmetric QAM
@@ -294,10 +349,15 @@ of a QAM). Each completed matrix passing [`is_qam`](@ref) yields an APN function
 ([`qam_to_sbox`](@ref)); results are deduplicated by [`apn_ea_mugshot`](@ref) into
 distinct CCZ-classes.
 
-`limit` stops after that many distinct classes; `max_evaluations` caps the number
-of completed matrices examined (the space is large, so a budget keeps it
-bounded). Reproduces the complete small classifications: `n=5` → the single
-Gold-`x³` class, `n=6` → the 13 CCZ-inequivalent quadratic APN classes.
+Returns a [`SearchOutcome`](@ref): [`Exhausted`](@ref) when the tree was walked
+to the end (so the class list is complete and an empty one proves emptiness),
+[`Found`](@ref) when `limit` distinct classes were reached first, or
+[`BudgetHit`](@ref) when `max_evaluations` completed matrices were examined first
+(the space is large, so a budget keeps it bounded). Take the functions with
+[`search_solutions`](@ref); ask [`proves_emptiness`](@ref), never `isempty`.
+
+Reproduces the complete small classifications: `n=5` → the single Gold-`x³`
+class, `n=6` → the 13 CCZ-inequivalent quadratic APN classes.
 """
 function search_qam_full(
     n::Integer;
@@ -311,7 +371,11 @@ function search_qam_full(
     reps = SBox{nn}[]
     evals = Ref(0)
     vecbuf = zeros(UInt, nn)
-    done() = length(reps) >= limit || evals[] >= max_evaluations
+    # Split the old single `done()` in two: which of the two stops fired decides
+    # whether the result may be read as coverage.
+    hit_limit() = length(reps) >= limit
+    hit_budget() = evals[] >= max_evaluations
+    done() = hit_limit() || hit_budget()
 
     # Is the c×c leading submatrix proper (nonzero row-sums have rank ≥ c-1)?
     proper = function (c::Int)
@@ -365,6 +429,27 @@ function search_qam_full(
         end
         fill_entry(c, 1)
     end
+    t0 = time()
     fill_col(2)
-    reps
+    el = time() - t0
+
+    # The full symmetric zero-diagonal space: nn·(nn-1)/2 free entries over GF(2ⁿ).
+    region = SearchRegion(
+        :full_qam,
+        "full_qam(n=$nn)";
+        size = BigInt(1) << (nn * div(nn * (nn - 1), 2)),
+        params = Dict{String,Any}("n" => nn, "modulus" => Int(modulus)),
+    )
+    if hit_budget()
+        return BudgetHit(
+            StopPoint(:nodes, "max_evaluations = $(Int(max_evaluations)) reached"),
+            region,
+            reps;
+            nodes_visited = evals[],
+            elapsed_seconds = el,
+        )
+    elseif hit_limit()
+        return Found(reps, region; nodes_visited = evals[], elapsed_seconds = el)
+    end
+    return Exhausted(region, reps; nodes_visited = evals[], elapsed_seconds = el)
 end
