@@ -10,7 +10,7 @@
 #   4. n=5: every function in our 7-element set is CCZ-equiv to one of {x³, x⁵, x¹⁵}
 # VBF API used: are_ccz_equivalent, gf_pow, primitive_polynomial, SBox
 
-include(joinpath(@__DIR__, "helpers.jl"))
+isdefined(@__MODULE__, :table2_luts) || include(joinpath(@__DIR__, "helpers.jl"))
 
 """
     theorem6_n4_report(io)
