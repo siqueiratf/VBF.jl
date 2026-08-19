@@ -24,9 +24,10 @@ arithmetic.
 > records, and both `packages/VBFCatalog/corpora/edelpott2009_n8.sqlite` and
 > `yuwangli2014_qam_n8.sqlite` are tracked and already hold these classes.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`,
-> `make report`, `make theorem6` and `make novelty` could not be executed. Every claim below
-> was re-derived independently in Python.
+> **Re-review 2026-08-15, Julia 1.12.6**: the suite executes green (96/96) and both flagship
+> targets now run. `make theorem6` **confirms the refutation with the repository's own
+> oracle** — it prints `[FAIL] PREMISE HOLDS (no pre-2020 set contains A..D)`. `make novelty`,
+> by contrast, is a **silent no-op** (see reproduction issue 11).
 
 ---
 
@@ -184,13 +185,16 @@ arithmetic.
      `packages/VBFCatalog/data-build/import_beierle2025.jl`, or record an explicit coverage
      gap.
 
-### 3. `theorem6.jl` cannot run as shipped
+### 3. `theorem6.jl` runs only when the σ-index happens to have been built elsewhere
 
 - **Location**: `theorem6.jl:46` `idx = VBFCatalog._open_sigma_index()`.
-- **Symptom**: `packages/VBFCatalog/corpora/ccz_sigma_index.sqlite` does not exist — it is a
-  regenerable, gitignored side store — so `_open_sigma_index` throws *"σ-index side store not
-  found"* and `make theorem6` errors out. `theorem6.jl` is not in `test/runtests.jl`, so
-  nothing catches it. (Absence confirmed during this review.)
+- **Symptom**: `packages/VBFCatalog/corpora/ccz_sigma_index.sqlite` is a regenerable,
+  git-ignored side store (`packages/VBFCatalog/.gitignore:3`) that the `theorem6` target never
+  builds. On 2026-08-15 the index existed (built by another workflow) and `make theorem6`
+  exited 0; on a clean checkout `_open_sigma_index` throws *"σ-index side store not found"*
+  and the target errors out. `theorem6.jl` is not in `test/runtests.jl`, so nothing catches
+  either case. (An earlier revision of this file recorded the target as unconditionally
+  broken; execution shows the failure is environment-dependent.)
 - **Root cause**: the target assumes a build step it never performs.
 - **Resolution plan**:
   1. Have the Makefile `theorem6` target run `build_sigma_index!(load_catalog())` first.
@@ -320,7 +324,7 @@ arithmetic.
 | §VI-C property checks | `theorem4.jl` | all six representatives δ=2, degree 2, non-permutation ✔ |
 | Table II σ distinctness and Gold identification | `table2.jl` | all six σ distinct ✔; `σ(CLASS-E) = σ(Gold x³)`, `σ(CLASS-F) = σ(Gold x⁹)` ✔ |
 | Theorem 4(3) slice structure | implicit | verified directly: **class_b, class_c, class_e share one NL=4 slice** (identical 200 coefficients of pairs with `p ≤ 4`); **class_d, class_f share another**; class_a is alone. Matches Theorem 4(3) |
-| §V-B Phase 2 (Gröbner) | `phase2.jl` | reimplemented open-source via `AlgebraicSolving`/msolve, with two real author slices embedded as ground truth in `test/test_phase2.jl` (exact set equality). Could not be executed; the design looks sound, and it *correctly* drops the paper's redundant `det(M_a)=0` generator with a written justification |
+| §V-B Phase 2 (Gröbner) | `phase2.jl` | reimplemented open-source via `AlgebraicSolving`/msolve, with two real author slices embedded as ground truth in `test/test_phase2.jl` (exact set equality). **Executed and passing** (2026-08-15): `phase2_test` 6/6 in 59.9 s reproduces both embedded author slices — the 4-solution MULTI slice (centre + 3 neighbours) and the 1-solution SINGLE slice — with msolve and no Magma. It also *correctly* drops the paper's redundant `det(M_a)=0` generator with a written justification; Remark 8's vacuity is now verified numerically (`rank(L_a) = 7` for every `a ∈ 1..255` on all six representatives) |
 | Theorem 6, database (2) | — | **NO_MATCH confirmed**: scanning `packages/VBFCatalog/corpora/beierleleander2022_n8.sqlite` (12,923 entries = the "12,921 file") gives **zero** ortho-derivative-differential-spectrum matches for CLASS-A…F |
 | Theorem 6, database (1) | `beierle_scan.out` | a committed run log shows 3,775,599 Beierle-2025 entries processed, 0 matches. Not re-runnable in-repo |
 
@@ -341,12 +345,44 @@ arithmetic.
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make test`, `make report`, `make theorem6`, `make novelty` | **Not run** — Julia unavailable. `make theorem6` would additionally fail on the missing σ-index (reproduction issue 3) |
-| Independent Python: `A`'s order and Eq. (1); `M_A` and its ranks (full 224 → 184; center-200 → 168; intra-24 → 24); `dim V_A = 40`; the RREF free-column split (32/8); the projection rank (40); `V_A` membership of all six artifact reps and all four Table-VII reps; δ, degree and permutation status of all ten; full σ for all ten; NL=4 slice grouping of all ten | **All confirmed** |
-| σ scans of tracked bulk corpora: `edelpott2009_n8` (22), `beierleleander2022_n8` (12,923), `yuwangli2014_qam_n8` (8,179), `beierleleanderperrin2022_n8` (6,368), `yuperrin2022_qam_n8` (5,412), `taniguchi2019_n8` (2), `wengtangong2013_n8` (10) | **Completed** — the CLASS-A…D matches in paper issue 3 come from these |
-| `simonberg_gf4_n8` (196,863 entries) | **Not scanned** — out of compute budget here. `FINDINGS.md` claims matches there too; that remains **unverified** |
+Reviewed 2026-08-15 on **Julia 1.12.6**, project `/home/tiago/VBF.jl` instantiated.
+
+```
+make -C papers/2026/Kuznetsov_202606 test
+```
+
+**Exit code: 0. Wall time: 68 s** (one of the slower paper suites; `phase2_test` alone is
+59.9 s of it — it runs two real msolve Gröbner-basis slice computations).
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---------|-----:|-------:|-----:|------:|-----:|
+| `section4_test`   |  9 | 0 | 0 |  9 | 1.1 s |
+| `algorithm1_test` |  8 | 0 | 0 |  8 | 0.6 s |
+| `theorem4_test`   | 28 | 0 | 0 | 28 | 0.7 s |
+| `table2_test`     | 15 | 0 | 0 | 15 | 1.5 s |
+| `table3_test`     |  7 | 0 | 0 |  7 | 0.5 s |
+| `phase2_test`     |  6 | 0 | 0 |  6 | 59.9 s |
+| `anf storage`     |  7 | 0 | 0 |  7 | 0.4 s |
+| `novelty oracle`  | 16 | 0 | 0 | 16 | 1.1 s |
+| **Total**         | **96** | **0** | **0** | **96** | **68 s** |
+
+Individual make targets exercised:
+
+| Target | Exit | What it actually does now |
+|--------|-----:|---------------------------|
+| `make section4`   | 0 | `[PASS]` on A⁵=I₈, A^k≠I₈ (k=1..4), `dim V_A = 40`, `rank(M_A) = 184`, b=0 and random b land in `V_A`. Still reports **only** the two quantities the paper gets right (reproduction issue 5). |
+| `make table2`     | 0 | Prints all six σ-signatures; `[PASS] σ(CLASS-E)=σ(Gold x³)`, `[PASS] σ(CLASS-F)=σ(Gold x⁹)`, `[PASS] all 6 σ distinct`. |
+| `make table3`     | 0 | `[PASS]` A,E,F ∈ `V_A`; B,C,D ∉ `V_A`; `[PASS] all membership results match paper (Theorem 4)`. |
+| `make theorem4`   | 0 | 30 `[PASS]` lines: all six reps `\|LUT\|=256`, δ=2, degree 2, non-permutation, correct `V_A` flag. |
+| `make algorithm1` | 0 | Prints `APN functions found: 0` / `empirical APN density: 0.0 %` / `completeness: budget-limited (100 evaluated)` — **confirms reproduction issue 7 by execution**. |
+| `make theorem6`   | 0 | **Runs.** The σ-index side store `packages/VBFCatalog/corpora/ccz_sigma_index.sqlite` was present in this environment, so `_open_sigma_index()` succeeded. Output: `[PASS]` literal inequivalences for A–D, `[PASS] CLASS-A..D ∈ Edel-Pott 2009 (genuine pre-2020)`, and `[FAIL] PREMISE HOLDS (no pre-2020 set contains A..D)` — i.e. the script itself declares the paper's premise false. |
+| `make novelty`    | 0 | **Runs but is a no-op.** Full output is two lines: the banner plus `catalog: MISSING — run ./fetch_catalog.sh`. `novelty_report.jl:14-16` returns early because `catalogs/` is git-ignored (`.gitignore:8`) and **`fetch_catalog.sh` does not exist anywhere in the repository**. No novelty check is performed by this target. |
+
+`make report` and `make full` were not run (outside this review's compute budget).
+
+**σ scan of `simonberg_gf4_n8` (196,863 entries) — now completed** via the in-repo σ-index,
+confirming `FINDINGS.md`: CLASS-A 4264 hits, CLASS-B 4128, CLASS-C 2064, CLASS-D 2123,
+CLASS-E 2064, CLASS-F 2127. All other tracked bulk corpora were scanned as before.
 
 ## Catalog Status
 
