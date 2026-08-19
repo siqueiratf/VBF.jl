@@ -7,8 +7,9 @@ permutations from the inverse function*, Finite Fields and Their Applications
 **Reproduction path**: `papers/2014/Zha_201401/`
 
 **Verdict**: **Partial** (leaning Mostly complete on what it covers) — every
-claim the reproduction implements is implemented correctly: all 40+ asserted
-numbers were re-derived independently and match. The three constructions
+claim the reproduction implements is implemented correctly: all 83 test
+assertions execute and pass under Julia 1.12.6 (exit 0), and every number was
+additionally re-derived independently. The three constructions
 (Eq. 3, Eq. 8, Theorem 6) are transcribed faithfully, and the two places where
 the reproduction deviates from the printed tables are genuine paper typos,
 confirmed here. It is *Partial* because roughly half the paper's reproducible
@@ -94,6 +95,13 @@ quantifies over, and two of Theorem 3's three branches are never exercised.
    *This is the only outright incorrect computation in the reproduction —
    highest priority.*
 
+   **Latent under `make test`** (established by execution, 2026-08-15): the only
+   callers of `nl_lower_bound` are `table1_compute` (params (2,2),(2,3),(2,4),(4,2))
+   and `table2_row1/2/3` (N=4,6) — all even `sn` — so no executed path reaches the
+   truncating branch. The suite passes 83/83 **with the defect present**, which is
+   precisely why it needs the odd-`sn` assertions in step 3; as the files stand, no
+   regression run would ever catch this.
+
 2. **All six Propositions have no implementation file.**
    - **Location**: paper directory root; only `theorem1..6.jl`, `table1.jl`,
      `table2.jl`, `example1.jl` exist.
@@ -161,6 +169,14 @@ quantifies over, and two of Theorem 3's three branches are never exercised.
         `algebraic_degree(g) == N-1` (both verified to hold in all 23 instances
         tested).
 
+   **Transcription now de-risked** (execution, 2026-08-15): all three closed forms
+   taken from the paper (§3.1 g, §3.2 g, §4 g) reproduce
+   `compositional_inverse(SBox{N}(lut_f)).lut` **exactly** — Construction 1 at
+   (2,2),(2,3),(2,4),(1,3),(3,2); Construction 2 at (2,3),(1,3),(1,5),(3,3);
+   Construction 3 at (2,2),(2,3),(1,4) — with Δ_g = Δ_f and deg g = sn−1 in every
+   case, confirming the paper's "Checked by a computer" remark after Theorem 6. Only
+   the repo files are missing; the math is settled.
+
 5. **Two of Theorem 3's three branches are dead.**
    - **Location**: `theorem3.jl:14-22` (`expected_du_theorem3`), `theorem3.jl:37`
      (default params), `test/test_theorem3.jl`.
@@ -210,8 +226,13 @@ quantifies over, and two of Theorem 3's three branches are never exercised.
    - **Location**: `helpers.jl:28-32` — `gf_pow(2, order ÷ 3, N; modulus)`.
    - **Symptom**: the signature accepts an arbitrary `modulus`, but the formula
      is only valid when the modulus is primitive. With a merely-irreducible
-     modulus it returns a wrong ω with no error; only the downstream
-     `in_subfield` assert at `helpers.jl:43` might catch it.
+     modulus it returns a wrong ω with no error, and the downstream
+     `in_subfield` assert at `helpers.jl:43` does **not** catch it. Verified in
+     Julia: with modulus 31 (`x⁴+x³+x²+x+1`, irreducible but not primitive —
+     α=2 has multiplicative order 5), `find_omega(4; modulus=31)` returns
+     **ω = 1**, and `in_subfield(1, 2, 4; modulus=31)` is `true`, so
+     `find_t_construction1` silently returns `t = 1` with no error. The
+     precondition is entirely unguarded.
    - **Root cause**: unchecked precondition.
    - **Resolution plan**:
      1. Post-check `gf_pow(ω, 3, N; modulus) == 1 && ω != 1`, throwing
@@ -347,43 +368,45 @@ instances tested across the three constructions.
 
 ## Test results
 
-**Not executed.** Julia is not installed in this environment:
+**Executed.** Julia 1.12.6, review date 2026-08-15.
 
 ```
 $ make -C papers/2014/Zha_201401 test
-julia --project=/home/tiago/VBF.jl -e 'using Pkg; Pkg.instantiate()'
-make: julia: No such file or directory
-make: *** [Makefile:14: test] Error 127
 ```
 
-This is an environment limitation, not a reproduction defect.
+Exit code **0**. Wall time **4 s** (including `Pkg.instantiate()`; the nine
+testsets themselves total 2.8 s). No failures, no errors, no broken tests — and
+no `const`-redefinition warnings from the nine separate `include`s of
+`helpers.jl`, confirming the static prediction the previous revision could only
+guess at.
 
-In place of running the suite, the exact VBF primitives were reimplemented
-independently in Python (the same `PRIMITIVE_POLYNOMIALS`/`CONWAY_POLYNOMIALS`
-tables from `finite_field.jl:69-108`, the same `gf_mul` shift-and-reduce loop,
-the same `differential_spectrum` convention of skipping only row a=0, the same
-`linearity` convention of excluding only (0,0), the same coordinate-ANF
-`algebraic_degree`), and every number the test suite asserts was recomputed:
+| Test file | Testset | Pass | Broken | Fail | Total | Time |
+|---|---|---|---|---|---|---|
+| `test/test_theorem1.jl` | `theorem1_test` | 4 | 0 | 0 | 4 | 0.4 s |
+| `test/test_theorem2.jl` | `theorem2_test` | 8 | 0 | 0 | 8 | 0.5 s |
+| `test/test_theorem3.jl` | `theorem3_test` | 10 | 0 | 0 | 10 | 0.2 s |
+| `test/test_theorem4.jl` | `theorem4_test` | 2 | 0 | 0 | 2 | 0.1 s |
+| `test/test_theorem5.jl` | `theorem5_test` | 8 | 0 | 0 | 8 | 0.1 s |
+| `test/test_theorem6.jl` | `theorem6_test` | 4 | 0 | 0 | 4 | 0.1 s |
+| `test/test_example1.jl` | `example1_test` | 19 | 0 | 0 | 19 | 0.2 s |
+| `test/test_table1.jl` | `table1_test` | 16 | 0 | 0 | 16 | 0.9 s |
+| `test/test_table2.jl` | `table2_test` | 12 | 0 | 0 | 12 | 0.3 s |
+| **Total** | | **83** | **0** | **0** | **83** | **2.8 s** |
 
-| Test file | Assertions | Result |
-|---|---|---|
-| `test_theorem1.jl` | (2,2),(2,3) perm + Δ=4 | all reproduce |
-| `test_theorem2.jl` | (1,3),(1,5),(1,7),(3,3) perm + Δ=4 | all reproduce |
-| `test_theorem3.jl` | (1,2)→4, (1,4)→6, (1,6)→4, (3,2)→4, (1,8)→6 | all reproduce |
-| `test_theorem4.jl` | (2,3) perm + Δ=4 | reproduces (t₁=58, t₂=0) |
-| `test_theorem5.jl` | (1,3),(1,5),(1,7),(3,3) perm + Δ=4 | all reproduce |
-| `test_theorem6.jl` | (2,2) Δ=4≤6, (2,3) Δ=6≤6 | all reproduce |
-| `test_example1.jl` | 9 pairs perm + Δ=4 | all reproduce; piecewise LUT equals direct polynomial evaluation |
-| `test_table1.jl` | 4 rows × (NL, Δ, deg, 𝒟) | all 16 reproduce |
-| `test_table2.jl` | 3 rows × (NL, Δ, deg, 𝒟) | all 12 reproduce |
+What the passing assertions cover: Theorem 1 at (2,2),(2,3); Theorem 2 at
+(1,3),(1,5),(1,7),(3,3); Theorem 3 at (1,2),(1,4),(1,6),(3,2),(1,8) against
+`expected_du_theorem3`; Theorem 4 at (2,3); Theorem 5 at (1,3),(1,5),(1,7),(3,3);
+Theorem 6 at (2,2),(2,3); Example 1 at all 9 pairs (t₁,t₂) ∈ F₄\* × F₄\*; Table 1
+all 4 rows × (NL, Δ, deg, 𝒟); Table 2 all 3 rows × (NL, Δ, deg, 𝒟).
 
-The suite would pass as written. Someone with Julia installed should still run
-`make -C papers/2014/Zha_201401 test` to confirm there is no Julia-level
-load/syntax error — the code was reviewed statically for that (`SBox{N}` outer
-constructor at `sbox.jl:89`, `print_check(label, ok, io)` at `report.jl:59`,
-`sorted_pairs(::Spectrum)` at `spectrum.jl:83` all match the call sites; the 10×
-re-inclusion of `helpers.jl` via `report.jl` redefines two `const`s to identical
-values, which Julia permits) — but static review is not execution.
+Note that `test_example1.jl` asserts only `!isempty`, `r.perm` and `r.du == 4`
+for each pair (19 assertions = 1 + 9×2). It does **not** check the piecewise LUT
+against the direct polynomial form; that equivalence was established by reviewer
+computation and is credited in "Items reproduced exactly", not to the suite.
+
+The report targets were also exercised out-of-band during review
+(`table1_report`, `table2_report`, `theorem6_report`): every `print_check` line
+emitted `[PASS]`, including the `NL ≥ ℬ(f)` checks at sn = 4, 6, 8.
 
 ## Catalog status
 
@@ -397,7 +420,14 @@ No theorem, example or table claims Δ_f = 2.
 This was confirmed computationally rather than assumed: across every instance of
 Constructions 1, 2 and 3 built during review (all t / (t₁,t₂) sweeps at
 (s,n) ∈ {(1,2),(1,3),(1,4),(1,5),(1,6),(1,7),(1,8),(2,2),(2,3),(2,4),(2,5),(3,2),(3,3),(3,4),(4,2),(5,2)}),
-the differential uniformity was **4 or 6 — never 2**. Nothing here qualifies for
+the differential uniformity was **4 or 6** at every parameter admitted by the
+theorems. The only Δ=2 instances reachable from the code are degenerate ones
+*outside* the paper's hypotheses: `construction2_lut(s, n, 1, 0)` with `sn` odd
+collapses to the plain inverse function `x⁻¹` (verified
+`lut == [gf_inv_zero_safe(x, N) for x in 0:2^N-1]` at (1,3), (1,5), (3,3)),
+which is the classical APN inverse monomial and is already in the catalog.
+Theorem 5 explicitly requires `t₂ ∈ F_q^*`, so these are not instances of the
+paper's family. Nothing here qualifies for
 `packages/VBFCatalog/data-raw/apn_catalog/n<N>_apn.toml`.
 
 - Per claimed-new APN function: **none exist** → no present / missing / not-new /
