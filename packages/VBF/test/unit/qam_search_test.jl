@@ -64,7 +64,9 @@ end
 end
 
 @testset "QAM search finds quadratic APN (n=4, m=2)" begin
-    sols = search_qam(4, 2)
+    outcome = search_qam(4, 2)
+    sols = search_solutions(outcome)
+    @test outcome isa Exhausted        # default budget covers the (4,2) odometer
     @test !isempty(sols)
     @test all(differential_uniformity(S) == 2 for S in sols)
     @test all(algebraic_degree(S) == 2 for S in sols)
