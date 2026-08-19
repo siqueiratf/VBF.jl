@@ -42,6 +42,21 @@
         @test r_ccz.is_ccz
     end
 
+    # The novelty claim Theorem 3 actually makes is EA-inequivalence to the known
+    # APN (no known APN has algebraic degree 4 for 6 | m) — NOT the CCZ-relation
+    # above, which is the opposite direction. `on_inconclusive = :throw` keeps a
+    # guessed `false` from manufacturing the claim; the degree separation
+    # (deg F' = 4 vs deg = 2 for every known n=6 APN) is the sound witness.
+    for i in (1, 5)
+        r_ea = theorem3_ea_inequivalence_check(; m = 6, i = i)
+        @test r_ea.deg_F == 4
+        @test r_ea.n_compared >= 3          # n6_Gold_x3, n6_Kasami_x48, n6_Kim, ...
+        @test r_ea.all_inequiv
+        @test r_ea.degrees_separate
+        @test all(!eq for (_, eq, _) in r_ea.results)
+        @test all(dg != 4 for (_, _, dg) in r_ea.results)
+    end
+
     # argument validation
     @test_throws ArgumentError theorem3_lut(5, 1)   # 6 ∤ 5
     @test_throws ArgumentError theorem3_lut(6, 2)   # gcd(2,6) ≠ 1

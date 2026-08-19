@@ -3,7 +3,7 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../../..)
 JULIA_PROJECT := --project=$(ROOT)
 
-.PHONY: help test report theorem1 remark4 theorem2 theorem3 theorem4 clean_results
+.PHONY: help test report theorem1 remark4 theorem2 theorem3 theorem4 propositions clean_results
 
 sample_size  ?= 500
 full_search  ?= false
@@ -35,11 +35,14 @@ theorem3:
 theorem4:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/theorem4.jl
 
+propositions:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/propositions.jl
+
 clean_results:
 	rm -rf "$(MAKEFILE_DIR)/results"
 
 help:
 	@echo 'Paper: Budaghyan, Carlet, Pott (2006) — New Classes of AB and APN Polynomials'
-	@echo 'Targets: test  report  theorem1  remark4  theorem2  theorem3  theorem4  clean_results'
+	@echo 'Targets: test  report  theorem1  remark4  theorem2  theorem3  theorem4  propositions  clean_results'
 	@echo 'Params:  sample_size=$(sample_size)  full_search=$(full_search)  seed=$(seed)'
 	@echo 'Note: remark4 full_search=true runs all 2^25 linear maps (slow)'
