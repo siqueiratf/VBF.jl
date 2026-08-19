@@ -15,9 +15,9 @@ claim (Σ⁴-multiplicities) is mentioned in a comment but never computed. And t
 of Propositions 14/16/18/22/25 and Table 2 is structurally unreachable, blocked on a core
 type limitation rather than a paper-local bug.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed. Every numeric claim below was re-derived independently in Python
-> from the `.tex` source and from the repository's own committed data.
+> Every numeric claim below was re-derived independently in Python by an earlier review and
+> has since been re-confirmed against the repository's own Julia API (Julia 1.12.6,
+> 2026-08-15). All agree; two corrections to this file's own inferences are noted inline.
 
 > **Supersedes a previous revision.** An earlier version of this file carried a log of seven
 > "RESOLVED" reproduction issues. Two of those resolutions are demonstrably wrong and are
@@ -52,11 +52,18 @@ type limitation rather than a paper-local bug.
 - **Location**: Table 8.
 - **Computed counter-evidence**: the row-12 entry `{0:15600, 16:46520, 32:5440}` is not among
   the six extended Walsh spectra listed two paragraphs earlier in Section 4.5, and its
-  entries sum to 67,560 ≠ 65,280 = 255·256. The intended value is almost certainly
-  `{0:15600, 16:44544, 32:5120, 64:16}` (= 𝒲₁), or a typo for 43520. Row 15
-  (`{0:15600, 16:43520, 32:5440}`, sum 64,560) is likewise not one of the six and does not
-  sum correctly. A full corpus scan finds **only** the six listed spectra across all 21,102
-  functions, so both table cells are typos.
+  entries sum to 67,560 ≠ 65,280 = 255·256. Row 15 (`{0:15600, 16:43520, 32:5440}`, sum
+  64,560) is likewise not one of the six and does not sum correctly. A full corpus scan finds
+  **only** the six listed spectra across all 21,102 functions, so both table cells are typos.
+
+  Both cells are typos for **𝒲₀ = `{0:16320, 16:43520, 32:5440}`**. For row 12 this is forced:
+  the paper states the 22 functions with thickness spectrum `{0:1, 1:255}` include the cube
+  mapping, and `ews(gold_apn(8))` computed in this repository is exactly
+  `[0=>16320, 16=>43520, 32=>5440]`. For row 15 it is forced by the paper's own narrative —
+  rows 15/16 are the announced "identical thickness spectra but different Walsh spectra"
+  example, row 16 is 𝒲₁, so row 15 must be a different spectrum; `15600 → 16320` is the
+  single-token correction that both restores the 65,280 sum and lands on one of the six.
+  (An earlier revision of this file guessed 𝒲₁ for row 12; that inference was wrong.)
 
 ---
 
@@ -130,7 +137,7 @@ type limitation rather than a paper-local bug.
   1. Reword `proposition25.jl:81` and this README to say "square case only; the rectangular
      Table 2 rows require an `(n,m)` function type that `VBF.SBox` does not model".
   2. File a promote-to-core request for an `SBox{N,M,T}` (or a `VBFunction{n,m}`) type.
-  3. Once available, add the four rectangular Table 2 rows.
+  3. Once available, add the **six** rectangular Table 2 rows (3, 4, 8, 9, 12, 13).
 
 ### 4. The catalog-snapshot count in the docs is stale
 
@@ -190,11 +197,42 @@ type limitation rather than a paper-local bug.
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make -C papers/2022/Canteaut_202205 test` and `CANTEAUT_202205_FAST=1 julia … test/runtests.jl` | **Not run** — `julia` is not installed. The previous README's recorded result (109 tests pass) could not be re-confirmed |
-| Independent Python: full Table 6/7 recomputation (13 functions: `du`, degree, linearity, `π_F` differential spectrum) | **All match** |
-| Independent Python: Banff #5 == Kim; butterfly involution/APN/degree check for both component orderings; Σ⁴-multiplicities of both butterflies; extended-Walsh-spectrum scan of `yuwangli2014_qam_n8` (8,179 members, 17.6 s) and `beierleleander2022_n8` (12,923 members, 27.5 s) | **All pass** |
+Command: `make -C papers/2022/Canteaut_202205 test`
+Julia 1.12.6 · reviewed 2026-08-15 · **exit code 0** · **737 s wall (12 min 17 s)**
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---------|-----:|-------:|-----:|------:|-----:|
+| `proposition14` | 7 | 0 | 0 | 7 | 0.9s |
+| `section3_2 (Proposition 16)` | 4 | 0 | 0 | 4 | 0.4s |
+| `proposition18` | 8 | 0 | 0 | 8 | 0.5s |
+| `proposition22` | 6 | 0 | 0 | 6 | 0.4s |
+| `corollary24` | 8 | 0 | 0 | 8 | 0.3s |
+| `proposition25` | 31 | 0 | 0 | 31 | 1.7s |
+| `algorithm1` | 9 | 0 | 0 | 9 | 2.8s |
+| `proposition35_36` | 7 | 0 | 0 | 7 | 0.7s |
+| `section4_3 (Kim mapping CCZ-class)` | 20 | 0 | 0 | 20 | **10m22.3s** |
+| `section4_4 (Tables 6-7, catalog partition)` | 30 | 0 | 0 | 30 | 1m44.7s |
+| **Total** | **130** | **0** | **0** | **130** | **737s** |
+
+This supersedes the older 109-test figure.
+
+**Runtime warning.** At 12 min this is by far the most expensive paper suite in the
+repository, and 84 % of it is one testset. Measured breakdown of `section4_3` (Julia 1.12.6,
+single core): `extract_linear_subspaces` 3.0s · `enumerate_ccz_class` 2.4s · **222 ×
+`thickness_spectrum` = 261s** · **≈265 × `affine_representative` @ 0.876 s/call ≈ 232s**.
+Both hot spots are inherent to the Section 4.3 claims (222 CCZ representatives; affine
+partition of 512 permutations), not accidental. CI (`.github/workflows/ci.yml`,
+`timeout-minutes: 20`) has only ~7 min of headroom over the local figure before
+`Pkg.instantiate` and precompilation are counted, and GitHub-hosted runners are commonly
+1.5–2× slower than this machine — so this is the single most likely job in the matrix to time
+out. The `CANTEAUT_202205_FAST=1` escape hatch that skips the `section4_3_report` block
+exists (`test/test_section4_3.jl:39`) but CI does not set it.
+
+All values previously derived in Python were re-confirmed against the repository's own Julia
+API: the full Table 6/7 recomputation, Banff #5 == Kim, both butterfly component orderings,
+the Σ⁴-multiplicities, and the extended-Walsh scan of all 21,102 corpus members (66 s in
+Julia, yielding exactly the paper's six spectra with multiplicities
+17007/3599/320/146/26/4).
 
 ## Catalog Status
 
@@ -233,9 +271,12 @@ into, so the catalog is complete for n = 6 quadratics with respect to this paper
     `2n²+1 = 163`. A real core API gap.
   - `helpers.jl:304-316` `extract_f2linear` — generic "read an `N×N` F₂ matrix out of a
     packed bit vector at an offset"; belongs next to `F2LinearMap`.
-  - `helpers.jl:362-368` `counts` — minor: overlaps `Spectrum` / `sorted_pairs`. Either use
-    `sorted_pairs(Spectrum(...))` or promote a `multiset_counts` helper.
   - An `(n, m)`-shaped function type — see reproduction issue 3.
+
+- **Should use a core export** (reclassified 2026-08-15 — this is a reuse violation, not a
+  core gap): `helpers.jl:362-368` `counts(values)` is *exactly* `sorted_pairs(Spectrum(values))`
+  — verified equal on `thickness_spectrum(kim_apn())`. Both `Spectrum(::AbstractVector{<:Integer})`
+  and `sorted_pairs` are exported (`packages/VBF/src/representations/spectrum.jl:42,83`).
 - **Correctly paper-specific**: `jac_lin_*` / `rank_table` / `rank_distribution`
   (Definitions 12 and 19), `open_butterfly` (CDP17), `BANFF_TABLE6`,
   `_build_combined_system!`, `_recover_ea_triple`, and `pseudo_random_quadratic`
