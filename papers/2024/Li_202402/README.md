@@ -17,12 +17,10 @@ Remarks 5 and 9, the AB claims of Propositions 4 and 8, and the CCZ-equivalence 
 Beierle–Leander #34/#35 are all absent — several of them cheap, and reproduced during this
 review.
 
-> **Environment note**: Julia is not installed in the review environment
-> (`make test` exits 127), so no test entrypoint could be executed. Every load-bearing claim
-> below was re-derived independently in pure Python — GF(2ⁿ) arithmetic mirroring
-> `gf_mul`/`gf_pow` semantics and moduli, DDT/differential spectrum, ortho-derivative via the
-> paper's own definition, FWHT, F₂ rank, orbit enumeration — and cross-checked against the
-> shipped `VBFCatalog` SQLite.
+> Every load-bearing claim below was originally re-derived in pure Python and has since been
+> re-verified against the repository's own Julia API (2026-08-15, Julia 1.12.6): GF(2ⁿ)
+> arithmetic, DDT/differential spectrum, ortho-derivative, LAT, F₂ rank, orbit enumeration,
+> and the shipped `VBFCatalog` SQLite. **Zero disagreements** across ~30 reconciled claims.
 
 ---
 
@@ -355,23 +353,35 @@ These are all cheap and all check out — they are the concrete gap:
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make -C papers/2024/Li_202402 test` | **Cannot run** — `make: julia: No such file or directory`, `make: *** [Makefile:16: test] Error 127` |
+Executed on 2026-08-15 with **Julia 1.12.6** (`julia --project=/home/tiago/VBF.jl`; the
+paper's tests live in `tests/`, not `test/`).
 
-Independent re-derivation of every value the tests assert, using the same modulus table and
-the same DU / permutation / ortho-derivative / differential-spectrum semantics as `VBF`:
+| Command | Exit code | Wall time |
+|---------|-----------|-----------|
+| `make -C papers/2024/Li_202402 test` | **0** | **7 s** (includes `Pkg.instantiate()`) |
 
-| Assertion | Independent result |
-|-----------|--------------------|
-| `test_theorem1`: `du` at (2,1),(3,1),(3,2),(4,2); perm at (3,1),(3,2); `c1 && c2 && c3` at (3,1) | would **pass** |
-| `test_theorem6`: the same grid plus `lut1 != lut2` | would **pass** |
-| `test_proposition4`: m=3 `du=2`, perm, `lut[1]==0`; m=5 `du=2`, perm; `@test_throws` at m=7 | would **pass** (the m=5 permutation was confirmed on all 32768 entries) |
-| `test_proposition8`: the same, plus `prop4_lut(3) != prop8_lut(3)` | would **pass** |
-| `test_section5a`: `match1`, `match2`, `f1_new`, `f2_new`, spot-checks 164199/21/172557/21 | would **pass** — every constant confirmed |
+| Testset | Pass | Broken | Fail / Error | Total | Time |
+|---------|------|--------|--------------|-------|------|
+| `theorem1_test`     | 10 | 0 | 0 | 10 | 1.6 s |
+| `proposition4_test` |  8 | 0 | 0 |  8 | 1.2 s |
+| `theorem6_test`     | 10 | 0 | 0 | 10 | 0.1 s |
+| `proposition8_test` |  9 | 0 | 0 |  9 | 1.1 s |
+| `section5a_test`    |  9 | 0 | 0 |  9 | 1.1 s |
+| **Total**           | **46** | **0** | **0** | **46** | — |
 
-**Caveat**: passing does **not** mean faithful — issues 1 and 3 mean two of these tests
-certify statements the paper does not make.
+Julia's `Test` summary printed only `Pass | Total | Time` columns for every testset, i.e. no
+broken, failed, or errored tests were recorded.
+
+**Caveat**: passing does **not** mean faithful. Reproduction issues 1 and 3 mean two of these
+testsets (`theorem1_test`'s and `proposition4_test`'s `@test c1 && c2 && c3`) certify a
+statement the paper does not make, and the bivariate hypothesis of Theorems 1 and 6 is not
+exercised at all.
+
+Measured cost note: `differential_uniformity` at n=15 takes **1.53 s**, not the "~2 min"
+claimed at `report.jl:24`. Since DDT cost scales as 2^{2n}, the two unconditional `m = 6`
+(n=18) calls at `report.jl:47` and `:61` cost ≈ 64× that each, i.e. ≈ 100 s apiece — so the
+docstring's cost ranking is inverted by roughly two orders of magnitude. `make test` is
+unaffected (7 s): the testsets only use m ∈ {3, 5}.
 
 ## Catalog Status
 
