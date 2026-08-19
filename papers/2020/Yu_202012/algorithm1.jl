@@ -38,17 +38,19 @@
 include(joinpath(@__DIR__, "helpers.jl"))
 
 """
-    algorithm1_run(n; limit, max_evaluations) -> Vector{SBox{n}}
+    algorithm1_run(n; limit, max_evaluations) -> SearchOutcome{SBox{n}}
 
 Enumerate F₂-cyclic QAMs over GF(2ⁿ) and return one representative per EA-mugshot class.
 
 **Substitutes** `search_qam(n, 1)` for the paper's pruned Algorithm 1 (see the header:
-no `GetNoneSquare` orbit reduction, no `GetElemC` span/submatrix pruning). Exhaustive
-over the same search space, so result-equivalent at small `n`, but much heavier per
-candidate.
+no `GetNoneSquare` orbit reduction, no `GetElemC` span/submatrix pruning). Covers the
+same search space, so result-equivalent at small `n`, but much heavier per candidate —
+and only *actually* exhaustive when the returned outcome is `Exhausted`, which depends
+on `max_evaluations`. Check `is_exhausted(outcome)`; do not assume it.
 
-The returned length is a **lower bound** on the CCZ-class count — the EA-mugshot
-de-duplication key merges CCZ-inequivalent functions (Gold x³/x⁹ at n=7).
+The solution count (`length(search_solutions(...))`) is a **lower bound** on the
+CCZ-class count — the EA-mugshot de-duplication key merges CCZ-inequivalent
+functions (Gold x³/x⁹ at n=7).
 """
 function algorithm1_run(
     n::Int;
@@ -73,15 +75,20 @@ function algorithm1_report(
              "odometer sweep with an exact oracle, NOT the paper's pruned Algorithm 1")
     print_kv(io, "n", n_demo)
     print_kv(io, "max_evaluations", max_evaluations)
-    result = algorithm1_run(n_demo; max_evaluations = max_evaluations)
+    outcome = algorithm1_run(n_demo; max_evaluations = max_evaluations)
+    result = search_solutions(outcome)
     print_kv(io, "distinct EA-mugshot classes found", length(result))
     print_kv(io, "class count is a", "LOWER BOUND (mugshot key merges CCZ-inequivalent " *
              "functions; at n=7 it returns 14 for 15 true classes)")
-    print_kv(io, "completeness", "exhaustive (n=$n_demo search space = 2^15, per Example 1)")
+    # Completeness is read off the search. The old line printed
+    #   "exhaustive (n=6 search space = 2^15, per Example 1)"
+    # unconditionally, and returned exhaustive = true, whatever budget was used.
+    print_kv(io, "completeness", coverage_note(outcome))
     print_kv(io, "expected (Table 1)", 1)
     all_apn = all(differential_uniformity(F) == 2 for F in result)
     print_check(io, "all found functions are APN", all_apn)
-    (; n_demo, n_classes = length(result), exhaustive = true)
+    (; n_demo, n_classes = length(result), exhaustive = is_exhausted(outcome),
+       outcome_tag = outcome_tag(outcome))
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

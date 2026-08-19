@@ -3,7 +3,11 @@
     include(joinpath(@__DIR__, "..", "table2.jl"))
 
     # ── n=6: exhaustive search must find exactly 1 EA-class (x³) ──────────────
-    classes6 = algorithm1_run(6; max_evaluations = 1 << 24)
+    outcome6 = algorithm1_run(6; max_evaluations = 1 << 24)
+    # The sweep must have actually finished for the count to test the paper's
+    # figure rather than the budget.
+    @test is_exhausted(outcome6)
+    classes6 = search_solutions(outcome6)
     @test length(classes6) == 1
     @test differential_uniformity(classes6[1]) == 2
     @test apn_ea_mugshot(classes6[1]) == apn_ea_mugshot(sbox_from_exponents(6, [3]))
@@ -19,7 +23,9 @@
     # This exhaustive sweep (~16 s) used to be run and then thrown away with no
     # assertion at all. It is the one place the paper's classification can actually be
     # tested, so it is tested here.
-    classes7 = algorithm1_run(7; max_evaluations = 1 << 24)
+    outcome7 = algorithm1_run(7; max_evaluations = 1 << 24)
+    @test is_exhausted(outcome7)
+    classes7 = search_solutions(outcome7)
 
     # 14, not 15: search_qam de-duplicates by apn_ea_mugshot, which merges the
     # CCZ-inequivalent Gold pair x³/x⁹. This length is a LOWER BOUND on the CCZ count.
