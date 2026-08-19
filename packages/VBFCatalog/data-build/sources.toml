@@ -12,9 +12,23 @@
 #   importer   – Julia script to run; executed in the order listed here by
 #                build_catalog.jl and targeted individually by the Makefile
 #   no_autorun – env var whose value "1" suppresses auto-run on include
+#   builtin    – true when the importer needs NO external data; it constructs
+#                its functions from VBF itself, so it always runs and needs no
+#                env_var, upstream or check_path
+#   required   – true when the COMMITTED catalog contains rows that only this
+#                source can produce. build_catalog.jl refuses to rebuild when a
+#                required source is unavailable, instead of silently emitting a
+#                smaller catalog. Set BFA_ALLOW_PARTIAL=1 to override, which
+#                prints loudly and yields a catalog that will fail the gate.
+#
+# ORDER MATTERS. Importers deduplicate by LUT hash, so the first source to claim
+# a function owns its family label. Keep the two builtin sources last: they fill
+# the dimensions the external corpora do not cover, and moving them earlier
+# relabels rows that belong to APN-rep and CCZ-rep-GF4.
 
 [[source]]
 name       = "apn_reps"
+required   = true
 label      = "APN reps"
 env_var    = "BFA_SBOXU_PATH"
 upstream   = "https://github.com/lpp-crypto/sboxU.git"
@@ -45,6 +59,7 @@ no_autorun = "BFA_SBOXU_NO_AUTORUN"
 
 [[source]]
 name       = "simonberg"
+required   = true
 label      = "Simon-Berg thesis"
 env_var    = "BFA_THESIS_PATH"
 check_path = "rep1.txt"
@@ -69,3 +84,24 @@ check_path = "database/apn"
 check_kind = "dir"
 importer   = "import_apn_repository.jl"
 no_autorun = "BFA_APN_REPO_NO_AUTORUN"
+
+# --- builtin sources: no external data, constructed from VBF ----------------
+# These two produced 69 known-family and 4 known-sporadic rows in the committed
+# catalog and were absent from this file, so build_catalog.jl never ran them and
+# every full rebuild silently dropped all 73. They are Makefile targets too.
+
+[[source]]
+name       = "known_families"
+label      = "known APN families (constructed)"
+builtin    = true
+required   = true
+importer   = "import_known_families.jl"
+no_autorun = "BFA_KNOWN_FAMILIES_NO_AUTORUN"
+
+[[source]]
+name       = "known_sporadic"
+label      = "known sporadic APN classes (constructed)"
+builtin    = true
+required   = true
+importer   = "import_sporadic_known.jl"
+no_autorun = "BFA_KNOWN_SPORADIC_NO_AUTORUN"

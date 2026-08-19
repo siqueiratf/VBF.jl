@@ -4,18 +4,33 @@
 # env var to use a local checkout (faster; no network required):
 #
 #   BFA_SBOXU_PATH   – sboxU git repo root  (apn_reps, quadratic_apn_8bit, sboxu_reconcile)
-#   BFA_THESIS_PATH  – Simon-Berg@thesis root (simonberg)
+#   BFA_THESIS_PATH  – Simon-Berg@thesis root (simonberg)   ** REQUIRED **
 #   BFA_XANADU_PATH  – apn-ccz-graph-framework root (xanadu)
 #   BFA_APN_REPO_PATH – APN-Repository root (apn_repo)
 #
 # Without a local checkout, sources that declare an `upstream` URL in
 # sources.toml are shallow-cloned into a temp directory automatically.
+#
+# A source marked `required` in sources.toml owns rows the committed catalog
+# contains.  `make catalog` REFUSES to start when one is unavailable, before it
+# touches anything — a rebuild used to skip it with a warning and emit a catalog
+# ~100 rows short that still reported success.  Today `simonberg` is the only
+# required source without an upstream URL, so a complete rebuild needs
+# BFA_THESIS_PATH.  `apn_reps` is required too but auto-clones.
+#
+# The rebuild assembles into BFA_catalog.sqlite.building and installs it only
+# after verifying that no family lost rows, so a failed rebuild never damages
+# the committed catalog.  BFA_ALLOW_PARTIAL=1 lets a partial build finish for
+# inspection; it is never installed.
+#
+# To correct only the declarative APN family, which data-raw fully owns, use
+# sync_apn_family.jl — it needs no external source.  See `make sync-apn`.
 
 JULIA   ?= julia
 JFLAGS  ?= --startup-file=no --project=$(CURDIR)
 CATALOG := $(CURDIR)/../BFA_catalog.sqlite
 
-.PHONY: all catalog check check-structure \
+.PHONY: all catalog check check-structure sync-apn \
         apn_reps quadratic_apn_8bit sboxu_reconcile \
         simonberg xanadu apn_repo \
         known_families known_sporadic \
@@ -40,6 +55,13 @@ check:
 
 check-structure:
 	$(CHECK) --structure-only
+
+# Narrow, in-place sync of the declarative APN family (data-raw/apn_catalog/)
+# into the existing catalog. Needs no external source, so it works on a clone
+# that cannot run a full rebuild. Not a substitute for `catalog`: it touches
+# family = 'APN' only. Run `check` afterwards.
+sync-apn:
+	$(JULIA) $(JFLAGS) $(CURDIR)/sync_apn_family.jl
 
 # ── individual external-source targets ─────────────────────────────────────
 # Each runs its importer against the *existing* catalog (no rebuild from

@@ -34,10 +34,22 @@ So every change here is a three-step change:
 
 ```bash
 $EDITOR n8_apn.toml                                    # 1. the entry
-make -C ../../data-build catalog                       # 2. rebuild the DB
+make -C ../../data-build sync-apn                      # 2. carry it into the DB
 make -C ../../data-build check                         # 3. gate: must print catalog-check: OK
 git add n8_apn.toml ../../BFA_catalog.sqlite           #    both, one commit
 ```
+
+Step 2 used to be `make -C ../../data-build catalog`, the full rebuild. Use
+`sync-apn` for a change confined to *this* directory: it touches `family =
+'APN'` only, needs no external data source, re-verifies every function through
+`load_apn_function` before writing, and is idempotent. The full rebuild also
+rebuilds the importer-backed families, so it needs their sources — today that
+means `BFA_THESIS_PATH` for the Simon-Berg thesis. Run the full rebuild when you
+change an importer, `sources.toml`, or `literature_sboxes.toml`.
+
+Neither command can silently lose rows any more. The full rebuild refuses to
+start when a required source is unavailable, assembles into a staging file, and
+installs it only after checking that no family shrank.
 
 `make check` also runs the catalog test items; `make check-structure` is the
 fast half (no Julia needed) and is what the pre-commit hook runs first. Enable

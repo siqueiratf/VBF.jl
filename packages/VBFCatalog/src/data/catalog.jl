@@ -50,8 +50,18 @@ const SCHEMA_DDL = read(joinpath(@__DIR__, "schema.sql"), String)
 
 Default location of the SQLite catalog (`BFA_catalog.sqlite` at the
 package root).
+
+`ENV["BFA_CATALOG_PATH"]`, when set and non-empty, overrides it. The rebuild in
+`data-build/build_catalog.jl` uses that to assemble a new catalog at a temporary
+path and verify it before it replaces the committed file, so a rebuild that
+cannot reproduce the catalog destroys nothing. Leave the variable unset for
+normal use.
 """
-catalog_path() = normpath(joinpath(@__DIR__, "..", "..", "BFA_catalog.sqlite"))
+function catalog_path()
+    override = get(ENV, "BFA_CATALOG_PATH", "")
+    isempty(override) || return normpath(override)
+    normpath(joinpath(@__DIR__, "..", "..", "BFA_catalog.sqlite"))
+end
 
 """
     is_catalog_built([path]) -> Bool
