@@ -3,7 +3,7 @@ using Test
 @testset "Algorithm 1 APNSearch Entry Point" begin
     identity1 = reshape([1], 1, 1)
 
-    solutions = APNSearch(
+    outcome = APNSearch(
         1,
         identity1,
         identity1,
@@ -11,7 +11,8 @@ using Test
         on_solution = sbox -> nothing,
     )
 
-    @test solutions == [[0, 1]]
+    @test search_solutions(outcome) == [[0, 1]]
+    @test outcome isa Found          # stopped at max_solutions = 1
 end
 
 @testset "Algorithm 1 C reference n = 7 class 4" begin
@@ -19,7 +20,7 @@ end
     apply_A = linear_map_lut(A, 7)
     apply_B = linear_map_lut(B, 7)
 
-    solutions = APNSearch(
+    outcome = APNSearch(
         7,
         A,
         B,
@@ -29,6 +30,10 @@ end
         timeout_seconds = 30,
     )
 
+    # With a timeout in play the outcome type is what says whether the empty
+    # case would have meant anything. Here a solution is expected.
+    @test !(outcome isa BudgetHit)
+    solutions = search_solutions(outcome)
     @test length(solutions) == 1
 
     sbox = solutions[1]

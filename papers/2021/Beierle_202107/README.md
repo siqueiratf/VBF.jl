@@ -16,10 +16,10 @@ extendability seeding), so the exhaustive per-class searches that establish Theo
 actually be run. Table 1's "no (Alg. 1)" column is never checked. Theorem 2 and all of
 Section 3 are absent.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed. Every numeric claim below marked "independently confirmed" was
-> re-derived from scratch in Python (GF(2^n) arithmetic, DDT, ANF degree, Walsh spectra,
-> ortho-derivative invariants, Γ-rank) rather than taken from the repository's own output.
+> Every numeric claim below marked "independently confirmed" was first re-derived from scratch
+> in Python (GF(2^n) arithmetic, DDT, ANF degree, Walsh spectra, ortho-derivative invariants,
+> Γ-rank) and has since been re-checked against the repository's own Julia API on 2026-08-15
+> (Julia 1.12.6). All agree except the extended-Walsh index convention — see "Test Results".
 
 > **Supersedes a previous revision.** An earlier version of this file listed the `A`/`B`
 > self-equivalence relation as reproduction issue 1 — a wrong constant to be fixed. That
@@ -250,10 +250,54 @@ and Table 1's Proposition 4 and Proposition 5 columns all verify exactly.
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make -C papers/2021/Beierle_202107 test` | **Not run** — `make: julia: No such file or directory`, exit 127 |
-| Independent Python re-derivation of Corollary 1 (n=6,7,8), the Proposition 4/5 filters, the seven stored solutions, and the n=7 exponent map | **All agree with the paper** (see table above) |
+Re-run on 2026-08-15 with **Julia 1.12.6** (project `/home/tiago/VBF.jl`, fully instantiated).
+
+| | |
+|---|---|
+| Command | `make -C papers/2021/Beierle_202107 test` |
+| Exit code | **0** |
+| Wall time | **66 s** (one of the slower paper suites; the two CCZ testsets account for ~48 s) |
+| Totals | **223 passed, 0 failed, 0 errored, 0 broken, 0 skipped** |
+
+| Testset | Pass | Broken | Fail | Time |
+|---|---|---|---|---|
+| Proposition 4 Direct Matrix Cases | 2 | 0 | 0 | 3.1 s |
+| Proposition 4 Precomputed n = 6 Classes | 17 | 0 | 0 | 1.8 s |
+| Proposition 4 Precomputed n = 7 Classes | 27 | 0 | 0 | 0.1 s |
+| Proposition 4 Precomputed n = 8 Classes | 32 | 0 | 0 | 0.1 s |
+| Proposition 5 Direct Precomputed Cases | 2 | 0 | 0 | 0.1 s |
+| Proposition 5 Precomputed n = 6 Classes | 17 | 0 | 0 | 0.0 s |
+| Proposition 5 Precomputed n = 7 Classes | 27 | 0 | 0 | 0.1 s |
+| Proposition 5 Precomputed n = 8 Classes | 32 | 0 | 0 | 0.1 s |
+| Dynamic DDT Updates | 6 | 0 | 0 | 0.2 s |
+| S-box Search State Helpers | 3 | 0 | 0 | 0.0 s |
+| APN Search Solution Callbacks | 4 | 0 | 0 | 0.1 s |
+| S-box Polynomial Interpolation | 2 | 0 | 0 | 0.6 s |
+| APN Search Class Selection | 6 | 0 | 0 | 0.4 s |
+| APN Search Batch Classes | 3 | 0 | 0 | 0.4 s |
+| APN Search Injected Result Persistence | 2 | 0 | 0 | 0.1 s |
+| APN Search Matrix Constant Output | 2 | 0 | 0 | 0.6 s |
+| N=6 Class 5 CCZ-Equivalence to Dillon's Permutation | 4 | 0 | 0 | 25.9 s |
+| N=7 Search Result CCZ-Equivalence to Monomials | 28 | 0 | 0 | 22.3 s |
+| Algorithm 1 APNSearch Entry Point | 1 | 0 | 0 | 0.0 s |
+| Algorithm 1 C reference n = 7 class 4 | 3 | 0 | 0 | 0.1 s |
+| Linearly self-equivalent APN permutation tuple experiment | 3 | 0 | 0 | 2.3 s |
+| **Total** | **223** | **0** | **0** | — |
+
+The suite mutates and restores the git-tracked `tuples/AllTuplesMatrices3.toml`
+(`test/test_APNSearch.jl:146-170`); `git status --porcelain papers/2021/Beierle_202107/` was
+clean after the run, so the restore works — but the write still targets tracked data
+(reproduction issue 9).
+
+`report.jl` is runnable directly (`julia --project=. papers/2021/Beierle_202107/report.jl`,
+exit 0) and every check it prints is `[PASS]`. `make report` still fails: the `report` target
+is commented out at `Makefile:44`.
+
+> **Walsh convention**: `VBF.absolute_walsh_spectrum` ranges over all `(a,b) ≠ (0,0)` (4095
+> entries, `packages/VBF/src/spectra/linear.jl:61-70`), while the extended Walsh spectrum
+> quoted elsewhere in this file ranges over `b ≠ 0` only (4032 entries). The non-zero parts
+> are identical; the zero counts differ by the 63 masks with `a = 0`, all giving `W = 0`
+> because `F` is a permutation.
 
 ## Catalog Status
 

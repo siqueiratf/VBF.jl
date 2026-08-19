@@ -33,7 +33,7 @@ algorithm1:
 	@echo "ROOT=$(ROOT)"
 	@echo "Running Algorithm 1 with n=$(n_value), save_results=$(save_results), max_solutions=$(max_solutions), timeout_seconds=$(timeout_seconds), class_indices=$(class_indices)"
 	$(JULIA) $(JULIA_PROJECT) -e 'filename = joinpath("$(MAKEFILE_DIR)", "tuples", "AllTuplesMatrices$(n_value).toml"); if !isfile(filename) println(stderr, "please generate the precomputed matrices using `make corollary1_n6n7n8 n=$(n_value)`"); exit(1); end'
-	$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "algorithm1.jl")); APNSearchClasses($(n_value), "$(class_indices)"; save_results=$(save_results), max_solutions=$(max_solutions), timeout_seconds=$(timeout_seconds), tuples_dir = joinpath("$(MAKEFILE_DIR)", "tuples"))'
+	$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "algorithm1.jl")); r = APNSearchClasses($(n_value), "$(class_indices)"; save_results=$(save_results), max_solutions=$(max_solutions), timeout_seconds=$(timeout_seconds), tuples_dir = joinpath("$(MAKEFILE_DIR)", "tuples")); println(); println("--- Algorithm 1 outcome summary (n=$(n_value), timeout_seconds=$(timeout_seconds)) ---"); print_apn_search_summary(r); println("A class listed under BUDGET HIT is UNEXAMINED, not empty. Only PROVED empty"); println("classes may be reported as Table 1'"'"'s \"no (Alg. 1)\".")'
 
 #proposition4:
 #...

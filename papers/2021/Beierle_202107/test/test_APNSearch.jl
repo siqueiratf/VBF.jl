@@ -120,8 +120,8 @@ end
     )
 
     @test sort(collect(keys(results))) == [1]
-    @test length(results[1]) == 1
-    @test APNSearchClasses(3, "all", excluded_class_indices = [1, 2, 3, 4], save_results = false) == Dict{Int, Vector{Vector{Int}}}()
+    @test length(search_solutions(results[1])) == 1
+    @test isempty(APNSearchClasses(3, "all", excluded_class_indices = [1, 2, 3, 4], save_results = false))
 end
 
 @testset "APN Search Injected Result Persistence" begin
@@ -139,8 +139,9 @@ end
         save_result = (sbox, n, class_index) -> push!(saved, (copy(sbox), n, class_index)),
     )
 
-    @test length(solutions) == 1
-    @test saved == [(solutions[1], 3, 1)]
+    sols = search_solutions(solutions)
+    @test length(sols) == 1
+    @test saved == [(sols[1], 3, 1)]
 end
 
 @testset "APN Search Matrix Constant Output" begin
@@ -159,10 +160,11 @@ end
             class_index = 1,
         )
 
+        sols = search_solutions(solutions)
         text = read(constants_filename, String)
-        expected_line = "search = [$(join(solutions[1], ", "))]"
+        expected_line = "search = [$(join(sols[1], ", "))]"
 
-        @test length(solutions) == 1
+        @test length(sols) == 1
         @test occursin(expected_line, text)
     finally
         write(constants_filename, original_text)
