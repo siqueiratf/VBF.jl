@@ -13,25 +13,43 @@
     @test algebraic_degree(F1) == 2
     @test algebraic_degree(F2) == 3
 
-    # n=4: EA-inequivalent
-    @test !are_ea_equivalent(F1, F2)
+    # n=4: EA-inequivalent, and F1 is the Gold class. Every verdict below must be
+    # a *decided* one — `ea_verdict` returns `missing` rather than a best-effort
+    # `false` when the bounded search is capped.
+    @test ea_verdict(F1, F2)[1] === false
+    @test ea_verdict(F1, G3_4)[1] === true
+    @test ea_verdict(F2, G3_4)[1] === false
 
-    # n=4: F1 is EA-equivalent to Gold x³
-    @test are_ea_equivalent(F1, G3_4)
+    # n=4: F2 IS EA-equivalent to the closed-form BCP eq. (5) construction. The
+    # non-permutation EA route is a complete inner-affine enumeration and settles
+    # this outright, so the old CCZ workaround is unnecessary.
+    F5 = formula5_n4()
+    @test ea_verdict(F2, F5)[1] === true
+    @test ea_verdict(F1, F5)[1] === false
 
-    # n=4: F2 is NOT EA-equivalent to x³ (the only power APN for n=4)
-    @test !are_ea_equivalent(F2, G3_4)
+    # n=5: every one of the 21 pairs among the 7 EA representatives is decided,
+    # and all 21 come out inequivalent. Two pairs — (x⁷,x¹¹) and (f6(1),f6(2)) —
+    # cap the EA search and are settled by CCZ separation instead.
+    fns = n5_all_seven()
+    classes = [n5_ccz_class(F) for F in fns]
+    @test all(c !== nothing for c in classes)
+    n_ccz = 0
+    for i in 1:7, j in (i+1):7
+        v, why = ea_verdict(fns[i], fns[j]; class_F = classes[i], class_G = classes[j])
+        @test v === false          # decided, and inequivalent
+        startswith(why, "CCZ") && (n_ccz += 1)
+    end
+    @test n_ccz == 2
 
-    # n=5: 3 CCZ-canonical power reps pairwise EA-inequivalent
-    mod5 = primitive_polynomial(5)
-    G3  = SBox{5}([gf_pow(x,  3, 5; modulus = mod5) for x in 0:31])
-    G5  = SBox{5}([gf_pow(x,  5, 5; modulus = mod5) for x in 0:31])
-    G15 = SBox{5}([gf_pow(x, 15, 5; modulus = mod5) for x in 0:31])
-    @test !are_ea_equivalent(G3,  G5)
-    @test !are_ea_equivalent(G3,  G15)
-    @test !are_ea_equivalent(G5,  G15)
+    # The two pairs the raw EA oracle cannot settle, spelled out.
+    @test are_ea_equivalent(fns[3], fns[4]; on_inconclusive = :missing) === missing
+    @test are_ea_equivalent(fns[6], fns[7]; on_inconclusive = :missing) === missing
+    # ... and they lie in different CCZ classes, which is what decides them.
+    @test classes[3] != classes[4]
+    @test classes[6] != classes[7]
 
     # n=5: formula6 functions are APN
+    mod5 = primitive_polynomial(5)
     f6_1 = formula6_n5(1; modulus = mod5)
     f6_2 = formula6_n5(2; modulus = mod5)
     @test differential_uniformity(f6_1) == 2

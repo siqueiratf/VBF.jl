@@ -9,7 +9,7 @@
 #   3. Verify equivalence with differential_uniformity(F) == 2
 # VBF API used: SBox, differential_uniformity
 
-include(joinpath(@__DIR__, "helpers.jl"))
+isdefined(@__MODULE__, :table2_luts) || include(joinpath(@__DIR__, "helpers.jl"))
 
 """
     check_lemma1(F::SBox{N,T}) -> Bool

@@ -3,7 +3,8 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../../..)
 JULIA_PROJECT := --project=$(ROOT)
 
-.PHONY: help test report lemma1 theorem3 theorem5 theorem6 section6 section6_n3
+.PHONY: help test report lemma1 algorithm1 table1 table3 theorem3 theorem5 theorem6 \
+        section6 section6_n3 section7 section8
 
 default: help
 
@@ -16,6 +17,15 @@ report:
 
 lemma1:
 	$(JULIA) $(JULIA_PROJECT) -e 'include("$(MAKEFILE_DIR)lemma1.jl"); lemma1_report()'
+
+algorithm1:
+	$(JULIA) $(JULIA_PROJECT) -e 'include("$(MAKEFILE_DIR)algorithm1.jl"); algorithm1_report()'
+
+table1:
+	$(JULIA) $(JULIA_PROJECT) -e 'include("$(MAKEFILE_DIR)table1.jl"); table1_report()'
+
+table3:
+	$(JULIA) $(JULIA_PROJECT) -e 'include("$(MAKEFILE_DIR)table3.jl"); table3_report()'
 
 theorem3:
 	$(JULIA) $(JULIA_PROJECT) -e 'include("$(MAKEFILE_DIR)theorem3.jl"); theorem3_report()'
@@ -32,6 +42,13 @@ section6:
 section6_n3:
 	$(JULIA) $(JULIA_PROJECT) -e 'include("$(MAKEFILE_DIR)section6.jl"); println("n=3 #APN = ", count_apn_n3())'
 
+section7:
+	$(JULIA) $(JULIA_PROJECT) -e 'include("$(MAKEFILE_DIR)section7.jl"); section7_report()'
+
+section8:
+	$(JULIA) $(JULIA_PROJECT) -e 'include("$(MAKEFILE_DIR)section8.jl"); section8_report()'
+
 help:
 	@echo 'Paper: Brinkmann & Leander (2008) — Classification of APN functions up to dim 5'
-	@echo 'Targets: test  report  lemma1  theorem3  theorem5  theorem6  section6  section6_n3'
+	@echo 'Targets: test  report  lemma1  algorithm1  table1  table3  theorem3  theorem5'
+	@echo '         theorem6  section6  section6_n3  section7  section8'
