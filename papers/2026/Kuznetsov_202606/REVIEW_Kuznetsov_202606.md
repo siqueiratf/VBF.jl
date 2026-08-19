@@ -42,19 +42,50 @@ reproduced). Repo verifies properties of hand-provided representatives, not the 
 - theorem4.jl non-permutation assertion "!res.perm == !expected_perm[...]" is obfuscated
   (works only because all expected are false).
 
-## Catalog status (n8_apn.toml has only Gold_x3, Gold_x9, Kasami_x57)
-- CLASS-E -> present (sigma matches n8_Gold_x3)
-- CLASS-F -> present (sigma matches n8_Gold_x9)
-- CLASS-A/B/C/D -> missing (no sigma match to any n=8 catalog entry; Kasami x57 is deg 4)
-Note: catalog is tiny, so "missing" only proves inequivalence to Gold/Kasami; novelty
-vs 3.7M Beierle-2025 was NOT re-verified in-repo (this is the follow-up task).
+## Catalog status — WITHDRAWN 2026-08-19
 
+**The four catalog-gap records below are withdrawn. Do not write them.** They are
+superseded by `FINDINGS.md` in this same directory, which refutes the paper's central
+novelty claim, and by a direct re-check against the current catalog.
+
+The original records were not wrong when written; they went stale. They were written
+when `n8_apn.toml` held only `n8_Gold_x3`, `n8_Gold_x9` and `n8_Kasami_x57`, so
+"no sigma match to any n=8 catalog entry" was a statement about three functions. The
+catalog has since gained the `APN-rep`, `CCZ-rep-GF4`, `known-family` and
+`known-sporadic` populations, and every one of the six representatives now matches:
+
+| representative | `classify_ccz` verdict | matches |
+|---|---|---|
+| CLASS-A | `(:sigma_match, "functions", 566)` | `reprs8_17` (`APN-rep`) |
+| CLASS-B | `(:sigma_match, "functions", 553)` | `reprs8_4` (`APN-rep`) |
+| CLASS-C | `(:sigma_match, "functions", 586)` | `SimonBerg_GF4_n8_class_5` (`CCZ-rep-GF4`) |
+| CLASS-D | `(:sigma_match, "functions", 585)` | `SimonBerg_GF4_n8_class_4` (`CCZ-rep-GF4`) |
+| CLASS-E | `(:sigma_match, "functions", 41)` | `n8_Gold_x3` |
+| CLASS-F | `(:sigma_match, "functions", 42)` | `n8_Gold_x9` |
+
+Reproduce with `classify_ccz(F)` on `representative_sboxes()` from `helpers.jl`; all six
+are `du = 2`, `deg = 2`. No representative returns `:new`. A sigma match is a necessary
+condition for CCZ-equivalence and not a decision, so this refutes novelty without
+identifying the class; `FINDINGS.md` identifies it, mapping CLASS-A/B/C/D to Edel-Pott
+(2009) Table 9 functions 2.1, 1.3, 1.2 and 1.11 by the paper's own published sigma-hashes.
+
+Two further reasons the records must not be written as they stand:
+
+- `bib_key="Kuznetsov_202606"` does not exist. `data-raw/bibliography.bib` has
+  `Kuznetsov_202600`. The catalog gate rejects a `bib_key` with no bibliography row.
+- The catalog admits a CCZ-duplicate only under a name that does not assert novelty.
+  These four would have entered as new classes.
+
+The withdrawn records, kept for the audit trail:
+
+```
 Catalog-gap records (LUTs = repo helpers.jl class_a..d; n=8,m=8,is_permutation=false;
 bib_key="Kuznetsov_202606"; target packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml):
 - n8_Kuznetsov2026_classA  sigma-hash 9d95d9c4a5e2dfdd  (in V_A)
 - n8_Kuznetsov2026_classB  sigma-hash c5f52f5659346f9f  (outside V_A)
 - n8_Kuznetsov2026_classC  sigma-hash 74a30c1a17d45761  (outside V_A)
 - n8_Kuznetsov2026_classD  sigma-hash 024ba500f4bac35b  (outside V_A)
+```
 
 ## Library-reuse audit
 Duplicates of VBF core (flag):
@@ -69,5 +100,6 @@ Promote-to-core: none needed.
 
 ## Open questions
 1. Reconcile repo reps vs paper Table VII, or document Table VII inconsistency.
-2. Do maintainers want CLASS-A..D as individual catalog entries?
+2. ~~Do maintainers want CLASS-A..D as individual catalog entries?~~ ANSWERED: no.
+   All four match functions already in the catalog; see the withdrawal above.
 3. Is reproducing Theorem 6 (3.7M dataset comparison) in scope? -> now being done.
