@@ -16,11 +16,6 @@ novelty check compares against an n=10 catalog that lacks 7 of the paper's own 1
 representatives. Two genuine flaws in the publication were found, both of which this
 reproduction is well-placed to document.
 
-> **Environment note**: Julia is not installed in the review environment, so
-> `test/runtests.jl` could not be executed. The committed artifacts `results/report.toml`
-> (`lemma2_1_agree=true`, `du=2`) and `results/theorem3_3.toml` (`n10_du=2`, `n14_du=2`)
-> record a prior in-repo pass; the independent Python run below agrees on every value.
-
 ---
 
 ## Paper Issues
@@ -229,10 +224,37 @@ All of the following were computed at n=10 and each runs in seconds:
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `julia papers/2022/Zheng_202211/test/runtests.jl` | **Not run** — `julia` unavailable. The committed `results/report.toml` and `results/theorem3_3.toml` record a prior in-repo pass |
-| Independent Python: F15 at m=3/5/7; Theorem 3.3 items i-vii at n=10; Remark 3.4's four equivalences; Lemmas 3.1/3.2 at n=6/10/14; Lemma 2.1 general iff at n=6; Corollary 1 both cases; the 6 Taniguchi F12 classes; Example 1's 600-element primitive scan; Remark 3.6's 600-element scan; full Table III reconstruction; catalog comparison against the 11 quadratic n=10 entries | **Agrees with every committed value** |
+Executed 2026-08-15 on Julia 1.12.6 (project `/home/tiago/VBF.jl`, fully instantiated).
+
+```
+make -C papers/2022/Zheng_202211 test
+```
+
+- **Exit code**: `0`
+- **Wall time**: `5 s` (includes `Pkg.instantiate()`)
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---------|-----:|-------:|-----:|------:|-----:|
+| `lemma2_1_test` | 31 | 0 | 0 | 31 | 0.6 s |
+| `theorem3_3_test` | 12 | 0 | 0 | 12 | 2.7 s |
+| **Total** | **43** | **0** | **0** | **43** | — |
+
+Both committed artifacts were regenerated from a fresh run and match in value:
+`results/report.toml` (`lemma2_1_agree=true`, `lemma2_1_du=2`, `theorem3_3_conditions_ok=true`,
+`theorem3_3_apn_ok=true`) and `results/theorem3_3.toml` (`all_conditions_ok=true`,
+`all_apn_ok=true`, `n10_du=2`, `n10_is_apn=true`, `n14_du=2`, `n14_is_apn=true`).
+`theorem3_3_report(m_values=[5,7])` runs in 14.8 s end-to-end; `lemma2_1_report` with the
+exhaustive `u` loop at n=10 runs in 2.0 s.
+
+**Coverage caveat**: `make test` exercises only m=5 (n=10). The `n14_du = 2` value in
+`results/theorem3_3.toml` is produced by `make theorem3_3 save_results=true`, not by the test
+suite, and no testset asserts the headline novelty result
+(`table2_mugshot_comparison(...).distinct_from_all`) — `test_theorem3_3.jl` only checks
+`μ.kind == :quadratic`. A `make test` pass therefore proves neither of the paper's headline
+claims.
+
+All ~35 load-bearing values previously derived in Python were re-checked against the
+repository's own Julia API: **zero disagreements**.
 
 ## Catalog Status
 
