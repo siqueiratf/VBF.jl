@@ -15,27 +15,25 @@ actually produced all 12,921 / 35 / 5 instances. On top of that, one file reprod
 from a **different publication**, and the entire data-dependent half of the reproduction is
 dead because `inputs/` does not exist and — for the `.txt` datasets — cannot be committed.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed. Every numeric claim below was re-derived independently in Python
-> from the `.tex` source and from the repository's own committed data
-> (`BFA_catalog.sqlite`, `corpora/*.sqlite`).
-
 ---
 
 ## Paper Issues
 
-### 1. `addDegreeInformation` / `removeDegreeInformation` are not inverse on the early-return path
+### 1. (withdrawn) `addDegreeInformation` / `removeDegreeInformation` *are* mutually inverse
 
-- **Location**: Section 3.2 pseudocode.
-- **Evidence**: `addDegreeInformation(x)`'s `return 0` fires *inside* the loop over `u`,
-  leaving `ctr[u]` and `sum[u]` un-incremented for every `u` not yet visited. `AddPoint`
-  then returns 0, so `RemovePoint(x)` runs; `removeDDTInformation(x)` returns 1 (the DDT was
-  fine — it was the *degree* check that failed), and `removeDegreeInformation(x)` decrements
-  `ctr[u]` for **all** `u` with `wt(u) ≥ 3` and `x ⪯ u`, including the ones that were never
-  incremented. `ctr` goes negative and the search state is corrupted.
-- **Note**: the reproduction avoids this at `algorithm1.jl:53-68` and `:84-89` by always
-  completing both loops and ANDing the results. That is the correct fix, but it is an
-  undocumented divergence from the printed pseudocode.
+An earlier revision of this file claimed the early `return 0` in `addDegreeInformation`
+corrupts `ctr`. **It does not**, and the claim is withdrawn.
+
+- **Evidence**: the paper's `removeDegreeInformation` (§3.2, second `verbatim` block) carries
+  a *mirrored* early `return 0`, guarded by `ctr[u] = 2^{wt(u)} − 1` and `sum[u] ≠ sbox[x]`.
+  Since `sum_new ≠ 0 ⟺ sum_old ≠ sbox[x]` and `ctr_after = 2^{wt(u)}−1 ⟺
+  ctr_before = 2^{wt(u)}`, the remove loop aborts at exactly the `u` where the add loop
+  aborted, having undone exactly the same prefix. The pseudocode is self-consistent.
+- **Root cause of the error**: the earlier review read only the first `verbatim` block of
+  §3.2 and inferred the remove path rather than reading it.
+- `algorithm1.jl:53-68` / `:84-89` merely drop the early exit (slower, same result), and
+  `VBF.search_quadratic_apn` implements the mirrored early-exit form faithfully. Neither is a
+  divergence from a buggy original.
 
 ### 2. Algorithm 1's `nextFreePosition` comment is inverted
 
@@ -169,7 +167,7 @@ dead because `inputs/` does not exist and — for the `.txt` datasets — cannot
   `catalog_validation.jl:51`; `table1_invariants.jl:193,288`; `report.jl:22-27`;
   `test/runtests.jl:6`.
 - **Symptom**: `ls papers/2022/Beierle_202201/inputs` → *No such file or directory*. Root
-  `.gitignore` line 11 is `*.txt`, so `apn_8bit.txt` / `apn_9bit.txt` / `apn_10bit.txt` can
+  `.gitignore` line 9 is `*.txt`, so `apn_8bit.txt` / `apn_9bit.txt` / `apn_10bit.txt` can
   never be tracked. `inputs/table1.csv` is not ignored, yet is also absent. `runtests.jl:6`
   therefore skips `test_table1_invariants.jl`, `test_proposition1.jl`,
   `test_catalog_validation.jl` and the file-dependent half of `test_dataset_validation.jl`,
@@ -272,10 +270,84 @@ dead because `inputs/` does not exist and — for the `.txt` datasets — cannot
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make -C papers/2022/Beierle_202201 test` | **Not run** — `julia` is not installed. Static reading of `test/runtests.jl:6` shows that on the current checkout only `test_dataset_validation` (parse-only branch), `test_algorithm1`, `test_lemma4` and `test_lemma5` would execute; the other four testsets are skipped for missing `inputs/` |
-| Independent Python: built and verified all three Section 1.1 functions; full Walsh-spectrum scan of `corpora/beierleleander2022_n8.sqlite` (12,923 members, 27.5 s); OD-spectrum comparison of the four 𝒲₅ members and of the two dimension-9 permutations against all 18 n=9 catalog rows | **All pass** |
+Executed on 2026-08-15 with **Julia 1.12.6**, project `/home/tiago/VBF.jl` fully instantiated.
+
+**Command**: `make -C papers/2022/Beierle_202201 test`
+**Exit code**: `0` · **Wall time**: 4 s
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---|---|---|---|---|---|
+| `dataset_validation_test` | 3 | 1 | 0 | 4 | 1.3 s |
+| `dataset-dependent tests (inputs absent)` | 0 | 1 | 0 | 1 | 0.0 s |
+| `algorithm1_test` | 13 | 0 | 0 | 13 | 0.5 s |
+| `lemma4_test` | 9 | 0 | 0 | 9 | 0.1 s |
+| `lemma5_test` | 11 | 0 | 0 | 11 | 0.0 s |
+| **Total** | **36** | **2** | **0** | **38** | 4 s |
+
+### The two Broken entries
+
+Both are `@test_skip`, which Julia reports in the *Broken* column; neither is a failing
+`@test_broken`.
+
+- `test/test_dataset_validation.jl:55` — `@test_skip "dataset files absent
+  (papers/Beierle_202201/inputs/*.txt)"`, guarded by the `isfile` check at
+  `test_dataset_validation.jl:15`.
+- `test/runtests.jl:16` — `@test_skip "papers/Beierle_202201/inputs/* not present"`, guarded
+  by `runtests.jl:7`. This one skip stands in for three whole test files:
+  `test_table1_invariants.jl`, `test_proposition1.jl`, `test_catalog_validation.jl`.
+
+**Absent inputs (exact paths)**: the directory `papers/2022/Beierle_202201/inputs/` does not
+exist at all. The four files the code expects are `inputs/apn_8bit.txt`,
+`inputs/apn_9bit.txt`, `inputs/apn_10bit.txt` (the BL21 Zenodo look-up-table release) and
+`inputs/table1.csv`. Note the naming trap: the *existing* directory is `input/` (singular)
+and holds only the `.tex` and `.pdf`.
+
+**Is this by design?** Partly. Root `.gitignore:9` is `*.txt`, so the three dataset files can
+never be tracked — that part is deliberate. But nothing in the repo fetches them (there is no
+download target in the `Makefile`), so they are unobtainable through any repo entry point.
+`inputs/table1.csv` is *not* gitignored and is simply missing; it is in any case a table from
+a different source (see reproduction issue 1).
+
+**What would be needed to run them**: either (a) manually place the BL21 release files under
+`papers/2022/Beierle_202201/inputs/`, or (b) — the correct fix — repoint
+`dataset_validation.jl`, `proposition1.jl` and `catalog_validation.jl` at the *committed*
+corpus `packages/VBFCatalog/corpora/beierleleander2022_n8.sqlite` (12,923 members,
+`modulus = 285`, `encoding = quadratic-coeffs-v1`, `bib_key = Beierle_202201`), which was
+verified working in this review.
+
+### Targets that crash on a fresh checkout
+
+`make test`, `make algorithm1`, `make lemma4`, `make lemma5` and `make multiplier_group` (an
+out-of-scope stub) succeed. All of the following exit non-zero with
+`SystemError: opening file ... No such file or directory`:
+
+| Target | Missing file |
+|---|---|
+| `dataset_counts` | `inputs/apn_8bit.txt` |
+| `verify_apn` | `inputs/apn_8bit.txt` |
+| `verify_quadratic` | `inputs/apn_8bit.txt` |
+| `table1_invariants` | `inputs/table1.csv` |
+| `walsh_spectrum` | `inputs/table1.csv` |
+| `proposition1` | `inputs/apn_8bit.txt` |
+| `catalog_validation` | `inputs/apn_8bit.txt` |
+| `report` | `inputs/apn_8bit.txt` |
+
+Consequently every file in `results/` is a stale artifact that cannot be regenerated from the
+current checkout.
+
+### In-repo re-verification
+
+All three Section 1.1 functions were rebuilt and verified with the repository's own Julia API
+(both n=9 permutations: `is_permutation`, `du=2`, `deg=2`, self-equivalence `F(u⁵x) = u·F(x)`;
+the 26-term n=8 function: `du=2`, `deg=2`, `linearity=128`). The full 12,923-member Walsh scan
+of `beierleleander2022_n8` ran in 83.5 s and reproduced exactly six spectra with
+multiplicities 9327 / 3112 / 308 / 146 / 26 / 4, with the four linearity-2⁷ members at indices
+12658–12661. Every value agrees with the earlier Python derivation.
+
+> **Walsh convention**: `VBF.absolute_walsh_spectrum` histograms over `(a,b) ≠ (0,0)`
+> (`packages/VBF/src/spectra/linear.jl:58`), while the paper's extended Walsh spectrum ranges
+> over `b ≠ 0`. The repo therefore reports `2ⁿ−1` more zeros. Numbers quoted below in the
+> paper's convention are marked as such.
 
 ## Catalog Status
 
@@ -372,9 +444,20 @@ evidence         : du = 2, degree 2, extended Walsh spectrum
 - **Should use a core export**: `proposition1.jl:25-29` `ortho_derivative_signature` →
   `VBF.apn_ea_mugshot`, which already bundles the OD differential and Walsh invariants the
   paper prescribes.
+- **Duplicate of a core export (highest severity, found 2026-08-15)**: the whole of
+  `algorithm1.jl` (`_add_ddt!`, `_remove_ddt!`, `_add_degree!`, `_remove_degree!`,
+  `_add_point!`, `_remove_point!`, `_next_val!`, `quadratic_apn_search`) reimplements
+  `VBF.search_quadratic_apn` (`packages/VBF/src/constructions/quadratic_apn_search.jl`), whose
+  docstring already cites `@cite Beierle_202201` and reproduces this exact Algorithm 1. The
+  core version is strictly better: it restricts the DDT loop to even-weight differences,
+  mirrors the paper's early returns, and independently re-verifies every returned solution
+  with `differential_uniformity == 2 && algebraic_degree == 2` (`quadratic_apn_search.jl:190-193`)
+  — a safety net `algorithm1.jl:167-168` lacks. Verified working:
+  `search_quadratic_apn(Val(4|5|6); limit=1)` returns `du=2, deg=2`. `algorithm1.jl` should be
+  deleted and `test_algorithm1.jl` retargeted at `search_quadratic_apn(Val(N); limit, rng)`.
+  (An earlier revision of this file mis-classified this machinery as "correctly local".)
 - **Paper-specific, correctly local**: `parse_lut_line` / `stream_dataset`
-  (`helpers.jl:28-57`); the incremental DDT/ANF machinery in `algorithm1.jl` (core's
-  `mobius!` / `ddt` are batch, and the search needs incremental).
+  (`helpers.jl:28-57`).
 - **Promote-to-core candidates**: `lemma4.jl:20` `fixed_point_count` and `lemma5.jl:22`
   `cycle_count` — generic permutation statistics with no core equivalent
   (`permutation_order` is exported, cycle structure is not). They belong in
