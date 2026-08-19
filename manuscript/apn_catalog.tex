@@ -1,0 +1,322 @@
+% ===========================================================================
+%  apn_catalog.tex — a standalone, \input-able fragment.
+%
+%  Paste this file into your manuscript, or \input it.  It contains no
+%  \documentclass and no \usepackage, so it can sit anywhere after
+%  \begin{document}.
+%
+%  PREAMBLE REQUIREMENTS.  Copy these into your own preamble:
+%
+%      \usepackage{booktabs}
+%      \usepackage{array}
+%      \usepackage{amssymb}
+%      \usepackage{tikz}
+%      \usepackage{pgfplots}
+%      \pgfplotsset{compat=1.17}
+%
+%  \cite keys resolve against packages/VBFCatalog/data-raw/bibliography.bib.
+%
+%  GENERATED CONTENT.  Everything numeric here is \input from
+%  \apncatgen (default `generated/`), written by
+%  manuscript/generate_catalog_table.jl.  Point \apncatgen at wherever you
+%  copy the generated/ directory:
+%
+%      \providecommand{\apncatgen}{path/to/generated/}
+%
+%  This fragment reports RECOMPUTATION STATUS only.  The BFA-4R assessment of
+%  the evidence each original publication supplied is a separate axis and is
+%  not represented here.
+%
+%  Include this file once.  It defines the environment `apncatnotes`; a second
+%  inclusion would redefine it and stop the run.  The table and figure floats
+%  are `table*` and `figure*`, i.e. full width in a two-column class; change
+%  them to `table` and `figure` if your class is one-column and you prefer the
+%  narrower measure.
+%
+%  FLOAT ORDER.  Table 1 and its lettered notes are two consecutive `table*'
+%  floats, because together they are taller than one page and cannot share a
+%  float.  LaTeX never moves a float ahead of an earlier float OF THE SAME
+%  TYPE, so the notes are guaranteed to follow Table 1 whatever surrounds this
+%  fragment.  That guarantee does not extend across types: Figure 1 is a
+%  `figure*' and MAY be placed between the table and its notes, which is what
+%  happens in the proofing harness.  If your pagination does that and you would
+%  rather it did not, move the `figure*' block below the appendix tables, or
+%  make it a one-column `figure'.  Nothing else depends on its position.
+% ===========================================================================
+
+\providecommand{\apncatgen}{generated/}
+\input{\apncatgen facts.tex}
+\input{\apncatgen heatmap_axes.tex}
+
+% --- status marks ----------------------------------------------------------
+% Monotone, greyscale-safe: filled / half / open marks say how much of a claim
+% was recomputed; the two remaining marks say why a claim was not recomputed.
+\providecommand{\apnConf}{\ensuremath{\checkmark}}
+\providecommand{\apnPart}{%
+  \tikz[baseline=-0.55ex]{%
+    \draw[line width=0.4pt] (0,0) circle (0.55ex);
+    \fill (0,0.55ex) arc (90:270:0.55ex) -- cycle;}}
+\providecommand{\apnDiv}{\textbf{!}}
+\providecommand{\apnBey}{\ensuremath{\oslash}}
+\providecommand{\apnOpen}{\ensuremath{\circ}}
+\providecommand{\apnNA}{\textendash}
+
+% --- footnote marks and the note list under a table ------------------------
+\providecommand{\tnote}[1]{\textsuperscript{\itshape #1}}
+\newenvironment{apncatnotes}%
+  {\par\vspace{3pt}\scriptsize\raggedright
+   \begin{list}{}{%
+     \setlength{\leftmargin}{1.5em}\setlength{\labelwidth}{1.1em}%
+     \setlength{\labelsep}{0.4em}\setlength{\itemsep}{1pt}%
+     \setlength{\parsep}{0pt}\setlength{\topsep}{0pt}%
+     \renewcommand{\makelabel}[1]{\itshape ##1\hfil}}}%
+  {\end{list}\par}
+
+% ===========================================================================
+%  TABLE 1 — families and constructions, grouped by construction method
+% ===========================================================================
+
+\begin{table*}[tp]
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{3.2pt}
+  \caption{The APN catalog of this work, grouped by construction method.  Each
+    row is one \emph{family}, except in group~C, where a row is a
+    \emph{representative set} produced by a classification tool, and in
+    group~D, where a row is an individual \emph{case study}; the count at the
+    right of each group heading names which.  \textbf{Ent.} counts \emph{named
+    entries}, \textbf{Inst.} counts \emph{corpus instances}, and the two are
+    never added; \textbf{Perm.} counts the records of the row that are
+    permutations.  \textbf{I}, \textbf{E} and \textbf{N} carry the status of
+    the row's \emph{published invariant}, \emph{equivalence and
+    classification}, and \emph{novelty} claims, with the marks of
+    Table~\ref{tab:apn-legend}.
+    \emph{These three columns are weaker evidence than they look, and weaker
+    than the APN column that is deliberately absent.}  The APN property itself
+    is recomputed from scratch by the generator of this table, on every run,
+    for all \apnReverified{} catalogued objects --- the \apnCurated{} curated
+    entries, the \apnDbApnRows{} named database rows and every one of the
+    \apnInstances{} corpus members --- and the run aborts if a single object
+    fails; it is confirmed everywhere, so a column for it would be a column of
+    identical marks and it is stated here instead.  \textbf{I}, \textbf{E} and
+    \textbf{N} are not re-run at typesetting time: they report what tracked
+    records in this repository establish, and the reading of a record into a
+    mark is the authors' judgement.  A divergence carries an E-code of the
+    E1--E5 taxonomy stated with this fragment when it is a divergence against
+    the cited publication.  The table reports recomputation status only; the BFA-4R
+    assessment of the evidence each publication supplied is a separate axis,
+    reported separately.  Superscript letters point into the notes below the
+    table.}
+  \label{tab:apn-catalog}
+  \input{\apncatgen table_main.tex}
+\end{table*}
+
+% The lettered notes are their OWN float, and that is deliberate.  Left in the
+% body text they drift away from the superscript letters that key them: in the
+% first proof of this fragment all twenty notes were printed a full page BEFORE
+% the table.  LaTeX never places a float of one class ahead of an earlier float
+% of the same class, so a second `table*' is guaranteed to follow the table
+% whatever the height of the text around this fragment in your manuscript.
+% Table and notes together are taller than one page, so they cannot share a
+% float; this is the closest binding available.  The float takes no \caption,
+% so it consumes no table number.
+\begin{table*}[!t]
+  \begingroup\raggedright
+  \noindent\textbf{Notes to Table~\ref{tab:apn-catalog}.}
+  \begin{apncatnotes}
+    \input{\apncatgen table_notes.tex}
+  \end{apncatnotes}
+  \endgroup
+\end{table*}
+
+\begin{sloppypar}
+\noindent\textbf{What Table~\ref{tab:apn-catalog} counts.}
+Four units are kept apart.  A \emph{construction method} is a group heading; a
+\emph{family}, a representative set or a case study is one row; a \emph{catalog
+record} is one stored object; a \emph{claim} is one I/E/N cell.  Records come from two stores and
+are therefore counted in two columns.  \textbf{Ent.} counts \emph{named
+entries}: the \apnCurated{} curated \texttt{[[apn\_functions]]} records of the
+\apnCuratedFiles{} per-dimension TOML files, together with the named rows of the
+\texttt{functions} table of the catalog database.  A curated entry that also has
+a \texttt{functions} row is counted once.  \textbf{Inst.} counts \emph{corpus
+instances}: members of the \apnCorpora{} side stores registered in
+\texttt{bulk\_corpora}.  Adding the two would be misleading, which is why the
+table does not: \apnStoreOverlap{} corpus members are byte-identical to a named
+entry, so the \apnNamed{} named entries and the \apnInstances{} instances
+together hold \apnDistinct{} distinct functions rather than their sum.
+Table~\ref{tab:apn-appendix-corpora} gives the overlap corpus by corpus.
+
+Neither count measures how much construction diversity the catalog holds, and
+the larger one measures it least.  \apnInstances{} instances come from six
+constructions at a single dimension.  \apnNamed{} named entries spread over
+\apnNDims{} dimensions and \apnFamilies{} rows, but only \apnConstrFamilies{}
+of those rows are construction families, in groups~A and~B; the rest are
+\apnRepSets{} representative sets, which are populations a classification tool
+returned rather than constructions, and \apnCaseStudies{} case studies of
+individual functions.  The two representative sets alone hold \apnRepEntries{}
+of the \apnNamed{} named entries, so \textbf{Ent.} is a measure of population,
+not of provenance; the \apnCurated{} curated entries of
+Table~\ref{tab:apn-appendix-entries} are the ones that carry a source and a
+verification record, and they are the tier a reader should weigh.  \emph{all}
+in the \textbf{Perm.} column means every record of the row is a permutation,
+and the flag is recomputed here rather than read from a stored field.
+\end{sloppypar}
+
+% ===========================================================================
+%  LEGEND
+% ===========================================================================
+
+\begin{table}[tp]
+  \centering
+  \footnotesize
+  \caption{The recomputation marks.  Every mark is a shape, never a colour, and
+    each one printed in Table~\ref{tab:apn-catalog} is backed by
+    \apnEvidenceQuotes{} literal quotations from \apnEvidenceFiles{} version
+    controlled files in the repository; the generator refuses to emit a mark
+    whose quotation no longer occurs in its source.}
+  \label{tab:apn-legend}
+  \begin{tabular}{@{}c >{\raggedright\arraybackslash}p{0.80\columnwidth}@{}}
+    \toprule
+    \textbf{Mark} & \textbf{Meaning} \\
+    \midrule
+    \apnConf & Recomputed in this repository and confirmed --- from the
+               catalog's stored equivalence index, or from a reproduction
+               under \texttt{papers/} that recorded the result. \\
+    \apnPart & Partially recomputed: part of the family, part of the corpus, or
+               a necessary condition only. \\
+    \apnDiv  & Recomputed, and a divergence was found.  An E-code names its
+               kind when the divergence is against the cited publication; a
+               divergence against this catalog's own record carries none. \\
+    \apnBey  & Outside the computational reach of the current reference
+               implementation. \\
+    \apnOpen & The claim exists, but no recomputation of it is recorded here;
+               the evidence rests on the literature. \\
+    \apnNA   & No such claim, or not applicable to this family. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ===========================================================================
+%  FIGURE 1 — construction method by dimension
+% ===========================================================================
+
+\begin{figure*}[tp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        apn heat axis,
+        width=0.855\linewidth, height=0.44\linewidth,
+        enlargelimits=false,
+        axis on top,
+        tick style={draw=none},
+        xlabel={dimension $n$},
+        xlabel style={font=\small, yshift=2pt},
+        x label style={at={(axis description cs:0.5,-0.06)}},
+        xticklabel style={font=\small},
+        yticklabel style={align=right},
+        colormap={apngrey}{gray(0cm)=(1); gray(1cm)=(0.40)},
+        point meta min=0, point meta max=5.3,
+      ]
+      \addplot[matrix plot*, point meta=explicit]
+        table[x=col, y=row, meta=logc] {\apncatgen heatmap.dat};
+      \addplot[only marks, mark=none, point meta=explicit symbolic,
+               nodes near coords, nodes near coords style={
+                 font=\scriptsize, anchor=center, inner sep=0pt}]
+        table[x=col, y=row, meta=lbl] {\apncatgen heatmap.dat};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Catalog content by construction method and dimension.  Row labels
+    carry the group codes of Table~\ref{tab:apn-catalog}.  The fill is
+    $\log_{10}(1+\text{functions})$ in grey, so no colour carries meaning; note
+    that the fill therefore tracks \emph{population}, which is the quantity
+    this presentation is least interested in --- read the pale rows, not the
+    dark one.  An en dash marks a method-dimension pair with \emph{no} catalog
+    content.  A cell counts distinct functions, addressed by the
+    \textsc{sha}-256 of the lookup table, so a function held in both stores
+    counts once; a function reached by two different methods is counted in both
+    rows, and the cells therefore sum to \apnCellTotal{}, slightly above the
+    \apnDistinct{} distinct functions the catalog holds.  A cell that holds
+    named entries prints \emph{distinct functions\,/\,those whose CCZ class
+    this repository decided}; a cell that holds corpus instances only prints
+    the count alone, because the in-repository CCZ decision runs on named
+    entries and is not defined on a corpus member --- a ratio there would read
+    as a failed check where in fact no check applies.
+    Three patterns follow, none of them visible in
+    Table~\ref{tab:apn-catalog}.  First, the catalog is concentrated at one
+    dimension: \apnNEIGHT{} of \apnCellTotal{} sit at $n=8$, against
+    \apnNotEIGHT{} at the eight other dimensions together.  Second, coverage of
+    the class structure inverts that population: the four computational-search
+    rows hold \apnSearchRecords{} functions, \apnSearchShare\% of the catalog,
+    and not one of them is placed in a confirmed CCZ class, while the sparse
+    algebraic rows above them are almost fully decided.  Every corpus member
+    does carry an ortho-derivative signature, which is a necessary condition
+    for CCZ-equivalence and not a decision.  The 27 CCZ representatives
+    extracted from the B3 sweep are counted in row C as well as in B3.  Third,
+    the curated and the imported tiers cover different dimensions: $n=11$ has
+    content in row \apnGroupsAtEleven{} alone and \apnCuratedAtEleven{} curated
+    entries, there being no \texttt{n11\_apn.toml}, while $n=12$ has content in
+    row \apnGroupsAtTwelve{} alone.}
+  \label{fig:apn-heat}
+\end{figure*}
+
+% ===========================================================================
+%  THE E1--E5 TAXONOMY
+% ===========================================================================
+
+\noindent\textbf{Qualifying a divergence.}
+An E-code classifies one \emph{individual divergence}.  It never classifies an
+article, a construction or a family, and a row with no divergence carries no
+E-code.  All five codes describe a divergence against a \emph{published}
+claim.  A divergence against this catalog's own provenance record is a
+different object, and none of the five is about it: such a cell carries the
+divergence mark and a note, and no code.
+
+\begin{list}{}{%
+  \setlength{\leftmargin}{1.2em}\setlength{\itemindent}{-1.2em}%
+  \setlength{\itemsep}{2pt}\setlength{\parsep}{0pt}\setlength{\topsep}{3pt}%
+  \raggedright}
+\item \textbf{E1 -- Typographical error.} The published source contains a value, label, or index inconsistent with the rest of the text itself. It does not affect the mathematical validity of the result, only its readability.
+\item \textbf{E2 -- False claim or computational error.} A numerical or structural claim in the paper is directly contradicted by independent recomputation, with computed evidence attached.
+\item \textbf{E3 -- Algorithmic ambiguity.} The method is described at an insufficient level of detail for reimplementation without additional choices unspecified by the paper, such as search heuristics, pruning criteria, or representative normalization.
+\item \textbf{E4 -- Data or implementation gap.} The paper omits data necessary to verify its own core claim, such that part of the reported result cannot be reproduced from the published text.
+\item \textbf{E5 -- Not reproducible under current tool status.} The result is, in principle, correct and well-specified, but lies outside the computational reach of the current reference implementation.
+\end{list}
+
+% ===========================================================================
+%  APPENDIX — instance-level detail
+% ===========================================================================
+
+\begin{table*}[tp]
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{4pt}
+  \caption{Appendix, record by record: the \apnCurated{} curated entries of the
+    \apnCuratedFiles{} per-dimension TOML files under
+    \texttt{data-raw/apn\_catalog}.  The differential uniformity $\delta$, the
+    algebraic degree and the permutation flag are recomputed by the generator
+    from each entry itself, through \texttt{load\_apn\_function}, which also
+    materialises the monomial-form entries from their exponent and modulus.
+    Every entry returns $\delta=2$, and the recomputed permutation flag agrees
+    with the stored \texttt{is\_permutation} field throughout.}
+  \label{tab:apn-appendix-entries}
+  \input{\apncatgen appendix_entries.tex}
+\end{table*}
+
+\begin{table*}[tp]
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{5pt}
+  \caption{Appendix: the registered bulk corpora.  \emph{APN}, \emph{Quad.}
+    and \emph{Perm.} are recomputed here for every member, not read from a
+    stored flag: each member is decoded from its \texttt{quadratic-coeffs-v1}
+    encoding, and its DDT, its algebraic degree and its bijectivity are
+    computed.  All \apnInstances{} members are APN and quadratic, and none is a
+    permutation.  \emph{Distinct} counts the distinct lookup tables among the
+    members: \apnCorpusDupes{} members of \texttt{\apnDupCorpus} repeat a
+    lookup table that the same corpus already holds, and no other corpus repeats
+    one.  \emph{Named} counts the members whose lookup table is byte-identical
+    to a named entry of Table~\ref{tab:apn-catalog}, so the two stores can be
+    added only after \apnStoreOverlap{} functions are removed once.}
+  \label{tab:apn-appendix-corpora}
+  \input{\apncatgen appendix_corpora.tex}
+\end{table*}

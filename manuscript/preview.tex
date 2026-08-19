@@ -1,0 +1,50 @@
+% ===========================================================================
+%  preview.tex — PROOFING HARNESS ONLY.
+%
+%  This file exists so that `apn_catalog.tex` can be compiled and read on
+%  screen.  It is NOT part of the deliverable and must NOT be pasted into a
+%  manuscript.  The deliverable is `apn_catalog.tex` plus the `generated/`
+%  directory; this driver only supplies a document class, the packages that
+%  fragment needs, and a bibliography so that \cite resolves.
+%
+%  Build (Tectonic; there is no system TeX on the development machine):
+%
+%    JULIA_PROJECT=<texenv> julia -e 'using Tectonic; tectonic() do bin
+%      run(`$bin -X compile manuscript/preview.tex --outdir <builddir>`) end'
+%
+%  Tectonic's pgfplots is old: compat=1.17 is the maximum it accepts.
+% ===========================================================================
+\documentclass[10pt,twocolumn]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=20mm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+
+\title{Proofing harness for \texttt{apn\_catalog.tex}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent
+This document exists only to render the fragment.  Everything below the rule is
+\verb|apn_catalog.tex| exactly as delivered.
+
+\hrulefill
+
+\input{apn_catalog.tex}
+
+\onecolumn
+\bibliographystyle{plain}
+\bibliography{../packages/VBFCatalog/data-raw/bibliography}
+
+\end{document}

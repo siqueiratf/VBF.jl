@@ -1,0 +1,20 @@
+% !!! GENERATED FILE — DO NOT EDIT !!!
+% Produced by manuscript/generate_catalog_table.jl from, in order of authority:
+%   packages/VBFCatalog/data-raw/apn_catalog/n{4,5,6,7,8,9,10,12}_apn.toml
+%   packages/VBFCatalog/data-raw/bibliography.bib
+%   packages/VBFCatalog/BFA_catalog.sqlite   (functions, bulk_corpora,
+%                                             equivalence_classes, class_members)
+%   packages/VBFCatalog/corpora/*.sqlite
+%   packages/VBFCatalog/data-build/*.jl, packages/VBF/src/**.jl
+%   papers/<year>/<Paper_ID>/README.md
+% Regenerate with:  julia --project=. -t auto manuscript/generate_catalog_table.jl
+% pgfplots axis style for Figure 1: grid size and tick labels,
+% derived from the same classification that produced heatmap.dat.
+\pgfplotsset{apn heat axis/.style={
+  mesh/cols=9,
+  xtick={4,5,6,7,8,9,10,11,12},
+  ytick={1,2,3,4,5,6,7,8,9,10},
+  yticklabels={{\scriptsize\textbf{D}\,\ Sporadic cases},{\scriptsize\textbf{C}\,\ CCZ representatives},{\scriptsize\textbf{B4}\,\ Published lists},{\scriptsize\textbf{B3}\,\ Restricted-coeff.\ sweep},{\scriptsize\textbf{B2}\,\ Tree / trim search},{\scriptsize\textbf{B1}\,\ QAM search},{\scriptsize\textbf{A4}\,\ Isotopic shift / switching},{\scriptsize\textbf{A3}\,\ Bivariate / biprojective},{\scriptsize\textbf{A2}\,\ Polynomial / multinomial},{\scriptsize\textbf{A1}\,\ Monomial (power)}},
+  xmin=3.5, xmax=12.5,
+  ymin=0.5, ymax=10.5,
+}}
