@@ -81,6 +81,12 @@ export image_set, image_subspaces, pi_multiset
 export ccz_equivalent_quadratic_function
 export automorphisms_from_ortho_derivative, ea_mappings_from_ortho_derivative
 export enumerate_ea_classes_apn_quadratic, ea_class_orbits
+# bounded-search result type: Exhausted and BudgetHit must never collapse
+export SearchOutcome, Found, Exhausted, BudgetHit, SearchRegion, StopPoint
+export search_solutions, search_region, nodes_visited, elapsed_seconds
+export outcome_tag, is_exhausted, is_budget_hit, proves_emptiness
+export certified_region, certified_empty_region, assert_exhausted, coverage_note
+
 export switching_neighbors
 export search_quadratic_apn
 export trims, apn_trims, trim_spectrum

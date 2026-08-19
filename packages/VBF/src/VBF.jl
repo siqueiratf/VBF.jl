@@ -41,6 +41,10 @@ include("representations/anf.jl")
 include("representations/finite_field.jl")
 include("representations/univariate.jl")
 
+# 1b. search — the three-case result type bounded searches return. No
+#     dependencies; included before anything that runs a bounded search.
+include("search/outcome.jl")
+
 # 2. linalg — F₂ bit-linear-algebra substrate
 include("linalg/f2_arith.jl")
 include("linalg/linear_system.jl")
