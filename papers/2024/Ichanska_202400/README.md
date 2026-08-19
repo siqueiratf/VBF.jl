@@ -26,10 +26,11 @@ QAM API written for this exact paper that is never called.
 > their ortho-derivative differential spectra (ODDS) maps them **bijectively and in order**
 > onto Table 11 indices 1-27 (class *k* ↔ Table 11 index *k*, all 27 distinct, all du=2).
 
-> **Environment note**: Julia is not installed in the review environment
-> (`make test` exits 127), so no test entrypoint could be executed. Every claim below was
-> re-derived independently in pure Python and cross-checked against the shipped `VBFCatalog`
-> SQLite.
+> **Re-review 2026-08-15, Julia 1.12.6**: the suite executes green (30/30). Every numeric
+> value previously derived in Python is confirmed — but running the repository's own catalog
+> tooling **overturns the Catalog Status**: the paper's Table 5 "new" APN function is *not*
+> new. It is EA-equivalent to a Weng–Tan–Gong 2013 function already shipped in this repo. The
+> `n8_Ichanska2024_new` catalog-gap record from the previous revision is **withdrawn**.
 
 ---
 
@@ -264,20 +265,29 @@ consistent with them.
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make -C papers/2024/Ichanska_202400 test` | **Cannot run** — `make: julia: No such file or directory`, `make: *** [Makefile:11: test] Error 127` |
+Command: `make -C papers/2024/Ichanska_202400 test`
+(note: this paper's tests live in `tests/`, not `test/`)
 
-Independent re-derivation of every asserted value:
+- **Exit code**: `0`
+- **Wall time**: 21 s (includes `Pkg.instantiate()`)
+- **Julia**: 1.12.6 — **Review date**: 2026-08-15
 
-| Test | Independent result |
-|------|--------------------|
-| `test_theorem2` (α=1, x³, n=4, s=1,2,3; `cyclic_shift(MF, n) == MF`) | would **pass** — the identity holds for `x³` and every α ∈ F₄ at n=4 |
-| `test_theorem3` (n=4, m=1 and m=2) | would **pass** |
-| `test_lemma1` (`\|cat1\|=3`, `\|cat_ind\|=252`, `Cat₁ = {1,a^85,a^170}`, preservation) | would **pass**, but `252` contradicts §3.2 (issue 2) |
-| `test_algorithm1` (4 orbits, reps `{1,a,a⁷,a¹⁷}`, 15-element n=4 partition) | would **pass** — `\|𝓛\|=24576` and the reps confirmed |
-| `test_section5_1` (du=2, ODDS, NL=112, ≠ Gold x³) | would **pass** — all four confirmed |
-| `test_section5_3` (three classes APN, pairwise distinct ODDS) | would **pass** — all confirmed |
+| Testset | Pass | Broken | Fail | Total | Time |
+|---------|------|--------|------|-------|------|
+| `theorem2_test`   | 4 | 0 | 0 | 4 | 1.4 s |
+| `theorem3_test`   | 2 | 0 | 0 | 2 | 0.5 s |
+| `lemma1_test`     | 6 | 0 | 0 | 6 | 0.4 s |
+| `algorithm1_test` | 7 | 0 | 0 | 7 | 13.6 s |
+| `section5_1_test` | 5 | 0 | 0 | 5 | 1.6 s |
+| `section5_3_test` | 6 | 0 | 0 | 6 | 0.4 s |
+| **Total**         | **30** | **0** | **0** | **30** | — |
+
+Julia printed only a `Pass | Total | Time` header for every testset, i.e. no failed or broken
+tests were recorded. All tests pass — but note that `lemma1_test` passes against a category
+definition that contradicts §3.2 (reproduction issue 2: the repo prints `|Cat_Ind|=252` while
+core's own `independent_conjugate_elements(8,2)` returns **192**), and `theorem3_test` passes
+only because it is restricted to n = 4 (reproduction issue 4: at n = 10 `verify_theorem3`
+returns **`false`**, falsely refuting a true theorem).
 
 Additional independent checks: Table 10×11 27/27; the Table 6 sum; §4.1's `|𝓛|`, `𝒜`, `ℬ₁`,
 `#𝒞_{1,a}`, `#𝒞_{1,a^85}`; Table 1's #B column; §4.4's `|𝓛|` and representatives; matrix
@@ -289,36 +299,47 @@ mapping. **Not re-verified this pass**: Δ-rank 438, Γ-rank 14034, `|𝓜(G_F)|
 
 | Claimed-new object | Status |
 |--------------------|--------|
-| Table 5 / Table 10 #10, the new (8,2) APN function | **missing from `packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml`** (5 entries: `n8_Gold_x3`, `n8_Gold_x9`, `n8_Kasami_x57`, `n8_Calderini2021_thm62`, `n8_Taniguchi2025_ex4_2` — none with the right ODDS); **an equivalent class representative already exists in `BFA_catalog.sqlite` as `SimonBerg_GF4_n8_class_10`** (different LUT, identical ODDS), but with an empty `algebraic_form`, no `bib_key`, and no attribution to Ichanska et al. |
+| Table 5 / Table 10 #10, the "new" (8,2) APN function | **not-new.** `is_novel(F) == false`; `classify_ccz(F) == (:sigma_match, "functions", 579)`. `are_ea_equivalent` returns `true` against **all** of: `wengtangong2013_n8` member 9 (bib_key `WengTanGong_201300`, **2013** — predates the paper and is absent from its reference list), `reprs8_34` (sboxU quadratic-APN CCZ-class representative, `functions.id = 579`), and `SimonBerg_GF4_n8_class_10` (`functions.id = 591`). It is therefore absent from `packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml` but **already present in the catalog under three other names**. |
 
-Verification level: **full claim reproduced** for the function itself, except Γ-rank and
-`|𝓜(G_F)|`. Formula reproduced ✓; APN property verified from the full DDT ✓; no parameter
-family (a single explicit function); novelty checked against the shipped n=8 catalog
-(`n8_Gold_x3` ODDS `[0^39780,2^21930,6^3570]` = Table 11 #26; `n8_Gold_x9`
-`[0^35700,2^26520,4^3060]` = Table 11 #1; `n8_Calderini2021_thm62` and
-`n8_Taniguchi2025_ex4_2` = Table 11 #12; `n8_Kasami_x57` degree 4 ⇒ EA-inequivalent; plus
-`n8_Gold_i5/i7`, `n8_Kasami_i7`, three `n8_Taniguchi_m1_*` database rows — **all distinct**),
-**but not** against the 12,921 + 8,157 + 6,368 + 5,412 Beierle–Leander / Yu–Wang–Li /
-Yu–Perrin 8-bit corpora, which is where the paper's "inequivalent to all previously known"
-claim really has to be settled.
+Verification levels reached: formula reproduced ✓; APN property verified from the full DDT ✓;
+no parameter family (a single explicit function); **novelty/equivalence claim checked ✓ and
+REFUTED**; full claim reproduced ✗ (Γ-rank 14034, Δ-rank 438 and `|𝓜(G_F)|` 3072 remain
+unverified — `_design_rank_guard` at `packages/VBF/src/invariants/design_ranks.jl:74` blocks
+both `gamma_rank` and `delta_rank` at n ≥ 8).
 
-### Catalog-gap record
+Negative controls for the EA-equivalence result: `are_ea_equivalent(F, F) = true`,
+`are_ea_equivalent(n8_Gold_x3, n8_Gold_x9) = false`, `are_ea_equivalent(F,
+wengtangong2013_n8 #1) = false` — and only member 9 of the 10-member WTG corpus shares F's
+σ-hash.
 
-The record drafted in the previous revision of this file (name `n8_Ichanska2024_new`, `n=8`,
-`m=8`, `is_permutation=false`, the Table-5 `algebraic_form`, `bib_key = "Ichanska_202400"`,
-and the 256-entry LUT) is **correct as written** — that LUT was re-derived here and confirmed
-du=2, ODDS `[0^38196, 2^22008, 4^4608, 6^456, 8^12]`, Walsh
-`[−32^2380, −16^20400, 0^16320, 16^23120, 32^3060]`, NL 112.
+The `bulk_corpora` sizes are `beierleleander2022_n8 = 12923`, `yuwangli2014_qam_n8 = 8179`,
+`beierleleanderperrin2022_n8 = 6368`, `yuperrin2022_qam_n8 = 5412`, `edelpott2009_n8 = 22`,
+`wengtangong2013_n8 = 10`, `taniguchi2019_n8 = 2`. (An earlier revision of this file quoted
+12,921 and 8,157 for the first two; those figures were wrong.)
 
-**Two additions before it is imported:**
+Note also that an earlier revision attributed Table 11 #12 to both `n8_Calderini2021_thm62`
+and `n8_Taniguchi2025_ex4_2`. Only `n8_Taniguchi2025_ex4_2` (ODDS
+`[0^38592, 2^21426, 4^4590, 6^654, 8^18]`) is #12; `n8_Calderini2021_thm62` has ODDS
+`[0^39150, 2^20463, 4^4920, 6^675, 8^54, 10^12, 12^6]` and matches **no** Table 11 row (it is
+not a GF(4)-coefficient quadratic).
 
-1. Note in `description` that `SimonBerg_GF4_n8_class_10` in `BFA_catalog.sqlite` is a
-   representative of the same CCZ class, so the import must be reconciled rather than
-   duplicated.
-2. Recommended novelty escalation: scan `beierleleander2022_n8`,
-   `beierleleanderperrin2022_n8`, `yuwangli2014_qam_n8`, `yuperrin2022_qam_n8`,
-   `edelpott2009_n8`, `wengtangong2013_n8` and `taniguchi2019_n8` for an ODDS match before
-   recording the entry as new — all seven are tracked corpora and none has been checked.
+### Catalog-gap record — WITHDRAWN
+
+The `n8_Ichanska2024_new` record drafted in the previous revision of this file **must not be
+acted on**. The function is EA-equivalent to three entries already in the catalog, so
+importing it would create a duplicate. The correct action is to enrich the existing rows with
+`bib_key = "Ichanska_202400"` and the Table-5 `algebraic_form`.
+
+The repository already ships a prebuilt σ-signature index at
+`packages/VBFCatalog/corpora/ccz_sigma_index.sqlite` covering all eight n = 8 sources, so the
+novelty escalation the previous revision recommended as "never checked" is a single call to
+`is_novel(F)` / `classify_ccz(F)`. It returns **not novel**.
+
+**Open question for a maintainer**: is `wengtangong2013_n8` (built by sboxU's
+`all_WenTanGon()`) a faithful rendering of the published Weng–Tan–Gong 2013 family? If yes,
+the paper's headline novelty claim is wrong. If the generator is broader than the published
+family, the finding is about the corpus's labelling rather than about the paper. The
+EA-equivalence itself is proven either way by the repo's own `are_ea_equivalent`.
 
 **Optional bulk addition**: the other 26 Table 10 representatives are absent from
 `n8_apn.toml` but present in the database as `SimonBerg_GF4_n8_class_*`; adding them to the
