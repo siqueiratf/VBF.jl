@@ -183,9 +183,15 @@ function _parse_max_n(args)
     m   # returned, not assigned to a captured local — avoids the soft-scope trap
 end
 
-if abspath(PROGRAM_FILE) == @__FILE__
-    # NOTE: n >= 11 pulls taniguchi_apn_representatives(half), which sweeps
-    # thousands of (m,a,b) candidates at half >= 6 and is slow (minutes). Run
-    # those dimensions without a tight `timeout`, or cap with --max-n.
+# Auto-run when included by build_catalog.jl (non-interactive), and when run as
+# a script. The guard was `abspath(PROGRAM_FILE) == @__FILE__`, which is false
+# under `include`, so chaining this importer from build_catalog.jl did nothing.
+# BFA_KNOWN_FAMILIES_NO_AUTORUN=1 lets a test include the file for its helpers
+# without touching the catalog.
+#
+# NOTE: n >= 11 pulls taniguchi_apn_representatives(half), which sweeps
+# thousands of (m,a,b) candidates at half >= 6 and is slow (minutes). Run those
+# dimensions without a tight `timeout`, or cap with --max-n.
+if !isinteractive() && get(ENV, "BFA_KNOWN_FAMILIES_NO_AUTORUN", "0") != "1"
     main(; max_n = _parse_max_n(ARGS))
 end

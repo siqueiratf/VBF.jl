@@ -62,7 +62,24 @@ function with_source(f::Function, name::AbstractString)
         end
     end
 
-    @warn "BFA: $label not available; set $env_var to enable"
+    # A source the committed catalog depends on must never degrade to a silent
+    # skip: that is how a rebuild used to emit a catalog ~100 rows short and
+    # still report success.
+    if get(src, "required", false) === true && get(ENV, "BFA_ALLOW_PARTIAL", "") != "1"
+        error("""
+        BFA: $label is REQUIRED and unavailable.
+
+        The committed catalog contains rows only this source can produce, so
+        rebuilding without it would drop them. Refusing rather than emitting an
+        incomplete catalog.
+
+        Fix: point $env_var at a local checkout containing '$check_path'.
+        Override (produces an incomplete catalog that fails the gate):
+            BFA_ALLOW_PARTIAL=1
+        """)
+    end
+
+    @warn "BFA: $label not available; set $env_var to enable" required=get(src, "required", false)
     nothing
 end
 

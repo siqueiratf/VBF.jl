@@ -132,6 +132,9 @@ function main()
     close(db)
 end
 
-if abspath(PROGRAM_FILE) == @__FILE__
+# Auto-run when included by build_catalog.jl (non-interactive), and when run as
+# a script. The guard was `abspath(PROGRAM_FILE) == @__FILE__`, which is false
+# under `include`, so chaining this importer from build_catalog.jl did nothing.
+if !isinteractive() && get(ENV, "BFA_KNOWN_SPORADIC_NO_AUTORUN", "0") != "1"
     main()
 end
