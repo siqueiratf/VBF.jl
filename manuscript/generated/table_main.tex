@@ -1,0 +1,82 @@
+% !!! GENERATED FILE — DO NOT EDIT !!!
+% Produced by manuscript/generate_catalog_table.jl from, in order of authority:
+%   packages/VBFCatalog/data-raw/apn_catalog/n{4,5,6,7,8,9,10,12}_apn.toml
+%   packages/VBFCatalog/data-raw/bibliography.bib
+%   packages/VBFCatalog/BFA_catalog.sqlite   (functions, bulk_corpora,
+%                                             equivalence_classes, class_members)
+%   packages/VBFCatalog/corpora/*.sqlite
+%   packages/VBFCatalog/data-build/*.jl, packages/VBF/src/**.jl
+%   papers/<year>/<Paper_ID>/README.md
+% Regenerate with:  julia --project=. -t auto manuscript/generate_catalog_table.jl
+\begin{tabular}{@{}l c r r c l ccc@{}}
+\toprule
+\textbf{Family or construction} & \textbf{$n$} & \textbf{Ent.} & \textbf{Inst.} & \textbf{Perm.} & \textbf{Ref.} & \multicolumn{3}{c}{\textbf{Claim status}}\\
+\cmidrule(l){7-9}
+ & & & & & & \textbf{I} & \textbf{E} & \textbf{N}\\
+\midrule
+\multicolumn{9}{@{}l}{\textbf{Algebraic constructions}}\\[1pt]
+\multicolumn{9}{@{}l}{\quad\emph{A1\enspace Monomial (power) families} \hfill{\footnotesize 7 families, 81 entries, 0 instances}}\\
+\addlinespace[1pt]
+\quad Gold $x^{2^i+1}$ & 4--11 & 38 & \textendash & 26 & \cite{Gold_196801} & \apnNA & \apnConf & \apnNA\\
+\quad Kasami $x^{2^{2i}-2^i+1}$ & 4--11 & 31 & \textendash & 23 & \cite{Kasami_197105,Nyberg_199400} & \apnNA & \apnPart\tnote{a} & \apnNA\\
+\quad Welch $x^{2^t+3}$ & 5,\,7,\,11 & 3 & \textendash & all & \cite{Dobbertin_199905b} & \apnNA & \apnBey & \apnNA\\
+\quad Niho & 7,\,11 & 2 & \textendash & all & \cite{Dobbertin_199905} & \apnNA & \apnBey & \apnNA\\
+\quad Welch\,$\equiv$\,Niho at $n=9$ & 9 & 1 & \textendash & all & \cite{Dobbertin_199905,Dobbertin_199905b} & \apnNA & \apnBey & \apnNA\\
+\quad Inverse $x^{2^n-2}$, $n$ odd & 5,\,7,\,9,\,11 & 4 & \textendash & all & \cite{Nyberg_199400} & \apnNA & \apnBey & \apnNA\\
+\quad Dobbertin, $n=5i$ & 5,\,10 & 2 & \textendash & 1 & \cite{Dobbertin_200100} & \apnNA & \apnBey & \apnNA\\
+\addlinespace[2pt]
+\multicolumn{9}{@{}l}{\quad\emph{A2\enspace Polynomial and multinomial families} \hfill{\footnotesize 5 families, 19 entries, 2 instances}}\\
+\addlinespace[1pt]
+\quad Budaghyan--Carlet--Leander binomial, $n=4k$ & 4 & 2 & \textendash & \textendash & \cite{Budaghyan_200809} & \apnNA & \apnConf & \apnNA\\
+\quad Budaghyan--Carlet--Pott binomial, $n=3k$ & 6 & 2 & \textendash & \textendash & \cite{Budaghyan_200603} & \apnNA & \apnConf & \apnNA\\
+\quad Budaghyan--Carlet--Leander 2009 trace polynomial & 9 & 2 & \textendash & \textendash & \cite{Budaghyan_200910} & \apnNA & \apnPart\tnote{b} & \apnPart\tnote{c}\\
+\quad Taniguchi quadratic family & 4,\,6,\,8,\,10 & 11 & 2 & \textendash & \cite{Taniguchi_201909} & \apnNA & \apnConf & \apnOpen\tnote{d}\\
+\quad Kim function and Dillon permutation & 6 & 2 & \textendash & 1 & \cite{Browning_201000} & \apnNA & \apnPart\tnote{e} & \apnNA\\
+\addlinespace[2pt]
+\multicolumn{9}{@{}l}{\quad\emph{A3\enspace Bivariate and biprojective constructions} \hfill{\footnotesize 3 families, 3 entries, 0 instances}}\\
+\addlinespace[1pt]
+\quad Calderini--Budaghyan--Carlet 2021, Thm.\,6.2 & 8 & 1 & \textendash & \textendash & \cite{Calderini_202100} & \apnNA & \apnConf & \apnPart\tnote{f}\\
+\quad Calderini--Li--Villa 2023, family $F_1$ & 12 & 1 & \textendash & \textendash & \cite{Calderini_202306} & \apnConf & \apnConf & \apnConf\tnote{g}\\
+\quad Calderini--Li--Villa 2023, family $F_2$ & 12 & 1 & \textendash & \textendash & \cite{Calderini_202306} & \apnConf & \apnConf & \apnConf\tnote{g}\\
+\addlinespace[2pt]
+\multicolumn{9}{@{}l}{\quad\emph{A4\enspace Isotopic-shift, switching and coset modification} \hfill{\footnotesize 1 family, 1 entry, 0 instances}}\\
+\addlinespace[1pt]
+\quad Taniguchi et al.\ 2025, Ex.\,4.2 (codim.\,2) & 8 & 1 & \textendash & \textendash & \cite{Taniguchi_202501} & \apnBey\tnote{h} & \apnDiv\tnote{i} & \apnNA\tnote{j}\\
+\midrule
+\multicolumn{9}{@{}l}{\textbf{Computational search}}\\[1pt]
+\multicolumn{9}{@{}l}{\quad\emph{B1\enspace QAM-based search} \hfill{\footnotesize 2 families, 0 entries, 13\,591 instances}}\\
+\addlinespace[1pt]
+\quad Yu--Wang--Li 2014 QAM search & 8 & \textendash & 8\,179 & \textendash & \cite{Yu_201411} & \apnOpen\tnote{k} & \apnPart\tnote{l} & \apnOpen\\
+\quad Yu--Perrin 2022 QAM search & 8 & \textendash & 5\,412 & \textendash & \cite{Yu_202211} & \apnConf & \apnConf & \apnOpen\tnote{m}\\
+\addlinespace[2pt]
+\multicolumn{9}{@{}l}{\quad\emph{B2\enspace Recursive tree and trim/extension search} \hfill{\footnotesize 2 families, 0 entries, 19\,291 instances}}\\
+\addlinespace[1pt]
+\quad Beierle--Leander 2022 tree search & 8 & \textendash & 12\,923 & \textendash & \cite{Beierle_202201} & \apnConf & \apnPart\tnote{n} & \apnOpen\tnote{o}\\
+\quad Beierle--Leander--Perrin 2022 trims/extensions & 8 & \textendash & 6\,368 & \textendash & \cite{Beierle_202201} & \apnOpen & \apnPart\tnote{l} & \apnOpen\\
+\addlinespace[2pt]
+\multicolumn{9}{@{}l}{\quad\emph{B3\enspace Restricted-coefficient exhaustive classification} \hfill{\footnotesize 1 family, 0 entries, 196\,863 instances}}\\
+\addlinespace[1pt]
+\quad Simon--Berg $\mathrm{GF}(4)$-coefficient sweep & 8 & \textendash & 196\,863 & \textendash & \textemdash\tnote{p} & \apnNA & \apnPart\tnote{q} & \apnNA\\
+\addlinespace[2pt]
+\multicolumn{9}{@{}l}{\quad\emph{B4\enspace Published targeted enumerations} \hfill{\footnotesize 2 families, 0 entries, 32 instances}}\\
+\addlinespace[1pt]
+\quad Edel--Pott 2009 quadratic list & 8 & \textendash & 22 & \textendash & \cite{Edel_200900} & \apnOpen\tnote{r} & \apnPart\tnote{l} & \apnOpen\tnote{r}\\
+\quad Weng--Tan--Gong 2013 list & 8 & \textendash & 10 & \textendash & \cite{WengTanGong_201300} & \apnOpen & \apnPart\tnote{l} & \apnOpen\\
+\midrule
+\multicolumn{9}{@{}l}{\textbf{Equivalence classification}}\\[1pt]
+\multicolumn{9}{@{}l}{\quad\emph{C\enspace CCZ-class representative sets} \hfill{\footnotesize 2 representative sets, 556 entries, 0 instances}}\\
+\addlinespace[1pt]
+\quad \texttt{sboxU} quadratic-APN CCZ representatives & 6--8 & 529 & \textendash & \textendash & \textemdash\tnote{p} & \apnNA & \apnPart\tnote{s} & \apnNA\\
+\quad Simon--Berg $\mathrm{GF}(4)$ CCZ representatives & 8 & 27 & \textendash & \textendash & \textemdash\tnote{p} & \apnNA & \apnConf & \apnNA\\
+\midrule
+\multicolumn{9}{@{}l}{\textbf{Sporadic results}}\\[1pt]
+\multicolumn{9}{@{}l}{\quad\emph{D\enspace Individual case studies} \hfill{\footnotesize 3 case studies, 4 entries, 0 instances}}\\
+\addlinespace[1pt]
+\quad Yu et al.\ 2020 representatives & 7,\,9 & 2 & \textendash & \textendash & \cite{Yu_202012} & \apnNA & \apnConf & \apnDiv\,\textsc{\scriptsize e4}\tnote{t}\\
+\quad Budaghyan--Carlet--Leander 2008 rep., $n=9$ & 9 & 1 & \textendash & \textendash & \cite{Budaghyan_200809} & \apnNA & \apnConf & \apnNA\\
+\quad Edel--Pott 2009 rep., $n=9$ & 9 & 1 & \textendash & \textendash & \cite{Edel_200900} & \apnNA & \apnConf & \apnOpen\tnote{r}\\
+\midrule
+\textbf{Total} & \textbf{4--12} & \textbf{664} & \textbf{229\,779} & \textbf{61} & & & & \\
+\multicolumn{9}{@{}l}{\footnotesize \textbf{Ent.} and \textbf{Inst.} count two overlapping stores and do not add: the catalog holds \apnDistinct{} distinct functions.}\\
+\bottomrule
+\end{tabular}
