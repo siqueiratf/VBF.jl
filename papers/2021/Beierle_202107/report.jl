@@ -87,10 +87,16 @@ function theorem1_report(io::IO = stdout)
         joinpath(@__DIR__, "tuples", "AllTuplesMatrices6.toml"))
     result = blocks[5].search
 
+    # A missing `search` field means "no solution was persisted". Because the
+    # searches that populate this file run under `timeout_seconds` (Makefile
+    # default 300), absence is NOT evidence that the class holds no APN
+    # permutation — it is equally consistent with the budget having expired.
+    # Only a run whose outcome was `Exhausted` licenses that reading.
     has_result = result !== nothing
     print_check(io, "n=6 class 5 search result stored", has_result)
 
     if !has_result
+        print_kv(io, "note", "absent stored result = not persisted; NOT a proof the class is empty")
         print_check(io, "n=6 result is APN permutation", false)
         print_check(io, "n=6 result CCZ-equiv to Dillon's permutation", false)
         return false
@@ -129,7 +135,9 @@ function n7_monomials_report(io::IO = stdout)
     for (cls, exp) in sort(collect(class_to_exponent))
         result = blocks[cls].search
         if result === nothing
-            print_check(io, "class $cls: stored result present", false)
+            # As above: not persisted ≠ proved empty. These searches ran under a
+            # wall-clock budget.
+            print_check(io, "class $cls: stored result present (absence is not a proof of emptiness)", false)
             all_ok = false
             continue
         end

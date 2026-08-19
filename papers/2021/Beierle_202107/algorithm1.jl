@@ -1,8 +1,37 @@
 include("helpers.jl")
 
+using VBF: SearchOutcome, Found, Exhausted, BudgetHit, SearchRegion, StopPoint,
+           search_solutions, proves_emptiness, is_exhausted, coverage_note,
+           outcome_tag
+
 # ---------------------------------------------------------------------------
 # Search infrastructure
 # ---------------------------------------------------------------------------
+#
+# WHY THE RETURN TYPE IS NOT A Vector
+#
+# `context.timed_out` used to be computed by `search_timed_out!` and then
+# dropped: `APNSearch` returned `context.solutions` and the context went out of
+# scope. With the Makefile's default `timeout_seconds = 300`, a class whose
+# deadline expired returned `Vector{Int}[]` — byte-for-byte what a class whose
+# tree was walked to the end and shown to hold no APN permutation returned.
+# Table 1's "no (Alg. 1)" column and Theorems 1, 3 and 4 are exactly that
+# distinction, so the two had to stop being the same value.
+#
+# The entry points now return a `VBF.SearchOutcome`:
+#
+#   Exhausted  — the tree was walked to the end. The solution list is complete
+#                for this (A, B), so an empty one PROVES no APN permutation
+#                with that self-equivalence exists.
+#   Found      — stopped at `max_solutions`. Nothing is claimed about the rest.
+#   BudgetHit  — `timeout_seconds` expired. Proves nothing.
+#
+# Note on the missing reductions: this implementation lacks the paper's Lemma 5
+# (isSmallest / commutant quotient) and Lemma 6 (extendability seeding) search
+# -space reductions. Those are *reductions* — they shrink the walk without
+# removing solutions — so their absence costs time, not soundness. An
+# `Exhausted` returned here is therefore still a sound proof of emptiness; it is
+# simply much harder to reach than it would be with the reductions in place.
 
 mutable struct APNSearchContext
     n::Int
@@ -156,6 +185,44 @@ function search_timed_out!(context::APNSearchContext)::Bool
     return true
 end
 
+"""
+    apn_search_region(n; class_index = nothing) -> VBF.SearchRegion
+
+The region an `APNSearch` run covers: the APN permutations `F` with
+`F(Bx) = A F(x)` and `F(0) = 0` for the given tuple. Its cardinality is not
+known in advance, so `size` is `nothing` — which is itself the honest statement
+that no coverage fraction can be computed for a partial run.
+"""
+apn_search_region(n::Int; class_index::Union{Nothing,Int} = nothing) = SearchRegion(
+    :le_automorphism_class,
+    class_index === nothing ? "BBL2021/n=$n/tuple=unnamed" : "BBL2021/n=$n/class=$class_index";
+    size = nothing,
+    params = Dict{String,Any}("n" => n, "class_index" => class_index),
+)
+
+"""
+    search_outcome(context, region, elapsed) -> VBF.SearchOutcome
+
+Turn a finished search context into the three-case outcome. This is the single
+place where `context.timed_out` is read — it used to be read nowhere.
+"""
+function search_outcome(context::APNSearchContext, region::SearchRegion, elapsed::Float64)
+    sols = context.solutions
+    if context.timed_out
+        return BudgetHit(
+            StopPoint(
+                :time,
+                "timeout_seconds expired";
+                resume_key = Dict{String,Any}("class_index" => region.params["class_index"]),
+            ),
+            region, sols; elapsed_seconds = elapsed,
+        )
+    elseif length(sols) >= context.max_solutions
+        return Found(sols, region; elapsed_seconds = elapsed)
+    end
+    return Exhausted(region, sols; elapsed_seconds = elapsed)
+end
+
 function record_complete_solution!(context::APNSearchContext, sbox::Vector{Int})
     solution = copy(sbox)
     solution_is_apn = _is_apn(solution)
@@ -271,15 +338,28 @@ function nextVal(depth::Int, sbox::Vector{Int}, ddt::Matrix{Int};
     )
     seed_used_outputs!(context, sbox)
 
-    return nextVal(depth, sbox, ddt, context)
+    t0 = time()
+    nextVal(depth, sbox, ddt, context)
+    return search_outcome(context, apn_search_region(n; class_index), time() - t0)
 end
 
 @doc"""
-    APNSearch(n::Int, A, B; kwargs...) -> Vector{Vector{Int}}
+    APNSearch(n::Int, A, B; kwargs...) -> VBF.SearchOutcome{Vector{Int}}
 
 Run Algorithm 1 from the linearly self-equivalent APN permutations experiment
-for the matrix pair `(A, B)`. The returned values are complete S-box lookup
-tables satisfying `F(Bx) = A F(x)` and the APN constraint.
+for the matrix pair `(A, B)`. The solutions (via `search_solutions`) are
+complete S-box lookup tables satisfying `F(Bx) = A F(x)` and the APN constraint.
+
+Returns a three-case [`VBF.SearchOutcome`], **not** a bare vector:
+
+  * `Exhausted` — the tree was walked to the end; the solution list is complete
+    for this tuple, so an empty one proves no such APN permutation exists.
+  * `Found` — stopped at `max_solutions`; the rest of the tree is unexamined.
+  * `BudgetHit` — `timeout_seconds` expired; nothing is proved.
+
+Use `proves_emptiness(result)`, never `isempty(result)`. A `Vector`-returning
+version of this function could not tell a 300 s timeout from a proof, which is
+precisely the distinction Table 1's "no (Alg. 1)" column rests on.
 
 !!! note "Convention vs. paper"
     The paper's Corollary 1 uses `F ∘ A = B ∘ F`, i.e. `F(Ax) = BF(x)`.
@@ -334,14 +414,20 @@ function APNSearch(n::Int, A, B;
     )
     seed_used_outputs!(context, sbox)
 
-    return nextVal(0, sbox, ddt, context)
+    t0 = time()
+    nextVal(0, sbox, ddt, context)
+    return search_outcome(context, apn_search_region(n; class_index), time() - t0)
 end
 
 @doc"""
-    APNSearchClasses(n::Int, class_indices="all"; kwargs...) -> Dict{Int, Vector{Vector{Int}}}
+    APNSearchClasses(n::Int, class_indices="all"; kwargs...) -> Dict{Int, VBF.SearchOutcome}
 
 Run [`APNSearch`](@ref) for precomputed tuple classes of the
 linearly self-equivalent APN permutations experiment.
+
+Each value is a three-case outcome, so a class that ran out of `timeout_seconds`
+is distinguishable from one proved to hold no APN permutation. Summarise a run
+with `apn_search_summary`.
 """
 function APNSearchClasses(n::Int, class_indices = "all";
                           excluded_class_indices = Int[],
@@ -359,7 +445,7 @@ function APNSearchClasses(n::Int, class_indices = "all";
         excluded_class_indices = excluded_class_indices,
         tuples_dir = tuples_dir,
     )
-    results = Dict{Int, Vector{Vector{Int}}}()
+    results = Dict{Int, SearchOutcome}()
 
     for class_index in classes
         A, B = precomputed_tuple_matrices(n, class_index, tuples_dir = tuples_dir)
@@ -380,4 +466,59 @@ function APNSearchClasses(n::Int, class_indices = "all";
     end
 
     return results
+end
+
+@doc"""
+    apn_search_summary(results::Dict{Int, VBF.SearchOutcome}) -> NamedTuple
+
+Split an [`APNSearchClasses`](@ref) run into what it actually established.
+
+  * `admissible`     — classes with at least one APN permutation found.
+  * `proved_empty`   — classes walked to the end with nothing in them. Only
+                       these may be reported as "no (Alg. 1)".
+  * `budget_hit`     — classes whose `timeout_seconds` expired. These are the
+                       paper's "?" and must never be reported as empty.
+  * `stopped_early`  — classes that hit `max_solutions` before finishing.
+
+The point of the split is that `proved_empty` and `budget_hit` used to be the
+same set.
+"""
+function apn_search_summary(results::Dict{Int, SearchOutcome})
+    admissible    = Int[]
+    proved_empty  = Int[]
+    budget_hit    = Int[]
+    stopped_early = Int[]
+    for class_index in sort(collect(keys(results)))
+        outcome = results[class_index]
+        if !isempty(search_solutions(outcome))
+            push!(admissible, class_index)
+        elseif proves_emptiness(outcome)
+            push!(proved_empty, class_index)
+        elseif outcome isa BudgetHit
+            push!(budget_hit, class_index)
+        else
+            push!(stopped_early, class_index)
+        end
+    end
+    (; admissible, proved_empty, budget_hit, stopped_early,
+       n_classes = length(results))
+end
+
+@doc"""
+    print_apn_search_summary(results; io = stdout)
+
+Print an [`apn_search_summary`](@ref) with wording that cannot launder a
+timeout into an emptiness result.
+"""
+function print_apn_search_summary(results::Dict{Int, SearchOutcome}; io::IO = stdout)
+    s = apn_search_summary(results)
+    println(io, "classes run                       : ", s.n_classes)
+    println(io, "admissible (APN permutation found): ", isempty(s.admissible) ? "none" : s.admissible)
+    println(io, "PROVED empty (exhaustive, sound)  : ", isempty(s.proved_empty) ? "none" : s.proved_empty)
+    println(io, "BUDGET HIT (nothing proved)       : ", isempty(s.budget_hit) ? "none" : s.budget_hit)
+    println(io, "stopped early at max_solutions    : ", isempty(s.stopped_early) ? "none" : s.stopped_early)
+    if !isempty(s.budget_hit)
+        println(io, "  NOTE: the budget-hit classes are NOT empty regions. They are unexamined.")
+    end
+    s
 end
