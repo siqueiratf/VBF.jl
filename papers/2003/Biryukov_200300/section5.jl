@@ -1,72 +1,118 @@
 # Implements Section 5 — Equivalent Descriptions of Various Ciphers.
 # Paper: Biryukov et al. (2003), "A Toolbox for Cryptanalysis: Linear and Affine
 #        Equivalence Algorithms", Eurocrypt 2003.
-# Section: 5.2 — Other SPN Ciphers (Serpent); Table 3 left side
+# Section: 5.2 — Other SPN Ciphers (Serpent, Khazad); Appendix B.2, Table 3
 #
 # Pseudocode:
-#   1. Load Serpent S0..S7 from VBFCatalog.
-#   2. Verify three equivalent pairs: {S2,S6}, {S3,S7}, {S4,S5}.
-#   3. Verify one inverse-equivalent pair: {S0, S1^{-1}}.
-#   4. Verify no cross-pair equivalences hold.
-#   5. Report number of self-equivalences for S0,S2,S3,S4 (paper: 4,4,1,1 resp.).
+#   Table 3 has six Serpent rows and one Khazad row; every row asserts that its
+#   members form one affine equivalence class and shares one value of s.
+#   1. Load Serpent S0..S7 from VBFCatalog, Khazad P/Q from helpers.jl.
+#   2. Row {S0, S1^{-1}}     : S0 ~ S1^{-1}, s = 4.
+#   3. Row {S0^{-1}, S1}     : S0^{-1} ~ S1, s = 4  (the inverse of row 2).
+#   4. Row {S2,S2^{-1},S6,S6^{-1}} : all four mutually equivalent, s = 4.
+#   5. Row {S3,S3^{-1},S7,S7^{-1}} : all four mutually equivalent, s = 1.
+#   6. Row {S4, S5}          : S4 ~ S5, s = 1.
+#   7. Row {S4^{-1}, S5^{-1}}: S4^{-1} ~ S5^{-1}, s = 1.
+#   8. Row {P,P^{-1},Q,Q^{-1}} (Khazad): P and Q are involutions, so the row is
+#      the single class of P; P ~ Q and s = 4.
+#   9. Verify the rows are pairwise distinct classes (S0 ≁ S1; S2 ≁ S3;
+#      S4 ≁ S6; Serpent ≁ Khazad).
 # VBF API used: are_affine_equivalent, self_affine_equivalences, load_literature_sbox,
 #               compositional_inverse
 
 include(joinpath(@__DIR__, "helpers.jl"))
 
-function section5_report(io::IO = stdout)
-    print_section(io, "Section 5.2 — Serpent S-box Equivalences (Table 3 left)")
-
+# Table 3, verbatim: (cipher, row label, members as name=>SBox, s).
+function table3_rows()
     sp = load_serpent_sboxes()
-    names = (:S0, :S1, :S2, :S3, :S4, :S5, :S6, :S7)
-    sboxes = [sp.S0, sp.S1, sp.S2, sp.S3, sp.S4, sp.S5, sp.S6, sp.S7]
-
-    # Three affine-equivalent pairs from Table 3.
-    pairs = [
-        ("S2", sp.S2, "S6", sp.S6),
-        ("S3", sp.S3, "S7", sp.S7),
-        ("S4", sp.S4, "S5", sp.S5),
+    kz = khazad_sboxes()
+    inv_(S) = compositional_inverse(S)
+    [
+        ("Serpent", "{S0, S1^{-1}}", ["S0" => sp.S0, "S1^{-1}" => inv_(sp.S1)], 4),
+        ("Serpent", "{S0^{-1}, S1}", ["S0^{-1}" => inv_(sp.S0), "S1" => sp.S1], 4),
+        (
+            "Serpent",
+            "{S2, S2^{-1}, S6, S6^{-1}}",
+            ["S2" => sp.S2, "S2^{-1}" => inv_(sp.S2), "S6" => sp.S6, "S6^{-1}" => inv_(sp.S6)],
+            4,
+        ),
+        (
+            "Serpent",
+            "{S3, S3^{-1}, S7, S7^{-1}}",
+            ["S3" => sp.S3, "S3^{-1}" => inv_(sp.S3), "S7" => sp.S7, "S7^{-1}" => inv_(sp.S7)],
+            1,
+        ),
+        ("Serpent", "{S4, S5}", ["S4" => sp.S4, "S5" => sp.S5], 1),
+        ("Serpent", "{S4^{-1}, S5^{-1}}", ["S4^{-1}" => inv_(sp.S4), "S5^{-1}" => inv_(sp.S5)], 1),
+        (
+            "Khazad",
+            "{P, P^{-1}, Q, Q^{-1}}",
+            ["P" => kz.P, "P^{-1}" => inv_(kz.P), "Q" => kz.Q, "Q^{-1}" => inv_(kz.Q)],
+            4,
+        ),
     ]
+end
+
+function section5_report(io::IO = stdout)
     all_ok = true
-    for (na, Sa, nb, Sb) in pairs
-        ok = are_affine_equivalent(Sa, Sb)
-        print_check(io, "Serpent $na ~ $nb (affine equivalent)", ok)
+
+    # --- Table 3 rows: members share one affine class and one value of s. ----
+    print_section(io, "Section 5.2 / Appendix B.2 — Table 3 (Serpent and Khazad)")
+    for (cipher, label, members, s_paper) in table3_rows()
+        head = first(members)
+        ok_class = all(are_affine_equivalent(head.second, m.second) for m in members)
+        print_check(io, "$cipher $label — all members in one affine class", ok_class)
+        counts = [length(self_affine_equivalences(m.second)) for m in members]
+        ok_s = all(==(s_paper), counts)
+        got = join(counts, ", ")
+        print_check(io, "$cipher $label — s = $s_paper (got $got)", ok_s)
+        all_ok &= ok_class && ok_s
+    end
+
+    # --- The rows are distinct classes. --------------------------------------
+    print_section(io, "Section 5.2 — Table 3 rows are pairwise distinct classes")
+    sp = load_serpent_sboxes()
+    kz = khazad_sboxes()
+    separations = [
+        ("Serpent S0 ≁ S1 (equivalent only through the inverse)", sp.S0, sp.S1),
+        ("Serpent S2 ≁ S3 (different rows)", sp.S2, sp.S3),
+        ("Serpent S4 ≁ S6 (different rows)", sp.S4, sp.S6),
+        ("Serpent S4 ≁ S4^{-1} (the two S4/S5 rows are distinct)", sp.S4, compositional_inverse(sp.S4)),
+        ("Khazad P ≁ Serpent S0 (Khazad is its own row)", kz.P, sp.S0),
+        ("Khazad P ≁ Serpent S2 (Khazad is its own row)", kz.P, sp.S2),
+    ]
+    for (label, Sa, Sb) in separations
+        ok = !are_affine_equivalent(Sa, Sb)
+        print_check(io, label, ok)
         all_ok &= ok
     end
 
-    # Inverse-equivalent pair: S0 ~ S1^{-1}.
-    S1_inv = compositional_inverse(sp.S1)
-    ok_inv = are_affine_equivalent(sp.S0, S1_inv)
-    print_check(io, "Serpent S0 ~ S1^{-1} (inverse-equivalent pair)", ok_inv)
-    all_ok &= ok_inv
-
-    # S0 and S1 are NOT directly affine equivalent (only via inverse).
-    ok_not_direct = !are_affine_equivalent(sp.S0, sp.S1)
-    print_check(io, "Serpent S0 and S1 are NOT directly affine equivalent", ok_not_direct)
-    all_ok &= ok_not_direct
-
-    # Cross-pair non-equivalences: verified pair members are not equivalent to others.
-    ok_cross1 = !are_affine_equivalent(sp.S2, sp.S3)
-    print_check(io, "S2 and S3 are NOT affine equivalent (different pairs)", ok_cross1)
-    ok_cross2 = !are_affine_equivalent(sp.S4, sp.S6)
-    print_check(io, "S4 and S6 are NOT affine equivalent (different pairs)", ok_cross2)
-    all_ok &= ok_cross1 && ok_cross2
-
-    # Self-equivalence counts for the four self-equivalent S-boxes.
-    # Paper Table 3 left: S=4 for S0, S2; S=4 for S6 (same class as S2); S=1 for S3,S7,S4,S5.
-    print_section(io, "Section 5.2 — Serpent self-equivalence counts (s column, Table 3)")
-    for (name, S) in [("S0", sp.S0), ("S1", sp.S1), ("S2", sp.S2), ("S3", sp.S3),
-                      ("S4", sp.S4), ("S5", sp.S5), ("S6", sp.S6), ("S7", sp.S7)]
-        s = length(self_affine_equivalences(S))
-        print_kv(io, "  Serpent $name  s", s)
+    # --- Per-S-box s, as printed by the paper. -------------------------------
+    print_section(io, "Section 5.2 — self-equivalence counts (s column, Table 3)")
+    for (name, S) in [("Serpent S0", sp.S0), ("Serpent S1", sp.S1), ("Serpent S2", sp.S2),
+                      ("Serpent S3", sp.S3), ("Serpent S4", sp.S4), ("Serpent S5", sp.S5),
+                      ("Serpent S6", sp.S6), ("Serpent S7", sp.S7),
+                      ("Khazad P", kz.P), ("Khazad Q", kz.Q)]
+        print_kv(io, "  $name  s", length(self_affine_equivalences(S)))
     end
     print_kv(
         io,
         "paper Table 3 (expected s)",
-        "S0:4, S1:4, S2:4, S6:4; S3:1, S7:1; S4:1, S5:1",
+        "Serpent S0:4, S1:4, S2:4, S6:4; S3:1, S7:1; S4:1, S5:1 — Khazad P:4, Q:4",
     )
-
-    print_kv(io, "completeness", "exhaustive (all Serpent S-boxes, 4-bit permutations)")
+    print_kv(
+        io,
+        "Khazad P, Q",
+        "involutions (P^{-1} = P, Q^{-1} = Q), so the four-member row is one class",
+    )
+    print_kv(
+        io,
+        "not run",
+        "Sect. 5.3 / Appendix B.1 (DES and S⁵DES 4x4 decompositions): the paper " *
+        "defers those tables to its extended version, so there is no printed " *
+        "target here to check (0 of 32+32 4x4 boxes evaluated)",
+    )
+    print_kv(io, "completeness", "exhaustive (all 7 Table 3 rows, 4-bit permutations)")
 
     return all_ok
 end
