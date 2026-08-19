@@ -16,10 +16,9 @@ code, and the entire novelty apparatus (Γ-rank, Δ-rank, `|M_{G_F}|`, Table 2) 
 the reproduction verifies "APN" but never "new". Propositions 3.1, 3.3, 3.4 and Remarks
 3.1, 3.5 are not reproduced at all.
 
-> **Environment note**: Julia is not installed in the review environment, so `make test`
-> could not be executed. Every numeric claim below marked "independently confirmed" was
-> re-derived from scratch in Python (GF(2^n) arithmetic, DDT, ANF degree, Walsh spectra,
-> ortho-derivative invariants) rather than taken from the repository's own output.
+> All numeric claims below were re-derived in the repository's own Julia API on 2026-08-15;
+> the earlier independent Python derivation agreed on every value, including all 15 SHA-256
+> LUT fingerprints bit-for-bit.
 
 ---
 
@@ -204,10 +203,28 @@ the reproduction verifies "APN" but never "new". Propositions 3.1, 3.3, 3.4 and 
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make -C papers/2021/Budaghyan_202101 test` | **Not run** — `make: julia: No such file or directory`, exit 127 |
-| Independent Python: Tables 1 and 3 APN-ness, Remark 2.1 (including the `M(x³)` decomposition), Remark 3.2 `Nᵢ`, all 8 Theorem-3.2 cases plus the 3 missing branches, Eq. (3) reconstruction of Table-3 row 2, Theorem 3.1's three `W`-conditions on 61 samples | **All pass; 0 mismatches** |
+Reviewed 2026-08-15 on Julia 1.12.6, repository commit `bf15e59`, project fully instantiated.
+
+**Command**: `make -C papers/2021/Budaghyan_202101 test`
+**Exit code**: `0`
+**Wall time**: 4 s (includes `Pkg.instantiate()`)
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---|---|---|---|---|---|
+| `proposition2_1_test` | 3 | 0 | 0 | 3 | 0.3 s |
+| `theorem3_1_test`     | 8 | 0 | 0 | 8 | 0.9 s |
+| `proposition3_2_test` | 4 | 0 | 0 | 4 | 0.5 s |
+| `theorem3_2_test`     | 17 | 0 | 0 | 17 | 0.4 s |
+| **Total**             | **32** | **0** | **0** | **32** | **2.1 s** |
+
+`test/runtests.jl` emits four independent top-level `@testset` summaries and no aggregate
+roll-up, so the 32/32 total above is a sum of the four printed summaries, not a line the
+runner prints.
+
+| Additional in-repo verification (2026-08-15) | Result |
+|---|---|
+| Tables 1 & 3 `du`/`deg`, Remark 2.1 incl. the `M(x³)` decomposition, Remark 3.2 `Nᵢ`, all 8 Theorem-3.2 cases plus the 4 missing branches, Eq. (3) reconstruction of Table-3 row 2 via `gen_shift_lut`/`fm_polynomial_lut`, Remark 3.5 exhaustive at `n = 4, 6`, catalog separation of all 17 Table-3 rows | **All agree with the earlier Python derivation; 0 mismatches** |
+| Theorem 3.1's three `W`-conditions on 61 `(L₁,L₂)` samples | **Not re-checkable in-repo** — no `W`/`d′` implementation exists (see reproduction issue 1) |
 
 ## Catalog Status
 
