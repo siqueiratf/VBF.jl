@@ -24,6 +24,10 @@ include(joinpath(@__DIR__, "..", "catalog_validation.jl"))
         r = small_search_full(4; limit = 5, max_evaluations = 1 << 24)
         @test r.n_classes >= 1
         @test r.gold_found
+        # `exhaustive` is now measured by the search, not inferred from the
+        # arguments. At n=4 with this budget the sweep really does complete.
+        @test r.exhaustive
+        @test is_exhausted(r.outcome)
     end
 
     @testset "Small QAM search: cyclic (n=4, m=2) finds Gold class" begin

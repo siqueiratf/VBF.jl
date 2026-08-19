@@ -14,7 +14,7 @@ using Random
 end
 
 @testset "Ortho-derivative separates the 13 quadratic APN classes on F_2^6" begin
-    cls = search_qam_full(6; limit = 13, max_evaluations = 1 << 24)
+    cls = search_solutions(search_qam_full(6; limit = 13, max_evaluations = 1 << 24))
     @test length(cls) == 13
     @test distinct_ccz_lower_bound(cls) == 13
 end

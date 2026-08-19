@@ -12,13 +12,19 @@ function small_search_full(
     gold_ref = gold_apn(n, 1)
     gold_mug = apn_ea_mugshot(gold_ref)
 
-    results = search_qam_full(n; limit, max_evaluations)
+    outcome = search_qam_full(n; limit, max_evaluations)
+    results = search_solutions(outcome)
     n_classes = length(results)
-    # exhaustive when search terminated naturally (not by budget or limit)
-    exhaustive = n_classes < limit && max_evaluations > 1 << 24 - 1
+    # Exhaustiveness is now READ OFF the search, not guessed from the arguments.
+    # The old line here was
+    #     exhaustive = n_classes < limit && max_evaluations > 1 << 24 - 1
+    # which inferred coverage from the parameters passed in and so reported a
+    # sweep that consumed exactly its budget as exhaustive.
+    exhaustive = is_exhausted(outcome)
 
     gold_found = any(apn_ea_mugshot(s) == gold_mug for s in results)
     (n_classes = n_classes, gold_found = gold_found, exhaustive = exhaustive,
+     outcome = outcome, coverage = coverage_note(outcome),
      limit = limit, max_evaluations = max_evaluations)
 end
 
@@ -34,10 +40,13 @@ function small_search_cyclic(
     gold_ref = gold_apn(n, 1)
     gold_mug = apn_ea_mugshot(gold_ref)
 
-    results = search_qam(n, m; limit, max_evaluations)
+    outcome = search_qam(n, m; limit, max_evaluations)
+    results = search_solutions(outcome)
     n_classes = length(results)
     gold_found = any(apn_ea_mugshot(s) == gold_mug for s in results)
     (n = n, m = m, n_classes = n_classes, gold_found = gold_found,
+     exhaustive = is_exhausted(outcome), outcome = outcome,
+     coverage = coverage_note(outcome),
      limit = limit, max_evaluations = max_evaluations)
 end
 
@@ -53,22 +62,28 @@ function small_searches_report(;
     r4 = small_search_full(4; limit, max_evaluations)
     print_kv("n = 4 full search: CCZ-classes found", r4.n_classes, io)
     print_check("n = 4: Gold x³ class found", r4.gold_found, io)
-    print_kv("      (result is exhaustive with no limit)", r4.exhaustive, io)
+    print_kv("      search terminated as", string(outcome_tag(r4.outcome)), io)
+    print_kv("      coverage", r4.coverage, io)
 
     # Cyclic search at (n=4, m=2)
     c42 = small_search_cyclic(4, 2; limit, max_evaluations)
     print_kv("n=4 m=2 cyclic: CCZ-classes found", c42.n_classes, io)
     print_check("n=4 m=2 cyclic: Gold x³ class found", c42.gold_found, io)
+    print_kv("      coverage", c42.coverage, io)
 
     # Cyclic search at (n=5, m=1)
     c51 = small_search_cyclic(5, 1; limit, max_evaluations)
     print_kv("n=5 m=1 cyclic: CCZ-classes found", c51.n_classes, io)
     print_check("n=5 m=1 cyclic: Gold x³ class found", c51.gold_found, io)
+    print_kv("      coverage", c51.coverage, io)
 
     data = (
-        n4_full = (classes = r4.n_classes, gold = r4.gold_found, exhaustive = r4.exhaustive),
-        n4m2_cyclic = (classes = c42.n_classes, gold = c42.gold_found),
-        n5m1_cyclic = (classes = c51.n_classes, gold = c51.gold_found),
+        n4_full = (classes = r4.n_classes, gold = r4.gold_found,
+                   exhaustive = r4.exhaustive, outcome = string(outcome_tag(r4.outcome))),
+        n4m2_cyclic = (classes = c42.n_classes, gold = c42.gold_found,
+                       exhaustive = c42.exhaustive, outcome = string(outcome_tag(c42.outcome))),
+        n5m1_cyclic = (classes = c51.n_classes, gold = c51.gold_found,
+                       exhaustive = c51.exhaustive, outcome = string(outcome_tag(c51.outcome))),
     )
 
     if save_results

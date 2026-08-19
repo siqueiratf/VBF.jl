@@ -129,7 +129,7 @@ Catalog-free demonstration of the sorting method:
   * Σ_4 total mass is 2^n; Γ/Δ-ranks are computable at n=6.
 """
 function invariants_demo(; seed::Int = 1)
-    cls = search_qam_full(6; limit = 13, max_evaluations = 1 << 24)
+    cls = search_solutions(search_qam_full(6; limit = 13, max_evaluations = 1 << 24))
     n6_classes = length(cls)
     n6_distinct = distinct_ccz_lower_bound(cls)
 

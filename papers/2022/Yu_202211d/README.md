@@ -13,10 +13,10 @@ one substantive gap is that the paper's four *quantitative* corpus claims are ne
 evaluated — even though all four reproduce exactly, as verified here. Two smaller defects: an
 `exhaustive` flag that can never be true, and a tautological test.
 
-> **Environment note**: Julia is not installed in the review environment, so
-> `test/runtests.jl` could not be executed. The committed `results/report.toml` (Julia
-> 1.12.6, generated 2026-06-06) records every check as `true`; every value below was
-> re-derived independently in Python and agrees.
+> **Re-review 2026-08-15, Julia 1.12.6**: the suite executes green (86/86). One claim from the
+> previous revision is **withdrawn as factually wrong**: `1 << 24 - 1` evaluates to
+> `16777215`, not `8388608` — Julia binds `<<` *tighter* than `-`, so there is no operator-
+> precedence bug in `small_searches.jl:18`. See reproduction issue 2.
 
 ---
 
@@ -71,7 +71,8 @@ The reproduction already flagged this; here is the hard counter-evidence.
 - **Independent verification — both PASS**:
   - Extended Walsh spectrum over all 5412 corpus members: **W₁ = 5084, W₂ = 324, W₃ = 4** —
     *exactly* the paper's Section 3.2 multiplicities. Roughly 3.5 minutes in pure Python;
-    seconds in Julia.
+    **91 s in Julia** for one pass over all 5412 members computing the extended Walsh class,
+    `apn_ea_mugshot` and the ortho-derivative fingerprint (measured 2026-08-15).
   - Distinct ortho-derivative fingerprints over all 5412: **5410** distinct by the `π_F`
     **differential** spectrum alone; the 2 collisions (members `{880, 2701}` and
     `{1837, 5151}`) split as soon as the `π_F` **Walsh** spectrum is added → **5412 distinct
@@ -92,11 +93,15 @@ The reproduction already flagged this; here is the hard counter-evidence.
 - **Symptom**: `results/report.toml` records
   `[results.small_searches.n4_full] exhaustive = false`, even though the n=4 full QAM search
   *is* exhaustive.
-- **Root cause**: two bugs. (a) In Julia `<<` binds **looser** than `-`, so `1 << 24 - 1`
-  parses as `1 << 23` = 8388608, not `2^24 − 1`. (b) `small_searches_report` (`:46`) defaults
-  `max_evaluations = 1 << 22` = 4194304, which is below even that, so the branch can never be
-  true from the report path. Separately, the flag is derived from the *budget* rather than
-  from whether the search terminated naturally.
+- **Root cause**: the flag is derived from the *budget*, not from whether the search
+  terminated naturally. (Verified 2026-08-15: `1 << 24 - 1 == 16777215` in Julia — `<<` binds
+  *tighter* than `-`, so the guard correctly means `max_evaluations ≥ 2^24`. **An earlier
+  revision of this file claimed an operator-precedence bug here; that claim was wrong and is
+  withdrawn** — acting on it would have "fixed" correct code.) `small_searches_report` (`:46`)
+  defaults `max_evaluations = 1 << 22` = 4194304 < 2^24, so the branch can never be true from
+  the report path — and the n=4 search demonstrably terminates naturally well below 2^22
+  (identical wall time at budgets 2^22, 2^23, 2^24 and 2^26), so `exhaustive = false` in
+  `results/report.toml` is a false negative.
 - **Resolution plan**:
   1. Have `search_qam_full` return a `terminated_naturally` flag and propagate it.
   2. Failing that, write `max_evaluations ≥ (1 << 24)` with explicit parentheses.
@@ -146,10 +151,31 @@ core functionality.
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `julia papers/2022/Yu_202211d/test/runtests.jl` | **Not run** — `julia` unavailable. The committed `results/report.toml` records every check `true` |
-| Independent Python: `H_8` block reconstruction, `is_qam(H_8)`, Proposition-3 cardinalities, the Theorem-6 exclusion-set counterexample count, the eq.(5)/(6) pair count, the Conjecture-3 products, the full-corpus Walsh classification, and the full-corpus ortho-derivative fingerprint count | **All confirmed** |
+Reviewed 2026-08-15 on Julia **1.12.6** with the project fully instantiated.
+
+| | |
+|---|---|
+| Command | `make -C papers/2022/Yu_202211d test` |
+| Exit code | **0** |
+| Wall time | **71 s** (`@testset` reported `1m07.7s`) |
+| Totals | **86 pass / 0 fail / 0 error / 0 broken — 86 total** |
+
+The suite reports a single top-level testset (`Yu–Perrin 2022 (QAM method) reproduction`).
+An instrumented `verbose=true` re-run of the same file set gives the breakdown; the three
+expensive testsets are ~96 % of the runtime — the n=6 QAM class search (53.2 s), the
+`small_searches` artifact test (50.7 s) and the n=4 full search (42.1 s). `git status` is
+clean after the run: the artifact test removes its temporary `results/small_searches.toml`.
+
+Every value in the committed `results/report.toml` was independently regenerated and matches:
+`conjecture2` (evaluated 256, budget 1048576, exhaustive true, candidate_space 256, qam_hits 1,
+n_classes 1), `theorem6` (43008 valid pairs; 1 vs 224 span builds), `invariants` (Γ-rank 1102,
+Δ-rank 94, `walsh_class_seed = "W1"`), `proposition3` (7, 112, 3, 96; 107→3), `catalog` (5412).
+The 2026-06-06 artifact is trustworthy.
+
+Corpus-level re-verification: the paper's §3.2 extended-Walsh multiplicities
+(𝒲₁=5084, 𝒲₂=324, 𝒲₃=4) and the 5412 distinct ortho-derivative fingerprints reproduce
+exactly, in **91 s** for one pass over all 5412 members. All 5412 members are APN (not just
+the 52 the repo's own tests sample).
 
 ## Catalog Status
 
