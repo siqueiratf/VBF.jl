@@ -1,4 +1,5 @@
 {
+  "outputStyle": "ASD-STE100",
   "hooks": {
     "PreToolUse": [
       {
