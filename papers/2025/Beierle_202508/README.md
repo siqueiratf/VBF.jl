@@ -15,11 +15,6 @@ required data (32,916 dimension-8 quadratic APN functions) is present in
 `packages/VBFCatalog/corpora/`. This review also surfaced a genuine defect in the paper that
 only computation reveals, and an off-by-one in the estimator that the test tolerance hides.
 
-> **Environment note**: Julia is not installed in the review environment, so no repo test
-> entrypoint could be executed. Every claim below was re-derived independently in Python and C
-> (GF(2ⁿ) arithmetic, DDT, ANF, ortho-derivatives, Walsh, bent-space search) and cross-checked
-> against the PDF. No repository file was modified during the review.
-
 ---
 
 ## Paper Issues
@@ -188,11 +183,16 @@ only computation reveals, and an off-by-one in the estimator that the test toler
 All of the following have data available in-repository:
 
 1. **Section 3 working hypothesis** — see reproduction issue 3.
-2. **Table 4.1 / Definition 4.1 (`P_k`)** — see reproduction issue 2. `P₆` was implemented
-   during this review (about 4 s per function in Python): e.g. `edelpott2009_n8` #1 →
-   `[(0,0),(1,1),(3,3),(7,7),(15,15),(28,40),(50,102)]`, #3 → `[…,(30,34),(50,102)]` — both
-   genuine Table 4.1 rows. The full 32,916-member distribution is reachable in hours (Python)
-   or about 30 minutes (Julia).
+2. **Table 4.1 / Definition 4.1 (`P_k`)** — see reproduction issue 2. `P₆` was re-implemented
+   in Julia during the 2026-08-15 re-review on top of the reproduction's own
+   `component_quadratic_rank`, and reproduces the earlier Python results exactly:
+   `edelpott2009_n8` #1 → `[(0,0),(1,1),(3,3),(7,7),(15,15),(28,40),(50,102)]`, #3 →
+   `[…,(30,34),(50,102)]` — both genuine Table 4.1 rows. A straightforward Julia
+   keep-all-maximizers flag search costs **1.62 s per function** (measured over 10
+   `beierleleander2022_n8` members), i.e. roughly **15 hours** for the full 32,916-member
+   distribution — not the ~30 minutes previously estimated. A `make table41` target must
+   therefore be opt-in and `limit=`-budgeted, and would benefit from bitmask subspace
+   representation and canonical-subspace deduplication.
 3. **Definition 4.3 (`J₂` invariant)** — not implemented at all.
 4. **Remark 4.4** (3,747,371,328 (8,5)-functions), **Step 2** (2,403,534), **Section 4.2**
    (866,470 (6,8)-functions; 92,955 (8,8)-APNs) — transcribed in prose only, with no code and
@@ -208,10 +208,37 @@ All of the following have data available in-repository:
 
 ## Test Results
 
-| Command | Result |
-|---------|--------|
-| `make -C papers/2025/Beierle_202508 test` | **Not run** — Julia unavailable |
-| Independent re-derivation (Python 3.13 + gcc) of all seven reproduced items, plus `P₆` profiles, the bent-space search over 7 corpora, and the coupon-collector MLE in 60-digit decimal | **All results as reported above** |
+Re-reviewed **2026-08-15** on **Julia 1.12.6** (repo commit `bf15e59`), project instantiated.
+
+| | |
+|---|---|
+| Command | `make -C papers/2025/Beierle_202508 test` |
+| Exit code | **0** |
+| Wall time | **6 s** (Julia-reported testset time 2.8 s; the rest is `Pkg.instantiate()`) |
+| Result | **35 / 35 pass, 0 fail, 0 broken, 0 errored** |
+
+The `make` log prints only the collapsed total. The per-testset breakdown below comes from
+re-running the identical `test/*.jl` files under `@testset verbose=true`:
+
+| Testset | Pass | Broken | Fail | Total | Time |
+|---|---|---|---|---|---|
+| `paper count arithmetic` | 4 | 0 | 0 | 4 | 0.4 s |
+| `component profile moments` | 6 | 0 | 0 | 6 | 0.3 s |
+| `extension criteria` | 13 | 0 | 0 | 13 | 0.4 s |
+| `section 5 estimators` | 4 | 0 | 0 | 4 | 0.0 s |
+| `dataset parser and bounded sample` | 5 | 0 | 0 | 5 | 0.5 s |
+| `catalog diagnostics` | 3 | 0 | 0 | 3 | 0.8 s |
+| **Beierle et al. 2025 reproduction** | **35** | **0** | **0** | **35** | **2.5 s** |
+
+A green suite here certifies only what the suite asserts: table-sum arithmetic, a Gold n=4
+component-moment identity, Lemma 4.7 / Theorem 4.9 at n=4 / (n,m)=(2,3), the two Section 5
+estimator formulas, a LUT-parser round-trip, and three corpus-count assertions. It does not
+exercise any dimension-8 search claim of the paper.
+
+Every load-bearing number previously derived in Python/C was additionally recomputed with the
+repository's own Julia API and **reproduced exactly — zero disagreements**. The one apparent
+divergence (extended Walsh spectrum `0:15600` vs `0:15855`) is a `b=0`-column convention and
+resolves exactly: 15855 − 255 = 15600.
 
 ## Catalog Status
 
@@ -220,10 +247,18 @@ Per-function `[[apn_functions]]` entries are inapplicable at that scale.
 
 - **Status: unverifiable** — the 3.4 GB Zenodo artifact is not in the repository, so nothing
   can be verified or ingested.
-- **Bulk-corpus gap (conditional)**: the natural home is a new `bulk_corpora` row
-  `beierle2025_n8` alongside the seven existing pre-2025 corpora. This is **blocked on
-  obtaining the Zenodo file** and on a decision about storing roughly 3.7M × 37-byte
-  encodings (about 140 MB packed). Flagged only; **no gap record emitted**.
+- **Bulk-corpus gap (conditional)**: the intended home is a `bulk_corpora` row
+  `beierle2025_n8`, and an importer for it **already exists** at
+  `packages/VBFCatalog/data-build/import_beierle2025.jl` (bib key `Beierle_202500` is present
+  at `packages/VBFCatalog/data-raw/bibliography.bib:1417`; `packages/VBFCatalog/.gitignore:7`
+  already ignores `corpora/beierle2025_n8.sqlite`). That importer is currently **unrunnable
+  for two independent reasons**, both established by execution on 2026-08-15: (1) its `KUZDIR`
+  at line 13 resolves to `papers/Kuznetsov_202606`, which does not exist — the paper lives at
+  `papers/2026/Kuznetsov_202606`; (2) its input side-file `catalogs/apn8_blp2025.anf` is not
+  present anywhere in the repository. So the gap is blocked on obtaining the source data *and*
+  on repairing the importer path — not merely on the Zenodo download. There is also a decision
+  pending about storing roughly 3.7M × 37-byte encodings (about 140 MB packed). Flagged only;
+  **no gap record emitted**.
 
 Note for `papers/2026/Kuznetsov_202606`: that reproduction's `theorem6.jl` looks up a bulk
 corpus named `beierle2025_n8` which does not exist, and treats its absence as a *passing*
