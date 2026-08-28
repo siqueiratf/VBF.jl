@@ -49,6 +49,39 @@ end
     end
 end
 
+@testset "the Beierle et al. 2025 bulk corpus" begin
+    db = load_catalog()
+    # The DESCRIPTOR is committed, so it must be present unconditionally: a
+    # rebuild run without BFA_BEIERLE2025_PATH drops the row, and this is what
+    # catches that. The 175 MiB side store is over GitHub's per-file limit and
+    # is NOT committed, so every store-dependent check is conditional on it.
+    @test "beierle2025_n8" in list_corpora(db)
+    info = corpus_info(db, "beierle2025_n8")
+    @test info !== nothing
+    @test info.n == 8
+    @test info.m == 8
+    @test info.degree == 2
+    @test info.member_count == 3775599
+    @test info.encoding == "quadratic-coeffs-v1"
+    @test info.bytes_per_member == 37
+    @test info.modulus == conway_polynomial(8)
+    @test info.bib_key == "Beierle_202500"
+    @test occursin("16752428", info.source_repo)
+
+    if isfile(corpus_store_path("beierle2025_n8"))
+        @test corpus_length(db, "beierle2025_n8") == 3775599
+        for i in (1, 1_000_000, 3_775_599)
+            s = corpus_function(db, "beierle2025_n8", i)
+            @test inputbits(s) == 8
+            @test differential_uniformity(s) == 2
+            @test algebraic_degree(s) == 2
+        end
+    else
+        @test_skip "beierle2025_n8 side store absent; rebuild it with " *
+                   "`make -C packages/VBFCatalog/data-build beierle2025`"
+    end
+end
+
 @testset "the seven 8-bit quadratic-APN literature corpora" begin
     db = load_catalog()
     # bib_key => member_count, the quadratic-APN families forming the pre-3.4 GB landscape (firstQAM stores 8179: its single non-quadratic member is excluded)

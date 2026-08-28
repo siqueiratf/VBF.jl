@@ -48,6 +48,21 @@ importer   = "import_quadratic_apn_8bit.jl"
 no_autorun = "BFA_QAPN8_NO_AUTORUN"
 
 [[source]]
+name       = "beierle2025"
+label      = "Beierle et al. 2025 (Zenodo 16752428, 3.4 GB)"
+env_var    = "BFA_BEIERLE2025_PATH"
+check_path = "new_apns.txt"
+check_kind = "file"
+importer   = "import_beierle2025.jl"
+no_autorun = "BFA_BEIERLE2025_NO_AUTORUN"
+# NOT `required`, and no `upstream`: the source is a single 3.4 GB text file
+# that no rebuild may download on its own. Its side store is regenerable and is
+# NOT committed (see .gitignore), so a clone without the file simply has no
+# beierle2025_n8 members. The committed catalog does hold the corpus DESCRIPTOR
+# row, and `corpus_test.jl` asserts it unconditionally, so a rebuild that drops
+# it still fails the gate.
+
+[[source]]
 name       = "sboxu_reconcile"
 label      = "sboxU reconciliation"
 env_var    = "BFA_SBOXU_PATH"

@@ -37,6 +37,35 @@ end
     @test is_novel(gold_apn(8, 1); index = idx)
 end
 
+@testset "a corpus registered since the last index build is a gap" begin
+    idx = coverage_index(corpora_indexed = true)
+    # A catalog that knows an n=8 corpus the index has never heard of. Without
+    # the cross-check this reads as full coverage, and every member of that
+    # corpus comes back `:new`.
+    cat = SQLite.DB()
+    SQLite.execute(cat, "CREATE TABLE bulk_corpora (name TEXT, n INTEGER, m INTEGER, " *
+                        "member_count INTEGER, degree INTEGER, modulus INTEGER, " *
+                        "encoding TEXT, bytes_per_member INTEGER, store_file TEXT, " *
+                        "store_sha256 TEXT, family TEXT, bib_key TEXT, source_repo TEXT, " *
+                        "contributor TEXT, added_date TEXT, notes TEXT)")
+    SQLite.execute(cat, "INSERT INTO bulk_corpora (name, n, m, member_count, modulus) " *
+                        "VALUES ('a_later_corpus_n8', 8, 8, 10, 285)")
+    @test_throws ErrorException classify_ccz(gold_apn(8, 1); index = idx, catalog = cat)
+    @test_throws ErrorException is_novel(gold_apn(8, 1); index = idx, catalog = cat)
+    # an n=8 corpus says nothing about n=7
+    @test classify_ccz(gold_apn(7, 1); index = idx, catalog = cat)[1] === :new
+    # once the index records it, the dimension answers again
+    SQLite.execute(idx, "INSERT INTO sigma_coverage VALUES ('a_later_corpus_n8', 8, 1)")
+    @test classify_ccz(gold_apn(8, 1); index = idx, catalog = cat)[1] === :new
+end
+
+@testset "an explicit index with no catalog is taken as the whole world" begin
+    # `index` alone must not reach for the real catalog: that is how every other
+    # test here builds a world in memory.
+    idx = coverage_index(corpora_indexed = true)
+    @test classify_ccz(gold_apn(8, 1); index = idx)[1] === :new
+end
+
 @testset "an index predating sigma_coverage is treated as complete" begin
     idx = SQLite.DB()
     SQLite.execute(idx, "CREATE TABLE ccz_sigma_index (sigma_hash TEXT NOT NULL, " *

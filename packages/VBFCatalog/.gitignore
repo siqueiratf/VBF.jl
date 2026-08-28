@@ -2,8 +2,10 @@
 # per catalogued function — millions) and derived; never committed.
 corpora/ccz_sigma_index.sqlite
 corpora/ccz_fingerprint_index.sqlite
-# Large 2025 bulk corpus (3.78M). Regenerate: data-build/import_beierle2025.jl
-# (needs papers/Kuznetsov_202606/catalogs/apn8_blp2025.anf), or host externally.
+# Large 2025 bulk corpus (3,775,599 members, about 175 MiB — over GitHub's 100 MB
+# per-file limit). Regenerate with
+#   make -C data-build beierle2025 BFA_BEIERLE2025_PATH=<dir holding new_apns.txt>
+# after you download new_apns.txt (3.4 GB) from https://zenodo.org/records/16752428.
 corpora/beierle2025_n8.sqlite
 # scratch / lazy LUT materialisation
 *_luts.sqlite
