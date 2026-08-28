@@ -326,6 +326,11 @@ union!(named_sha, values(curated_sha))
 corpus_checks = Dict{String,CorpusCheck}()
 corpus_sha = Dict{String,Vector{String}}()
 for c in corpora
+    isfile(corpus_store_path(c.name)) || error(
+        "corpus $(c.name): side store $(corpus_store_path(c.name)) is absent. " *
+        "This table re-derives every figure from the members, so it cannot be " *
+        "generated without them. Rebuild the store: " *
+        "`make -C packages/VBFCatalog/data-build $(c.name == "beierle2025_n8" ? "beierle2025" : c.name)`.")
     store = SQLite.DB(corpus_store_path(c.name))
     coeffs = Vector{UInt8}[]
     for r in DBInterface.execute(store, "SELECT coeffs FROM members ORDER BY idx")
@@ -500,6 +505,7 @@ const FAMILIES = Family[
     Family("qam22", "B1", "Yu--Perrin 2022 QAM search", ["Yu_202211"]),
     Family("bl22", "B2", "Beierle--Leander 2022 tree search", ["Beierle_202201"]),
     Family("blp22", "B2", "Beierle--Leander--Perrin 2022 trims/extensions", ["Beierle_202201"]),
+    Family("blp25", "B2", "Beierle et al.\\ 2025 large-scale search", ["Beierle_202508"]),
     Family("sb", "B3", "Simon--Berg \$\\mathrm{GF}(4)\$-coefficient sweep", String[]),
     Family("ep09list", "B4", "Edel--Pott 2009 quadratic list", ["Edel_200900"]),
     Family("wtg13", "B4", "Weng--Tan--Gong 2013 list", ["WengTanGong_201300"]),
@@ -527,6 +533,7 @@ const FAMSHORT = Dict(
     "qam22" => "Yu--Perrin 2022 QAM search",
     "bl22" => "Beierle--Leander 2022 tree search",
     "blp22" => "Beierle--Leander--Perrin 2022 trims/extensions",
+    "blp25" => "Beierle et al.\\ 2025 large-scale search",
     "sb" => "Simon--Berg GF(4) sweep",
     "ep09list" => "Edel--Pott 2009 quadratic list",
     "wtg13" => "Weng--Tan--Gong 2013 list",
@@ -587,6 +594,7 @@ const CORPUS_RULES = Dict(
     "yuperrin2022_qam_n8"         => "qam22",
     "beierleleander2022_n8"       => "bl22",
     "beierleleanderperrin2022_n8" => "blp22",
+    "beierle2025_n8"              => "blp25",
     "simonberg_gf4_n8"            => "sb",
     "edelpott2009_n8"             => "ep09list",
     "wengtangong2013_n8"          => "wtg13",

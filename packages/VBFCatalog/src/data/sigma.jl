@@ -107,8 +107,36 @@ function _sigma_gaps(idx::SQLite.DB, n::Integer)
     gaps
 end
 
-function _assert_sigma_coverage(idx::SQLite.DB, n::Integer)
+# A corpus registered in the catalog AFTER the index was built has no
+# sigma_coverage row at all, so it reads as neither indexed nor skipped and the
+# oracle would answer `:new` without ever having seen its members. Pass the
+# catalog to close that hole: a corpus the catalog knows and the coverage table
+# does not is a gap, exactly like an explicitly skipped one.
+function _sigma_unknown_corpora(idx::SQLite.DB, db::SQLite.DB, n::Integer)
+    recorded = Set{String}()
+    has_table = false
+    for _ in DBInterface.execute(idx,
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='sigma_coverage'")
+        has_table = true
+    end
+    has_table || return String[]
+    for r in DBInterface.execute(idx, "SELECT source FROM sigma_coverage")
+        push!(recorded, String(r.source))
+    end
+    out = String[]
+    for name in list_corpora(db)
+        name in recorded && continue
+        info = corpus_info(db, name)
+        info === nothing && continue
+        Int(info.n) == Int(n) && push!(out, name)
+    end
+    out
+end
+
+function _assert_sigma_coverage(idx::SQLite.DB, n::Integer;
+                                db::Union{Nothing,SQLite.DB} = nothing)
     gaps = _sigma_gaps(idx, n)
+    db === nothing || append!(gaps, _sigma_unknown_corpora(idx, db, n))
     isempty(gaps) && return
     error("σ-index does not cover n=$n: the source(s) $(join(gaps, ", ")) were not " *
           "indexed, so a σ-absence at this dimension is NOT a novelty certificate. " *
@@ -187,6 +215,19 @@ function build_sigma_index!(
     # 2) bulk corpora (decode member -> σ), in batches to bound memory + GC churn.
     #    σ over millions allocates heavily; GC.gc() per batch avoids a GC death-spiral.
     names = corpora === nothing ? list_corpora(db) : collect(corpora)
+    # A descriptor may name a side store this clone does not hold: the largest
+    # corpora exceed GitHub's per-file limit and are regenerable, so they are
+    # not committed. Drop such a corpus from `names` HERE, so it is recorded as
+    # NOT indexed and the oracle refuses its dimension — the honest answer.
+    # Opening a missing store would instead create an empty file and then throw
+    # on `SELECT … FROM members`.
+    let absent = filter(nm -> !isfile(corpus_store_path(nm)), names)
+        if !isempty(absent)
+            @warn "σ-index: side store absent; corpus NOT indexed (its dimension " *
+                  "will refuse a novelty lookup)" corpora = absent
+            names = filter(nm -> isfile(corpus_store_path(nm)), names)
+        end
+    end
     for name in names
         info = corpus_info(db, name)
         info === nothing && continue
@@ -293,10 +334,33 @@ The status was formerly `:known`, which invited callers to read a σ collision a
 
 Throws if the index does not cover `F`'s dimension (see `sigma_coverage`): an
 absence proves nothing against sources that were never indexed, so a partial
-index must refuse rather than answer `:new`.
+index must refuse rather than answer `:new`. By default the check also reads the
+catalog, so a bulk corpus registered since the last index build counts as a gap
+too — otherwise its members would read as `:new`. Pass `index` to supply your
+own index (then no catalog is read unless you also pass `catalog`).
 """
-function classify_ccz(F::SBox{N}; index::SQLite.DB = _open_sigma_index()) where {N}
-    _assert_sigma_coverage(index, N)
+function classify_ccz(F::SBox{N};
+                      index::Union{Nothing,SQLite.DB} = nothing,
+                      catalog::Union{Nothing,SQLite.DB} = nothing) where {N}
+    # The default path opens BOTH side stores and cross-checks them, so a corpus
+    # registered after the last index build is caught. An explicit `index`
+    # (the tests build one in memory) is taken as the whole world unless the
+    # caller also passes `catalog`.
+    own_index = index === nothing
+    idx = own_index ? _open_sigma_index() : index
+    own_cat = own_index && catalog === nothing
+    cat = own_cat ? load_catalog() : catalog
+    try
+        return _classify_ccz(F, idx, cat)
+    finally
+        own_index && close(idx)
+        own_cat && cat !== nothing && close(cat)
+    end
+end
+
+function _classify_ccz(F::SBox{N}, index::SQLite.DB,
+                       catalog::Union{Nothing,SQLite.DB}) where {N}
+    _assert_sigma_coverage(index, N; db = catalog)
     h = sigma_hash(F)
     for r in DBInterface.execute(
         index,
@@ -319,7 +383,9 @@ direction is rigorous.
 known. Confirm a collision before treating it as a duplicate; see
 [`classify_ccz`](@ref).
 """
-is_novel(F::SBox; index::SQLite.DB = _open_sigma_index()) = classify_ccz(F; index = index)[1] === :new
+is_novel(F::SBox; index::Union{Nothing,SQLite.DB} = nothing,
+         catalog::Union{Nothing,SQLite.DB} = nothing) =
+    classify_ccz(F; index = index, catalog = catalog)[1] === :new
 
 # --- equivalence_classes population (functions-table reps) ------------------
 

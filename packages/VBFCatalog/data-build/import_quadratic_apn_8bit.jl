@@ -57,10 +57,6 @@ function _yu_202211(apndb::AbstractString, file::String)
     parse_apn_lut_file(joinpath(apndb, file))
 end
 
-function _beierle_202508(apndb::AbstractString, file::String, zenodo_record::String)
-    parse_apn_lut_file(joinpath(apndb, file); zenodo_record = zenodo_record)
-end
-
 # --- WTG13: raw LUTs in eightBitAPN.all_WenTanGon() (the only raw lists there) -
 _wengtangong_luts(apndb::AbstractString, file::String ) =
     [l for l in parse_apn_lut_file(joinpath(apndb, file)) if length(l) == 256]
@@ -137,15 +133,10 @@ const FAMILIES = Family[
         "https://github.com/lpp-crypto/sboxU/blob/main/sboxU/scripts/apnDB/apn_8bit_BLP22.py",
         "https://zenodo.org/records/16752428",
     ),
-#    Family(
-#        "Millions of inequivalent quadratic APN functions in eight variables",
-#        "Beierle_202508",
-#        "beierlelangevinleander2025_n8",
-#        apndb -> _beierle_202508(apndb, "new_apns.txt", "https://zenodo.org/records/16752428"),
-#        "Beierle-Langevin-Leander 2025: Millions of inequivalent quadratic APN functions in eight variables",
-#        "null",
-#        "https://zenodo.org/records/16752428",
-#    ),
+    # The 2025 Beierle-Langevin-Leander-Polujan-Rasoolzadeh dataset is NOT here.
+    # Its 3,775,599 members arrive as a 3.4 GB text file that parse_apn_lut_file
+    # cannot hold in memory as one String, so it has its own streaming importer:
+    # import_beierle2025.jl, source `beierle2025` in sources.toml.
     Family(
         "Constructing more quadratic APN functions with the QAM method",
         "Yu_202211",

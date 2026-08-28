@@ -4,6 +4,7 @@
 # env var to use a local checkout (faster; no network required):
 #
 #   BFA_SBOXU_PATH   – sboxU git repo root  (apn_reps, quadratic_apn_8bit, sboxu_reconcile)
+#   BFA_BEIERLE2025_PATH – directory holding new_apns.txt (beierle2025)
 #   BFA_THESIS_PATH  – Simon-Berg@thesis root (simonberg)   ** REQUIRED **
 #   BFA_XANADU_PATH  – apn-ccz-graph-framework root (xanadu)
 #   BFA_APN_REPO_PATH – APN-Repository root (apn_repo)
@@ -31,7 +32,7 @@ JFLAGS  ?= --startup-file=no --project=$(CURDIR)
 CATALOG := $(CURDIR)/../BFA_catalog.sqlite
 
 .PHONY: all catalog check check-structure sync-apn \
-        apn_reps quadratic_apn_8bit sboxu_reconcile \
+        apn_reps quadratic_apn_8bit beierle2025 sboxu_reconcile \
         simonberg xanadu apn_repo \
         known_families known_sporadic \
         clean reset
@@ -72,6 +73,15 @@ apn_reps:
 
 quadratic_apn_8bit:
 	$(JULIA) $(JFLAGS) $(CURDIR)/import_quadratic_apn_8bit.jl
+
+# The Beierle et al. 2025 dataset: 3,775,599 quadratic APN over GF(2^8) from
+# Zenodo 16752428 (new_apns.txt, 3.4 GB). Point BFA_BEIERLE2025_PATH at the
+# directory that holds the file; the rebuild never downloads it. The 175 MiB
+# side store this writes is regenerable and is NOT committed, so run this target
+# on a fresh clone to make the corpus usable. Give Julia every thread you have:
+# the run re-encodes and σ-signs 3.8 million functions.
+beierle2025:
+	$(JULIA) $(JFLAGS) -t auto $(CURDIR)/import_beierle2025.jl
 
 sboxu_reconcile:
 	$(JULIA) $(JFLAGS) $(CURDIR)/import_sboxu_apn.jl
