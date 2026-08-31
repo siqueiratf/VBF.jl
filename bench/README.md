@@ -11,8 +11,8 @@ Run one of these from the repository root.
 
 ```bash
 make -C bench quick     # level 1, the fast cases only   about 1 minute
-make -C bench bench     # level 2, the default set       about 15 minutes
-make -C bench full      # level 3, every case            an hour or more
+make -C bench bench     # level 2, the default set       about 4 minutes
+make -C bench full      # level 3, every case            about 30 minutes
 make -C bench list      # print the registered cases, measure none
 ```
 
@@ -28,6 +28,10 @@ julia --project=. bench/run.jl --level=1 --target-seconds=0.25
 CAUTION: do not start `make -C bench full` on a machine that you need for other
 work. Level 3 runs the exhaustive equivalence searches. A loaded machine moves
 every figure by up to a factor of two, as `bench/calibration.toml` records.
+
+CAUTION: give level 3 at least 4 GB of free memory. The case
+`equivalence/partition_automorphisms` at `n = 6` returns 14.4 million maps and
+holds about 1.7 GB for each call.
 
 ## The levels
 

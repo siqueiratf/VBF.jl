@@ -6,13 +6,16 @@
 # command.
 #
 #   make -C bench quick     level 1, the fast cases     about 1 minute
-#   make -C bench bench     level 2, the default        about 15 minutes
-#   make -C bench full      level 3, every case         an hour or more
+#   make -C bench bench     level 2, the default        about 4 minutes
+#   make -C bench full      level 3, every case         about 30 minutes
 #   make -C bench list      print the cases, measure none
 #
 # CAUTION: `make full` runs the exhaustive equivalence searches. Do not start it
 # on a machine that you need for other work, and do not start it while another
 # job runs. A loaded machine moves every figure by up to a factor of two.
+#
+# CAUTION: give `make full` at least 4 GB of free memory. The case
+# equivalence/partition_automorphisms at n = 6 holds about 1.7 GB for each call.
 
 JULIA  ?= julia
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
