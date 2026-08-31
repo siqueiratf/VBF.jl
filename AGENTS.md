@@ -23,6 +23,10 @@ Primary sources:
 - `papers/`: standalone paper-reproduction scripts. Keep one paper claim,
   theorem, lemma, algorithm, table, or experiment per file, and make each file
   runnable on its own.
+- `bench/`: the benchmark suite. `bench/run.jl` measures the public API and
+  writes `bench/generated/` for the manuscript. Read-only against `packages/`.
+  See `bench/README.md`. `bench/calibrate.jl` is the older probe that
+  `report.md` cites; keep both.
 - `docs/`: Documenter.jl API-reference site generated from source docstrings.
 - `.claude/`: Claude source material: project context, original skills, and
   original agent markdown.
