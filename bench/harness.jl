@@ -27,6 +27,8 @@ Fields:
   The runner skips a case when its cost is above the requested level.
 - `reps`: 0 asks the harness to choose the count. A positive value fixes it.
 - `note`: one short line for the reader of the table.
+- `approach`, `parameters`: grouping and reproducible case parameters.
+- `metrics`: optional `(payload, value, seconds)` callback, outside timing.
 """
 struct BenchCase
     group::String
@@ -37,6 +39,9 @@ struct BenchCase
     call::Function
     reps::Int
     note::String
+    approach::String
+    parameters::NamedTuple
+    metrics::Function
 end
 
 """
@@ -72,10 +77,13 @@ case does not measure inside `setup`.
 function bench!(reg::Registry; group::AbstractString, name::AbstractString,
                 n::Integer = 0, cost::Integer = 1,
                 setup::Function = () -> nothing, call::Function,
-                reps::Integer = 0, note::AbstractString = "")
+                reps::Integer = 0, note::AbstractString = "",
+                approach::AbstractString = group, parameters::NamedTuple = (;),
+                metrics::Function = (payload, value, seconds) -> (;))
     1 <= cost <= 3 || throw(ArgumentError("cost must be 1, 2 or 3; got $cost"))
     push!(reg, BenchCase(String(group), String(name), Int(n), Int(cost),
-                         setup, call, Int(reps), String(note)))
+                         setup, call, Int(reps), String(note), String(approach),
+                         parameters, metrics))
     return reg
 end
 
@@ -97,14 +105,17 @@ function choose_reps(t::Float64)
 end
 
 """
-    run_case(c::BenchCase) -> BenchResult
+    run_case(c::BenchCase; on_execution=nothing) -> BenchResult
 
 Measure one case. The function seeds the global random number generator before
 `setup`, so a case that draws random objects gives the same payload on every
 run of the suite.
+`on_execution(case, payload, value, seconds, repetition, reps, seed)` runs after
+each timed call, before the next repetition. It does not observe warm-up/probes.
 """
-function run_case(c::BenchCase)
-    Random.seed!(0x5EED0000 + hash((c.group, c.name, c.n)) % 0xFFFF)
+function run_case(c::BenchCase; on_execution = nothing)
+    seed = 0x5EED0000 + hash((c.group, c.name, c.n)) % 0xFFFF
+    Random.seed!(seed)
     payload = c.setup()
 
     GC.gc()
@@ -115,7 +126,11 @@ function run_case(c::BenchCase)
 
     times = Vector{Float64}(undef, reps)
     for i in 1:reps
-        times[i] = @elapsed c.call(payload)
+        start = time_ns()
+        value = c.call(payload)
+        times[i] = (time_ns() - start) / 1e9
+        on_execution === nothing || on_execution(c, payload, value, times[i],
+                                                 i, reps, seed)
     end
     sort!(times)
 
@@ -137,7 +152,8 @@ Measure every case that passes the filters and return the results.
 - `dims`: a collection of `n` values, or `nothing` for every value.
 """
 function run_registry(reg::Registry; level::Integer = 2,
-                      groups = nothing, dims = nothing, io::IO = stdout)
+                      groups = nothing, dims = nothing, io::IO = stdout,
+                      on_execution = nothing)
     selected = filter(reg) do c
         c.cost <= level &&
             (groups === nothing || c.group in groups) &&
@@ -151,7 +167,7 @@ function run_registry(reg::Registry; level::Integer = 2,
         @printf(io, "[%3d/%3d] %-52s ", i, total, label)
         flush(io)
         try
-            r = run_case(c)
+            r = run_case(c; on_execution)
             push!(results, r)
             @printf(io, "min=%.3e s  median=%.3e s  reps=%d\n",
                     r.min_seconds, r.median_seconds, r.reps)

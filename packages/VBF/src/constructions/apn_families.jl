@@ -131,25 +131,36 @@ end
 The APN power functions on `GF(2ⁿ)` from the classical families that apply at
 dimension `n` (Gold `x³`, Kasami at the smallest valid `k`, and — for odd `n` —
 Welch / Niho / inverse, plus Dobbertin when `5 ∣ n`), tagged by family name.
+Optional `observer(:apn, F)` receives each constructed SBox; do not mutate it.
 """
 function known_apn_monomials(
     n::Integer;
     modulus::Integer = primitive_polynomial(n),
+    observer = nothing,
 )
     nn = Int(n)
     out = Tuple{Symbol,SBox{nn}}[]
     push!(out, (:gold, gold_apn(nn, 1; modulus = modulus)))
+    observer === nothing || observer(:apn, out[end][2])
     k = 2
     while k < nn && gcd(k, nn) != 1
         k += 1
     end
-    k < nn && push!(out, (:kasami, kasami_apn(nn, k; modulus = modulus)))
+    if k < nn
+        push!(out, (:kasami, kasami_apn(nn, k; modulus = modulus)))
+        observer === nothing || observer(:apn, out[end][2])
+    end
     if isodd(nn)
         push!(out, (:welch, welch_apn(nn; modulus = modulus)))
+        observer === nothing || observer(:apn, out[end][2])
         push!(out, (:niho, niho_apn(nn; modulus = modulus)))
+        observer === nothing || observer(:apn, out[end][2])
         push!(out, (:inverse, inverse_apn(nn; modulus = modulus)))
+        observer === nothing || observer(:apn, out[end][2])
     end
-    nn % 5 == 0 &&
+    if nn % 5 == 0
         push!(out, (:dobbertin, dobbertin_apn(nn; modulus = modulus)))
+        observer === nothing || observer(:apn, out[end][2])
+    end
     out
 end

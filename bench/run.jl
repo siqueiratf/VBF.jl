@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 #
-# bench/run.jl — start the VBF benchmark suite and export the thesis artifacts.
+# bench/run.jl — collect raw benchmark executions in the project catalog.
 #
 #   julia --project=. bench/run.jl                 # level 2, every group
 #   julia --project=. bench/run.jl --level=1       # the fast cases only
@@ -9,8 +9,7 @@
 #   julia --project=. bench/run.jl --n=8 --n=9
 #   julia --project=. bench/run.jl --list          # print the cases, measure none
 #
-# The script reads only this repository and writes only into bench/generated/.
-# It rebuilds no database and it runs no git command.
+# Each timed repetition appends one database row. No presentation artifacts.
 #
 # Levels:
 #   1  fast     each case is under about 0.1 s
@@ -25,18 +24,19 @@ using Random
 using Printf, Dates
 
 const BENCH_DIR = @__DIR__
-const OUT_DIR   = joinpath(BENCH_DIR, "generated")
 
 include(joinpath(BENCH_DIR, "harness.jl"))
-include(joinpath(BENCH_DIR, "export.jl"))
+include(joinpath(BENCH_DIR, "persistence.jl"))
+include(joinpath(BENCH_DIR, "observation.jl"))
 
 using .BenchHarness
-using .BenchExport
+using .BenchPersistence
+using .BenchObservation
 
 # ── command line ────────────────────────────────────────────────────────────
 
 const HELP = """
-bench/run.jl — start the VBF benchmark suite and export the thesis artifacts.
+bench/run.jl — persist raw benchmark executions in the project database.
 
 usage: julia --project=. bench/run.jl [options]
 
@@ -44,10 +44,12 @@ usage: julia --project=. bench/run.jl [options]
   --group=NAME         restrict to one group; repeat the flag for more
   --n=N                restrict to one bit-width; repeat the flag for more
   --target-seconds=X   wall time to aim for per case (default 1.0)
+  --database=PATH      existing project catalog (default BFA_catalog.sqlite)
+  --reference-family=NAME  restrict known-APN reference rows to this family
   --list               print the registered cases and measure none
   -h, --help           print this text
 
-Output goes to bench/generated/. See bench/README.md.
+Output appends to the benchmark table. See bench/README.md.
 """
 
 function parse_args(argv)
@@ -56,6 +58,8 @@ function parse_args(argv)
     dims   = Int[]
     listonly = false
     target = 1.0
+    database = VBFCatalog.catalog_path()
+    reference_family = nothing
     for a in argv
         if (m = match(r"^--level=(\d+)$", a)) !== nothing
             level = parse(Int, m.captures[1])
@@ -65,6 +69,10 @@ function parse_args(argv)
             push!(dims, parse(Int, m.captures[1]))
         elseif (m = match(r"^--target-seconds=([0-9.]+)$", a)) !== nothing
             target = parse(Float64, m.captures[1])
+        elseif startswith(a, "--database=")
+            database = split(a, '='; limit = 2)[2]
+        elseif startswith(a, "--reference-family=")
+            reference_family = split(a, '='; limit = 2)[2]
         elseif a == "--list"
             listonly = true
         elseif a in ("-h", "--help")
@@ -79,7 +87,7 @@ function parse_args(argv)
             groups = isempty(groups) ? nothing : groups,
             dims   = isempty(dims) ? nothing : dims,
             listonly = listonly,
-            target = target)
+            target = target, database = database, reference_family = reference_family)
 end
 
 const OPTS = parse_args(ARGS)
@@ -120,15 +128,18 @@ println("  cases    ", length(REG), " registered")
 println()
 
 const T0 = time()
-const RESULTS = run_registry(REG; level = OPTS.level,
-                             groups = OPTS.groups, dims = OPTS.dims)
+const RESULTS = let db = load_catalog(OPTS.database)
+    try
+        writer = execution_writer(db; options = OPTS, reference_family = OPTS.reference_family)
+        run_registry(REG; level = OPTS.level, groups = OPTS.groups, dims = OPTS.dims,
+                     on_execution = writer)
+    finally
+        close(db)
+    end
+end
 const WALL = time() - T0
 
 println()
 @printf("measured %d cases in %.1f s\n", length(RESULTS), WALL)
 
-paths = export_all(OUT_DIR, RESULTS; level = OPTS.level, wall_seconds = WALL)
-println("wrote:")
-for p in paths
-    println("  ", relpath(p, dirname(BENCH_DIR)))
-end
+println("appended timed executions to ", OPTS.database, " (benchmark table)")

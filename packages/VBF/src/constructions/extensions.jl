@@ -138,11 +138,14 @@ pass an `AbstractRNG` for a reproducible randomised top coordinate and `L` order
 
 Each returned function is independently re-verified to be APN
 (`differential_uniformity == 2`) and of algebraic degree `2`.
+Optional `observer(event, value)` reports completed candidates, final tests,
+and verified APNs as `:candidate`, `:final_test`, and `:apn`. Do not mutate values.
 """
 function extend_quadratic_apn(
     G::SBox{M};
     limit::Integer = 1,
     rng::Union{Nothing,AbstractRNG} = nothing,
+    observer = nothing,
 ) where {M}
     n = M + 1
     T = _storage_for(n)
@@ -204,7 +207,13 @@ function extend_quadratic_apn(
 
     # independent confirmation: keep only genuine quadratic APN extensions
     filter!(
-        F -> differential_uniformity(F) == 2 && algebraic_degree(F) == 2,
+        F -> begin
+            observer === nothing || observer(:candidate, nothing)
+            observer === nothing || observer(:final_test, nothing)
+            ok = differential_uniformity(F) == 2 && algebraic_degree(F) == 2
+            ok && observer !== nothing && observer(:apn, F)
+            ok
+        end,
         s.cands,
     )
     s.cands

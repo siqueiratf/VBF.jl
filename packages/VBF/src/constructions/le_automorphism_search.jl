@@ -18,6 +18,8 @@ Each completed candidate is independently re-verified (`du == 2 && deg == 2`).
 `A`, `B` are the length-`2ⁿ` lookup tables of the linear maps (the canonical-class
 tuples of BL22). The n=7 canonical classes 1, 7, 16, 19 each yield quadratic APN,
 reproducing the paper.
+Optional `observer(event, value)` reports completed candidates, final tests,
+and verified APNs as `:candidate`, `:final_test`, and `:apn`. Do not mutate values.
 
 This is the per-class driver; it does not yet include the `is_smallest_in_class`
 canonical-minimum filter (used to count *distinct* classes) — it certifies that a
@@ -29,6 +31,7 @@ function search_quadratic_apn_le(
     pos::AbstractVector{<:Integer},
     fix::AbstractVector{<:Integer} = Int[],
     limit::Integer = 1,
+    observer = nothing,
 )
     length(A) == length(B) || throw(
         ArgumentError(
@@ -51,6 +54,7 @@ function search_quadratic_apn_le(
         Vector{Int}(pos),
         Vector{Int}(fix),
         Int(limit),
+        observer,
     )
 end
 
@@ -61,6 +65,7 @@ function _search_le(
     pos::Vector{Int},
     fix::Vector{Int},
     limit::Int,
+    observer = nothing,
 ) where {N}
     N2 = 1 << N
     evens = [a for a = 1:(N2-1) if iseven(count_ones(a))]
@@ -144,7 +149,13 @@ function _search_le(
 
     recurse!(1)
     filter!(
-        F -> differential_uniformity(F) == 2 && algebraic_degree(F) == 2,
+        F -> begin
+            observer === nothing || observer(:candidate, nothing)
+            observer === nothing || observer(:final_test, nothing)
+            ok = differential_uniformity(F) == 2 && algebraic_degree(F) == 2
+            ok && observer !== nothing && observer(:apn, F)
+            ok
+        end,
         s.sols,
     )
 end

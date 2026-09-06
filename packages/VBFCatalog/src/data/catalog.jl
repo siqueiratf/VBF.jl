@@ -35,15 +35,31 @@ import Dates
 The schema version this code understands. `load_catalog` refuses
 catalogs whose `schema_meta.schema_version` differs.
 """
-const SCHEMA_VERSION = 3
+const SCHEMA_VERSION = 4
 
 """
     SCHEMA_DDL :: String
 
-Authoritative DDL embedded at package-build time. Identical content to
-`src/data/schema.sql`.
+Authoritative DDL embedded at package-build time: `src/data/schema.sql` plus
+`src/data/benchmark.sql`.
 """
-const SCHEMA_DDL = read(joinpath(@__DIR__, "schema.sql"), String)
+const SCHEMA_DDL = read(joinpath(@__DIR__, "schema.sql"), String) * "\n" *
+                   read(joinpath(@__DIR__, "benchmark.sql"), String)
+
+"""Preserve non-regenerable observations when installing a rebuilt catalog."""
+function _copy_benchmark_history!(db::SQLite.DB, source::AbstractString)
+    isfile(source) || return
+    SQLite.execute(db, "ATTACH DATABASE " * _sql_quote(source) * " AS previous_benchmarks")
+    try
+        present = [String(r.name) for r in DBInterface.execute(db,
+            "SELECT name FROM previous_benchmarks.sqlite_master WHERE type='table' AND name='benchmark'")]
+        isempty(present) || SQLite.execute(db,
+            "INSERT INTO benchmark SELECT * FROM previous_benchmarks.benchmark")
+    finally
+        SQLite.execute(db, "DETACH DATABASE previous_benchmarks")
+    end
+    nothing
+end
 
 """
     catalog_path() -> String

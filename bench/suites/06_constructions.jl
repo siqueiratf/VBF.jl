@@ -229,5 +229,71 @@ function register!(reg)
            call  = F -> extend_quadratic_apn(F; limit = 1),
            note  = "limit 1 extension")
 
+    for (i, c) in pairs(reg)
+        c.group == G || continue
+        approach = if c.name in ("search_qam", "search_qam_full")
+            "quadratic APN matrices"
+        elseif c.name in ("search_quadratic_apn", "search_quadratic_apn_le")
+            "DDT and degree backtracking"
+        elseif c.name == "extend_quadratic_apn"
+            "dimension extension"
+        elseif c.name == "switching_neighbors"
+            "switching"
+        elseif c.name in ("apn_trims", "trims", "trim_spectrum")
+            "trimming"
+        elseif c.name in BenchPersistence.PRODUCERS
+            "algebraic construction"
+        else
+            "construction primitives"
+        end
+        parameters = if c.name == "search_qam"
+            (; limit = 8, max_evaluations = 1 << 12, confirm = false)
+        elseif c.name == "search_qam_full"
+            (; limit = 1, max_evaluations = 1 << 10)
+        elseif c.name == "search_quadratic_apn"
+            (; limit = 256)
+        elseif c.name in ("search_quadratic_apn_le", "extend_quadratic_apn")
+            (; limit = 1)
+        else
+            (;)
+        end
+        observed = if c.name == "search_qam"
+            (p, o) -> search_qam(p[1], p[2]; limit = 8, max_evaluations = 1 << 12, observer = o)
+        elseif c.name == "search_qam_full"
+            (p, o) -> search_qam_full(p; limit = 1, max_evaluations = 1 << 10, observer = o)
+        elseif c.name == "search_quadratic_apn"
+            (p, o) -> search_quadratic_apn(Val(6); limit = p, observer = o)
+        elseif c.name == "search_quadratic_apn_le"
+            (p, o) -> search_quadratic_apn_le(p[1], p[2]; pos = p[3], fix = p[4], limit = 1, observer = o)
+        elseif c.name == "extend_quadratic_apn"
+            (p, o) -> extend_quadratic_apn(p; limit = 1, observer = o)
+        elseif c.name == "switching_neighbors"
+            (p, o) -> switching_neighbors(p; observer = o)
+        elseif c.name == "apn_trims"
+            (p, o) -> apn_trims(p; observer = o)
+        elseif c.name == "taniguchi_apn_representatives"
+            (p, o) -> taniguchi_apn_representatives(p[1]; modulus = p[2], observer = o)
+        elseif c.name == "known_apn_monomials"
+            (p, o) -> known_apn_monomials(p[1]; modulus = p[2], observer = o)
+        else
+            nothing
+        end
+        setup = observed === nothing ? c.setup : () -> (input = c.setup(), observation = Observation())
+        call = observed === nothing ? c.call : p -> observed_call(observed, p)
+        metrics = observed === nothing ? c.metrics : observation_metrics
+        if c.name == "known_apn_monomials"
+            metrics = (p, v, s) -> merge(observation_metrics(p, v, s),
+                (; candidates_processed = nothing, candidates_final_apn_test = nothing))
+        elseif c.name == "apn_trims"
+            metrics = (p, v, s) -> merge(observation_metrics(p, v, s),
+                (; search_space_size = 2 * (big(2)^c.n - 1)^2))
+        elseif c.name == "taniguchi_apn_representatives"
+            metrics = (p, v, s) -> merge(observation_metrics(p, v, s),
+                (; search_space_size = count(m -> gcd(m, p.input[1]) == 1, 1:p.input[1]-1) *
+                    big(2)^p.input[1] * (big(2)^p.input[1] - 1)))
+        end
+        reg[i] = BenchCase(c.group, c.name, c.n, c.cost, setup, call,
+                          c.reps, c.note, approach, parameters, metrics)
+    end
     return reg
 end
