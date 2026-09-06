@@ -5,246 +5,246 @@
 Operation & Note & $n$ & min (s) & median (s) & reps \\
 \midrule
 \multicolumn{6}{l}{\emph{Representations and finite fields}} \\
-\texttt{anf} & Mobius transform & 8 & $5.01\times10^{-7}$ & $5.11\times10^{-7}$ & 31 \\
-\texttt{anf} & Mobius transform & 10 & $1.65\times10^{-6}$ & $1.90\times10^{-6}$ & 20 \\
-\texttt{anf} & Mobius transform & 12 & $6.33\times10^{-6}$ & $6.80\times10^{-6}$ & 121 \\
-\texttt{compositional\_inverse} & invert a permutation & 8 & $3.21\times10^{-7}$ & $3.41\times10^{-7}$ & 37 \\
-\texttt{compositional\_inverse} & invert a permutation & 10 & $1.47\times10^{-6}$ & $1.59\times10^{-6}$ & 20 \\
-\texttt{compositional\_inverse} & invert a permutation & 12 & $6.10\times10^{-6}$ & $6.42\times10^{-6}$ & 20 \\
-\texttt{gf\_inv\_sweep} & 1024 inverses & 8 & $3.14\times10^{-4}$ & $3.16\times10^{-4}$ & 28 \\
-\texttt{gf\_inv\_sweep} & 1024 inverses & 12 & $1.26\times10^{-3}$ & $1.26\times10^{-3}$ & 500 \\
-\texttt{gf\_inv\_sweep} & 1024 inverses & 16 & $2.45\times10^{-3}$ & $2.45\times10^{-3}$ & 405 \\
-\texttt{gf\_monomial\_lut} & build the table of $x^{3}$ & 8 & $1.23\times10^{-5}$ & $1.24\times10^{-5}$ & 86 \\
-\texttt{gf\_monomial\_lut} & build the table of $x^{3}$ & 10 & $6.07\times10^{-5}$ & $6.09\times10^{-5}$ & 500 \\
-\texttt{gf\_monomial\_lut} & build the table of $x^{3}$ & 12 & $4.22\times10^{-4}$ & $4.25\times10^{-4}$ & 500 \\
-\texttt{gf\_mul\_sweep} & 4096 products & 8 & $1.73\times10^{-4}$ & $1.74\times10^{-4}$ & 39 \\
-\texttt{gf\_mul\_sweep} & 4096 products & 12 & $2.42\times10^{-4}$ & $2.50\times10^{-4}$ & 500 \\
-\texttt{gf\_mul\_sweep} & 4096 products & 16 & $2.52\times10^{-4}$ & $2.62\times10^{-4}$ & 500 \\
-\texttt{is\_permutation} & test the bijection & 8 & $2.00\times10^{-7}$ & $2.31\times10^{-7}$ & 76 \\
-\texttt{is\_permutation} & test the bijection & 10 & $7.91\times10^{-7}$ & $8.11\times10^{-7}$ & 77 \\
-\texttt{is\_permutation} & test the bijection & 12 & $2.94\times10^{-6}$ & $3.07\times10^{-6}$ & 77 \\
-\texttt{mobius} & Mobius transform of a raw vector & 10 & $1.61\times10^{-6}$ & $1.86\times10^{-6}$ & 127 \\
-\texttt{mobius} & Mobius transform of a raw vector & 12 & $6.56\times10^{-6}$ & $6.99\times10^{-6}$ & 500 \\
-\texttt{mobius} & Mobius transform of a raw vector & 14 & $2.63\times10^{-5}$ & $3.49\times10^{-5}$ & 500 \\
-\texttt{polynomial\_to\_lut} & evaluate x + $x^{3}$ + $x^{5}$ & 8 & $1.40\times10^{-4}$ & $1.40\times10^{-4}$ & 6 \\
-\texttt{polynomial\_to\_lut} & evaluate x + $x^{3}$ + $x^{5}$ & 10 & $6.03\times10^{-4}$ & $6.12\times10^{-4}$ & 500 \\
-\texttt{sbox\_construct} & wrap a lookup table & 8 & $5.41\times10^{-7}$ & $5.71\times10^{-7}$ & 16 \\
-\texttt{sbox\_construct} & wrap a lookup table & 10 & $9.82\times10^{-7}$ & $1.20\times10^{-6}$ & 15 \\
-\texttt{sbox\_construct} & wrap a lookup table & 12 & $2.24\times10^{-6}$ & $4.10\times10^{-6}$ & 33 \\
+\texttt{anf} & Mobius transform & 8 & $5.11\times10^{-7}$ & $5.21\times10^{-7}$ & 28 \\
+\texttt{anf} & Mobius transform & 10 & $1.69\times10^{-6}$ & $1.94\times10^{-6}$ & 19 \\
+\texttt{anf} & Mobius transform & 12 & $5.91\times10^{-6}$ & $6.90\times10^{-6}$ & 113 \\
+\texttt{compositional\_inverse} & invert a permutation & 8 & $3.21\times10^{-7}$ & $4.00\times10^{-7}$ & 35 \\
+\texttt{compositional\_inverse} & invert a permutation & 10 & $1.49\times10^{-6}$ & $1.56\times10^{-6}$ & 20 \\
+\texttt{compositional\_inverse} & invert a permutation & 12 & $5.79\times10^{-6}$ & $6.86\times10^{-6}$ & 20 \\
+\texttt{gf\_inv\_sweep} & 1024 inverses & 8 & $3.15\times10^{-4}$ & $3.18\times10^{-4}$ & 26 \\
+\texttt{gf\_inv\_sweep} & 1024 inverses & 12 & $1.26\times10^{-3}$ & $1.27\times10^{-3}$ & 500 \\
+\texttt{gf\_inv\_sweep} & 1024 inverses & 16 & $2.48\times10^{-3}$ & $2.49\times10^{-3}$ & 397 \\
+\texttt{gf\_monomial\_lut} & build the table of $x^{3}$ & 8 & $1.23\times10^{-5}$ & $1.26\times10^{-5}$ & 81 \\
+\texttt{gf\_monomial\_lut} & build the table of $x^{3}$ & 10 & $6.06\times10^{-5}$ & $6.09\times10^{-5}$ & 500 \\
+\texttt{gf\_monomial\_lut} & build the table of $x^{3}$ & 12 & $4.25\times10^{-4}$ & $4.28\times10^{-4}$ & 500 \\
+\texttt{gf\_mul\_sweep} & 4096 products & 8 & $1.77\times10^{-4}$ & $1.78\times10^{-4}$ & 36 \\
+\texttt{gf\_mul\_sweep} & 4096 products & 12 & $2.45\times10^{-4}$ & $2.54\times10^{-4}$ & 500 \\
+\texttt{gf\_mul\_sweep} & 4096 products & 16 & $2.57\times10^{-4}$ & $2.68\times10^{-4}$ & 500 \\
+\texttt{is\_permutation} & test the bijection & 8 & $2.00\times10^{-7}$ & $2.10\times10^{-7}$ & 70 \\
+\texttt{is\_permutation} & test the bijection & 10 & $8.11\times10^{-7}$ & $8.22\times10^{-7}$ & 61 \\
+\texttt{is\_permutation} & test the bijection & 12 & $3.04\times10^{-6}$ & $3.20\times10^{-6}$ & 70 \\
+\texttt{mobius} & Mobius transform of a raw vector & 10 & $1.60\times10^{-6}$ & $1.91\times10^{-6}$ & 116 \\
+\texttt{mobius} & Mobius transform of a raw vector & 12 & $6.56\times10^{-6}$ & $7.27\times10^{-6}$ & 500 \\
+\texttt{mobius} & Mobius transform of a raw vector & 14 & $2.62\times10^{-5}$ & $3.47\times10^{-5}$ & 500 \\
+\texttt{polynomial\_to\_lut} & evaluate x + $x^{3}$ + $x^{5}$ & 8 & $1.37\times10^{-4}$ & $1.37\times10^{-4}$ & 5 \\
+\texttt{polynomial\_to\_lut} & evaluate x + $x^{3}$ + $x^{5}$ & 10 & $5.77\times10^{-4}$ & $5.92\times10^{-4}$ & 500 \\
+\texttt{sbox\_construct} & wrap a lookup table & 8 & $5.11\times10^{-7}$ & $5.21\times10^{-7}$ & 14 \\
+\texttt{sbox\_construct} & wrap a lookup table & 10 & $9.22\times10^{-7}$ & $1.09\times10^{-6}$ & 14 \\
+\texttt{sbox\_construct} & wrap a lookup table & 12 & $2.33\times10^{-6}$ & $4.27\times10^{-6}$ & 31 \\
 \midrule
 \multicolumn{6}{l}{\emph{Linear algebra over GF(2)}} \\
-\texttt{affine\_map\_from\_range\_and\_image} & map fixed by 32 images & 32 & $5.12\times10^{-6}$ & $6.26\times10^{-6}$ & 3 \\
-\texttt{complete\_basis} & extend a half basis & 32 & $7.83\times10^{-6}$ & $7.90\times10^{-6}$ & 23 \\
-\texttt{complete\_basis} & extend a half basis & 64 & $3.91\times10^{-5}$ & $3.93\times10^{-5}$ & 24 \\
-\texttt{complete\_basis\_reversed} & extend a half basis, reversed & 64 & $3.80\times10^{-5}$ & $3.82\times10^{-5}$ & 23 \\
-\texttt{compose\_linear} & product of two linear maps & 16 & $1.40\times10^{-7}$ & $1.51\times10^{-7}$ & 78 \\
-\texttt{compose\_linear} & product of two linear maps & 32 & $6.71\times10^{-7}$ & $6.92\times10^{-7}$ & 78 \\
-\texttt{compose\_sbox\_linear} & S-box after a linear map & 8 & $1.02\times10^{-6}$ & $1.04\times10^{-6}$ & 56 \\
-\texttt{compose\_sbox\_linear} & S-box after a linear map & 12 & $1.20\times10^{-4}$ & $1.21\times10^{-4}$ & 30 \\
-\texttt{expand\_subspaces} & lift 2-dim spaces to 3-dim & 10 & $3.38\times10^{-3}$ & $3.44\times10^{-3}$ & 15 \\
-\texttt{expand\_subspaces} & lift 2-dim spaces to 3-dim & 12 & $3.57\times10^{-1}$ & $3.67\times10^{-1}$ & 3 \\
-\texttt{extract\_linear\_subspaces} & 2-dim subspaces in a span & 8 & $2.24\times10^{-6}$ & $2.87\times10^{-6}$ & 3 \\
-\texttt{extract\_linear\_subspaces} & 2-dim subspaces in a span & 12 & $2.74\times10^{-5}$ & $2.85\times10^{-5}$ & 500 \\
-\texttt{extract\_linear\_subspaces} & 2-dim subspaces in a span & 16 & $4.55\times10^{-4}$ & $4.64\times10^{-4}$ & 500 \\
-\texttt{f2\_dot} & 4096 inner products & 64 & $6.91\times10^{-7}$ & $6.91\times10^{-7}$ & 79 \\
-\texttt{find\_2d\_subspaces} & 2-dim subspaces in a set & 10 & $1.04\times10^{-5}$ & $1.16\times10^{-5}$ & 23 \\
-\texttt{find\_2d\_subspaces} & 2-dim subspaces in a set & 12 & $1.60\times10^{-4}$ & $1.69\times10^{-4}$ & 500 \\
-\texttt{gauss\_jordan} & reduce a square matrix & 8 & $5.00\times10^{-8}$ & $6.00\times10^{-8}$ & 42 \\
-\texttt{gauss\_jordan} & reduce a square matrix & 16 & $1.20\times10^{-7}$ & $1.30\times10^{-7}$ & 26 \\
-\texttt{gauss\_jordan} & reduce a square matrix & 32 & $7.11\times10^{-7}$ & $7.21\times10^{-7}$ & 23 \\
-\texttt{gauss\_jordan} & reduce a square matrix & 64 & $1.86\times10^{-6}$ & $1.88\times10^{-6}$ & 24 \\
-\texttt{generating\_affine\_map} & map from a partial basis & 32 & $8.17\times10^{-6}$ & $8.21\times10^{-6}$ & 44 \\
-\texttt{is\_in\_span} & 1024 span tests & 64 & $1.78\times10^{-5}$ & $1.78\times10^{-5}$ & 91 \\
-\texttt{is\_invertible} & full-rank test & 16 & $1.50\times10^{-7}$ & $1.61\times10^{-7}$ & 69 \\
-\texttt{is\_invertible} & full-rank test & 32 & $7.31\times10^{-7}$ & $7.41\times10^{-7}$ & 78 \\
-\texttt{kernel\_f2} & nullspace of a wide matrix & 32 & $5.61\times10^{-7}$ & $5.71\times10^{-7}$ & 17 \\
-\texttt{kernel\_f2} & nullspace of a wide matrix & 64 & $1.01\times10^{-6}$ & $1.04\times10^{-6}$ & 18 \\
-\texttt{linear\_basis} & echelon basis of a span & 64 & $1.90\times10^{-6}$ & $1.91\times10^{-6}$ & 62 \\
-\texttt{parity} & 4096 parity calls & 64 & $6.11\times10^{-7}$ & $6.21\times10^{-7}$ & 111 \\
-\texttt{rank\_f2} & rank without mutation & 32 & $6.91\times10^{-7}$ & $7.02\times10^{-7}$ & 112 \\
-\texttt{rank\_f2} & rank without mutation & 64 & $1.88\times10^{-6}$ & $1.90\times10^{-6}$ & 113 \\
-\texttt{smallest\_basis} & basis of a 256-element space & 12 & $4.36\times10^{-6}$ & $6.50\times10^{-6}$ & 47 \\
-\texttt{solve\_f2} & solve a consistent system & 16 & $3.90\times10^{-7}$ & $4.11\times10^{-7}$ & 13 \\
-\texttt{solve\_f2} & solve a consistent system & 32 & $5.81\times10^{-7}$ & $5.92\times10^{-7}$ & 14 \\
-\texttt{span\_from\_basis} & expand a basis to its span & 16 & $3.23\times10^{-5}$ & $1.50\times10^{-4}$ & 44 \\
-\texttt{subspace\_count\_signature} & subspace counts per dimension & 10 & $2.34\times10^{-2}$ & $2.54\times10^{-2}$ & 28 \\
+\texttt{affine\_map\_from\_range\_and\_image} & map fixed by 32 images & 32 & $5.10\times10^{-6}$ & $6.12\times10^{-6}$ & 3 \\
+\texttt{complete\_basis} & extend a half basis & 32 & $7.71\times10^{-6}$ & $7.77\times10^{-6}$ & 21 \\
+\texttt{complete\_basis} & extend a half basis & 64 & $3.91\times10^{-5}$ & $3.95\times10^{-5}$ & 22 \\
+\texttt{complete\_basis\_reversed} & extend a half basis, reversed & 64 & $3.78\times10^{-5}$ & $3.81\times10^{-5}$ & 20 \\
+\texttt{compose\_linear} & product of two linear maps & 16 & $1.40\times10^{-7}$ & $1.40\times10^{-7}$ & 62 \\
+\texttt{compose\_linear} & product of two linear maps & 32 & $6.61\times10^{-7}$ & $6.81\times10^{-7}$ & 69 \\
+\texttt{compose\_sbox\_linear} & S-box after a linear map & 8 & $1.03\times10^{-6}$ & $1.06\times10^{-6}$ & 50 \\
+\texttt{compose\_sbox\_linear} & S-box after a linear map & 12 & $1.18\times10^{-4}$ & $1.21\times10^{-4}$ & 27 \\
+\texttt{expand\_subspaces} & lift 2-dim spaces to 3-dim & 10 & $3.35\times10^{-3}$ & $3.41\times10^{-3}$ & 14 \\
+\texttt{expand\_subspaces} & lift 2-dim spaces to 3-dim & 12 & $4.23\times10^{-1}$ & $4.44\times10^{-1}$ & 3 \\
+\texttt{extract\_linear\_subspaces} & 2-dim subspaces in a span & 8 & $2.60\times10^{-6}$ & $2.81\times10^{-6}$ & 3 \\
+\texttt{extract\_linear\_subspaces} & 2-dim subspaces in a span & 12 & $2.82\times10^{-5}$ & $2.97\times10^{-5}$ & 500 \\
+\texttt{extract\_linear\_subspaces} & 2-dim subspaces in a span & 16 & $4.60\times10^{-4}$ & $4.84\times10^{-4}$ & 500 \\
+\texttt{f2\_dot} & 4096 inner products & 64 & $6.91\times10^{-7}$ & $7.01\times10^{-7}$ & 73 \\
+\texttt{find\_2d\_subspaces} & 2-dim subspaces in a set & 10 & $1.12\times10^{-5}$ & $1.18\times10^{-5}$ & 21 \\
+\texttt{find\_2d\_subspaces} & 2-dim subspaces in a set & 12 & $1.68\times10^{-4}$ & $2.21\times10^{-4}$ & 500 \\
+\texttt{gauss\_jordan} & reduce a square matrix & 8 & $5.00\times10^{-8}$ & $6.00\times10^{-8}$ & 40 \\
+\texttt{gauss\_jordan} & reduce a square matrix & 16 & $1.30\times10^{-7}$ & $1.40\times10^{-7}$ & 24 \\
+\texttt{gauss\_jordan} & reduce a square matrix & 32 & $7.01\times10^{-7}$ & $7.11\times10^{-7}$ & 21 \\
+\texttt{gauss\_jordan} & reduce a square matrix & 64 & $1.86\times10^{-6}$ & $1.87\times10^{-6}$ & 23 \\
+\texttt{generating\_affine\_map} & map from a partial basis & 32 & $7.98\times10^{-6}$ & $8.06\times10^{-6}$ & 42 \\
+\texttt{is\_in\_span} & 1024 span tests & 64 & $1.78\times10^{-5}$ & $1.78\times10^{-5}$ & 81 \\
+\texttt{is\_invertible} & full-rank test & 16 & $1.60\times10^{-7}$ & $1.70\times10^{-7}$ & 56 \\
+\texttt{is\_invertible} & full-rank test & 32 & $7.21\times10^{-7}$ & $7.41\times10^{-7}$ & 67 \\
+\texttt{kernel\_f2} & nullspace of a wide matrix & 32 & $5.62\times10^{-7}$ & $5.81\times10^{-7}$ & 16 \\
+\texttt{kernel\_f2} & nullspace of a wide matrix & 64 & $1.07\times10^{-6}$ & $1.14\times10^{-6}$ & 17 \\
+\texttt{linear\_basis} & echelon basis of a span & 64 & $1.89\times10^{-6}$ & $1.90\times10^{-6}$ & 58 \\
+\texttt{parity} & 4096 parity calls & 64 & $6.21\times10^{-7}$ & $6.31\times10^{-7}$ & 89 \\
+\texttt{rank\_f2} & rank without mutation & 32 & $6.91\times10^{-7}$ & $7.01\times10^{-7}$ & 104 \\
+\texttt{rank\_f2} & rank without mutation & 64 & $1.88\times10^{-6}$ & $1.89\times10^{-6}$ & 106 \\
+\texttt{smallest\_basis} & basis of a 256-element space & 12 & $4.89\times10^{-6}$ & $7.21\times10^{-6}$ & 43 \\
+\texttt{solve\_f2} & solve a consistent system & 16 & $3.80\times10^{-7}$ & $3.91\times10^{-7}$ & 13 \\
+\texttt{solve\_f2} & solve a consistent system & 32 & $5.71\times10^{-7}$ & $6.21\times10^{-7}$ & 12 \\
+\texttt{span\_from\_basis} & expand a basis to its span & 16 & $4.40\times10^{-5}$ & $1.35\times10^{-4}$ & 42 \\
+\texttt{subspace\_count\_signature} & subspace counts per dimension & 10 & $2.46\times10^{-2}$ & $3.00\times10^{-2}$ & 27 \\
 \midrule
 \multicolumn{6}{l}{\emph{Spectra and statistics}} \\
-\texttt{absolute\_walsh\_spectrum} & LAT magnitude histogram & 12 & $4.37\times10^{-1}$ & $4.59\times10^{-1}$ & 3 \\
-\texttt{algebraic\_degree} & heaviest monomial in the ANF & 16 & $1.29\times10^{-4}$ & $1.30\times10^{-4}$ & 56 \\
-\texttt{bct} & cubic-cost boomerang table & 8 & $9.28\times10^{-3}$ & $9.32\times10^{-3}$ & 16 \\
+\texttt{absolute\_walsh\_spectrum} & LAT magnitude histogram & 12 & $4.42\times10^{-1}$ & $4.91\times10^{-1}$ & 3 \\
+\texttt{algebraic\_degree} & heaviest monomial in the ANF & 16 & $1.30\times10^{-4}$ & $1.37\times10^{-4}$ & 50 \\
+\texttt{bct} & cubic-cost boomerang table & 8 & $9.31\times10^{-3}$ & $9.39\times10^{-3}$ & 14 \\
 \texttt{bct} & cubic-cost boomerang table & 10 & $5.71\times10^{-1}$ & $5.71\times10^{-1}$ & 3 \\
-\texttt{boomerang\_spectrum} & BCT histogram & 8 & $9.91\times10^{-3}$ & $9.99\times10^{-3}$ & 46 \\
-\texttt{boomerang\_uniformity} & BCT peak, APN permutation & 9 & $7.17\times10^{-2}$ & $7.18\times10^{-2}$ & 6 \\
-\texttt{ddt} & full $2^{n}$ x $2^{n}$ table & 6 & $3.26\times10^{-6}$ & $1.29\times10^{-5}$ & 43 \\
-\texttt{ddt} & full $2^{n}$ x $2^{n}$ table & 8 & $9.45\times10^{-5}$ & $2.69\times10^{-4}$ & 46 \\
-\texttt{ddt} & full $2^{n}$ x $2^{n}$ table & 10 & $2.65\times10^{-3}$ & $2.87\times10^{-3}$ & 35 \\
-\texttt{ddt} & full $2^{n}$ x $2^{n}$ table & 12 & $1.58\times10^{-1}$ & $1.59\times10^{-1}$ & 5 \\
-\texttt{ddt\_coeff\_probability} & 33 DDT coefficient masses & 8 & $6.80\times10^{-5}$ & $6.88\times10^{-5}$ & 27 \\
-\texttt{degree\_spectrum} & per-coordinate degrees & 16 & $4.70\times10^{-4}$ & $4.73\times10^{-4}$ & 47 \\
-\texttt{differential\_spectrum} & streamed DDT histogram & 12 & $1.68\times10^{-1}$ & $1.68\times10^{-1}$ & 5 \\
-\texttt{differential\_uniformity\_apn} & streamed DDT peak, APN & 14 & $2.18\times10^{-1}$ & $2.19\times10^{-1}$ & 4 \\
-\texttt{differential\_uniformity\_random} & streamed DDT peak, random & 14 & $2.11\times10^{-1}$ & $2.12\times10^{-1}$ & 4 \\
-\texttt{expected\_boomerang\_uniformity\_distribution} & random-permutation BCT peak & 8 & $1.55\times10^{-1}$ & $1.55\times10^{-1}$ & 3 \\
-\texttt{expected\_differential\_uniformity\_distribution} & random-function DDT peak & 8 & $1.01\times10^{-2}$ & $1.01\times10^{-2}$ & 38 \\
-\texttt{expected\_linearity\_distribution} & random-permutation LAT peak & 8 & $7.89\times10^{-3}$ & $7.92\times10^{-3}$ & 10 \\
-\texttt{expected\_max\_distribution} & maximum of i.i.d. DDT cells & 8 & $6.94\times10^{-4}$ & $6.96\times10^{-4}$ & 7 \\
-\texttt{fbct} & Feistel boomerang table & 10 & $6.67\times10^{-1}$ & $6.68\times10^{-1}$ & 3 \\
-\texttt{fbct\_uniformity} & FBCT peak & 9 & $8.38\times10^{-2}$ & $8.41\times10^{-2}$ & 7 \\
-\texttt{has\_linear\_structure} & identity, all structures present & 10 & $4.40\times10^{-3}$ & $4.90\times10^{-3}$ & 51 \\
-\texttt{lat} & one FWHT per output mask & 6 & $1.39\times10^{-5}$ & $1.64\times10^{-5}$ & 14 \\
-\texttt{lat} & one FWHT per output mask & 8 & $3.27\times10^{-4}$ & $4.60\times10^{-4}$ & 22 \\
-\texttt{lat} & one FWHT per output mask & 10 & $4.09\times10^{-3}$ & $4.62\times10^{-3}$ & 13 \\
-\texttt{lat} & one FWHT per output mask & 12 & $1.13\times10^{-1}$ & $1.39\times10^{-1}$ & 5 \\
-\texttt{linear\_structures} & DDT cells that hold $2^{n}$ & 12 & $5.21\times10^{-1}$ & $5.23\times10^{-1}$ & 3 \\
-\texttt{linearity} & LAT peak & 12 & $6.64\times10^{-1}$ & $7.77\times10^{-1}$ & 3 \\
-\texttt{nonlinearity} & distance to the affine maps & 10 & $8.43\times10^{-3}$ & $1.00\times10^{-2}$ & 36 \\
-\texttt{spectrum\_build} & $2^{20}$ add! calls & 20 & $1.14\times10^{-2}$ & $1.14\times10^{-2}$ & 53 \\
-\texttt{spectrum\_read} & sorted\_pairs and total\_mass & 20 & $9.62\times10^{-7}$ & $1.01\times10^{-6}$ & 6 \\
-\texttt{table\_anomaly\_random} & DDT anomaly, few ties & 8 & $6.77\times10^{-4}$ & $6.81\times10^{-4}$ & 6 \\
-\texttt{table\_negative\_anomaly} & negative DDT anomaly & 8 & $6.92\times10^{-4}$ & $6.95\times10^{-4}$ & 10 \\
-\texttt{walsh\_hadamard!} & in-place FWHT kernel & 20 & $3.42\times10^{-3}$ & $3.45\times10^{-3}$ & 138 \\
-\texttt{walsh\_hadamard\_alloc} & FWHT with a new buffer & 20 & $4.42\times10^{-3}$ & $4.64\times10^{-3}$ & 51 \\
-\texttt{walsh\_power\_moment} & fourth Walsh power moment & 12 & $2.28\times10^{-1}$ & $2.44\times10^{-1}$ & 4 \\
-\texttt{walsh\_transform} & encode the signs, then FWHT & 20 & $4.40\times10^{-3}$ & $4.58\times10^{-3}$ & 61 \\
+\texttt{boomerang\_spectrum} & BCT histogram & 8 & $9.92\times10^{-3}$ & $1.00\times10^{-2}$ & 44 \\
+\texttt{boomerang\_uniformity} & BCT peak, APN permutation & 9 & $7.21\times10^{-2}$ & $7.24\times10^{-2}$ & 5 \\
+\texttt{ddt} & full $2^{n}$ x $2^{n}$ table & 6 & $2.86\times10^{-6}$ & $1.42\times10^{-5}$ & 40 \\
+\texttt{ddt} & full $2^{n}$ x $2^{n}$ table & 8 & $9.23\times10^{-5}$ & $1.42\times10^{-4}$ & 38 \\
+\texttt{ddt} & full $2^{n}$ x $2^{n}$ table & 10 & $3.78\times10^{-3}$ & $6.44\times10^{-3}$ & 32 \\
+\texttt{ddt} & full $2^{n}$ x $2^{n}$ table & 12 & $2.80\times10^{-1}$ & $2.81\times10^{-1}$ & 3 \\
+\texttt{ddt\_coeff\_probability} & 33 DDT coefficient masses & 8 & $6.91\times10^{-5}$ & $6.97\times10^{-5}$ & 23 \\
+\texttt{degree\_spectrum} & per-coordinate degrees & 16 & $4.75\times10^{-4}$ & $4.95\times10^{-4}$ & 43 \\
+\texttt{differential\_spectrum} & streamed DDT histogram & 12 & $1.66\times10^{-1}$ & $1.66\times10^{-1}$ & 4 \\
+\texttt{differential\_uniformity\_apn} & streamed DDT peak, APN & 14 & $2.20\times10^{-1}$ & $2.21\times10^{-1}$ & 3 \\
+\texttt{differential\_uniformity\_random} & streamed DDT peak, random & 14 & $2.16\times10^{-1}$ & $2.16\times10^{-1}$ & 4 \\
+\texttt{expected\_boomerang\_uniformity\_distribution} & random-permutation BCT peak & 8 & $1.63\times10^{-1}$ & $1.69\times10^{-1}$ & 3 \\
+\texttt{expected\_differential\_uniformity\_distribution} & random-function DDT peak & 8 & $1.02\times10^{-2}$ & $1.04\times10^{-2}$ & 33 \\
+\texttt{expected\_linearity\_distribution} & random-permutation LAT peak & 8 & $8.16\times10^{-3}$ & $8.45\times10^{-3}$ & 6 \\
+\texttt{expected\_max\_distribution} & maximum of i.i.d. DDT cells & 8 & $7.01\times10^{-4}$ & $7.06\times10^{-4}$ & 6 \\
+\texttt{fbct} & Feistel boomerang table & 10 & $6.68\times10^{-1}$ & $6.71\times10^{-1}$ & 3 \\
+\texttt{fbct\_uniformity} & FBCT peak & 9 & $8.45\times10^{-2}$ & $8.48\times10^{-2}$ & 7 \\
+\texttt{has\_linear\_structure} & identity, all structures present & 10 & $4.83\times10^{-3}$ & $5.86\times10^{-3}$ & 47 \\
+\texttt{lat} & one FWHT per output mask & 6 & $1.37\times10^{-5}$ & $1.73\times10^{-5}$ & 13 \\
+\texttt{lat} & one FWHT per output mask & 8 & $4.53\times10^{-4}$ & $5.53\times10^{-4}$ & 20 \\
+\texttt{lat} & one FWHT per output mask & 10 & $5.28\times10^{-3}$ & $6.21\times10^{-3}$ & 12 \\
+\texttt{lat} & one FWHT per output mask & 12 & $1.78\times10^{-1}$ & $2.30\times10^{-1}$ & 3 \\
+\texttt{linear\_structures} & DDT cells that hold $2^{n}$ & 12 & $5.33\times10^{-1}$ & $5.67\times10^{-1}$ & 3 \\
+\texttt{linearity} & LAT peak & 12 & $6.71\times10^{-1}$ & $8.01\times10^{-1}$ & 3 \\
+\texttt{nonlinearity} & distance to the affine maps & 10 & $8.96\times10^{-3}$ & $9.77\times10^{-3}$ & 32 \\
+\texttt{spectrum\_build} & $2^{20}$ add! calls & 20 & $1.12\times10^{-2}$ & $1.14\times10^{-2}$ & 53 \\
+\texttt{spectrum\_read} & sorted\_pairs and total\_mass & 20 & $9.11\times10^{-7}$ & $1.18\times10^{-6}$ & 5 \\
+\texttt{table\_anomaly\_random} & DDT anomaly, few ties & 8 & $6.63\times10^{-4}$ & $6.68\times10^{-4}$ & 5 \\
+\texttt{table\_negative\_anomaly} & negative DDT anomaly & 8 & $6.91\times10^{-4}$ & $7.10\times10^{-4}$ & 7 \\
+\texttt{walsh\_hadamard!} & in-place FWHT kernel & 20 & $3.56\times10^{-3}$ & $3.90\times10^{-3}$ & 127 \\
+\texttt{walsh\_hadamard\_alloc} & FWHT with a new buffer & 20 & $5.24\times10^{-3}$ & $6.25\times10^{-3}$ & 46 \\
+\texttt{walsh\_power\_moment} & fourth Walsh power moment & 12 & $2.35\times10^{-1}$ & $2.71\times10^{-1}$ & 3 \\
+\texttt{walsh\_transform} & encode the signs, then FWHT & 20 & $5.25\times10^{-3}$ & $6.05\times10^{-3}$ & 50 \\
 \midrule
 \multicolumn{6}{l}{\emph{Invariants}} \\
-\texttt{apn\_ea\_mugshot} & fallback path, Kasami $x^{13}$ & 5 & $6.25\times10^{-2}$ & $6.25\times10^{-2}$ & 3 \\
-\texttt{apn\_ea\_mugshot} & fallback path, Dillon permutation & 6 & $1.16\times10^{0}$ & $1.16\times10^{0}$ & 3 \\
-\texttt{apn\_ea\_mugshot} & quadratic path through pi\_F & 8 & $1.79\times10^{-3}$ & $1.79\times10^{-3}$ & 3 \\
-\texttt{apn\_ea\_mugshot} & quadratic path through pi\_F & 10 & $3.60\times10^{-2}$ & $3.64\times10^{-2}$ & 7 \\
-\texttt{apn\_ea\_mugshot} & quadratic path through pi\_F & 12 & $7.10\times10^{-1}$ & $7.32\times10^{-1}$ & 3 \\
-\texttt{bent\_components} & scan the LAT for flat rows & 10 & $4.11\times10^{-3}$ & $4.65\times10^{-3}$ & 36 \\
-\texttt{component\_degree\_spectrum} & degrees of the components & 12 & $7.55\times10^{-3}$ & $7.56\times10^{-3}$ & 91 \\
-\texttt{delta\_rank} & F2 rank of dev(D\_F) & 6 & $2.14\times10^{-2}$ & $2.19\times10^{-2}$ & 28 \\
-\texttt{delta\_rank} & F2 rank of dev(D\_F) & 7 & $7.29\times10^{-1}$ & $7.38\times10^{-1}$ & 3 \\
-\texttt{gamma\_rank} & F2 rank of dev(G\_F) & 5 & $1.48\times10^{-3}$ & $1.52\times10^{-3}$ & 11 \\
-\texttt{gamma\_rank} & F2 rank of dev(G\_F) & 6 & $3.18\times10^{-2}$ & $3.25\times10^{-2}$ & 18 \\
-\texttt{gamma\_rank} & F2 rank of dev(G\_F) & 7 & $3.74\times10^{0}$ & $3.75\times10^{0}$ & 3 \\
-\texttt{image\_set} & distinct output values & 10 & $1.10\times10^{-5}$ & $1.21\times10^{-5}$ & 23 \\
-\texttt{image\_subspaces} & subspaces inside the image & 8 & $6.49\times10^{-4}$ & $6.57\times10^{-4}$ & 24 \\
-\texttt{image\_subspaces} & subspaces inside the image & 10 & $1.50\times10^{-1}$ & $1.54\times10^{-1}$ & 5 \\
-\texttt{is\_quadratic\_apn} & accept through pi\_F & 12 & $4.29\times10^{-2}$ & $4.35\times10^{-2}$ & 21 \\
-\texttt{is\_quadratic\_apn\_rank} & accept through the rank test & 12 & $1.95\times10^{-3}$ & $1.96\times10^{-3}$ & 67 \\
-\texttt{is\_quadratic\_apn\_rank} & accept through the rank test & 14 & $1.06\times10^{-2}$ & $1.06\times10^{-2}$ & 42 \\
-\texttt{is\_quadratic\_apn\_rank\_sweep} & reject 1024 random maps & 12 & $1.11\times10^{-3}$ & $1.11\times10^{-3}$ & 33 \\
-\texttt{nonbent\_components} & complement of the bent set & 10 & $4.29\times10^{-3}$ & $4.63\times10^{-3}$ & 20 \\
-\texttt{nonbent\_signature} & Gologlu subspace counts & 8 & $8.96\times10^{-4}$ & $9.23\times10^{-4}$ & 30 \\
-\texttt{nonbent\_signature} & Gologlu subspace counts & 10 & $1.57\times10^{-1}$ & $1.57\times10^{-1}$ & 5 \\
-\texttt{ortho\_derivative} & pi\_F of Gold $x^{3}$ & 8 & $1.54\times10^{-4}$ & $1.57\times10^{-4}$ & 21 \\
-\texttt{ortho\_derivative} & pi\_F of Gold $x^{3}$ & 10 & $2.60\times10^{-3}$ & $2.61\times10^{-3}$ & 11 \\
-\texttt{ortho\_derivative} & pi\_F of Gold $x^{3}$ & 12 & $4.27\times10^{-2}$ & $5.09\times10^{-2}$ & 8 \\
-\texttt{ortho\_derivative} & pi\_F at the practical limit & 13 & $1.74\times10^{-1}$ & $1.95\times10^{-1}$ & 4 \\
-\texttt{ortho\_integral} & rebuild Q from pi\_F & 7 & $3.89\times10^{-2}$ & $3.91\times10^{-2}$ & 3 \\
-\texttt{ortho\_integral} & rebuild Q from pi\_F & 8 & $3.94\times10^{-1}$ & $3.98\times10^{-1}$ & 3 \\
-\texttt{pi\_multiset} & shifted derivative histogram & 10 & $9.20\times10^{-4}$ & $9.27\times10^{-4}$ & 19 \\
-\texttt{pi\_multiset} & shifted derivative histogram & 12 & $1.42\times10^{-2}$ & $1.42\times10^{-2}$ & 15 \\
-\texttt{sigma\_multiplicities} & sigma multiset at k = 4 & 8 & $4.46\times10^{-4}$ & $4.55\times10^{-4}$ & 14 \\
-\texttt{sigma\_multiplicities} & sigma multiset at k = 4 & 10 & $7.40\times10^{-3}$ & $7.76\times10^{-3}$ & 14 \\
-\texttt{sigma\_multiplicities} & sigma multiset at k = 4 & 12 & $1.25\times10^{-1}$ & $2.32\times10^{-1}$ & 5 \\
+\texttt{apn\_ea\_mugshot} & fallback path, Kasami $x^{13}$ & 5 & $6.25\times10^{-2}$ & $6.26\times10^{-2}$ & 3 \\
+\texttt{apn\_ea\_mugshot} & fallback path, Dillon permutation & 6 & $1.16\times10^{0}$ & $1.17\times10^{0}$ & 3 \\
+\texttt{apn\_ea\_mugshot} & quadratic path through pi\_F & 8 & $1.89\times10^{-3}$ & $2.10\times10^{-3}$ & 3 \\
+\texttt{apn\_ea\_mugshot} & quadratic path through pi\_F & 10 & $3.81\times10^{-2}$ & $4.42\times10^{-2}$ & 5 \\
+\texttt{apn\_ea\_mugshot} & quadratic path through pi\_F & 12 & $7.25\times10^{-1}$ & $8.11\times10^{-1}$ & 3 \\
+\texttt{bent\_components} & scan the LAT for flat rows & 10 & $5.39\times10^{-3}$ & $5.94\times10^{-3}$ & 30 \\
+\texttt{component\_degree\_spectrum} & degrees of the components & 12 & $7.56\times10^{-3}$ & $7.59\times10^{-3}$ & 88 \\
+\texttt{delta\_rank} & F2 rank of dev(D\_F) & 6 & $2.19\times10^{-2}$ & $2.28\times10^{-2}$ & 26 \\
+\texttt{delta\_rank} & F2 rank of dev(D\_F) & 7 & $8.41\times10^{-1}$ & $8.92\times10^{-1}$ & 3 \\
+\texttt{gamma\_rank} & F2 rank of dev(G\_F) & 5 & $1.47\times10^{-3}$ & $1.51\times10^{-3}$ & 10 \\
+\texttt{gamma\_rank} & F2 rank of dev(G\_F) & 6 & $3.23\times10^{-2}$ & $3.30\times10^{-2}$ & 18 \\
+\texttt{gamma\_rank} & F2 rank of dev(G\_F) & 7 & $5.94\times10^{0}$ & $6.04\times10^{0}$ & 3 \\
+\texttt{image\_set} & distinct output values & 10 & $1.22\times10^{-5}$ & $1.32\times10^{-5}$ & 20 \\
+\texttt{image\_subspaces} & subspaces inside the image & 8 & $6.79\times10^{-4}$ & $7.11\times10^{-4}$ & 19 \\
+\texttt{image\_subspaces} & subspaces inside the image & 10 & $1.85\times10^{-1}$ & $1.91\times10^{-1}$ & 4 \\
+\texttt{is\_quadratic\_apn} & accept through pi\_F & 12 & $4.38\times10^{-2}$ & $4.55\times10^{-2}$ & 19 \\
+\texttt{is\_quadratic\_apn\_rank} & accept through the rank test & 12 & $1.96\times10^{-3}$ & $1.96\times10^{-3}$ & 61 \\
+\texttt{is\_quadratic\_apn\_rank} & accept through the rank test & 14 & $1.07\times10^{-2}$ & $1.07\times10^{-2}$ & 39 \\
+\texttt{is\_quadratic\_apn\_rank\_sweep} & reject 1024 random maps & 12 & $1.11\times10^{-3}$ & $1.12\times10^{-3}$ & 30 \\
+\texttt{nonbent\_components} & complement of the bent set & 10 & $5.20\times10^{-3}$ & $5.87\times10^{-3}$ & 18 \\
+\texttt{nonbent\_signature} & Gologlu subspace counts & 8 & $9.83\times10^{-4}$ & $1.10\times10^{-3}$ & 28 \\
+\texttt{nonbent\_signature} & Gologlu subspace counts & 10 & $1.87\times10^{-1}$ & $1.93\times10^{-1}$ & 4 \\
+\texttt{ortho\_derivative} & pi\_F of Gold $x^{3}$ & 8 & $1.58\times10^{-4}$ & $1.65\times10^{-4}$ & 19 \\
+\texttt{ortho\_derivative} & pi\_F of Gold $x^{3}$ & 10 & $2.63\times10^{-3}$ & $2.73\times10^{-3}$ & 10 \\
+\texttt{ortho\_derivative} & pi\_F of Gold $x^{3}$ & 12 & $4.40\times10^{-2}$ & $4.54\times10^{-2}$ & 8 \\
+\texttt{ortho\_derivative} & pi\_F at the practical limit & 13 & $1.85\times10^{-1}$ & $1.87\times10^{-1}$ & 3 \\
+\texttt{ortho\_integral} & rebuild Q from pi\_F & 7 & $3.94\times10^{-2}$ & $3.95\times10^{-2}$ & 3 \\
+\texttt{ortho\_integral} & rebuild Q from pi\_F & 8 & $4.02\times10^{-1}$ & $4.02\times10^{-1}$ & 3 \\
+\texttt{pi\_multiset} & shifted derivative histogram & 10 & $9.22\times10^{-4}$ & $9.29\times10^{-4}$ & 18 \\
+\texttt{pi\_multiset} & shifted derivative histogram & 12 & $1.43\times10^{-2}$ & $1.43\times10^{-2}$ & 14 \\
+\texttt{sigma\_multiplicities} & sigma multiset at k = 4 & 8 & $4.93\times10^{-4}$ & $5.12\times10^{-4}$ & 13 \\
+\texttt{sigma\_multiplicities} & sigma multiset at k = 4 & 10 & $8.15\times10^{-3}$ & $8.85\times10^{-3}$ & 13 \\
+\texttt{sigma\_multiplicities} & sigma multiset at k = 4 & 12 & $2.00\times10^{-1}$ & $2.05\times10^{-1}$ & 4 \\
 \midrule
 \multicolumn{6}{l}{\emph{Equivalence tests}} \\
-\texttt{affine\_class\_signature} & one representative per anchor & 6 & $6.17\times10^{-1}$ & $6.20\times10^{-1}$ & 3 \\
-\texttt{are\_affine\_equivalent\_neg} & negative answer, all anchors & 5 & $9.52\times10^{-2}$ & $9.64\times10^{-2}$ & 10 \\
-\texttt{are\_affine\_equivalent\_pos} & positive answer at n=5 & 5 & $7.16\times10^{-2}$ & $7.35\times10^{-2}$ & 8 \\
-\texttt{are\_ccz\_equivalent\_neg} & negative, invariant rejects the pair & 6 & $3.45\times10^{-5}$ & $3.74\times10^{-5}$ & 3 \\
-\texttt{are\_ccz\_equivalent\_pos} & positive, Kim against Dillon & 6 & $1.18\times10^{0}$ & $1.19\times10^{0}$ & 3 \\
-\texttt{are\_ea\_equivalent\_neg} & negative answer at n=8 & 8 & $4.34\times10^{-3}$ & $4.44\times10^{-3}$ & 118 \\
-\texttt{are\_ea\_equivalent\_neg\_heggebakk} & negative, capped Heggebakk search & 5 & $1.78\times10^{0}$ & $2.22\times10^{0}$ & 3 \\
-\texttt{are\_ea\_equivalent\_pos} & positive, ortho-derivative test & 5 & $4.74\times10^{-3}$ & $4.77\times10^{-3}$ & 3 \\
-\texttt{are\_ea\_equivalent\_pos} & positive answer at n=8 & 8 & $7.07\times10^{-1}$ & $7.08\times10^{-1}$ & 3 \\
-\texttt{are\_linear\_equivalent\_neg} & negative answer, Gold against Kasami & 5 & $5.29\times10^{-3}$ & $5.40\times10^{-3}$ & 114 \\
-\texttt{are\_linear\_equivalent\_neg} & negative answer at n=7 & 7 & $7.95\times10^{-1}$ & $7.96\times10^{-1}$ & 3 \\
-\texttt{are\_linear\_equivalent\_pos} & positive answer at n=5 & 5 & $6.73\times10^{-3}$ & $8.32\times10^{-3}$ & 3 \\
-\texttt{are\_linearly\_equivalent\_general} & negative answer, two non-permutations & 6 & $4.46\times10^{-1}$ & $4.49\times10^{-1}$ & 3 \\
-\texttt{are\_sets\_linear\_equivalent} & positive answer on image sets & 6 & $2.36\times10^{-6}$ & $2.54\times10^{-6}$ & 14 \\
-\texttt{canonical\_3to1\_representative} & the canonical triplicate & 6 & $3.10\times10^{-6}$ & $3.52\times10^{-6}$ & 5 \\
-\texttt{code\_weight\_enumerator} & weight enumerator of the CCZ code & 8 & $5.16\times10^{-4}$ & $5.20\times10^{-4}$ & 16 \\
-\texttt{ea\_equivalences} & every EA map at n=4 & 4 & $5.40\times10^{-1}$ & $5.41\times10^{-1}$ & 3 \\
-\texttt{ea\_mappings\_from\_ortho\_derivative\_neg} & exact EA decision, negative & 7 & $2.34\times10^{0}$ & $2.34\times10^{0}$ & 3 \\
-\texttt{ea\_mappings\_from\_ortho\_derivative\_pos} & exact EA decision, positive & 7 & $3.11\times10^{0}$ & $3.12\times10^{0}$ & 3 \\
-\texttt{ea\_partition} & the k=4 multiplicity partition & 8 & $5.10\times10^{-2}$ & $5.25\times10^{-2}$ & 9 \\
-\texttt{enumerate\_bucket\_maps} & bounded bucket maps & 6 & $1.12\times10^{-6}$ & $1.72\times10^{-6}$ & 3 \\
-\texttt{enumerate\_ccz\_class} & EA representatives of the class & 6 & $9.70\times10^{-1}$ & $9.70\times10^{-1}$ & 3 \\
-\texttt{get\_tu\_decompositions} & every TU decomposition & 6 & $1.16\times10^{0}$ & $1.16\times10^{0}$ & 3 \\
-\texttt{inner\_permutation} & inner map, positive answer & 6 & $5.38\times10^{-4}$ & $5.42\times10^{-4}$ & 8 \\
-\texttt{is\_ccz\_equivalent\_to\_permutation} & positive answer for the Kim function & 6 & $9.59\times10^{-1}$ & $9.59\times10^{-1}$ & 3 \\
-\texttt{linear\_equivalences\_general} & every pair, non-permutation input & 6 & $4.22\times10^{-1}$ & $4.30\times10^{-1}$ & 3 \\
-\texttt{linear\_representative} & Stennes canonical form & 7 & $1.00\times10^{-1}$ & $1.01\times10^{-1}$ & 9 \\
-\texttt{outer\_permutations} & partition-preserving outer maps & 4 & $1.58\times10^{-3}$ & $1.59\times10^{-3}$ & 10 \\
-\texttt{self\_3to1\_linear\_equivalences} & the 3-to-1 self-equivalence group & 6 & $5.21\times10^{-3}$ & $5.25\times10^{-3}$ & 3 \\
-\texttt{self\_linear\_equivalences} & the linear self-equivalence group & 5 & $1.43\times10^{-3}$ & $1.44\times10^{-3}$ & 10 \\
-\texttt{triplicate\_adjoints} & every triplicate adjoint & 6 & $3.24\times10^{-3}$ & $3.25\times10^{-3}$ & 12 \\
+\texttt{affine\_class\_signature} & one representative per anchor & 6 & $7.31\times10^{-1}$ & $7.36\times10^{-1}$ & 3 \\
+\texttt{are\_affine\_equivalent\_neg} & negative answer, all anchors & 5 & $1.02\times10^{-1}$ & $1.16\times10^{-1}$ & 8 \\
+\texttt{are\_affine\_equivalent\_pos} & positive answer at n=5 & 5 & $7.96\times10^{-2}$ & $8.89\times10^{-2}$ & 8 \\
+\texttt{are\_ccz\_equivalent\_neg} & negative, invariant rejects the pair & 6 & $4.22\times10^{-5}$ & $4.96\times10^{-5}$ & 3 \\
+\texttt{are\_ccz\_equivalent\_pos} & positive, Kim against Dillon & 6 & $1.17\times10^{0}$ & $1.18\times10^{0}$ & 3 \\
+\texttt{are\_ea\_equivalent\_neg} & negative answer at n=8 & 8 & $4.51\times10^{-3}$ & $4.92\times10^{-3}$ & 96 \\
+\texttt{are\_ea\_equivalent\_neg\_heggebakk} & negative, capped Heggebakk search & 5 & $2.46\times10^{0}$ & $2.51\times10^{0}$ & 3 \\
+\texttt{are\_ea\_equivalent\_pos} & positive, ortho-derivative test & 5 & $4.85\times10^{-3}$ & $5.00\times10^{-3}$ & 3 \\
+\texttt{are\_ea\_equivalent\_pos} & positive answer at n=8 & 8 & $8.54\times10^{-1}$ & $8.63\times10^{-1}$ & 3 \\
+\texttt{are\_linear\_equivalent\_neg} & negative answer, Gold against Kasami & 5 & $5.38\times10^{-3}$ & $6.30\times10^{-3}$ & 107 \\
+\texttt{are\_linear\_equivalent\_neg} & negative answer at n=7 & 7 & $9.82\times10^{-1}$ & $1.01\times10^{0}$ & 3 \\
+\texttt{are\_linear\_equivalent\_pos} & positive answer at n=5 & 5 & $7.21\times10^{-3}$ & $8.56\times10^{-3}$ & 3 \\
+\texttt{are\_linearly\_equivalent\_general} & negative answer, two non-permutations & 6 & $5.38\times10^{-1}$ & $5.42\times10^{-1}$ & 3 \\
+\texttt{are\_sets\_linear\_equivalent} & positive answer on image sets & 6 & $2.39\times10^{-6}$ & $2.96\times10^{-6}$ & 12 \\
+\texttt{canonical\_3to1\_representative} & the canonical triplicate & 6 & $4.13\times10^{-6}$ & $4.41\times10^{-6}$ & 4 \\
+\texttt{code\_weight\_enumerator} & weight enumerator of the CCZ code & 8 & $5.16\times10^{-4}$ & $5.23\times10^{-4}$ & 13 \\
+\texttt{ea\_equivalences} & every EA map at n=4 & 4 & $5.66\times10^{-1}$ & $5.67\times10^{-1}$ & 3 \\
+\texttt{ea\_mappings\_from\_ortho\_derivative\_neg} & exact EA decision, negative & 7 & $2.37\times10^{0}$ & $2.39\times10^{0}$ & 3 \\
+\texttt{ea\_mappings\_from\_ortho\_derivative\_pos} & exact EA decision, positive & 7 & $3.19\times10^{0}$ & $3.22\times10^{0}$ & 3 \\
+\texttt{ea\_partition} & the k=4 multiplicity partition & 8 & $5.22\times10^{-2}$ & $5.24\times10^{-2}$ & 8 \\
+\texttt{enumerate\_bucket\_maps} & bounded bucket maps & 6 & $1.39\times10^{-6}$ & $1.62\times10^{-6}$ & 3 \\
+\texttt{enumerate\_ccz\_class} & EA representatives of the class & 6 & $9.73\times10^{-1}$ & $9.74\times10^{-1}$ & 3 \\
+\texttt{get\_tu\_decompositions} & every TU decomposition & 6 & $1.17\times10^{0}$ & $1.17\times10^{0}$ & 3 \\
+\texttt{inner\_permutation} & inner map, positive answer & 6 & $5.43\times10^{-4}$ & $5.45\times10^{-4}$ & 7 \\
+\texttt{is\_ccz\_equivalent\_to\_permutation} & positive answer for the Kim function & 6 & $9.64\times10^{-1}$ & $9.68\times10^{-1}$ & 3 \\
+\texttt{linear\_equivalences\_general} & every pair, non-permutation input & 6 & $4.96\times10^{-1}$ & $5.14\times10^{-1}$ & 3 \\
+\texttt{linear\_representative} & Stennes canonical form & 7 & $1.21\times10^{-1}$ & $1.25\times10^{-1}$ & 8 \\
+\texttt{outer\_permutations} & partition-preserving outer maps & 4 & $1.61\times10^{-3}$ & $1.63\times10^{-3}$ & 9 \\
+\texttt{self\_3to1\_linear\_equivalences} & the 3-to-1 self-equivalence group & 6 & $9.16\times10^{-3}$ & $9.21\times10^{-3}$ & 3 \\
+\texttt{self\_linear\_equivalences} & the linear self-equivalence group & 5 & $1.45\times10^{-3}$ & $1.46\times10^{-3}$ & 9 \\
+\texttt{triplicate\_adjoints} & every triplicate adjoint & 6 & $3.22\times10^{-3}$ & $3.25\times10^{-3}$ & 10 \\
 \midrule
 \multicolumn{6}{l}{\emph{Constructions and searches}} \\
-\texttt{apn\_trims} & keep the APN trims & 7 & $9.58\times10^{-2}$ & $9.75\times10^{-2}$ & 5 \\
-\texttt{bcl\_apn} & BCL binomial, k=3 s=1 & 12 & $2.29\times10^{-3}$ & $2.29\times10^{-3}$ & 49 \\
-\texttt{bcp\_apn} & BCP binomial, k=4 s=1 & 12 & $2.35\times10^{-3}$ & $2.36\times10^{-3}$ & 24 \\
-\texttt{cyclic\_qam\_subset\_representatives} & Theorem 3 subset orbits & 20 & $2.44\times10^{-3}$ & $2.47\times10^{-3}$ & 172 \\
-\texttt{decode\_quadratic\_lut} & rebuild the table & 10 & $9.56\times10^{-5}$ & $9.62\times10^{-5}$ & 21 \\
-\texttt{dobbertin\_apn} & Dobbertin power table & 5 & $2.71\times10^{-6}$ & $2.73\times10^{-6}$ & 98 \\
-\texttt{dobbertin\_apn} & Dobbertin power table & 10 & $4.11\times10^{-4}$ & $4.14\times10^{-4}$ & 500 \\
-\texttt{encode\_quadratic} & pack the coefficients & 10 & $5.74\times10^{-2}$ & $5.74\times10^{-2}$ & 5 \\
-\texttt{gold\_apn} & Gold $x^{3}$ power table & 6 & $2.40\times10^{-6}$ & $2.47\times10^{-6}$ & 287 \\
-\texttt{gold\_apn} & Gold $x^{3}$ power table & 8 & $1.29\times10^{-5}$ & $1.31\times10^{-5}$ & 500 \\
-\texttt{gold\_apn} & Gold $x^{3}$ power table & 10 & $6.18\times10^{-5}$ & $6.24\times10^{-5}$ & 500 \\
-\texttt{independent\_conjugate\_elements} & Theorem 1 element set & 12 & $2.50\times10^{-3}$ & $2.51\times10^{-3}$ & 40 \\
-\texttt{inverse\_apn} & field inverse table & 7 & $1.98\times10^{-5}$ & $1.99\times10^{-5}$ & 124 \\
-\texttt{inverse\_apn} & field inverse table & 9 & $2.36\times10^{-4}$ & $2.37\times10^{-4}$ & 500 \\
-\texttt{inverse\_apn} & field inverse table & 11 & $1.64\times10^{-3}$ & $1.64\times10^{-3}$ & 500 \\
-\texttt{is\_cyclic\_qam} & shift orbits only, m=2 & 12 & $3.62\times10^{-4}$ & $3.68\times10^{-4}$ & 16 \\
-\texttt{is\_qam} & rank test, $2^{14}$ subsets & 14 & $1.17\times10^{-2}$ & $1.18\times10^{-2}$ & 31 \\
-\texttt{kasami\_apn} & Kasami power table & 6 & $1.05\times10^{-5}$ & $1.06\times10^{-5}$ & 269 \\
-\texttt{kasami\_apn} & Kasami power table & 8 & $4.15\times10^{-5}$ & $4.17\times10^{-5}$ & 500 \\
-\texttt{kasami\_apn} & Kasami power table & 10 & $2.77\times10^{-4}$ & $2.79\times10^{-4}$ & 500 \\
-\texttt{kim\_apn} & Kim quadratic APN & 6 & $1.25\times10^{-5}$ & $1.26\times10^{-5}$ & 238 \\
-\texttt{known\_apn\_monomials} & five families at once & 11 & $3.82\times10^{-3}$ & $3.82\times10^{-3}$ & 14 \\
-\texttt{niho\_apn} & Niho power table & 7 & $1.47\times10^{-5}$ & $1.48\times10^{-5}$ & 95 \\
-\texttt{niho\_apn} & Niho power table & 9 & $7.04\times10^{-5}$ & $7.10\times10^{-5}$ & 500 \\
-\texttt{niho\_apn} & Niho power table & 11 & $1.08\times10^{-3}$ & $1.08\times10^{-3}$ & 500 \\
-\texttt{qam\_to\_sbox} & matrix back to S-box & 12 & $4.31\times10^{-4}$ & $4.39\times10^{-4}$ & 26 \\
-\texttt{quadratic\_apn\_matrix} & derivative matrix of F & 12 & $1.20\times10^{-7}$ & $1.90\times10^{-7}$ & 56 \\
-\texttt{search\_qam} & limit 8, budget $2^{12}$ & 8 & $1.28\times10^{-2}$ & $1.29\times10^{-2}$ & 3 \\
-\texttt{search\_quadratic\_apn} & limit 256 solutions & 6 & $2.78\times10^{-2}$ & $2.81\times10^{-2}$ & 4 \\
-\texttt{search\_quadratic\_apn\_le} & BL22 class 1, limit 1 & 7 & $1.40\times10^{-3}$ & $1.42\times10^{-3}$ & 3 \\
-\texttt{switching\_neighbors} & Edel-Pott switching space & 7 & $9.50\times10^{-1}$ & $9.54\times10^{-1}$ & 3 \\
-\texttt{taniguchi\_apn} & one Taniguchi member & 10 & $1.54\times10^{-4}$ & $1.55\times10^{-4}$ & 45 \\
-\texttt{taniguchi\_apn\_representatives} & three classes on F$2^{8}$ & 8 & $3.27\times10^{-1}$ & $4.52\times10^{-1}$ & 3 \\
-\texttt{trim\_spectrum} & EA fingerprints of trims & 7 & $1.34\times10^{-1}$ & $1.35\times10^{-1}$ & 4 \\
-\texttt{trims} & all 2($2^{8}$-1)\textasciicircum{}2 trims & 8 & $4.31\times10^{-2}$ & $4.91\times10^{-2}$ & 6 \\
-\texttt{welch\_apn} & Welch power table & 7 & $9.99\times10^{-6}$ & $1.00\times10^{-5}$ & 122 \\
-\texttt{welch\_apn} & Welch power table & 9 & $7.03\times10^{-5}$ & $7.10\times10^{-5}$ & 500 \\
-\texttt{welch\_apn} & Welch power table & 11 & $5.10\times10^{-4}$ & $5.13\times10^{-4}$ & 32 \\
+\texttt{apn\_trims} & keep the APN trims & 7 & $9.63\times10^{-2}$ & $9.81\times10^{-2}$ & 4 \\
+\texttt{bcl\_apn} & BCL binomial, k=3 s=1 & 12 & $2.29\times10^{-3}$ & $2.30\times10^{-3}$ & 41 \\
+\texttt{bcp\_apn} & BCP binomial, k=4 s=1 & 12 & $2.36\times10^{-3}$ & $2.37\times10^{-3}$ & 23 \\
+\texttt{cyclic\_qam\_subset\_representatives} & Theorem 3 subset orbits & 20 & $2.51\times10^{-3}$ & $2.54\times10^{-3}$ & 156 \\
+\texttt{decode\_quadratic\_lut} & rebuild the table & 10 & $9.56\times10^{-5}$ & $9.68\times10^{-5}$ & 19 \\
+\texttt{dobbertin\_apn} & Dobbertin power table & 5 & $2.70\times10^{-6}$ & $2.71\times10^{-6}$ & 88 \\
+\texttt{dobbertin\_apn} & Dobbertin power table & 10 & $4.16\times10^{-4}$ & $4.20\times10^{-4}$ & 500 \\
+\texttt{encode\_quadratic} & pack the coefficients & 10 & $5.78\times10^{-2}$ & $5.79\times10^{-2}$ & 4 \\
+\texttt{gold\_apn} & Gold $x^{3}$ power table & 6 & $2.40\times10^{-6}$ & $2.44\times10^{-6}$ & 235 \\
+\texttt{gold\_apn} & Gold $x^{3}$ power table & 8 & $1.29\times10^{-5}$ & $1.32\times10^{-5}$ & 500 \\
+\texttt{gold\_apn} & Gold $x^{3}$ power table & 10 & $6.18\times10^{-5}$ & $6.25\times10^{-5}$ & 500 \\
+\texttt{independent\_conjugate\_elements} & Theorem 1 element set & 12 & $2.50\times10^{-3}$ & $2.51\times10^{-3}$ & 37 \\
+\texttt{inverse\_apn} & field inverse table & 7 & $1.98\times10^{-5}$ & $1.99\times10^{-5}$ & 112 \\
+\texttt{inverse\_apn} & field inverse table & 9 & $2.37\times10^{-4}$ & $2.38\times10^{-4}$ & 500 \\
+\texttt{inverse\_apn} & field inverse table & 11 & $1.66\times10^{-3}$ & $1.67\times10^{-3}$ & 500 \\
+\texttt{is\_cyclic\_qam} & shift orbits only, m=2 & 12 & $3.66\times10^{-4}$ & $3.69\times10^{-4}$ & 15 \\
+\texttt{is\_qam} & rank test, $2^{14}$ subsets & 14 & $1.19\times10^{-2}$ & $1.20\times10^{-2}$ & 29 \\
+\texttt{kasami\_apn} & Kasami power table & 6 & $1.05\times10^{-5}$ & $1.07\times10^{-5}$ & 228 \\
+\texttt{kasami\_apn} & Kasami power table & 8 & $4.17\times10^{-5}$ & $4.20\times10^{-5}$ & 500 \\
+\texttt{kasami\_apn} & Kasami power table & 10 & $2.78\times10^{-4}$ & $2.80\times10^{-4}$ & 500 \\
+\texttt{kim\_apn} & Kim quadratic APN & 6 & $1.25\times10^{-5}$ & $1.25\times10^{-5}$ & 217 \\
+\texttt{known\_apn\_monomials} & five families at once & 11 & $3.87\times10^{-3}$ & $3.88\times10^{-3}$ & 12 \\
+\texttt{niho\_apn} & Niho power table & 7 & $1.47\times10^{-5}$ & $1.47\times10^{-5}$ & 88 \\
+\texttt{niho\_apn} & Niho power table & 9 & $6.97\times10^{-5}$ & $7.04\times10^{-5}$ & 500 \\
+\texttt{niho\_apn} & Niho power table & 11 & $1.09\times10^{-3}$ & $1.09\times10^{-3}$ & 500 \\
+\texttt{qam\_to\_sbox} & matrix back to S-box & 12 & $4.30\times10^{-4}$ & $4.36\times10^{-4}$ & 25 \\
+\texttt{quadratic\_apn\_matrix} & derivative matrix of F & 12 & $1.10\times10^{-7}$ & $2.31\times10^{-7}$ & 51 \\
+\texttt{search\_qam} & limit 8, budget $2^{12}$ & 8 & $1.47\times10^{-2}$ & $1.49\times10^{-2}$ & 3 \\
+\texttt{search\_quadratic\_apn} & limit 256 solutions & 6 & $2.77\times10^{-2}$ & $2.78\times10^{-2}$ & 4 \\
+\texttt{search\_quadratic\_apn\_le} & BL22 class 1, limit 1 & 7 & $1.48\times10^{-3}$ & $1.50\times10^{-3}$ & 3 \\
+\texttt{switching\_neighbors} & Edel-Pott switching space & 7 & $9.91\times10^{-1}$ & $1.01\times10^{0}$ & 3 \\
+\texttt{taniguchi\_apn} & one Taniguchi member & 10 & $1.56\times10^{-4}$ & $1.58\times10^{-4}$ & 43 \\
+\texttt{taniguchi\_apn\_representatives} & three classes on F$2^{8}$ & 8 & $3.31\times10^{-1}$ & $4.96\times10^{-1}$ & 3 \\
+\texttt{trim\_spectrum} & EA fingerprints of trims & 7 & $1.35\times10^{-1}$ & $1.37\times10^{-1}$ & 4 \\
+\texttt{trims} & all 2($2^{8}$-1)\textasciicircum{}2 trims & 8 & $3.66\times10^{-2}$ & $5.39\times10^{-2}$ & 6 \\
+\texttt{welch\_apn} & Welch power table & 7 & $9.93\times10^{-6}$ & $9.99\times10^{-6}$ & 103 \\
+\texttt{welch\_apn} & Welch power table & 9 & $7.01\times10^{-5}$ & $7.08\times10^{-5}$ & 500 \\
+\texttt{welch\_apn} & Welch power table & 11 & $5.14\times10^{-4}$ & $5.18\times10^{-4}$ & 29 \\
 \midrule
 \multicolumn{6}{l}{\emph{Catalog queries}} \\
-\texttt{canonical\_lut\_bytes} & canonical byte form & 12 & $4.51\times10^{-7}$ & $9.12\times10^{-7}$ & 82 \\
-\texttt{ccz\_fingerprint\_hash} & tier 2 CCZ fingerprint & 8 & $1.72\times10^{-3}$ & $1.76\times10^{-3}$ & 21 \\
-\texttt{ccz\_fingerprint\_key} & tier 1 fingerprint with ranks & 6 & $5.32\times10^{-2}$ & $5.40\times10^{-2}$ & 13 \\
-\texttt{classify\_ccz} & novelty query on the index & 8 & $1.87\times10^{-3}$ & $1.90\times10^{-3}$ & 36 \\
-\texttt{corpus\_coefficients} & read one packed member & 8 & $7.73\times10^{-5}$ & $7.86\times10^{-5}$ & 67 \\
-\texttt{corpus\_function} & decode one corpus member & 8 & $1.73\times10^{-3}$ & $1.74\times10^{-3}$ & 67 \\
-\texttt{corpus\_length} & size of the largest corpus & 8 & $3.85\times10^{-5}$ & $3.99\times10^{-5}$ & 22 \\
-\texttt{count\_functions} & count every catalog row & --- & $3.04\times10^{-6}$ & $3.84\times10^{-6}$ & 118 \\
-\texttt{cross\_source\_matches} & rows that two sources share & --- & $2.00\times10^{-2}$ & $2.01\times10^{-2}$ & 5 \\
-\texttt{find\_function\_by\_hash} & find one row by hash & 8 & $3.78\times10^{-5}$ & $4.01\times10^{-5}$ & 59 \\
-\texttt{find\_function\_by\_name} & find one row by name & 8 & $4.16\times10^{-5}$ & $4.31\times10^{-5}$ & 38 \\
-\texttt{functions\_by\_source} & rows per upstream source & --- & $2.71\times10^{-4}$ & $2.74\times10^{-4}$ & 30 \\
-\texttt{is\_novel} & novelty verdict for one function & 8 & $1.86\times10^{-3}$ & $1.89\times10^{-3}$ & 152 \\
-\texttt{list\_corpora} & list the bulk corpora & --- & $2.18\times10^{-5}$ & $2.32\times10^{-5}$ & 17 \\
-\texttt{list\_functions} & read every catalog row & --- & $7.22\times10^{-3}$ & $7.29\times10^{-3}$ & 13 \\
-\texttt{literature\_sbox\_names} & list the literature names & --- & $4.01\times10^{-7}$ & $4.31\times10^{-7}$ & 35 \\
-\texttt{load\_apn\_function} & build a catalog APN function & 8 & $3.62\times10^{-5}$ & $3.65\times10^{-5}$ & 8 \\
-\texttt{load\_apn\_function} & build a catalog APN function & 12 & $9.78\times10^{-3}$ & $1.00\times10^{-2}$ & 76 \\
-\texttt{load\_bibliography} & read and parse the bibliography & --- & $4.17\times10^{-4}$ & $4.22\times10^{-4}$ & 6 \\
-\texttt{load\_catalog} & open the committed catalog & --- & $1.26\times10^{-4}$ & $1.28\times10^{-4}$ & 3 \\
-\texttt{load\_literature\_sbox} & build the AES S-box & 8 & $1.08\times10^{-6}$ & $1.22\times10^{-6}$ & 17 \\
-\texttt{load\_sbox} & materialise one catalog S-box & 8 & $8.48\times10^{-5}$ & $8.66\times10^{-5}$ & 19 \\
-\texttt{lut\_sha256\_hex} & content key of an S-box & 8 & $1.80\times10^{-6}$ & $1.89\times10^{-6}$ & 44 \\
-\texttt{materialize\_corpus\_luts} & expand 22 member LUTs & 8 & $4.39\times10^{-3}$ & $4.42\times10^{-3}$ & 19 \\
-\texttt{materialize\_corpus\_luts\_bulk} & expand 6368 member LUTs & 8 & $2.21\times10^{0}$ & $2.22\times10^{0}$ & 3 \\
-\texttt{parse\_bibtex} & parse BibTeX text & --- & $3.91\times10^{-4}$ & $4.07\times10^{-4}$ & 285 \\
-\texttt{reconciliation\_summary} & tally of the disagreements & --- & $1.42\times10^{-3}$ & $1.44\times10^{-3}$ & 31 \\
-\texttt{sigma\_hash} & ortho-derivative signature & 8 & $1.87\times10^{-3}$ & $1.90\times10^{-3}$ & 7 \\
-\texttt{sigma\_hash} & ortho-derivative signature & 10 & $2.94\times10^{-2}$ & $3.03\times10^{-2}$ & 16 \\
+\texttt{canonical\_lut\_bytes} & canonical byte form & 12 & $3.90\times10^{-7}$ & $8.31\times10^{-7}$ & 74 \\
+\texttt{ccz\_fingerprint\_hash} & tier 2 CCZ fingerprint & 8 & $1.75\times10^{-3}$ & $1.78\times10^{-3}$ & 18 \\
+\texttt{ccz\_fingerprint\_key} & tier 1 fingerprint with ranks & 6 & $5.51\times10^{-2}$ & $5.63\times10^{-2}$ & 11 \\
+\texttt{classify\_ccz} & novelty query on the index & 8 & $1.90\times10^{-3}$ & $1.96\times10^{-3}$ & 30 \\
+\texttt{corpus\_coefficients} & read one packed member & 8 & $7.87\times10^{-5}$ & $8.03\times10^{-5}$ & 67 \\
+\texttt{corpus\_function} & decode one corpus member & 8 & $1.74\times10^{-3}$ & $1.75\times10^{-3}$ & 57 \\
+\texttt{corpus\_length} & size of the largest corpus & 8 & $3.97\times10^{-5}$ & $4.26\times10^{-5}$ & 21 \\
+\texttt{count\_functions} & count every catalog row & --- & $3.26\times10^{-6}$ & $3.86\times10^{-6}$ & 90 \\
+\texttt{cross\_source\_matches} & rows that two sources share & --- & $2.10\times10^{-2}$ & $2.13\times10^{-2}$ & 3 \\
+\texttt{find\_function\_by\_hash} & find one row by hash & 8 & $3.85\times10^{-5}$ & $4.05\times10^{-5}$ & 51 \\
+\texttt{find\_function\_by\_name} & find one row by name & 8 & $4.20\times10^{-5}$ & $4.42\times10^{-5}$ & 32 \\
+\texttt{functions\_by\_source} & rows per upstream source & --- & $2.71\times10^{-4}$ & $2.76\times10^{-4}$ & 28 \\
+\texttt{is\_novel} & novelty verdict for one function & 8 & $1.88\times10^{-3}$ & $1.93\times10^{-3}$ & 120 \\
+\texttt{list\_corpora} & list the bulk corpora & --- & $2.20\times10^{-5}$ & $2.37\times10^{-5}$ & 15 \\
+\texttt{list\_functions} & read every catalog row & --- & $7.22\times10^{-3}$ & $7.27\times10^{-3}$ & 11 \\
+\texttt{literature\_sbox\_names} & list the literature names & --- & $3.80\times10^{-7}$ & $3.91\times10^{-7}$ & 31 \\
+\texttt{load\_apn\_function} & build a catalog APN function & 8 & $3.72\times10^{-5}$ & $3.77\times10^{-5}$ & 7 \\
+\texttt{load\_apn\_function} & build a catalog APN function & 12 & $9.81\times10^{-3}$ & $1.02\times10^{-2}$ & 71 \\
+\texttt{load\_bibliography} & read and parse the bibliography & --- & $5.00\times10^{-4}$ & $5.50\times10^{-4}$ & 5 \\
+\texttt{load\_catalog} & open the committed catalog & --- & $1.24\times10^{-4}$ & $1.30\times10^{-4}$ & 3 \\
+\texttt{load\_literature\_sbox} & build the AES S-box & 8 & $1.23\times10^{-6}$ & $1.40\times10^{-6}$ & 16 \\
+\texttt{load\_sbox} & materialise one catalog S-box & 8 & $8.53\times10^{-5}$ & $8.76\times10^{-5}$ & 17 \\
+\texttt{lut\_sha256\_hex} & content key of an S-box & 8 & $1.80\times10^{-6}$ & $1.82\times10^{-6}$ & 41 \\
+\texttt{materialize\_corpus\_luts} & expand 22 member LUTs & 8 & $4.44\times10^{-3}$ & $4.49\times10^{-3}$ & 16 \\
+\texttt{materialize\_corpus\_luts\_bulk} & expand 6368 member LUTs & 8 & $2.26\times10^{0}$ & $2.28\times10^{0}$ & 3 \\
+\texttt{parse\_bibtex} & parse BibTeX text & --- & $4.05\times10^{-4}$ & $4.23\times10^{-4}$ & 213 \\
+\texttt{reconciliation\_summary} & tally of the disagreements & --- & $1.47\times10^{-3}$ & $1.53\times10^{-3}$ & 18 \\
+\texttt{sigma\_hash} & ortho-derivative signature & 8 & $2.03\times10^{-3}$ & $2.05\times10^{-3}$ & 4 \\
+\texttt{sigma\_hash} & ortho-derivative signature & 10 & $3.23\times10^{-2}$ & $3.31\times10^{-2}$ & 13 \\
 \bottomrule
 \end{tabular}

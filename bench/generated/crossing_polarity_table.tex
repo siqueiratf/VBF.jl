@@ -2,17 +2,17 @@
 % Crossing 2: the asymmetry between the two answers of a decision procedure.
 % Produced by bench/crossings.jl from bench/generated/benchmarks.csv and bench/crossings.toml.
 % Regenerate with:  make -C bench crossings
-% Machine: AMD Ryzen 5 5600G with Radeon Graphics, 12 cores, 1 Julia thread(s), 30.7 GB.
-% Julia 1.12.7; measured 2026-09-01 at level 2; statistic: the minimum of N repetitions.
+% Machine: AMD Ryzen 5 5600G with Radeon Graphics, 12 cores, 1 Julia thread(s), 15.0 GB.
+% Julia 1.12.7; measured 2026-09-06 at level 2; statistic: the minimum of N repetitions.
 \begin{tabular}{llrrrl}
 \toprule
 Relation & $n$ & Yes (s) & No (s) & No/Yes & Faster answer \\
 \midrule
-linear & 5 & $6.73\times10^{-3}$ & $5.29\times10^{-3}$ & 0.79 & neither \\
-affine & 5 & $7.16\times10^{-2}$ & $9.52\times10^{-2}$ & 1.33 & neither \\
-EA & 8 & $7.07\times10^{-1}$ & $4.34\times10^{-3}$ & $6.1\times10^{-3}$ & no \\
-CCZ & 6 & $1.18\times10^{0}$ & $3.45\times10^{-5}$ & $2.9\times10^{-5}$ & no \\
-EA, exact decision & 7 & $3.11\times10^{0}$ & $2.34\times10^{0}$ & 0.75 & neither \\
+linear & 5 & $7.21\times10^{-3}$ & $5.38\times10^{-3}$ & 0.75 & neither \\
+affine & 5 & $7.96\times10^{-2}$ & $1.02\times10^{-1}$ & 1.28 & neither \\
+EA & 8 & $8.54\times10^{-1}$ & $4.51\times10^{-3}$ & $5.3\times10^{-3}$ & no \\
+CCZ & 6 & $1.17\times10^{0}$ & $4.22\times10^{-5}$ & $3.6\times10^{-5}$ & no \\
+EA, exact decision & 7 & $3.19\times10^{0}$ & $2.37\times10^{0}$ & 0.74 & neither \\
 \bottomrule
 \end{tabular}
 % linear n=5: expected balanced, measured balanced -> agrees
