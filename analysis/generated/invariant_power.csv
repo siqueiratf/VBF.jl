@@ -1,0 +1,171 @@
+invariant,population,n,population_size,evaluated,undefined,errors,distinct_values,largest_bucket,singleton_buckets,pair_separation_rate,bench_seconds_per_call,measured_seconds,status,note
+sigma_signature,catalog_n4,4,6,6,0,0,1,6,0,0.0,0.001874016,0.402,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,catalog_n5,5,5,5,0,0,1,5,0,0.0,0.001874016,0.12,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,catalog_n6,6,19,19,0,0,13,6,11,0.906433,0.001874016,0.131,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,catalog_n7,7,128,128,0,0,127,2,126,0.999877,0.001874016,0.195,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,catalog_n8,8,67,67,0,0,44,5,28,0.984622,0.001874016,0.276,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,catalog_n9,9,12,12,0,0,7,3,3,0.909091,0.001874016,0.255,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,catalog_n10,10,11,11,0,0,8,3,6,0.927273,0.029443322,0.715,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,catalog_n11,11,11,11,0,0,5,3,0,0.872727,0.029443322,2.081,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,corpus_taniguchi2019_n8,8,2,2,0,0,2,1,2,1.0,0.001874016,0.004,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,corpus_wengtangong2013_n8,8,10,10,0,0,10,1,10,1.0,0.001874016,0.047,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,corpus_edelpott2009_n8,8,22,22,0,0,22,1,22,1.0,0.001874016,0.042,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,corpus_yuperrin2022_qam_n8,8,128,128,0,0,128,1,128,1.0,0.001874016,0.351,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,corpus_beierleleanderperrin2022_n8,8,128,128,0,0,128,1,128,1.0,0.001874016,0.248,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,corpus_yuwangli2014_qam_n8,8,128,128,0,0,128,1,128,1.0,0.001874016,0.245,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,corpus_beierleleander2022_n8,8,128,128,0,0,128,1,128,1.0,0.001874016,0.25,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,corpus_simonberg_gf4_n8,8,128,128,0,0,25,10,2,0.95497,0.001874016,0.252,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+sigma_signature,corpus_beierle2025_n8,8,128,128,0,0,128,1,128,1.0,0.001874016,0.379,measured,the ortho-derivative signature; a mismatch certifies CCZ-inequivalence
+od_differential_spectrum,catalog_n4,4,6,6,0,0,1,6,0,0.0,0.00015448,0.064,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,catalog_n5,5,5,5,0,0,1,5,0,0.0,0.00015448,0.007,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,catalog_n6,6,19,19,0,0,13,6,11,0.906433,0.00015448,0.008,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,catalog_n7,7,128,128,0,0,127,2,126,0.999877,0.00015448,0.033,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,catalog_n8,8,67,67,0,0,44,5,28,0.984622,0.00015448,0.062,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,catalog_n9,9,12,12,0,0,6,5,3,0.818182,0.00015448,0.046,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,catalog_n10,10,11,11,0,0,8,3,6,0.927273,0.002600179,0.159,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,catalog_n11,11,11,11,0,0,4,5,0,0.763636,0.002600179,0.73,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,corpus_taniguchi2019_n8,8,2,2,0,0,2,1,2,1.0,0.00015448,0.002,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,corpus_wengtangong2013_n8,8,10,10,0,0,10,1,10,1.0,0.00015448,0.008,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,corpus_edelpott2009_n8,8,22,22,0,0,22,1,22,1.0,0.00015448,0.018,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,corpus_yuperrin2022_qam_n8,8,128,128,0,0,128,1,128,1.0,0.00015448,0.129,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,corpus_beierleleanderperrin2022_n8,8,128,128,0,0,128,1,128,1.0,0.00015448,0.106,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,corpus_yuwangli2014_qam_n8,8,128,128,0,0,128,1,128,1.0,0.00015448,0.107,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,corpus_beierleleander2022_n8,8,128,128,0,0,128,1,128,1.0,0.00015448,0.22,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,corpus_simonberg_gf4_n8,8,128,128,0,0,25,10,2,0.95497,0.00015448,0.107,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_differential_spectrum,corpus_beierle2025_n8,8,128,128,0,0,128,1,128,1.0,0.00015448,0.108,measured,"the differential spectrum of the ortho-derivative alone, one half of sigma"
+od_walsh_spectrum,catalog_n4,4,6,6,0,0,1,6,0,0.0,0.00015448,0.007,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,catalog_n5,5,5,5,0,0,1,5,0,0.0,0.00015448,0.006,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,catalog_n6,6,19,19,0,0,13,6,11,0.906433,0.00015448,0.007,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,catalog_n7,7,128,128,0,0,126,3,125,0.999631,0.00015448,0.042,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,catalog_n8,8,67,67,0,0,44,5,28,0.984622,0.00015448,0.106,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,catalog_n9,9,12,12,0,0,7,3,3,0.909091,0.00015448,0.07,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,catalog_n10,10,11,11,0,0,8,3,6,0.927273,0.002600179,0.244,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,catalog_n11,11,11,11,0,0,5,3,0,0.872727,0.002600179,1.353,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,corpus_taniguchi2019_n8,8,2,2,0,0,2,1,2,1.0,0.00015448,0.003,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,corpus_wengtangong2013_n8,8,10,10,0,0,10,1,10,1.0,0.00015448,0.013,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,corpus_edelpott2009_n8,8,22,22,0,0,22,1,22,1.0,0.00015448,0.028,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,corpus_yuperrin2022_qam_n8,8,128,128,0,0,128,1,128,1.0,0.00015448,0.189,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,corpus_beierleleanderperrin2022_n8,8,128,128,0,0,128,1,128,1.0,0.00015448,0.261,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,corpus_yuwangli2014_qam_n8,8,128,128,0,0,128,1,128,1.0,0.00015448,0.18,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,corpus_beierleleander2022_n8,8,128,128,0,0,128,1,128,1.0,0.00015448,0.261,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,corpus_simonberg_gf4_n8,8,128,128,0,0,25,10,2,0.95497,0.00015448,0.165,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+od_walsh_spectrum,corpus_beierle2025_n8,8,128,128,0,0,128,1,128,1.0,0.00015448,0.16,measured,"the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+apn_ea_mugshot,catalog_n4,4,6,6,0,0,1,6,0,0.0,0.062452835,0.825,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,catalog_n5,5,5,5,0,0,1,5,0,0.0,0.062452835,0.136,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,catalog_n6,6,19,,,,,,,,1.15542606,22.0,skipped_budget,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,catalog_n7,7,128,,,,,,,,1.15542606,147.9,skipped_budget,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,catalog_n8,8,67,67,0,0,44,5,28,0.984622,0.00179042,0.335,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,catalog_n9,9,12,12,0,0,7,3,3,0.909091,0.00179042,0.413,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,catalog_n10,10,11,11,0,0,8,3,6,0.927273,0.036010044,0.565,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,catalog_n11,11,11,11,0,0,5,3,0,0.872727,0.036010044,2.346,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,corpus_taniguchi2019_n8,8,2,2,0,0,2,1,2,1.0,0.00179042,0.004,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,corpus_wengtangong2013_n8,8,10,10,0,0,10,1,10,1.0,0.00179042,0.018,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,corpus_edelpott2009_n8,8,22,22,0,0,22,1,22,1.0,0.00179042,0.041,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,corpus_yuperrin2022_qam_n8,8,128,128,0,0,128,1,128,1.0,0.00179042,0.341,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,corpus_beierleleanderperrin2022_n8,8,128,128,0,0,128,1,128,1.0,0.00179042,0.235,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,corpus_yuwangli2014_qam_n8,8,128,128,0,0,128,1,128,1.0,0.00179042,0.371,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,corpus_beierleleander2022_n8,8,128,128,0,0,128,1,128,1.0,0.00179042,0.235,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,corpus_simonberg_gf4_n8,8,128,128,0,0,25,10,2,0.95497,0.00179042,0.371,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+apn_ea_mugshot,corpus_beierle2025_n8,8,128,128,0,0,128,1,128,1.0,0.00179042,0.233,measured,necessary and not sufficient for EA-equivalence; audit finding F021
+pi_multiset,catalog_n4,4,6,6,0,0,1,6,0,0.0,0.000919916,0.035,measured,the shifted derivative histogram
+pi_multiset,catalog_n5,5,5,5,0,0,1,5,0,0.0,0.000919916,0.048,measured,the shifted derivative histogram
+pi_multiset,catalog_n6,6,19,19,0,0,4,10,1,0.643275,0.000919916,0.052,measured,the shifted derivative histogram
+pi_multiset,catalog_n7,7,128,128,0,0,1,128,0,0.0,0.000919916,0.058,measured,the shifted derivative histogram
+pi_multiset,catalog_n8,8,67,67,0,0,14,50,9,0.444143,0.000919916,0.061,measured,the shifted derivative histogram
+pi_multiset,catalog_n9,9,12,12,0,0,1,12,0,0.0,0.000919916,0.054,measured,the shifted derivative histogram
+pi_multiset,catalog_n10,10,11,11,0,0,1,11,0,0.0,0.000919916,0.061,measured,the shifted derivative histogram
+pi_multiset,catalog_n11,11,11,11,0,0,1,11,0,0.0,0.000919916,0.09,measured,the shifted derivative histogram
+pi_multiset,corpus_taniguchi2019_n8,8,2,2,0,0,1,2,0,0.0,0.000919916,0.0,measured,the shifted derivative histogram
+pi_multiset,corpus_wengtangong2013_n8,8,10,10,0,0,1,10,0,0.0,0.000919916,0.001,measured,the shifted derivative histogram
+pi_multiset,corpus_edelpott2009_n8,8,22,22,0,0,5,18,4,0.337662,0.000919916,0.002,measured,the shifted derivative histogram
+pi_multiset,corpus_yuperrin2022_qam_n8,8,128,128,0,0,128,1,128,1.0,0.000919916,0.01,measured,the shifted derivative histogram
+pi_multiset,corpus_beierleleanderperrin2022_n8,8,128,128,0,0,128,1,128,1.0,0.000919916,0.01,measured,the shifted derivative histogram
+pi_multiset,corpus_yuwangli2014_qam_n8,8,128,128,0,0,127,2,126,0.999877,0.000919916,0.01,measured,the shifted derivative histogram
+pi_multiset,corpus_beierleleander2022_n8,8,128,128,0,0,128,1,128,1.0,0.000919916,0.01,measured,the shifted derivative histogram
+pi_multiset,corpus_simonberg_gf4_n8,8,128,128,0,0,13,43,1,0.851747,0.000919916,0.01,measured,the shifted derivative histogram
+pi_multiset,corpus_beierle2025_n8,8,128,128,0,0,127,2,126,0.999877,0.000919916,0.01,measured,the shifted derivative histogram
+component_degree_spectrum,catalog_n4,4,6,6,0,0,1,6,0,0.0,0.007550288,0.003,measured,the degrees of the components
+component_degree_spectrum,catalog_n5,5,5,5,0,0,1,5,0,0.0,0.007550288,0.002,measured,the degrees of the components
+component_degree_spectrum,catalog_n6,6,19,19,0,0,1,19,0,0.0,0.007550288,0.029,measured,the degrees of the components
+component_degree_spectrum,catalog_n7,7,128,128,0,0,1,128,0,0.0,0.007550288,0.022,measured,the degrees of the components
+component_degree_spectrum,catalog_n8,8,67,67,0,0,1,67,0,0.0,0.007550288,0.005,measured,the degrees of the components
+component_degree_spectrum,catalog_n9,9,12,12,0,0,1,12,0,0.0,0.007550288,0.004,measured,the degrees of the components
+component_degree_spectrum,catalog_n10,10,11,11,0,0,1,11,0,0.0,0.007550288,0.008,measured,the degrees of the components
+component_degree_spectrum,catalog_n11,11,11,11,0,0,1,11,0,0.0,0.007550288,0.023,measured,the degrees of the components
+component_degree_spectrum,corpus_taniguchi2019_n8,8,2,2,0,0,1,2,0,0.0,0.007550288,0.0,measured,the degrees of the components
+component_degree_spectrum,corpus_wengtangong2013_n8,8,10,10,0,0,1,10,0,0.0,0.007550288,0.0,measured,the degrees of the components
+component_degree_spectrum,corpus_edelpott2009_n8,8,22,22,0,0,1,22,0,0.0,0.007550288,0.001,measured,the degrees of the components
+component_degree_spectrum,corpus_yuperrin2022_qam_n8,8,128,128,0,0,1,128,0,0.0,0.007550288,0.004,measured,the degrees of the components
+component_degree_spectrum,corpus_beierleleanderperrin2022_n8,8,128,128,0,0,1,128,0,0.0,0.007550288,0.004,measured,the degrees of the components
+component_degree_spectrum,corpus_yuwangli2014_qam_n8,8,128,128,0,0,1,128,0,0.0,0.007550288,0.004,measured,the degrees of the components
+component_degree_spectrum,corpus_beierleleander2022_n8,8,128,128,0,0,1,128,0,0.0,0.007550288,0.004,measured,the degrees of the components
+component_degree_spectrum,corpus_simonberg_gf4_n8,8,128,128,0,0,1,128,0,0.0,0.007550288,0.004,measured,the degrees of the components
+component_degree_spectrum,corpus_beierle2025_n8,8,128,128,0,0,1,128,0,0.0,0.007550288,0.004,measured,the degrees of the components
+differential_spectrum,catalog_n4,4,6,6,0,0,1,6,0,0.0,0.168182149,0.007,measured,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,catalog_n5,5,5,5,0,0,1,5,0,0.0,0.168182149,0.006,measured,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,catalog_n6,6,19,19,0,0,1,19,0,0.0,0.168182149,0.006,measured,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,catalog_n7,7,128,,,,,,,,0.168182149,21.5,skipped_budget,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,catalog_n8,8,67,67,0,0,1,67,0,0.0,0.168182149,0.049,measured,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,catalog_n9,9,12,12,0,0,1,12,0,0.0,0.168182149,0.038,measured,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,catalog_n10,10,11,11,0,0,1,11,0,0.0,0.168182149,0.121,measured,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,catalog_n11,11,11,11,0,0,1,11,0,0.0,0.168182149,0.469,measured,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,corpus_taniguchi2019_n8,8,2,2,0,0,1,2,0,0.0,0.168182149,0.001,measured,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,corpus_wengtangong2013_n8,8,10,10,0,0,1,10,0,0.0,0.168182149,0.007,measured,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,corpus_edelpott2009_n8,8,22,22,0,0,1,22,0,0.0,0.168182149,0.015,measured,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,corpus_yuperrin2022_qam_n8,8,128,,,,,,,,0.168182149,21.5,skipped_budget,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,corpus_beierleleanderperrin2022_n8,8,128,,,,,,,,0.168182149,21.5,skipped_budget,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,corpus_yuwangli2014_qam_n8,8,128,,,,,,,,0.168182149,21.5,skipped_budget,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,corpus_beierleleander2022_n8,8,128,,,,,,,,0.168182149,21.5,skipped_budget,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,corpus_simonberg_gf4_n8,8,128,,,,,,,,0.168182149,21.5,skipped_budget,the differential spectrum of F itself; the same for every APN function
+differential_spectrum,corpus_beierle2025_n8,8,128,,,,,,,,0.168182149,21.5,skipped_budget,the differential spectrum of F itself; the same for every APN function
+absolute_walsh_spectrum,catalog_n4,4,6,6,0,0,1,6,0,0.0,0.437200471,0.007,measured,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,catalog_n5,5,5,5,0,0,1,5,0,0.0,0.437200471,0.006,measured,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,catalog_n6,6,19,19,0,0,2,18,1,0.105263,0.437200471,0.007,measured,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,catalog_n7,7,128,,,,,,,,0.437200471,56.0,skipped_budget,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,catalog_n8,8,67,,,,,,,,0.437200471,29.3,skipped_budget,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,catalog_n9,9,12,12,0,0,1,12,0,0.0,0.437200471,0.07,measured,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,catalog_n10,10,11,11,0,0,1,11,0,0.0,0.437200471,0.242,measured,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,catalog_n11,11,11,11,0,0,1,11,0,0.0,0.437200471,1.376,measured,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,corpus_taniguchi2019_n8,8,2,2,0,0,1,2,0,0.0,0.437200471,0.009,measured,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,corpus_wengtangong2013_n8,8,10,10,0,0,1,10,0,0.0,0.437200471,0.011,measured,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,corpus_edelpott2009_n8,8,22,22,0,0,1,22,0,0.0,0.437200471,0.024,measured,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,corpus_yuperrin2022_qam_n8,8,128,,,,,,,,0.437200471,56.0,skipped_budget,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,corpus_beierleleanderperrin2022_n8,8,128,,,,,,,,0.437200471,56.0,skipped_budget,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,corpus_yuwangli2014_qam_n8,8,128,,,,,,,,0.437200471,56.0,skipped_budget,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,corpus_beierleleander2022_n8,8,128,,,,,,,,0.437200471,56.0,skipped_budget,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,corpus_simonberg_gf4_n8,8,128,,,,,,,,0.437200471,56.0,skipped_budget,the extended Walsh spectrum of F itself
+absolute_walsh_spectrum,corpus_beierle2025_n8,8,128,,,,,,,,0.437200471,56.0,skipped_budget,the extended Walsh spectrum of F itself
+gamma_rank,catalog_n4,4,6,6,0,0,1,6,0,0.0,0.001475719,0.091,measured,the source guard refuses n > 7
+gamma_rank,catalog_n5,5,5,5,0,0,1,5,0,0.0,0.001475719,0.027,measured,the source guard refuses n > 7
+gamma_rank,catalog_n6,6,19,19,0,0,8,6,4,0.853801,0.031784956,0.634,measured,the source guard refuses n > 7
+gamma_rank,catalog_n7,7,128,,,,,,,,3.73974436,478.7,skipped_budget,the source guard refuses n > 7
+gamma_rank,catalog_n8,8,67,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,catalog_n9,9,12,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,catalog_n10,10,11,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,catalog_n11,11,11,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,corpus_taniguchi2019_n8,8,2,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,corpus_wengtangong2013_n8,8,10,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,corpus_edelpott2009_n8,8,22,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,corpus_yuperrin2022_qam_n8,8,128,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,corpus_beierleleanderperrin2022_n8,8,128,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,corpus_yuwangli2014_qam_n8,8,128,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,corpus_beierleleander2022_n8,8,128,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,corpus_simonberg_gf4_n8,8,128,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+gamma_rank,corpus_beierle2025_n8,8,128,,,,,,,,3.73974436,,not_applicable,the source guard refuses n > 7
+delta_rank,catalog_n4,4,6,6,0,0,1,6,0,0.0,0.021430605,0.014,measured,the source guard refuses n > 7
+delta_rank,catalog_n5,5,5,5,0,0,1,5,0,0.0,0.021430605,0.018,measured,the source guard refuses n > 7
+delta_rank,catalog_n6,6,19,19,0,0,2,11,0,0.51462,0.021430605,0.45,measured,the source guard refuses n > 7
+delta_rank,catalog_n7,7,128,,,,,,,,0.729495623,93.4,skipped_budget,the source guard refuses n > 7
+delta_rank,catalog_n8,8,67,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,catalog_n9,9,12,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,catalog_n10,10,11,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,catalog_n11,11,11,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,corpus_taniguchi2019_n8,8,2,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,corpus_wengtangong2013_n8,8,10,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,corpus_edelpott2009_n8,8,22,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,corpus_yuperrin2022_qam_n8,8,128,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,corpus_beierleleanderperrin2022_n8,8,128,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,corpus_yuwangli2014_qam_n8,8,128,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,corpus_beierleleander2022_n8,8,128,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,corpus_simonberg_gf4_n8,8,128,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7
+delta_rank,corpus_beierle2025_n8,8,128,,,,,,,,0.729495623,,not_applicable,the source guard refuses n > 7

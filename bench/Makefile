@@ -9,6 +9,7 @@
 #   make -C bench bench     level 2, the default        about 4 minutes
 #   make -C bench full      level 3, every case         about 30 minutes
 #   make -C bench list      print the cases, measure none
+#   make -C bench crossings cross the axes of the last run, measure nothing
 #
 # CAUTION: `make full` runs the exhaustive equivalence searches. Do not start it
 # on a machine that you need for other work, and do not start it while another
@@ -22,6 +23,7 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT   := $(abspath $(MAKEFILE_DIR)..)
 JFLAGS ?= --startup-file=no --project=$(ROOT)
 RUN    := $(MAKEFILE_DIR)run.jl
+CROSS  := $(MAKEFILE_DIR)crossings.jl
 
 # Overridable parameters
 target_seconds ?= 1.0
@@ -31,7 +33,7 @@ n              ?=
 GROUP_ARG := $(if $(group),--group=$(group),)
 N_ARG     := $(if $(n),--n=$(n),)
 
-.PHONY: help quick bench full list group clean
+.PHONY: help quick bench full list group crossings clean
 
 default: help
 
@@ -47,15 +49,32 @@ full:
 list:
 	$(JULIA) $(JFLAGS) $(RUN) --list
 
+# The crossings read bench/generated/benchmarks.csv. They measure nothing, so
+# they cost about one second. Run a suite target first.
+crossings:
+	$(JULIA) $(JFLAGS) $(CROSS)
+
 clean:
 	rm -f $(MAKEFILE_DIR)generated/benchmarks.csv \
 	      $(MAKEFILE_DIR)generated/benchmarks_table.tex \
 	      $(MAKEFILE_DIR)generated/benchmarks_facts.tex \
-	      $(MAKEFILE_DIR)generated/benchmarks_meta.tex
+	      $(MAKEFILE_DIR)generated/benchmarks_meta.tex \
+	      $(MAKEFILE_DIR)generated/crossing_growth.csv \
+	      $(MAKEFILE_DIR)generated/crossing_growth_table.tex \
+	      $(MAKEFILE_DIR)generated/crossing_growth.dat \
+	      $(MAKEFILE_DIR)generated/crossing_reach_table.tex \
+	      $(MAKEFILE_DIR)generated/crossing_polarity.csv \
+	      $(MAKEFILE_DIR)generated/crossing_polarity_table.tex \
+	      $(MAKEFILE_DIR)generated/crossing_memory.csv \
+	      $(MAKEFILE_DIR)generated/crossing_memory_table.tex \
+	      $(MAKEFILE_DIR)generated/crossing_memory.dat \
+	      $(MAKEFILE_DIR)generated/crossings_facts.tex
 
 help:
 	@echo 'VBF benchmark suite'
-	@echo 'Targets: quick (level 1)  bench (level 2)  full (level 3)  list  clean'
+	@echo 'Targets: quick (level 1)  bench (level 2)  full (level 3)  list  crossings  clean'
 	@echo 'Params:  group=spectra  n=8  target_seconds=1.0'
 	@echo 'Output:  bench/generated/{benchmarks.csv,benchmarks_table.tex,'
 	@echo '                          benchmarks_facts.tex,benchmarks_meta.tex}'
+	@echo 'Crossings: bench/generated/crossing_*.{csv,tex,dat}, crossings_facts.tex'
+	@echo '           Paste bench/crossings.tex into the paper.'

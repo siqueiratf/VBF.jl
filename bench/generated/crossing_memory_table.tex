@@ -1,0 +1,27 @@
+% !!! GENERATED FILE — DO NOT EDIT !!!
+% Crossing 3: the cases that allocate the most, and what they cost in time.
+% Produced by bench/crossings.jl from bench/generated/benchmarks.csv and bench/crossings.toml.
+% Regenerate with:  make -C bench crossings
+% Machine: AMD Ryzen 5 5600G with Radeon Graphics, 12 cores, 1 Julia thread(s), 30.7 GB.
+% Julia 1.12.7; measured 2026-09-01 at level 2; statistic: the minimum of N repetitions.
+\begin{tabular}{llrrrr}
+\toprule
+Group & Operation & $n$ & min (s) & Allocated (GiB) & GiB/s \\
+\midrule
+equivalence & \texttt{are\_linear\_equivalent\_neg} & 7 & $7.95\times10^{-1}$ & 2.480 & 3.12 \\
+equivalence & \texttt{are\_ea\_equivalent\_pos} & 8 & $7.07\times10^{-1}$ & 2.106 & 2.98 \\
+equivalence & \texttt{affine\_class\_signature} & 6 & $6.17\times10^{-1}$ & 1.676 & 2.72 \\
+equivalence & \texttt{are\_linearly\_equivalent\_general} & 6 & $4.46\times10^{-1}$ & 1.264 & 2.83 \\
+equivalence & \texttt{linear\_equivalences\_general} & 6 & $4.22\times10^{-1}$ & 1.184 & 2.80 \\
+equivalence & \texttt{are\_ea\_equivalent\_neg\_heggebakk} & 5 & $1.78\times10^{0}$ & 1.124 & 0.63 \\
+linalg & \texttt{expand\_subspaces} & 12 & $3.57\times10^{-1}$ & 0.575 & 1.61 \\
+equivalence & \texttt{ea\_mappings\_from\_ortho\_derivative\_pos} & 7 & $3.11\times10^{0}$ & 0.527 & 0.17 \\
+invariants & \texttt{nonbent\_signature} & 10 & $1.57\times10^{-1}$ & 0.477 & 3.05 \\
+invariants & \texttt{image\_subspaces} & 10 & $1.50\times10^{-1}$ & 0.461 & 3.08 \\
+invariants & \texttt{apn\_ea\_mugshot} & 12 & $7.10\times10^{-1}$ & 0.438 & 0.62 \\
+equivalence & \texttt{ea\_equivalences} & 4 & $5.40\times10^{-1}$ & 0.378 & 0.70 \\
+equivalence & \texttt{linear\_representative} & 7 & $1.00\times10^{-1}$ & 0.304 & 3.03 \\
+constructions & \texttt{taniguchi\_apn\_representatives} & 8 & $3.27\times10^{-1}$ & 0.299 & 0.91 \\
+equivalence & \texttt{are\_affine\_equivalent\_neg} & 5 & $9.52\times10^{-2}$ & 0.271 & 2.85 \\
+\bottomrule
+\end{tabular}

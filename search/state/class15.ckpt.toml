@@ -1,0 +1,6 @@
+region_id = "n8/class15"
+d = 24
+next_block = 16
+tested = 16777216
+elapsed_seconds = 8.546926021575928
+found_b = []

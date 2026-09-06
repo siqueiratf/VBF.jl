@@ -1,0 +1,12 @@
+criterion,grade,papers,papers_complete,papers_mostly_complete,papers_partial,papers_unstated,findings,findings_high,findings_per_paper
+R1,full,16,2,8,6,0,18,11,1.12
+R1,half,16,1,5,9,1,8,1,0.5
+R1,open,10,2,4,4,0,8,5,0.8
+R2,full,25,2,8,14,1,20,9,0.8
+R2,half,17,3,9,5,0,14,8,0.82
+R3,full,6,0,0,6,0,12,9,2.0
+R3,half,26,3,12,10,1,19,6,0.73
+R3,open,10,2,5,3,0,3,2,0.3
+R4,full,3,0,1,2,0,1,1,0.33
+R4,half,25,3,12,9,1,25,13,1.0
+R4,open,14,2,4,8,0,8,3,0.57

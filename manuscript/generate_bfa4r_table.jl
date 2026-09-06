@@ -336,6 +336,25 @@ function build()
     write(joinpath(OUT, "bfa4r_facts.tex"), String(take!(facts)))
     write(joinpath(OUT, "bfa4r_evidence.tex"), String(take!(ap)))
 
+    # The same grades as data. analysis/metrics.jl joins this file to the
+    # reproduction outcome of each paper, so the grade must come from here and
+    # never from a second copy of the rules. The file holds data only: one
+    # header line, then one row per paper, and no comment line.
+    csv = IOBuffer()
+    println(csv, "paper_id,year,bib_key,r1,r2,r3,r4,pseudocode,io,params,tabular,",
+                 "invariant,archive,repo,proprietary,underspec,paper_issues,",
+                 "corroborators,in_corpus")
+    for p in ordered
+        e = ev[p.id]
+        println(csv, join((p.id, p.year, p.bib_key,
+                           r1(e), r2(e), r3(e), r4(e),
+                           e.pseudocode, e.io, e.params, e.tabular, e.invariant,
+                           e.archive, e.repo, e.proprietary, e.underspec,
+                           e.paper_issues, length(e.corroborators),
+                           e.in_corpus ? 1 : 0), ","))
+    end
+    write(joinpath(OUT, "bfa4r_grades.csv"), String(take!(csv)))
+
     @info "BFA-4R generated" papers = length(papers) R1full = n_full[:R1] R2full = n_full[:R2] R3full = n_full[:R3] R4full = n_full[:R4] missing_bib = length(nobib)
     isempty(nobib) || println("  no usable bibliography key: ", join(nobib, ", "))
 end

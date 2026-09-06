@@ -130,8 +130,121 @@ The minimum is the statistic of record. It is the least sensitive to scheduler
 noise on a loaded machine. The CSV also holds the median, the mean, the standard
 deviation and the allocated bytes.
 
+## The crossings
+
+A table of 229 timings is data. A crossing turns that data into a result,
+because it puts each measurement against a prediction that the measurement can
+contradict. Run this after any suite target.
+
+```bash
+make -C bench crossings          # about one second; it measures nothing
+```
+
+The command reads `bench/generated/benchmarks.csv`, the machine file beside it,
+and the predictions in `bench/crossings.toml`. It writes ten more files into
+`bench/generated/`.
+
+### Crossing 1 — the dimension against the predicted exponent
+
+The script fits `log2` of the minimum time against `n`, so the slope of a
+series is an exponent. `bench/crossings.toml` holds the exponent that the
+algorithm predicts, and the table prints the two side by side.
+
+CAUTION: the `n` column of the CSV holds three different quantities: a bit
+width, a matrix side and a machine word width. A fit that mixes them returns a
+number that looks like a growth rate and is not one. The `[size_kind]` section
+of `bench/crossings.toml` separates them, and the script gives a power-law
+model to a matrix side and an exponential model to a bit width.
+
+Three guards keep the table honest.
+
+1. A series whose fastest point is under one microsecond reads "inconclusive".
+   The fixed cost of one call is then a large part of the measurement.
+2. A series that the straight line misses by more than half a bit reads
+   "curved fit". Its slope is an average over two regimes and not one
+   exponent, so read the `pair_slope_min` and `pair_slope_max` columns.
+3. A case with three or more points, no prediction and no exclusion appears as
+   "unmodelled" in the console and in the header of the CSV. A new case can
+   therefore never drop out of the article without a word.
+
+The `[[extrapolation_check]]` entries test a fit against a point that another
+instrument measured. The Gamma-rank fit over n = 5 to 7 gives 141.9 s at
+n = 8; `bench/calibration.toml` measured 166.8 s there, a ratio of 0.85.
+
+### Crossing 2 — the cost of a yes against the cost of a no
+
+Every decision procedure in `bench/suites/05_equivalence.jl` registers a
+positive case and a negative case. The two answers take different code paths,
+so one mean over both has no meaning. `[[polarity]]` pairs them and states
+which side the code should favour. The table prints the ratio and names the
+faster answer, and the script marks a pair whose direction misses its
+expectation.
+
+### Crossing 3 — the allocation against the time
+
+The scatter of allocated bytes against seconds shows which cases stop for the
+reason of memory. The reach table joins this crossing to the first one: each
+fitted series gives a largest `n` under one hour and a largest `n` under 4 GiB,
+and the smaller of the two is the one that stops the operation.
+
+CAUTION: the `bytes` column comes from `@allocated`. It is the total that one
+call allocates, and it is not the peak resident memory. Two figures for peak
+resident memory exist in this repository, and both come from another
+instrument: 0.95 GB for the Gamma-rank at n = 8, in `bench/calibration.toml`,
+and about 1.7 GB for one call of `equivalence/partition_automorphisms` at
+n = 6.
+
+### The files
+
+| File | What it is |
+|---|---|
+| `crossing_growth.csv` | one row per fitted series: slope, prediction, verdict, reach |
+| `crossing_growth_table.tex` | the `booktabs` table of crossing 1 |
+| `crossing_growth.dat` | the measured points, for a `pgfplots` growth figure |
+| `crossing_reach_table.tex` | the largest `n` under one hour and under 4 GiB |
+| `crossing_polarity.csv` | one row per decision procedure, both answers |
+| `crossing_polarity_table.tex` | the `booktabs` table of crossing 2 |
+| `crossing_memory.csv` | every case, heaviest allocation first |
+| `crossing_memory_table.tex` | the `booktabs` table of the heaviest cases |
+| `crossing_memory.dat` | the scatter data of crossing 3 |
+| `crossings_facts.tex` | one `\newcommand` per figure that the prose quotes |
+| `CROSSINGS.md` | the provenance: the machine, the units, the unmodelled cases, the excluded series and the external checks |
+
+The three CSV files hold data only. They carry one header line of column names
+and no comment line, so pandas, R or a spreadsheet reads them with no filter.
+Everything that a reader needs to interpret them is in `CROSSINGS.md`.
+
+`bench/crossings.tex` is the fragment that you paste into the paper. It is not
+generated. It inputs the four tables, draws the two figures and writes the
+captions. `bench/preview_crossings.tex` compiles that fragment on its own, so
+you can read it on screen. The preview is a proofing harness. Do not paste it
+into a paper.
+
+### Add a prediction
+
+Open `bench/crossings.toml` and add a `[[growth]]` block.
+
+```toml
+[[growth]]
+case = "spectra/ddt"
+predicted_slope = 2.0
+kind   = "exact"          # or "lower_bound"
+basis  = "the table holds 2^{2n} cells and every cell is written once"
+source = "bench/suites/03_spectra.jl"
+```
+
+Follow these rules.
+
+1. Give the exponent from the algorithm, never from the measurement.
+2. Use `lower_bound` when each unit of work itself grows with `n`.
+3. Name the file that documents the exponent in `source`.
+4. Exclude a series through `[[excluded]]` when its points do not measure one
+   algorithm on one family of inputs. Give the reason.
+
 ## Related files
 
 - `bench/calibrate.jl` and `bench/calibration.toml` are the earlier, hand-written
   probe of a few primitives. They stay, because `report.md` cites them.
 - `bench/gamma8_probe.jl` is a single experiment on the Gamma-rank at n = 8.
+- `bench/crossings.jl`, `bench/crossings.toml`, `bench/crossings.tex` and
+  `bench/preview_crossings.tex` build the crossings above.

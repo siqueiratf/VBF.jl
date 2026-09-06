@@ -1,0 +1,19 @@
+source,method_group,n,member_count,indexed_rows,sigma_classes,rows_per_sigma_class,unique_sigma_classes,shared_sigma_classes,note
+beierle2025_n8,B2,8,3775599,3775599,3775599,1.0,3775599,0,"the published file is named new_apns.txt and holds only the functions that the authors treat as new, so an empty overlap with an earlier source is expected"
+beierleleander2022_n8,B2,8,12923,12923,12923,1.0,12911,12,
+yuwangli2014_qam_n8,B1,8,8179,8179,8179,1.0,8157,22,
+beierleleanderperrin2022_n8,B2,8,6368,6368,6368,1.0,6368,0,
+yuperrin2022_qam_n8,B1,8,5412,5412,5412,1.0,5412,0,
+functions,curated,7,500,493,487,1.01,487,0,"the curated functions table of the catalog, not a published corpus"
+functions,curated,8,70,67,44,1.52,0,44,"the curated functions table of the catalog, not a published corpus"
+simonberg_gf4_n8,B3,8,196863,196863,27,7291.22,0,27,"the sweep keeps every function it accepts, so one CCZ class appears many times"
+edelpott2009_n8,B4,8,22,22,22,1.0,0,22,
+functions,curated,6,21,19,13,1.46,13,0,"the curated functions table of the catalog, not a published corpus"
+wengtangong2013_n8,B4,8,10,10,10,1.0,0,10,
+functions,curated,10,14,11,8,1.38,8,0,"the curated functions table of the catalog, not a published corpus"
+functions,curated,9,18,12,7,1.71,7,0,"the curated functions table of the catalog, not a published corpus"
+functions,curated,11,22,11,5,2.2,5,0,"the curated functions table of the catalog, not a published corpus"
+functions,curated,12,2,2,2,1.0,2,0,"the curated functions table of the catalog, not a published corpus"
+taniguchi2019_n8,A2,8,2,2,2,1.0,0,2,"instances of the Taniguchi family, stored as a corpus for convenience"
+functions,curated,5,11,5,1,5.0,1,0,"the curated functions table of the catalog, not a published corpus"
+functions,curated,4,6,6,1,6.0,1,0,"the curated functions table of the catalog, not a published corpus"
