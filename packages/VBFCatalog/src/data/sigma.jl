@@ -362,14 +362,19 @@ function _classify_ccz(F::SBox{N}, index::SQLite.DB,
                        catalog::Union{Nothing,SQLite.DB}) where {N}
     _assert_sigma_coverage(index, N; db = catalog)
     h = sigma_hash(F)
-    for r in DBInterface.execute(
+    q = DBInterface.execute(
         index,
         "SELECT source, member_idx FROM ccz_sigma_index WHERE sigma_hash = " *
         _sql_quote(h) * " LIMIT 1",
     )
-        return (:sigma_match, String(r.source), Int(r.member_idx))
+    try
+        for r in q
+            return (:sigma_match, String(r.source), Int(r.member_idx))
+        end
+        (:new, nothing, nothing)
+    finally
+        DBInterface.close!(q)
     end
-    (:new, nothing, nothing)
 end
 
 """

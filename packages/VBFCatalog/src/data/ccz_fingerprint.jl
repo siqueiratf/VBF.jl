@@ -137,14 +137,19 @@ quadratic APN use [`classify_ccz`](@ref) (σ) instead.
 """
 function classify_ccz_fingerprint(F::SBox; index::SQLite.DB = _open_ccz_fingerprint_index())
     h = ccz_fingerprint_hash(F)
-    for r in DBInterface.execute(
+    q = DBInterface.execute(
         index,
         "SELECT source, member_idx FROM ccz_fingerprint_index WHERE fp_hash = " *
         _sql_quote(h) * " LIMIT 1",
     )
-        return (:known, String(r.source), Int(r.member_idx))
+    try
+        for r in q
+            return (:known, String(r.source), Int(r.member_idx))
+        end
+        (:new, nothing, nothing)
+    finally
+        DBInterface.close!(q)
     end
-    (:new, nothing, nothing)
 end
 
 """

@@ -200,13 +200,15 @@ end
 function _verify_schema!(db::SQLite.DB, path::AbstractString)
     v = nothing
     found = false
-    for r in DBInterface.execute(
-        db,
-        "SELECT schema_version FROM schema_meta LIMIT 1",
-    )
-        v = r.schema_version
-        found = true
-        break
+    q = DBInterface.execute(db, "SELECT schema_version FROM schema_meta LIMIT 1")
+    try
+        for r in q
+            v = r.schema_version
+            found = true
+            break
+        end
+    finally
+        DBInterface.close!(q)
     end
     found || throw(
         ArgumentError(
