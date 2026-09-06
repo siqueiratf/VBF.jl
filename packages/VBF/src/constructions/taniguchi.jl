@@ -99,6 +99,8 @@ that separates quadratic-APN classes). Enumerates every admissible `(m, a, b)`
 (`gcd(m, half)=1`, `b ≠ 0`, `P` rootless), keeps the quadratic-APN members, and
 tags `new = (a ≠ 0)`. On `half = 4` this returns the three classes of Tan19 — one
 old (`a = 0`, Zhou–Pott) and the two new (`a ≠ 0`) ones.
+Optional `observer(event, value)` counts parameter tuples (`:candidate`),
+`:final_test` calls, and `:apn` SBoxes before deduplication. Do not mutate values.
 
 # Examples
 ```jldoctest
@@ -111,6 +113,7 @@ julia> length(taniguchi_apn_representatives(4))
 function taniguchi_apn_representatives(
     half::Integer;
     modulus::Integer = primitive_polynomial(half),
+    observer = nothing,
 )
     n = Int(half)
     mod = Int(modulus)
@@ -119,10 +122,13 @@ function taniguchi_apn_representatives(
     for m = 1:(n-1)
         gcd(m, n) == 1 || continue
         for a = 0:((1<<n)-1), b = 1:((1<<n)-1)
+            observer === nothing || observer(:candidate, nothing)
             _taniguchi_admissible(n, m, a, b; modulus = mod) || continue
             F = taniguchi_apn(n, m, a, b; modulus = mod)
+            observer === nothing || observer(:final_test, nothing)
             (differential_uniformity(F) == 2 && algebraic_degree(F) == 2) ||
                 continue
+            observer === nothing || observer(:apn, F)
             mg = apn_ea_mugshot(F)
             mg in seen && continue
             push!(seen, mg)

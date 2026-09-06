@@ -183,7 +183,11 @@ function is_cyclic_qam(M::AbstractMatrix{<:Integer}, m::Integer)
 end
 
 """
-    search_qam(n, m; limit=typemax(Int), max_evaluations=1<<22, confirm=false)
+    search_qam(n, m; limit=typemax(Int), max_evaluations=1<<22, confirm=false, observer=nothing)
+
+Optional `observer(event, value)` reports `:candidate`, `:final_test` (the QAM
+rank criterion), and `:apn` before deduplication. Only `:apn` carries an SBox;
+observers must not mutate it.
         -> SearchOutcome{SBox{n}}
 
 Search for quadratic APN functions over `GF(2ⁿ)` with `GF(2ᵐ)` coefficients by
@@ -237,6 +241,7 @@ function search_qam(
     limit::Integer = typemax(Int),
     max_evaluations::Integer = 1 << 22,
     confirm::Bool = false,
+    observer = nothing,
 )
     nn = Int(n)
     orbits = qam_cyclic_orbits(nn, m)
@@ -278,8 +283,11 @@ function search_qam(
             vals[vi] = subfields[vi][counter[vi]+1]
         end
         M = qam_from_cyclic(nn, m, vals)
+        observer === nothing || observer(:candidate, nothing)
+        observer === nothing || observer(:final_test, nothing)
         if is_cyclic_qam(M, m)  # Theorem-3-accelerated test
             S = qam_to_sbox(M)
+            observer === nothing || observer(:apn, S)
             mug = apn_ea_mugshot(S)
             bucket = get!(() -> SBox{nn,_storage_for(nn)}[], buckets, mug)
             isnew = if isempty(bucket)
@@ -349,6 +357,10 @@ of a QAM). Each completed matrix passing [`is_qam`](@ref) yields an APN function
 ([`qam_to_sbox`](@ref)); results are deduplicated by [`apn_ea_mugshot`](@ref) into
 distinct CCZ-classes.
 
+Optional `observer(event, value)` reports completed matrices (`:candidate`),
+QAM rank tests (`:final_test`), and `:apn` SBoxes before deduplication. Observers
+must not mutate the SBoxes.
+
 Returns a [`SearchOutcome`](@ref): [`Exhausted`](@ref) when the tree was walked
 to the end (so the class list is complete and an empty one proves emptiness),
 [`Found`](@ref) when `limit` distinct classes were reached first, or
@@ -364,6 +376,7 @@ function search_qam_full(
     limit::Integer = typemax(Int),
     max_evaluations::Integer = 1 << 24,
     modulus::Integer = conway_polynomial(n),
+    observer = nothing,
 )
     nn = Int(n)
     M = [zeros(Int, nn) for _ = 1:nn]            # symmetric, zero diagonal
@@ -413,12 +426,15 @@ function search_qam_full(
         done() && return
         if c > nn
             evals[] += 1
+            observer === nothing || observer(:candidate, nothing)
             Mat = Matrix{Int}(undef, nn, nn)
             @inbounds for i = 1:nn, j = 1:nn
                 Mat[i, j] = M[i][j]
             end
+            observer === nothing || observer(:final_test, nothing)
             if is_qam(Mat)
                 F = qam_to_sbox(Mat)
+                observer === nothing || observer(:apn, F)
                 mg = apn_ea_mugshot(F)
                 if !(mg in seen)
                     push!(seen, mg)

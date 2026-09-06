@@ -98,9 +98,17 @@ end
     apn_trims(F::SBox{N}) -> Vector{SBox{N-1}}
 
 The trims of `F` that are APN (`differential_uniformity == 2`). May be empty.
+Optional `observer(event, value)` reports `:candidate`, `:final_test`, and
+`:apn`; only `:apn` carries the verified SBox, which must not be mutated.
 """
-function apn_trims(F::SBox{N}) where {N}
-    filter!(t -> differential_uniformity(t) == 2, trims(F))
+function apn_trims(F::SBox{N}; observer = nothing) where {N}
+    filter!(trims(F)) do t
+        observer === nothing || observer(:candidate, nothing)
+        observer === nothing || observer(:final_test, nothing)
+        ok = differential_uniformity(t) == 2
+        ok && observer !== nothing && observer(:apn, t)
+        ok
+    end
 end
 
 """

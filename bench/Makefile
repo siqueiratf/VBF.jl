@@ -1,9 +1,7 @@
 # VBF benchmark suite.
 #
 # The suite measures the public API of packages/VBF and the read queries of
-# packages/VBFCatalog. It writes four files into bench/generated/ that the
-# thesis reads directly. It changes nothing under packages/ and it runs no git
-# command.
+# packages/VBFCatalog. It appends raw timed executions to the project database.
 #
 #   make -C bench quick     level 1, the fast cases     about 1 minute
 #   make -C bench bench     level 2, the default        about 4 minutes
@@ -33,7 +31,7 @@ n              ?=
 GROUP_ARG := $(if $(group),--group=$(group),)
 N_ARG     := $(if $(n),--n=$(n),)
 
-.PHONY: help quick bench full list group crossings clean
+.PHONY: help quick bench full list group crossings clean test
 
 default: help
 
@@ -48,6 +46,9 @@ full:
 
 list:
 	$(JULIA) $(JFLAGS) $(RUN) --list
+
+test:
+	$(JULIA) $(JFLAGS) $(MAKEFILE_DIR)test_persistence.jl
 
 # The crossings read bench/generated/benchmarks.csv. They measure nothing, so
 # they cost about one second. Run a suite target first.
@@ -74,7 +75,6 @@ help:
 	@echo 'VBF benchmark suite'
 	@echo 'Targets: quick (level 1)  bench (level 2)  full (level 3)  list  crossings  clean'
 	@echo 'Params:  group=spectra  n=8  target_seconds=1.0'
-	@echo 'Output:  bench/generated/{benchmarks.csv,benchmarks_table.tex,'
-	@echo '                          benchmarks_facts.tex,benchmarks_meta.tex}'
+	@echo 'Output:  packages/VBFCatalog/BFA_catalog.sqlite, table benchmark'
 	@echo 'Crossings: bench/generated/crossing_*.{csv,tex,dat}, crossings_facts.tex'
 	@echo '           Paste bench/crossings.tex into the paper.'

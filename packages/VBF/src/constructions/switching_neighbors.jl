@@ -142,6 +142,7 @@ function _sn_apn_coset(
     F::SBox{N,T},
     uu::T,
     basis::Vector{BitVector},
+    observer = nothing,
 ) where {N,T}
     n_size = 1 << N
     result = SBox{N,T}[]
@@ -149,6 +150,7 @@ function _sn_apn_coset(
     nb = length(basis)
     nb == 0 && return result
     @inbounds for combo = 1:((1<<nb)-1)
+        observer === nothing || observer(:candidate, nothing)
         lut = copy(F.lut)
         for j = 0:(nb-1)
             ((combo >> j) & 1) == 1 || continue
@@ -160,7 +162,11 @@ function _sn_apn_coset(
         lut in seen && continue
         push!(seen, lut)
         G = SBox{N,T}(lut)
-        differential_uniformity(G) ≤ 2 && push!(result, G)
+        observer === nothing || observer(:final_test, nothing)
+        if differential_uniformity(G) ≤ 2
+            push!(result, G)
+            observer === nothing || observer(:apn, G)
+        end
     end
     return result
 end
@@ -175,8 +181,10 @@ element: entry `u` (for `u = 1 … 2ⁿ-1`) is the vector of APN functions
 
 Throws `ArgumentError` if `F` is not APN. See the module docstring for the
 deterministic-vs-sampled difference.
+Optional `observer(event, value)` reports `:candidate`, `:final_test`, and
+`:apn`; only `:apn` carries the verified SBox, which must not be mutated.
 """
-function switching_neighbors(F::SBox{N,T}) where {N,T}
+function switching_neighbors(F::SBox{N,T}; observer = nothing) where {N,T}
     differential_uniformity(F) ≤ 2 ||
         throw(ArgumentError("switching_neighbors: F must be APN"))
     n_size = 1 << N
@@ -223,7 +231,7 @@ function switching_neighbors(F::SBox{N,T}) where {N,T}
     result = Vector{Vector{SBox{N,T}}}(undef, n_size - 1)
     for uu = 1:(n_size-1)
         basis = _sn_kernel(systems[uu])
-        result[uu] = _sn_apn_coset(F, T(uu), basis)
+        result[uu] = _sn_apn_coset(F, T(uu), basis, observer)
     end
     return result
 end

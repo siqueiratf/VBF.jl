@@ -121,9 +121,10 @@ function _remove_point!(s::_QApnSearch, c::Int)
     nothing
 end
 
-function _qapn_recurse!(s::_QApnSearch{N,T}, depth::Int) where {N,T}
+function _qapn_recurse!(s::_QApnSearch{N,T}, depth::Int, observer = nothing) where {N,T}
     length(s.sols) >= s.limit && return
     if depth == s.n - 1                     # every position assigned
+        observer === nothing || observer(:candidate, nothing)
         push!(s.sols, SBox{N,T}(T.(s.sbox)))
         return
     end
@@ -132,7 +133,7 @@ function _qapn_recurse!(s::_QApnSearch{N,T}, depth::Int) where {N,T}
     @inbounds for y in ord
         s.sbox[x+1] = y
         if _add_point!(s, x)
-            _qapn_recurse!(s, depth + 1)
+            _qapn_recurse!(s, depth + 1, observer)
         end
         _remove_point!(s, x)
         s.sbox[x+1] = -1
@@ -152,11 +153,14 @@ returning up to `limit` of them. The search is deterministic by default; pass an
 
 Every returned function is independently re-verified to be APN
 (`differential_uniformity == 2`) and of algebraic degree `2`.
+Optional `observer(event, value)` receives `:candidate`, `:final_test`, and
+`:apn` events; only `:apn` carries an SBox, which must not be mutated.
 """
 function search_quadratic_apn(
     ::Val{N};
     limit::Integer = 1,
     rng::Union{Nothing,AbstractRNG} = nothing,
+    observer = nothing,
 ) where {N}
     N >= 1 ||
         throw(ArgumentError("search_quadratic_apn: N must be ≥ 1, got $N"))
@@ -185,10 +189,15 @@ function search_quadratic_apn(
         SBox{N,T}[],
     )
     _add_point!(s, 0) || return s.sols       # seed F(0) = 0
-    _qapn_recurse!(s, 0)
+    _qapn_recurse!(s, 0, observer)
     # Independent confirmation: keep only genuine quadratic APN functions.
     filter!(
-        F -> differential_uniformity(F) == 2 && algebraic_degree(F) == 2,
+        F -> begin
+            observer === nothing || observer(:final_test, nothing)
+            ok = differential_uniformity(F) == 2 && algebraic_degree(F) == 2
+            ok && observer !== nothing && observer(:apn, F)
+            ok
+        end,
         s.sols,
     )
     s.sols
