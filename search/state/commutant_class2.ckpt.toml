@@ -1,0 +1,5 @@
+region_id = "n8/commutant/class2"
+d = 8
+next_block = 1
+tested = 256
+elapsed_seconds = 0.03754281997680664

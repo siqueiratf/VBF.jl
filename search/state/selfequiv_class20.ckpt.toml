@@ -1,0 +1,5 @@
+region_id = "n8/selfequiv/class20"
+d = 26
+next_block = 64
+tested = 67108864
+elapsed_seconds = 0.5367779731750488

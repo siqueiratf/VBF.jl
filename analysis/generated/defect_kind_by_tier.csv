@@ -1,0 +1,19 @@
+kind,verification_tier,findings,findings_high,finding_ids
+hard_limit,readme_only,2,0,F031 F051
+inferred,readme_only,2,0,F070 F071
+internal_inconsistency,readme_only,3,2,F014 F060 F064
+internal_inconsistency,code_confirmed,2,1,F061 F062
+internal_inconsistency,recomputed,3,3,F001 F005 F008
+sampling_not_exhaustion,code_confirmed,2,0,F023 F024
+scope_restriction,readme_only,2,0,F053 F063
+theory_limit,recomputed,1,1,F040
+tool_limit,code_confirmed,2,0,F030 F032
+tool_limit,recomputed,1,1,F009
+unproved_premise,readme_only,1,0,F052
+unsound_negative,code_confirmed,4,2,F020 F021 F025 F041
+unsound_negative,recomputed,1,1,F022
+wrong_condition,code_confirmed,1,1,F013
+wrong_condition,recomputed,1,0,F007
+wrong_value,readme_only,1,0,F050
+wrong_value,code_confirmed,1,1,F012
+wrong_value,recomputed,6,5,F002 F003 F004 F006 F010 F011

@@ -1,0 +1,43 @@
+paper_id,year,topic,catalog_bib_key,method_group,tex_lines,jl_files,test_files,test_assertions,results_dir,readme_verdict,verdict_class,readme_test_claim,cited_by_core_src,findings_primary,findings_implicated,findings_high,findings_medium,findings_recomputed,findings_readme_only,catalog_functions,corpus_members,r1,r2,r3,r4
+Biryukov_200300,2003,equivalence,,,484,10,9,109,0,Good,mostly_complete,ran,0,0,0,0,0,0,0,0,0,full,full,open,half
+Budaghyan_200506,2005,construction,,,957,8,7,165,0,Complete,complete,ran,0,0,0,0,0,0,0,0,0,open,full,open,half
+Bracken_200807,2008,construction,,,582,6,5,75,0,Good,mostly_complete,ran,0,1,0,0,1,0,0,0,0,half,half,half,half
+Brinkmann_200812,2008,classification,,,671,13,11,118,0,Reproduced,complete,ran,0,0,0,0,0,0,0,0,0,full,full,half,half
+Budaghyan_200904,2009,modification,,,403,13,13,46,0,Mostly complete,mostly_complete,stale_no_julia,0,1,0,1,0,0,1,0,0,open,half,open,half
+Budaghyan_200910,2009,construction,Budaghyan_200910,A2,451,14,14,46,0,Mostly complete,mostly_complete,stale_no_julia,0,0,2,0,0,0,0,2,0,half,half,open,open
+Edel_200900,2009,modification,Edel_200900,B4,1129,9,8,38,0,Partial,partial,stale_no_julia,1,0,2,0,0,0,0,1,22,half,full,half,full
+Bracken_201103,2011,construction,,,522,4,3,17,0,Partial,partial,stale_no_julia,0,1,1,0,1,0,1,0,0,half,full,half,half
+Bracken_201205,2012,four_uniform,,,519,5,4,7,0,Partial,partial,ran,0,1,0,0,1,0,1,0,0,half,half,half,open
+Yuyin_201300,2013,four_uniform,,,550,5,4,19,0,Mostly complete,mostly_complete,stale_no_julia,0,0,3,0,0,0,0,0,0,full,half,open,half
+Li_201408,2014,four_uniform,,,700,9,8,26,0,Complete,complete,ran,0,0,0,0,0,0,0,0,0,open,half,half,open
+Zha_201401,2014,four_uniform,,,688,11,10,55,0,Partial,partial,ran,0,1,1,1,0,0,1,0,0,open,full,half,open
+Tang_201510,2015,four_uniform,,,815,7,6,30,0,Partial,partial,stale_no_julia,0,0,2,0,0,0,0,0,0,half,full,half,half
+Canteaut_201906,2019,theory,,,851,11,10,169,0,Complete,complete,ran,1,0,0,0,0,0,0,0,0,full,half,open,open
+Kaleyski_201911,2019,modification,,,913,7,6,88,1,Partial,partial,ran,0,1,0,0,1,0,0,0,0,open,full,open,open
+Taniguchi_201909,2019,construction,Taniguchi_201909,A2,455,7,6,95,0,Reproduced,complete,ran,1,0,1,0,0,0,0,11,2,half,half,half,half
+Budaghyan_202008,2020,modification,,,821,7,6,94,0,Partial,partial,ran,0,1,2,0,1,0,0,0,0,half,half,half,open
+Budaghyan_202009,2020,theory,,,930,9,8,168,0,Good,mostly_complete,ran,0,0,0,0,0,0,0,0,0,full,full,half,open
+Budaghyan_202011,2020,construction,,,549,10,9,109,0,unstated,unstated,ran,0,1,2,0,1,0,1,0,0,half,full,half,half
+Calderini_202009,2020,classification,,,897,6,5,123,0,Mostly complete,mostly_complete,ran,0,1,1,0,1,0,1,0,0,full,full,half,half
+Kalgin_202000,2020,classification,,,621,6,5,181,0,Partial → repaired,mostly_complete,ran,0,1,0,0,1,0,0,0,0,full,full,half,open
+Yu_202012,2020,classification,Yu_202012,D,375,11,10,50,0,"Good, with two scoped gaps",mostly_complete,ran,0,2,2,1,1,1,0,2,0,full,half,half,half
+Beierle_202107,2021,classification,,,940,6,5,65,0,Partial,partial,ran,0,2,0,1,0,0,1,0,0,full,half,full,open
+Budaghyan_202101,2021,modification,,,613,6,5,18,0,Partial,partial,ran,0,0,4,0,0,0,0,0,0,half,full,half,half
+Calderini_202100,2021,theory,Calderini_202100,A3,871,13,11,73,0,Mostly complete,mostly_complete,ran,0,0,0,0,0,0,0,1,0,open,full,half,half
+Chase_202110,2021,construction,,,468,14,13,83,0,Mostly complete,mostly_complete,ran,0,0,0,0,0,0,0,0,0,half,half,half,half
+Beierle_202201,2022,search,Beierle_202201,B2,490,9,8,63,1,Partial,partial,ran,1,1,3,1,0,0,0,0,19291,full,half,full,full
+Canteaut_202205,2022,equivalence,,,1371,12,11,86,0,Mostly complete,mostly_complete,ran,1,1,2,0,1,0,1,0,0,full,full,half,half
+Gologlu_202207,2022,construction,,,1355,6,4,27,0,Partial,partial,ran,0,2,2,0,2,1,1,0,0,full,full,half,half
+Kaleyski_202200,2022,construction,,,125,5,4,21,0,Mostly complete,mostly_complete,ran,0,0,0,0,0,0,0,0,0,open,half,open,open
+Kaleyski_202203,2022,equivalence,,,731,8,6,27,0,Partial,partial,ran,0,0,0,0,0,0,0,0,0,half,full,half,open
+Li_202207,2022,construction,,,891,4,3,12,0,Partial,partial,ran,0,2,2,1,1,2,0,0,0,open,full,full,half
+Yu_202211d,2022,search,Yu_202211,B1,421,9,8,76,1,Mostly complete,mostly_complete,ran,0,0,1,0,0,0,0,0,5412,full,half,half,full
+Zheng_202211,2022,construction,,,1033,4,3,25,1,Partial,partial,ran,0,0,2,0,0,0,0,0,0,open,full,open,open
+Calderini_202306,2023,construction,Calderini_202306,A3,872,8,5,30,0,Mostly complete,mostly_complete,ran,0,0,1,0,0,0,0,2,0,half,full,half,half
+Ichanska_202400,2024,search,,,1332,8,7,29,0,Partial,partial,ran,1,2,2,2,0,1,0,0,0,full,full,half,half
+Li_202402,2024,construction,,,1436,7,6,44,0,Partial,partial,ran,0,1,2,1,0,0,0,0,0,half,full,open,open
+Beierle_202508,2025,search,Beierle_202500,B2,277,8,7,35,1,Partial,partial,ran,0,1,1,0,1,0,1,0,3775599,half,full,full,half
+Gologlu_202503,2025,equivalence,,,1124,14,13,184,0,Mostly complete,mostly_complete,ran,0,1,1,0,1,0,0,0,0,half,full,half,half
+Taniguchi_202501,2025,modification,Taniguchi_202501,A4,668,6,5,13,0,Mostly complete,mostly_complete,ran,0,3,0,2,1,2,1,1,0,open,half,half,half
+Yu_202512,2025,classification,,,553,14,7,22,0,Partial,partial,ran,0,2,1,2,0,2,0,0,0,full,half,full,half
+Kuznetsov_202606,2026,search,,,853,14,9,51,0,Partial,partial,ran,0,4,1,4,0,3,0,0,0,full,full,full,half

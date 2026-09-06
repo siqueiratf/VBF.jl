@@ -1,0 +1,7 @@
+d = 8
+n_hits = 255
+next_index = 256
+[[sigma]]
+hash = "74a6c8da9e37dfb3e98d7dd44aef2bb5a63e1b5b344cca515d642baf38083e77"
+count = 255
+rep = 1

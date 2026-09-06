@@ -1,0 +1,7 @@
+d = 16
+n_hits = 255
+next_index = 256
+[[sigma]]
+hash = "31245805669f3ae96ad40132ee45542bcfb1ecebf610a01db1e1651771d80405"
+count = 255
+rep = 275

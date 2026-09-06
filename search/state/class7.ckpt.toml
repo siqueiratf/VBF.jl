@@ -1,0 +1,6 @@
+region_id = "n8/class7"
+d = 7
+next_block = 1
+tested = 128
+elapsed_seconds = 3.409385681152344e-5
+found_b = []

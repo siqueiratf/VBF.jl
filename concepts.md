@@ -1,0 +1,26 @@
+- **Finite field**: N/A
+- **Boolean function**: [@Beierle_202508, @Budaghyan_202009, @Canteaut_202205, @Gologlu_202207, @Kalgin_202000, @Li_202402, @Tang_201510]
+- **Vectorial Boolean function**: [@Beierle_202508, @Budaghyan_202009, @Calderini_202009, @Calderini_202306, @Canteaut_202205, @Gologlu_202207, @Gologlu_202503, @Kaleyski_202203, @Kalgin_202000, @Li_202207, @Li_202402, @Tang_201510, @Yu_202012, @Zheng_202211]
+- **Truth table**: [@Canteaut_202205, @Tang_201510]
+- **Algebraic normal form**: [@Beierle_202107, @Beierle_202201, @Beierle_202508, @Budaghyan_200506, @Budaghyan_202009, @Canteaut_202205, @Ichanska_202400, @Kalgin_202000, @Kuznetsov_202606]
+- **Univariate representation**: [@Budaghyan_202011, @Calderini_202100, @Calderini_202306, @Gologlu_202207, @Kaleyski_202200, @Kaleyski_202203, @Li_202207, @Yu_202012, @Zheng_202211]
+- **Lookup table**: [@Canteaut_202205]
+- **Spectrum**: N/A
+- **Affine mapping over $\mathbb{F}_2$**: [@Beierle_202107, @Beierle_202201, @Beierle_202508, @Biryukov_200300, @Budaghyan_200506, @Budaghyan_202008, @Budaghyan_202011, @Calderini_202009, @Calderini_202100, @Calderini_202306, @Gologlu_202207, @Ichanska_202400, @Kaleyski_202203, @Kalgin_202000, @Li_202207, @Li_202402, @Yu_202012, @Yu_202512, @Zha_201401, @Zheng_202211]
+- **Linear mapping over $\mathbb{F}_2$**: [@Biryukov_200300, @Budaghyan_200506, @Budaghyan_202008, @Budaghyan_202011, @Calderini_202009, @Calderini_202100, @Calderini_202306, @Gologlu_202207, @Ichanska_202400, @Kaleyski_202203, @Kalgin_202000, @Li_202207, @Li_202402, @Yu_202012, @Yu_202512]
+- **APN function**: [@Beierle_202107, @Beierle_202201, @Beierle_202508, @Bracken_200807, @Bracken_201103, @Bracken_201205, @Brinkmann_200812, @Budaghyan_200506, @Budaghyan_200904, @Budaghyan_200910, @Budaghyan_202008, @Budaghyan_202009, @Budaghyan_202011, @Budaghyan_202101, @Calderini_202009, @Calderini_202100, @Calderini_202306, @Canteaut_201906, @Canteaut_202205, @Chase_202110, @Edel_200900, @Gologlu_202207, @Gologlu_202503, @Ichanska_202400, @Kaleyski_201911, @Kaleyski_202200, @Kaleyski_202203, @Kalgin_202000, @Kuznetsov_202606, @Li_201408, @Li_202207, @Li_202402, @Tang_201510, @Taniguchi_201909, @Taniguchi_202501, @Yu_202012, @Yu_202512, @Yuyin_201300, @Zha_201401, @Zheng_202211]
+- **Quadratic APN functions**: [@Beierle_202107, @Beierle_202201, @Beierle_202508, @Budaghyan_202008, @Budaghyan_202011, @Calderini_202009, @Calderini_202100, @Calderini_202306, @Gologlu_202207, @Ichanska_202400, @Kaleyski_202203, @Kalgin_202000, @Kuznetsov_202606, @Li_201408, @Li_202207, @Li_202402, @Taniguchi_202501, @Yu_202012, @Zheng_202211]
+- **Known infinite families**: N/A
+- **Affine equivalence**: [@Beierle_202107, @Beierle_202201, @Biryukov_200300, @Brinkmann_200812, @Budaghyan_200506, @Budaghyan_202101, @Calderini_202009, @Canteaut_202205, @Edel_200900, @Gologlu_202503, @Ichanska_202400, @Kalgin_202000, @Li_202402, @Tang_201510]
+- **EA-equivalence**: [@Beierle_202107, @Beierle_202201, @Beierle_202508, @Brinkmann_200812, @Budaghyan_200506, @Budaghyan_200904, @Budaghyan_200910, @Budaghyan_202008, @Budaghyan_202009, @Budaghyan_202011, @Budaghyan_202101, @Calderini_202009, @Calderini_202100, @Calderini_202306, @Canteaut_202205, @Chase_202110, @Gologlu_202207, @Gologlu_202503, @Ichanska_202400, @Kaleyski_201911, @Kaleyski_202203, @Kalgin_202000, @Kuznetsov_202606, @Li_202207, @Li_202402, @Tang_201510, @Taniguchi_202501, @Yu_202012, @Yu_202512, @Zha_201401, @Zheng_202211]
+- **CCZ-equivalence**: [@Beierle_202107, @Beierle_202201, @Beierle_202508, @Bracken_200807, @Bracken_201103, @Brinkmann_200812, @Budaghyan_200506, @Budaghyan_200904, @Budaghyan_200910, @Budaghyan_202008, @Budaghyan_202009, @Budaghyan_202011, @Calderini_202009, @Calderini_202100, @Calderini_202306, @Canteaut_201906, @Canteaut_202205, @Edel_200900, @Gologlu_202207, @Gologlu_202503, @Ichanska_202400, @Kaleyski_201911, @Kaleyski_202203, @Kuznetsov_202606, @Li_201408, @Li_202207, @Li_202402, @Taniguchi_201909, @Taniguchi_202501, @Yu_202012, @Yu_202512, @Zha_201401, @Zheng_202211]
+- **Differential spectrum**: [@Bracken_201205, @Canteaut_202205, @Kaleyski_202203, @Kuznetsov_202606, @Li_202402, @Tang_201510]
+- **Bent component analysis and Göloğlu's non-bent signature**: [@Beierle_202508, @Calderini_202306, @Gologlu_202207, @Li_202207]
+- **Ranks**: [@Bracken_201103, @Budaghyan_200904, @Budaghyan_202011, @Edel_200900, @Taniguchi_201909]
+- **Image**: N/A
+- **Mugshot**: N/A
+- **Ortho-derivative**: [@Beierle_202201, @Beierle_202508, @Canteaut_202205, @Ichanska_202400, @Kuznetsov_202606, @Li_202402, @Yu_202211d, @Yu_202512]
+- **Ortho-integral**: N/A
+- **Pi multiset**: [@Budaghyan_202009, @Kaleyski_202203]
+- **Sigma multiplicities**: [@Canteaut_202205, @Kaleyski_202203]
+- **Walsh spectrum**: [@Bracken_201205, @Budaghyan_200506, @Budaghyan_200904, @Budaghyan_200910, @Budaghyan_202011, @Calderini_202009, @Calderini_202100, @Edel_200900, @Gologlu_202503, @Kaleyski_202203, @Li_201408, @Tang_201510, @Taniguchi_202501, @Zha_201401]
