@@ -149,10 +149,15 @@ function count_functions(
 )
     where = _where_clause(; family, n, is_apn, is_permutation, bib_key)
     sql = "SELECT COUNT(*) AS c FROM functions" * where
-    for r in DBInterface.execute(db, sql)
-        return Int(r.c)
+    q = DBInterface.execute(db, sql)
+    try
+        for r in q
+            return Int(r.c)
+        end
+        0
+    finally
+        DBInterface.close!(q)
     end
-    0
 end
 
 """
@@ -186,10 +191,15 @@ function find_function(
         " FROM functions WHERE " *
         where *
         " LIMIT 1"
-    for r in DBInterface.execute(db, sql)
-        return _row_to_namedtuple(r)
+    q = DBInterface.execute(db, sql)
+    try
+        for r in q
+            return _row_to_namedtuple(r)
+        end
+        nothing
+    finally
+        DBInterface.close!(q)
     end
-    nothing
 end
 
 """
@@ -223,27 +233,32 @@ function load_sbox(db::SQLite.DB, canonical_name::AbstractString)
 end
 
 function _materialise_sbox(db, sql, locator)
-    for r in DBInterface.execute(db, sql)
-        n = Int(r.n)
-        m = Int(r.m)
-        n == m || throw(
-            ArgumentError(
-                "load_sbox: catalog row has n=$n ≠ m=$m; rectangular S-boxes not yet supported",
-            ),
-        )
-        bytes_per_entry = cld(n, 8)
-        blob = Vector{UInt8}(r.lut_blob)
-        len = 1 << n
-        lut = Vector{Int}(undef, len)
-        @inbounds for i = 1:len
-            offset = (i - 1) * bytes_per_entry
-            v = 0
-            for b = 0:(bytes_per_entry-1)
-                v |= Int(blob[offset+b+1]) << (8 * b)
+    q = DBInterface.execute(db, sql)
+    try
+        for r in q
+            n = Int(r.n)
+            m = Int(r.m)
+            n == m || throw(
+                ArgumentError(
+                    "load_sbox: catalog row has n=$n ≠ m=$m; rectangular S-boxes not yet supported",
+                ),
+            )
+            bytes_per_entry = cld(n, 8)
+            blob = Vector{UInt8}(r.lut_blob)
+            len = 1 << n
+            lut = Vector{Int}(undef, len)
+            @inbounds for i = 1:len
+                offset = (i - 1) * bytes_per_entry
+                v = 0
+                for b = 0:(bytes_per_entry-1)
+                    v |= Int(blob[offset+b+1]) << (8 * b)
+                end
+                lut[i] = v
             end
-            lut[i] = v
+            return SBox{n}(lut)
         end
-        return SBox{n}(lut)
+        throw(ArgumentError("load_sbox: no catalog row for $locator"))
+    finally
+        DBInterface.close!(q)
     end
-    throw(ArgumentError("load_sbox: no catalog row for $locator"))
 end

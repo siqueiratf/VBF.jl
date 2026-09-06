@@ -134,10 +134,15 @@ Fast `COUNT(*)` under the same filters as [`list_reconciliation_disagreements`](
 function count_reconciliation_disagreements(db::SQLite.DB; kwargs...)
     where = _disagreement_where(; kwargs...)
     sql = "SELECT COUNT(*) AS c FROM reconciliation_disagreements" * where
-    for r in DBInterface.execute(db, sql)
-        return Int(r.c)
+    q = DBInterface.execute(db, sql)
+    try
+        for r in q
+            return Int(r.c)
+        end
+        0
+    finally
+        DBInterface.close!(q)
     end
-    0
 end
 
 """

@@ -48,10 +48,15 @@ function corpus_info(db::SQLite.DB, name::AbstractString)
         "SELECT * FROM bulk_corpora WHERE name = " *
         _sql_quote(String(name)) *
         " LIMIT 1"
-    for r in DBInterface.execute(db, sql)
-        return _row_namedtuple(r)
+    q = DBInterface.execute(db, sql)
+    try
+        for r in q
+            return _row_namedtuple(r)
+        end
+        nothing
+    finally
+        DBInterface.close!(q)
     end
-    nothing
 end
 
 """
