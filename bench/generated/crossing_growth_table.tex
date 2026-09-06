@@ -2,35 +2,35 @@
 % Crossing 1: measured growth against the predicted exponent.
 % Produced by bench/crossings.jl from bench/generated/benchmarks.csv and bench/crossings.toml.
 % Regenerate with:  make -C bench crossings
-% Machine: AMD Ryzen 5 5600G with Radeon Graphics, 12 cores, 1 Julia thread(s), 30.7 GB.
-% Julia 1.12.7; measured 2026-09-01 at level 2; statistic: the minimum of N repetitions.
+% Machine: AMD Ryzen 5 5600G with Radeon Graphics, 12 cores, 1 Julia thread(s), 15.0 GB.
+% Julia 1.12.7; measured 2026-09-06 at level 2; statistic: the minimum of N repetitions.
 \begin{tabular}{llrrrl}
 \toprule
 Operation & $n$ & Measured & Predicted & $\Delta$ & Verdict \\
 \midrule
 \multicolumn{6}{l}{\emph{Exponential model: time $\sim 2^{cn}$; the columns give $c$ in bits per unit of $n$}} \\
 \texttt{constructions/gold\_apn} & 6--10 & 1.17 & 1.00 & +0.17 & confirms \\
-\texttt{constructions/inverse\_apn} & 7--11 & 1.59 & $\geq$1.00 & +0.59 & confirms the bound \\
+\texttt{constructions/inverse\_apn} & 7--11 & 1.60 & $\geq$1.00 & +0.60 & confirms the bound \\
 \texttt{constructions/kasami\_apn} & 6--10 & 1.18 & $\geq$1.00 & +0.18 & confirms the bound \\
 \texttt{constructions/niho\_apn} & 7--11 & 1.55 & $\geq$1.00 & +0.55 & confirms the bound (curved fit) \\
 \texttt{constructions/welch\_apn} & 7--11 & 1.42 & $\geq$1.00 & +0.42 & confirms the bound \\
-\texttt{invariants/gamma\_rank} & 5--7 & 5.65 & 6.00 & -0.35 & confirms (curved fit) \\
-\texttt{invariants/ortho\_derivative} & 8--13 & 2.03 & 2.00 & +0.03 & confirms \\
-\texttt{invariants/sigma\_multiplicities} & 8--12 & 2.03 & $\geq$2.00 & +0.03 & confirms the bound \\
-\texttt{linalg/extract\_linear\_subspaces} & 8--16 & 0.96 & 1.00 & -0.04 & confirms \\
-\texttt{representations/anf} & 8--12 & 0.91 & $\geq$1.00 & -0.09 & inconclusive: overhead floor \\
-\texttt{representations/compositional\_inverse} & 8--12 & 1.06 & 1.00 & +0.06 & inconclusive: overhead floor \\
+\texttt{invariants/gamma\_rank} & 5--7 & 5.99 & 6.00 & -0.01 & confirms (curved fit) \\
+\texttt{invariants/ortho\_derivative} & 8--13 & 2.04 & 2.00 & +0.04 & confirms \\
+\texttt{invariants/sigma\_multiplicities} & 8--12 & 2.17 & $\geq$2.00 & +0.17 & confirms the bound \\
+\texttt{linalg/extract\_linear\_subspaces} & 8--16 & 0.93 & 1.00 & -0.07 & confirms \\
+\texttt{representations/anf} & 8--12 & 0.88 & $\geq$1.00 & -0.12 & inconclusive: overhead floor \\
+\texttt{representations/compositional\_inverse} & 8--12 & 1.04 & 1.00 & +0.04 & inconclusive: overhead floor \\
 \texttt{representations/gf\_inv\_sweep} & 8--16 & 0.37 & $\geq$0.00 & +0.37 & confirms the bound \\
 \texttt{representations/gf\_monomial\_lut} & 8--12 & 1.28 & $\geq$1.00 & +0.28 & confirms the bound \\
 \texttt{representations/gf\_mul\_sweep} & 8--16 & 0.07 & $\geq$0.00 & +0.07 & confirms the bound \\
-\texttt{representations/is\_permutation} & 8--12 & 0.97 & 1.00 & -0.03 & inconclusive: overhead floor \\
+\texttt{representations/is\_permutation} & 8--12 & 0.98 & 1.00 & -0.02 & inconclusive: overhead floor \\
 \texttt{representations/mobius} & 10--14 & 1.01 & $\geq$1.00 & +0.01 & confirms the bound \\
-\texttt{representations/sbox\_construct} & 8--12 & 0.51 & 1.00 & -0.49 & inconclusive: overhead floor \\
-\texttt{spectra/ddt} & 6--12 & 2.58 & 2.00 & +0.58 & above \\
-\texttt{spectra/lat} & 6--12 & 2.13 & $\geq$2.00 & +0.13 & confirms the bound \\
+\texttt{representations/sbox\_construct} & 8--12 & 0.55 & 1.00 & -0.45 & inconclusive: overhead floor \\
+\texttt{spectra/ddt} & 6--12 & 2.76 & 2.00 & +0.76 & above \\
+\texttt{spectra/lat} & 6--12 & 2.23 & $\geq$2.00 & +0.23 & confirms the bound \\
 \midrule
 \multicolumn{6}{l}{\emph{Power-law model: time $\sim n^{c}$; $n$ is a matrix side, not a width}} \\
-\texttt{linalg/gauss\_jordan} & 8--64 & 1.82 & 2.00 & -0.18 & inconclusive: overhead floor \\
+\texttt{linalg/gauss\_jordan} & 8--64 & 1.81 & 2.00 & -0.19 & inconclusive: overhead floor \\
 \bottomrule
 \end{tabular}
-% external check: invariants/gamma_rank at n=8: the fit gives 141.9 s, another instrument measured 166.8 s (ratio 0.85); source bench/calibration.toml [design_rank_gamma] n8_seconds
+% external check: invariants/gamma_rank at n=8: the fit gives 264.8 s, another instrument measured 166.8 s (ratio 1.59); source bench/calibration.toml [design_rank_gamma] n8_seconds

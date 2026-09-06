@@ -7,9 +7,9 @@ Do not edit. Rebuild with `make -C bench crossings`.
 |---|---|
 | Measurements | `bench/generated/benchmarks.csv` |
 | Predictions | `bench/crossings.toml` |
-| Machine | AMD Ryzen 5 5600G with Radeon Graphics, 12 cores, 1 Julia thread(s), 30.7 GB |
+| Machine | AMD Ryzen 5 5600G with Radeon Graphics, 12 cores, 1 Julia thread(s), 15.0 GB |
 | Julia | 1.12.7 |
-| Measured | 2026-09-01, level 2 |
+| Measured | 2026-09-06, level 2 |
 | Statistic | the minimum of N repetitions after one warm-up call |
 
 ## `crossing_growth.csv`
@@ -30,7 +30,7 @@ Every case with three or more points carries a prediction.
 
 | Case | n | Fit (s) | Measured (s) | Ratio | Source |
 |---|---|---|---|---|---|
-| `invariants/gamma_rank` | 8 | 141.9 | 166.8 | 0.85 | bench/calibration.toml [design_rank_gamma] n8_seconds |
+| `invariants/gamma_rank` | 8 | 264.8 | 166.8 | 1.59 | bench/calibration.toml [design_rank_gamma] n8_seconds |
 
 ## `crossing_polarity.csv`
 
@@ -43,6 +43,6 @@ CAUTION: `bytes` comes from `@allocated`. It is the total that one call
 allocates, and it is NOT the peak resident memory. A routine that allocates
 2 GB in small pieces can run inside a much smaller resident set.
 
-- Machine memory: 30.7 GB.
+- Machine memory: 15.0 GB.
 - Cases that allocate at least 1 GiB: 6 of 229.
-- Highest allocation rate among those: 3.12 GiB/s.
+- Highest allocation rate among those: 2.53 GiB/s.
