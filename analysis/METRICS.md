@@ -340,3 +340,32 @@ Three joins carry the argument of the paper.
 
 Use no figure for group C2 or for B2. Both are tables of a few rows, and a
 figure would hide the numbers.
+
+## What is drawn, and by what
+
+`analysis/figures.jl` renders the figures and LaTeX tables the manuscript reads.
+Run it with `make -C analysis figures`. It reads the CSVs above and writes only
+into the manuscript directory; it recomputes no metric and opens no database, so
+a figure cannot disagree with the table it came from. It borrows the resolved
+plotting environment in `bench/analysis` instead of adding a second Manifest.
+
+Four of the five drawings above are implemented. C1 is not a scatter: on the
+population it uses, separation is bimodal, so the second axis held no
+information. It is a cost chart, ordered by cost, with separation as the colour
+and the exact share printed at each mark. B4 is not drawn at all, because its
+one result — that `beierle2025_n8` shares no signature with any other source —
+is one sentence and does not need a matrix.
+
+`analysis/curated_bfa4r.csv` holds the author's BFA-4R grades for the 40 graded
+papers. It is a SOURCE, not a generated file: the grades are an expert reading
+that overrides the automatic first pass from `manuscript/generate_bfa4r_table.jl`,
+and the two disagree on most papers. `figures.jl` renders both the per-paper
+table and every aggregate from this one file, so the totals in the text can
+never drift from the table the reader sees. Any aggregate over BFA-4R grades
+must come from here and never from `evidence_vs_outcome.csv`, which grades 42
+papers from the automatic pass.
+
+Four paper ids are spelled differently in the two sources (`Yu_202211`/`Yu_202211d`,
+`Calderini_202009a`/`Calderini_202009`, `Yuyin_201307`/`Yuyin_201300`,
+`Chase_202110a`/`Chase_202110`). `figures.jl` maps them and fails loudly if any
+curated row stops joining, rather than silently dropping it from an aggregate.

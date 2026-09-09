@@ -126,6 +126,13 @@ help:
 	@echo 'Analysis: setup-analysis; consolidate; inspect-analysis; test-analysis'
 	@echo 'Exports: export / export-all; export-core; export-papers; export-profiles (CSV + Arrow)'
 	@echo 'Figures: plots; plots-runtime; plots-approach; plots-profiles (exploratory, persisted data only)'
+	@echo 'Manuscript: manuscript [manuscript_output=DIR manuscript_config=PATH]'
 	@echo 'Cleanup: clean-analysis (default analysis output only; retains all raw data)'
 	@echo 'Analysis params: database=PATH profiles=DIR analysis_output=DIR'
 	@echo 'Run consolidate before exports/plots. These targets never rerun benchmarks.'
+
+manuscript_output ?= $(ROOT)/manuscript/6a0607721e3ebcf2a6fc6422/bench/generated
+manuscript_config ?= $(ANALYSIS)/manuscript.toml
+.PHONY: manuscript
+manuscript:
+	$(JULIA) $(AJFLAGS) $(ANALYSIS)/manuscript.jl "$(manuscript_output)" "$(manuscript_config)" "$(database)"

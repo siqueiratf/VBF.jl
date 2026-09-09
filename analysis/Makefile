@@ -32,7 +32,14 @@ budget ?= 15
 
 INVFLAGS := --sample=$(sample) --seed=$(seed) --budget-seconds=$(budget)
 
-.PHONY: help all fast papers catalog corpus invariants grades list clean
+# The figure script plots and tabulates; it never recomputes a metric. It reuses
+# the resolved plotting environment in bench/analysis instead of adding a second
+# Manifest to keep in step.
+FIGURES  := $(MAKEFILE_DIR)figures.jl
+FIGFLAGS ?= --startup-file=no --project=$(ROOT)/bench/analysis
+figures_output ?= $(ROOT)/manuscript/6a0607721e3ebcf2a6fc6422/analysis/generated
+
+.PHONY: help all fast papers catalog corpus invariants grades figures list clean
 
 default: help
 
@@ -63,6 +70,10 @@ invariants:
 grades:
 	$(JULIA) $(JFLAGS) $(BFA4R)
 
+# The manuscript figures and LaTeX tables, from the CSVs the sections above wrote.
+figures:
+	$(JULIA) $(FIGFLAGS) $(FIGURES) "$(figures_output)"
+
 list:
 	$(JULIA) $(JFLAGS) $(RUN) --list
 
@@ -71,6 +82,6 @@ clean:
 
 help:
 	@echo 'The metric tables of the paper. See analysis/METRICS.md.'
-	@echo 'Targets: fast (papers catalog corpus)  invariants  all  grades  list  clean'
+	@echo 'Targets: fast (papers catalog corpus)  invariants  all  grades  figures  list  clean'
 	@echo 'Params:  sample=128  seed=20260901  budget=15   (the invariants section only)'
 	@echo 'Output:  analysis/generated/*.csv plus PROVENANCE.md'
