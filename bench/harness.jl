@@ -29,6 +29,10 @@ Fields:
 - `note`: one short line for the reader of the table.
 - `approach`, `parameters`: grouping and reproducible case parameters.
 - `metrics`: optional `(payload, value, seconds)` callback, outside timing.
+- `paper_id`, `mode`: paper-reproduction provenance. Both stay `""` (the
+  harness writes them as SQL NULL) for every case in `bench/suites/`. A case
+  in `bench/paper_suites/` sets `paper_id` to the paper directory name and
+  `mode` to one of `"core_only"`, `"hybrid"`, `"paper_specific"`.
 """
 struct BenchCase
     group::String
@@ -42,7 +46,16 @@ struct BenchCase
     approach::String
     parameters::NamedTuple
     metrics::Function
+    paper_id::String
+    mode::String
 end
+
+# Backward-compatible constructor for the one place outside bench!/harness.jl
+# that builds a BenchCase directly (bench/suites/06_constructions.jl's
+# Observation-wrapping pass, predating paper_id/mode). Defaults both to "".
+BenchCase(group, name, n, cost, setup, call, reps, note, approach, parameters, metrics) =
+    BenchCase(group, name, n, cost, setup, call, reps, note, approach, parameters,
+              metrics, "", "")
 
 """
     BenchResult
@@ -79,11 +92,14 @@ function bench!(reg::Registry; group::AbstractString, name::AbstractString,
                 setup::Function = () -> nothing, call::Function,
                 reps::Integer = 0, note::AbstractString = "",
                 approach::AbstractString = group, parameters::NamedTuple = (;),
-                metrics::Function = (payload, value, seconds) -> (;))
+                metrics::Function = (payload, value, seconds) -> (;),
+                paper_id::AbstractString = "", mode::AbstractString = "")
     1 <= cost <= 3 || throw(ArgumentError("cost must be 1, 2 or 3; got $cost"))
+    isempty(mode) || mode in ("core_only", "hybrid", "paper_specific") ||
+        throw(ArgumentError("mode must be core_only, hybrid or paper_specific; got $mode"))
     push!(reg, BenchCase(String(group), String(name), Int(n), Int(cost),
                          setup, call, Int(reps), String(note), String(approach),
-                         parameters, metrics))
+                         parameters, metrics, String(paper_id), String(mode)))
     return reg
 end
 
