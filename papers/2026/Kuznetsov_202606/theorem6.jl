@@ -12,8 +12,9 @@
 # mismatch certifies CCZ-inequivalence, Yoshiara+Canteaut):
 #   * The three literal inequivalences HOLD (A..D absent from those three sets).
 #   * But the PREMISE fails: database (2) is NOT "the pre-2020 database". The real
-#     pre-2020 known set — Edel-Pott 2009 — contains σ-matches for all of A..D
-#     (confirmed by exact code-equivalence in verify_edelpott.py). Hence Theorem 6
+#     pre-2020 known set — Edel-Pott 2009 — contains σ-matches for all of A..D.
+#     A σ match only LOCATES those candidates; theorem6_exact.jl decides them with
+#     are_ccz_equivalent and confirms all four. Hence Theorem 6
 #     certifies inequivalence to a non-representative subset while calling it the
 #     pre-2020 database; the novelty it is invoked to establish does not hold.
 #
