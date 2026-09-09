@@ -5,6 +5,8 @@ include("harness.jl")
 include("persistence.jl")
 include("observation.jl")
 include("../packages/VBFCatalog/data-build/migrations/004_benchmark.jl")
+include("../packages/VBFCatalog/data-build/migrations/005_paper_provenance.jl")
+include("../packages/VBFCatalog/data-build/migrations/006_consolidate_paper_columns.jl")
 using .BenchHarness, .BenchPersistence, .BenchObservation
 
 rows(db) = [NamedTuple(r) for r in DBInterface.execute(db, "SELECT * FROM benchmark ORDER BY id")]
@@ -46,19 +48,32 @@ rows(db) = [NamedTuple(r) for r in DBInterface.execute(db, "SELECT * FROM benchm
         @test r.elapsed_seconds >= 0
 
         reg = Registry()
+        bench!(reg; group = "test", name = "callable_payload", reps = 1,
+            setup = () -> (sin, zeros(100_000)), call = p -> p[1](p[2][1]))
+        run_registry(reg; on_execution = execution_writer(db), io = devnull)
+        metadata = JSON3.read(rows(db)[end].parameters_json).payload_after_call
+        @test metadata[1].name == "sin"
+        @test metadata[2].dimensions == [100_000]
+        @test sizeof(rows(db)[end].parameters_json) < 10_000
+
+        reg = Registry()
         calls = Ref(0)
         bench!(reg; group = "test", name = "fails", reps = 2,
             call = _ -> ((calls[] += 1) == 4 ? error("intentional failure") : nothing))
         @test_throws ErrorException run_registry(reg; on_execution = execution_writer(db), io = devnull)
-        @test length(rows(db)) == 4 # previous completed repetition survives
+        @test length(rows(db)) == 5 # previous completed repetition survives
         @test ismissing(rows(db)[end].n)
 
         SQLite.execute(db, "UPDATE schema_meta SET schema_version = 3")
         close(db)
         migrate_benchmark(path)
         migrate_benchmark(path)
+        migrate_paper_provenance(path)
+        migrate_paper_provenance(path)
+        migrate_consolidate_paper_columns(path)
+        migrate_consolidate_paper_columns(path)
         db = load_catalog(path)
-        @test length(rows(db)) == 4
+        @test length(rows(db)) == 5
         @test count_functions(db) == 1
         rebuilt = create_catalog(joinpath(dir, "rebuilt.sqlite"))
         VBFCatalog._copy_benchmark_history!(rebuilt, path)

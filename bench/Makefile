@@ -17,6 +17,7 @@
 # equivalence/partition_automorphisms at n = 6 holds about 1.7 GB for each call.
 
 JULIA  ?= julia
+.DEFAULT_GOAL := help
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT   := $(abspath $(MAKEFILE_DIR)..)
 JFLAGS ?= --startup-file=no --project=$(ROOT)
@@ -31,18 +32,61 @@ n              ?=
 GROUP_ARG := $(if $(group),--group=$(group),)
 N_ARG     := $(if $(n),--n=$(n),)
 
+ANALYSIS := $(MAKEFILE_DIR)analysis
+AJFLAGS ?= --startup-file=no --project=$(ANALYSIS)
+database ?= $(if $(BFA_CATALOG_PATH),$(BFA_CATALOG_PATH),$(ROOT)/packages/VBFCatalog/BFA_catalog.sqlite)
+analysis_output ?= $(ANALYSIS)/generated
+profiles ?= $(MAKEFILE_DIR)profiles
+paper ?=
+mode ?=
+ANALYZE = $(JULIA) $(AJFLAGS) $(ANALYSIS)/run.jl
+ANALYSIS_ARGS = --database="$(database)" --output="$(analysis_output)" --profiles="$(profiles)"
+
+.PHONY: benchmark benchmark-papers setup-analysis consolidate export export-all export-core export-papers export-profiles plots plots-runtime plots-approach plots-profiles inspect-analysis clean-analysis test-analysis
+
+benchmark: bench
+
+benchmark-papers:
+	$(JULIA) $(JFLAGS) $(MAKEFILE_DIR)run_papers.jl --target-seconds=$(target_seconds) --database="$(database)" $(if $(paper),--paper=$(paper),) $(if $(mode),--mode=$(mode),)
+
+setup-analysis:
+	$(JULIA) $(AJFLAGS) -e 'using Pkg; Pkg.instantiate()'
+
+consolidate:
+	$(ANALYZE) consolidate $(ANALYSIS_ARGS)
+
+export: export-all
+export-all export-core export-papers export-profiles:
+	$(ANALYZE) export $(ANALYSIS_ARGS) --dataset=$(patsubst export-%,%,$@)
+
+plots:
+	$(ANALYZE) plots $(ANALYSIS_ARGS) --dataset=all
+
+plots-runtime plots-approach plots-profiles:
+	$(ANALYZE) plots $(ANALYSIS_ARGS) --dataset=$(patsubst plots-%,%,$@)
+
+inspect-analysis:
+	$(ANALYZE) inspect $(ANALYSIS_ARGS)
+
+test-analysis:
+	$(JULIA) $(AJFLAGS) $(ANALYSIS)/test.jl
+
+# Deliberately limited to generated analysis files, never raw DB/profile artifacts.
+clean-analysis:
+	rm -f $(ANALYSIS)/generated/analysis.sqlite $(ANALYSIS)/generated/*.csv $(ANALYSIS)/generated/*.arrow $(ANALYSIS)/generated/*.png
+
 .PHONY: help quick bench full list group crossings clean test
 
 default: help
 
 quick:
-	$(JULIA) $(JFLAGS) $(RUN) --level=1 --target-seconds=$(target_seconds) $(GROUP_ARG) $(N_ARG)
+	$(JULIA) $(JFLAGS) $(RUN) --level=1 --target-seconds=$(target_seconds) --database="$(database)" $(GROUP_ARG) $(N_ARG)
 
 bench:
-	$(JULIA) $(JFLAGS) $(RUN) --level=2 --target-seconds=$(target_seconds) $(GROUP_ARG) $(N_ARG)
+	$(JULIA) $(JFLAGS) $(RUN) --level=2 --target-seconds=$(target_seconds) --database="$(database)" $(GROUP_ARG) $(N_ARG)
 
 full:
-	$(JULIA) $(JFLAGS) $(RUN) --level=3 --target-seconds=$(target_seconds) $(GROUP_ARG) $(N_ARG)
+	$(JULIA) $(JFLAGS) $(RUN) --level=3 --target-seconds=$(target_seconds) --database="$(database)" $(GROUP_ARG) $(N_ARG)
 
 list:
 	$(JULIA) $(JFLAGS) $(RUN) --list
@@ -78,3 +122,10 @@ help:
 	@echo 'Output:  packages/VBFCatalog/BFA_catalog.sqlite, table benchmark'
 	@echo 'Crossings: bench/generated/crossing_*.{csv,tex,dat}, crossings_facts.tex'
 	@echo '           Paste bench/crossings.tex into the paper.'
+	@echo 'Execution: benchmark (alias bench), benchmark-papers [paper=ID mode=MODE]'
+	@echo 'Analysis: setup-analysis; consolidate; inspect-analysis; test-analysis'
+	@echo 'Exports: export / export-all; export-core; export-papers; export-profiles (CSV + Arrow)'
+	@echo 'Figures: plots; plots-runtime; plots-approach; plots-profiles (exploratory, persisted data only)'
+	@echo 'Cleanup: clean-analysis (default analysis output only; retains all raw data)'
+	@echo 'Analysis params: database=PATH profiles=DIR analysis_output=DIR'
+	@echo 'Run consolidate before exports/plots. These targets never rerun benchmarks.'
