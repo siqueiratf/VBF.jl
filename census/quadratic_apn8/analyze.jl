@@ -15,6 +15,7 @@
 #
 # Pseudocode:
 #   1. Read all lines; lw = logw + log e (or -Inf); keep every line in the denominator.
+#      A compact manifest (data/legacy_chunks.tsv) gives the same lw and hits.
 #   2. Mass estimate with standard error (helpers.jl: mass_estimate).
 #   3. For each hit: decode, check differential uniformity 2, look up sigma_hash in the
 #      ccz_sigma_index side store of VBFCatalog; mark known or collect as new.
@@ -50,6 +51,7 @@ Analyze the (8,8) sample files `paths`. Writes the distinct new sigma
 function analyze_census(paths::AbstractVector{<:AbstractString};
                         new_path::Union{Nothing,AbstractString} = nothing, io::IO = stdout)
     t0 = time()
+    labels = sample_labels(paths)
     lw, hits = read_samples(paths)
     N = length(lw)
     est = mass_estimate(lw, 8, 8)
@@ -84,8 +86,8 @@ function analyze_census(paths::AbstractVector{<:AbstractString};
     nnew = length(newsig)
 
     print_section("Census analysis (8,8)", io)
-    @printf(io, "files              %d (%s ... %s)\n", length(paths), basename(first(paths)),
-            basename(last(paths)))
+    @printf(io, "files              %d (%s ... %s)\n", length(labels), first(labels), last(labels))
+    length(labels) == length(paths) || println(io, "inputs             ", join(paths, ", "))
     @printf(io, "samples            %d\n", N)
     @printf(io, "APN hits           %d  (hit rate %.3e)\n", nh, nh / N)
     @printf(io, "mass estimate      %.4g ± %.3g  (%.1f%%)  batch-sd/sqrt(B)=%.3g  max-w/sum-w=%.2e\n",
@@ -94,7 +96,7 @@ function analyze_census(paths::AbstractVector{<:AbstractString};
     @printf(io, "weighted coverage  %.4f ± %.4f\n", c, sec)
     @printf(io, "mass from coverage %.4g ± %.3g ;  N >= mass + %.0f  ->  N(cov) = %.4g, N(mass) = %.4g\n",
             Mcov, seMcov, DELTA_KNOWN, Ncov, est.mass + DELTA_KNOWN)
-    @printf(io, "distinct new σ     %d  (repeats among new: %d)  [pending verification]\n",
+    @printf(io, "distinct new σ     %d  (repeats among new: %d)  [σ absent from the index]\n",
             nnew, (nh - nk) - nnew)
     if new_path !== nothing
         mkpath(dirname(new_path))
@@ -104,10 +106,14 @@ function analyze_census(paths::AbstractVector{<:AbstractString};
             end
         end
         println(io, "new σ list         ", new_path)
+        if isfile(NEW_CLASSES_FILE)
+            same = read(new_path) == read(NEW_CLASSES_FILE)
+            println(io, "new σ list vs new_classes_553.tsv: ", same ? "identical" : "differs")
+        end
     end
     @printf(io, "[%.1fs]\n", time() - t0)
 
-    (files = length(paths), samples = N, hits = nh, hit_rate = nh / N,
+    (files = length(labels), samples = N, hits = nh, hit_rate = nh / N,
      mass = est.mass, mass_se = est.se, mass_batch_se = est.batch_se,
      max_weight_share = est.max_share,
      known_hits = nk, known_by_source = src, coverage = c, coverage_se = sec,

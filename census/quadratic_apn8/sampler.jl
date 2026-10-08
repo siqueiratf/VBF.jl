@@ -11,8 +11,8 @@
 #   function drawn with probability proportional to 1/W; the analysis reweights by W.
 #
 # Pseudocode:
-#   for th in 1:T (threads), rng = Xoshiro(seed * 100003 + th):
-#     for i in th:T:N (sample index):
+#   for th in 1:S (RNG streams, default S = threads), rng = Xoshiro(seed * 100003 + th):
+#     for i in th:S:N (sample index):
 #       (logw, C) = probe to n-1 variables;  logw = -Inf -> line "i  -Inf  0  ".
 #       (e, sols) = FL3.count_completions(C, n-1, m; want_solution = true)
 #       e == 0 -> line "i  logw  0  ".
@@ -20,10 +20,12 @@
 #            line "i  logw  e  coeffs" (coeffs = encode_coeffs(C, n)).
 #   Write the N lines in index order.
 #
-# Reproducibility: sample i uses the RNG stream of thread th = ((i-1) mod T) + 1, so
-#   a chunk is a function of (N, seed, T, n, m) only.  The same seed and the SAME thread
-#   count T reproduce a chunk byte for byte; a different T gives a different (equally
-#   valid) chunk.  The legacy chunks c101..c140 and s1.tsv use T = 12.
+# Reproducibility: sample i uses the RNG stream th = ((i-1) mod S) + 1, so a chunk is a
+#   function of (N, seed, S, n, m) only.  The same seed and the SAME stream count S
+#   reproduce a chunk byte for byte; a different S gives a different (equally valid)
+#   chunk.  The streams run on any number of threads: S = threads by default, and
+#   streams = 12 with threads = 2 regenerates a 12-thread chunk.  The legacy chunks
+#   c101..c140 and s1.tsv use S = 12; s77.tsv uses S = 4.
 # VBF API used: none (helpers.jl loads VBF for SBox; the sampler does not call it).
 
 isdefined(@__MODULE__, :QK) || include(joinpath(@__DIR__, "qknuth.jl"))
@@ -100,15 +102,17 @@ function sample_stream!(res::Vector{String}, seed::Int, th::Int, nthr::Int, n::I
 end
 
 """
-    sample_chunk(nsamples, seed; n = 8, m = 8) -> Vector{String}
+    sample_chunk(nsamples, seed; n = 8, m = 8, streams = nthreads()) -> Vector{String}
 
-`nsamples` sample lines on `Threads.nthreads()` threads (one RNG stream per thread).
+`nsamples` sample lines from `streams` RNG streams. The streams run in parallel on the
+Julia threads; the result depends on `streams`, not on the number of threads.
 """
-function sample_chunk(nsamples::Int, seed::Int; n::Int = 8, m::Int = 8)
+function sample_chunk(nsamples::Int, seed::Int; n::Int = 8, m::Int = 8,
+                      streams::Int = nthreads())
+    streams >= 1 || throw(ArgumentError("streams must be >= 1"))
     res = Vector{String}(undef, nsamples)
-    nthr = nthreads()
-    @threads for th in 1:nthr
-        sample_stream!(res, seed, th, nthr, n, m)
+    @threads :dynamic for th in 1:streams
+        sample_stream!(res, seed, th, streams, n, m)
     end
     res
 end
@@ -129,18 +133,19 @@ end
 function _check_threads(threads::Integer)
     threads == nthreads() && return nothing
     error("threads=$threads but Julia runs $(nthreads()) threads; start julia with -t $threads " *
-          "(the thread count is part of the RNG scheme)")
+          "(the RNG scheme depends on streams, not on threads)")
 end
 
 """
-    run_sampling(; outdir, first_seed, nchunks, samples, threads, n = 8, m = 8)
+    run_sampling(; outdir, first_seed, nchunks, samples, threads, streams = threads, n = 8, m = 8)
 
 Write chunks `outdir/c<seed>.tsv` for `seed in first_seed:first_seed+nchunks-1`, each
-with `samples` lines. An existing chunk is kept (the run resumes). `threads` must equal
-`Threads.nthreads()`.
+with `samples` lines from `streams` RNG streams. An existing chunk is kept (the run
+resumes). `threads` must equal `Threads.nthreads()`.
 """
 function run_sampling(; outdir::AbstractString, first_seed::Int, nchunks::Int, samples::Int,
-                      threads::Int, n::Int = 8, m::Int = 8, io::IO = stdout)
+                      threads::Int, streams::Int = threads, n::Int = 8, m::Int = 8,
+                      io::IO = stdout)
     _check_threads(threads)
     nchunks >= 0 || throw(ArgumentError("nchunks must be >= 0"))
     samples > 0 || throw(ArgumentError("samples must be > 0"))
@@ -150,30 +155,31 @@ function run_sampling(; outdir::AbstractString, first_seed::Int, nchunks::Int, s
             println(io, "skip  ", path, " (exists)")
             continue
         end
-        t = @elapsed lines = sample_chunk(samples, s; n, m)
+        t = @elapsed lines = sample_chunk(samples, s; n, m, streams)
         write_chunk(path, lines)
         nh = count(l -> split(l, '\t')[3] != "0", lines)
-        @printf(io, "wrote %s  (n,m)=(%d,%d) samples=%d hits=%d threads=%d [%.1fs]\n",
-                path, n, m, samples, nh, threads, t)
+        @printf(io, "wrote %s  (n,m)=(%d,%d) samples=%d hits=%d threads=%d streams=%d [%.1fs]\n",
+                path, n, m, samples, nh, threads, streams, t)
         flush(io)
     end
     nothing
 end
 
 """
-    reproduce_check(; ref, seed, samples, threads, n = 8, m = 8, outdir) -> Bool
+    reproduce_check(; ref, seed, samples, threads, streams = threads, n = 8, m = 8, outdir) -> Bool
 
 Regenerate one chunk and compare it byte for byte with the reference file `ref`.
 """
 function reproduce_check(; ref::AbstractString, seed::Int, samples::Int, threads::Int,
-                         n::Int = 8, m::Int = 8, outdir::AbstractString, io::IO = stdout)
+                         streams::Int = threads, n::Int = 8, m::Int = 8,
+                         outdir::AbstractString, io::IO = stdout)
     _check_threads(threads)
     isfile(ref) || error("reference file not found: $ref")
     path = joinpath(outdir, "c$(seed).tsv")
-    t = @elapsed write_chunk(path, sample_chunk(samples, seed; n, m))
+    t = @elapsed write_chunk(path, sample_chunk(samples, seed; n, m, streams))
     same = read(path) == read(ref)
-    @printf(io, "regenerated %s  (seed=%d samples=%d threads=%d (n,m)=(%d,%d)) [%.1fs]\n",
-            path, seed, samples, threads, n, m, t)
+    @printf(io, "regenerated %s  (seed=%d samples=%d threads=%d streams=%d (n,m)=(%d,%d)) [%.1fs]\n",
+            path, seed, samples, threads, streams, n, m, t)
     println(io, "reference   ", ref)
     println(io, same ? "byte-identical: YES" : "byte-identical: NO")
     same

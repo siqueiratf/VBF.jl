@@ -5,11 +5,13 @@
 #   1. Store study constants (known-class counts, exact masses for small n).
 #   2. Encode and decode the coefficient string of a pure quadratic function.
 #   3. Read sample TSV files (files or directories) into log-weights and APN hits.
-#   4. Write machine-readable results under results/.
+#   4. Compact form of sample files (manifest + hit rows, data/): write, read, verify.
+#   5. Write machine-readable results under results/.
 # VBF API used: SBox
 
 using Dates
 using Printf
+using SHA
 using Statistics
 using TOML
 using VBF
@@ -54,6 +56,11 @@ const PUBLISHED = (
     n_cov_se = 1.1e5,
     new_sigma = 553,
 )
+
+# The 553 new classes of the legacy run (sigma_hash<TAB>coeffs, sorted by hash).
+const NEW_CLASSES_FILE = joinpath(@__DIR__, "new_classes_553.tsv")
+const NOVELTY_STATUS = "verified: the 553 sigma are absent from all 10 indexed sources " *
+                       "(reports/verification/REPORT.md)"
 
 function print_header(io::IO = stdout)
     println(io, "# Census: ", STUDY_TITLE)
@@ -130,21 +137,238 @@ expand_paths(v::AbstractVector) = expand_paths(join(v, ' '))
 Read sample lines `i<TAB>logw<TAB>e<TAB>coeffs`. `lw[t] = logw + log(e)`, or `-Inf`
 when `e == 0` (dead end or no APN completion). Every line stays in `lw`: the
 estimator divides by the number of probes. `hits` lists `(t, coeffs)` for `e > 0`.
+A path can also be a compact manifest (`*_chunks.tsv`, see [`compact_samples`](@ref)).
+The compact form gives the same `lw` and `hits`, bit for bit.
 """
 function read_samples(paths::AbstractVector{<:AbstractString})
     lw = Float64[]
     hits = Tuple{Int,String}[]
-    for f in paths, line in eachline(f)
-        p = split(line, '\t')
-        e = parse(Int, p[3])
-        if e == 0
-            push!(lw, -Inf)
-        else
-            push!(lw, parse(Float64, p[2]) + log(e))
-            push!(hits, (length(lw), String(p[4])))
+    for f in paths
+        if is_manifest(f)
+            _read_compact!(lw, hits, f)
+            continue
+        end
+        for line in eachline(f)
+            p = split(line, '\t')
+            e = parse(Int, p[3])
+            if e == 0
+                push!(lw, -Inf)
+            else
+                push!(lw, parse(Float64, p[2]) + log(e))
+                push!(hits, (length(lw), String(p[4])))
+            end
         end
     end
     lw, hits
+end
+
+# --- compact sample data (data/) ----------------------------------------------------
+#
+# A failure (logw = -Inf or e = 0) has weight 0. Its only effect on every estimate is
+# its position in the sample sequence. Thus a sample file is fully described by its
+# number of lines and its hit lines (e > 0). The compact form has two files:
+#   <name>_chunks.tsv  manifest, header MANIFEST_HEADER, one row per sample file:
+#                      file, seed, samples, neg_inf (rows with logw = -Inf),
+#                      zero_e (rows with e = 0, the -Inf rows included), hits, sha256.
+#   <name>_hits.tsv    no header, one row per hit: file, seed, i, logw, e, coeffs.
+#                      logw is the original text, so parse() gives the same Float64.
+
+const DATA_DIR = joinpath(@__DIR__, "data")
+const MANIFEST_HEADER = "file\tseed\tsamples\tneg_inf\tzero_e\thits\tsha256"
+
+"True when `path` is a compact manifest (first line is `MANIFEST_HEADER`)."
+function is_manifest(path::AbstractString)
+    isfile(path) || return false
+    open(path) do io
+        eof(io) ? false : readline(io) == MANIFEST_HEADER
+    end
+end
+
+"Path of the hits file of a manifest: `x_chunks.tsv` -> `x_hits.tsv`."
+hits_path(manifest::AbstractString) = replace(manifest, r"_chunks\.tsv$" => "_hits.tsv")
+
+"""
+    read_manifest(path) -> Vector{NamedTuple}
+
+Rows `(file, seed, samples, neg_inf, zero_e, hits, sha256)` of a compact manifest.
+"""
+function read_manifest(path::AbstractString)
+    lines = readlines(path)
+    first(lines) == MANIFEST_HEADER || error("not a compact manifest: $path")
+    map(lines[2:end]) do l
+        p = split(l, '\t')
+        length(p) == 7 || error("bad manifest row in $path: $l")
+        (file = String(p[1]), seed = parse(Int, p[2]), samples = parse(Int, p[3]),
+         neg_inf = parse(Int, p[4]), zero_e = parse(Int, p[5]), hits = parse(Int, p[6]),
+         sha256 = String(p[7]))
+    end
+end
+
+"""
+    read_hit_rows(path) -> Dict{String,Vector{NamedTuple}}
+
+Hit rows `(seed, i, logw, e, coeffs)` of a compact hits file, grouped by file label
+in file order. `logw` and `e` stay text.
+"""
+function read_hit_rows(path::AbstractString)
+    out = Dict{String,Vector{NamedTuple{(:seed, :i, :logw, :e, :coeffs),
+                                         Tuple{Int,Int,String,String,String}}}}()
+    for l in eachline(path)
+        p = split(l, '\t')
+        length(p) == 6 || error("bad hit row in $path: $l")
+        push!(get!(out, String(p[1]), []),
+              (seed = parse(Int, p[2]), i = parse(Int, p[3]), logw = String(p[4]),
+               e = String(p[5]), coeffs = String(p[6])))
+    end
+    out
+end
+
+function _read_compact!(lw::Vector{Float64}, hits::Vector{Tuple{Int,String}}, manifest)
+    rows = read_manifest(manifest)
+    hp = hits_path(manifest)
+    isfile(hp) || error("hits file of $manifest not found: $hp")
+    hr = read_hit_rows(hp)
+    unknown = setdiff(keys(hr), [r.file for r in rows])
+    isempty(unknown) || error("$hp has hits of files absent from $manifest: $(collect(unknown))")
+    for r in rows
+        off = length(lw)
+        append!(lw, fill(-Inf, r.samples))
+        h = get(hr, r.file, [])
+        length(h) == r.hits || error("$(r.file): $(length(h)) hit rows, manifest says $(r.hits)")
+        last_i = 0
+        for x in h
+            last_i < x.i <= r.samples || error("$(r.file): hit index $(x.i) out of order or range")
+            last_i = x.i
+            e = parse(Int, x.e)
+            e > 0 || error("$(r.file): hit row $(x.i) has e = 0")
+            lw[off + x.i] = parse(Float64, x.logw) + log(e)
+            push!(hits, (off + x.i, x.coeffs))
+        end
+    end
+    lw, hits
+end
+
+"File labels of `paths`: a manifest contributes its rows, a sample file its base name."
+sample_labels(paths::AbstractVector{<:AbstractString}) =
+    reduce(vcat, [is_manifest(f) ? [r.file for r in read_manifest(f)] : [basename(f)]
+                  for f in paths]; init = String[])
+
+"""
+    scan_sample_file(path) -> NamedTuple
+
+Counts, hit rows and SHA-256 of a full sample file. Checks the format: four fields,
+`i` equal to the line number, `logw = -Inf` only with `e = 0`, coeffs only when `e > 0`.
+"""
+function scan_sample_file(path::AbstractString)
+    samples = neg_inf = zero_e = 0
+    hits = Tuple{Int,String,String,String}[]
+    for line in eachline(path)
+        samples += 1
+        p = split(line, '\t')
+        length(p) == 4 || error("$path:$samples: expected 4 fields")
+        parse(Int, p[1]) == samples || error("$path:$samples: index $(p[1]) is not the line number")
+        e = parse(Int, p[3])
+        (e == 0) == isempty(p[4]) || error("$path:$samples: coeffs must be empty exactly when e = 0")
+        if p[2] == "-Inf"
+            neg_inf += 1
+            e == 0 || error("$path:$samples: logw = -Inf with e > 0")
+        end
+        if e == 0
+            zero_e += 1
+        else
+            push!(hits, (samples, String(p[2]), String(p[3]), String(p[4])))
+        end
+    end
+    sha = bytes2hex(open(SHA.sha256, path))
+    (samples = samples, neg_inf = neg_inf, zero_e = zero_e, hits = hits, sha256 = sha)
+end
+
+"""
+    compact_samples(sources, manifest; write_hits = true) -> manifest
+
+Write the compact form of the sample files `sources = [(label, path, seed), ...]`:
+the manifest `manifest` (`*_chunks.tsv`) and, with `write_hits`, its hits file.
+"""
+function compact_samples(sources, manifest::AbstractString; write_hits::Bool = true,
+                         io::IO = stdout)
+    endswith(manifest, "_chunks.tsv") || throw(ArgumentError("manifest must end in _chunks.tsv"))
+    mkpath(dirname(manifest))
+    scans = [(label, seed, scan_sample_file(path)) for (label, path, seed) in sources]
+    open(manifest, "w") do f
+        println(f, MANIFEST_HEADER)
+        for (label, seed, s) in scans
+            println(f, join((label, seed, s.samples, s.neg_inf, s.zero_e, length(s.hits),
+                             s.sha256), '\t'))
+        end
+    end
+    if write_hits
+        open(hits_path(manifest), "w") do f
+            for (label, seed, s) in scans, (i, logw, e, coeffs) in s.hits
+                println(f, join((label, seed, i, logw, e, coeffs), '\t'))
+            end
+        end
+    end
+    @printf(io, "wrote %s: %d files, %d samples, %d hits%s\n", manifest, length(scans),
+            sum(s.samples for (_, _, s) in scans), sum(length(s.hits) for (_, _, s) in scans),
+            write_hits ? " (+ $(basename(hits_path(manifest))))" : " (counts only)")
+    manifest
+end
+
+"""
+    compact_legacy(legacy_dir = LEGACY_DIR, out_dir = DATA_DIR)
+
+Write `legacy_chunks.tsv` + `legacy_hits.tsv` (s1.tsv, chunks/c101..c140) and
+`legacy_s77_chunks.tsv` (counts only; s77.tsv is too large for the repository).
+Reads the legacy files only.
+"""
+function compact_legacy(legacy_dir::AbstractString = LEGACY_DIR,
+                        out_dir::AbstractString = DATA_DIR; io::IO = stdout)
+    src = [("s1.tsv", joinpath(legacy_dir, "s1.tsv"), 1)]
+    cdir = joinpath(legacy_dir, "chunks")
+    for f in sort(filter(f -> occursin(r"^c\d+\.tsv$", f), readdir(cdir)); by = f -> parse(Int, f[2:end-4]))
+        push!(src, ("chunks/" * f, joinpath(cdir, f), parse(Int, f[2:end-4])))
+    end
+    compact_samples(src, joinpath(out_dir, "legacy_chunks.tsv"); io)
+    s77 = joinpath(legacy_dir, "s77.tsv")
+    isfile(s77) && compact_samples([("s77.tsv", s77, 7)], joinpath(out_dir, "legacy_s77_chunks.tsv");
+                                   write_hits = false, io)
+    nothing
+end
+
+"""
+    verify_sample_file(path, manifest; seed, io) -> Bool
+
+Compare a regenerated sample file with the manifest row of `seed`: counts, SHA-256 and,
+when the hits file exists, every hit row (i, logw, e, coeffs).
+"""
+function verify_sample_file(path::AbstractString, manifest::AbstractString; seed::Int,
+                            io::IO = stdout)
+    rows = filter(r -> r.seed == seed, read_manifest(manifest))
+    length(rows) == 1 || error("manifest $manifest has $(length(rows)) rows with seed $seed")
+    r = only(rows)
+    s = scan_sample_file(path)
+    checks = Pair{String,Bool}[
+        "samples" => s.samples == r.samples,
+        "neg_inf" => s.neg_inf == r.neg_inf,
+        "zero_e" => s.zero_e == r.zero_e,
+        "hits" => length(s.hits) == r.hits,
+    ]
+    hp = hits_path(manifest)
+    if isfile(hp)
+        ref = [(x.i, x.logw, x.e, x.coeffs) for x in get(read_hit_rows(hp), r.file, [])]
+        push!(checks, "hit rows" => s.hits == ref)
+    end
+    push!(checks, "sha256" => s.sha256 == r.sha256)
+    println(io, "regenerated ", path)
+    println(io, "reference   ", manifest, " row ", r.file, " (seed ", r.seed, ")")
+    for (k, v) in checks
+        @printf(io, "  %-9s %s\n", k, v ? "identical" : "DIFFERS")
+    end
+    @printf(io, "  counts: samples=%d neg_inf=%d zero_e=%d hits=%d (reference %d %d %d %d)\n",
+            s.samples, s.neg_inf, s.zero_e, length(s.hits), r.samples, r.neg_inf, r.zero_e, r.hits)
+    ok = all(last, checks)
+    println(io, ok ? "verify_data: PASS (byte-identical)" : "verify_data: FAIL")
+    ok
 end
 
 """

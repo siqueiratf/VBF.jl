@@ -3,8 +3,17 @@
 **Path**: `census/quadratic_apn8/`
 
 **Status**: The estimator is validated against exact values for n ≤ 7. The census
-numbers below come from 4,012,000 samples. The novelty claims (the 553 new σ) are
-**pending verification**. A separate verification is running.
+numbers below come from 4,012,000 samples. The 553 novelty claims are **verified**
+against all 10 indexed sources ([reports/verification/REPORT.md](reports/verification/REPORT.md)).
+Two items are open:
+
+- The x^57 Kasami class (three non-quadratic catalog rows) is not yet decided by
+  computation. `kasami_x57/` checks it.
+- The raw Langevin files (11,888,039 records) are checked by sampling only.
+  `crosscheck_raw/` checks them in full.
+
+A fresh clone runs `make test` and `make analyze` with the committed data in `data/`.
+[SETUP.md](SETUP.md) tells how to set up another machine.
 
 ---
 
@@ -98,10 +107,29 @@ hits. If you remove these rows, the mass estimate is too large by the factor
 
 ### Random number scheme
 
-Thread `th` of T uses `Xoshiro(seed · 100003 + th)` and computes the samples
-`i = th : T : N`. Thus a chunk is a function of (N, seed, T, n, m). **The same seed and the
-same thread count T reproduce a chunk byte for byte.** A different T gives a different,
-equally valid chunk. The legacy chunks use T = 12. The default of `threads` is 12.
+Stream `th` of S uses `Xoshiro(seed · 100003 + th)` and computes the samples
+`i = th : S : N`. Thus a chunk is a function of (N, seed, S, n, m). **The same seed and the
+same stream count S reproduce a chunk byte for byte.** A different S gives a different,
+equally valid chunk. The parameter `streams` sets S; its default is `threads`. The streams
+run on any number of threads, so `threads=4 streams=12` gives a 12-thread chunk. The
+legacy (8,8) chunks use S = 12, and `s77.tsv` uses S = 4. The default of `threads` is 12.
+
+### Compact data (`data/`)
+
+A row with weight 0 changes the estimates only through its position. Thus the hit rows
+and the number of rows of each file describe the data completely. `data/` holds the
+legacy run in this compact form (175 KB instead of 90 MB):
+
+| File | Content |
+|---|---|
+| `legacy_chunks.tsv` | Manifest. Header `file seed samples neg_inf zero_e hits sha256`; one row per legacy file (`s1.tsv`, `chunks/c101.tsv` … `chunks/c140.tsv`). `neg_inf` counts rows with `logw = -Inf`; `zero_e` counts rows with `e = 0` (the `-Inf` rows included); `sha256` is the hash of the full file. |
+| `legacy_hits.tsv` | 1,661 rows, no header: `file seed i logw e coeffs`. `logw` is the original text. |
+| `legacy_s77_chunks.tsv` | Manifest row of `s77.tsv` only (200,000 samples, 116,527 hits). Its hit rows are 4.7 MB compressed, so they are not in the repository. `make validate threads=4` regenerates the file. |
+
+`read_samples` accepts a manifest wherever it accepts a sample file. It gives the same
+log weights and hits, bit for bit. `make compact_data legacy=<dir>` writes `data/` again
+from the full files. `make verify_data` regenerates one chunk with `make sample` and
+compares the counts, the hit rows and the SHA-256 with the manifest.
 
 ## Validation
 
@@ -114,7 +142,7 @@ equally valid chunk. The legacy chunks use T = 12. The default of `threads` is 1
 | (5,5) mass | pipeline, 2,000 samples | within 5 SE and 5 % | 2/155 = 0.012903 | `make test` |
 | (6,6) mass | plain Knuth, 200,000 probes, seed 7 | 7.71986 ± 0.0415 (z = +2.10) | 7.632804 | `make validate` |
 | (7,7) mass | pipeline, 200,000 samples, seed 7, 12 threads | 472.304 ± 1.31 (z = −1.85) | 474.7177 | `make validate` |
-| (7,7) mass | pipeline, legacy `s77.tsv` (200,000 samples, seed 7, 4 threads) | 475.002 ± 1.31 (z = +0.22) | 474.7177 | `make validate data77=…/s77.tsv` |
+| (7,7) mass | pipeline, legacy `s77.tsv` (200,000 samples, seed 7, 4 threads) | 475.002 ± 1.31 (z = +0.22) | 474.7177 | `make validate threads=4` (same weights, see the note on `s77.tsv`) |
 
 Other seeds show the expected spread. (6,6), 200,000 probes, seeds 8–11:
 z = +1.06, −0.62, +0.45, −0.06. (7,7), 50,000 samples, 12 threads, seeds 7–11:
@@ -136,7 +164,8 @@ The catalog has no n = 3 representative. The n = 7 computation takes about 20 mi
 ## Results
 
 Data: legacy `s1.tsv` (12,000 samples, seed 1) and chunks `c101`–`c140` (100,000 samples
-each, seeds 101–140), all with 12 threads.
+each, seeds 101–140), all with 12 streams. The committed compact form is
+`data/legacy_chunks.tsv`.
 
 | Quantity | Value |
 |---|---|
@@ -148,13 +177,38 @@ each, seeds 101–140), all with 12 threads.
 | Mass from coverage | 5.613e6 ± 1.1e5 |
 | **N(cov)** | **5.621e6 ± 1.1e5** |
 | N(mass) | 5.473e6 ± 1.58e5 |
-| Distinct new σ | 553, no repeats (**pending verification**) |
+| Distinct new σ | 553, no repeats (**verified**, see below) |
 
 Thus about 32 % of the mass of quadratic APN classes on F_2^8 is outside the known
-classes. The 553 new σ are in `results/new_sigma.tsv` (`sigma_hash<TAB>coeffs`). Each line
-certifies a CCZ class that is absent from the indexed corpora, if the σ index is complete.
-A separate verification of these 553 functions is running. Do not cite them as new
-classes before it ends.
+classes. The 553 new σ are in `new_classes_553.tsv` (`sigma_hash<TAB>coeffs`, sorted by
+hash). `make analyze` writes the same list to `results/new_sigma.tsv` and compares the two
+files. Each line certifies a CCZ class that is absent from the indexed corpora.
+
+The verification ([reports/verification/REPORT.md](reports/verification/REPORT.md)) found:
+
+- The σ index is complete and consistent: 4,005,445 members of 10 sources, all APN,
+  3,808,491 distinct σ (equal to Theorem 5.1 of Beierle et al.).
+- None of the 553 σ occurs in the recalculated set of all indexed members.
+- The 553 functions are quadratic APN and pairwise CCZ-inequivalent.
+
+Novelty is relative to the 10 indexed sources. The open items are in the status above.
+
+### Where the new classes are
+
+The properties report ([reports/properties/REPORT.md](reports/properties/REPORT.md))
+compares the component profiles of the new and the known hits. **The new classes are
+concentrated in the branch B6 = 52**, which Algorithm 3.1 of Beierle et al. does not search
+(it needs B6 ≥ 54):
+
+| Branch | Share of the new mass | Known fraction | Estimated unknown classes |
+|---|---:|---:|---:|
+| B6 = 52 | 54 % | 2 % | about 1.0e6 |
+| B6 = 54 (only half extended, Remark 3.19) | 34 % | 84 % | about 0.6e6 |
+| Level-5 entry (28,40) (Remark 3.11) | 10 % | 2.5 % | about 0.18e6 |
+| B6 ≥ 56 (fully targeted) | < 2 % | 95 % | about 0.03e6 |
+
+Most new hits (302 of 553) have the profile `[..,(30,34),(52,96)]`. All 1,661 hits
+contain a 4-dimensional all-bent subspace (Hypothesis 3.2 holds).
 
 ## Reproduce the numbers
 
@@ -164,15 +218,16 @@ Run all commands from the repository root or from this folder. All targets use
 | Number | Command | Time |
 |---|---|---|
 | Unit tests | `make test` | < 1 min after precompilation |
-| Census table above, `results/new_sigma.tsv` | `make analyze` (reads the legacy data in place; `results/new_sigma.tsv` is identical to the legacy `all40_new.tsv`) | about 15 s |
+| Census table above, `results/new_sigma.tsv` | `make analyze` (reads `data/legacy_chunks.tsv`; `results/new_sigma.tsv` is identical to `new_classes_553.tsv`) | about 15 s |
 | All numbers in `results/report.toml` | `make report` | about 3 min |
 | (6,6), (7,7) validation | `make validate` | about 2.5 min |
 | (7,7) with the legacy file | `make validate data77=$LEGACY/s77.tsv` | about 30 s |
 | Exact masses n = 4..6 / n = 4..7 | `make exact_masses` / `make exact_masses nmax=7` | seconds / about 20 min |
-| `s1.tsv` byte for byte | `make reproduce` (seed 1, 12,000 samples, 12 threads) | 1–2 min |
-| `c101.tsv` byte for byte | `make reproduce seed=101 ref_samples=100000 ref=$LEGACY/chunks/c101.tsv` | 8–15 min on 12 free cores |
+| `s1.tsv` against the manifest (counts, hits, SHA-256) | `make verify_data threads=<cores>` (seed 1, 12,000 samples, 12 streams) | 1–2 min on 12 cores, about 4 min on 2 |
+| `c101.tsv` against the manifest | `make verify_data seed=101 threads=<cores>` | 8–15 min on 12 free cores |
+| `s1.tsv` byte for byte with the full file | `make reproduce streams=12 ref=$LEGACY/s1.tsv` | 1–2 min |
 | All 40 chunks | `make sample first_seed=101 chunks=40` | about 8 h on 12 free cores |
-| `s77.tsv` | `make reproduce n=7 m=7 seed=7 ref_samples=200000 threads=4 ref=$LEGACY/s77.tsv` | about 3.5 min (see the note below) |
+| `s77.tsv` | `make verify_data seed=7 n=7 m=7 verify_streams=4 manifest=data/legacy_s77_chunks.tsv` | about 3.5 min on 4 threads (see the note below) |
 
 **Note on `s77.tsv`.** The regenerated file has the same columns `i`, `logw` and `e` on
 all 200,000 lines, so the mass estimate is the same. The `coeffs` column differs on 782 of
@@ -180,16 +235,47 @@ all 200,000 lines, so the mass estimate is the same. The `coeffs` column differs
 output as this port; `s77.tsv` was probably written by an earlier version of the counter that listed
 the canonical completions in a different order. The random stream is the same, so only
 the selected completion changes. `make reproduce` therefore reports "byte-identical: NO"
-for `s77.tsv`. The (8,8) file `s1.tsv` is byte-identical. For `c101.tsv`, the first 400 samples of the five
+for `s77.tsv`, and `make verify_data` reports equal counts but a different SHA-256. The
+(8,8) file `s1.tsv` is byte-identical. For `c101.tsv`, the first 400 samples of the five
 thread streams that contain the six earliest hits (2,000 lines) are byte-identical; the
 full-chunk check was not run because the machine was busy.
 
-`$LEGACY` is `papers/2025/Beierle_202508/results/class_count`. `make sample` keeps
-existing chunks, so you can stop and continue a long run. To add new chunks to the
-analysis, use for example
-`make analyze data="$LEGACY/s1.tsv $LEGACY/chunks census/quadratic_apn8/results/chunks"`.
-Use new seeds (for example `first_seed=141`). The same seed and thread count give the same
-samples again.
+`$LEGACY` is `papers/2025/Beierle_202508/results/class_count`. The full files are
+untracked and exist only on the original machine; `data/` replaces them for the analysis.
+`make sample` keeps existing chunks, so you can stop and continue a long run. To add new
+chunks to the analysis, use for example
+`make analyze data="data/legacy_chunks.tsv results/chunks"`. Use new seeds (for example
+`first_seed=141`). The same seed and stream count give the same samples again.
+
+## Subprojects
+
+Each subproject has its own Makefile. The census Makefile delegates to it and skips it
+when the Makefile is absent. Command-line parameters reach the sub-make; `args="..."`
+adds more.
+
+| Target | Runs | Purpose |
+|---|---|---|
+| `make kasami_x57` | `make -C kasami_x57 check` | Is the x^57 Kasami class CCZ-equivalent to a quadratic function? |
+| `make permutation` | `make -C permutation check` | CCZ-equivalence of new classes to permutations |
+| `make theory_uniqueness` | `make -C theory check_uniqueness` | Checks of the theory notes |
+| `make crosscheck_raw` | `make -C crosscheck_raw check` | Full σ check of the raw Langevin files |
+| `make web_serve` | `make -C web serve` | Local web view of the census |
+| `make search_b52` / `make search_b52_status` | `make -C search_b52 search` / `status` | Targeted search in the B6 = 52 branch |
+
+## Reports
+
+| Report | Content |
+|---|---|
+| [reports/verification/REPORT.md](reports/verification/REPORT.md) | Verification of the 553 novelty claims and of the σ index |
+| [reports/properties/REPORT.md](reports/properties/REPORT.md) | Component profiles of new and known hits (B6 = 52 branch) |
+| [reports/literature/LITERATURE.md](reports/literature/LITERATURE.md) | Survey of public sources of quadratic APN functions on F_2^8 |
+| [theory/METHOD.md](theory/METHOD.md) | Method of the estimator (in progress) |
+| [theory/UNIQUENESS.md](theory/UNIQUENESS.md) | Uniqueness arguments (in progress) |
+| [kasami_x57/REPORT.md](kasami_x57/REPORT.md) | x^57 Kasami class gap (in progress) |
+| [permutation/REPORT.md](permutation/REPORT.md) | Permutation question for the new classes (in progress) |
+| [crosscheck_raw/REPORT.md](crosscheck_raw/REPORT.md) | Raw Langevin files against the σ index (in progress) |
+| [web/README.md](web/README.md) | Web view (in progress) |
+| [search_b52/README.md](search_b52/README.md) | B6 = 52 search (in progress) |
 
 ## Files
 
@@ -197,20 +283,24 @@ samples again.
 |---|---|---|
 | `qknuth.jl` | Modules `QK` (images, free values, Knuth probe, exact DFS count, LUT) and `QK2` (slow exact last-step counter) | `qknuth.jl` |
 | `fastlast.jl` | Modules `FL`, `FL2`, `FL3` (fast exact last-step counters; `FL3` is the production counter) | `fastlast.jl` |
-| `sampler.jl` | Threaded sampler, chunk writer, byte-level reproduction check | `sample88.jl`, `samplenm.jl`, `longrun.sh` |
-| `helpers.jl` | Constants, coefficient strings, TSV reader, mass estimate, TOML output | `est.jl` |
+| `sampler.jl` | Threaded sampler (RNG streams), chunk writer, byte-level reproduction check | `sample88.jl`, `samplenm.jl`, `longrun.sh` |
+| `helpers.jl` | Constants, coefficient strings, TSV and compact-data reader, compaction and chunk verification, mass estimate, TOML output | `est.jl` |
 | `analyze.jl` | Mass, σ coverage, N estimates, new σ list | `analyze.jl`, `check.jl` |
 | `validate.jl` | (6,6) and (7,7) checks against the exact masses | |
 | `exact_masses.jl` | Exact masses from the catalog | `stabs.jl` |
 | `diagnostics.jl` | σ-index spot check, invariants of single functions | `spot.jl`, `props.jl` |
 | `report.jl` | Aggregate report, `results/report.toml` | |
 | `test/` | Unit tests | |
+| `data/` | Compact form of the legacy run (manifests and hit rows) | `s1.tsv`, `chunks/`, `s77.tsv` |
+| `new_classes_553.tsv` | The 553 new classes (`sigma_hash<TAB>coeffs`) | `all40_new.tsv` |
+| `SETUP.md` | Setup of a new machine | |
 
 The algorithms and the random number scheme are the same as in the legacy scripts. The
 legacy folder stays unchanged.
 
 Generated files go to `results/` only: `results/chunks/` (`make sample`),
-`results/repro/` (`make reproduce`), `results/validate/` (`make validate`),
+`results/repro/` (`make reproduce`), `results/verify/` (`make verify_data`),
+`results/validate/` (`make validate`),
 `results/new_sigma.tsv` (`make analyze`) and `results/report.toml` (`make report`).
 Git ignores all of them except `results/report.toml`.
 
@@ -219,6 +309,5 @@ Git ignores all of them except `results/report.toml`.
 `VBF` (SBox, differential_uniformity, is_quadratic_apn, automorphisms_from_ortho_derivative,
 absolute_walsh_spectrum, is_ccz_equivalent_to_permutation) and `VBFCatalog` (catalog,
 `sigma_hash`, the `ccz_sigma_index` side store). `make analyze` needs the side store
-`packages/VBFCatalog/corpora/ccz_sigma_index.sqlite`; build it with
-`build_sigma_index!(load_catalog())` if it is missing. The sampler and the tests do not
-need it.
+`packages/VBFCatalog/corpora/ccz_sigma_index.sqlite`. Git ignores it; [SETUP.md](SETUP.md)
+tells how to copy or rebuild it. The sampler and the tests do not need it.
