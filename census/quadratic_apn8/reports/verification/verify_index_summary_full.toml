@@ -1,0 +1,213 @@
+_wall_seconds = 3400.8
+
+[beierleleanderperrin2022_n8]
+counts_equal = true
+store_present = true
+index_out_of_range_rows = 0
+store_sha256_matches_catalog = true
+store_idx_contiguous = true
+index_duplicate_rows = 0
+checked = 6368
+store_rows = 6368
+index_rows = 6368
+full = true
+member_count_catalog = 6368
+exact_row_present = 6368
+decode_or_sigma_errors = 0
+du_not_2 = 0
+seconds = 4.7
+n = 8
+orphan_index_rows = 0
+hash_mismatch = 0
+missing_index_row = 0
+
+[beierle2025_n8]
+counts_equal = true
+store_present = true
+index_out_of_range_rows = 0
+store_sha256_matches_catalog = true
+store_idx_contiguous = true
+index_duplicate_rows = 0
+checked = 3775599
+store_rows = 3775599
+index_rows = 3775599
+full = true
+member_count_catalog = 3775599
+exact_row_present = 3775599
+decode_or_sigma_errors = 0
+du_not_2 = 0
+seconds = 3213.8
+n = 8
+orphan_index_rows = 0
+hash_mismatch = 0
+missing_index_row = 0
+
+[taniguchi2019_n8]
+counts_equal = true
+store_present = true
+index_out_of_range_rows = 0
+store_sha256_matches_catalog = true
+store_idx_contiguous = true
+index_duplicate_rows = 0
+checked = 2
+store_rows = 2
+index_rows = 2
+full = true
+member_count_catalog = 2
+exact_row_present = 2
+decode_or_sigma_errors = 0
+du_not_2 = 0
+seconds = 0.5
+n = 8
+orphan_index_rows = 0
+hash_mismatch = 0
+missing_index_row = 0
+
+[wengtangong2013_n8]
+counts_equal = true
+store_present = true
+index_out_of_range_rows = 0
+store_sha256_matches_catalog = true
+store_idx_contiguous = true
+index_duplicate_rows = 0
+checked = 10
+store_rows = 10
+index_rows = 10
+full = true
+member_count_catalog = 10
+exact_row_present = 10
+decode_or_sigma_errors = 0
+du_not_2 = 0
+seconds = 0.3
+n = 8
+orphan_index_rows = 0
+hash_mismatch = 0
+missing_index_row = 0
+
+[yuwangli2014_qam_n8]
+counts_equal = true
+store_present = true
+index_out_of_range_rows = 0
+store_sha256_matches_catalog = true
+store_idx_contiguous = true
+index_duplicate_rows = 0
+checked = 8179
+store_rows = 8179
+index_rows = 8179
+full = true
+member_count_catalog = 8179
+exact_row_present = 8179
+decode_or_sigma_errors = 0
+du_not_2 = 0
+seconds = 5.8
+n = 8
+orphan_index_rows = 0
+hash_mismatch = 0
+missing_index_row = 0
+
+[simonberg_gf4_n8]
+counts_equal = true
+store_present = true
+index_out_of_range_rows = 0
+store_sha256_matches_catalog = false
+store_idx_contiguous = true
+index_duplicate_rows = 0
+checked = 196863
+store_rows = 196863
+index_rows = 196863
+full = true
+member_count_catalog = 196863
+exact_row_present = 196863
+decode_or_sigma_errors = 0
+du_not_2 = 0
+seconds = 148.8
+n = 8
+orphan_index_rows = 0
+hash_mismatch = 0
+missing_index_row = 0
+
+[beierleleander2022_n8]
+counts_equal = true
+store_present = true
+index_out_of_range_rows = 0
+store_sha256_matches_catalog = true
+store_idx_contiguous = true
+index_duplicate_rows = 0
+checked = 12923
+store_rows = 12923
+index_rows = 12923
+full = true
+member_count_catalog = 12923
+exact_row_present = 12923
+decode_or_sigma_errors = 0
+du_not_2 = 0
+seconds = 9.2
+n = 8
+orphan_index_rows = 0
+hash_mismatch = 0
+missing_index_row = 0
+
+[edelpott2009_n8]
+counts_equal = true
+store_present = true
+index_out_of_range_rows = 0
+store_sha256_matches_catalog = true
+store_idx_contiguous = true
+index_duplicate_rows = 0
+checked = 22
+store_rows = 22
+index_rows = 22
+full = true
+member_count_catalog = 22
+exact_row_present = 22
+decode_or_sigma_errors = 0
+du_not_2 = 0
+seconds = 0.3
+n = 8
+orphan_index_rows = 0
+hash_mismatch = 0
+missing_index_row = 0
+
+[yuperrin2022_qam_n8]
+counts_equal = true
+store_present = true
+index_out_of_range_rows = 0
+store_sha256_matches_catalog = true
+store_idx_contiguous = true
+index_duplicate_rows = 0
+checked = 5412
+store_rows = 5412
+index_rows = 5412
+full = true
+member_count_catalog = 5412
+exact_row_present = 5412
+decode_or_sigma_errors = 0
+du_not_2 = 0
+seconds = 4.2
+n = 8
+orphan_index_rows = 0
+hash_mismatch = 0
+missing_index_row = 0
+
+[functions]
+counts_equal = true
+n8_rows = 72
+flag_mismatch = 0
+index_rows = 67
+full = true
+exact_row_present = 67
+seconds = 1.3
+orphan_index_rows = 0
+hash_mismatch = 0
+missing_index_row = 0
+quadratic_apn_rows = 67
+
+[_global]
+index_sources_n8 = ["beierle2025_n8", "beierleleander2022_n8", "beierleleanderperrin2022_n8", "edelpott2009_n8", "functions", "simonberg_gf4_n8", "taniguchi2019_n8", "wengtangong2013_n8", "yuperrin2022_qam_n8", "yuwangli2014_qam_n8"]
+new553_present_in_recomputed_set = 0
+new553_count = 553
+recomputed_n8_distinct_sigma = 3808491
+index_n8_distinct_sigma = 3808491
+catalog_corpora = ["beierle2025_n8", "beierleleander2022_n8", "beierleleanderperrin2022_n8", "edelpott2009_n8", "simonberg_gf4_n8", "taniguchi2019_n8", "wengtangong2013_n8", "yuperrin2022_qam_n8", "yuwangli2014_qam_n8"]
+unknown_index_sources = []
+index_n8_rows = 4005445

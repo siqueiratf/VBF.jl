@@ -1,0 +1,45 @@
+random30	153	548959	beierle2025_n8	2120718	true	true	256	true	485.3
+
+[3399537] signal 15: Terminated
+in expression starting at /home/ts/VBF.jl/papers/2025/Beierle_202508/results/class_count/verification/ea_check.jl:36
+unknown function (ip: 0x7f29ea8f6ddc) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+unknown function (ip: 0x7f29ea8f8313) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+unknown function (ip: 0x7f29ea8fe5dd) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+ijl_gc_collect at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+unknown function (ip: 0x7f29ea8ffaea) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+ijl_gc_small_alloc at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+copy at ./array.jl:386 [inlined]
+#linear_equivalences_general##2 at /home/ts/VBF.jl/packages/VBF/src/equivalence/linear/general_equivalence.jl:89
+unknown function (ip: 0x7f296992d378) at (unknown file)
+#linear_equivalences_general##2 at /home/ts/VBF.jl/packages/VBF/src/equivalence/linear/general_equivalence.jl:105
+unknown function (ip: 0x7f296992d378) at (unknown file)
+#linear_equivalences_general##2 at /home/ts/VBF.jl/packages/VBF/src/equivalence/linear/general_equivalence.jl:105
+unknown function (ip: 0x7f296992d378) at (unknown file)
+#linear_equivalences_general##2 at /home/ts/VBF.jl/packages/VBF/src/equivalence/linear/general_equivalence.jl:105
+unknown function (ip: 0x7f296992d378) at (unknown file)
+linear_equivalences_general at /home/ts/VBF.jl/packages/VBF/src/equivalence/linear/general_equivalence.jl:117
+_ortho_derivative_maps at /home/ts/VBF.jl/packages/VBF/src/constructions/quadratic_apn_graph.jl:45
+ea_mappings_from_ortho_derivative at /home/ts/VBF.jl/packages/VBF/src/constructions/quadratic_apn_graph.jl:102
+unknown function (ip: 0x7f296992985a) at (unknown file)
+macro expansion at ./timing.jl:463 [inlined]
+top-level scope at /home/ts/VBF.jl/papers/2025/Beierle_202508/results/class_count/verification/ea_check.jl:41
+jl_toplevel_eval_flex at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+unknown function (ip: 0x7f29ea87f885) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+jl_toplevel_eval_flex at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+ijl_toplevel_eval at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+ijl_toplevel_eval_in at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+unknown function (ip: 0x7f29d2de4932) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7f29d309cac4) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7f29d2d11abd) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7f29d4a3470b) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7f29d2accf45) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7f29d2f00501) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7f29d49a9263) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7f29ea8a7b5e) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+jl_repl_entrypoint at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+main at julia (unknown line)
+unknown function (ip: 0x7f29eb227780) at /usr/bin/../lib/libc.so.6
+__libc_start_main at /usr/bin/../lib/libc.so.6 (unknown line)
+_start at julia (unknown line)
+unknown function (ip: (nil)) at (unknown file)
+Allocations: 17426745271 (Pool: 17426745163; Big: 108); GC: 59726

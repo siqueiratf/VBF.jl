@@ -1,0 +1,51 @@
+random30	71	224693	beierle2025_n8	756657	true	true	256	true	538.5
+random30	244	911794	beierle2025_n8	647336	true	true	256	true	553.5
+random30	299	1148311	beierle2025_n8	1204805	true	true	256	true	613.0
+random30	452	1675721	beierle2025_n8	3678064	true	true	256	true	542.6
+random30	671	2502925	beierle2025_n8	1490587	true	true	256	true	463.1
+random30	840	3022951	beierle2025_n8	2299008	true	true	256	true	446.8
+random30	918	3267784	beierle2025_n8	2390220	true	true	256	true	507.1
+
+[3364295] signal 15: Terminated
+in expression starting at /home/ts/VBF.jl/papers/2025/Beierle_202508/results/class_count/verification/ea_check.jl:36
+unknown function (ip: 0x7fc74fcffab4) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+unknown function (ip: 0x7fc74fd00078) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+jl_alloc_genericmemory_unchecked at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+unknown function (ip: 0x7fc73923dd51) at /usr/lib/julia/sys.so
+_growend! at ./array.jl:1205 [inlined]
+_push! at ./array.jl:1348 [inlined]
+push! at ./array.jl:1345 [inlined]
+#linear_equivalences_general##2 at /home/ts/VBF.jl/packages/VBF/src/equivalence/linear/general_equivalence.jl:97
+unknown function (ip: 0x7fc6ce92d7c8) at (unknown file)
+#linear_equivalences_general##2 at /home/ts/VBF.jl/packages/VBF/src/equivalence/linear/general_equivalence.jl:105
+unknown function (ip: 0x7fc6ce92d7c8) at (unknown file)
+#linear_equivalences_general##2 at /home/ts/VBF.jl/packages/VBF/src/equivalence/linear/general_equivalence.jl:105
+unknown function (ip: 0x7fc6ce92d7c8) at (unknown file)
+#linear_equivalences_general##2 at /home/ts/VBF.jl/packages/VBF/src/equivalence/linear/general_equivalence.jl:105
+unknown function (ip: 0x7fc6ce92d7c8) at (unknown file)
+linear_equivalences_general at /home/ts/VBF.jl/packages/VBF/src/equivalence/linear/general_equivalence.jl:117
+_ortho_derivative_maps at /home/ts/VBF.jl/packages/VBF/src/constructions/quadratic_apn_graph.jl:45
+ea_mappings_from_ortho_derivative at /home/ts/VBF.jl/packages/VBF/src/constructions/quadratic_apn_graph.jl:102
+unknown function (ip: 0x7fc6ce926d1a) at (unknown file)
+macro expansion at ./timing.jl:463 [inlined]
+top-level scope at /home/ts/VBF.jl/papers/2025/Beierle_202508/results/class_count/verification/ea_check.jl:41
+jl_toplevel_eval_flex at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+unknown function (ip: 0x7fc74fc7f885) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+jl_toplevel_eval_flex at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+ijl_toplevel_eval at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+ijl_toplevel_eval_in at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+unknown function (ip: 0x7fc7381e4932) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fc73849cac4) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fc738111abd) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fc739e3470b) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fc737eccf45) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fc738300501) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fc739da9263) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fc74fca7b5e) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+jl_repl_entrypoint at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+main at julia (unknown line)
+unknown function (ip: 0x7fc750827780) at /usr/bin/../lib/libc.so.6
+__libc_start_main at /usr/bin/../lib/libc.so.6 (unknown line)
+_start at julia (unknown line)
+unknown function (ip: (nil)) at (unknown file)
+Allocations: 122251242024 (Pool: 122251241916; Big: 108); GC: 433692
