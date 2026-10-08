@@ -6,7 +6,8 @@
 #      (2^m-1)(2^m-2)(2^m-4) (n = 3: every nonzero 2-vector is decomposable).
 #   2. Small-n validation against the exact masses (bounded sample counts).
 #   3. Optional recomputation of the exact masses from the catalog (exact_nmax > 0).
-#   4. Census analysis of the (8,8) sample files; compare with the published numbers.
+#   4. Census analysis of the (8,8) sample files (full TSVs or the compact manifest
+#      data/legacy_chunks.tsv); compare with the published numbers and new_classes_553.tsv.
 #   5. Write everything to results/report.toml and the new sigma list to results/new_sigma.tsv.
 # VBF API used: SBox, differential_uniformity, is_quadratic_apn,
 #   automorphisms_from_ortho_derivative (through the included scripts)
@@ -74,10 +75,11 @@ function census_report(; data::AbstractString, samples66::Int, samples77::Int, s
         "coverage" => round(a.coverage, digits = 4) == P.coverage,
         "n_cov" => round(a.n_cov, sigdigits = 4) == P.n_cov,
         "new_sigma" => a.new_sigma == P.new_sigma,
+        "new_list" => read(newp) == read(NEW_CLASSES_FILE),
     )
     results["published"] = P
     results["published_reproduced"] = repro
-    results["novelty_status"] = "pending verification"
+    results["novelty_status"] = NOVELTY_STATUS
     print_section("Comparison with the published run", io)
     for (k, v) in sort(collect(repro))
         @printf(io, "  %-10s %s\n", k, v ? "reproduced" : "differs (expected for other data)")
