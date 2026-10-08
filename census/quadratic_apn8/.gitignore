@@ -1,0 +1,12 @@
+# Generated outputs (regenerate with make sample / reproduce / validate / analyze / report).
+# Ignore every file under results/ but keep descending into its directories, so the
+# negations below can still re-include files.
+results/**
+!results/**/
+# The aggregate report is small and is tracked, like results/report.toml of the paper folders.
+!results/report.toml
+
+# READMEs are always tracked. Mirror of the negations at the bottom of the root
+# .gitignore; keep this block last.
+!README.md
+!**/README.md

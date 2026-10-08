@@ -1,0 +1,8 @@
+set	row	sample_idx	source	member_idx	sigma_F_eq_stored	sigma_G_eq_stored	n_mappings	equivalent	seconds
+random30	71	224693	beierle2025_n8	756657	true	true	256	true	538.5
+random30	244	911794	beierle2025_n8	647336	true	true	256	true	553.5
+random30	299	1148311	beierle2025_n8	1204805	true	true	256	true	613.0
+random30	452	1675721	beierle2025_n8	3678064	true	true	256	true	542.6
+random30	671	2502925	beierle2025_n8	1490587	true	true	256	true	463.1
+random30	840	3022951	beierle2025_n8	2299008	true	true	256	true	446.8
+random30	918	3267784	beierle2025_n8	2390220	true	true	256	true	507.1

@@ -1,0 +1,134 @@
+novelty_status = "pending verification"
+
+[census]
+coverage = 0.6769974101613319
+coverage_se = 0.013286646886824674
+delta_known = 8516.877199999988
+files = 41
+hit_rate = 0.00041400797607178463
+hits = 1661
+known_classes = 3808491
+known_hits = 1108
+known_mass = 3.7999741228e6
+mass = 5.464359044098711e6
+mass_batch_se = 140924.50398327693
+mass_from_coverage = 5.612981771812757e6
+mass_from_coverage_se = 110159.51562722724
+mass_se = 157664.45122467235
+max_weight_share = 0.0034168945860912465
+n_cov = 5.6214986490127565e6
+n_cov_se = 110159.51562722724
+n_mass = 5.472875921298711e6
+n_mass_se = 157664.45122467235
+new_repeats = 0
+new_sigma = 553
+samples = 4012000
+sigma_index_gaps = []
+
+    [census.known_by_source]
+    beierle2025_n8 = 1101
+    beierleleanderperrin2022_n8 = 3
+    yuperrin2022_qam_n8 = 3
+    yuwangli2014_qam_n8 = 1
+
+[exact_counts.T_3_3]
+closed_form = 168
+expected = 168
+mass = "1/168"
+pass = true
+value = 168
+
+[exact_counts.T_3_4]
+closed_form = 2520
+expected = 2520
+mass = "1/1344"
+pass = true
+value = 2520
+
+[exact_counts.T_3_5]
+closed_form = 26040
+expected = 26040
+mass = "1/64512"
+pass = true
+value = 26040
+
+[exact_counts.T_4_4]
+closed_form = "nothing"
+expected = 1128960
+mass = "1/360"
+pass = true
+value = 1128960
+
+[exact_mass_constants.n4m4]
+float = 0.002777777777777778
+rational = "1/360"
+
+[exact_mass_constants.n5m5]
+float = 0.012903225806451613
+rational = "2/155"
+
+[exact_mass_constants.n6m6]
+float = 7.632804232804233
+rational = "7213/945"
+
+[exact_mass_constants.n7m7]
+float = 474.71766029246345
+rational = "422024/889"
+
+[meta]
+data = "/home/ts/VBF.jl/papers/2025/Beierle_202508/results/class_count/s1.tsv /home/ts/VBF.jl/papers/2025/Beierle_202508/results/class_count/chunks"
+data77 = ""
+date = "2026-10-08"
+exact_nmax = 0
+julia = "1.13.1"
+samples66 = 200000
+samples77 = 200000
+seed = 7
+threads = 12
+title = "Number of CCZ classes of quadratic APN functions on F_2^8"
+
+[published]
+coverage = 0.677
+coverage_se = 0.0133
+hits = 1661
+mass = 5.464e6
+mass_se = 158000.0
+n_cov = 5.621e6
+n_cov_se = 110000.0
+new_sigma = 553
+samples = 4012000
+
+[published_reproduced]
+coverage = true
+hits = true
+mass = true
+n_cov = true
+new_sigma = true
+samples = true
+
+[validation]
+pass = true
+
+    [validation.n6m6]
+    exact = 7.632804232804233
+    exact_rational = "7213/945"
+    hits = 42350
+    mass = 7.7198566118693215
+    method = "plain Knuth"
+    pass = true
+    samples = 200000
+    se = 0.04151781332890872
+    seconds = 4.157670147
+    z = 2.0967476869614967
+
+    [validation.n7m7]
+    exact = 474.71766029246345
+    exact_rational = "422024/889"
+    hits = 115899
+    mass = 472.30440228417604
+    method = "Knuth + exact last step"
+    pass = true
+    samples = 200000
+    se = 1.3055990463464129
+    seconds = 137.44236239
+    z = -1.8483913687289164

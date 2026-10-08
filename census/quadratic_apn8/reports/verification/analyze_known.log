@@ -1,0 +1,7 @@
+samples            4012000
+APN hits           1661  (hit rate 4.140e-04)
+mass estimate      5.464e+06 ± 1.58e+05  (2.9%)
+hits with known σ  1108 / 1661   by source: Dict("yuwangli2014_qam_n8" => 1, "beierle2025_n8" => 1101, "yuperrin2022_qam_n8" => 3, "beierleleanderperrin2022_n8" => 3)
+weighted coverage  0.6770 ± 0.0133
+mass from coverage 5.613e+06 ± 1.1e+05 ;  N >= mass + 8517  ->  N(cov) = 5.621e+06, N(mass) = 5.473e+06
+distinct new σ     553  (repeats among new: 0)

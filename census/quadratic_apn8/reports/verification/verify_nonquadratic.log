@@ -1,0 +1,40 @@
+
+[3363182] signal 15: Terminated
+in expression starting at /home/ts/VBF.jl/papers/2025/Beierle_202508/results/class_count/verification/verify_nonquadratic.jl:15
++ at ./int.jl:87 [inlined]
+_iterate_abstractarray at ./abstractarray.jl:1255 [inlined]
+iterate at ./abstractarray.jl:1247 [inlined]
+_subspace_dfs! at /home/ts/VBF.jl/packages/VBF/src/linalg/subspace_search.jl:89
+_subspace_dfs! at /home/ts/VBF.jl/packages/VBF/src/linalg/subspace_search.jl:77
+_subspace_dfs! at /home/ts/VBF.jl/packages/VBF/src/linalg/subspace_search.jl:77
+_subspace_dfs! at /home/ts/VBF.jl/packages/VBF/src/linalg/subspace_search.jl:77
+#extract_linear_subspaces#36 at /home/ts/VBF.jl/packages/VBF/src/linalg/subspace_search.jl:134
+extract_linear_subspaces at /home/ts/VBF.jl/packages/VBF/src/linalg/subspace_search.jl:119 [inlined]
+enumerate_ccz_class at /home/ts/VBF.jl/packages/VBF/src/equivalence/ccz/thickness.jl:167
+unknown function (ip: 0x7fdb172bb486) at (unknown file)
+macro expansion at ./timing.jl:463 [inlined]
+top-level scope at /home/ts/VBF.jl/papers/2025/Beierle_202508/results/class_count/verification/verify_nonquadratic.jl:20
+jl_toplevel_eval_flex at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+unknown function (ip: 0x7fdb9827f885) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+jl_toplevel_eval_flex at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+ijl_toplevel_eval at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+ijl_toplevel_eval_in at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+unknown function (ip: 0x7fdb807e4932) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fdb80a9cac4) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fdb80711abd) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fdb8243470b) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fdb804ccf45) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fdb80900501) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fdb823a9263) at /usr/lib/julia/sys.so
+unknown function (ip: 0x7fdb982a7b5e) at /usr/bin/../lib/julia/libjulia-internal.so.1.13
+jl_repl_entrypoint at /usr/bin/../lib/julia/libjulia-internal.so.1.13 (unknown line)
+main at julia (unknown line)
+unknown function (ip: 0x7fdb98e27780) at /usr/bin/../lib/libc.so.6
+__libc_start_main at /usr/bin/../lib/libc.so.6 (unknown line)
+_start at julia (unknown line)
+unknown function (ip: (nil)) at (unknown file)
+Allocations: 3335837 (Pool: 3335753; Big: 84); GC: 4
+non-quadratic n=8 APN rows in functions: 3
+
+id=43 n8_Kasami_x57  deg=4 du=2 perm=false
+  walsh zeros (incl. 0?): 16575

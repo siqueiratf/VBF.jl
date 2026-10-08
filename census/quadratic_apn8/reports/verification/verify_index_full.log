@@ -1,0 +1,14 @@
+mode=full threads=6 check_du=true
+functions                      rows(n=8)=72 quadAPN=67 ok=67 mism=0 missing=0 orphan=0 flag_mismatch=0 index_rows=67  1.3s
+taniguchi2019_n8               checked=       2 ok=       2 mism=0 missing=0 err=0 orphan=0 dup=0 du!=2=0  counts(store/cat/index)=2/2/2 sha_ok=true  0.5s (4/s)
+wengtangong2013_n8             checked=      10 ok=      10 mism=0 missing=0 err=0 orphan=0 dup=0 du!=2=0  counts(store/cat/index)=10/10/10 sha_ok=true  0.3s (34/s)
+edelpott2009_n8                checked=      22 ok=      22 mism=0 missing=0 err=0 orphan=0 dup=0 du!=2=0  counts(store/cat/index)=22/22/22 sha_ok=true  0.3s (75/s)
+yuperrin2022_qam_n8            checked=    5412 ok=    5412 mism=0 missing=0 err=0 orphan=0 dup=0 du!=2=0  counts(store/cat/index)=5412/5412/5412 sha_ok=true  4.2s (1293/s)
+beierleleanderperrin2022_n8    checked=    6368 ok=    6368 mism=0 missing=0 err=0 orphan=0 dup=0 du!=2=0  counts(store/cat/index)=6368/6368/6368 sha_ok=true  4.7s (1351/s)
+yuwangli2014_qam_n8            checked=    8179 ok=    8179 mism=0 missing=0 err=0 orphan=0 dup=0 du!=2=0  counts(store/cat/index)=8179/8179/8179 sha_ok=true  5.8s (1418/s)
+beierleleander2022_n8          checked=   12923 ok=   12923 mism=0 missing=0 err=0 orphan=0 dup=0 du!=2=0  counts(store/cat/index)=12923/12923/12923 sha_ok=true  9.2s (1407/s)
+simonberg_gf4_n8               checked=  196863 ok=  196863 mism=0 missing=0 err=0 orphan=0 dup=0 du!=2=0  counts(store/cat/index)=196863/196863/196863 sha_ok=false  148.8s (1323/s)
+beierle2025_n8                 checked= 3775599 ok= 3775599 mism=0 missing=0 err=0 orphan=0 dup=0 du!=2=0  counts(store/cat/index)=3775599/3775599/3775599 sha_ok=true  3213.8s (1175/s)
+index n=8 rows 4005445, distinct 3808491; recomputed distinct 3808491
+553 claimed-new hashes found in the RECOMPUTED sigma set: 0 / 553
+total wall: 3400.8 s
