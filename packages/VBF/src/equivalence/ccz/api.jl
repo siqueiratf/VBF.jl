@@ -1,106 +1,80 @@
 """
-Public CCZ-equivalence API.
+Public CCZ-equivalence decisions and affine certificates.
 
-Two SBoxes `F, G : F₂ⁿ → F₂ⁿ` are **CCZ-equivalent** iff there exists
-an invertible F₂-affine map `L : F₂²ⁿ → F₂²ⁿ` with `L(Γ_F) = Γ_G`,
-where `Γ_F = {(x, F(x)) : x ∈ F₂ⁿ}` is the graph of `F` (the equivalence
-introduced by [Carlet, Charpin and Zinoviev, 1998](@cite Carlet_199811)).
-CCZ strictly
-contains EA-equivalence, which strictly contains affine equivalence,
-which contains linear equivalence.
+`:auto` and `:partition_refinement` use the native Kaleyski–Sunde algorithm
+(ePrint 2026/940, https://eprint.iacr.org/2026/940), applicable to arbitrary
+square SBoxes. Every positive result has a verified affine graph witness;
+every negative result requires exhaustive search or a mismatching invariant.
+For two quadratic APN functions `:auto` first compares the ortho-derivative
+mugshots, using CCZ = EA (Yoshiara 2012), before running the same recovery.
 
-# Functions
-- [`are_ccz_equivalent`](@ref) — `Bool` decision procedure.
-
-# Strategy
-
-The only strategy at v0.1 is `:canteaut_perrin`, based on the framework
-of [Canteaut and Perrin (2019)](@cite Canteaut_201906):
-
-  1. **Necessary conditions** — both `walsh_zeroes_size(F) ==
-     walsh_zeroes_size(G)` and `sort(vec(ddt(F))) == sort(vec(ddt(G)))`
-     must hold. Either failing rules out CCZ-equivalence. (The
-     thickness spectrum is *not* a CCZ-invariant in general — see
-     [`thickness_spectrum`](@ref) — so it cannot be used here.)
-  2. **Sufficient condition** — enumerate every EA-class representative
-     in `F`'s CCZ-class via [`enumerate_ccz_class`](@ref) and check
-     [`are_ea_equivalent`](@ref) against `G`. The Canteaut-Perrin
-     theorem guarantees this enumeration hits at least one
-     representative per EA-class.
-
-# Decision coverage
-
-- **Both quadratic APN** — decided exactly via the ortho-derivative EA test
-  (CCZ = EA on this class, [Yoshiara, 2012](@cite Yoshiara_201200)).
-- **Exactly one quadratic APN** (e.g. the Kim function vs the Dillon
-  permutation, a quadratic and a degree-4 permutation in one CCZ-class) —
-  decided by enumerating the other side's CCZ-class and EA-testing its
-  degree-2 representatives against the quadratic one. EA preserves algebraic
-  degree, so only degree-2 reps can match, and EA between two quadratic APN is
-  the reliable ortho-derivative test.
-- **Neither quadratic APN, both permutations** — the Canteaut–Perrin
-  enumeration with the (Heggebakk) EA backend. This inherits Heggebakk's
-  incompleteness on degenerate `k=4` partitions (signature `[2ⁿ-1, 1]`): for a
-  class whose reps all have such partitions it can return `false` even when
-  CCZ-equivalent.
-- **Neither quadratic APN, not both permutations** — a positive
-  [`are_ea_equivalent`](@ref) result is a sufficient CCZ-certificate and is
-  returned as `true` (the complete non-permutation EA decision covers e.g.
-  degree-≥3 non-permutation APN). Otherwise the pair is **not decided**:
-  EA-inequivalence does not imply CCZ-inequivalence (EA ⊊ CCZ), so a `false`
-  here would be a fabricated negative. Deciding this case in general reduces to
-  linear-code equivalence (Leon's algorithm), a documented frontier. See
-  `on_inconclusive` for how undecided is reported.
-
-# A `false` is not always a proof
-
-Every `false` this function returns from a *decided* query is either a failed
-necessary CCZ-invariant (sound) or an exhausted class enumeration (sound). But
-some pairs it cannot settle. By default an undecided query **warns and returns a
-best-effort `false`** (`on_inconclusive = :best_effort`) — the caller cannot tell
-that guess from a proof, so a novelty pipeline reading "not equivalent" from it
-can invent a discovery (this is not hypothetical — it is how four "new" APN
-functions were added to this repo's catalog and later withdrawn). Code that needs
-certainty must pass `on_inconclusive = :throw` (raise
-[`InconclusiveEquivalence`](@ref)) or `:missing`, or use a complete decision
-(for quadratic APN, [`ea_mappings_from_ortho_derivative`](@ref) /
-[`ea_class_orbits`](@ref)). The default stays a `Bool` so existing predicate
-callers are not broken.
+`:canteaut_perrin` retains the older CCZ-class enumeration for comparisons.
+Its permutation EA backend can be incomplete on degenerate partitions, so
+use the native strategy for exact classification.
 """
 
 """
-    are_ccz_equivalent(F::SBox, G::SBox; strategy = :auto,
-                        ea_max_outer_per_sigma = 10^6,
-                        max_class_reps = 10^4,
-                        on_inconclusive = :throw) -> Bool
+    are_ccz_equivalent(F, G; strategy=:auto, max_nodes=10^6,
+        timeout_seconds=60.0, min_active_hyperplanes=0,
+        max_memory_bytes=512*1024^2, on_inconclusive=:best_effort,
+        ea_max_outer_per_sigma=10^6, max_class_reps=10^4)
 
-Decide CCZ-equivalence of `F` and `G`.
-
-`max_class_reps` caps the number of EA-class representatives enumerated from
-`F`'s CCZ-class. Exceeding it means the class was **not** exhausted, so no
-conclusion is available and the query is inconclusive (it used to return
-`false`). `ea_max_outer_per_sigma` is forwarded to each EA-equivalence call.
-
-`on_inconclusive` controls what an undecided query does: `:best_effort` (default
-— warn and return `false`), `:throw` (raise [`InconclusiveEquivalence`](@ref)),
-or `:missing`.
-
-Permutations only at v0.1.
-
-# Examples
-
-The Kim function (quadratic APN) and the Dillon permutation (degree 4)
-lie in a single CCZ-class over `F₂⁶`, the first known APN permutation in
-even dimension:
+Decide CCZ equivalence using native Kaleyski–Sunde partition refinement.
+`on_inconclusive=:throw` raises [`InconclusiveEquivalence`](@ref) on a budget
+hit; `:missing` propagates uncertainty; the compatibility policy `:best_effort`
+warns and returns `false`, which must not be interpreted as a proof.
+The default remains `:best_effort` for compatibility with existing callers.
+The legacy class/outer limits apply only to `strategy=:canteaut_perrin`.
+See [`partition_refinement_equivalence`](@ref) for native budget semantics.
 
 ```jldoctest
 julia> using VBF
 
-julia> are_ccz_equivalent(kim_apn(), dillon_apn_permutation())
+julia> are_ccz_equivalent(kim_apn(), dillon_apn_permutation(); on_inconclusive=:throw)
 true
 ```
 """
 function are_ccz_equivalent(
+    F::SBox, G::SBox; strategy::Symbol = :auto,
+    ea_max_outer_per_sigma::Int = 10^6, max_class_reps::Int = 10^4,
+    on_inconclusive::Symbol = :best_effort, max_nodes::Int = 10^6,
+    timeout_seconds::Real = 60.0, min_active_hyperplanes::Int = 0,
+    max_memory_bytes::Int = 512 * 1024^2,
+)
+    strategy in (:auto, :partition_refinement, :canteaut_perrin) ||
+        throw(ArgumentError("are_ccz_equivalent: unknown strategy $(repr(strategy))"))
+    _pr_validate_policy(on_inconclusive)
+    inputbits(F) == inputbits(G) || return false
+    if strategy === :canteaut_perrin
+        return _are_ccz_canteaut_perrin(F, G; strategy, ea_max_outer_per_sigma,
+                                       max_class_reps, on_inconclusive)
+    end
+    if strategy === :auto
+        F.lut == G.lut && return true
+        if is_quadratic_apn(F) && is_quadratic_apn(G)
+            apn_ea_mugshot(F) == apn_ea_mugshot(G) || return false
+        end
+    end
+    result = partition_refinement_equivalence(F, G; max_nodes, timeout_seconds,
+                                              min_active_hyperplanes, max_memory_bytes)
+    return _pr_decision(result, on_inconclusive, :are_ccz_equivalent)
+end
+
+"""
+    ccz_equivalence_certificate(F, G; on_inconclusive=:throw, kwargs...)
+
+Return a verified invertible `F2AffineMap` carrying `FunctionGraph(F)` onto
+`FunctionGraph(G)`, or `nothing` after proving inequivalence. Search limits
+are those of [`partition_refinement_equivalence`](@ref). A budget hit raises
+[`InconclusiveEquivalence`](@ref) by default; `:missing` returns `missing`.
+"""
+function ccz_equivalence_certificate(F::SBox, G::SBox;
+                                     on_inconclusive::Symbol = :throw, kwargs...)
+    result = partition_refinement_equivalence(F, G; kwargs...)
+    return _pr_witness(result, on_inconclusive, :ccz_equivalence_certificate)
+end
+
+function _are_ccz_canteaut_perrin(
     F::SBox,
     G::SBox;
     strategy::Symbol = :auto,
@@ -128,8 +102,8 @@ function are_ccz_equivalent(
     sort(vec(ddt(F))) == sort(vec(ddt(G))) || return false
 
     # One side quadratic APN: EA preserves degree, so EA-test the degree-2 reps.
-    Gq && return _ccz_match_quadratic(F, G, max_class_reps)
-    Fq && return _ccz_match_quadratic(G, F, max_class_reps)
+    Gq && return _ccz_match_quadratic(F, G, max_class_reps, on_inconclusive)
+    Fq && return _ccz_match_quadratic(G, F, max_class_reps, on_inconclusive)
 
     # EA-equivalence is a sufficient CCZ-certificate (EA ⊂ CCZ). The complete
     # non-permutation EA decision settles many pairs — including degree-≥3
@@ -191,15 +165,22 @@ restore the old best-effort `false`, or `:missing` to propagate the uncertainty.
 $(repr(on_inconclusive)) (expected :throw, :best_effort or :missing)"))
 end
 
-function _ccz_match_quadratic(F::SBox, Gq::SBox, max_class_reps::Int)
+function _ccz_match_quadratic(F::SBox, Gq::SBox, max_class_reps::Int, on_inconclusive::Symbol)
     reps = enumerate_ccz_class(F)
-    length(reps) > max_class_reps && return false
+    length(reps) > max_class_reps && return _ccz_undecided(
+        "the CCZ-class enumeration exceeded max_class_reps = $max_class_reps.",
+        on_inconclusive,
+    )
+    undecided = false
     for r in reps
         r == Gq && return true
         is_quadratic_apn(r) || continue
         # A `false` from any single representative is not a CCZ-negative; only
         # exhausting the class is. Keep the loop going rather than throwing.
-        are_ea_equivalent(r, Gq; on_inconclusive = :best_effort) && return true
+        result = are_ea_equivalent(r, Gq; on_inconclusive = :missing)
+        result === true && return true
+        undecided |= ismissing(result)
     end
+    undecided && return _ccz_undecided("an EA representative test was inconclusive.", on_inconclusive)
     return false
 end

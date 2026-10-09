@@ -17,9 +17,13 @@ and is itself strictly contained in CCZ-equivalence.
 
 # Strategies
 
-`:auto` (default) routes by input shape: quadratic APN whose
-ortho-derivatives exist route to `:ortho_derivative`; everything else
-routes to `:heggebakk`. Within `:heggebakk`, permutation pairs use the
+`:auto` (default) and `:partition_refinement` use native Kaleyski–Sunde
+recovery, ePrint 2026/940 (https://eprint.iacr.org/2026/940), for arbitrary
+square SBoxes. `:auto` rejects differing quadratic-APN mugshots first.
+Every native witness is checked on the full graph; interrupted searches are
+inconclusive. The older strategies remain available explicitly.
+
+Within `:heggebakk`, permutation pairs use the
 partition search, while pairs with a non-permutation input use the
 complete inner-affine enumeration below (Heggebakk follows the
 functional inverse and cannot handle non-bijective inputs).
@@ -52,17 +56,15 @@ functional inverse and cannot handle non-bijective inputs).
 
 `are_ea_equivalent` never returns a **silent** wrong answer:
 
-- `true` is always backed by a witness (Heggebakk certificate, verified
+- `true` is always backed by a witness (native graph map, Heggebakk certificate, verified
   ortho-derivative equivalence, LUT equality, or an affine-equivalence
   witness — affine equivalence implies EA-equivalence).
-- `false` is returned when soundly provable: exhaustive (uncapped)
+- `false` is returned when soundly provable: exhausted native search, exhaustive (uncapped)
   Heggebakk search, mismatching partition signatures, or a differing
   EA-invariant (algebraic degree for degrees ≥ 2, extended Walsh
   spectrum, component degree spectrum).
-- When the partition search is **capped** (degenerate partitions — e.g.
-  signature `[2ⁿ-1, 1]` monomial APN, or `[2ⁿ-8, 7, 1]` degree-4 APN
-  permutations at n = 6) and no invariant separates the pair and no
-  affine witness exists, the decision is *inconclusive*. By default the
+- When a search hits its node, time or memory budget without finding a
+  witness, the decision is *inconclusive*. By default the
   function **warns and returns a best-effort `false`** — keeping the `Bool`
   contract so existing predicate callers are not broken — but callers act on
   that `Bool`, and a novelty check reading it as "inequivalent" manufactures a
@@ -86,12 +88,13 @@ function is never EA-equivalent to one of degree ≥ 2.
 Decide EA-equivalence of `F` and `G`.
 
 SBoxes of different `N` or storage `T` return `false` without throwing.
-Non-permutation quadratic APN are handled via the ortho-derivative test;
-all other non-permutation (and mixed permutation/non-permutation) pairs
-are decided by a complete enumeration of the inner affine map, exact up
-to the `max_inner_affine` cap (see below).
+Native partition refinement handles permutations and non-permutations alike,
+including mixed pairs. It accepts `max_nodes`, `timeout_seconds`,
+`min_active_hyperplanes`, and `max_memory_bytes`; see
+[`partition_refinement_equivalence`](@ref). Its uncertainty policy is the same
+as the legacy strategies. Storage widths may differ for native queries.
 
-`k` controls the partition level (default `4`, must be even and `≥ 4`).
+For `:heggebakk`, `k` controls the partition level (default `4`, even and ≥ 4).
 
 `max_inner_affine` bounds the inner-affine enumeration used for
 non-permutation inputs; an exhausted (uncapped) enumeration is a sound
@@ -133,16 +136,27 @@ function are_ea_equivalent(
     max_outer_per_sigma::Int = 10^6,
     max_inner_affine::Int = 10^7,
     on_inconclusive::Symbol = :best_effort,
+    max_nodes::Int = 10^6,
+    timeout_seconds::Real = 60.0,
+    min_active_hyperplanes::Int = 0,
+    max_memory_bytes::Int = 512 * 1024^2,
 )
+    _pr_validate_policy(on_inconclusive)
     inputbits(F) == inputbits(G) || return false
+    if strategy in (:auto, :partition_refinement)
+        if strategy === :auto
+            F.lut == G.lut && return true
+            if is_quadratic_apn(F) && is_quadratic_apn(G)
+                apn_ea_mugshot(F) == apn_ea_mugshot(G) || return false
+            end
+        end
+        result = partition_refinement_equivalence(F, G; relation = :ea,
+            max_nodes, timeout_seconds, min_active_hyperplanes, max_memory_bytes)
+        return _pr_decision(result, on_inconclusive, :are_ea_equivalent)
+    end
     storage_type(F) == storage_type(G) || return false
 
     s = strategy
-    if s === :auto
-        # Reflexivity via identity maps, scoped to :auto.
-        F.lut == G.lut && return true
-        s = _ea_auto_strategy(F, G)
-    end
     if s === :heggebakk
         if is_permutation(F) && is_permutation(G)
             capped = Ref(false)
@@ -221,7 +235,8 @@ function _ea_inconclusive_fallback(
 the pair, so equivalence is undecided. Do not read this as inequivalence. For \
 members of a quadratic APN's CCZ-class use `ea_class_orbits` (or \
 `ea_mappings_from_ortho_derivative`, which is complete for quadratic APN) for an \
-exact decision; otherwise external code-equivalence tooling is required. Pass \
+exact decision; otherwise use `strategy = :partition_refinement` with a larger \
+search budget. Pass \
 `on_inconclusive = :best_effort` to restore the old best-effort `false`, or \
 `:missing` to propagate the uncertainty."
     on_inconclusive === :throw && throw(InconclusiveEquivalence(msg))
@@ -371,14 +386,6 @@ function _ea_nonperm_search(F::SBox{N,T}, G::SBox{N,T}; max_inner::Int) where {N
     return :no
 end
 
-# Quadratic APN uses the ortho-derivative test; else the Heggebakk search.
-function _ea_auto_strategy(F::SBox, G::SBox)
-    algebraic_degree(F) == 2 && algebraic_degree(G) == 2 || return :heggebakk
-    ortho_derivative(F) === nothing && return :heggebakk
-    ortho_derivative(G) === nothing && return :heggebakk
-    return :ortho_derivative
-end
-
 # Ortho-derivative EA test (CCP 2022): F ~_EA G ⇒ π_F ~_L π_G for quadratic APN.
 function _are_ea_equivalent_via_ortho(F::SBox, G::SBox)
     π_F = ortho_derivative(F)
@@ -395,14 +402,16 @@ end
                                 max_outer_per_sigma = 10^6)
         -> NamedTuple{(:L1, :A2, :A_drift), ...} | Nothing
 
-Return an EA-equivalence certificate on success or `nothing` on
-failure. `nothing` means *no certificate found*, not a proof of
-EA-inequivalence — the bounded search may have been capped (see the
-soundness note in the module docstring). The certificate is a named
+Return an EA-equivalence certificate on success or `nothing` after an
+exhausted native search. Native recovery defaults to `on_inconclusive=:throw`;
+`:missing` propagates a budget hit. For the legacy `:heggebakk` strategy,
+`nothing` only means no certificate was found and can also indicate a cap.
+The certificate is a named
 tuple
 
   - `L1::F2LinearMap{N,T}` — outer linear bijection.
-  - `A2::F2LinearMap{N,T}` — inner linear bijection.
+  - `A2::Union{F2LinearMap{N,T},F2AffineMap{N,T}}` — inner affine bijection
+    (linear when its constant is zero).
   - `A_drift::SBox{N,T}`   — affine drift function.
 
 satisfying `G(x) == L1(F(A2(x))) ⊕ A_drift(x)` for every `x ∈ F₂ⁿ`.
@@ -412,16 +421,28 @@ Same `strategy`, `k`, and `max_outer_per_sigma` semantics as
 """
 function ea_equivalence_certificate(
     F::SBox{N,T},
-    G::SBox{N,T};
+    G::SBox;
     strategy::Symbol = :auto,
     k::Int = 4,
     max_outer_per_sigma::Int = 10^6,
+    on_inconclusive::Symbol = :throw,
+    max_nodes::Int = 10^6,
+    timeout_seconds::Real = 60.0,
+    min_active_hyperplanes::Int = 0,
+    max_memory_bytes::Int = 512 * 1024^2,
 ) where {N,T}
+    _pr_validate_policy(on_inconclusive)
+    if strategy in (:auto, :partition_refinement)
+        result = partition_refinement_equivalence(F, G; relation = :ea,
+            max_nodes, timeout_seconds, min_active_hyperplanes, max_memory_bytes)
+        A = _pr_witness(result, on_inconclusive, :ea_equivalence_certificate)
+        return A === nothing || ismissing(A) ? A : _pr_ea_triple(A, T)
+    end
     inputbits(F) == inputbits(G) || return nothing
     storage_type(F) == storage_type(G) || return nothing
     (is_permutation(F) && is_permutation(G)) || return nothing
 
-    s = strategy == :auto ? :heggebakk : strategy
+    s = strategy
     if s === :heggebakk
         return _ea_search(
             F,

@@ -51,6 +51,9 @@ function Base.inv(A::F2AffineMap{N,T}) where {N,T}
     F2AffineMap{N,T}(Linv, Linv(A.constant))
 end
 
+"""`true` iff the affine map's linear part is invertible."""
+is_invertible(A::F2AffineMap) = is_invertible(A.linear)
+
 """
     compose(A1::F2AffineMap{N, T}, A2::F2AffineMap{N, T}) -> F2AffineMap{N, T}
 

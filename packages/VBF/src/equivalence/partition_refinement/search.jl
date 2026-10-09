@@ -238,3 +238,42 @@ function partition_refinement_equivalence(
                     _PRAffineMap(N), work, floor, relation === :ea, budget, transitive)
     return finish(cert)
 end
+
+"""Validate an equivalence API's uncertainty policy, including decided queries."""
+function _pr_validate_policy(policy::Symbol)
+    policy in (:throw, :missing, :best_effort) ||
+        throw(ArgumentError("on_inconclusive must be :throw, :missing or :best_effort"))
+    return nothing
+end
+
+"""Expose a verified witness while preserving a budget hit as uncertainty."""
+function _pr_witness(result::SearchOutcome, policy::Symbol, caller::Symbol)
+    _pr_validate_policy(policy)
+    result isa Found && return only(search_solutions(result))
+    result isa Exhausted && return nothing
+    message = "$caller: partition refinement stopped at $(result.where_it_stopped.reason) " *
+              "after $(nodes_visited(result)) nodes; equivalence is inconclusive."
+    policy === :throw && throw(InconclusiveEquivalence(message))
+    policy === :missing && return missing
+    @warn message
+    return nothing
+end
+
+"""Convert a certified search outcome into the existing predicate API."""
+function _pr_decision(result::SearchOutcome, policy::Symbol, caller::Symbol)
+    witness = _pr_witness(result, policy, caller)
+    return ismissing(witness) ? missing : witness !== nothing
+end
+
+"""Convert an EA graph map to the existing outer/inner/drift certificate."""
+function _pr_ea_triple(A::F2AffineMap{M}, ::Type{T}) where {M,T<:Unsigned}
+    n = M ÷ 2
+    mask = (UInt32(1) << n) - UInt32(1)
+    B = F2LinearMap{n,T}(T[A.linear.cols[i] & mask for i = 1:n])
+    L = F2LinearMap{n,T}(T[A.linear.cols[n+i] >> n for i = 1:n])
+    C = F2LinearMap{n,T}(T[A.linear.cols[n+i] & mask for i = 1:n])
+    inner_linear = inv(L)
+    inner = F2AffineMap(inner_linear, inner_linear(A.constant >> n))
+    drift = SBox{n,T}(T[C(inner(x)) ⊻ T(A.constant & mask) for x = 0:((1 << n)-1)])
+    return (L1 = B, A2 = is_linear(inner) ? inner.linear : inner, A_drift = drift)
+end

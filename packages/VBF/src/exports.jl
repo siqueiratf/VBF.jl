@@ -68,7 +68,7 @@ export thickness, thickness_spectrum, enumerate_ccz_class
 export is_ccz_equivalent_to_permutation
 export TUDecomposition, tu_decomposition_from_space_basis, get_tu_decompositions
 export apply_tu, core, twist
-export are_ccz_equivalent
+export are_ccz_equivalent, ccz_equivalence_certificate
 export partition_refinement_equivalence
 
 # tier 7 — APN-specific invariants
