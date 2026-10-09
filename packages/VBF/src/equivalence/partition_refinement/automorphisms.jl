@@ -104,7 +104,8 @@ _pr_group_memory(n::Int, m::Int = n) = Int128(16) * (Int128(1) << (2n)) * (n + m
 
 Discover a generating set for the full ambient CCZ or EA automorphism group
 using Kaleyski–Sunde Algorithms 4–5 (ePrint 2026/940). Dynamic stabilizer orbits
-prune the search. Quadratic translations seed the graph action. Lemma 13's
+prune the search. In the paper profile, quadratic translations are adjoined
+after DFS, followed by the pointwise affine kernel. Lemma 13's
 pointwise kernel supplies the affine lift, including rank-deficient graphs.
 
 `complete=true` is a completeness certificate. A node/time/memory interruption
@@ -112,7 +113,7 @@ returns a verified subgroup with `complete=false`; it is still safe to supply
 as `automorphisms` to [`partition_refinement_equivalence`](@ref). Memory bounds
 include live stabilizer chains and use the same estimated-allocation convention
 as the equivalence search. Schreier–Sims stores permutations of 2^n graph
-points, never 2^(2n) ambient points.
+points, never 2^(n+m) ambient points.
 `threaded=true` parallelizes only sufficiently large refinement kernels; group
 updates and DFS are serial. Threads do not alter completeness or node budgets.
 """

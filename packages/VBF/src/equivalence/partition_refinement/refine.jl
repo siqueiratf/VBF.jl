@@ -102,6 +102,8 @@ end
 """
 Choose whole intersection classes in Algorithm 7's order (large absolute Walsh
 values first, then small classes). Class ties use the intersection size.
+`preserve_order=false` retains that priority order for the paper profile;
+the private default preserves the earlier canonical intersection-size order.
 """
 function _pr_select_classes(histogram::Vector{Int}, floor::Int; preserve_order::Bool = true)
     npoints = length(histogram) - 1

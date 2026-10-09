@@ -11,7 +11,7 @@ external comparison artifact, not a runtime dependency or vendored source.
 
 `SBox{N}` represents square functions. `VBFTable{N,M}` represents the paper's
 general functions F₂ⁿ → F₂ᵐ, with positive independent dimensions. Graphs pack
-`(x << m) | F(x)`; EA maps preserve the low `m` output bits. The ambient
+`(x << m) | F(x)`; EA maps preserve the subspace formed by the low `m` output bits. The ambient
 representation uses UInt32 (`n+m ≤ 32`), with explicit time, node and memory
 limits. A budget hit is not a negative equivalence result or a complete group.
 
@@ -44,7 +44,79 @@ constraints, parametrizing all invertible solutions rather than enumerating
 them. This supplies the complete kernel required by Algorithm 5, not merely
 one affine extension of each graph action.
 
-## Conformance work and commit boundaries
+## Algorithm mapping
+
+| Paper | Native Julia routine | Independent check |
+| :--- | :--- | :--- |
+| Algorithm 1, RefinePoints | `_pr_point_scores!` | Direct weighted incidences |
+| Algorithm 2, RefineHyperplanes | `_pr_plane_scores!` | Direct weighted intersections |
+| Algorithm 3, Refine | `_pr_refine!` | Every ordered split, trim and RNG state |
+| Algorithm 4, DFS-Auto | `_pr_auto_dfs!` | Explicit affine spans and enumerated groups |
+| Algorithm 5, CCZ-Automorphism | `partition_refinement_automorphisms` | Graph groups, AGL ambient groups, kernel orders |
+| Algorithm 6, DFS | `_pr_dfs!` | First actions and DFS counts |
+| Algorithm 7, CCZ-Equivalence | `partition_refinement_equivalence` | All small rectangular table pairs |
+
+Section 6's `Update` uses the independently tested incremental GF(2)
+isomorphism primitive. `ValidEA` establishes the input quotient at leaves
+before ambient completion. Section 8.2's group operations use native
+Schreier–Sims on graph points. Lemma 13 supplies the full affine lift.
+
+## Paper profile and independent validation
+
+The public solver and group discovery default to `algorithm=:paper`.
+Algorithms 1–3 use fresh shared random key vectors on every iteration, with
+uniform integer entries in `1:8191` (the pseudocode leaves their range open).
+Pass a fresh `rng=Xoshiro(seed)` to replay a search. The default creates a fresh
+`Xoshiro(940)` per call; no mutable global RNG is shared between searches.
+Initial cells remain in decreasing absolute-Walsh order (Algorithms 5/7);
+refined hyperplane cells remain in increasing-size order (Algorithm 3), even
+when the floor retains every cell. Ties are resolved stably and identically on
+both sides. Signed Walsh scores omit only a common offset and positive scale,
+and therefore induce the exact same ordered refinement as incidence counts.
+
+`algorithm=:optimized` preserves the earlier deterministic-weight and
+canonical-cell-order choices explicitly. Threaded kernels remain opt-in.
+The test-only reference in `test/support/kaleyski_sunde_reference.jl` computes
+literal weighted incidences without the native signatures, Walsh transforms
+or compact partitions. Tests compare every intermediate ordered partition,
+truncation result, consistency decision and RNG consumption.
+
+Algorithms 4–7 use leaf-only `ValidEA` checks in the paper profile. Affine
+implications are evaluated to determine the next free point, without the
+optimized profile's early graph-cell rejection. Algorithm 5 starts with an
+empty group, anchors a quadratic graph's origin without individualizing its
+point cell, searches, then adjoins all τₐ actions and finally constructs the
+pointwise kernel. The algorithm retains verified affine witnesses as lifts;
+this supplies exactly the generators required by Lemma 13 without a second
+linear solve for the same action.
+
+The independent reference also transcribes Algorithms 4–7 using explicitly
+enumerated partial affine domains, group elements and point stabilizers.
+Tests exhaust all ordered pairs of tables in dimensions (1,2) and (2,1),
+comparing decisions, first graph actions, DFS counts and full graph groups
+under multiple seeds. Full ambient orders are separately checked against
+exhaustive AGL oracles, including EA restrictions and kernel lifts.
+
+The final package regression on Julia 1.13.1 passed **131,050 assertions in
+92 test items**. Only the pre-existing `linear_backtracking` and `extensions`
+failures were excluded; both were reproduced on the unchanged base commit
+`f0401a2`. The regression command was:
+
+```sh
+VBF_TEST_NAME='(?!linear_backtracking$|extensions$).*' \
+RETESTITEMS_NWORKERS=4 \
+JULIA_DEPOT_PATH=/tmp/vbf-julia-depot:/home/zambonin/.julia \
+julia --threads=4 --startup-file=no --compiled-modules=existing \
+  -e 'using Pkg; Pkg.activate("packages/VBF"); Pkg.test(;julia_args=["--compiled-modules=existing","--threads=4"])'
+```
+
+This includes 6,266 reference-conformance assertions, 259 rectangular
+representation/group/API assertions, the isolated branching regression,
+and direct verification of Figure 1's discrepancy and Example 2's group
+order and DFS count. It also exercises the existing square APIs and group,
+certificate, budget and threaded-refinement tests.
+
+## Printed pseudocode and figure discrepancies
 
 ### Necessary correction to the printed branching condition
 
@@ -85,56 +157,6 @@ figure's unsplit cell. A separate test records this discrepancy and verifies
 both the direct counts and the native trace. Example 2's 21-node search and
 the order-113,792 group are independently recovered.
 
-The public solver and group discovery default to `algorithm=:paper`.
-Algorithms 1–3 use fresh shared random key vectors on every iteration, with
-uniform integer entries in `1:8191` (the pseudocode leaves their range open).
-Pass a fresh `rng=Xoshiro(seed)` to replay a search. The default creates a fresh
-`Xoshiro(940)` per call; no mutable global RNG is shared between searches.
-Initial cells remain in decreasing absolute-Walsh order (Algorithms 5/7);
-refined hyperplane cells remain in increasing-size order (Algorithm 3), even
-when the floor retains every cell. Ties are resolved stably and identically on
-both sides. Signed Walsh scores omit only a common offset and positive scale,
-and therefore induce the exact same ordered refinement as incidence counts.
-
-`algorithm=:optimized` preserves the earlier deterministic-weight and
-canonical-cell-order choices explicitly. Threaded kernels remain opt-in.
-The test-only reference in `test/support/kaleyski_sunde_reference.jl` computes
-literal weighted incidences without the native signatures, Walsh transforms
-or compact partitions. Tests compare every intermediate ordered partition,
-truncation result, consistency decision and RNG consumption.
-
-Algorithms 4–7 use leaf-only `ValidEA` checks in the paper profile. Affine
-implications are evaluated to determine the next free point, without the
-optimized profile's early graph-cell rejection. Algorithm 5 starts with an
-empty group, anchors a quadratic graph's origin without individualizing its
-point cell, searches, then adjoins all τₐ actions and finally constructs the
-pointwise kernel. The algorithm retains verified affine witnesses as lifts;
-this supplies exactly the generators required by Lemma 13 without a second
-linear solve for the same action.
-
-The independent reference also transcribes Algorithms 4–7 using explicitly
-enumerated partial affine domains, group elements and point stabilizers.
-Tests exhaust all ordered pairs of tables in dimensions (1,2) and (2,1),
-comparing decisions, first graph actions, DFS counts and full graph groups
-under multiple seeds. Full ambient orders are separately checked against
-exhaustive AGL oracles, including EA restrictions and kernel lifts.
-
-The original implementation used deterministic weights, restored previous cell
-ordering after truncation, seeded quadratic translations before group DFS, and
-propagated EA constraints before leaves. Those choices are extensions, not
-literal pseudocode. Their separation from the paper path is tracked in later
-conformance commits. Earlier optimization commits remain distinct:
-
-- `a552de8`: direct indexing of implied graph images.
-- `1dad1ed`: skipping uniform-cell sorting and SIMD Walsh butterflies.
-- `34d732a`: group machinery and opt-in parallel refinement kernels.
-- `b6ad7b2`: avoiding boxed counters in threaded score construction.
-
-The paper's experimental tables are separate empirical claims. Small fixture
-comparisons in `bench/` do not reproduce Section 7's sampled corpora, Magma
-comparisons, large-dimension averages or peak RSS measurements. Implementing
-Algorithms 1–7 does not imply reproducing those hardware-dependent tables.
-
 ## Section 6.2 discovery policy outside Algorithm 7
 
 With `automorphism_timeout_seconds>0` and no supplied target subgroup, the
@@ -151,3 +173,47 @@ target generators are always validated and used on the original target.
 `search_region(result).params` records the internal orientation and separate
 discovery node counts. This policy implements the prose of Section 6.2; the
 Algorithm 7 entry point itself still accepts an optional pruning subgroup.
+
+## Implementation history and algorithmic extensions
+
+The original implementation used deterministic weights, restored previous cell
+ordering after truncation, seeded quadratic translations before group DFS, and
+propagated EA constraints before leaves. Those choices are extensions, not
+literal pseudocode. They are confined to `algorithm=:optimized`. Earlier optimization commits remain distinct:
+
+- `a552de8`: direct indexing of implied graph images.
+- `1dad1ed`: skipping uniform-cell sorting and SIMD Walsh butterflies.
+- `34d732a`: group machinery and opt-in parallel refinement kernels.
+- `b6ad7b2`: avoiding boxed counters in threaded score construction.
+
+The paper's experimental tables are separate empirical claims. Small fixture
+comparisons in `bench/` do not reproduce Section 7's sampled corpora, Magma
+comparisons, large-dimension averages or peak RSS measurements. Implementing
+Algorithms 1–7 does not imply reproducing those hardware-dependent tables.
+
+The conformance work is committed separately from those extensions:
+
+- `372f9c0`: independent input/output dimensions and rectangular group oracles.
+- `5ebb803`: paper keys and ordering, explicit optimized profile, direct reference.
+- `c81708a`: paper DFS scheduling, leaf-only EA checks and post-DFS affine lifting.
+- `49a127d`: isolated correction to the printed free-point condition.
+- `e0e2ac3`: Section 6.2 two-sided discovery and certificate orientation.
+- `0d7efaa`: rectangular public decisions and EA/CCZ certificates.
+- `ab6997e`: example validation and the Figure 1 discrepancy.
+
+## Reproduction claim
+
+The supported claim is: **VBF independently implements the Kaleyski–Sunde
+CCZ/EA equivalence and automorphism algorithms of ePrint 2026/940 in native
+Julia**, including rectangular functions and full ambient group lifting.
+The default path follows the paper's mathematical algorithms; the necessary
+printed branching correction and Figure 1 discrepancy are explicit above.
+The independent reference is test-only and shares no native partition,
+signature, partial-affine-map or group-search implementation.
+
+The memory guard estimates allocations, not peak RSS. In particular its
+conservative group bound exceeds the default 512 MiB budget at nine input
+bits for square functions. Raising the explicit memory allowance permits
+larger computations; this is a resource policy, not a negative result.
+Large-dimension performance parity and the experimental tables remain
+separate claims requiring their own measurements.
