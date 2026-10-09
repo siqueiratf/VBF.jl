@@ -441,11 +441,12 @@ the old CSV; it does not read the new database table.
 
 ## Native partition refinement comparison
 
-These historical performance comparisons explicitly select
+The original measurements below explicitly select
 `algorithm=:optimized`: bounded deterministic weights, canonical cell order
 and quadratic root symmetry. The default `algorithm=:paper` follows the
-paper's random-key and prescribed ordered-partition steps. These timings do
-not describe the paper profile; see the conformance document under `docs/src/`.
+paper's random-key and prescribed ordered-partition steps. The original table
+does not describe the paper profile; the current profile comparison follows it.
+See the conformance document under `docs/src/` for the algorithm mapping.
 
 The native CCZ/EA recovery algorithm is credited to Nikolay Kaleyski and Joakim
 Sunde, [ePrint 2026/940](https://eprint.iacr.org/2026/940). A standalone runner
@@ -540,6 +541,81 @@ EA oracle. The unfiltered suite has two failing baseline items,
 `linear_backtracking` and `extensions`; both failures reproduce with the
 unchanged source at `f0401a2`. The successful regression run excluded only
 those two items (`VBF_TEST_NAME='(?!linear_backtracking$|extensions$).*'`).
+
+### Current paper and optimized profiles
+
+Measured on 2026-10-09 with the same host and compiler listed above, one Julia
+thread, seed 940, seven timed samples per fixture and a separate warm-up.
+The three batches ran sequentially. Both implementations construct graphs,
+preprocess, search and recover complete ambient certificates within the timer.
+Every decision and certificate is independently checked outside the timer.
+All measured queries completed; none of these timings represent budget hits.
+
+Benchmark methodology commit: `29190f978a8c9a46cc1cd5d4bf7050a5d5bf25bd`.
+Native source SHA-256:
+`659b9a90b52d809f1ea048b8ecb94172ec9e31ee94c26bbc6413d848d17f1700`.
+The reference is the same pinned `c9cec651` revision and source fingerprint
+listed above. These are new measurements with the corrected C++ certificate
+completion timing; they supersede the original table for current code.
+
+With `--translations=quadratic --hard`, the paper profile receives the same
+Lemma 14 subgroup as C++; the optimized profile uses its equivalent automatic
+quadratic root pruning. Neither computes a general group. Medians in
+milliseconds, with the C++ medians measured separately in each profile's batch:
+
+| Fixture | Julia paper | C++ (paper batch) | Julia optimized | C++ (optimized batch) |
+| :--- | ---: | ---: | ---: | ---: |
+| `gold5_positive` | 0.565 | 0.812 | 0.525 | 1.162 |
+| `gold7_positive` | 7.115 | 7.704 | 6.851 | 7.695 |
+| `gold8_positive` | 6.129 | 5.633 | 3.158 | 5.632 |
+| `gold5_negative` | 26.797 | 39.341 | 27.425 | 39.038 |
+| `gold8_negative` | 73.179 | 172.218 | 70.322 | 172.111 |
+| `kim_dillon_ccz` | 1.452 | 2.177 | 1.469 | 2.165 |
+| `kim_dillon_ea` | 611.950 | 1241.698 | 596.784 | 1238.192 |
+| `random8_positive` | 0.642 | 1.103 | 0.708 | 1.103 |
+| `gold7_negative` | 5156.394 | 5073.107 | 5306.649 | 5057.890 |
+
+The paper profile has lower medians on 7/9 fixtures, with an equal-weight
+geometric-mean speedup of 1.43×. The optimized profile has lower medians on
+8/9, with a geometric-mean speedup of 1.60×. C++ wins the seven-bit negative
+case in both batches; it also wins the eight-bit positive case against the
+seeded paper profile. The seven-bit paper-profile difference is small:
+Julia's sample range is 5.144–5.167 seconds and C++'s is 5.061–5.145 seconds.
+The runner reports all sample minima/maxima for inspecting such margins.
+
+The unseeded public solver default is measured separately, without supplying
+or discovering any group on either side. To reproduce that batch:
+
+```bash
+julia --startup-file=no --project=. --threads=1 \
+  bench/compare_partition_refinement.jl \
+  --reference=/tmp/CCZ-EA-equivalence --samples=7 \
+  --algorithm=paper --translations=none \
+  --only=gold5_positive,gold7_positive,gold8_positive,gold5_negative,kim_dillon_ccz,kim_dillon_ea,random8_positive
+```
+
+| Fixture | Julia default (ms) | C++ (ms) | C++ / Julia | Julia nodes |
+| :--- | ---: | ---: | ---: | ---: |
+| `gold5_positive` | 0.499 | 0.808 | 1.62× | 12 |
+| `gold7_positive` | 6.531 | 7.632 | 1.17× | 18 |
+| `gold8_positive` | 2.988 | 5.260 | 1.76× | 6 |
+| `gold5_negative` | 814.113 | 1251.206 | 1.54× | 30930 |
+| `kim_dillon_ccz` | 1.413 | 2.165 | 1.53× | 10 |
+| `kim_dillon_ea` | 588.271 | 1244.996 | 2.12× | 4159 |
+| `random8_positive` | 0.634 | 1.105 | 1.74× | 1 |
+
+Julia has lower medians on all seven selected unseeded fixtures, with a
+geometric-mean speedup of 1.62×. This batch omits the expensive seven- and
+eight-bit Gold negative cases; no unseeded timing comparison is claimed for
+them. Supplying a subgroup materially changes negative searches: the five-bit
+case visits 30,930 nodes unseeded versus 963 with translations.
+
+The supported performance claim is **faster warmed serial equivalence recovery
+on these measured workloads**, with the profile and symmetry policy specified.
+These fixed fixtures do not establish universal superiority, a speedup across
+randomly sampled corpora, lower peak memory, better first-call latency, or an
+advantage in full automorphism discovery. Geometric means weight each listed
+fixture equally, not according to any application's workload distribution.
 
 ## Group pruning and parallel refinement
 
