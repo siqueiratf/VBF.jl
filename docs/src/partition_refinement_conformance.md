@@ -251,6 +251,23 @@ Algorithm 7 entry point itself still accepts an optional pruning subgroup.
 
 ## Implementation history and algorithmic extensions
 
+The local branches were separated on 2026-10-09 after three census commits
+were interleaved with this work. `feat/native-partition-equivalence` is based
+on the original `f0401a2` and preserves the 22 solver, conformance, optimization
+and benchmark commits. `feat/apn-literature-audit` is a three-commit census
+stack on that solver branch: its EA verifier calls the native solver, so the
+dependency is explicit. The solver branch's diff contains no census files;
+the audit branch's diff against the solver contains only census files.
+
+The original mixed heads are preserved locally as
+`backup/native-partition-equivalence-mixed-20261009` (`380b8a3`) and
+`backup/apn-literature-audit-mixed-20261009` (`ecb0739`). Commit IDs below and
+the measured revision IDs in `bench/README.md` identify the original history.
+Some replayed commits have new IDs, but their patches and the final VBF source
+tree are unchanged; the recorded benchmark source fingerprints remain valid.
+This separation adds only this documentation note after replaying the solver
+commits. No remote history was rewritten by the local separation.
+
 The original implementation used deterministic weights, restored previous cell
 ordering after truncation, seeded quadratic translations before group DFS, and
 propagated EA constraints before leaves. Those choices are extensions, not
