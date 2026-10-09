@@ -47,6 +47,7 @@ include("search/outcome.jl")
 
 # 2. linalg — F₂ bit-linear-algebra substrate
 include("linalg/f2_arith.jl")
+include("linalg/partial_isomorphism.jl")
 include("linalg/linear_system.jl")
 include("linalg/affine_system.jl")
 include("linalg/dyadic_bitset.jl")

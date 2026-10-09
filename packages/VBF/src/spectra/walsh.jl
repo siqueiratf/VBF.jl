@@ -11,7 +11,7 @@ for a vectorial Boolean function each component is transformed
 independently to build the LAT.
 
 # Public surface
-- [`walsh_hadamard!`](@ref) — in-place FWHT on `Vector{Int}`.
+- [`walsh_hadamard!`](@ref) — in-place FWHT on signed integer vectors.
 - [`walsh_hadamard`](@ref)  — allocating counterpart.
 - [`walsh_transform`](@ref) — convenience: convert a `{0,1}`-valued truth
   table to `±1`, then FWHT.
@@ -23,12 +23,13 @@ independently to build the LAT.
 """
 
 """
-    walsh_hadamard!(v::Vector{Int}) -> v
+    walsh_hadamard!(v::Vector{<:Signed}) -> v
 
 In-place FWHT. `length(v)` must be a power of 2. After the call,
-`v[u + 1] = ∑ₓ (-1)^{u · x} · v_in[x + 1]`.
+`v[u + 1] = ∑ₓ (-1)^{u · x} · v_in[x + 1]`. The element type is
+preserved; choose a width that can hold every intermediate sum.
 """
-function walsh_hadamard!(v::Vector{Int})
+function walsh_hadamard!(v::Vector{<:Signed})
     n_pow = length(v)
     n_pow ≥ 1 || throw(ArgumentError("walsh_hadamard!: empty input"))
     n = trailing_zeros(n_pow)
