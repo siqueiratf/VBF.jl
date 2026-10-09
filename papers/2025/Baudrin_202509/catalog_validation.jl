@@ -23,3 +23,21 @@ function section32_inputs()
     length(unique(Tuple(row.function_value.lut) for row in inputs)) == 14 || error("duplicate census lookup table")
     return inputs
 end
+
+"""Load the pinned 488 quadratic seven-bit roots used by Section 3.2.
+
+Three preexisting Gold rows were merged by LUT during import; selecting only
+the APN-rep family would omit those roots. The source tag selects the complete
+imported collection, independently of its catalog family labels.
+"""
+function section32_seven_inputs()
+    db = load_catalog()
+    rows = filter(row->row.is_quadratic && occursin("sboxu@7066b82",row.source_repo),
+        list_functions(db;n=7,is_apn=true))
+    length(rows)==488 || error("expected 488 pinned quadratic seven-bit roots")
+    inputs = [(;label=String(row.canonical_name),identifier=string(row.id),
+        function_value=load_sbox(db,row.id),provenance=String(row.source_repo)) for row in rows]
+    length(unique(Tuple(row.function_value.lut) for row in inputs))==488 || error("duplicate seven-bit root LUT")
+    all(row->is_quadratic_apn(row.function_value),inputs) || error("seven-bit root is not quadratic APN")
+    return inputs
+end
