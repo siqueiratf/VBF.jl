@@ -437,15 +437,15 @@ function extract_linear_subspaces_bounded(
 end
 
 """
-    span_from_basis(basis::Vector{UInt32}) -> Vector{UInt32}
+    span_from_basis(basis::AbstractVector{T}) -> Vector{T} where T<:Unsigned
 
 The full linear span of a basis: `2^length(basis)` elements including
 `0`.
 """
-function span_from_basis(basis::Vector{UInt32})
-    span = UInt32[0]
+function span_from_basis(basis::AbstractVector{T}) where {T<:Unsigned}
+    span = T[0]
     @inbounds for b in basis
-        new_span = Vector{UInt32}(undef, 2 * length(span))
+        new_span = Vector{T}(undef, 2 * length(span))
         for i = 1:length(span)
             new_span[i] = span[i]
             new_span[length(span)+i] = span[i] ⊻ b
