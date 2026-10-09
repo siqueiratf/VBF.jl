@@ -74,6 +74,37 @@ end
 
 inputbits(::FunctionGraph{N}) where {N} = N::Int
 
+"""Rectangular graph packed as `(x << m) | F(x)`; n+m must fit UInt32."""
+struct RectangularFunctionGraph{N,M}
+    packed::Vector{UInt32}
+end
+
+function FunctionGraph(F::VBFTable{N,M}) where {N,M}
+    N + M <= 32 || throw(ArgumentError("graph dimension n+m must fit UInt32"))
+    return RectangularFunctionGraph{N,M}(UInt32[(UInt32(x) << M) | UInt32(F(x)) for x in 0:(length(F)-1)])
+end
+
+inputbits(::RectangularFunctionGraph{N,M}) where {N,M} = N
+outputbits(::RectangularFunctionGraph{N,M}) where {N,M} = M
+outputbits(::FunctionGraph{N}) where {N} = N
+Base.length(g::RectangularFunctionGraph) = length(g.packed)
+
+"""Apply an ambient affine map to a rectangular graph and recover its table."""
+function ccz_equivalent_function(F::VBFTable{N,M,T}, A::F2AffineMap{D,S}) where {N,M,T,D,S}
+    D == N + M || throw(ArgumentError("map dimension must equal n+m"))
+    graph = FunctionGraph(F)
+    lut, seen = zeros(T,length(F)), falses(length(F))
+    mask = (UInt32(1) << M) - UInt32(1)
+    for p in graph.packed
+        z = UInt32(A(S(p)))
+        i = Int(z >> M) + 1
+        seen[i] && return nothing
+        seen[i] = true
+        lut[i] = T(z & mask)
+    end
+    return VBFTable{N,M,T}(lut)
+end
+
 Base.length(g::FunctionGraph) = length(g.packed)
 
 function Base.show(io::IO, g::FunctionGraph{N}) where {N}

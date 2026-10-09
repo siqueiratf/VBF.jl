@@ -42,8 +42,8 @@ mutable struct _PRAffineMap
 end
 
 """Construct empty affine constraints in VBF's input-high/output-low convention."""
-_PRAffineMap(n::Int) = _PRAffineMap(
-    _PartialF2Isomorphism(2n), _PartialF2Isomorphism(n), false, UInt32(0), UInt32(0),
+_PRAffineMap(n::Int, m::Int = n) = _PRAffineMap(
+    _PartialF2Isomorphism(n+m), _PartialF2Isomorphism(n), false, UInt32(0), UInt32(0),
 )
 Base.copy(a::_PRAffineMap) = _PRAffineMap(
     copy(a.linear), copy(a.quotient), a.anchored, a.source, a.target,
@@ -92,25 +92,26 @@ function _pr_refine!(pl, pr, hl, hr, left, right, planes_left, planes_right,
 end
 
 """Extend affine constraints and independently verify a full graph certificate."""
-function _pr_certificate(a::_PRAffineMap, F::SBox{N}, G::SBox, ea::Bool) where {N}
-    L = _partial_complete(a.linear; output_bits = ea ? N : 0)
+function _pr_certificate(a::_PRAffineMap, F::AbstractTruthTable{N,M}, G::AbstractTruthTable, ea::Bool) where {N,M}
+    L = _partial_complete(a.linear; output_bits = ea ? M : 0)
     L === nothing && return nothing
     A = F2AffineMap(L, a.target ⊻ L(a.source))
     is_invertible(L) || return nothing
     if ea
-        all(v -> v >> N == 0, view(L.cols, 1:N)) || return nothing
+        all(v -> v >> M == 0, view(L.cols, 1:M)) || return nothing
     end
-    return ccz_equivalent_function(F, A) == G ? A : nothing
+    mapped = ccz_equivalent_function(F, A)
+    return mapped !== nothing && mapped.lut == G.lut ? A : nothing
 end
 
 """Propagate singleton constraints and choose the next undetermined graph point."""
-function _pr_prepare_node!(pl, pr, left, right, a, work, N, ea, fixed)
+function _pr_prepare_node!(pl, pr, left, right, a, work, M, ea, fixed)
     @inbounds for c = 1:(length(pl.starts)-1)
         lo = pl.starts[c]
         if pl.starts[c+1] == lo + 1
             x, y = left[pl.order[lo]], right[pr.order[lo]]
             fresh = _pr_image(a, x) === nothing
-            _pr_insert!(a, x, y, N, ea) || return nothing
+            _pr_insert!(a, x, y, M, ea) || return nothing
             fresh && push!(fixed, pr.order[lo])
         end
     end
@@ -132,7 +133,7 @@ function _pr_prepare_node!(pl, pr, left, right, a, work, N, ea, fixed)
             else
                 # An affine implication must land in the corresponding target cell.
                 # Graph points are indexed by input, so membership is O(1).
-                target_index = Int(y >> N) + 1
+                target_index = Int(y >> M) + 1
                 right[target_index] == y && work.point_cells[target_index] == c ||
                     return nothing
             end
@@ -142,8 +143,8 @@ function _pr_prepare_node!(pl, pr, left, right, a, work, N, ea, fixed)
 end
 
 """Depth-first affine recovery with paired partitions (Algorithm 6)."""
-function _pr_dfs!(F::SBox{N}, G, left, right, planes_left, planes_right, pl, pr,
-                  hl, hr, a, work, floor, ea, budget, transitive, H = nothing) where {N}
+function _pr_dfs!(F::AbstractTruthTable{N,M}, G, left, right, planes_left, planes_right, pl, pr,
+                  hl, hr, a, work, floor, ea, budget, transitive, H = nothing) where {N,M}
     _pr_check!(budget) || return nothing
     if budget.nodes >= budget.max_nodes
         budget.stopped = :nodes
@@ -153,7 +154,7 @@ function _pr_dfs!(F::SBox{N}, G, left, right, planes_left, planes_right, pl, pr,
     _pr_refine!(pl, pr, hl, hr, left, right, planes_left, planes_right,
                 work, floor, budget) || return nothing
     fixed = Int[]
-    choice = _pr_prepare_node!(pl, pr, left, right, a, work, N, ea, fixed)
+    choice = _pr_prepare_node!(pl, pr, left, right, a, work, M, ea, fixed)
     choice === nothing && return nothing
     cell, xindex = choice
     cell == 0 && return _pr_certificate(a, F, G, ea)
@@ -177,7 +178,7 @@ function _pr_dfs!(F::SBox{N}, G, left, right, planes_left, planes_right, pl, pr,
             seen[orbit] = true
         end
         b = copy(a)
-        _pr_insert!(b, left[xindex], right[yindex], N, ea) || continue
+        _pr_insert!(b, left[xindex], right[yindex], M, ea) || continue
         child_group = H === nothing ? nothing : _pr_group_stabilizer(H, yindex, budget)
         H !== nothing && child_group === nothing && return nothing
         ql, qr = copy(pl), copy(pr)
@@ -225,12 +226,12 @@ Credits: Nikolay Kaleyski and Joakim Sunde, ePrint 2026/940,
 https://eprint.iacr.org/2026/940. No sboxU, Sage or C++ runtime is required.
 """
 function partition_refinement_equivalence(
-    F::SBox{N}, G::SBox; relation::Symbol = :ccz, max_nodes::Int = 10^6,
+    F::AbstractTruthTable{N,M}, G::AbstractTruthTable; relation::Symbol = :ccz, max_nodes::Int = 10^6,
     timeout_seconds::Real = 60.0, min_active_hyperplanes::Int = 0,
     max_memory_bytes::Int = 512 * 1024^2,
     automorphisms = nothing, automorphism_timeout_seconds::Real = 0.0,
     threaded::Bool = false,
-) where {N}
+) where {N,M}
     relation in (:ccz, :ea) || throw(ArgumentError("relation must be :ccz or :ea"))
     max_nodes >= 0 || throw(ArgumentError("max_nodes must be nonnegative"))
     timeout_seconds >= 0 || throw(ArgumentError("timeout_seconds must be nonnegative"))
@@ -240,7 +241,7 @@ function partition_refinement_equivalence(
     start = time_ns()
     budget = _PRBudget(start, Float64(timeout_seconds), max_nodes, 0, :none)
     region = SearchRegion(:equivalence, "$(relation):$(N)-bit graphs")
-    witnesses = F2AffineMap{2N,UInt32}[]
+    witnesses = F2AffineMap{(N+M),UInt32}[]
     finish = function (cert)
         elapsed = (time_ns() - start) * 1e-9
         cert === nothing || push!(witnesses, cert)
@@ -252,7 +253,7 @@ function partition_refinement_equivalence(
         end
         return Exhausted(region, witnesses; nodes_visited = budget.nodes, elapsed_seconds = elapsed)
     end
-    inputbits(G) == N || return finish(nothing)
+    inputbits(G) == N && outputbits(G) == M || return finish(nothing)
     _pr_check!(budget) || return finish(nothing)
     if max_nodes == 0
         budget.stopped = :nodes
@@ -260,22 +261,22 @@ function partition_refinement_equivalence(
     end
     # Check before any ambient-sized allocation, including the indicator FWHT.
     groups = automorphisms !== nothing || automorphism_timeout_seconds > 0
-    group_memory = groups ? _pr_group_memory(N) : Int128(0)
-    if (Int128(16) << (2N)) + group_memory > max_memory_bytes
+    group_memory = groups ? _pr_group_memory(N,M) : Int128(0)
+    if (Int128(16) << ((N+M))) + group_memory > max_memory_bytes
         budget.stopped = :memory
         return finish(nothing)
     end
     left, right = FunctionGraph(F).packed, FunctionGraph(G).packed
-    wf = _pr_graph_walsh(left, 2N; threaded)
+    wf = _pr_graph_walsh(left, (N+M); threaded)
     _pr_check!(budget) || return finish(nothing)
     hf = _pr_intersection_histogram(wf, length(left))
-    wg = _pr_graph_walsh(right, 2N; threaded)
+    wg = _pr_graph_walsh(right, (N+M); threaded)
     _pr_check!(budget) || return finish(nothing)
     hg = _pr_intersection_histogram(wg, length(right))
     hf == hg || return finish(nothing)
     floor = min_active_hyperplanes == 0 ? (N <= 7 ? 16 : 2) * length(left) : min_active_hyperplanes
     classes, nplanes = _pr_select_classes(hf, floor)
-    estimate = (Int128(16) << (2N)) + Int128(nplanes + length(left)) * (64 + 32 * (2N + 2))
+    estimate = (Int128(16) << ((N+M))) + Int128(nplanes + length(left)) * (64 + 32 * ((N+M) + 2))
     estimate += group_memory
     if estimate > max_memory_bytes
         budget.stopped = :memory
@@ -296,11 +297,11 @@ function partition_refinement_equivalence(
     _pr_check!(budget) || return finish(nothing)
     planes_left, hl = _pr_build_planes(wf, length(left), classes, hf)
     planes_right, hr = _pr_build_planes(wg, length(right), classes, hg)
-    work = _PRWorkspace(2N, length(left), nplanes; threaded)
+    work = _PRWorkspace((N+M), length(left), nplanes; threaded)
     pl, pr = _PRPartition(length(left)), _PRPartition(length(right))
     transitive = algebraic_degree(G) <= 2
     cert = _pr_dfs!(F, G, left, right, planes_left, planes_right, pl, pr, hl, hr,
-                    _PRAffineMap(N), work, floor, relation === :ea, budget, transitive, H)
+                    _PRAffineMap(N,M), work, floor, relation === :ea, budget, transitive, H)
     return finish(cert)
 end
 

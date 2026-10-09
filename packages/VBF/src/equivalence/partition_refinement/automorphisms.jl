@@ -32,8 +32,8 @@ mutable struct _PRDiscovery{D}
 end
 
 """Algorithm 4: discover new graph actions and refresh ancestor stabilizers."""
-function _pr_auto_dfs!(F::SBox{N}, points, planes, pl, pr, hl, hr, a, work,
-                      floor, ea, budget, state, fixed, H, epoch) where {N}
+function _pr_auto_dfs!(F::AbstractTruthTable{N,M}, points, planes, pl, pr, hl, hr, a, work,
+                      floor, ea, budget, state, fixed, H, epoch) where {N,M}
     _pr_check!(budget) || return
     if budget.nodes >= budget.max_nodes
         budget.stopped = :nodes
@@ -43,7 +43,7 @@ function _pr_auto_dfs!(F::SBox{N}, points, planes, pl, pr, hl, hr, a, work,
     _pr_refine!(pl, pr, hl, hr, points, points, planes, planes,
                 work, floor, budget) || return
     oldfixed = length(fixed)
-    choice = _pr_prepare_node!(pl, pr, points, points, a, work, N, ea, fixed)
+    choice = _pr_prepare_node!(pl, pr, points, points, a, work, M, ea, fixed)
     choice === nothing && return
     H = _pr_group_fix(H, view(fixed, (oldfixed+1):length(fixed)), budget)
     H === nothing && return
@@ -80,7 +80,7 @@ function _pr_auto_dfs!(F::SBox{N}, points, planes, pl, pr, hl, hr, a, work,
         yindex = pr.order[lo+j-1]
         touched[yindex] = true
         b = copy(a)
-        _pr_insert!(b, points[xindex], points[yindex], N, ea) || continue
+        _pr_insert!(b, points[xindex], points[yindex], M, ea) || continue
         child_group = _pr_group_stabilizer(H, yindex, budget)
         child_group === nothing && return
         ql, qr = copy(pl), copy(pr)
@@ -94,7 +94,7 @@ function _pr_auto_dfs!(F::SBox{N}, points, planes, pl, pr, hl, hr, a, work,
 end
 
 """Conservative live stabilizer-chain allocation estimate, including DFS depth."""
-_pr_group_memory(n::Int) = Int128(16) * (Int128(1) << (2n)) * (2n + 2)^2
+_pr_group_memory(n::Int, m::Int = n) = Int128(16) * (Int128(1) << (2n)) * (n + m + 2)^2
 
 """
     partition_refinement_automorphisms(F; relation=:ccz, max_nodes=10^6,
@@ -115,11 +115,11 @@ points, never 2^(2n) ambient points.
 `threaded=true` parallelizes only sufficiently large refinement kernels; group
 updates and DFS are serial. Threads do not alter completeness or node budgets.
 """
-function partition_refinement_automorphisms(F::SBox{N}; relation::Symbol = :ccz,
+function partition_refinement_automorphisms(F::AbstractTruthTable{N,M}; relation::Symbol = :ccz,
     max_nodes::Int = 10^6, timeout_seconds::Real = 60.0,
     min_active_hyperplanes::Int = 0, max_memory_bytes::Int = 512 * 1024^2,
     threaded::Bool = false,
-) where {N}
+) where {N,M}
     relation in (:ccz, :ea) || throw(ArgumentError("relation must be :ccz or :ea"))
     max_nodes >= 0 || throw(ArgumentError("max_nodes must be nonnegative"))
     timeout_seconds >= 0 || throw(ArgumentError("timeout_seconds must be nonnegative"))
@@ -127,12 +127,12 @@ function partition_refinement_automorphisms(F::SBox{N}; relation::Symbol = :ccz,
     max_memory_bytes >= 0 || throw(ArgumentError("max_memory_bytes must be nonnegative"))
     start = time_ns()
     budget = _PRBudget(start, Float64(timeout_seconds), max_nodes, 0, :none)
-    state = _PRDiscovery(_PRPermutationGroup(length(F)), F2AffineMap{2N,UInt32}[], 0)
+    state = _PRDiscovery(_PRPermutationGroup(length(F)), F2AffineMap{(N+M),UInt32}[], 0)
     kernel_order = nothing
     finish = function ()
         graph_order = _pr_group_order(state.group)
         order = graph_order === nothing || kernel_order === nothing ? nothing : graph_order * kernel_order
-        return AutomorphismGroupResult{2N}(relation, state.generators,
+        return AutomorphismGroupResult{(N+M)}(relation, state.generators,
             budget.stopped === :none, budget.stopped, order, graph_order, kernel_order,
             budget.nodes, (time_ns() - start) * 1e-9)
     end
@@ -141,7 +141,7 @@ function partition_refinement_automorphisms(F::SBox{N}; relation::Symbol = :ccz,
         budget.stopped = :nodes
         return finish()
     end
-    if (Int128(16) << (2N)) + _pr_group_memory(N) > max_memory_bytes
+    if (Int128(16) << ((N+M))) + _pr_group_memory(N,M) > max_memory_bytes
         budget.stopped = :memory
         return finish()
     end
@@ -158,29 +158,29 @@ function partition_refinement_automorphisms(F::SBox{N}; relation::Symbol = :ccz,
             end
         end
     end
-    spectrum = _pr_graph_walsh(points, 2N; threaded)
+    spectrum = _pr_graph_walsh(points, (N+M); threaded)
     _pr_check!(budget) || return finish()
     histogram = _pr_intersection_histogram(spectrum, length(points))
     floor = min_active_hyperplanes == 0 ? (N <= 7 ? 16 : 2) * length(points) : min_active_hyperplanes
     classes, nplanes = _pr_select_classes(histogram, floor)
-    estimate = (Int128(16) << (2N)) + _pr_group_memory(N) +
-        Int128(nplanes + length(points)) * (64 + 32 * (2N + 2))
+    estimate = (Int128(16) << ((N+M))) + _pr_group_memory(N,M) +
+        Int128(nplanes + length(points)) * (64 + 32 * ((N+M) + 2))
     if estimate > max_memory_bytes
         budget.stopped = :memory
         return finish()
     end
     planes, hl = _pr_build_planes(spectrum, length(points), classes, histogram)
     pl, pr = _PRPartition(length(points)), _PRPartition(length(points))
-    a, fixed = _PRAffineMap(N), Int[]
+    a, fixed = _PRAffineMap(N,M), Int[]
     if algebraic_degree(F) <= 2
-        _pr_insert!(a, first(points), first(points), N, relation === :ea)
+        _pr_insert!(a, first(points), first(points), M, relation === :ea)
         push!(fixed, 1)
         _pr_individualize!(pl, 1, 1); _pr_individualize!(pr, 1, 1)
     end
     H = _pr_group_fix(state.group, fixed, budget)
     H === nothing && return finish()
     _pr_auto_dfs!(F, points, planes, pl, pr, hl, copy(hl), a,
-        _PRWorkspace(2N, length(points), nplanes; threaded), floor, relation === :ea,
+        _PRWorkspace((N+M), length(points), nplanes; threaded), floor, relation === :ea,
         budget, state, fixed, H, state.epoch)
     return finish()
 end

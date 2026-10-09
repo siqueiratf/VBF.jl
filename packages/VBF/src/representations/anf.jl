@@ -79,3 +79,4 @@ nonzero, and its bit `0` marks that this monomial appears in output
 coordinate `0`.
 """
 anf(s::SBox{N,T}) where {N,T} = mobius(s.lut)
+anf(s::VBFTable) = mobius(s.lut)

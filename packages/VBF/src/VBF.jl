@@ -33,6 +33,7 @@ on `VBF`, never the reverse). See the top-level README for the catalog index.
 module VBF
 
 # 1. representations — types first (used in later signatures), then transforms
+include("representations/truth_table.jl")
 include("representations/sbox.jl")
 include("representations/f2_linear_map.jl")
 include("representations/f2_affine_map.jl")

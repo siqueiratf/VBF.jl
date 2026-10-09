@@ -34,7 +34,7 @@ julia> id(2)
 0x02
 ```
 """
-struct SBox{N,T<:Unsigned}
+struct SBox{N,T<:Unsigned} <: AbstractTruthTable{N,N}
     lut::Vector{T}
 
     function SBox{N,T}(lut::Vector{T}) where {N,T<:Unsigned}
