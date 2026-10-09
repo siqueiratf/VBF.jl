@@ -13,8 +13,9 @@ Switching-neighbour construction (Edel–Pott). The classical formulation
 element turns out non-APN; this implementation instead assembles the
 **complete** system of necessary linear constraints (so the result is
 deterministic and reproducible) and then filters the candidate neighbours by an
-explicit APN check. The complete enumeration is `O(2^{3n})`, practical
-for `n ≤ 7`.
+explicit APN check. Each affine two-flat contributes one equation, rather than
+the 24 repeated equations from its ordered direction and point pairs. The
+complete enumeration is still `O(2^{3n})`.
 
 The constraint for a fixed `u` lives over the `2ⁿ` unknowns `s(0..2ⁿ-1)`.
 For each direction `a ≠ 0` and pair `x₁ ≠ x₂` (with `x₁ ≠ x₂ ⊕ a`) such
@@ -259,23 +260,7 @@ function _sn_neighbors(
         end
     end
 
-    # Complete necessary-constraint system.
-    @inbounds for a = 1:(n_size-1)
-        for x1 = 0:(n_size-1)
-            f_ax1 = flut[(x1⊻a)+1] ⊻ flut[x1+1]
-            for x2 = 0:(n_size-1)
-                _sn_check(check, :constraints, a, (x1, x2))
-                x1 == x2 && continue
-                x1 == (x2 ⊻ a) && continue
-                target = f_ax1 ⊻ flut[(x2⊻a)+1] ⊻ flut[x2+1]
-                target == 0 && continue
-                _sn_add_equation!(
-                    systems[Int(target)],
-                    (x1 ⊻ a, x1, x2 ⊻ a, x2),
-                )
-            end
-        end
-    end
+    _sn_constraints!(systems, flut, check)
 
     result = Vector{Vector{SBox{N,T}}}(undef, n_size - 1)
     for uu = 1:(n_size-1)
@@ -287,6 +272,34 @@ function _sn_neighbors(
         result[uu] = _sn_apn_coset(F, T(uu), basis, observer, check, verified, diagnostics)
     end
     return result
+end
+
+# A flat is {x, x+a, x+b, x+a+b}. Select its smallest direction a,
+# second-smallest direction b, and smallest point x. These are precisely the
+# first occurrences in the former (a,x1,x2) loop, so pivot insertion order and
+# the resulting kernel/quotient representatives remain unchanged.
+function _sn_constraints!(systems, flut, check = nothing)
+    n_size = length(flut)
+    @inbounds for a in 1:(n_size-1)
+        _sn_check(check, :constraints, a, 0)
+        for x in 0:(n_size-1)
+            xa = x ⊻ a
+            x < xa || continue
+            # Iterate the opposite point in the original order, rather than
+            # b: XOR translation does not preserve integer ordering.
+            for xb in (x+1):(n_size-1)
+                b = x ⊻ xb
+                a < b && b < (a ⊻ b) || continue
+                xab = xb ⊻ a
+                x < xab || continue
+                _sn_check(check, :constraints, a, (x, xb))
+                target = flut[x+1] ⊻ flut[xa+1] ⊻ flut[xb+1] ⊻ flut[xab+1]
+                iszero(target) && continue
+                _sn_add_equation!(systems[Int(target)], (xa, x, xab, xb))
+            end
+        end
+    end
+    return nothing
 end
 
 # Budget state belongs to one invocation; observer calls may start other searches.

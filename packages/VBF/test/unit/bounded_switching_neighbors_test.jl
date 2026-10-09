@@ -9,6 +9,34 @@
     expected = reduce(vcat, grouped; init = typeof(F)[])
     @test !isempty(expected)
 
+    @testset "one equation per affine two-flat preserves the full system" begin
+        using Random
+        rng = Xoshiro(82026)
+        # Compare with the ordered-pair definition, including nonquadratic
+        # tables. Identical pivot rows imply identical kernels and neighbours,
+        # not merely matching counts or APN status.
+        for n in 3:5, lut in (gold_apn(n).lut, rand(rng, UInt8(0):UInt8((1<<n)-1), 1<<n))
+            q = 1 << n
+            reference = [VBF._sn_system(q) for _ in 1:(q-1)]
+            for a in 1:(q-1), x in 0:(q-1), y in 0:(q-1)
+                x == y && continue
+                x == (y ⊻ a) && continue
+                u = lut[x+1] ⊻ lut[(x⊻a)+1] ⊻ lut[y+1] ⊻ lut[(y⊻a)+1]
+                iszero(u) || VBF._sn_add_equation!(reference[Int(u)], (x⊻a,x,y⊻a,y))
+            end
+            actual = [VBF._sn_system(q) for _ in 1:(q-1)]
+            visited = Ref(0)
+            check = (_,_,position) -> position isa Tuple && (visited[] += 1)
+            VBF._sn_constraints!(actual, lut, check)
+            @test visited[] == q*(q-1)*(q-2) ÷ 24
+            for u in 1:(q-1)
+                @test actual[u].pivot_cols == reference[u].pivot_cols
+                @test actual[u].pivot_rows == reference[u].pivot_rows
+                @test VBF._sn_kernel(actual[u]) == VBF._sn_kernel(reference[u])
+            end
+        end
+    end
+
     @testset "complete enumeration and observer compatibility" begin
         bounded_events = Tuple{Symbol,Any}[]
         result = switching_neighbors_bounded(
