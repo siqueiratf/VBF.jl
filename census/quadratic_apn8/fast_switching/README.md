@@ -120,6 +120,8 @@ restricts sampling to those sources and also adds their signatures to the
 exclusion set. Both options may be repeated. Reuse previous outputs through
 these options to explore further rounds. Every run requires a fresh output
 directory and refuses to overwrite existing evidence.
+For files with a status column, sampling includes `new`, `search` (the Framework
+label), and `search-new`; every label remains in the novelty exclusion set.
 
 The optional orbit route uses native partition refinement, optimized Walsh-zero
 subspace extraction and verified CCZ maps. It searches additional nonquadratic
@@ -167,3 +169,6 @@ julia --project=. census/quadratic_apn8/fast_switching/benchmark.jl \
 
 For this local Julia 1.13 installation, these commands were run with
 `--compiled-modules=no --startup-file=no` to avoid writes to the user depot.
+
+Test the runner's input selection with
+`julia --project=. census/quadratic_apn8/fast_switching/test/runtests.jl`.
