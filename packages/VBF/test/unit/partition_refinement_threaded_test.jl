@@ -35,11 +35,14 @@
         VBF._pr_point_scores!(b,points,planes,hp,parallel)
         VBF._pr_point_scores!(c,points,planes,hp,dense)
         @test a == b == c
+        # Task closures must not box the serial signature-building counters.
+        @test (@allocated VBF._pr_point_scores!(a,points,planes,hp,serial)) < 4096
         a,b,c = zeros(Int,nplanes),zeros(Int,nplanes),zeros(Int,nplanes)
         VBF._pr_plane_scores!(a,points,pp,planes,hp,serial)
         VBF._pr_plane_scores!(b,points,pp,planes,hp,parallel)
         VBF._pr_plane_scores!(c,points,pp,planes,hp,dense)
         @test a == b == c
+        @test (@allocated VBF._pr_plane_scores!(a,points,pp,planes,hp,serial)) < 4096
     end
 
     @testset "complete search, budgets and concurrent discovery" begin

@@ -62,6 +62,25 @@ end
 _pr_parallel_direct(work, points, planes) = work.threaded && Threads.nthreads() > 1 &&
     points * planes >= (1 << 19)
 
+"""Isolate task captures from the caller's mutable signature-building counters."""
+function _pr_parallel_point_scores!(scores, points, normals, weights, k)
+    Threads.@threads :dynamic for i in eachindex(points)
+        @inbounds scores[i] = _pr_signed_sum(points[i], normals, weights, k)
+    end
+    return scores
+end
+
+function _pr_parallel_plane_scores!(scores, points, planes, active, weights)
+    Threads.@threads :dynamic for j in eachindex(active)
+        @inbounds begin
+            i = active[j]
+            scores[i] = _pr_signed_sum(planes.normals[i], points,
+                weights, length(points)) * planes.signs[i]
+        end
+    end
+    return scores
+end
+
 """Count all nonconstant affine hyperplanes by graph intersection size."""
 function _pr_intersection_histogram(walsh, npoints::Int)
     counts = zeros(Int, npoints + 1)
@@ -131,9 +150,7 @@ function _pr_point_scores!(scores, points, planes::_PRPlanes, hp::_PRPartition,
     end
     if k <= work.direct_threshold
         if _pr_parallel_direct(work, length(points), k)
-            Threads.@threads :dynamic for i in eachindex(points)
-                @inbounds scores[i] = _pr_signed_sum(points[i], work.normals, work.weights, k)
-            end
+            _pr_parallel_point_scores!(scores, points, work.normals, work.weights, k)
         else
             @inbounds for i in eachindex(points)
                 scores[i] = _pr_signed_sum(points[i], work.normals, work.weights, k)
@@ -163,13 +180,7 @@ function _pr_plane_scores!(scores, points, pp::_PRPartition, planes::_PRPlanes,
     end
     if length(hp.order) <= work.direct_threshold
         if _pr_parallel_direct(work, length(points), length(hp.order))
-            Threads.@threads :dynamic for j in eachindex(hp.order)
-                @inbounds begin
-                    i = hp.order[j]
-                    scores[i] = _pr_signed_sum(planes.normals[i], points,
-                        work.point_weights, length(points)) * planes.signs[i]
-                end
-            end
+            _pr_parallel_plane_scores!(scores, points, planes, hp.order, work.point_weights)
         else
             @inbounds for i in hp.order
                 scores[i] = _pr_signed_sum(planes.normals[i], points,
