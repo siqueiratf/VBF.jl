@@ -5,12 +5,18 @@
 **Status**: The estimator is validated against exact values for n ≤ 7. The census
 numbers below come from 4,012,000 samples. The 553 novelty claims are **verified**
 against all 10 indexed sources ([reports/verification/REPORT.md](reports/verification/REPORT.md)).
-Two items are open:
+The two items that were open are now closed:
 
-- The x^57 Kasami class (three non-quadratic catalog rows) is not yet decided by
-  computation. `kasami_x57/` checks it.
-- The raw Langevin files (11,888,039 records) are checked by sampling only.
-  `crosscheck_raw/` checks them in full.
+- The x^57 Kasami class (three non-quadratic catalog rows) has no quadratic
+  member: its CCZ class is equal to its EA class ([kasami_x57/REPORT.md](kasami_x57/REPORT.md)).
+- All 31,390,363 records of the authors' raw files were checked. None has the σ of
+  one of the 553 ([crosscheck_raw/REPORT.md](crosscheck_raw/REPORT.md)). The raw file
+  holds 546 more public classes that are absent from the published list and from the
+  index (`crosscheck_raw/raw_only_546.tsv`).
+
+Also: 0 of the 553 new functions are CCZ-equivalent to a permutation
+([permutation/REPORT.md](permutation/REPORT.md)). One more new class came from the
+theory experiment (`new_classes_extra.tsv`, see [theory/UNIQUENESS.md](theory/UNIQUENESS.md)).
 
 A fresh clone runs `make test` and `make analyze` with the committed data in `data/`.
 [SETUP.md](SETUP.md) tells how to set up another machine.
@@ -191,7 +197,20 @@ The verification ([reports/verification/REPORT.md](reports/verification/REPORT.m
 - None of the 553 σ occurs in the recalculated set of all indexed members.
 - The 553 functions are quadratic APN and pairwise CCZ-inequivalent.
 
-Novelty is relative to the 10 indexed sources. The open items are in the status above.
+Novelty is relative to the 10 indexed sources, to the x^57 class
+([kasami_x57/REPORT.md](kasami_x57/REPORT.md)) and to all public raw files of the
+authors ([crosscheck_raw/REPORT.md](crosscheck_raw/REPORT.md)). Classes that were never
+published (for example, in a talk) are not covered.
+
+**Known classes and the coverage estimate.** The public data holds at least
+3,808,491 + 546 = 3,809,037 classes. The 546 raw-only classes change the known mass by
+less than 0.015 %, which is far below the standard error of the coverage estimate. The
+estimate uses the mass of the 3,808,491 indexed classes.
+
+**Note on e.** In this run, every hit had e = 128 (one coset). This is not a theorem.
+Hyperplane restrictions of known functions sometimes give e = 256 or 512
+([theory/UNIQUENESS.md](theory/UNIQUENESS.md)). The estimator uses the exact value of e,
+so the census numbers do not depend on this observation.
 
 ### Where the new classes are
 
@@ -269,12 +288,12 @@ adds more.
 | [reports/verification/REPORT.md](reports/verification/REPORT.md) | Verification of the 553 novelty claims and of the σ index |
 | [reports/properties/REPORT.md](reports/properties/REPORT.md) | Component profiles of new and known hits (B6 = 52 branch) |
 | [reports/literature/LITERATURE.md](reports/literature/LITERATURE.md) | Survey of public sources of quadratic APN functions on F_2^8 |
-| [theory/METHOD.md](theory/METHOD.md) | Method of the estimator (in progress) |
-| [theory/UNIQUENESS.md](theory/UNIQUENESS.md) | Uniqueness arguments (in progress) |
-| [kasami_x57/REPORT.md](kasami_x57/REPORT.md) | x^57 Kasami class gap (in progress) |
-| [permutation/REPORT.md](permutation/REPORT.md) | Permutation question for the new classes (in progress) |
-| [crosscheck_raw/REPORT.md](crosscheck_raw/REPORT.md) | Raw Langevin files against the σ index (in progress) |
-| [web/README.md](web/README.md) | Web view (in progress) |
+| [theory/METHOD.md](theory/METHOD.md) | The mathematics of the census, with proofs |
+| [theory/UNIQUENESS.md](theory/UNIQUENESS.md) | Number of APN completions e: what is proved, what is false (e = 128 is not general) |
+| [kasami_x57/REPORT.md](kasami_x57/REPORT.md) | The x^57 class has no quadratic member (gap closed) |
+| [permutation/REPORT.md](permutation/REPORT.md) | 0 of 553 new functions are CCZ-equivalent to a permutation |
+| [crosscheck_raw/REPORT.md](crosscheck_raw/REPORT.md) | All raw files of the authors: 0 coincidences with the 553; 546 raw-only classes |
+| [web/README.md](web/README.md) | Local web page: is a function new or known? |
 | [search_b52/README.md](search_b52/README.md) | B6 = 52 search (in progress) |
 
 ## Files
