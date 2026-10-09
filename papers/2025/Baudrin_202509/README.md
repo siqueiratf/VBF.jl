@@ -6,7 +6,8 @@ The supplied PDF is the ground truth; no public TeX source was identified.
 
 This reproduction implements the Section 3.1 Walsh-zero subspace orbit workflow
 using VBF's native automorphism generators, checks the Section 3.2 six-bit
-known-class census, and provides bounded switching exploration relevant to
+known-class census, provides a resumable seven-bit census, and checks six-bit
+switching closure relevant to
 Conjecture 1. It requires Julia ≥1.12 and runs in the repository's root project.
 No Python, sboxU or Magma runtime is required.
 
@@ -45,12 +46,14 @@ No author code is vendored or used as a package dependency.
 | `section31.jl` | Proposition 2 / Section 3.1 exact CCZ-class representation | Exact when group, subspaces and representative construction complete |
 | `section32.jl` | Section 3.2 known six-bit census | Full fourteen-root run is explicit; defaults are small demonstrations |
 | `conjecture1.jl` | Section 3.2 switching exploration preceding Conjecture 1 | Bounded evidence, with undecided comparisons retained |
-| `catalog_validation.jl` | Known six-bit input collection | Thirteen APN-rep catalog records plus the Kim mapping |
+| `section32_switching.jl` | Section 3.2 / Gillot–Langevin Section 6, Fact 3 | Resumable complete switching over all 716 certified six-bit representatives |
+| `section32_sevenbit.jl` | Section 3.2 seven-bit census | Resumable 488-root closures, using explicitly selected optimized algorithms |
+| `catalog_validation.jl` | Known input collections | Thirteen six-bit APN-rep records plus Kim; pinned 488 seven-bit quadratic roots |
 | `report.jl` | Aggregate demonstration | Four-bit smoke examples; does not launch the six-bit census |
 
 `EXPERIMENTS.md` records the broader mathematical inventory. Finite checks do
-not prove its universal theorems. The full seven-bit census of 82,409 classes
-is not executed, and Conjecture 1 is not proved.
+not prove its universal theorems. Conjecture 1 is not proved by a switching
+closure computation: a further APN class might lie outside this closed set.
 
 ## Running
 
@@ -65,6 +68,8 @@ The full known-class six-bit census is expensive and is an explicit opt-in:
 
 ```sh
 make -C papers/2025/Baudrin_202509 census6 save_results=true
+make -C papers/2025/Baudrin_202509 closure6 save_results=true
+make -C papers/2025/Baudrin_202509 census7 save_results=true
 ```
 
 The expected complete results are 691 EA classes in thirteen quadratic CCZ
@@ -78,6 +83,29 @@ an exhausted native equivalence decision. An undecided root pair prevents
 an exact global census claim. Completed APN closures in dimension ≥2 also check
 Theorem 2's orbit-count bounds using the exact group order; the full Burnside
 fixed-subspace sum is not computed.
+
+`closure6` loads the complete saved six-bit census, validates all 716 positive
+graph certificates, exhausts each representative's 63 output quotient
+directions and checks every nonzero quotient combination against the fourteen
+roots. This is the one-coordinate closure assertion of Gillot and Langevin,
+*Observation of known APNs*, [arXiv:2601.11247v1](https://arxiv.org/abs/2601.11247v1).
+Their Section 6 table counts quotient basis vectors; we record both that count
+and the larger number of all nonzero combinations. Classification uses positive
+CCZ graph certificates, which suffice because the input census contains the
+complete EA closures of those fourteen roots. Per-candidate EA searches are
+unnecessary for this closure assertion.
+
+`census7` selects all 488 quadratic roots with the pinned `sboxu@7066b82`
+source tag, including three Gold records merged into the catalog's APN family.
+The expected degree counts are `{2:488, 3:60302, 4:21619}`, totaling 82,409.
+Each root's independently computed closure has a strict completion flag; root
+distinctness is inherited from the pinned collection and labelled as such.
+The driver explicitly uses the existing native `algorithm=:optimized` group
+profile and `subspace_algorithm=:optimized`. These choices preserve the orbit
+correspondence; the core's paper/reference defaults remain available. The
+subspace optimization is recorded in a separate commit, with exhaustive parity
+and Gaussian-count tests. Arbitrary admissible complements avoid spending time
+searching for permutation representatives; degree and EA counts are unchanged.
 
 A bounded six-bit switching example starts from the cube and Kim roots and
 compares against the fourteen known CCZ representatives:
@@ -138,7 +166,11 @@ hashes of all VBF Julia source files and the paper's runtime Julia scripts are
 captured once when the helpers load, using repository-relative paths. The
 source PDF's hash is captured at the same time; an absent PDF is explicitly
 marked unavailable. This provenance capture does not require Git at runtime.
-They are diagnostic snapshots, not resumable search states. Generated output
+The older `conjecture1` snapshots are diagnostic snapshots. The `closure6` and
+`census7` drivers additionally save a separate checkpoint for each completed
+parent or root and resume those completed rows; interrupted rows are recomputed.
+Changing recorded source code or algorithm profiles requires a new result name.
+Generated output
 and source PDFs are ignored; this README is tracked.
 
 The bounded test suite passed **132 assertions** across four test sets under
