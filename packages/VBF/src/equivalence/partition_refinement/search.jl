@@ -227,6 +227,7 @@ The deadline covers preprocessing and DFS. A conservative memory estimate bounds
 the transform buffers, hyperplanes and live partition copies before allocating
 them; it is not a process RSS limit. `min_active_hyperplanes` is a refinement
 floor, not a correctness limit: whole cells are retained and may exceed it.
+If fewer hyperplanes are available than requested, all are retained.
 Zero selects `16*2^n` for n ≤ 7 and `2*2^n` otherwise. The search is complete
 when allowed to exhaust, but its worst-case tree is exponential. Storage is
 O(2^(n+m)) for the transform, so larger dimensions may hit the memory budget.
