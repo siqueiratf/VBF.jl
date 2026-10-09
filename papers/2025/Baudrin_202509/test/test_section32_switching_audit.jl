@@ -59,6 +59,36 @@
     @test [row.direction for row in dimensions] == collect(1:15)
     @test sum((big(1) << row.quotient_dimension)-1 for row in dimensions) == full["neighbors"]
 
+    @testset "cached audit deadline preserves checkpoint" begin
+        isdefined(@__MODULE__,:_bgp_read_switching_checkpoint) ||
+            include(joinpath(@__DIR__,"..","section32_switching.jl"))
+        mktempdir() do temporary
+            path = joinpath(temporary,"parent_001.toml")
+            bgp_atomic_toml(path,full)
+            original = read(path)
+            @test_throws BGPSwitchingAuditDeadline _bgp_read_switching_checkpoint(
+                path,parent,census,identity;parent_index=1,check_deadline=()->false)
+            @test read(path) == original
+            # A positive but expired wall-clock deadline stops before a row
+            # can be accepted, independently of machine/compile speed.
+            deadline = time_ns()+UInt64(1)
+            @test_throws BGPSwitchingAuditDeadline _bgp_read_switching_checkpoint(
+                path,parent,census,identity;parent_index=1,
+                check_deadline=()->time_ns()<deadline)
+            @test read(path) == original
+            calls = Ref(0)
+            @test_throws BGPSwitchingAuditDeadline _bgp_read_switching_checkpoint(
+                path,parent,census,identity;parent_index=1,
+                check_deadline=()->(calls[]+=1; calls[] < 20))
+            @test calls[] == 20
+            @test read(path) == original
+            @test _bgp_read_switching_checkpoint(path,parent,census,identity;
+                parent_index=1,check_deadline=()->true) == full
+            @test_throws ArgumentError _bgp_read_switching_checkpoint(path,parent,census,identity;
+                parent_index=2,check_deadline=()->true)
+        end
+    end
+
     @testset "binding and mathematical corruption" begin
         @test_throws ArgumentError bgp_audit_switching_parent(full,other,census;parent_index=2)
         swapped = deepcopy(full)
@@ -149,6 +179,8 @@
                 TOML.print(io,summary)
             end
             write_summary()
+            @test_throws BGPSwitchingAuditDeadline bgp_audit_switching_results(path,census;
+                check_deadline=()->false)
             checked = bgp_audit_switching_results(path,census)
             @test !checked.complete
             @test checked.parents_checked == checked.complete_parents == 1
