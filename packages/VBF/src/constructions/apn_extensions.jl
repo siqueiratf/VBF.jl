@@ -166,26 +166,38 @@ end
     apn_extensions(G; normalize=true, max_nodes=10^6, max_solutions=1000,
                    timeout_seconds=60)
 
-Enumerate square APN extensions of rectangular `G` by one coordinate using
-Gillot–Langevin (2026), Section 6. Output packing is `(G(x) << 1) | g(x)`.
+Enumerate square APN extensions of rectangular `G` using Gillot–Langevin
+(2026), Sections 6–9. One added coordinate uses the affine parity system;
+two or more use backtracking with nonzero flat constraints. Output packing is
+`(G(x) << (N−M)) | g(x)`. Two coordinates optionally apply the necessary
+GF(4)-cube linearization first; this test is not sufficient. Larger output
+blocks use the same exact nonzero constraints without that GF(4) test.
 Each table is independently checked for differential uniformity 2. With
 normalization, the region contains representatives modulo adding affine and
-existing coordinate functions. `Exhausted` certifies that region; caps return
+existing coordinate functions; the first unfixed output is restricted to 0 or
+1 using an invertible change of added output coordinates. This need not remove
+all duplicates under those coordinate changes. `Exhausted` certifies that region; caps return
 `BudgetHit`, even if they might coincide with its last solution.
 """
 function apn_extensions(G::AbstractTruthTable{N,M}; normalize::Bool=true,
     max_nodes::Integer=10^6,max_solutions::Integer=1000,
-    timeout_seconds::Real=60) where {N,M}
-    M == N-1 || throw(ArgumentError("one-coordinate extensions require M=N−1"))
+    timeout_seconds::Real=60, linearized_test::Bool=true, observer=nothing) where {N,M}
+    1 <= M < N || throw(ArgumentError("extensions require 1 ≤ M < N"))
     max_solutions >= 0 || throw(ArgumentError("max_solutions must be nonnegative"))
     budget = _apnx_budget(max_nodes,timeout_seconds)
-    region = SearchRegion(:apn_extensions,"$(N)-to-$(M) one-coordinate extensions";
+    region = SearchRegion(:apn_extensions,"$(N)-to-$(M) extensions";
         params=Dict{String,Any}("normalize"=>normalize,"max_nodes"=>max_nodes,
             "max_solutions"=>max_solutions,"timeout_seconds"=>timeout_seconds))
     found = SBox{N,_storage_for(N)}[]
     try
         _apnx_check!(budget,:validation;consume=true)
         max_solutions == 0 && throw(_APNXStopped(StopPoint(:solutions,"zero solution cap")))
+        if M < N-1
+            _apnx_extensions_backtrack!(found,G,budget,region;normalize,max_solutions,
+                linearized_test,observer)
+            return Exhausted(region,found;nodes_visited=budget.nodes,
+                elapsed_seconds=_apnx_elapsed(budget))
+        end
         space = _apnx_space(G,budget;normalize)
         space.consistent || return Exhausted(region,found;nodes_visited=budget.nodes,
             elapsed_seconds=_apnx_elapsed(budget))
@@ -199,6 +211,7 @@ function apn_extensions(G::AbstractTruthTable{N,M}; normalize::Bool=true,
             F = SBox{N}([(Int(G.lut[x])<<1)|Int(g[x]) for x in eachindex(g)])
             differential_uniformity(F) == 2 || error("invalid parity-system extension")
             push!(found,F)
+            observer === nothing || observer(F)
             length(found) >= max_solutions && throw(_APNXStopped(StopPoint(:solutions,
                 "extension solution cap";resume_key=Dict{String,Any}("combination"=>string(combo)))))
         end
@@ -209,4 +222,122 @@ function apn_extensions(G::AbstractTruthTable{N,M}; normalize::Bool=true,
     end
     return Exhausted(region,found;nodes_visited=budget.nodes,
         elapsed_seconds=_apnx_elapsed(budget))
+end
+
+function _apnx_linearized_consistent(flats,q,budget)
+    nvars = q*(q+1)÷2
+    rows = BitVector[]
+    columns = Int[]
+    for flat in flats
+        _apnx_check!(budget,:linearized_system)
+        row = falses(nvars+1)
+        row[nvars+1] = true
+        for x in flat
+            row[x+1] = true
+        end
+        for i in 1:3, j in i+1:4
+            x,y = flat[i],flat[j]
+            pair = q+x*(2q-x-1)÷2+y-x-1
+            row[pair+1] = true
+        end
+        _apnx_insert!(rows,columns,row,nvars) || return false
+    end
+    return true
+end
+
+"""
+    apn_extension_tests(G; max_nodes=10^6, timeout_seconds=60)
+
+Necessary square-APN extension tests of Gillot–Langevin, Lemmas 3 and 4.
+The exact differential bound is `2^(N−M+1)`. For `M=N−2`, the GF(4)-cube
+system is linearized with `q(q+1)/2` Boolean variables; inconsistency proves
+nonextendibility, whereas consistency does not prove an extension exists.
+An `Exhausted` result contains one record, including `passes`,
+`differential_uniformity`, `differential_bound`, and `linearized_consistent`.
+The last field is `nothing` outside the two-coordinate setting. A budget
+stop returns no record, never a negative extension verdict.
+"""
+function apn_extension_tests(G::AbstractTruthTable{N,M};max_nodes::Integer=10^6,
+    timeout_seconds::Real=60) where {N,M}
+    1 <= M < N || throw(ArgumentError("extension tests require 1 ≤ M < N"))
+    budget = _apnx_budget(max_nodes,timeout_seconds)
+    region = SearchRegion(:apn_extension_tests,"$(N)-to-$(M) necessary tests")
+    records = Any[]
+    try
+        _apnx_check!(budget,:validation;consume=true)
+        du = differential_uniformity(SBox{N}(G.lut))
+        bound = big(1)<<(N-M+1)
+        _apnx_check!(budget,:differential_test)
+        linearized = M == N-2 ? _apnx_linearized_consistent(
+            _apnx_flats(G,budget),length(G),budget) : nothing
+        push!(records,(;passes=du<=bound && linearized!==false,
+            differential_uniformity=du,differential_bound=bound,
+            linearized_consistent=linearized))
+    catch err
+        err isa _APNXStopped || rethrow()
+        return BudgetHit(err.point,region,records;nodes_visited=budget.nodes,
+            elapsed_seconds=_apnx_elapsed(budget))
+    end
+    return Exhausted(region,records;nodes_visited=budget.nodes,
+        elapsed_seconds=_apnx_elapsed(budget))
+end
+
+function _apnx_extensions_backtrack!(found,G::AbstractTruthTable{N,M},budget,region;
+    normalize,max_solutions,linearized_test,observer) where {N,M}
+    K = N-M
+    differential_uniformity(SBox{N}(G.lut)) <= big(1)<<(K+1) || return nothing
+    _apnx_check!(budget,:differential_test)
+    flats = _apnx_flats(G,budget)
+    linearized_test && K == 2 && !_apnx_linearized_consistent(flats,length(G),budget) &&
+        return nothing
+    points = normalize ? _apnx_normalization_points(G,budget) : Int[]
+    values = fill(-1,length(G))
+    for x in points
+        values[x+1] = 0
+    end
+    free = findall(==(-1),values)
+    incidence = [Int[] for _ in eachindex(values)]
+    for (i,flat) in enumerate(flats)
+        for x in flat
+            push!(incidence[x+1],i)
+        end
+        if all(values[x+1]>=0 for x in flat) &&
+            xor((values[x+1] for x in flat)...) == 0
+            return nothing
+        end
+    end
+    function visit(position)
+        _apnx_check!(budget,:backtracking)
+        if position > length(free)
+            F = SBox{N}([(Int(G.lut[x])<<K)|values[x] for x in eachindex(values)])
+            differential_uniformity(F) == 2 || error("invalid flat-constraint extension")
+            push!(found,F)
+            observer === nothing || observer(F)
+            length(found) >= max_solutions && throw(_APNXStopped(StopPoint(:solutions,
+                "extension solution cap";resume_key=Dict{String,Any}(
+                    "assignment"=>copy(values)))))
+            return nothing
+        end
+        point = free[position]
+        forbidden = falses(1<<K)
+        for i in incidence[point]
+            flat = flats[i]
+            rest = filter(x->x+1!=point,flat)
+            all(values[x+1]>=0 for x in rest) || continue
+            forbidden[xor((values[x+1] for x in rest)...)+1] = true
+        end
+        upper = normalize && position == 1 ? 1 : (1<<K)-1
+        for value in 0:upper
+            _apnx_check!(budget,:assignment;consume=true,
+                frontier=Dict{String,Any}("position"=>position,
+                    "assignment"=>copy(values),"next_value"=>value))
+            forbidden[value+1] && continue
+            values[point] = value
+            visit(position+1)
+            values[point] = -1
+        end
+        return nothing
+    end
+    visit(1)
+    return nothing
 end

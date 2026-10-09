@@ -94,7 +94,7 @@ export certified_region, certified_empty_region, assert_exhausted, coverage_note
 
 export switching_neighbors
 export switching_neighbors_bounded
-export apn_extension_space, apn_extensions
+export apn_extension_space, apn_extensions, apn_extension_tests
 export search_quadratic_apn
 export trims, apn_trims, trim_spectrum
 export extend_quadratic_apn

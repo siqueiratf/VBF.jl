@@ -32,5 +32,41 @@
     @test apn_extensions(G;max_solutions=1) isa BudgetHit
     @test length(search_solutions(apn_extensions(G;max_solutions=1))) == 1
     @test_throws ArgumentError apn_extensions(G;max_nodes=-1)
-    @test_throws ArgumentError apn_extensions(VBFTable{3,1}(zeros(Int,8)))
+    @test_throws ArgumentError apn_extensions(gold_apn(3))
+end
+
+@testitem "apn_extensions_two_coordinates_test" begin
+    using VBF
+    G = VBFTable{3,1}(Int.(gold_apn(3).lut) .>> 2)
+    exact = apn_extensions(G;normalize=false,max_nodes=10^7,max_solutions=100000)
+    brute = Set{Vector{UInt8}}()
+    for mask in 0:65535
+        F = SBox{3}([(Int(G(x))<<2)|((mask>>(2x))&3) for x in 0:7])
+        differential_uniformity(F)==2 && push!(brute,F.lut)
+    end
+    @test exact isa Exhausted
+    @test Set(F.lut for F in search_solutions(exact))==brute
+    tests = only(search_solutions(apn_extension_tests(G)))
+    @test tests.passes && tests.linearized_consistent
+    @test tests.differential_bound==8
+    normalized = apn_extensions(G;max_nodes=10^5,max_solutions=10000)
+    @test normalized isa Exhausted
+    @test !isempty(search_solutions(normalized))
+    @test all(F.lut in brute for F in search_solutions(normalized))
+    @test Set(F.lut for F in search_solutions(normalized))==Set(F.lut for F in
+        search_solutions(apn_extensions(G;linearized_test=false,max_solutions=10000)))
+    impossible = VBFTable{3,1}(zeros(Int,8))
+    obstruction = only(search_solutions(apn_extension_tests(impossible)))
+    @test !obstruction.linearized_consistent
+    @test !obstruction.passes
+    @test proves_emptiness(apn_extensions(impossible))
+    @test apn_extension_tests(G;max_nodes=0) isa BudgetHit
+    @test apn_extensions(G;max_solutions=1) isa BudgetHit
+    @test length(search_solutions(apn_extensions(G;max_solutions=1)))==1
+    @test apn_extensions(G;max_nodes=10) isa BudgetHit
+    @test apn_extensions(G;timeout_seconds=0) isa BudgetHit
+    H = VBFTable{4,1}(Int.(gold_apn(4).lut) .>> 3)
+    partial = apn_extensions(H;max_nodes=10000,max_solutions=1)
+    @test partial isa BudgetHit
+    @test all(differential_uniformity(F)==2 for F in search_solutions(partial))
 end
