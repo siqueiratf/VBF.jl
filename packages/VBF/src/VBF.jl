@@ -110,6 +110,7 @@ include("equivalence/partition_refinement/api.jl")
 
 # 6. constructions — building / searching for functions
 include("constructions/switching_neighbors.jl")
+include("constructions/apn_extensions.jl")
 include("constructions/ccz_quadratic.jl")
 include("constructions/quadratic_apn_graph.jl")
 include("constructions/ea_class_orbits.jl")
