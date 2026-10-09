@@ -13,7 +13,8 @@ make -C census/quadratic_apn8/rebuild_corpus test
 make -C census/quadratic_apn8/rebuild_corpus all threads=16
 ```
 
-The stages `fetch`, `stored`, `raw`, and `compare` can also run individually.
+The stages `fetch`, `stored`, `raw`, `compare`, `candidates`, and `equivalence`
+can also run individually.
 All downloaded inputs, progress databases, logs and reports default to the
 ignored `census/quadratic_apn8/results/signature_rebuild/` directory. The
 existing catalog, corpus side stores and sigma index are read-only inputs.
@@ -92,3 +93,27 @@ an exact LUT match requires an EA/CCZ test to resolve equivalence.
 Override `CANDIDATES="/path/one.tsv /path/two.tsv"` to check other runs.
 The screenshot's independent audit is absent from this checkout; counts from
 that screenshot must be compared with the new report, not assumed in advance.
+
+The `equivalence` stage resolves the search matches against their original
+public dump representatives using VBF's native partition refinement with
+`relation=:ea`. It independently rechecks the candidate/public signatures and
+the public record LUT digest before searching. Every positive result saves
+both LUTs and an explicit affine graph map in `equivalence_checks.toml`.
+`ea_witness.jl` checks the map's EA block structure, bijective input/output
+blocks and the graph identity at all 256 inputs, using only the standard
+library. Maps run from the candidate graph to the public graph, packed as
+`(x << 8) | F(x)`; the 16 columns are images of basis bits 0 through 15.
+
+```sh
+make -C census/quadratic_apn8/rebuild_corpus equivalence EA_TIMEOUT=60 EA_MAX_NODES=1000000
+make -C census/quadratic_apn8/rebuild_corpus verify-witnesses
+```
+
+Budget hits remain `inconclusive`. A negative result requires exhaustive
+search against **every** public record with the matching signature. Checks
+are saved after each candidate; completed verdicts resume and unresolved
+ones are retried. The report binds input and source-code hashes; archive it
+before rerunning with changed inputs or code. The completed run found explicit
+EA witnesses for **all 61 matches**, with no inconclusive results. This also
+certifies CCZ equivalence. The separate 110,436 absence results continue to
+certify inequality to the rebuilt quadratic baseline.
