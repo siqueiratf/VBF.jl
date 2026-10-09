@@ -10,16 +10,13 @@ APN functions in small dimensions", 2020, Theorem 6). This file builds
 their generator matrices (`ccz_matrix` / `ea_matrix` / `ae_matrix` /
 `ae_perm_matrix`) plus the `code_weight_enumerator` invariant.
 
-!!! note "Out of scope: the code-equivalence test"
-    Deciding equivalence from these codes requires testing binary linear-code
-    *permutation-equivalence* (J. Leon's algorithm / group-theoretic backends).
-    VBF ships the generator matrices as invariant building blocks but does
-    **not** implement the permutation-equivalence kernel — that would require a
-    native binary-code-equivalence implementation, a project in its
-    own right. Use these matrices for downstream tooling or external
-    code-equivalence software. `code_weight_enumerator` gives a cheap
-    *necessary* condition: equivalent codes have equal weight enumerators,
-    so unequal enumerators prove inequivalence (the converse fails).
+!!! note "Native function-equivalence recovery"
+    [`partition_refinement_equivalence`](@ref) and
+    [`ccz_equivalence_certificate`](@ref) decide function equivalence directly
+    using Kaleyski–Sunde (ePrint 2026/940), without an external code-equivalence
+    solver. These matrices remain useful for invariants and downstream binary
+    coding software. `code_weight_enumerator` is only a necessary condition:
+    unequal enumerators prove inequivalence; equal enumerators do not prove it.
 
 Row layout of every matrix (2n+1 rows): row 1 is the constant-1 row,
 rows `2..n+1` carry the `x`-block bits (LSB first) and rows `n+2..2n+1`
