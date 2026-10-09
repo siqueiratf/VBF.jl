@@ -20,6 +20,7 @@ isdir(API_DIR) && rm(API_DIR; recursive = true)
 mkpath(API_DIR)
 
 const CONCEPTS = [
+    ("search",          "Search outcomes"),
     ("representations", "Representations"),
     ("linalg",          "Linear algebra"),
     ("spectra",         "Spectra"),
@@ -51,6 +52,15 @@ for (dir, title) in CONCEPTS
     end
     push!(api_pages, "api/" * dir * ".md")
 end
+
+open(joinpath(API_DIR, "module.md"), "w") do io
+    println(io, "# VBF module\n")
+    println(io, "```@autodocs")
+    println(io, "Modules = [VBF]")
+    println(io, "Pages = [\"VBF.jl\"]")
+    println(io, "```")
+end
+pushfirst!(api_pages, "api/module.md")
 
 open(joinpath(API_DIR, "catalog.md"), "w") do io
     println(io, "# VBFCatalog\n")

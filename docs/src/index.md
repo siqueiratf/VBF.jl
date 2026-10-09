@@ -33,8 +33,9 @@ using VBFCatalog   # the algorithms plus the catalog
 
 The pages under **API reference** in the sidebar are generated from the source
 docstrings, one page per concept directory of `packages/VBF/src`:
-representations, linear algebra, spectra, invariants, the equivalence hierarchy,
-constructions, random objects, and rendering — plus the VBFCatalog data layer.
+search outcomes, representations, linear algebra, spectra, invariants, the
+equivalence hierarchy, constructions, random objects, and rendering — plus the
+VBFCatalog data layer.
 Each entry carries its underlying mathematics and references.
 
 ## Native CCZ and EA equivalence
