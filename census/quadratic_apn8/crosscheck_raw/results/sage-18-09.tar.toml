@@ -1,0 +1,32 @@
+file = "sage-18-09.tar"
+bytes = 222485638
+records = 681211
+other_lines = 20
+parse_errors = 0
+non_apn = 0
+non_quadratic = 0
+od_undefined = 0
+quadratic_apn = 681211
+distinct_sigma = 681211
+distinct_sigma_in_index = 681211
+distinct_sigma_not_in_index = 0
+records_in_index = 681211
+records_not_in_index = 0
+distinct_sigma_in_553 = 0
+records_in_553 = 0
+spot_checked = 683
+spot_mismatch = 0
+seconds = 96.1
+other_line_samples = ["apnx00=[", "]", "", "apnx01=[", "]", "", "apnx02=[", "]", "", "apnx03=["]
+examples = Tuple{String, String}[]
+[distinct_sigma_by_source]
+functions = 1
+beierle2025_n8 = 674452
+beierleleander2022_n8 = 4004
+beierleleanderperrin2022_n8 = 1218
+edelpott2009_n8 = 0
+simonberg_gf4_n8 = 1
+taniguchi2019_n8 = 0
+wengtangong2013_n8 = 0
+yuperrin2022_qam_n8 = 636
+yuwangli2014_qam_n8 = 901

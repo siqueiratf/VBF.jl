@@ -1,0 +1,3 @@
+dillon	n=6	walsh_zeroes=1071	subspaces=222	seconds=2.11
+kim	n=6	walsh_zeroes=1071	subspaces=222	seconds=1.2
+41	n=8	not finished: killed by timeout 2700 s inside extract_linear_subspaces; 43 not reached

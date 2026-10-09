@@ -1,0 +1,16 @@
+source	idx	u	e	dim_ker_phi	distinct_pi	distinct_sigma	same_sigma_as_F	F_ranks	G_ranks	seconds
+catalog_ccz_n4	25	1	448	3	56	-1	-1	10,5,0	14,1	0.1177
+catalog_ccz_n4	25	2	448	3	56	-1	-1	10,5,0	14,1	0.0001
+catalog_ccz_n4	25	3	448	3	56	-1	-1	10,5,0	14,1	0.0002
+catalog_ccz_n4	25	4	448	3	56	-1	-1	10,5,0	14,1	0.0001
+catalog_ccz_n4	25	5	448	3	56	-1	-1	10,5,0	14,1	0.0001
+catalog_ccz_n4	25	6	448	3	56	-1	-1	10,5,0	14,1	0.0001
+catalog_ccz_n4	25	7	448	3	56	-1	-1	10,5,0	14,1	0.0001
+catalog_ccz_n4	25	8	448	3	56	-1	-1	10,5,0	14,1	0.0001
+catalog_ccz_n4	25	9	448	3	56	-1	-1	10,5,0	14,1	0.2929
+catalog_ccz_n4	25	10	448	3	56	-1	-1	10,5,0	14,1	0.0001
+catalog_ccz_n4	25	11	448	3	56	-1	-1	10,5,0	14,1	0.0001
+catalog_ccz_n4	25	12	448	3	56	-1	-1	10,5,0	14,1	0.0001
+catalog_ccz_n4	25	13	448	3	56	-1	-1	10,5,0	14,1	0.0001
+catalog_ccz_n4	25	14	448	3	56	-1	-1	10,5,0	14,1	0.0001
+catalog_ccz_n4	25	15	448	3	56	-1	-1	10,5,0	14,1	0.0001
