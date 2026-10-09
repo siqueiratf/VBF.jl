@@ -9,6 +9,12 @@ certifies that it is the entire automorphism group. `stop_reason` is `:none`,
 `graph_order` is the order of the induced graph action, `kernel_order` that of
 the pointwise affine kernel, and `order` their product. An order is `nothing`
 if its construction was interrupted. Orders are exact `BigInt` values.
+
+`graph_points` binds a completed native result to the source graph as a detached
+copy of its packed points. A completeness claim may be reused for a function
+only when this provenance matches its graph. Older nine-argument constructors
+leave provenance as `nothing`; those results remain usable as verified
+subgroups, without certifying completeness for another computation.
 """
 struct AutomorphismGroupResult{D}
     relation::Symbol
@@ -20,6 +26,28 @@ struct AutomorphismGroupResult{D}
     kernel_order::Union{Nothing,BigInt}
     nodes_visited::Int
     elapsed_seconds::Float64
+    graph_points::Union{Nothing,Vector{UInt32}}
+end
+
+# Preserve both public constructor forms from before provenance was added.
+function AutomorphismGroupResult{D}(
+    relation, generators, complete, stop_reason, order, graph_order,
+    kernel_order, nodes_visited, elapsed_seconds,
+) where {D}
+    return AutomorphismGroupResult{D}(
+        relation, generators, complete, stop_reason, order, graph_order,
+        kernel_order, nodes_visited, elapsed_seconds, nothing,
+    )
+end
+
+function AutomorphismGroupResult(
+    relation, generators::Vector{F2AffineMap{D,UInt32}}, complete, stop_reason,
+    order, graph_order, kernel_order, nodes_visited, elapsed_seconds,
+) where {D}
+    return AutomorphismGroupResult{D}(
+        relation, generators, complete, stop_reason, order, graph_order,
+        kernel_order, nodes_visited, elapsed_seconds,
+    )
 end
 
 nodes_visited(H::AutomorphismGroupResult) = H.nodes_visited
@@ -134,12 +162,12 @@ function partition_refinement_automorphisms(F::AbstractTruthTable{N,M}; relation
     budget = _PRBudget(start, Float64(timeout_seconds), max_nodes, 0, :none)
     state = _PRDiscovery(_PRPermutationGroup(length(F)), F2AffineMap{(N+M),UInt32}[], 0)
     kernel_order = nothing
-    finish = function ()
+    finish = function (; graph_points = nothing)
         graph_order = _pr_group_order(state.group)
         order = graph_order === nothing || kernel_order === nothing ? nothing : graph_order * kernel_order
         return AutomorphismGroupResult{(N+M)}(relation, state.generators,
             budget.stopped === :none, budget.stopped, order, graph_order, kernel_order,
-            budget.nodes, (time_ns() - start) * 1e-9)
+            budget.nodes, (time_ns() - start) * 1e-9, graph_points)
     end
     _pr_check!(budget) || return finish()
     if max_nodes == 0
@@ -207,7 +235,7 @@ function partition_refinement_automorphisms(F::AbstractTruthTable{N,M}; relation
         kernel, kernel_order = _pr_affine_kernel(F,points,relation===:ea,budget)
         append!(state.generators,kernel)
     end
-    return finish()
+    return finish(; graph_points = budget.stopped === :none ? copy(points) : nothing)
 end
 
 """Validate all ambient generators before trusting any graph-action pruning."""
