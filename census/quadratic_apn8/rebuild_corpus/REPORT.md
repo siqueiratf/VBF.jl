@@ -15,6 +15,8 @@ comparison baseline has **3,809,037 distinct signatures**.
 | Public signatures added beyond the old index | 546 |
 | Candidate records independently verified | 499,627 |
 | Candidate stored-signature mismatches | 0 |
+| Search/public matches proved EA-equivalent by explicit maps | **61** |
+| Unresolved search/public equivalence checks | 0 |
 | Distinct candidate signatures absent from the fresh baseline | **110,436** |
 
 All nine imported corpus LUT sets match their original data. The one excluded
@@ -27,8 +29,14 @@ catalog.
 The search's `desk1/found.tsv` contains 498,300 distinct signatures. Of its
 109,943 records tagged `search`, **61 have a matching signature in the public
 May 2025 dump**; all 61 are absent from the old index. None has an exact LUT
-match among the dump records with that signature. Their novelty requires
-equivalence testing; a matching signature alone does not prove equivalence.
+match among the dump records with that signature. **All 61 have now been
+proved EA-equivalent to public representatives**, by native partition
+refinement followed by independent verification of each explicit map on
+all 256 graph points. Each map preserves the output subspace and has
+bijective input and output blocks, so it certifies EA equivalence and hence
+CCZ equivalence. No check timed out or remained inconclusive. These 61
+search records represent previously public classes, despite their absence
+from the old index.
 The remaining **109,882 search signatures** are absent from the rebuilt
 baseline. All 388,343 records tagged `known` match it.
 
@@ -36,17 +44,26 @@ The union of `desk1/found.tsv`, `new_classes_553.tsv`, `new_classes_extra.tsv`
 and `new_classes_trial_773.tsv` contains 498,840 distinct signatures, of which
 388,404 match the public baseline and 110,436 are absent. There are 787
 duplicate records across these input files. This checkout's candidate inputs
-do not reproduce the screenshot's whole-study count of 110,868; the screenshot's
-independent audit/input manifest is unavailable. The exact checked input hashes
+account for 110,436 absent signatures; the screenshot's larger whole-study
+count of 110,868 cannot be reconciled without its independent audit/input
+manifest, which is unavailable. This is an input-scope discrepancy, not an
+APN verification failure or evidence that the extra 432 claimed classes are
+invalid. The exact checked input hashes
 are saved in the candidate report.
 
 The verifier independently checks Boolean degree two and rank seven of every
 nonzero polar map (the quadratic APN criterion), derives its annihilator, and
 computes differential and absolute Walsh spectra. It calls no VBF verification
 or signature routines. VBF polynomial/compact decoders and the Taniguchi
-constructor remain explicit dependencies. All **121 focused tests pass**.
+constructor remain explicit dependencies. The focused tests also cover
+valid affine witnesses, forged maps, singular blocks, an output-subspace
+violation and correct handling of interrupted versus exhausted searches.
+All **142 focused tests pass**; the standalone verifier also rechecked all
+61 saved witnesses without loading VBF.
 
-Different signatures certify CCZ-inequivalence between quadratic APN functions.
+Different signatures certify CCZ-inequivalence between quadratic APN functions,
+using [Yoshiara's equivalence theorem](https://emis.muni.cz/journals/JACO/Volume35_3/p72q12l317124710.fulltext.pdf)
+and the EA invariance of the ortho-derivative spectra.
 The 110,436 absence results therefore separate those candidates from every
 quadratic APN represented by this rebuilt baseline and from each other. This
 is a certificate against the specified datasets, with the dependencies above;
@@ -62,6 +79,10 @@ is under `../results/signature_rebuild/`:
 - `fresh_union.sqlite`: the rebuilt baseline (`signatures(sigma_hash)`).
 - `candidate_comparison.toml` and `.tsv`: all candidate verdicts and input hashes.
 - `search_public_matches.tsv`: public record pointers for the 61 signature matches.
+- `equivalence_checks.toml`: all 61 explicit EA graph maps, embedded candidate/
+  public LUTs and their hashes, source pointers, search budgets and code hashes.
+- `equivalence.log`: per-candidate search outcomes. Run `make verify-witnesses`
+  in this workflow directory to check every map without loading VBF.
 - `tests.log`, `fetch.log`, `stored.log`, `raw.log`, `comparison.log`,
   `candidates.log`: execution logs.
 

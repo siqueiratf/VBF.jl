@@ -2,6 +2,7 @@ using Test, Random
 include("../rebuild.jl")
 include("candidates.jl")
 include("comparison.jl")
+include("equivalence.jl")
 
 @testset "independent signatures" begin
     rng = Xoshiro(901)
