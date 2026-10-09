@@ -104,9 +104,11 @@
         VBF._pr_individualize!(pp, 1, 7)
         w = VBF._PRWorkspace(10, length(points), nplanes)
         direct = VBF._PRWorkspace(w.scratch, w.point_left, w.point_right,
-            w.plane_left, w.plane_right, w.normals, w.weights, w.point_weights, typemax(Int))
+            w.plane_left, w.plane_right, w.normals, w.weights, w.point_weights,
+            w.point_cells, typemax(Int))
         dense = VBF._PRWorkspace(w.scratch, w.point_left, w.point_right,
-            w.plane_left, w.plane_right, w.normals, w.weights, w.point_weights, 0)
+            w.plane_left, w.plane_right, w.normals, w.weights, w.point_weights,
+            w.point_cells, 0)
         a, b = zeros(Int, length(points)), zeros(Int, length(points))
         VBF._pr_point_scores!(a, points, planes, hp, direct)
         VBF._pr_point_scores!(b, points, planes, hp, dense)

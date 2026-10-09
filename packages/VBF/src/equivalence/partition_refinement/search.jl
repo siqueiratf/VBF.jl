@@ -120,6 +120,11 @@ function _pr_dfs!(F::SBox{N}, G, left, right, planes_left, planes_right, pl, pr,
             _pr_insert!(a, left[pl.order[lo]], right[pr.order[lo]], N, ea) || return nothing
         end
     end
+    @inbounds for c = 1:(length(pr.starts)-1)
+        for j = pr.starts[c]:(pr.starts[c+1]-1)
+            work.point_cells[pr.order[j]] = c
+        end
+    end
     cell, size, xindex = 0, typemax(Int), 0
     @inbounds for c = 1:(length(pl.starts)-1)
         lo, hi = pl.starts[c], pl.starts[c+1] - 1
@@ -132,7 +137,10 @@ function _pr_dfs!(F::SBox{N}, G, left, right, planes_left, planes_right, pl, pr,
                 end
             else
                 # An affine implication must land in the corresponding target cell.
-                any(k -> right[pr.order[k]] == y, lo:hi) || return nothing
+                # Graph points are indexed by input, so membership is O(1).
+                target_index = Int(y >> N) + 1
+                right[target_index] == y && work.point_cells[target_index] == c ||
+                    return nothing
             end
         end
     end
