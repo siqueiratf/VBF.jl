@@ -37,14 +37,28 @@ end
 
 function main(args)
     if "--help" in args
-        println("julia --project=. bench/compare_partition_refinement.jl --reference=/path/to/CCZ-EA-equivalence [--samples=5] [--hard]")
+        println("julia --project=. bench/compare_partition_refinement.jl --reference=/path/to/CCZ-EA-equivalence [--samples=5] [--hard] [--algorithm=optimized|paper] [--translations=quadratic|none] [--only=case1,case2]")
         return
     end
     reference = only(filter(a -> startswith(a, "--reference="), args))[13:end]
     samples_arg = filter(a -> startswith(a, "--samples="), args)
     samples = isempty(samples_arg) ? 5 : parse(Int, only(samples_arg)[11:end])
     samples > 0 && isodd(samples) || error("samples must be positive and odd")
+    algorithm_args = filter(a -> startswith(a,"--algorithm="),args)
+    algorithm = isempty(algorithm_args) ? :optimized : Symbol(only(algorithm_args)[13:end])
+    algorithm in (:paper,:optimized) || error("algorithm must be paper or optimized")
+    translation_args = filter(a -> startswith(a,"--translations="),args)
+    translations = isempty(translation_args) ? :quadratic : Symbol(only(translation_args)[16:end])
+    translations in (:quadratic,:none) || error("translations must be quadratic or none")
+    algorithm===:optimized && translations===:none &&
+        error("optimized automatically prunes quadratic root symmetry; use paper for no translations")
     cases = fixtures(; hard = "--hard" in args)
+    only_args = filter(a -> startswith(a,"--only="),args)
+    if !isempty(only_args)
+        names = split(only(only_args)[8:end],',')
+        all(name -> any(c -> c[1]==name,cases),names) || error("unknown fixture name")
+        filter!(c -> c[1] in names,cases)
+    end
     println("# Julia $(VERSION), $(Sys.CPU_NAME), $(Threads.nthreads()) threads")
     println("# CPU: $(Sys.cpu_info()[1].model); $(first(split(read(`g++ --version`, String), '\n')))")
     println("# Julia source revision: $(chomp(read(`git -C $(@__DIR__) rev-parse HEAD`, String)))")
@@ -54,7 +68,8 @@ function main(args)
     native_hash = sha256(join(relpath(f, native_src) * "\n" * read(f, String) for f in native_files))
     println("# Julia source SHA-256: $(bytes2hex(native_hash))")
     println("# Samples: $samples, fixture seed: 940")
-    println("# C++ -std=c++17 -O3 -DNDEBUG -march=native; quadratic translations only, no general automorphism discovery")
+    println("# Julia algorithm: $algorithm; translations: $translations; no general automorphism discovery")
+    println("# C++ -std=c++17 -O3 -DNDEBUG -march=native")
     println("# Timing includes preprocessing, refinement and certificate recovery; excludes JIT, I/O and verification")
     flush(stdout)
     mktempdir() do tmp
@@ -71,16 +86,25 @@ function main(args)
         input = joinpath(tmp, "fixtures.txt")
         open(input, "w") do io
             for (name, relation, F, G, expected) in cases
-                println(io, "$name $relation $(inputbits(F)) $(Int(expected)) $samples")
+                println(io, "$name $relation $(inputbits(F)) $(Int(expected)) $samples $(Int(translations===:quadratic))")
                 println(io, join(F.lut, ' ')); println(io, join(G.lut, ' '))
             end
         end
         output = read(pipeline(`timeout 180 $binary`; stdin = input), String)
-        cpp = Dict(name => parse(Float64, seconds) for (name, seconds) in
+        cpp = Dict(fields[1] => parse.(Float64,fields[2:4]) for fields in
                    (split(line, ',') for line in split(chomp(output), '\n')))
-        println("case,julia_seconds,cpp_seconds,julia_over_cpp,nodes")
+        println("case,julia_seconds,cpp_seconds,julia_over_cpp,nodes,julia_min_seconds,julia_max_seconds,cpp_min_seconds,cpp_max_seconds")
         for (name, relation, F, G, expected) in cases
-            solve() = partition_refinement_equivalence(F, G; relation, algorithm=:optimized, timeout_seconds = 120.0)
+            function solve()
+                if algorithm===:paper && translations===:quadratic
+                    # Lemma 14 generators are constructed within each timed call,
+                    # matching the C++ driver's supplied graph-action subgroup.
+                    H = algebraic_degree(G)<=2 ? VBF._pr_quadratic_translations(G) : F2AffineMap[]
+                    return partition_refinement_equivalence(F,G;relation,algorithm,
+                        automorphisms=H,timeout_seconds=120.0)
+                end
+                return partition_refinement_equivalence(F,G;relation,algorithm,timeout_seconds=120.0)
+            end
             result = solve() # compilation excluded
             verify(result, F, G, relation === :ea, expected)
             times = Float64[]
@@ -91,7 +115,9 @@ function main(args)
                 push!(times, elapsed)
             end
             seconds = median(times)
-            println("$name,$seconds,$(cpp[name]),$(seconds/cpp[name]),$(nodes_visited(result))")
+            cseconds,cmin,cmax = cpp[name]
+            println("$name,$seconds,$cseconds,$(seconds/cseconds),$(nodes_visited(result)),$(minimum(times)),$(maximum(times)),$cmin,$cmax")
+            flush(stdout)
         end
     end
 end

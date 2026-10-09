@@ -460,15 +460,35 @@ git -C /tmp/CCZ-EA-equivalence checkout c9cec6515b3297abf5c15fedd23e55b43f2ba888
 julia --startup-file=no --project=. bench/compare_partition_refinement.jl \
   --reference=/tmp/CCZ-EA-equivalence --samples=5
 # Add --hard to include the more expensive seven-bit Gold negative case.
+# Use the paper profile with the same quadratic translation subgroup:
+julia --startup-file=no --project=. bench/compare_partition_refinement.jl \
+  --reference=/tmp/CCZ-EA-equivalence --samples=7 --hard \
+  --algorithm=paper --translations=quadratic
+# To measure Algorithm 7 without any supplied group, use:
+# --algorithm=paper --translations=none
+# --only=case1,case2 limits the run to named fixtures.
 ```
 
 The runner compiles C++17 with `g++ -O3 -DNDEBUG -march=native` to match Julia's
 use of the host CPU, warms both implementations,
 reports median wall times, and checks every decision and recovered witness.
+It also reports the minimum and maximum sampled wall times.
 Timings include graph construction, preprocessing and search, excluding JIT,
-compilation, fixture I/O and the driver's independent certificate checks. C++
-gets the same automatic quadratic translation symmetry reduction as Julia;
-neither side computes or receives a general automorphism group. The reference
+compilation, fixture I/O and the driver's independent certificate checks.
+The C++ timer now includes completion of the point correspondence to a full
+ambient affine certificate. The historical table below predates this timing
+boundary correction and excluded that small completion cost on the C++ side.
+
+The runner defaults to `--algorithm=optimized --translations=quadratic`,
+preserving the original comparison's root-symmetry policy. In
+`--algorithm=paper --translations=quadratic`, both sides construct and supply
+Lemma 14's quadratic translation generators during each timed call; Julia
+also validates the supplied affine generators through its native solver API.
+`--algorithm=paper --translations=none` supplies no group on either side.
+The optimized profile automatically prunes quadratic root symmetry, so the
+runner rejects `--algorithm=optimized --translations=none` as a mismatched
+comparison. No mode discovers or supplies a general automorphism group.
+The reference
 process has a 180-second limit for the whole batch; native searches have
 120-second and one-million-node limits per call. An inconclusive result fails
 the comparison. Metadata records Julia/compiler/CPU, source revision, native
@@ -477,13 +497,17 @@ and reference source SHA-256 hashes, seed and sample count.
 The two implementations follow different refinement heuristics: Julia follows
 the paper's ordering of initial hyperplane classes by absolute Walsh value and
 retains signed incidence signatures; the pinned C++ version selects the
-smallest classes and takes absolute signatures. These timings compare complete
+smallest classes and takes absolute signatures. The paper profile also uses
+fresh shared random keys and preserves the prescribed ordered partitions.
+These timings compare complete
 recovery procedures, not identical instruction sequences. This comparison
 disables general automorphism discovery and stabilizer pruning on both sides;
 workloads using a precomputed group are outside its scope. The separate
 optimization runner below includes group discovery and stabilizer pruning.
 Performance is instance-dependent, with exponential worst-case search and O(2^(2n))
-transform storage.
+transform storage for square functions. Timings with a supplied subgroup do
+not describe the unseeded public default, which uses `algorithm=:paper` and no
+group discovery unless requested.
 
 The existing equivalence suite also registers strict native decisions and
 `ccz_equivalence_certificate` / `ea_equivalence_certificate` recovery cases.
