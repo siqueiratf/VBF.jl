@@ -86,9 +86,54 @@ result = partition_refinement_equivalence(F, G; relation=:ea,
 The memory budget checks a conservative allocation estimate, not process RSS.
 The transform uses O(2^(2n)) storage and the worst-case search is exponential.
 Quadratic target graphs get automatic translation symmetry reduction at the
-root. General automorphism discovery and stabilizer-group pruning from the
-paper are not implemented. The older `:heggebakk`, `:ortho_derivative` and CCZ
+root. The older `:heggebakk`, `:ortho_derivative` and CCZ
 `:canteaut_perrin` strategies remain available explicitly. Native refinement
 decides and recovers one map; it does not replace the APIs enumerating all EA
 maps or entire CCZ classes. See [the reproducible comparison](https://github.com/zambonin/VBF.jl/blob/main/bench/README.md#native-partition-refinement-comparison)
 for the C++ benchmark and its scope.
+
+### Automorphism groups and stabilizer pruning
+
+Group discovery is part of the paper's Algorithms 4–5; Algorithms 6–7 use
+stabilizer orbits to prune equivalence searches. VBF implements these with
+native deterministic Schreier–Sims chains on graph points. The affine lift
+includes the pointwise kernel from Lemma 13, so it also returns the whole
+ambient group for rank-deficient graphs. Orders use exact `BigInt` arithmetic.
+
+```julia
+F, G = gold_apn(7, 1), gold_apn(7, 2)
+H = partition_refinement_automorphisms(G; relation=:ccz)
+@assert H.complete && H.order == 113792
+result = partition_refinement_equivalence(F, G; automorphisms=H)
+@assert result isa Exhausted
+@assert nodes_visited(result) == 21  # the paper's Example 2
+```
+
+`H.generators` are verified affine maps, not every group element. A stopped
+discovery returns `H.complete == false` and a valid subgroup which is still
+safe to use for pruning. `H.stop_reason` explains the limit; `H.order` can be
+`nothing` if group construction was interrupted. Supplied maps are checked
+against the target graph before use. For EA, discover with `relation=:ea`;
+CCZ generators may violate the required output-subspace condition.
+
+All decision and certificate APIs accept `automorphisms=H`. For a one-off
+query, `automorphism_timeout_seconds=1.0` discovers a bounded target subgroup
+first, sharing the query's overall time, node and memory budgets. Discovery is
+opt-in: easy queries often finish faster without it. Reuse a discovered group
+when testing many functions against the same target. Group memory estimates
+include stabilizer chains across the DFS depth and can reject a computation
+before allocating its buffers.
+
+### Optional parallel refinement
+
+Start Julia with `julia --threads=4 --project=.` and pass `threaded=true` to a
+search or certificate API. Large fixed-width Walsh transforms and large direct
+incidence sums then run on independent output slices. Small workloads stay
+serial to avoid task overhead. The Walsh API also accepts
+`walsh_hadamard!(v; threaded=true)`.
+
+DFS and group mutations remain serial; integer signatures, search order, node
+budgets and completeness are unchanged. Independent group searches can also
+run concurrently because their mutable state is search-local. The paper's
+Section 9 proposes implementation optimization and parallelization as future
+work; it does not give a parallel algorithm.
