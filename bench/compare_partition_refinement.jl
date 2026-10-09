@@ -80,7 +80,7 @@ function main(args)
                    (split(line, ',') for line in split(chomp(output), '\n')))
         println("case,julia_seconds,cpp_seconds,julia_over_cpp,nodes")
         for (name, relation, F, G, expected) in cases
-            solve() = partition_refinement_equivalence(F, G; relation, timeout_seconds = 120.0)
+            solve() = partition_refinement_equivalence(F, G; relation, algorithm=:optimized, timeout_seconds = 120.0)
             result = solve() # compilation excluded
             verify(result, F, G, relation === :ea, expected)
             times = Float64[]

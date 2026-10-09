@@ -62,8 +62,8 @@ function _pr_individualize!(p::_PRPartition, c::Int, element::Int)
 end
 
 """Retain corresponding smallest whole hyperplane cells, up to a floor."""
-function _pr_trim_pair!(a::_PRPartition, b::_PRPartition, floor::Int)
-    length(a.order) <= floor && return
+function _pr_trim_pair!(a::_PRPartition, b::_PRPartition, floor::Int; preserve_order::Bool = true)
+    preserve_order && length(a.order) <= floor && return
     cells = collect(1:(length(a.starts)-1))
     sort!(cells; by = c -> (a.starts[c+1] - a.starts[c], c))
     total, nkeep = 0, 0
@@ -73,7 +73,7 @@ function _pr_trim_pair!(a::_PRPartition, b::_PRPartition, floor::Int)
         total >= floor && break
     end
     resize!(cells, nkeep)
-    sort!(cells)
+    preserve_order && sort!(cells)
     oa, ob, starts = Int[], Int[], Int[1]
     sizehint!(oa, total)
     sizehint!(ob, total)

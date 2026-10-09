@@ -48,6 +48,12 @@ functions using the partition refinement framework*. The authors also provide a
 VBF uses its existing Walsh transform, GF(2) linear maps and function graphs;
 there is no sboxU, Sage, Python or C++ dependency in the Julia package.
 
+The default `algorithm=:paper` follows the paper's fresh shared random weights
+and ordered partitions. Supply `rng=Xoshiro(seed)` (from `Random`) for replay.
+The earlier deterministic heuristic choices are available explicitly as
+`algorithm=:optimized`. See [algorithm conformance](partition_refinement_conformance.md)
+for the step mapping, independent validation and documented extensions.
+
 Recover and check an affine map from F's graph to G's graph:
 
 ```julia

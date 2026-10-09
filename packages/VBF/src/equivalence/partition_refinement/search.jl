@@ -76,15 +76,20 @@ function _pr_refine!(pl, pr, hl, hr, left, right, planes_left, planes_right,
                      work, floor, budget)
     while _pr_check!(budget)
         before = length(pl.starts) + length(hl.starts)
-        _pr_point_scores!(work.point_left, left, planes_left, hl, work)
-        _pr_point_scores!(work.point_right, right, planes_right, hr, work)
+        keys = work.algorithm === :paper ? rand(work.rng,1:8191,length(hl.starts)-1) : nothing
+        _pr_point_scores!(work.point_left, left, planes_left, hl, work;keys)
+        _pr_point_scores!(work.point_right, right, planes_right, hr, work;keys)
         _pr_split_pair!(pl, pr, work.point_left, work.point_right) || return false
+        work.trace === nothing || work.trace(:points,pl,pr,hl,hr)
         _pr_check!(budget) || return false
-        _pr_plane_scores!(work.plane_left, left, pl, planes_left, hl, work)
-        _pr_plane_scores!(work.plane_right, right, pr, planes_right, hr, work)
+        keys = work.algorithm === :paper ? rand(work.rng,1:8191,length(pl.starts)-1) : nothing
+        _pr_plane_scores!(work.plane_left, left, pl, planes_left, hl, work;keys)
+        _pr_plane_scores!(work.plane_right, right, pr, planes_right, hr, work;keys)
         _pr_split_pair!(hl, hr, work.plane_left, work.plane_right) || return false
+        work.trace === nothing || work.trace(:hyperplanes,pl,pr,hl,hr)
         if before == length(pl.starts) + length(hl.starts)
-            _pr_trim_pair!(hl, hr, floor)
+            _pr_trim_pair!(hl, hr, floor;preserve_order=work.algorithm!==:paper)
+            work.trace === nothing || work.trace(:trim,pl,pr,hl,hr)
             return true
         end
     end
@@ -196,10 +201,11 @@ end
     partition_refinement_equivalence(F, G; relation=:ccz, max_nodes=10^6,
         timeout_seconds=60.0, min_active_hyperplanes=0,
         max_memory_bytes=512*1024^2, automorphisms=nothing,
-        automorphism_timeout_seconds=0.0, threaded=false) -> SearchOutcome{F2AffineMap}
+        automorphism_timeout_seconds=0.0, threaded=false,
+        algorithm=:paper, rng=Xoshiro(940)) -> SearchOutcome{F2AffineMap}
 
 Kaleyski–Sunde (2026), Algorithms 1–3, 6–7: recover a CCZ or EA affine map
-**from F's graph to G's graph** for arbitrary square SBoxes. `relation` is
+**from F's graph to G's graph** for square SBoxes or rectangular VBFTable objects. `relation` is
 `:ccz` or `:ea`. `Found` contains one verified invertible `F2AffineMap`;
 `Exhausted` with no witnesses proves inequivalence; `BudgetHit` proves nothing.
 
@@ -224,6 +230,11 @@ remain serial, and integer signatures, search order and node limits are unchange
 
 Credits: Nikolay Kaleyski and Joakim Sunde, ePrint 2026/940,
 https://eprint.iacr.org/2026/940. No sboxU, Sage or C++ runtime is required.
+
+`algorithm=:paper` uses fresh shared random keys and the ordered partitions
+prescribed in Algorithms 3, 5 and 7. Supply a fresh seeded `rng` to replay a
+query. `algorithm=:optimized` preserves the earlier deterministic weights,
+canonical cell order and quadratic root symmetry explicitly.
 """
 function partition_refinement_equivalence(
     F::AbstractTruthTable{N,M}, G::AbstractTruthTable; relation::Symbol = :ccz, max_nodes::Int = 10^6,
@@ -231,7 +242,9 @@ function partition_refinement_equivalence(
     max_memory_bytes::Int = 512 * 1024^2,
     automorphisms = nothing, automorphism_timeout_seconds::Real = 0.0,
     threaded::Bool = false,
+    algorithm::Symbol = :paper, rng::AbstractRNG = Xoshiro(940),
 ) where {N,M}
+    algorithm in (:paper,:optimized) || throw(ArgumentError("algorithm must be :paper or :optimized"))
     relation in (:ccz, :ea) || throw(ArgumentError("relation must be :ccz or :ea"))
     max_nodes >= 0 || throw(ArgumentError("max_nodes must be nonnegative"))
     timeout_seconds >= 0 || throw(ArgumentError("timeout_seconds must be nonnegative"))
@@ -275,7 +288,7 @@ function partition_refinement_equivalence(
     hg = _pr_intersection_histogram(wg, length(right))
     hf == hg || return finish(nothing)
     floor = min_active_hyperplanes == 0 ? (N <= 7 ? 16 : 2) * length(left) : min_active_hyperplanes
-    classes, nplanes = _pr_select_classes(hf, floor)
+    classes, nplanes = _pr_select_classes(hf, floor;preserve_order=algorithm!==:paper)
     estimate = (Int128(16) << ((N+M))) + Int128(nplanes + length(left)) * (64 + 32 * ((N+M) + 2))
     estimate += group_memory
     if estimate > max_memory_bytes
@@ -286,7 +299,7 @@ function partition_refinement_equivalence(
         remaining = max(0.0, budget.timeout - (time_ns() - start) * 1e-9)
         discovered = partition_refinement_automorphisms(G; relation,
             timeout_seconds = min(Float64(automorphism_timeout_seconds), remaining),
-            max_nodes, min_active_hyperplanes, max_memory_bytes, threaded)
+            max_nodes, min_active_hyperplanes, max_memory_bytes, threaded, algorithm, rng)
         budget.nodes += discovered.nodes_visited
         previous = automorphisms isa AutomorphismGroupResult ? automorphisms.generators : automorphisms
         automorphisms = previous === nothing ? discovered : vcat(collect(previous), discovered.generators)
@@ -297,9 +310,9 @@ function partition_refinement_equivalence(
     _pr_check!(budget) || return finish(nothing)
     planes_left, hl = _pr_build_planes(wf, length(left), classes, hf)
     planes_right, hr = _pr_build_planes(wg, length(right), classes, hg)
-    work = _PRWorkspace((N+M), length(left), nplanes; threaded)
+    work = _PRWorkspace((N+M), length(left), nplanes; threaded, algorithm, rng)
     pl, pr = _PRPartition(length(left)), _PRPartition(length(right))
-    transitive = algebraic_degree(G) <= 2
+    transitive = algorithm === :optimized && algebraic_degree(G) <= 2
     cert = _pr_dfs!(F, G, left, right, planes_left, planes_right, pl, pr, hl, hr,
                     _PRAffineMap(N,M), work, floor, relation === :ea, budget, transitive, H)
     return finish(cert)

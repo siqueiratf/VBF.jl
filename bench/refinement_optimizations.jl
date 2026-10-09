@@ -30,17 +30,17 @@ function optimization_main(args)
         check(r) = verify(r,F,G,relation===:ea,expected)
         # Warm discovery separately: compilation is included in search budgets,
         # but must not consume the short discovery allowance in measurements.
-        H = partition_refinement_automorphisms(G;relation,timeout_seconds=10)
+        H = partition_refinement_automorphisms(G;relation,algorithm=:optimized,timeout_seconds=10)
         auto_check(r) = all(A -> is_invertible(A) && ccz_equivalent_function(G,A)==G &&
             (relation !== :ea || all(v -> v >> inputbits(G) == 0,A.linear.cols[1:inputbits(G)])),
             r.generators) || error("invalid automorphism")
         seconds,bytes,H = measure(() -> partition_refinement_automorphisms(G;
-            relation,timeout_seconds=1),auto_check,samples)
+            relation,algorithm=:optimized,timeout_seconds=1),auto_check,samples)
         println("$name,discovery,$seconds,$bytes,$(nodes_visited(H)),$(H.complete),$(H.order)")
         for (mode,options) in (("unpruned",(;)),("supplied_group",(;automorphisms=H)),
                               ("discovery_and_search",(;automorphism_timeout_seconds=1.0)))
             seconds,bytes,r = measure(() -> partition_refinement_equivalence(F,G;
-                relation,timeout_seconds=120,options...),check,samples)
+                relation,algorithm=:optimized,timeout_seconds=120,options...),check,samples)
             println("$name,$mode,$seconds,$bytes,$(nodes_visited(r)),,")
             flush(stdout)
         end
@@ -51,7 +51,7 @@ function optimization_main(args)
     for threaded in (false,true)
         check(r) = verify(r,F,G,true,true)
         seconds,bytes,r = measure(() -> partition_refinement_equivalence(F,G;
-            relation=:ea,threaded,timeout_seconds=120),check,samples)
+            relation=:ea,algorithm=:optimized,threaded,timeout_seconds=120),check,samples)
         println("random9_positive,$(threaded ? "threaded" : "serial"),$seconds,$bytes,$(nodes_visited(r)),,")
     end
     println("# Walsh buffers are reset outside timing; transformation and its temporary allocations are timed")

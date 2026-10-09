@@ -441,6 +441,12 @@ the old CSV; it does not read the new database table.
 
 ## Native partition refinement comparison
 
+These historical performance comparisons explicitly select
+`algorithm=:optimized`: bounded deterministic weights, canonical cell order
+and quadratic root symmetry. The default `algorithm=:paper` follows the
+paper's random-key and prescribed ordered-partition steps. These timings do
+not describe the paper profile; see the conformance document under `docs/src/`.
+
 The native CCZ/EA recovery algorithm is credited to Nikolay Kaleyski and Joakim
 Sunde, [ePrint 2026/940](https://eprint.iacr.org/2026/940). A standalone runner
 compares VBF's public `partition_refinement_equivalence` against their
