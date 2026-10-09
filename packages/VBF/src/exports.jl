@@ -31,6 +31,7 @@ export random_linear_permutation,
 # tier 5 — algorithms
 export is_invertible, compose, solve_f2, kernel_f2
 export extract_linear_subspaces, span_from_basis
+export extract_linear_subspaces_bounded
 export smallest_basis,
     find_2d_subspaces, expand_subspaces, subspace_count_signature
 export identity_affine_map, zero_affine_map
@@ -91,6 +92,7 @@ export outcome_tag, is_exhausted, is_budget_hit, proves_emptiness
 export certified_region, certified_empty_region, assert_exhausted, coverage_note
 
 export switching_neighbors
+export switching_neighbors_bounded
 export search_quadratic_apn
 export trims, apn_trims, trim_spectrum
 export extend_quadratic_apn
