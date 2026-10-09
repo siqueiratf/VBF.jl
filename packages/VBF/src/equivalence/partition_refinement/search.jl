@@ -7,10 +7,11 @@ functions using the partition refinement framework*, ePrint 2026/940 (2026),
 https://eprint.iacr.org/2026/940. Reference implementation:
 https://github.com/zskiley/CCZ-EA-equivalence.
 
-This Julia implementation uses VBF's packing `(x << n) | F(x)` throughout.
-Consequently the EA output subspace occupies the **low** n bits. Signed
-signatures implement the paper's incidence refinement, with deterministic cell
-weights. Hyperplanes only prune; every witness is checked against the full graph.
+This Julia implementation uses VBF's packing `(x << m) | F(x)` throughout.
+Consequently the EA output subspace occupies the **low** m bits. Signed
+signatures implement the paper's incidence refinement with shared random cell
+weights in the default paper profile. Hyperplanes only prune; every witness is
+checked against the full graph.
 """
 
 """Search-local deadline and node count, including preprocessing time."""
@@ -228,15 +229,17 @@ them; it is not a process RSS limit. `min_active_hyperplanes` is a refinement
 floor, not a correctness limit: whole cells are retained and may exceed it.
 Zero selects `16*2^n` for n ≤ 7 and `2*2^n` otherwise. The search is complete
 when allowed to exhaust, but its worst-case tree is exponential. Storage is
-O(2^(2n)) for the transform, so larger dimensions may hit the memory budget.
+O(2^(n+m)) for the transform, so larger dimensions may hit the memory budget.
 
 `automorphisms` accepts a verified [`AutomorphismGroupResult`](@ref) or an
 iterable of target-graph affine automorphisms. Every map is revalidated; EA
 pruning also requires output-subspace preservation. Stabilizers branch on
 one target per orbit (Lemma 12). A positive `automorphism_timeout_seconds`
-first discovers a bounded target subgroup; discovery and chain construction
-share the overall deadline, memory estimate and DFS-node budget. Discovery
-is opt-in so easy instances do not pay for a group computation.
+uses bounded discovery on both functions in the paper profile (Section 6.2);
+source-group selection reverses the internal search and inverts the witness
+back to F → G. Supplied generators retain the target orientation. Discovery
+and chain construction share the overall deadline, memory estimate and DFS-node
+budget. Discovery is opt-in so easy instances do not pay for a group computation.
 `threaded=true` uses independent parallel incidence sums and large Walsh
 transforms when Julia has multiple default-pool threads. DFS and group updates
 remain serial, and integer signatures, search order and node limits are unchanged.

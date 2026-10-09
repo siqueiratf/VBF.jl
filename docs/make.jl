@@ -70,6 +70,7 @@ makedocs(
     plugins = [bib],
     pages = [
         "Home" => "index.md",
+        "2026/940 algorithm conformance" => "partition_refinement_conformance.md",
         "API reference" => api_pages,
         "References" => "references.md",
     ],

@@ -73,9 +73,9 @@ c = ea_equivalence_certificate(F, G)
 @assert all(c.L1(F(c.A2(x))) ⊻ c.A_drift(x) == G(x) for x in 0:31)
 ```
 
-The graph convention is `(x << n) | F(x)`, so EA maps preserve the **low-bit**
-output subspace. Every recovered map is checked for invertibility and against
-the whole target graph. The search handles arbitrary square SBoxes and
+For n-input, m-output functions, graphs pack `(x << m) | F(x)`; EA maps preserve
+the **output subspace formed by the low m bits**. Every recovered map is checked
+for invertibility and against the whole target graph. The search handles arbitrary square SBoxes and
 rectangular `VBFTable{N,M}` functions F₂ⁿ → F₂ᵐ, including
 nonpermutations and affine graphs that do not span the ambient space.
 
@@ -91,9 +91,9 @@ result = partition_refinement_equivalence(F, G; relation=:ea,
 ```
 
 The memory budget checks a conservative allocation estimate, not process RSS.
-The transform uses O(2^(2n)) storage and the worst-case search is exponential.
-Quadratic target graphs get automatic translation symmetry reduction at the
-root. The older `:heggebakk`, `:ortho_derivative` and CCZ
+The transform uses O(2^(n+m)) storage and the worst-case search is exponential.
+In the explicit optimized profile, quadratic target graphs get automatic
+translation symmetry reduction at the root. The older `:heggebakk`, `:ortho_derivative` and CCZ
 `:canteaut_perrin` strategies remain available explicitly. Native refinement
 decides and recovers one map; it does not replace the APIs enumerating all EA
 maps or entire CCZ classes. See [the reproducible comparison](https://github.com/zambonin/VBF.jl/blob/main/bench/README.md#native-partition-refinement-comparison)
