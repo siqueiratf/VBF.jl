@@ -24,6 +24,7 @@ struct _PRWorkspace{T<:Signed}
     normals::Vector{UInt32}
     weights::Vector{Int}
     point_weights::Vector{Int}
+    point_cells::Vector{Int}
     direct_threshold::Int
 end
 
@@ -33,7 +34,8 @@ function _PRWorkspace(d::Int, npoints::Int, nplanes::Int)
     return _PRWorkspace(
         zeros(T, 1 << d), zeros(Int, npoints), zeros(Int, npoints),
         zeros(Int, nplanes), zeros(Int, nplanes), zeros(UInt32, nplanes),
-        zeros(Int, nplanes), zeros(Int, npoints), (d * (1 << d)) ÷ npoints,
+        zeros(Int, nplanes), zeros(Int, npoints), zeros(Int, npoints),
+        (d * (1 << d)) ÷ npoints,
     )
 end
 
