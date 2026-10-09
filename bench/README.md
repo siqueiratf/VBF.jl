@@ -438,3 +438,74 @@ raw benchmark counts or APN identities.
 remain available for historical workflows. Normal benchmark targets do not run
 the exporters or refresh those artifacts. `make crossings` explicitly processes
 the old CSV; it does not read the new database table.
+
+## Native partition refinement comparison
+
+The native CCZ/EA recovery algorithm is credited to Nikolay Kaleyski and Joakim
+Sunde, [ePrint 2026/940](https://eprint.iacr.org/2026/940). A standalone runner
+compares VBF's public `partition_refinement_equivalence` against their
+[C++ reference core](https://github.com/zskiley/CCZ-EA-equivalence), on identical
+seeded truth tables. It uses temporary files and leaves the catalog database
+untouched. No reference implementation or paper PDF is vendored.
+
+```bash
+git clone https://github.com/zskiley/CCZ-EA-equivalence /tmp/CCZ-EA-equivalence
+git -C /tmp/CCZ-EA-equivalence checkout c9cec6515b3297abf5c15fedd23e55b43f2ba888
+julia --startup-file=no --project=. bench/compare_partition_refinement.jl \
+  --reference=/tmp/CCZ-EA-equivalence --samples=5
+# Add --hard to include the more expensive seven-bit Gold negative case.
+```
+
+The runner compiles C++17 with `g++ -O3 -DNDEBUG -march=native` to match Julia's
+use of the host CPU, warms both implementations,
+reports median wall times, and checks every decision and recovered witness.
+Timings include graph construction, preprocessing and search, excluding JIT,
+compilation, fixture I/O and the driver's independent certificate checks. C++
+gets the same automatic quadratic translation symmetry reduction as Julia;
+neither side computes or receives a general automorphism group. The reference
+process has a 180-second limit for the whole batch; native searches have
+120-second and one-million-node limits per call. An inconclusive result fails
+the comparison. Metadata records Julia/compiler/CPU, source revision, native
+and reference source SHA-256 hashes, seed and sample count.
+
+The two implementations follow different refinement heuristics: Julia follows
+the paper's ordering of initial hyperplane classes by absolute Walsh value and
+retains signed incidence signatures; the pinned C++ version selects the
+smallest classes and takes absolute signatures. These timings compare complete
+recovery procedures, not identical instruction sequences. General automorphism
+discovery and stabilizer pruning are not yet implemented in Julia; workloads
+using a precomputed automorphism group are outside this comparison. Performance
+is instance-dependent, with exponential worst-case search and O(2^(2n))
+transform storage.
+
+The existing equivalence suite also registers strict native decisions and
+`ccz_equivalence_certificate` / `ea_equivalence_certificate` recovery cases.
+
+Measured on 2026-10-09 with Julia 1.13.1, GCC 16.2.1 and an AMD Ryzen AI MAX+
+395, one Julia thread, seed 940, five timed samples plus warm-up (`--hard`):
+
+| Fixture | Relation | Julia median (ms) | C++ median (ms) | Julia nodes |
+| :--- | :--- | ---: | ---: | ---: |
+| Gold 5-bit positive | EA | 0.533 | 4.337 | 12 |
+| Gold 7-bit positive | EA | 7.164 | 16.059 | 18 |
+| Gold 8-bit positive | EA | 3.369 | 10.504 | 6 |
+| Gold 5-bit negative | CCZ | 28.098 | 75.618 | 963 |
+| Gold 8-bit negative | CCZ | 79.198 | 251.257 | 257 |
+| Kim / Dillon | CCZ | 1.473 | 4.265 | 10 |
+| Kim / Dillon | EA (negative) | 626.425 | 1622.939 | 4097 |
+| Random 8-bit positive | EA | 0.761 | 2.211 | 1 |
+| Gold 7-bit negative | CCZ | 5304.480 | 9107.524 | 16131 |
+
+Native source revision: `cb3050138a19bbe55a2c8ad27b489a346c249c21`.
+Native source SHA-256:
+`742ac7eb2699a79e2ee0299c1ee5e32cd24bb451cf7d272555a814c792e99290`.
+Reference source SHA-256:
+`d26c2ea762258e3ce3cf21a7b0cf6d4e55d6488a717c2f0b3e62bf04cbe09757`.
+These local measurements are not a guarantee for other functions or hardware.
+
+Validation on the same Julia version: 120,990 assertions pass across 86 test
+items, including all new native tests and the independent exhaustive three-bit
+EA oracle. The unfiltered suite has two failing baseline items,
+`linear_backtracking` and `extensions`; both failures reproduce with the
+unchanged source at `f0401a2`. The successful regression run excluded only
+those two items (`VBF_TEST_NAME='(?!linear_backtracking$|extensions$).*'`).

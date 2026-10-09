@@ -188,10 +188,8 @@ function register!(reg)
 
     bench!(reg; group = G, name = "are_ea_equivalent_pos", n = 5, cost = 1,
            setup = () -> (F = gold_apn(5, 1); (F, lin_copy(F, 11))),
-           call  = p -> are_ea_equivalent(p[1], p[2];
-                                          max_outer_per_sigma = 10^6,
-                                          max_inner_affine = 10^7),
-           note  = "positive, ortho-derivative test")
+           call  = p -> are_ea_equivalent(p[1], p[2]; on_inconclusive = :throw),
+           note  = "positive, native graph refinement")
 
     bench!(reg; group = G, name = "are_ea_equivalent_neg_heggebakk", n = 5,
            cost = 2,
@@ -204,16 +202,12 @@ function register!(reg)
 
     bench!(reg; group = G, name = "are_ea_equivalent_pos", n = 8, cost = 2,
            setup = () -> (F = gold_apn(8, 1); (F, lin_copy(F, 11))),
-           call  = p -> are_ea_equivalent(p[1], p[2];
-                                          max_outer_per_sigma = 10^6,
-                                          max_inner_affine = 10^7),
+           call  = p -> are_ea_equivalent(p[1], p[2]; on_inconclusive = :throw),
            note  = "positive answer at n=8")
 
     bench!(reg; group = G, name = "are_ea_equivalent_neg", n = 8, cost = 1,
            setup = () -> (gold_apn(8, 1), gold_apn(8, 3)),
-           call  = p -> are_ea_equivalent(p[1], p[2];
-                                          max_outer_per_sigma = 10^6,
-                                          max_inner_affine = 10^7),
+           call  = p -> are_ea_equivalent(p[1], p[2]; on_inconclusive = :throw),
            note  = "negative answer at n=8")
 
     bench!(reg; group = G, name = "ea_equivalences", n = 4, cost = 2,
@@ -232,9 +226,7 @@ function register!(reg)
     bench!(reg; group = G, name = "are_ccz_equivalent_neg", n = 6, cost = 1,
            setup = () -> (dillon_apn_permutation(),
                           random_permutation_sbox(Xoshiro(3), Val(6))),
-           call  = p -> are_ccz_equivalent(p[1], p[2]; max_class_reps = 10^4,
-                                           ea_max_outer_per_sigma = 10^6,
-                                           on_inconclusive = :best_effort),
+           call  = p -> are_ccz_equivalent(p[1], p[2]; on_inconclusive = :throw),
            note  = "negative, invariant rejects the pair")
 
     bench!(reg; group = G, name = "enumerate_ccz_class", n = 6, cost = 2,
@@ -255,10 +247,18 @@ function register!(reg)
 
     bench!(reg; group = G, name = "are_ccz_equivalent_pos", n = 6, cost = 2,
            setup = () -> (kim_apn(), dillon_apn_permutation()),
-           call  = p -> are_ccz_equivalent(p[1], p[2]; max_class_reps = 10^4,
-                                           ea_max_outer_per_sigma = 10^6,
-                                           on_inconclusive = :best_effort),
+           call  = p -> are_ccz_equivalent(p[1], p[2]; on_inconclusive = :throw),
            note  = "positive, Kim against Dillon")
+
+    bench!(reg; group = G, name = "ccz_equivalence_certificate", n = 6, cost = 1,
+           setup = () -> (kim_apn(), dillon_apn_permutation()),
+           call = p -> ccz_equivalence_certificate(p[1], p[2]),
+           note = "verified affine graph map, native refinement")
+
+    bench!(reg; group = G, name = "ea_equivalence_certificate", n = 8, cost = 2,
+           setup = () -> (F = gold_apn(8, 1); (F, lin_copy(F, 11))),
+           call = p -> ea_equivalence_certificate(p[1], p[2]),
+           note = "outer, affine input and drift certificate, native refinement")
 
     bench!(reg; group = G, name = "ea_mappings_from_ortho_derivative_pos",
            n = 7, cost = 2,
