@@ -20,7 +20,13 @@ new classes**, verified again by `make novelty` (`search_b52/new_classes_trial_7
 They are disjoint from the 553, from the extra class and from the 546 raw-only classes.
 The long run is for a larger machine ([search_b52/README.md](search_b52/README.md)).
 
-**Total new CCZ classes so far: 553 (census) + 1 (theory) + 773 (search trial) = 1,327.**
+**Hyperplane scan.** Restricting known and new functions to all 255 hyperplanes and
+extending them again (APN codimension-1 changes) found **463 more new classes**
+(`theory/hyperplane_scan/new_classes_hyperplane.tsv`; theory in
+[theory/HYPERPLANE.md](theory/HYPERPLANE.md)).
+
+**Total new CCZ classes so far: 553 (census) + 1 (theory) + 773 (search trial) + 463
+(hyperplane scan) = 1,790.**
 
 Also: 0 of the 553 new functions are CCZ-equivalent to a permutation
 ([permutation/REPORT.md](permutation/REPORT.md)). One more new class came from the
@@ -298,6 +304,8 @@ adds more.
 | [reports/literature/LITERATURE.md](reports/literature/LITERATURE.md) | Survey of public sources of quadratic APN functions on F_2^8 |
 | [theory/METHOD.md](theory/METHOD.md) | The mathematics of the census, with proofs |
 | [theory/UNIQUENESS.md](theory/UNIQUENESS.md) | Number of APN completions e: what is proved, what is false (e = 128 is not general) |
+| [theory/HYPERPLANE.md](theory/HYPERPLANE.md) | Hyperplane changes (TPPA 2025), admissible selections, the neighbour graph, and the hyperplane scan |
+| [theory/hyperplane_scan/README.md](theory/hyperplane_scan/README.md) | Scan of all hyperplanes of 11,684 functions: rates, structure, 463 new classes |
 | [kasami_x57/REPORT.md](kasami_x57/REPORT.md) | The x^57 class has no quadratic member (gap closed) |
 | [permutation/REPORT.md](permutation/REPORT.md) | 0 of 553 new functions are CCZ-equivalent to a permutation |
 | [crosscheck_raw/REPORT.md](crosscheck_raw/REPORT.md) | All raw files of the authors: 0 coincidences with the 553; 546 raw-only classes |
