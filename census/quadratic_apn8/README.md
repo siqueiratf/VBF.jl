@@ -14,6 +14,14 @@ The two items that were open are now closed:
   holds 546 more public classes that are absent from the published list and from the
   index (`crosscheck_raw/raw_only_546.tsv`).
 
+**Targeted search.** `search_b52/` extends 5-dim bent subspaces of B6 = 52 functions
+(step 3 of Algorithm 3.1 for B6 = 52). A 17-minute trial on 2 threads found **773 more
+new classes**, verified again by `make novelty` (`search_b52/new_classes_trial_773.tsv`).
+They are disjoint from the 553, from the extra class and from the 546 raw-only classes.
+The long run is for a larger machine ([search_b52/README.md](search_b52/README.md)).
+
+**Total new CCZ classes so far: 553 (census) + 1 (theory) + 773 (search trial) = 1,327.**
+
 Also: 0 of the 553 new functions are CCZ-equivalent to a permutation
 ([permutation/REPORT.md](permutation/REPORT.md)). One more new class came from the
 theory experiment (`new_classes_extra.tsv`, see [theory/UNIQUENESS.md](theory/UNIQUENESS.md)).
@@ -294,7 +302,7 @@ adds more.
 | [permutation/REPORT.md](permutation/REPORT.md) | 0 of 553 new functions are CCZ-equivalent to a permutation |
 | [crosscheck_raw/REPORT.md](crosscheck_raw/REPORT.md) | All raw files of the authors: 0 coincidences with the 553; 546 raw-only classes |
 | [web/README.md](web/README.md) | Local web page: is a function new or known? |
-| [search_b52/README.md](search_b52/README.md) | B6 = 52 search (in progress) |
+| [search_b52/README.md](search_b52/README.md) | Targeted search in the B6 = 52 branch: method, validation, trial (773 new classes), run steps for a larger machine |
 
 ## Files
 
