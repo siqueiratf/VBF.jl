@@ -16,12 +16,13 @@
   vendored, and this inventory does not assert agreement with an inspected
   reference-code revision.
 
-The authorized experiment integrates VBF's native automorphism generators into
-the existing Walsh-zero orbit computation, checks the six-bit census, and runs
-a bounded switching exploration with independently checked equivalence
-certificates. It does not claim an exhaustive switching closure, a full
-seven-bit census, or a proof of Conjecture 1. This inventory is a plan, not a
-record that any computation has already completed.
+The experiment integrates VBF's native automorphism generators into the
+Walsh-zero orbit computation. The full known-class six-bit census, complete
+one-coordinate switching closure, and all 488 seven-bit per-root closures have
+now completed, with independently checked mathematical evidence. Seven-bit
+input-root distinctness is inherited from the pinned source collection.
+Conjecture 1 remains unproved. This inventory maps claims and methods; actual
+coverage and timings are recorded in README.md and TEST_REPORT.md.
 
 The core integration alongside this experiment adds
 `ea_class_orbits(F; backend=:partition_refinement, automorphisms=H,
@@ -282,17 +283,16 @@ does not establish complete reachability of all APN functions.
 - **Statement:** The CCZ closure of 488 quadratic EA representatives contains
   82,409 EA classes with degree counts `{2:488, 3:60302, 4:21619}`; the cube
   has three EA classes, including its degree-four inverse and a cubic one-twist.
-- **Reproducibility:** Out-of-scope for the full 488-row run in this session;
-  Exact for an optional completed single-cube check. A future full run needs
-  frozen corpus inputs, per-row complete groups/subspaces and stored results.
+- **Reproducibility:** Completed for all 488 pinned roots, with exact per-root
+  native group/subspace closures and stored witnesses. The global aggregate
+  inherits the source collection's pairwise CCZ distinctness.
 - **VBF APIs likely needed:** `gold_apn`, `ea_class_orbits`,
   `partition_refinement_automorphisms`, `enumerate_ccz_class`,
   `algebraic_degree`, `is_permutation`; corpus APIs, if used, remain isolated
   in `catalog_validation.jl`.
-- **Estimated cost:** Slow for the whole corpus; no timing established here.
-- **Proposed Julia file:** `section32.jl` (optional single-cube parameter).
-- **Proposed Makefile target:** `section32` with explicit dimension/sample
-  arguments; the default must not launch the full seven-bit run.
+- **Estimated cost:** Full 488-root run completed in 384.13 seconds on 16 workers.
+- **Julia file:** `section32_sevenbit.jl`, plus its standalone evidence audit.
+- **Makefile target:** Explicit `census7`; the default does not launch the full run.
 
 ## Routines checklist
 
@@ -324,7 +324,7 @@ No author routines checklist was supplied. The synthesized checklist is:
    `results/`; report limits/completeness and preserve conjecture status
    (`section32-switching-exploration`, `conjecture1-six-bit-exhaustiveness`).
 9. Keep report/test defaults small; make the full six-bit census explicit and
-   the full seven-bit run not implemented or explicitly not run
+   the full seven-bit run an explicit, resumable target
    (`section32-six-bit-census`, `section32-seven-bit-census`).
 
 ## Open questions
@@ -359,3 +359,15 @@ None of these prevents the authorized bounded integration:
   native graph automorphism discovery separately to Kaleyski and Sunde
   (ePrint 2026/940). Native discovery is an alternative first stage, not a
   line-by-line reproduction of sboxU's ortho-derivative first stage.
+
+
+## Executed coverage, 9 October 2026
+
+The fourteen-root six-bit census, all 716-parent one-coordinate switching
+closure, and all 488-root seven-bit EA census completed. See README.md and
+TEST_REPORT.md for measured times, independent artifact audits and exact
+counts. Seven-bit root distinctness remains inherited from the pinned input
+collection, and exhaustive known-set switching closure does not prove the
+universal exhaustiveness conjecture. The optimized subspace/group profiles
+and parallel drivers are documented implementation extensions with separate
+commits; the reference paths remain available.

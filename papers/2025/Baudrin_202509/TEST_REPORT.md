@@ -5,7 +5,8 @@ no sboxU, Python or Magma runtime participates in the implementation.
 
 ## Completed automated tests
 
-`make -C papers/2025/Baudrin_202509 test` passed **132 assertions**:
+`julia --threads=16 --project=. papers/2025/Baudrin_202509/test/runtests.jl`
+passed **255 assertions**:
 
 | Test set | Assertions | Checks |
 |---|---:|---|
@@ -13,6 +14,11 @@ no sboxU, Python or Magma runtime participates in the implementation.
 | Section 3.2 | 15 | Fourteen distinct lookup tables, thirteen quadratic APN inputs, exact four-bit sample, root distinctness, invalid full-search requests |
 | Conjecture 1 | 31 | Switching supports and APN checks, partial outcomes, undecided EA/CCZ comparisons, bounded novelty semantics |
 | Independent evidence | 68 | Raw certificate/rank checks, corrupted/singular certificate rejection, zero node/subspace/memory budgets, TOML round trips, source hashes, stage completeness, shared native/legacy node accounting and Theorem 2 bounds |
+| Resumable census drivers | 18 | Validated input coverage, budgets and checkpoint round trips |
+| Switching checkpoint audit | 44 | Independently recomputed kernel/coset coverage, corrupt evidence rejection and deadline-aware resume |
+| Parallel switching | 15 | Serial/parallel deterministic candidate and witness outcomes |
+| Seven-bit checkpoint audit | 28 | Raw maps, Walsh spans, group actions, orbit coverage and corrupt evidence rejection |
+| Parallel census | 18 | Serial/parallel root parity, independent task state, zero budgets and invalid cache rejection |
 
 The test-only `certificate_oracle.jl` applies saved affine columns using packed
 integer XOR and independently checks binary rank. It checks EA block structure
@@ -86,11 +92,36 @@ raw audit checked every saved graph witness, independently recomputed APN
 DDTs and reconstructed each candidate from its recorded switching support.
 The switching snapshot audit sets passed 12 and 8 assertions respectively.
 
+## Complete switching closure and seven-bit census
+
+The full serial and 16-worker switching runs completed all 716 parents,
+45,108 directions and 20,674 APN neighbours. They produced exactly the same
+candidate LUTs, checked target roots and two-component graph. The independent
+parallel artifact audit and cross-run comparison passed **109,814 assertions**.
+The independent kernel census agrees with all fourteen Gillot–Langevin kernel
+histogram and weighted basis-vector columns (11,598 basis vectors).
+
+Full closure wall times were **497.57 seconds serial** and **96.45 seconds with
+16 workers**. Kernel/candidate generation alone took **35.97/3.89 seconds**.
+The full seven-bit census took **384.13 seconds**, completing 488 roots with
+82,409 representatives and degree counts `{2:488,3:60302,4:21619}`. A fresh
+standalone audit completed all 488 checkpoints in **23.77 seconds**, checking
+raw affine maps/ranks, direct Walsh coefficients, APN and degree of witnesses,
+subspace spans and orbit partition coverage/connectivity. Exhaustion is
+recorded by the tested producer rather than independently replayed by this
+artifact audit. The source collection supplies root distinctness.
+
+The VBF regression suite passed **143,086 assertions in 100 test items**,
+excluding the previously known failures `linear_backtracking` and `extensions`.
+The documentation build and doctests passed. The subsequent unsigned-span
+API extension additionally passed six focused type/range assertions.
+
 ## Limits
 
 The known-class census establishes EA classes inside the recorded CCZ roots;
 it does not prove that those roots include every six-bit APN function. The
-82,409-class seven-bit census is not executed. Finite switching-frontier
+82,409-class seven-bit census completed for all 488 pinned roots; their mutual
+CCZ distinctness is inherited from the source collection. Finite switching-frontier
 exhaustion cannot establish that every APN function is reachable by switching,
 and these tests do not prove Conjecture 1 or the paper's universal theorems.
 No speed or memory superiority over the authors' sboxU implementation is
