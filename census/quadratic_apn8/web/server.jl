@@ -27,6 +27,14 @@ using VBFCatalog
 const WEB_DIR = @__DIR__
 const STUDY_DIR = dirname(WEB_DIR)
 const CENSUS_TSV = joinpath(STUDY_DIR, "new_classes_553.tsv")
+# Other lists of classes that are absent from the index:
+# (file, label, novelty, data column, data kind). `:new` = found in this study;
+# `:public` = in a public raw file of the authors, but not in the index.
+const OTHER_LISTS = [
+    ("new_classes_extra.tsv", "theory experiment (extra class)", :new, 2, :coeffs),
+    ("search_b52/new_classes_trial_773.tsv", "B6 = 52 search, trial run", :new, 5, :coeffs),
+    ("crosscheck_raw/raw_only_546.tsv", "authors' raw file of May 2025 (langevin.univ-tln.fr)", :public, 3, :lut),
+]
 const N = 8
 const NPAIRS = N * (N - 1) ÷ 2
 const DEFAULT_MODULUS = 0x11B
@@ -42,7 +50,30 @@ mutable struct State
     census::Dict{String,Tuple{Int,String}}   # sigma hash -> (line number, coeffs)
     rows::Int                                 # rows in the index (n = 8)
     dblock::ReentrantLock                     # SQLite connections are not thread safe
+    others::Dict{String,NamedTuple}           # sigma hash -> entry of OTHER_LISTS
 end
+
+"""Read the lists of OTHER_LISTS. A header line (first field `sigma_hash` or `sigma`) is skipped;
+line numbers are file line numbers."""
+function read_others()
+    d = Dict{String,NamedTuple}()
+    for (file, label, novelty, col, kind) in OTHER_LISTS
+        path = joinpath(STUDY_DIR, file)
+        isfile(path) || continue
+        for (k, line) in enumerate(eachline(path))
+            f = split(line, '\t')
+            (isempty(strip(line)) || f[1] in ("sigma_hash", "sigma")) && continue
+            haskey(d, f[1]) && continue
+            d[String(f[1])] = (file = file, label = label, novelty = novelty, line = k,
+                               kind = kind, data = String(f[col]))
+        end
+    end
+    d
+end
+
+"LUT of an entry of OTHER_LISTS."
+other_lut(e) = e.kind === :coeffs ? coeffs_to_lut(e.data) :
+    [parse(Int, e.data[2k - 1:2k]; base = 16) for k in 1:(1 << N)]
 
 const STATE = Ref{Union{Nothing,State}}(nothing)
 
@@ -73,7 +104,7 @@ function init!()
     for r in DBInterface.execute(idx, "SELECT COUNT(*) c FROM ccz_sigma_index WHERE n = $N")
         rows = Int(r.c)
     end
-    st = State(idx, cat, read_census(), rows, ReentrantLock())
+    st = State(idx, cat, read_census(), rows, ReentrantLock(), read_others())
     # A coverage gap makes classify_ccz throw. Fail at start, not at the first request.
     classify_ccz(SBox{N}(gf_monomial_lut(N, 3; modulus = DEFAULT_MODULUS));
                  index = idx, catalog = cat)
@@ -254,6 +285,21 @@ function analyze(text::AbstractString)
                         "functions (rigorous). The sigma is equal to that of census line $line; " *
                         "this is necessary but not sufficient for equivalence to that line."
         res["ea_available"] = true
+    elseif haskey(st.others, h)
+        e = st.others[h]
+        res["status"] = e.novelty === :new ? "listed_new" : "raw_public"
+        res["list_file"] = e.file
+        res["list_line"] = e.line
+        res["list_data"] = e.data
+        res["list_kind"] = String(e.kind)
+        res["verdict"] = e.novelty === :new ?
+            "NEW, found in this study: $(e.label), line $(e.line) of $(e.file)." :
+            "Not in the catalog index, but PUBLIC: $(e.label), line $(e.line) of $(e.file)."
+        res["caveat"] = "The sigma is absent from the index of $(fmtint(KNOWN_CLASSES)) known " *
+                        "classes, so the function is CCZ-inequivalent to all indexed functions " *
+                        "(rigorous). The sigma is equal to that of the listed entry; this is " *
+                        "necessary but not sufficient for equivalence to that entry."
+        res["ea_available"] = true
     else
         res["status"] = "new"
         res["verdict"] = "NEW: sigma absent from the index of $(fmtint(KNOWN_CLASSES)) known " *
@@ -294,6 +340,9 @@ function target_sbox(st::State, res::Dict)
             src == "functions" ? load_sbox(st.catalog, m) : corpus_function(st.catalog, src, m)
         end
         return G, "$src member $m"
+    elseif res["status"] in ("listed_new", "raw_public")
+        e = st.others[res["sigma"]]
+        return SBox{N}(other_lut(e)), "$(e.file) line $(e.line)"
     else
         line = res["census_line"]
         return SBox{N}(coeffs_to_lut(res["census_coeffs"])), "census line $line"
@@ -406,7 +455,7 @@ textarea{width:100%;height:12rem;font-family:monospace}
 table{border-collapse:collapse}td{padding:.2rem .6rem;border-bottom:1px solid #ccc;vertical-align:top}
 td:first-child{font-weight:bold;white-space:nowrap}
 .v{font-size:1.15rem;font-weight:bold;margin:.8rem 0}
-.known{color:#06c}.new{color:#080}.census{color:#080}.not_apn,.error{color:#b00}.apn_not_quadratic{color:#a60}
+.known{color:#06c}.new{color:#080}.census{color:#080}.listed_new{color:#080}.raw_public{color:#06c}.not_apn,.error{color:#b00}.apn_not_quadratic{color:#a60}
 code{word-break:break-all}
 </style></head><body>
 <h1>Quadratic APN on F<sub>2</sub><sup>8</sup>: known or new CCZ class?</h1>
@@ -446,6 +495,7 @@ async function classify(){
     +(j.sigma?row('sigma hash','<code>'+j.sigma+'</code>'):'')
     +(j.index_rows?row('Index rows with this sigma',j.index_rows):'')
     +(j.census_coeffs?row('Census coefficients','<code>'+j.census_coeffs+'</code>'):'')
+    +(j.list_file?row('Listed in',esc(j.list_file)+', line '+j.list_line):'')
     +'</table>';
   if(j.ea_available){
     h+='<p><button id="ea">Exact EA check</button> Warning: this takes about 10 minutes when the functions are equivalent. One test runs at a time.</p><div id="eaout"></div>';

@@ -78,6 +78,20 @@ const CENSUS = [split(l, '\t') for l in eachline(APN8Web.CENSUS_TSV)]
         @test j2.format == "lut" && j2.status == "census" && j2.census_line == 7
     end
 
+    @testset "other lists: extra class, search trial, raw-only" begin
+        st, j = classify("60586b23865a010415cf78320eb7700de3f03212e2d82ccc969a6142")
+        @test st == 200 && j.status == "listed_new"
+        @test j.list_file == "new_classes_extra.tsv" && j.list_line == 2
+        t = split(collect(eachline(joinpath(APN8Web.STUDY_DIR, "search_b52", "new_classes_trial_773.tsv")))[2], '\t')
+        st, j = classify(String(t[5]))
+        @test j.status == "listed_new" && j.sigma == t[1]
+        r = split(collect(eachline(joinpath(APN8Web.STUDY_DIR, "crosscheck_raw", "raw_only_546.tsv")))[2], '\t')
+        lut = [parse(Int, r[3][2k - 1:2k]; base = 16) for k in 1:256]
+        st, j = classify(lutstr(lut))
+        @test j.status == "raw_public" && j.sigma == r[1]
+        @test startswith(j.verdict, "Not in the catalog index, but PUBLIC")
+    end
+
     @testset "Gold x^3 is known" begin
         st, j = classify("x^3")
         @test j.format == "polynomial"

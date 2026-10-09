@@ -44,6 +44,8 @@ algebraic degree. A quadratic APN function also gives its σ hash and one of the
 |---|---|
 | **KNOWN (sigma matches source X member i)** | σ is in the index of 3,808,491 known classes (4,005,445 index rows, n = 8). A σ match is necessary but **not sufficient** for CCZ-equivalence. The button "Exact EA check" runs `VBF.ea_mappings_from_ortho_derivative(F, G)` against member i of source X. This takes about 10 minutes when the functions are equivalent and seconds when they are not. |
 | **NEW, in the census list (one of the 553)** | σ is absent from the index. Thus the function is CCZ-inequivalent to all indexed functions (rigorous). σ is equal to the σ of a line of `new_classes_553.tsv`. The EA check against that line is available. |
+| **NEW, found in this study** (status `listed_new`) | σ is absent from the index and equal to a line of `../new_classes_extra.tsv` (theory experiment) or `../search_b52/new_classes_trial_773.tsv` (B6 = 52 search trial). The EA check against that line is available. |
+| **Not in the catalog index, but PUBLIC** (status `raw_public`) | σ is absent from the index and equal to a line of `../crosscheck_raw/raw_only_546.tsv`: one of the 546 classes in the authors' public raw file of May 2025 that are not in their published list. |
 | **NEW: sigma absent from the index and from the census list** | A rigorous CCZ-inequivalence certificate against all indexed sources. σ is a CCZ invariant of quadratic APN functions (Canteaut–Couvreur–Perrin; EA = CCZ for quadratic APN by Yoshiara). |
 | **APN, not quadratic** | The σ oracle needs a quadratic function. The page gives only the basic properties. |
 | **NOT APN** | The differential uniformity is larger than 2. |
