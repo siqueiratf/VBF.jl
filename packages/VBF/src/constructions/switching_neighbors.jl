@@ -61,6 +61,8 @@ _sn_remove_solution!(S::_SNSystem, positions) =
 # RREF a set of BitVector rows in place; return parallel pivot columns.
 _sn_check(::Nothing, stage, direction, position) = nothing
 _sn_check(check, stage, direction, position) = check(stage, direction, position)
+_sn_diagnostic(::Nothing, event, value) = nothing
+_sn_diagnostic(diagnostics, event, value) = diagnostics(event, value)
 
 function _sn_rref!(rows::Vector{BitVector}, check = nothing, direction = 0)
     cols = Int[]
@@ -165,14 +167,21 @@ function _sn_apn_coset(
     observer = nothing,
     check = nothing,
     verified = nothing,
+    diagnostics = nothing,
 ) where {N,T}
     n_size = 1 << N
     result = SBox{N,T}[]
     seen = Set{Vector{T}}()
     nb = length(basis)
-    nb == 0 && return result
+    evaluations = 0
+    if nb == 0
+        _sn_diagnostic(diagnostics, :direction_complete,
+            (; direction=Int(uu), evaluations, neighbors=0))
+        return result
+    end
     @inbounds for combo in _sn_combinations(nb)
         _sn_check(check, :candidate, Int(uu), combo)
+        evaluations += 1
         observer === nothing || observer(:candidate, nothing)
         lut = copy(F.lut)
         for j = 0:(nb-1)
@@ -193,6 +202,8 @@ function _sn_apn_coset(
         end
         _sn_check(check, :candidate_done, Int(uu), combo)
     end
+    _sn_diagnostic(diagnostics, :direction_complete,
+        (; direction=Int(uu), evaluations, neighbors=length(result)))
     return result
 end
 
@@ -215,6 +226,7 @@ end
 
 function _sn_neighbors(
     F::SBox{N,T}, observer = nothing, check = nothing, verified = nothing,
+    diagnostics = nothing,
 ) where {N,T}
     _sn_check(check, :validation, 0, 0)
     differential_uniformity(F) ≤ 2 ||
@@ -268,7 +280,11 @@ function _sn_neighbors(
     result = Vector{Vector{SBox{N,T}}}(undef, n_size - 1)
     for uu = 1:(n_size-1)
         basis = _sn_kernel(systems[uu], check, uu)
-        result[uu] = _sn_apn_coset(F, T(uu), basis, observer, check, verified)
+        raw_dimension = n_size - length(systems[uu].pivot_rows)
+        _sn_diagnostic(diagnostics, :kernel,
+            (; direction=uu, raw_dimension, quotient_dimension=length(basis),
+               trivial_dimension=raw_dimension-length(basis)))
+        result[uu] = _sn_apn_coset(F, T(uu), basis, observer, check, verified, diagnostics)
     end
     return result
 end
@@ -280,7 +296,8 @@ end
 
 """
     switching_neighbors_bounded(F::SBox; max_evaluations=10^4,
-        timeout_seconds=60, max_neighbors=typemax(Int), observer=nothing)
+        timeout_seconds=60, max_neighbors=typemax(Int), observer=nothing,
+        diagnostics=nothing)
         -> Exhausted | BudgetHit
 
 Enumerate the same complete-system switching neighbours as
@@ -299,6 +316,11 @@ cannot be interrupted. Zero budgets return before validating the input.
 `StopPoint.resume_key` identifies the stopped stage, direction and position;
 it is a diagnostic frontier, not a serialized resumable linear system.
 The observer has the same events and contract as `switching_neighbors`.
+Optional `diagnostics(event, value)` reports `:kernel` with the switching
+direction, full constraint-kernel dimension, quotient dimension and removed
+trivial dimension; `:direction_complete` with per-direction candidate and APN
+counts; and `:stop` with the budget frontier and total counts. Diagnostics do
+not alter the observer's event sequence and must not mutate returned values.
 """
 function switching_neighbors_bounded(
     F::SBox{N,T};
@@ -306,6 +328,7 @@ function switching_neighbors_bounded(
     timeout_seconds::Real = 60,
     max_neighbors::Integer = typemax(Int),
     observer = nothing,
+    diagnostics = nothing,
 ) where {N,T}
     max_evaluations >= 0 || throw(ArgumentError("max_evaluations must be nonnegative"))
     max_neighbors >= 0 || throw(ArgumentError("max_neighbors must be nonnegative"))
@@ -349,9 +372,11 @@ function switching_neighbors_bounded(
         return nothing
     end
     try
-        _sn_neighbors(F, observer, check, G -> push!(found, G))
+        _sn_neighbors(F, observer, check, G -> push!(found, G), diagnostics)
     catch err
         err isa _SNStopped || rethrow()
+        _sn_diagnostic(diagnostics, :stop,
+            (; point=err.point, evaluations=evaluations[], neighbors=length(found)))
         return BudgetHit(
             err.point, region, found;
             nodes_visited = evaluations[], elapsed_seconds = elapsed(),
