@@ -17,6 +17,7 @@ const SUPPLEMENT = "census/quadratic_apn8/results/literature_20261009/supplement
 
 function options(args)
     opts = Dict("limit"=>"32", "seconds"=>"30", "evaluations"=>"10000",
+        "wall-seconds"=>"Inf",
         "workers"=>string(min(Threads.nthreads(),8)), "seed"=>"82026",
         "orbit-seconds"=>"0", "ea-representatives"=>"0",
         "baseline"=>DEFAULT_OUTPUT, "outdir"=>joinpath(@__DIR__,"results","pilot"))
@@ -78,8 +79,10 @@ function main_search(args)
     opts, extra, seed_inputs = options(args)
     limit, workers = parse(Int,opts["limit"]), parse(Int,opts["workers"])
     seconds, evaluations = parse(Float64,opts["seconds"]), parse(Int,opts["evaluations"])
+    wall_seconds = parse(Float64,opts["wall-seconds"])
     orbit_seconds, ea_limit = parse(Float64,opts["orbit-seconds"]), parse(Int,opts["ea-representatives"])
     limit > 0 && evaluations > 0 && seconds > 0 && isfinite(seconds) || error("positive finite search limits required")
+    wall_seconds > 0 && (isfinite(wall_seconds) || wall_seconds == Inf) || error("invalid total time budget")
     1 <= workers <= Threads.nthreads() || error("workers exceeds Julia thread count")
     ea_limit >= 0 && orbit_seconds >= 0 && isfinite(orbit_seconds) || error("invalid orbit limits")
     ea_limit == 0 || orbit_seconds > 0 || error("EA exploration requires --orbit-seconds")
@@ -95,11 +98,7 @@ function main_search(args)
     if !isempty(seed_inputs)
         _, seeds = load_study(seed_inputs,max(1,cld(limit,length(seed_inputs))),Xoshiro(parse(Int,opts["seed"])))
     end
-    # Verify every sampled quadratic seed independently before starting workers.
     w = Workspace()
-    for (hash,payload) in seeds
-        bytes2hex(signature(w,candidate_lut(payload))) == hash || error("seed signature mismatch: $hash")
-    end
     gold = gold_apn(8)
     pushfirst!(seeds,(bytes2hex(signature(w,gold.lut)),bytes2hex(gold.lut)))
     unique!(seeds)
@@ -108,8 +107,24 @@ function main_search(args)
     mkpath(outdir)
     novel = Set{String}()
     guard = ReentrantLock()
-    rows = Vector{Dict{String,Any}}(undef,length(seeds))
+    rows = Dict{String,Any}[]
+    next_seed = Threads.Atomic{Int}(1)
     started = time_ns()
+    remaining() = max(0.0,wall_seconds-(time_ns()-started)*1e-9)
+    code_paths = [@__FILE__,
+        joinpath(REPO,"packages/VBF/src/constructions/switching_neighbors.jl"),
+        joinpath(REPO,"packages/VBF/src/constructions/ea_class_orbits.jl"),
+        joinpath(@__DIR__,"../rebuild_corpus/check_candidates.jl"),
+        joinpath(@__DIR__,"../rebuild_corpus/signature.jl")]
+    code_hashes = Dict(p=>filehash(p) for p in code_paths)
+    metadata = Dict("schema"=>"vbf-n8-switching-pilot-v2","options"=>opts,
+        "input_sha256"=>input_hashes,"baseline_sha256"=>baseline_hash,
+        "code_sha256"=>code_hashes,"seeds"=>length(seeds),"workers"=>workers,
+        "started_utc"=>string(Dates.now(Dates.UTC)),
+        "study_signatures"=>length(known))
+    open(io->TOML.print(io,metadata;sorted=true),joinpath(outdir,"run.toml"),"w")
+    println("Starting $(length(seeds)) seeds on $workers workers; total search budget $wall_seconds s; results $outdir")
+    flush(stdout)
     open(joinpath(outdir,"new_classes.tsv"),"w") do io
         println(io,"sigma_hash\tlut_hex\tparent_sigma\tea_representative\tswitch_direction\tcoeffs")
         Threads.@threads :static for worker in 1:workers
@@ -117,9 +132,13 @@ function main_search(args)
             stmt = DBI.prepare(db,"SELECT 1 FROM signatures WHERE sigma_hash=? LIMIT 1")
             workspace = Workspace()
             try
-                for index in worker:workers:length(seeds)
+                while remaining() > 0
+                    index = Threads.atomic_add!(next_seed,1)
+                    index <= length(seeds) || break
                     parent, payload = seeds[index]
-                    F = SBox{8,UInt8}(candidate_lut(payload))
+                    lut = candidate_lut(payload)
+                    bytes2hex(signature(workspace,lut)) == parent || error("seed signature mismatch: $parent")
+                    F = SBox{8,UInt8}(lut)
                     counters = Dict("neighbors"=>0,"quadratic"=>0,"nonquadratic"=>0,
                         "public_matches"=>0,"study_matches"=>0,"new_classes"=>0)
                     parents = [F]
@@ -128,7 +147,7 @@ function main_search(args)
                     orbit_available = 0
                     if ea_limit > 0
                         orbit = ea_class_representatives(F; prefer_permutations=false,
-                            subspace_algorithm=:optimized,timeout_seconds=orbit_seconds)
+                            subspace_algorithm=:optimized,timeout_seconds=min(orbit_seconds,remaining()))
                         orbit_complete, orbit_stop = orbit.complete, string(orbit.stop_reason)
                         orbit_available = length(orbit.representatives)
                         # Original F is always searched; the budget only limits
@@ -144,6 +163,7 @@ function main_search(args)
                     end
                     outcomes = Dict{String,Any}[]
                     for (representative,P) in enumerate(parents)
+                        remaining() > 0 || break
                         observer = function (event,G)
                             event === :apn || return
                             counters["neighbors"] += 1
@@ -174,7 +194,7 @@ function main_search(args)
                             end
                         end
                         r = switching_neighbors_bounded(P;max_evaluations=evaluations,
-                            timeout_seconds=seconds,observer)
+                            timeout_seconds=min(seconds,remaining()),observer)
                         push!(outcomes,Dict("representative"=>representative,
                             "parent_lut_hex"=>bytes2hex(P.lut),
                             "ccz_columns"=>Int.(maps[representative].linear.cols),
@@ -183,14 +203,22 @@ function main_search(args)
                             "seconds"=>elapsed_seconds(r),
                             "stop"=>r isa BudgetHit ? string(r.where_it_stopped.reason) : "none"))
                     end
-                    rows[index] = Dict("index"=>index,"parent_sigma"=>parent,
+                    row = Dict("index"=>index,"parent_sigma"=>parent,
                         "parent_lut_hex"=>bytes2hex(F.lut),"counts"=>counters,
                         "orbit_complete"=>orbit_complete,"orbit_stop"=>orbit_stop,
                         "orbit_representatives_available"=>orbit_available,
-                        "orbit_representative_cap"=>ea_limit,"switching"=>outcomes)
-                    open(io->TOML.print(io,rows[index];sorted=true),joinpath(outdir,"parent_$(index).toml"),"w")
+                        "orbit_representative_cap"=>ea_limit,"switching"=>outcomes,
+                        "parent_search_complete"=>length(outcomes)==length(parents) && all(s["complete"] for s in outcomes))
+                    checkpoint = joinpath(outdir,"parent_$(index).toml")
+                    open(io->TOML.print(io,row;sorted=true),checkpoint*".tmp","w")
+                    mv(checkpoint*".tmp",checkpoint)
                     lock(guard) do
+                        push!(rows,row)
                         println("parent $index/$(length(seeds)): $(counters["neighbors"]) APNs, $(counters["quadratic"]) quadratic, $(counters["new_classes"]) additional signatures")
+                        progress = Dict("processed_seeds"=>length(rows),"new_classes"=>length(novel),
+                            "elapsed_seconds"=>(time_ns()-started)*1e-9,"remaining_seconds"=>remaining())
+                        open(io->TOML.print(io,progress;sorted=true),joinpath(outdir,"progress.toml.tmp"),"w")
+                        mv(joinpath(outdir,"progress.toml.tmp"),joinpath(outdir,"progress.toml");force=true)
                         flush(stdout)
                     end
                 end
@@ -201,16 +229,14 @@ function main_search(args)
         end
     end
     all(filehash(p)==h for (p,h) in input_hashes) || error("comparison inputs changed during search")
-    summary = Dict("schema"=>"vbf-n8-switching-pilot-v1","options"=>opts,
-        "input_sha256"=>input_hashes,"baseline_sha256"=>baseline_hash,
-        "code_sha256"=>Dict(p=>filehash(p) for p in [@__FILE__,
-            joinpath(REPO,"packages/VBF/src/constructions/switching_neighbors.jl"),
-            joinpath(REPO,"packages/VBF/src/constructions/ea_class_orbits.jl"),
-            joinpath(@__DIR__,"../rebuild_corpus/check_candidates.jl"),
-            joinpath(@__DIR__,"../rebuild_corpus/signature.jl")]),
-        "seeds"=>length(seeds),"workers"=>workers,"new_classes"=>length(novel),
+    sort!(rows;by=r->r["index"])
+    summary = merge(metadata,Dict("new_classes"=>length(novel),
+        "processed_seeds"=>length(rows),
+        "complete"=>length(rows)==length(seeds) && all(r["parent_search_complete"] for r in rows),
+        "stop"=>remaining()==0 ? "time" : "seed_pool_exhausted",
         "elapsed_seconds"=>(time_ns()-started)*1e-9,"parents"=>rows,
         "novelty_scope"=>"different verified quadratic signatures absent from the rebuilt public baseline, public supplement, and supplied study inputs; not a claim of literature completeness")
+    )
     open(io->TOML.print(io,summary;sorted=true),joinpath(outdir,"summary.toml"),"w")
     println("Finished: $(length(novel)) additional signatures; $(summary["elapsed_seconds"]) seconds. Evidence: $outdir")
     summary
