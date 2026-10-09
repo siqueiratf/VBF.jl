@@ -116,6 +116,11 @@ and direct verification of Figure 1's discrepancy and Example 2's group
 order and DFS count. It also exercises the existing square APIs and group,
 certificate, budget and threaded-refinement tests.
 
+The local Documenter build also completed with doctests enabled, without
+doctest failures, missing-docstring warnings or unresolved references. The
+generated API includes the shared search outcomes used by bounded equivalence
+and group discovery. Existing bibliography-format and HTML-size warnings remain.
+
 ## Printed pseudocode and figure discrepancies
 
 ### Necessary correction to the printed branching condition

@@ -4,7 +4,7 @@ Permutation-group machinery for Kaleyski–Sunde Sections 5 and 8.2.
 Deterministic Schreier–Sims: orbit transversals, sifting, Schreier generators
 and point stabilizers. Actions use one-based graph storage indices; packed
 ambient points keep VBF's mathematical convention. No ambient permutation of
-degree 2^(2n) is stored. Every group is owned by its search.
+degree 2^(n+m) is stored. Every group is owned by its search.
 """
 
 const _PRTransversals = Vector{Union{Nothing,Vector{Int}}}
@@ -34,7 +34,7 @@ function _pr_perm_inverse(p)
     return q
 end
 
-"""Orbit of b, with t[q](b)=q and its inverse for each reached point q."""
+"""Orbit of b, with `t[q](b)=q` and its inverse for each reached point q."""
 function _pr_orbit_transversals(n, generators, b, budget)
     trans = _PRTransversals(nothing, n)
     inverses = _PRTransversals(nothing, n)
