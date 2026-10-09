@@ -472,10 +472,11 @@ The two implementations follow different refinement heuristics: Julia follows
 the paper's ordering of initial hyperplane classes by absolute Walsh value and
 retains signed incidence signatures; the pinned C++ version selects the
 smallest classes and takes absolute signatures. These timings compare complete
-recovery procedures, not identical instruction sequences. General automorphism
-discovery and stabilizer pruning are not yet implemented in Julia; workloads
-using a precomputed automorphism group are outside this comparison. Performance
-is instance-dependent, with exponential worst-case search and O(2^(2n))
+recovery procedures, not identical instruction sequences. This comparison
+disables general automorphism discovery and stabilizer pruning on both sides;
+workloads using a precomputed group are outside its scope. The separate
+optimization runner below includes group discovery and stabilizer pruning.
+Performance is instance-dependent, with exponential worst-case search and O(2^(2n))
 transform storage.
 
 The existing equivalence suite also registers strict native decisions and
@@ -509,3 +510,76 @@ EA oracle. The unfiltered suite has two failing baseline items,
 `linear_backtracking` and `extensions`; both failures reproduce with the
 unchanged source at `f0401a2`. The successful regression run excluded only
 those two items (`VBF_TEST_NAME='(?!linear_backtracking$|extensions$).*'`).
+
+## Group pruning and parallel refinement
+
+`refinement_optimizations.jl` measures unpruned search, group discovery alone,
+search with a supplied group, and discovery plus search under one query budget.
+It also compares serial and threaded nine-bit refinement and Walsh transforms.
+It runs public VBF APIs, verifies every certificate/generator, reports medians
+and allocations, and writes no catalog data:
+
+```bash
+julia --threads=4 --startup-file=no --project=. bench/refinement_optimizations.jl --samples=5
+```
+
+Discovery gets a one-second sub-budget after compilation warm-up. A partial
+subgroup is safe to prune with; its completion flag and order are recorded.
+All equivalence calls use 120 seconds and one million DFS nodes. The
+`discovery_and_search` row includes discovery, validation of its generators,
+chain construction and equivalence. Its node count includes discovery nodes.
+`supplied_group` excludes discovery but includes validation and chain building.
+Compilation, fixture setup, independent verification and Walsh buffer resets
+are outside timing. Run without competing heavy processes.
+
+Threading follows [Julia's task-safety guidance](https://docs.julialang.org/en/v1/manual/multi-threading/):
+parallel kernels write disjoint slices, finish before buffers are reused, and
+do not index temporary buffers by thread ID. DFS and mutable group updates
+remain serial. Small kernels fall back to serial execution; this is an opt-in
+optimization rather than a promise that every search improves with threads.
+
+Measured on 2026-10-09 on the same Ryzen AI MAX+ 395, Julia 1.13.1,
+four default-pool threads, seed 940 and five timed samples after warm-up.
+Source revision: `b6ad7b2937c4962a5d0948372c29f184ef875d3c`.
+The group comparisons use serial refinement in every mode:
+
+| Fixture | Discovery (ms) | Unpruned (ms) | Supplied group (ms) | Discovery + search (ms) | Search nodes, unpruned → seeded |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| Gold 8-bit negative, CCZ | 36.975 | 70.377 | 27.708 | 66.405 | 257 → 3 |
+| Kim / Dillon, EA negative | 37.537 | 567.732 | 10.223 | 47.704 | 4097 → 75 |
+| Gold 7-bit negative, CCZ | 15.418 | 4765.449 | 8.001 | 23.233 | 16131 → 21 |
+
+All three discoveries completed within the one-second allowance. Their exact
+ambient group orders were 522,240, 56 and 113,792 respectively. Counting
+discovery as well, the combined runs visited 22, 353 and 61 DFS nodes.
+
+| Fixture | Unpruned allocations (MiB) | Discovery + search allocations (MiB) |
+| :--- | ---: | ---: |
+| Gold 8-bit negative | 27.78 | 352.99 |
+| Kim / Dillon, EA negative | 439.43 | 39.32 |
+| Gold 7-bit negative | 2151.72 | 40.69 |
+
+Allocations are cumulative bytes, not peak resident memory. Group construction
+can cost more memory than unpruned search, as the eight-bit fixture shows.
+Keep discovery opt-in and reuse groups for repeated target comparisons.
+
+| Workload | Serial median (ms) | Threaded median (ms) |
+| :--- | ---: | ---: |
+| Random 9-bit EA positive, complete query | 2.060 | 2.071 |
+| Int32 Walsh, 2^18 entries | 0.369 | 0.240 |
+| Int32 Walsh, 2^20 entries | 1.701 | 0.597 |
+| Int32 Walsh, 2^22 entries | 6.744 | 2.264 |
+
+The threaded Walsh calls allocate approximately 29–35 KiB of task overhead;
+their serial counterparts allocate zero bytes. The easy nine-bit query gains
+no speed in this measurement. These are local timings for a small fixture set,
+not a general speedup guarantee or a new comparison against the C++ core.
+
+The updated regression run passes 124,505 assertions across 88 test items on
+Julia 1.13.1, with four threads per worker. It excludes only the two baseline
+failures documented above. New group tests compare native Schreier–Sims orders
+and stabilizers with explicitly enumerated small groups, enumerate every
+AGL(4,2) map for several graphs, and independently enumerate graph actions on
+three-bit functions. Tests also verify the paper's Example 2, affine kernel
+lifts, subgroup validation, shared budgets, concurrent searches, exact serial /
+threaded signatures and transforms, and bounded serial signature allocations.
