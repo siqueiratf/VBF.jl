@@ -59,12 +59,17 @@ _sn_remove_solution!(S::_SNSystem, positions) =
     push!(S.removed, _sn_rowof(S.nvars, positions))
 
 # RREF a set of BitVector rows in place; return parallel pivot columns.
-function _sn_rref!(rows::Vector{BitVector})
+_sn_check(::Nothing, stage, direction, position) = nothing
+_sn_check(check, stage, direction, position) = check(stage, direction, position)
+
+function _sn_rref!(rows::Vector{BitVector}, check = nothing, direction = 0)
     cols = Int[]
     keep = BitVector[]
-    for r in rows
+    for (position, r) in enumerate(rows)
+        _sn_check(check, :kernel, direction, position)
         row = copy(r)
         for t in eachindex(keep)
+            _sn_check(check, :kernel, direction, position)
             row[cols[t]] && (row .⊻= keep[t])
         end
         lead = findfirst(row)
@@ -77,6 +82,7 @@ function _sn_rref!(rows::Vector{BitVector})
     for i in eachindex(keep)
         pc = cols[i]
         for j in eachindex(keep)
+            _sn_check(check, :kernel, direction, i)
             i == j && continue
             keep[j][pc] && (keep[j] .⊻= keep[i])
         end
@@ -85,26 +91,31 @@ function _sn_rref!(rows::Vector{BitVector})
 end
 
 # Kernel basis of the system, with the removed solutions quotiented out.
-function _sn_kernel(S::_SNSystem)
-    prows, pcols = _sn_rref!(S.pivot_rows)
+function _sn_kernel(S::_SNSystem, check = nothing, direction = 0)
+    _sn_check(check, :kernel, direction, 0)
+    prows, pcols = _sn_rref!(S.pivot_rows, check, direction)
     pivot_set = Set(pcols)
     kernel = BitVector[]
     @inbounds for f = 1:S.nvars
+        _sn_check(check, :kernel, direction, f)
         f in pivot_set && continue
         v = falses(S.nvars)
         v[f] = true
         for i in eachindex(prows)
+            _sn_check(check, :kernel, direction, f)
             prows[i][f] && (v[pcols[i]] = true)
         end
         push!(kernel, v)
     end
     isempty(S.removed) && return kernel
 
-    krows, kcols = _sn_rref!(copy(kernel))
+    krows, kcols = _sn_rref!(copy(kernel), check, direction)
     in_kernel = BitVector[]
-    for r in S.removed
+    for (position, r) in enumerate(S.removed)
+        _sn_check(check, :kernel, direction, position)
         row = copy(r)
         for t in eachindex(krows)
+            _sn_check(check, :kernel, direction, position)
             row[kcols[t]] && (row .⊻= krows[t])
         end
         findfirst(row) === nothing && push!(in_kernel, r)   # r ∈ span(kernel)
@@ -113,18 +124,22 @@ function _sn_kernel(S::_SNSystem)
 
     qrows = BitVector[]
     qcols = Int[]
-    for r in in_kernel
+    for (position, r) in enumerate(in_kernel)
+        _sn_check(check, :kernel, direction, position)
         row = copy(r)
         for t in eachindex(qrows)
+            _sn_check(check, :kernel, direction, position)
             row[qcols[t]] && (row .⊻= qrows[t])
         end
         lead = findfirst(row)
         lead !== nothing && (push!(qrows, row); push!(qcols, lead))
     end
     out = BitVector[]
-    for k in kernel
+    for (position, k) in enumerate(kernel)
+        _sn_check(check, :kernel, direction, position)
         row = copy(k)
         for t in eachindex(qrows)
+            _sn_check(check, :kernel, direction, position)
             row[qcols[t]] && (row .⊻= qrows[t])
         end
         lead = findfirst(row)
@@ -137,19 +152,27 @@ function _sn_kernel(S::_SNSystem)
     return out
 end
 
+# Keep the machine-integer path for small kernels, without wrapping a large
+# candidate count into a negative/empty range and falsely reporting exhaustion.
+_sn_combinations(nb::Int) = nb < 8*sizeof(Int) - 1 ?
+    (1:((1 << nb) - 1)) : (big(1):((big(1) << nb) - 1))
+
 # All neighbours F ⊕ u·s for s in span(basis) \ {0}, keeping the APN ones.
 function _sn_apn_coset(
     F::SBox{N,T},
     uu::T,
     basis::Vector{BitVector},
     observer = nothing,
+    check = nothing,
+    verified = nothing,
 ) where {N,T}
     n_size = 1 << N
     result = SBox{N,T}[]
     seen = Set{Vector{T}}()
     nb = length(basis)
     nb == 0 && return result
-    @inbounds for combo = 1:((1<<nb)-1)
+    @inbounds for combo in _sn_combinations(nb)
+        _sn_check(check, :candidate, Int(uu), combo)
         observer === nothing || observer(:candidate, nothing)
         lut = copy(F.lut)
         for j = 0:(nb-1)
@@ -166,7 +189,9 @@ function _sn_apn_coset(
         if differential_uniformity(G) ≤ 2
             push!(result, G)
             observer === nothing || observer(:apn, G)
+            verified === nothing || verified(G)
         end
+        _sn_check(check, :candidate_done, Int(uu), combo)
     end
     return result
 end
@@ -185,8 +210,16 @@ Optional `observer(event, value)` reports `:candidate`, `:final_test`, and
 `:apn`; only `:apn` carries the verified SBox, which must not be mutated.
 """
 function switching_neighbors(F::SBox{N,T}; observer = nothing) where {N,T}
+    _sn_neighbors(F, observer)
+end
+
+function _sn_neighbors(
+    F::SBox{N,T}, observer = nothing, check = nothing, verified = nothing,
+) where {N,T}
+    _sn_check(check, :validation, 0, 0)
     differential_uniformity(F) ≤ 2 ||
         throw(ArgumentError("switching_neighbors: F must be APN"))
+    _sn_check(check, :constraints, 0, 0)
     n_size = 1 << N
     flut = F.lut
 
@@ -198,14 +231,17 @@ function switching_neighbors(F::SBox{N,T}; observer = nothing) where {N,T}
     linear_positions =
         [Int[x for x = 0:(n_size-1) if (x >> i) & 1 == 1] for i = 0:(N-1)]
     for uu = 1:(n_size-1)
+        _sn_check(check, :removed_solutions, uu, 0)
         S = systems[uu]
         _sn_remove_solution!(S, all_positions)            # constant function
-        for lp in linear_positions                        # linear coordinates
+        for (i, lp) in enumerate(linear_positions)         # linear coordinates
+            _sn_check(check, :removed_solutions, uu, i)
             _sn_remove_solution!(S, lp)
         end
         Minv = inv(F2LinearMap{N,T}(complete_basis(T[T(uu)], N)))
         temp_s = compose(Minv, F)                          # M⁻¹ ∘ F
         for i = 1:(N-1)  # F's non-u coordinates
+            _sn_check(check, :removed_solutions, uu, N + i)
             pos = Int[x for x = 0:(n_size-1) if (temp_s.lut[x+1] >> i) & 1 == 1]
             _sn_remove_solution!(S, pos)
         end
@@ -216,6 +252,7 @@ function switching_neighbors(F::SBox{N,T}; observer = nothing) where {N,T}
         for x1 = 0:(n_size-1)
             f_ax1 = flut[(x1⊻a)+1] ⊻ flut[x1+1]
             for x2 = 0:(n_size-1)
+                _sn_check(check, :constraints, a, (x1, x2))
                 x1 == x2 && continue
                 x1 == (x2 ⊻ a) && continue
                 target = f_ax1 ⊻ flut[(x2⊻a)+1] ⊻ flut[x2+1]
@@ -230,8 +267,97 @@ function switching_neighbors(F::SBox{N,T}; observer = nothing) where {N,T}
 
     result = Vector{Vector{SBox{N,T}}}(undef, n_size - 1)
     for uu = 1:(n_size-1)
-        basis = _sn_kernel(systems[uu])
-        result[uu] = _sn_apn_coset(F, T(uu), basis, observer)
+        basis = _sn_kernel(systems[uu], check, uu)
+        result[uu] = _sn_apn_coset(F, T(uu), basis, observer, check, verified)
     end
     return result
+end
+
+# Budget state belongs to one invocation; observer calls may start other searches.
+struct _SNStopped <: Exception
+    point::StopPoint
+end
+
+"""
+    switching_neighbors_bounded(F::SBox; max_evaluations=10^4,
+        timeout_seconds=60, max_neighbors=typemax(Int), observer=nothing)
+        -> Exhausted | BudgetHit
+
+Enumerate the same complete-system switching neighbours as
+[`switching_neighbors`](@ref), flattened in increasing switching direction and
+its existing candidate order. Every returned function has passed an explicit
+APN test. `Exhausted` certifies completion; `BudgetHit` retains verified partial
+results and does not establish coverage. Neighbour caps conservatively return
+`BudgetHit`, even when the final candidate might meet the cap.
+
+`nodes_visited` counts candidate evaluations, including rejected candidates;
+constraint construction and kernel elimination do not consume that counter.
+The wall-clock budget covers input validation, constraint construction, kernel
+extraction and candidate enumeration. Checks occur between individual
+constraints and kernel operations; one APN test or linear-algebra primitive
+cannot be interrupted. Zero budgets return before validating the input.
+`StopPoint.resume_key` identifies the stopped stage, direction and position;
+it is a diagnostic frontier, not a serialized resumable linear system.
+The observer has the same events and contract as `switching_neighbors`.
+"""
+function switching_neighbors_bounded(
+    F::SBox{N,T};
+    max_evaluations::Integer = 10^4,
+    timeout_seconds::Real = 60,
+    max_neighbors::Integer = typemax(Int),
+    observer = nothing,
+) where {N,T}
+    max_evaluations >= 0 || throw(ArgumentError("max_evaluations must be nonnegative"))
+    max_neighbors >= 0 || throw(ArgumentError("max_neighbors must be nonnegative"))
+    timeout_seconds >= 0 || throw(ArgumentError("timeout_seconds must be nonnegative"))
+    isfinite(timeout_seconds) || timeout_seconds == Inf ||
+        throw(ArgumentError("timeout_seconds must be finite or Inf"))
+    started = time_ns()
+    elapsed() = Float64(time_ns() - started) / 1e9
+    evaluations = Ref(0)
+    found = SBox{N,T}[]
+    region = SearchRegion(
+        :switching_neighbors, "complete switching systems on $(N) bits";
+        params = Dict{String,Any}(
+            "max_evaluations" => max_evaluations,
+            "timeout_seconds" => timeout_seconds,
+            "max_neighbors" => max_neighbors,
+        ),
+    )
+    function check(stage, direction, position)
+        reason = if length(found) >= max_neighbors
+            :solutions
+        elseif elapsed() >= timeout_seconds
+            :time
+        elseif (stage === :validation || stage === :candidate) &&
+               evaluations[] >= max_evaluations
+            :nodes
+        else
+            nothing
+        end
+        if reason !== nothing
+            frontier = Dict{String,Any}(
+                "stage" => stage, "direction" => direction, "position" => position,
+                "evaluations" => evaluations[],
+            )
+            throw(_SNStopped(StopPoint(
+                reason, "switching stage $(stage), direction $(direction), position $(position)";
+                resume_key = frontier,
+            )))
+        end
+        stage === :candidate && (evaluations[] += 1)
+        return nothing
+    end
+    try
+        _sn_neighbors(F, observer, check, G -> push!(found, G))
+    catch err
+        err isa _SNStopped || rethrow()
+        return BudgetHit(
+            err.point, region, found;
+            nodes_visited = evaluations[], elapsed_seconds = elapsed(),
+        )
+    end
+    return Exhausted(
+        region, found; nodes_visited = evaluations[], elapsed_seconds = elapsed(),
+    )
 end
