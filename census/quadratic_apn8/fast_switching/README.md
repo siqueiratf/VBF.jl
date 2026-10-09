@@ -85,6 +85,25 @@ and small sources can produce fewer seeds than the cap. Gold is always included.
 Each switching call has its own time and evaluation caps. Start with eight
 workers and compare throughput before increasing concurrency.
 
+For a two-hour run on 30 Julia threads, use:
+
+```sh
+julia --project=. --threads=30 census/quadratic_apn8/fast_switching/search.jl \
+  --limit 1000000 --workers 30 --seconds 30 --evaluations 10000 \
+  --wall-seconds 7200 \
+  --input census/quadratic_apn8/fast_switching/results/pilot_final/new_classes.tsv \
+  --outdir census/quadratic_apn8/fast_switching/results/run_2h_30t
+```
+
+`--wall-seconds` bounds the whole search after input loading and baseline
+validation. Workers claim seeds dynamically and share the deadline; each orbit
+or switching call receives the smaller of its own limit and the remaining time.
+The search stops early if its finite seed pool is exhausted. The deadline is
+cooperative: a running primitive or compilation must finish before its next
+budget check. Final evidence writing and input rehashing occur after searching.
+Sampled seeds are verified immediately before processing, so a large seed pool
+does not delay the beginning of the timed search with a full verification pass.
+
 To focus on a supplied TSV while retaining all default novelty exclusions:
 
 ```sh
@@ -130,9 +149,12 @@ indices, directions, and 28-byte squarefree ANF coefficients. The compact
 coefficients remove affine terms; their signatures are independently checked
 against the exact LUT signatures. They can seed subsequent quadratic extension
 searches after measuring their bent profile. `parent_N.toml` records searched
-representatives, maps, counts and completion/stop statuses. `summary.toml` binds
+representatives, maps, counts and completion/stop statuses; each checkpoint is
+written through an atomic rename. `run.toml` records provenance at startup,
+`progress.toml` is updated after each processed parent, and `summary.toml` binds
 the inputs, baseline and principal algorithm sources by SHA-256. Generated
-results remain ignored by git.
+results remain ignored by git. A timed run's final summary distinguishes the
+seed-pool size from the processed count and retains partial parent results.
 
 Reproduce the timing comparison:
 
