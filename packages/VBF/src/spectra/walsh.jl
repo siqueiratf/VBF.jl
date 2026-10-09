@@ -40,7 +40,7 @@ function walsh_hadamard!(v::Vector{<:Signed})
     while block < n_pow
         step = 2 * block
         @inbounds for start = 0:step:(n_pow-1)
-            for i = 1:block
+            @simd for i = 1:block
                 a = v[start+i]
                 b = v[start+i+block]
                 v[start+i] = a + b
