@@ -267,10 +267,17 @@ function partition_refinement_equivalence(
     automorphism_timeout_seconds >= 0 || throw(ArgumentError("automorphism_timeout_seconds must be nonnegative"))
     start = time_ns()
     budget = _PRBudget(start, Float64(timeout_seconds), max_nodes, 0, :none)
-    region = SearchRegion(:equivalence, "$(relation):$(N)-bit graphs")
+    region = SearchRegion(:equivalence, "$(relation):$(N)-input/$(M)-output graphs";
+        params=Dict{String,Any}("algorithm"=>algorithm,"orientation"=>:forward,
+            "source_discovery_nodes"=>0,"target_discovery_nodes"=>0))
     witnesses = F2AffineMap{(N+M),UInt32}[]
+    reversed = false
     finish = function (cert)
         elapsed = (time_ns() - start) * 1e-9
+        if cert !== nothing && reversed
+            inverse = inv(cert.linear)
+            cert = F2AffineMap(inverse,inverse(cert.constant))
+        end
         cert === nothing || push!(witnesses, cert)
         if cert !== nothing
             return Found(witnesses, region; nodes_visited = budget.nodes, elapsed_seconds = elapsed)
@@ -315,6 +322,29 @@ function partition_refinement_equivalence(
             timeout_seconds = min(Float64(automorphism_timeout_seconds), remaining),
             max_nodes, min_active_hyperplanes, max_memory_bytes, threaded, algorithm, rng)
         budget.nodes += discovered.nodes_visited
+        region.params["target_discovery_nodes"] = discovered.nodes_visited
+        _pr_check!(budget) || return finish(nothing)
+        if algorithm === :paper && automorphisms === nothing
+            remaining = max(0.0,budget.timeout-(time_ns()-start)*1e-9)
+            source_group = partition_refinement_automorphisms(F;relation,
+                timeout_seconds=min(Float64(automorphism_timeout_seconds),remaining),
+                max_nodes=max(0,max_nodes-budget.nodes),min_active_hyperplanes,
+                max_memory_bytes,threaded,algorithm,rng)
+            budget.nodes += source_group.nodes_visited
+            region.params["source_discovery_nodes"] = source_group.nodes_visited
+            _pr_check!(budget) || return finish(nothing)
+            # Section 6.2 compares graph-action groups: the pointwise kernel
+            # contributes no pruning. Prefer the source on exact-order ties.
+            if source_group.graph_order !== nothing &&
+                (discovered.graph_order === nothing || source_group.graph_order >= discovered.graph_order)
+                F,G = G,F
+                left,right = right,left
+                wf,wg = wg,wf
+                discovered = source_group
+                reversed = true
+                region.params["orientation"] = :reverse
+            end
+        end
         previous = automorphisms isa AutomorphismGroupResult ? automorphisms.generators : automorphisms
         automorphisms = previous === nothing ? discovered : vcat(collect(previous), discovered.generators)
         _pr_check!(budget) || return finish(nothing)

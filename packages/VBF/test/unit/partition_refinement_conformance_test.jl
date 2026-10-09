@@ -87,4 +87,21 @@
             @test nodes_visited(H)==count
         end
     end
+
+    @testset "Section 6.2 two-sided seeding and witness orientation" begin
+        for F in (SBox{2}([0,0,0,1]),VBFTable{2,1}([0,0,0,1])), relation in (:ccz,:ea)
+            n,m = inputbits(F),outputbits(F)
+            G = VBFTable{n,m}([F(x ⊻ 1) ⊻ 1 for x in 0:(length(F)-1)])
+            r = partition_refinement_equivalence(F,G;relation,automorphism_timeout_seconds=10)
+            @test r isa Found
+            mapped = ccz_equivalent_function(F,only(search_solutions(r)))
+            @test mapped.lut==G.lut
+            metadata = search_region(r).params
+            @test metadata["orientation"]===:reverse
+            @test metadata["source_discovery_nodes"]>0 && metadata["target_discovery_nodes"]>0
+            @test nodes_visited(r)>metadata["source_discovery_nodes"]+metadata["target_discovery_nodes"]
+            @test partition_refinement_equivalence(F,G;relation,
+                automorphism_timeout_seconds=10,max_nodes=1) isa BudgetHit
+        end
+    end
 end

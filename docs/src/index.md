@@ -124,8 +124,9 @@ against the target graph before use. For EA, discover with `relation=:ea`;
 CCZ generators may violate the required output-subspace condition.
 
 All decision and certificate APIs accept `automorphisms=H`. For a one-off
-query, `automorphism_timeout_seconds=1.0` discovers a bounded target subgroup
-first, sharing the query's overall time, node and memory budgets. Discovery is
+query, `automorphism_timeout_seconds=1.0` runs bounded discovery on both functions
+and uses the larger known graph-action group in the paper profile, sharing the
+query's overall time, node and memory budgets. Discovery is
 opt-in: easy queries often finish faster without it. Reuse a discovered group
 when testing many functions against the same target. Group memory estimates
 include stabilizer chains across the DFS depth and can reject a computation

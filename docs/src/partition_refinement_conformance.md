@@ -93,3 +93,20 @@ The paper's experimental tables are separate empirical claims. Small fixture
 comparisons in `bench/` do not reproduce Section 7's sampled corpora, Magma
 comparisons, large-dimension averages or peak RSS measurements. Implementing
 Algorithms 1–7 does not imply reproducing those hardware-dependent tables.
+
+## Section 6.2 discovery policy outside Algorithm 7
+
+With `automorphism_timeout_seconds>0` and no supplied target subgroup, the
+paper profile runs bounded discovery on both F and G, compares their known
+graph-action orders, and uses the larger subgroup (source on ties). A source
+group reverses the internal search; the returned certificate is inverted back
+to the public F → G convention. Both discovery runs and the equivalence DFS
+share the overall time and node budget. The allowance is per discovery run,
+bounded by the remaining query time. Unknown orders provide no largest-group
+guarantee; the chosen verified subgroup remains safe for pruning.
+
+The optimized profile preserves target-only discovery. Explicitly supplied
+target generators are always validated and used on the original target.
+`search_region(result).params` records the internal orientation and separate
+discovery node counts. This policy implements the prose of Section 6.2; the
+Algorithm 7 entry point itself still accepts an optional pruning subgroup.
