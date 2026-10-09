@@ -139,6 +139,15 @@ node and compares the printed and corrected reference executions.
 This is a correctness correction, isolated in its own commit. It is not a
 heuristic or optimization. The implementation follows the mathematical search
 described and proved in the paper rather than reproducing this printed defect.
+Lemma 16's inductive step assumes that a branching point can be selected;
+the printed `>1` condition does not guarantee that step. Lemma 17 invokes
+Lemma 16, so the literal pseudocode's completeness argument has this gap.
+This does not refute completeness of the corrected mathematical DFS.
+
+The scalar example is `VBFTable{2,1}([0,0,0,1])`, representing
+`F(x₁,x₂)=x₁x₂`. Its graph is an affine basis in dimension three and its
+full ambient CCZ group has order 24. The square example above embeds this
+scalar function into two output bits, adding a pointwise kernel of order 8.
 
 ### Algorithm 3 needs an exhaustion boundary
 
@@ -157,6 +166,54 @@ increasing size and preserves their left/right correspondence. Tests cover
 exactly sufficient, oversized and maximum-integer floors, empty partitions,
 and public equivalence/group calls with only six ambient hyperplanes. The
 additional focused regression passes 71 assertions.
+
+### Verification against the authors' implementation
+
+The optional driver `bench/partition_refinement_specification_audit.cpp`
+checks the official C++ revision
+[`c9cec6515b3297abf5c15fedd23e55b43f2ba888`](https://github.com/zskiley/CCZ-EA-equivalence/tree/c9cec6515b3297abf5c15fedd23e55b43f2ba888).
+All 54 source/header files in the executed checkout were verified byte for
+byte against that revision's official archive. The source fingerprint,
+using the same sorted-path/content convention as the benchmark runner, is
+`d26c2ea762258e3ce3cf21a7b0cf6d4e55d6488a717c2f0b3e62bf04cbe09757`.
+
+Both `partition_branch::NextUndeterminedBranchCell` and the equivalence
+routine's `NextUndeterminedBranchCellPair` skip singleton *cells*, then accept
+any remaining cell containing at least one undetermined point. After matched
+singletons have been processed, this permits the necessary sole-free-point
+branch. This is different from requiring more than one *undetermined point*.
+The driver's direct probe accepts `[second],[third],[first,fourth]` with the
+first three points mapped. End-to-end group discovery recovers graph order
+24 in both the scalar and square cases, and ambient orders 24 and 192.
+Positive equivalence checks also succeed. The authors' quadratic wrapper
+individualizes the anchor and adjoins translations before DFS, providing an
+additional difference from the printed Algorithm 5.
+
+The C++ `KeepSmallestCells` returns immediately when the number of available
+hyperplanes does not exceed the requested floor. The driver verifies that a
+maximum-integer floor safely retains all six hyperplanes in ambient dimension
+two. **Neither identified pseudocode defect is present in these inspected
+C++ routines at the pinned revision.** These checks do not establish general
+correctness of the released implementation or independently validate the
+paper's large-dimension experimental results.
+
+Re-run from the repository root against an external checkout of that revision:
+
+```sh
+CCZ_REFERENCE=/tmp/CCZ-EA-equivalence-main python3 - <<'PY'
+import os, pathlib, subprocess
+src = pathlib.Path(os.environ['CCZ_REFERENCE']) / 'src'
+files = sorted(str(p) for p in src.rglob('*.cpp')
+               if p.name not in ('main.cpp', 'python.cpp', 'group_benchmark.cpp'))
+subprocess.run(['g++', '-std=c++17', '-O2', '-I' + str(src),
+                'bench/partition_refinement_specification_audit.cpp',
+                *files, '-o', '/tmp/vbf-reference-specification-audit'], check=True)
+subprocess.run(['/tmp/vbf-reference-specification-audit'], check=True)
+PY
+```
+
+The driver is independent audit code; no upstream source is vendored or
+required by package tests.
 
 ### Figure 1 differs from Algorithm 2
 
@@ -218,6 +275,30 @@ The conformance work is committed separately from those extensions:
 - `e0e2ac3`: Section 6.2 two-sided discovery and certificate orientation.
 - `0d7efaa`: rectangular public decisions and EA/CCZ certificates.
 - `ab6997e`: example validation and the Figure 1 discrepancy.
+- `d2f5e7d`: Algorithm 3's necessary exhaustion boundary and focused regression.
+
+## Limits of the paper's experimental claims
+
+The reported tables demonstrate substantial improvements on many cases,
+but do not establish universal per-instance superiority in time and memory:
+
+| Observation in the local paper | Qualification |
+| :--- | :--- |
+| Table 1, positive CCZ search: 6 s for Algorithm 7, 1 s for Magma | The search alone is faster in Magma. Both times exclude group discovery; adding the reported group averages gives approximately 42 s versus 158 s, favoring the proposed method for a fresh end-to-end query. |
+| Table 5, dimension-13 inverse automorphisms: 1,256 MB for Algorithm 5, 969 MB for Magma | Magma uses less reported peak memory in this case. |
+| Section 7 benchmarks CCZ and states EA behaves similarly | Corresponding EA measurements are not presented, so the tables do not independently substantiate that assertion. |
+| Table 5 labels the dimension-10-through-15 inverse benchmarks non-APN | The odd cases 11, 13 and 15 are APN, as Section 7.2 itself states. |
+
+For the last point, extend inversion by `F(0)=0`. For nonzero `a,b`, put
+`x=az`. Away from `z=0,1`, the differential equation becomes
+`z²+z=1/(ab)`. At `ab=1`, the two exceptional solutions are joined by two
+ordinary solutions exactly when `Tr(1)=0`, which holds for even dimension.
+Thus inversion is APN in odd dimension and differentially 4-uniform in even
+dimension. CCZ transformations preserve this distinction; using transformed
+inverse functions does not make the odd-dimensional cases non-APN.
+
+The branching condition affects the printed completeness argument; the table
+findings constrain the scope of the experimental claims.
 
 ## Reproduction claim
 
@@ -225,7 +306,7 @@ The supported claim is: **VBF independently implements the Kaleyski–Sunde
 CCZ/EA equivalence and automorphism algorithms of ePrint 2026/940 in native
 Julia**, including rectangular functions and full ambient group lifting.
 The default path follows the paper's mathematical algorithms; the necessary
-printed branching correction and Figure 1 discrepancy are explicit above.
+branching/floor safeguards and Figure 1 discrepancy are explicit above.
 The independent reference is test-only and shares no native partition,
 signature, partial-affine-map or group-search implementation.
 
