@@ -99,7 +99,8 @@ _pr_group_memory(n::Int, m::Int = n) = Int128(16) * (Int128(1) << (2n)) * (n + m
 """
     partition_refinement_automorphisms(F; relation=:ccz, max_nodes=10^6,
         timeout_seconds=60.0, min_active_hyperplanes=0,
-        max_memory_bytes=512*1024^2, threaded=false) -> AutomorphismGroupResult
+        max_memory_bytes=512*1024^2, threaded=false,
+        algorithm=:paper, rng=Xoshiro(940)) -> AutomorphismGroupResult
 
 Discover a generating set for the full ambient CCZ or EA automorphism group
 using Kaleyski–Sunde Algorithms 4–5 (ePrint 2026/940). Dynamic stabilizer orbits
@@ -119,7 +120,9 @@ function partition_refinement_automorphisms(F::AbstractTruthTable{N,M}; relation
     max_nodes::Int = 10^6, timeout_seconds::Real = 60.0,
     min_active_hyperplanes::Int = 0, max_memory_bytes::Int = 512 * 1024^2,
     threaded::Bool = false,
+    algorithm::Symbol = :paper, rng::AbstractRNG = Xoshiro(940),
 ) where {N,M}
+    algorithm in (:paper,:optimized) || throw(ArgumentError("algorithm must be :paper or :optimized"))
     relation in (:ccz, :ea) || throw(ArgumentError("relation must be :ccz or :ea"))
     max_nodes >= 0 || throw(ArgumentError("max_nodes must be nonnegative"))
     timeout_seconds >= 0 || throw(ArgumentError("timeout_seconds must be nonnegative"))
@@ -162,7 +165,7 @@ function partition_refinement_automorphisms(F::AbstractTruthTable{N,M}; relation
     _pr_check!(budget) || return finish()
     histogram = _pr_intersection_histogram(spectrum, length(points))
     floor = min_active_hyperplanes == 0 ? (N <= 7 ? 16 : 2) * length(points) : min_active_hyperplanes
-    classes, nplanes = _pr_select_classes(histogram, floor)
+    classes, nplanes = _pr_select_classes(histogram, floor;preserve_order=algorithm!==:paper)
     estimate = (Int128(16) << ((N+M))) + _pr_group_memory(N,M) +
         Int128(nplanes + length(points)) * (64 + 32 * ((N+M) + 2))
     if estimate > max_memory_bytes
@@ -180,7 +183,7 @@ function partition_refinement_automorphisms(F::AbstractTruthTable{N,M}; relation
     H = _pr_group_fix(state.group, fixed, budget)
     H === nothing && return finish()
     _pr_auto_dfs!(F, points, planes, pl, pr, hl, copy(hl), a,
-        _PRWorkspace((N+M), length(points), nplanes; threaded), floor, relation === :ea,
+        _PRWorkspace((N+M), length(points), nplanes; threaded, algorithm, rng), floor, relation === :ea,
         budget, state, fixed, H, state.epoch)
     return finish()
 end

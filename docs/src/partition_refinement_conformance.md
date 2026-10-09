@@ -22,6 +22,24 @@ graph actions, including the pointwise affine kernel in rank-deficient cases.
 
 ## Conformance work and commit boundaries
 
+The public solver and group discovery default to `algorithm=:paper`.
+Algorithms 1–3 use fresh shared random key vectors on every iteration, with
+uniform integer entries in `1:8191` (the pseudocode leaves their range open).
+Pass a fresh `rng=Xoshiro(seed)` to replay a search. The default creates a fresh
+`Xoshiro(940)` per call; no mutable global RNG is shared between searches.
+Initial cells remain in decreasing absolute-Walsh order (Algorithms 5/7);
+refined hyperplane cells remain in increasing-size order (Algorithm 3), even
+when the floor retains every cell. Ties are resolved stably and identically on
+both sides. Signed Walsh scores omit only a common offset and positive scale,
+and therefore induce the exact same ordered refinement as incidence counts.
+
+`algorithm=:optimized` preserves the earlier deterministic-weight and
+canonical-cell-order choices explicitly. Threaded kernels remain opt-in.
+The test-only reference in `test/support/kaleyski_sunde_reference.jl` computes
+literal weighted incidences without the native signatures, Walsh transforms
+or compact partitions. Tests compare every intermediate ordered partition,
+truncation result, consistency decision and RNG consumption.
+
 The original implementation used deterministic weights, restored previous cell
 ordering after truncation, seeded quadratic translations before group DFS, and
 propagated EA constraints before leaves. Those choices are extensions, not

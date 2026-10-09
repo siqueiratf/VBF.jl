@@ -15,7 +15,7 @@ struct _PRPlanes
 end
 
 """Reusable transform and signature buffers; owned by one search."""
-struct _PRWorkspace{T<:Signed}
+struct _PRWorkspace{T<:Signed,R<:AbstractRNG}
     scratch::Vector{T}
     point_left::Vector{Int}
     point_right::Vector{Int}
@@ -27,16 +27,23 @@ struct _PRWorkspace{T<:Signed}
     point_cells::Vector{Int}
     threaded::Bool
     direct_threshold::Int
+    algorithm::Symbol
+    rng::R
+    trace::Any
 end
 
+# Existing private kernel tests construct workspaces directly.
+_PRWorkspace(s,a,b,c,d,e,f,g,h,t,k) = _PRWorkspace(s,a,b,c,d,e,f,g,h,t,k,:optimized,Xoshiro(940),nothing)
+
 """Allocate safe-width scratch space and choose the direct-summation crossover."""
-function _PRWorkspace(d::Int, npoints::Int, nplanes::Int; threaded::Bool = false)
+function _PRWorkspace(d::Int, npoints::Int, nplanes::Int; threaded::Bool = false,
+                      algorithm::Symbol = :optimized, rng::AbstractRNG = Xoshiro(940), trace=nothing)
     T = Int128(max(npoints, nplanes)) * 8191 <= typemax(Int32) ? Int32 : Int64
     return _PRWorkspace(
         zeros(T, 1 << d), zeros(Int, npoints), zeros(Int, npoints),
         zeros(Int, nplanes), zeros(Int, nplanes), zeros(UInt32, nplanes),
         zeros(Int, nplanes), zeros(Int, npoints), zeros(Int, npoints),
-        threaded, (d * (1 << d)) ÷ npoints,
+        threaded, (d * (1 << d)) ÷ npoints, algorithm, rng, trace,
     )
 end
 
@@ -96,7 +103,7 @@ end
 Choose whole intersection classes in Algorithm 7's order (large absolute Walsh
 values first, then small classes). Class ties use the intersection size.
 """
-function _pr_select_classes(histogram::Vector{Int}, floor::Int)
+function _pr_select_classes(histogram::Vector{Int}, floor::Int; preserve_order::Bool = true)
     npoints = length(histogram) - 1
     classes = findall(!iszero, histogram)
     sort!(classes; by = j -> (-abs(2(j-1)-npoints), histogram[j], j))
@@ -107,7 +114,7 @@ function _pr_select_classes(histogram::Vector{Int}, floor::Int)
         total >= floor && break
     end
     resize!(classes, last)
-    sort!(classes)
+    preserve_order && sort!(classes)
     return classes, total
 end
 
@@ -138,10 +145,10 @@ end
 
 """Compute point signatures from signed hyperplane-cell weights (Algorithm 1)."""
 function _pr_point_scores!(scores, points, planes::_PRPlanes, hp::_PRPartition,
-                           work::_PRWorkspace)
+                           work::_PRWorkspace; keys=nothing)
     k = 0
     @inbounds for c = 1:(length(hp.starts)-1)
-        weight = _pr_cell_weight(c, length(hp.starts)-1)
+        weight = keys === nothing ? _pr_cell_weight(c, length(hp.starts)-1) : keys[c]
         for j = hp.starts[c]:(hp.starts[c+1]-1)
             i = hp.order[j]
             k += 1
@@ -172,9 +179,9 @@ end
 
 """Compute hyperplane signatures from point-cell weights (Algorithm 2)."""
 function _pr_plane_scores!(scores, points, pp::_PRPartition, planes::_PRPlanes,
-                           hp::_PRPartition, work::_PRWorkspace)
+                           hp::_PRPartition, work::_PRWorkspace; keys=nothing)
     @inbounds for c = 1:(length(pp.starts)-1)
-        weight = _pr_cell_weight(c, length(pp.starts)-1)
+        weight = keys === nothing ? _pr_cell_weight(c, length(pp.starts)-1) : keys[c]
         for j = pp.starts[c]:(pp.starts[c+1]-1)
             work.point_weights[pp.order[j]] = weight
         end

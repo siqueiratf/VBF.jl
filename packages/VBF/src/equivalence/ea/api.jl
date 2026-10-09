@@ -142,9 +142,11 @@ function are_ea_equivalent(
     max_memory_bytes::Int = 512 * 1024^2,
     automorphisms = nothing, automorphism_timeout_seconds::Real = 0.0,
     threaded::Bool = false,
+    algorithm::Symbol = :paper, rng::AbstractRNG = Xoshiro(940),
 )
     strategy in (:auto, :partition_refinement, :heggebakk, :ortho_derivative) ||
         throw(ArgumentError("are_ea_equivalent: unknown strategy $(repr(strategy))"))
+    algorithm in (:paper,:optimized) || throw(ArgumentError("algorithm must be :paper or :optimized"))
     _pr_validate_policy(on_inconclusive)
     inputbits(F) == inputbits(G) || return false
     if strategy in (:auto, :partition_refinement)
@@ -156,7 +158,7 @@ function are_ea_equivalent(
         end
         result = partition_refinement_equivalence(F, G; relation = :ea,
             max_nodes, timeout_seconds, min_active_hyperplanes, max_memory_bytes,
-            automorphisms, automorphism_timeout_seconds, threaded)
+            automorphisms, automorphism_timeout_seconds, threaded, algorithm, rng)
         return _pr_decision(result, on_inconclusive, :are_ea_equivalent)
     end
     storage_type(F) == storage_type(G) || return false
@@ -437,14 +439,16 @@ function ea_equivalence_certificate(
     max_memory_bytes::Int = 512 * 1024^2,
     automorphisms = nothing, automorphism_timeout_seconds::Real = 0.0,
     threaded::Bool = false,
+    algorithm::Symbol = :paper, rng::AbstractRNG = Xoshiro(940),
 ) where {N,T}
     strategy in (:auto, :partition_refinement, :heggebakk) ||
         throw(ArgumentError("ea_equivalence_certificate: unknown strategy $(repr(strategy))"))
+    algorithm in (:paper,:optimized) || throw(ArgumentError("algorithm must be :paper or :optimized"))
     _pr_validate_policy(on_inconclusive)
     if strategy in (:auto, :partition_refinement)
         result = partition_refinement_equivalence(F, G; relation = :ea,
             max_nodes, timeout_seconds, min_active_hyperplanes, max_memory_bytes,
-            automorphisms, automorphism_timeout_seconds, threaded)
+            automorphisms, automorphism_timeout_seconds, threaded, algorithm, rng)
         A = _pr_witness(result, on_inconclusive, :ea_equivalence_certificate)
         return A === nothing || ismissing(A) ? A : _pr_ea_triple(A, T)
     end

@@ -31,6 +31,7 @@ The data/catalog layer lives in the companion `VBFCatalog` package (it depends
 on `VBF`, never the reverse). See the top-level README for the catalog index.
 """
 module VBF
+using Random: AbstractRNG, Xoshiro, rand
 
 # 1. representations — types first (used in later signatures), then transforms
 include("representations/truth_table.jl")
