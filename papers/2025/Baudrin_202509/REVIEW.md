@@ -27,6 +27,52 @@ None. The report heading now includes the selected dimension.
 
 ### Passed checks
 
+- Extended review covered the reusable rectangular APN-extension solver,
+  optimized subspace extraction, parallel switching/seven-bit producers and
+  saved-checkpoint auditors. The parity constraints enumerate precisely the
+  vanishing projected two-flats; normalization removes affine and existing
+  component additions. Multiple-coordinate backtracking enforces a nonzero
+  output sum on each constrained flat. The GF(4) linearized test is reported
+  as a necessary obstruction, never as a sufficient extension certificate.
+- The optimized subspace search intersects candidates with translated
+  candidates and preserves canonical basis enumeration. Histogram pruning is
+  a necessary cardinality bound. Dense and sparse membership representations
+  preserve the same mathematical search; bounded prefixes may differ.
+- Parallel tasks own their search state, random generators and result slots.
+  Shared target automorphism discovery and progress output use locks; the
+  immutable reference data and verified groups are borrowed without mutation.
+  Per-parent limits and aggregate wall-clock limits are distinguished from
+  sums of worker time. Atomic checkpoints bind the source census, parent/root
+  indices, code snapshot and algorithm parameters before reuse.
+- Resume paths audit completed checkpoints before accepting them. Switching
+  checkpoint audits share the search deadline; expiration leaves the checkpoint
+  untouched and cannot accept a partially checked parent. Seven-bit partial
+  checkpoints are recomputed. Corrupted graphs, orbit assignments, degrees,
+  source identities and algorithm settings cannot silently retain exactness.
+- The completed six-bit one-coordinate switching closure processes all 716
+  parents and all 45,108 output directions. It covers 20,674 normalized APN
+  neighbours, with no unresolved comparisons or relative new CCZ classes,
+  and recovers two components: roots 1–2 and roots 3–14. The serial run took
+  497.569 seconds; the separate sixteen-worker run took 96.455 seconds and
+  reproduced these coverage totals and components. This is a comparison of
+  these two VBF runs, not a benchmark against the authors' implementation.
+  The separate auditor checks raw two-flat systems, quotient dimensions,
+  distinct switching cosets, APN properties and all positive graph witnesses;
+  it rebuilds the reported components from the verified edges.
+- The seven-bit producer completed all 488 pinned quadratic roots in 384.131
+  seconds and reproduced 82,409 classes with degree histogram
+  `{2:488, 3:60302, 4:21619}`. Its separate raw checkpoint audit completed in
+  23.775 seconds: it checks Walsh-zero subspaces, generator graph maps, dual
+  actions, orbit connectivity, representative maps, APN properties and degrees.
+  Full group discovery and subspace exhaustion are recorded by the producer
+  and are not independently replayed by that audit. Pairwise root distinction
+  is inherited from the pinned input collection, not independently established
+  by this seven-bit run; summing its closures is conditional on that input fact.
+- The selected extended VBF regression passed 143,086 assertions across 100
+  items, excluding the same two identified pre-existing failures. The dedicated
+  seven-bit checkpoint fixture audit passed 28 assertions and exercised an
+  actual saved-root round trip. These checks supplement the earlier evidence
+  below; the earlier test totals describe the earlier implementation stage.
 - Proposition 2's group-orbit classification is implemented through verified
   graph automorphism generators. The inverse-transpose action generates the
   same orbits as the paper's transpose action; neither translation constants
@@ -82,7 +128,8 @@ None. The report heading now includes the selected dimension.
   candidates matched known EA representatives, with no undecided comparisons
   or relative new CCZ seeds. All 200 saved maps independently passed the raw
   certificate oracle; the run remains bounded by its neighbour cap.
-- Stage 5's final suite passed 132 assertions, including a test-only raw
+- Stage 5's initial suite passed 132 assertions; the extended suite now passes
+  255 assertions, including a test-only raw
   certificate oracle, deliberate certificate corruption, budget semantics,
   switching-support checks, the corrected shared node budget, Theorem 2 bounds,
   schema-v2 source/closure metadata and TOML round trips. Witness snapshots use
@@ -92,7 +139,7 @@ None. The report heading now includes the selected dimension.
   APN properties, ANF degrees, lookup-table distinction, root indices and the
   79 independent invariant rejections. Dedicated switching audits also checked
   the four combined-run and two Kim-run switching supports directly.
-- The final broader VBF regression passed 138,326 assertions across 97 test
+- The final broader VBF regression passed 143,086 assertions across 100 test
   items. Its two excluded items, `linear_backtracking` and `extensions`, are
   separately identified as pre-existing failures; this is not presented as an
   unfiltered package-suite pass. The earlier timing failure was an undecided
@@ -117,9 +164,11 @@ None. The report heading now includes the selected dimension.
 ### Summary
 
 The scoped implementation is ready for merging: it is mathematically coherent
-and safely reports incomplete work. The full known-class six-bit census is reproduced and its
-saved certificates and degree totals are independently validated; the broader
-selected regression passes. No Critical or Important code issue remains.
-The full seven-bit census is not reproduced, the authors' exact switching
-traversal/database is not reconstructed, and Conjecture 1 and the universal
-paper theorems remain unproved.
+and safely reports incomplete work. The known-class six-bit census and complete
+one-coordinate switching closure are reproduced and independently audited.
+All 488 seven-bit closures reproduce the paper's 82,409 degree totals, conditional
+on the pinned collection's inherited root distinction and the producer's tested
+exhaustion decisions. The selected extended regression passes. No Critical or
+Important code issue remains. The authors' exact switching traversal/database is
+not reconstructed; finite closure does not prove Conjecture 1, that every APN
+function belongs to the input collections, or the paper's universal theorems.

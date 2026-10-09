@@ -180,7 +180,7 @@ Changing recorded source code or algorithm profiles requires a new result name.
 Generated output
 and source PDFs are ignored; this README is tracked.
 
-The bounded test suite passed **132 assertions** across four test sets under
+The bounded test suite passed **255 assertions** across nine test sets under
 Julia 1.13.1. The fast report completed with two four-bit Gold EA classes,
 complete native/legacy orbit agreement, and a bounded switching run that
 evaluated fifteen candidates, made 34 equivalence decisions and retained 32
@@ -234,8 +234,62 @@ closures. Both runs retain an incomplete frontier and found no new CCZ class
 or undecided comparison in their samples. Their snapshots are
 `results/conjecture1_sixbit.toml` and `results/conjecture1_kim.toml`.
 
-The VBF regression suite passed **138,326 assertions in 97 test items**,
+The VBF regression suite passed **143,086 assertions in 100 test items**,
 excluding the two previously known failing items `linear_backtracking` and
 `extensions`. The documentation build and doctests passed. The independent
 review and evidence checks are recorded in `REVIEW.md` and `TEST_REPORT.md`.
 No timing advantage over sboxU is claimed here.
+
+
+## Completed parallel computations
+
+On 9 October 2026, the full six-bit one-coordinate switching closure completed
+for **all 716 EA representatives**, over all **45,108 output directions** and
+all **20,674 nonzero quotient-kernel combinations**. Every resulting APN
+neighbour has a checked affine graph map into one of the fourteen known CCZ
+roots; no comparison was undecided. The induced CCZ graph has two components:
+the two Gold classes, and the other twelve classes. This verifies closure of
+the known set under this switching operation, not Conjecture 1.
+
+| Computation | Serial seconds | 16-worker seconds | Observed speedup |
+|---|---:|---:|---:|
+| Switching kernels and candidate generation | 35.97 | 3.89 | 9.2× |
+| Full switching closure, including CCZ classification | 497.57 | 96.45 | 5.2× |
+| Seven-bit census, all 488 recorded roots | — | 384.13 | — |
+
+The full seven-bit run independently computed each root's complete native
+CCZ automorphism group, enumerated its Walsh-zero subspaces, and formed their
+EA-class orbits. The aggregate is **82,409 EA classes**, with **488 quadratic,
+60,302 cubic and 21,619 quartic** representatives, exactly the published totals.
+The 488 input roots' CCZ distinctness is inherited from the pinned classification
+collection; it was not independently certified pair by pair. Consequently the
+global sum is conditional on that input classification, while the computed
+per-root closures are complete.
+
+The saved outputs are `results/switching_closure6_parallel16.toml` and
+`results/sevenbit_parallel16.toml`, with individual parent/root checkpoints.
+Standalone audits verified all switching dimensions, quotient cosets, APN
+neighbours and graph certificates, and all seven-bit subspace spans, group
+maps, orbit coverage/connectivity, representative graph maps and degrees.
+The seven-bit audit took **23.77 seconds**; it checks the recorded mathematical
+evidence and does not independently replay group or subspace exhaustion.
+
+Parallel runs use task-local RNGs, disjoint checkpoints and a synchronized
+cache of verified target automorphism generators. Results are collected in
+input order. The seven-bit driver explicitly selects the separately documented
+`:optimized` group/subspace implementations; the reference defaults in the
+reusable APIs remain available. Wall times exclude package loading and are
+observations from this host, not a comparison with sboxU or C. The two full
+parallel runs overlapped, so this is not a controlled scaling benchmark.
+
+Rerun from the repository root:
+
+```sh
+make -C papers/2025/Baudrin_202509 closure6 threads=16 workers=16 save_results=true
+make -C papers/2025/Baudrin_202509 census7 threads=16 workers=16 save_results=true
+```
+
+The closure target requires the saved complete `results/section32.toml` census.
+Use `resume=false` for a fresh timed run; source/profile changes require a new
+result name when calling the Julia driver directly. Resume checks are bounded
+by the remaining deadline and reject incomplete or invalid checkpoints.
