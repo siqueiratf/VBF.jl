@@ -1,0 +1,25 @@
+Hyperplane restrictions: n=6 samples=5000 hpf=5 seed=1 threads=2
+julia --project=/home/ts/VBF.jl/.claude/worktrees/apn8-census -t 2 -e \
+  'include(joinpath("/home/ts/VBF.jl/.claude/worktrees/apn8-census/census/quadratic_apn8/theory/", "check_uniqueness.jl")); \
+   check_uniqueness(; n=6, samples=5000, hpf=5, seed=1)'
+n=6 functions=13 pairs=819 threads=2 crosscheck=true seed=1
+  500 / 819 pairs [5s]
+
+## Results n=6  (|Lambda| = 32)
+pairs                     819
+distinct functions        13
+e histogram               Pair{Any, Int64}[31744 => 1, 35648 => 411, 47136 => 405, 63488 => 2]
+e / 2^(n-1) histogram     Pair{Any, Int64}[992 => 1, 1114 => 411, 1473 => 405, 1984 => 2]
+dim ker Phi histogram     Pair{Any, Int64}[5 => 819]
+e / |ker Phi| histogram   Pair{Any, Int64}[992 => 1, 1114 => 411, 1473 => 405, 1984 => 2]
+crosscheck distinct pi|_H == e/|ker Phi|:  819 / 819
+pairs with e > 2^(n-1)    819
+by source                 [("catalog_ccz_n6", 819, 63488)]
+F rank types (count)      Pair{Any, Int64}[(42, 21, 0, 0) => 756, (46, 16, 1, 0) => 63]
+G rank types (count)      Pair{Any, Int64}[(58, 5, 0) => 816, (62, 0, 1) => 3]
+(F type, G type) -> e/|ker Phi| histogram:
+  F=(42, 21, 0, 0)  G=(58, 5, 0)  pairs=756  Pair{Any, Int64}[1114 => 396, 1473 => 360]
+  F=(46, 16, 1, 0)  G=(58, 5, 0)  pairs=60  Pair{Any, Int64}[1114 => 15, 1473 => 45]
+  F=(46, 16, 1, 0)  G=(62, 0, 1)  pairs=3  Pair{Any, Int64}[992 => 1, 1984 => 2]
+time per pair: mean 0.012s, max 0.421s
+wrote /home/ts/VBF.jl/.claude/worktrees/apn8-census/census/quadratic_apn8/theory/results/uniq_n6.tsv  [8.0s]

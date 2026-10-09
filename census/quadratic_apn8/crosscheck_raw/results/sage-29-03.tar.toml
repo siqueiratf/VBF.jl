@@ -1,0 +1,32 @@
+file = "sage-29-03.tar"
+bytes = 444651592
+records = 1361417
+other_lines = 47
+parse_errors = 0
+non_apn = 0
+non_quadratic = 0
+od_undefined = 0
+quadratic_apn = 1361417
+distinct_sigma = 1361417
+distinct_sigma_in_index = 1361417
+distinct_sigma_not_in_index = 0
+records_in_index = 1361417
+records_not_in_index = 0
+distinct_sigma_in_553 = 0
+records_in_553 = 0
+spot_checked = 1365
+spot_mismatch = 0
+seconds = 189.1
+other_line_samples = ["apnx00=[", "]", "", "apnx01=[", "]", "", "apnx02=[", "]", "", "apnx03=["]
+examples = Tuple{String, String}[]
+[distinct_sigma_by_source]
+functions = 2
+beierle2025_n8 = 1349451
+beierleleander2022_n8 = 6556
+beierleleanderperrin2022_n8 = 2237
+edelpott2009_n8 = 0
+simonberg_gf4_n8 = 2
+taniguchi2019_n8 = 0
+wengtangong2013_n8 = 0
+yuperrin2022_qam_n8 = 1298
+yuwangli2014_qam_n8 = 1875

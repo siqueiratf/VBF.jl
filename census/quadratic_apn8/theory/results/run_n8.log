@@ -1,0 +1,41 @@
+Hyperplane restrictions: n=8 samples=5000 hpf=5 seed=1 threads=2
+julia --project=/home/ts/VBF.jl/.claude/worktrees/apn8-census -t 2 -e \
+  'include(joinpath("/home/ts/VBF.jl/.claude/worktrees/apn8-census/census/quadratic_apn8/theory/", "check_uniqueness.jl")); \
+   check_uniqueness(; n=8, samples=5000, hpf=5, seed=1)'
+n=8 functions=1000 pairs=5000 threads=2 crosscheck=false seed=1
+  500 / 5000 pairs [12s]
+  1000 / 5000 pairs [23s]
+  1500 / 5000 pairs [34s]
+  2000 / 5000 pairs [45s]
+  2500 / 5000 pairs [55s]
+  3000 / 5000 pairs [65s]
+  3500 / 5000 pairs [74s]
+  4000 / 5000 pairs [84s]
+  4500 / 5000 pairs [95s]
+  5000 / 5000 pairs [108s]
+
+## Results n=8  (|Lambda| = 128)
+pairs                     5000
+distinct functions        1000
+e histogram               Pair{Any, Int64}[128 => 4966, 256 => 24, 512 => 10]
+e / 2^(n-1) histogram     Pair{Any, Int64}[1 => 4966, 2 => 24, 4 => 10]
+dim ker Phi histogram     Pair{Any, Int64}[7 => 5000]
+e / |ker Phi| histogram   Pair{Any, Int64}[1 => 4966, 2 => 24, 4 => 10]
+crosscheck distinct pi|_H == e/|ker Phi|:  34 / 34
+pairs with e > 2^(n-1)    34
+classified pairs (e > 2^(n-1)): (canonical extensions, distinct sigma, sigma == sigma(F)) histogram
+                          Pair{Any, Int64}[(2, 2, 1) => 24, (4, 3, 1) => 10]
+functions with some e > 2^(n-1): Pair{Any, Int64}["beierle2025_n8" => 1, "beierleleander2022_n8" => 7, "beierleleanderperrin2022_n8" => 1, "edelpott2009_n8" => 5, "gold_x3" => 1, "gold_x9" => 1, "yuperrin2022_qam_n8" => 1]
+by source                 [("beierle2025_n8", 3185, 256), ("beierleleander2022_n8", 480, 256), ("beierleleanderperrin2022_n8", 385, 256), ("edelpott2009_n8", 110, 512), ("gold_x3", 5, 512), ("gold_x9", 5, 256), ("taniguchi2019_n8", 10, 128), ("wengtangong2013_n8", 50, 128), ("yuperrin2022_qam_n8", 385, 256), ("yuwangli2014_qam_n8", 385, 128)]
+F rank types (count)      Pair{Any, Int64}[(170, 85, 0, 0, 0) => 4450, (174, 80, 1, 0, 0) => 505, (178, 75, 2, 0, 0) => 35, (182, 70, 3, 0, 0) => 10]
+G rank types (count)      Pair{Any, Int64}[(234, 21, 0, 0) => 4959, (238, 16, 1, 0) => 41]
+(F type, G type) -> e/|ker Phi| histogram:
+  F=(170, 85, 0, 0, 0)  G=(234, 21, 0, 0)  pairs=4450  Pair{Any, Int64}[1 => 4421, 2 => 19, 4 => 10]
+  F=(174, 80, 1, 0, 0)  G=(234, 21, 0, 0)  pairs=471  Pair{Any, Int64}[1 => 468, 2 => 3]
+  F=(174, 80, 1, 0, 0)  G=(238, 16, 1, 0)  pairs=34  Pair{Any, Int64}[1 => 34]
+  F=(178, 75, 2, 0, 0)  G=(234, 21, 0, 0)  pairs=29  Pair{Any, Int64}[1 => 28, 2 => 1]
+  F=(178, 75, 2, 0, 0)  G=(238, 16, 1, 0)  pairs=6  Pair{Any, Int64}[1 => 5, 2 => 1]
+  F=(182, 70, 3, 0, 0)  G=(234, 21, 0, 0)  pairs=9  Pair{Any, Int64}[1 => 9]
+  F=(182, 70, 3, 0, 0)  G=(238, 16, 1, 0)  pairs=1  Pair{Any, Int64}[1 => 1]
+time per pair: mean 0.042s, max 0.725s
+wrote /home/ts/VBF.jl/.claude/worktrees/apn8-census/census/quadratic_apn8/theory/results/uniq_n8.tsv  [108.3s]

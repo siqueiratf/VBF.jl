@@ -1,0 +1,72 @@
+== catalog_40_n8_Calderini2021_thm62 (n = 8)
+   start degree 2, differential spectrum {0: 32640, 2: 32640}
+   Walsh zeroes (sboxU = numpy): 16575
+   n-dim subspaces in Z_F: 352 (0.10 s)
+   thickness of the subspaces: {0: 1, 1: 255, 2: 96}
+   degrees of the representatives: {2: 1, 3: 255, 4: 96}
+   distinct EA invariants (degree, thickness spectrum): 17
+          1 x (2, ((0, 1), (1, 255), (2, 96)))
+         36 x (3, ((0, 1), (1, 3), (2, 252), (3, 96)))
+         36 x (3, ((0, 1), (1, 3), (2, 254), (3, 94)))
+         72 x (3, ((0, 1), (1, 3), (2, 256), (3, 92)))
+         18 x (3, ((0, 1), (1, 5), (2, 252), (3, 94)))
+         36 x (3, ((0, 1), (1, 5), (2, 254), (3, 92)))
+         12 x (3, ((0, 1), (1, 5), (2, 256), (3, 90)))
+         12 x (3, ((0, 1), (1, 5), (2, 258), (3, 88)))
+         27 x (3, ((0, 1), (1, 7), (2, 252), (3, 92)))
+          6 x (3, ((0, 1), (1, 7), (2, 256), (3, 88)))
+         12 x (4, ((0, 1), (1, 3), (2, 10), (3, 248), (4, 90)))
+         12 x (4, ((0, 1), (1, 3), (2, 10), (3, 252), (4, 86)))
+         12 x (4, ((0, 1), (1, 3), (2, 10), (3, 254), (4, 84)))
+         24 x (4, ((0, 1), (1, 3), (2, 12), (3, 248), (4, 88)))
+         12 x (4, ((0, 1), (1, 3), (2, 12), (3, 250), (4, 86)))
+         12 x (4, ((0, 1), (1, 3), (2, 12), (3, 254), (4, 82)))
+         12 x (4, ((0, 1), (1, 3), (2, 8), (3, 254), (4, 86)))
+   quadratic representative: YES
+   time 100.54 s
+== catalog_41_n8_Gold_x3 (n = 8)
+   start degree 2, differential spectrum {0: 32640, 2: 32640}
+   Walsh zeroes (sboxU = numpy): 16575
+   n-dim subspaces in Z_F: 256 (0.05 s)
+   thickness of the subspaces: {0: 1, 1: 255}
+   degrees of the representatives: {2: 1, 3: 255}
+   distinct EA invariants (degree, thickness spectrum): 2
+          1 x (2, ((0, 1), (1, 255)))
+        255 x (3, ((0, 1), (1, 3), (2, 252)))
+   quadratic representative: YES
+   time 49.63 s
+== vbf_dillon_apn_permutation (n = 6)
+   start degree 4, differential spectrum {0: 2016, 2: 2016}
+   Walsh zeroes (sboxU = numpy): 1071
+   n-dim subspaces in Z_F: 222 (0.01 s)
+   thickness of the subspaces: {0: 1, 1: 7, 2: 14, 3: 58, 4: 42, 5: 84, 6: 16}
+   degrees of the representatives: {2: 1, 3: 63, 4: 158}
+   distinct EA invariants (degree, thickness spectrum): 8
+          1 x (2, ((0, 1), (1, 63), (2, 126), (3, 32)))
+         21 x (3, ((0, 1), (1, 9), (2, 72), (3, 108), (4, 32)))
+         14 x (3, ((0, 1), (1, 9), (2, 72), (3, 124), (4, 16)))
+         28 x (3, ((0, 1), (1, 9), (2, 80), (3, 116), (4, 16)))
+         42 x (4, ((0, 1), (1, 3), (2, 24), (3, 78), (4, 84), (5, 32)))
+         28 x (4, ((0, 1), (1, 3), (2, 24), (3, 94), (4, 84), (5, 16)))
+         32 x (4, ((0, 1), (1, 7), (2, 14), (3, 58), (4, 42), (5, 84), (6, 16)))
+         56 x (4, ((0, 1), (1, 7), (2, 24), (3, 90), (4, 84), (5, 16)))
+   quadratic representative: YES
+   time 29.43 s
+== vbf_kim_apn (n = 6)
+   start degree 2, differential spectrum {0: 2016, 2: 2016}
+   Walsh zeroes (sboxU = numpy): 1071
+   n-dim subspaces in Z_F: 222 (0.00 s)
+   thickness of the subspaces: {0: 1, 1: 63, 2: 126, 3: 32}
+   degrees of the representatives: {2: 1, 3: 63, 4: 158}
+   distinct EA invariants (degree, thickness spectrum): 8
+          1 x (2, ((0, 1), (1, 63), (2, 126), (3, 32)))
+         21 x (3, ((0, 1), (1, 9), (2, 72), (3, 108), (4, 32)))
+         14 x (3, ((0, 1), (1, 9), (2, 72), (3, 124), (4, 16)))
+         28 x (3, ((0, 1), (1, 9), (2, 80), (3, 116), (4, 16)))
+         42 x (4, ((0, 1), (1, 3), (2, 24), (3, 78), (4, 84), (5, 32)))
+         28 x (4, ((0, 1), (1, 3), (2, 24), (3, 94), (4, 84), (5, 16)))
+         32 x (4, ((0, 1), (1, 7), (2, 14), (3, 58), (4, 42), (5, 84), (6, 16)))
+         56 x (4, ((0, 1), (1, 7), (2, 24), (3, 90), (4, 84), (5, 16)))
+   quadratic representative: YES
+   time 26.88 s
+wrote 4 degree-2 representatives (one per invariant) to data/controls_quadratic_reps.tsv

@@ -1,0 +1,22 @@
+Hyperplane restrictions: n=4 samples=5000 hpf=5 seed=1 threads=2
+julia --project=/home/ts/VBF.jl/.claude/worktrees/apn8-census -t 2 -e \
+  'include(joinpath("/home/ts/VBF.jl/.claude/worktrees/apn8-census/census/quadratic_apn8/theory/", "check_uniqueness.jl")); \
+   check_uniqueness(; n=4, samples=5000, hpf=5, seed=1)'
+n=4 functions=1 pairs=15 threads=2 crosscheck=true seed=1
+
+## Results n=4  (|Lambda| = 8)
+pairs                     15
+distinct functions        1
+e histogram               Pair{Any, Int64}[448 => 15]
+e / 2^(n-1) histogram     Pair{Any, Int64}[56 => 15]
+dim ker Phi histogram     Pair{Any, Int64}[3 => 15]
+e / |ker Phi| histogram   Pair{Any, Int64}[56 => 15]
+crosscheck distinct pi|_H == e/|ker Phi|:  15 / 15
+pairs with e > 2^(n-1)    15
+by source                 [("catalog_ccz_n4", 15, 448)]
+F rank types (count)      Pair{Any, Int64}[(10, 5, 0) => 15]
+G rank types (count)      Pair{Any, Int64}[(14, 1) => 15]
+(F type, G type) -> e/|ker Phi| histogram:
+  F=(10, 5, 0)  G=(14, 1)  pairs=15  Pair{Any, Int64}[56 => 15]
+time per pair: mean 0.027s, max 0.293s
+wrote /home/ts/VBF.jl/.claude/worktrees/apn8-census/census/quadratic_apn8/theory/results/uniq_n4.tsv  [2.6s]
