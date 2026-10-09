@@ -61,7 +61,11 @@ function _pr_individualize!(p::_PRPartition, c::Int, element::Int)
     error("element does not belong to the selected partition cell")
 end
 
-"""Retain corresponding smallest whole hyperplane cells, up to a floor."""
+"""
+Retain corresponding smallest whole hyperplane cells, up to a floor.
+If fewer hyperplanes are available, retain all cells. Algorithm 3's printed
+while-loop omits this boundary; iterating over existing cells supplies it.
+"""
 function _pr_trim_pair!(a::_PRPartition, b::_PRPartition, floor::Int; preserve_order::Bool = true)
     preserve_order && length(a.order) <= floor && return
     cells = collect(1:(length(a.starts)-1))

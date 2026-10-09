@@ -97,7 +97,7 @@ comparing decisions, first graph actions, DFS counts and full graph groups
 under multiple seeds. Full ambient orders are separately checked against
 exhaustive AGL oracles, including EA restrictions and kernel lifts.
 
-The final package regression on Julia 1.13.1 passed **131,050 assertions in
+The package regression after the conformance implementation on Julia 1.13.1 passed **131,050 assertions in
 92 test items**. Only the pre-existing `linear_backtracking` and `extensions`
 failures were excluded; both were reproduced on the unchanged base commit
 `f0401a2`. The regression command was:
@@ -139,6 +139,24 @@ node and compares the printed and corrected reference executions.
 This is a correctness correction, isolated in its own commit. It is not a
 heuristic or optimization. The implementation follows the mathematical search
 described and proved in the paper rather than reproducing this printed defect.
+
+### Algorithm 3 needs an exhaustion boundary
+
+The final loop in Algorithm 3 stops only when `HyperplaneFloor` is reached.
+If the requested floor exceeds the number of available hyperplanes, its next
+cell does not exist. This also arises naturally in small dimensions: there
+are only `2*(2^(n+m)-1)` affine hyperplanes in total, and initialization may
+have already retained fewer than that. Algorithms 5 and 7 bound their initial
+selection by the available classes; Algorithm 3 needs the same protection.
+
+The native trim iterates over existing cells and retains all of them if the
+floor cannot be reached. This boundary has been present since the original
+implementation; its specification and regression tests are isolated from
+algorithmic extensions. The paper profile still sorts the surviving cells by
+increasing size and preserves their left/right correspondence. Tests cover
+exactly sufficient, oversized and maximum-integer floors, empty partitions,
+and public equivalence/group calls with only six ambient hyperplanes. The
+additional focused regression passes 71 assertions.
 
 ### Figure 1 differs from Algorithm 2
 
