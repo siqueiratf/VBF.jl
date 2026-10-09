@@ -142,6 +142,9 @@ function _pr_prepare_node!(pl, pr, left, right, a, work, M, ea, fixed)
             i = pl.order[j]
             y = _pr_image(a, left[i])
             if y === nothing
+                # Algorithms 4/6 print >1 free points. A quadratic anchor is
+                # not individualized in Algorithm 5: its cell can have just
+                # one free point. Section 3 and Lemma 16 require >0 here.
                 if hi - lo + 1 < size
                     cell, size, xindex = c, hi - lo + 1, i
                 end
