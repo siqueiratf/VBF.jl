@@ -1,0 +1,240 @@
+"""
+Native Kaleyski–Sunde CCZ/EA recovery by affine partition refinement.
+
+Algorithms 3, 6 and 7 of Nikolay Kaleyski and Joakim Sunde, *Efficiently
+deciding and recovering CCZ and EA equivalence for arbitrary vectorial Boolean
+functions using the partition refinement framework*, ePrint 2026/940 (2026),
+https://eprint.iacr.org/2026/940. Reference implementation:
+https://github.com/zskiley/CCZ-EA-equivalence.
+
+This Julia implementation uses VBF's packing `(x << n) | F(x)` throughout.
+Consequently the EA output subspace occupies the **low** n bits. Signed
+signatures implement the paper's incidence refinement, with deterministic cell
+weights. Hyperplanes only prune; every witness is checked against the full graph.
+"""
+
+"""Search-local deadline and node count, including preprocessing time."""
+mutable struct _PRBudget
+    start::UInt64
+    timeout::Float64
+    max_nodes::Int
+    nodes::Int
+    stopped::Symbol
+end
+
+"""Check a search deadline without conflating interruption with exhaustion."""
+function _pr_check!(b::_PRBudget)
+    b.stopped === :none || return false
+    if (time_ns() - b.start) * 1e-9 >= b.timeout
+        b.stopped = :time
+        return false
+    end
+    return true
+end
+
+"""An affine anchor and injective partial maps on the ambient space and quotient."""
+mutable struct _PRAffineMap
+    linear::_PartialF2Isomorphism
+    quotient::_PartialF2Isomorphism
+    anchored::Bool
+    source::UInt32
+    target::UInt32
+end
+
+"""Construct empty affine constraints in VBF's input-high/output-low convention."""
+_PRAffineMap(n::Int) = _PRAffineMap(
+    _PartialF2Isomorphism(2n), _PartialF2Isomorphism(n), false, UInt32(0), UInt32(0),
+)
+Base.copy(a::_PRAffineMap) = _PRAffineMap(
+    copy(a.linear), copy(a.quotient), a.anchored, a.source, a.target,
+)
+
+"""Evaluate the determined portion of an affine map."""
+@inline function _pr_image(a::_PRAffineMap, x::UInt32)
+    a.anchored || return nothing
+    y = _partial_image(a.linear, x ⊻ a.source)
+    return y === nothing ? nothing : y ⊻ a.target
+end
+
+"""
+Propagate a point correspondence. EA mode also propagates the input quotient;
+this tests every relation in the intersection with the output subspace, including
+relations that involve several output basis vectors.
+"""
+function _pr_insert!(a::_PRAffineMap, x::UInt32, y::UInt32, n::Int, ea::Bool)
+    if !a.anchored
+        a.anchored, a.source, a.target = true, x, y
+        return true
+    end
+    dx, dy = x ⊻ a.source, y ⊻ a.target
+    _partial_insert!(a.linear, dx, dy) || return false
+    return !ea || _partial_insert!(a.quotient, dx >> n, dy >> n)
+end
+
+"""Run paired point/hyperplane refinement to a fixpoint (Algorithm 3)."""
+function _pr_refine!(pl, pr, hl, hr, left, right, planes_left, planes_right,
+                     work, floor, budget)
+    while _pr_check!(budget)
+        before = length(pl.starts) + length(hl.starts)
+        _pr_point_scores!(work.point_left, left, planes_left, hl, work)
+        _pr_point_scores!(work.point_right, right, planes_right, hr, work)
+        _pr_split_pair!(pl, pr, work.point_left, work.point_right) || return false
+        _pr_check!(budget) || return false
+        _pr_plane_scores!(work.plane_left, left, pl, planes_left, hl, work)
+        _pr_plane_scores!(work.plane_right, right, pr, planes_right, hr, work)
+        _pr_split_pair!(hl, hr, work.plane_left, work.plane_right) || return false
+        if before == length(pl.starts) + length(hl.starts)
+            _pr_trim_pair!(hl, hr, floor)
+            return true
+        end
+    end
+    return false
+end
+
+"""Extend affine constraints and independently verify a full graph certificate."""
+function _pr_certificate(a::_PRAffineMap, F::SBox{N}, G::SBox, ea::Bool) where {N}
+    L = _partial_complete(a.linear; output_bits = ea ? N : 0)
+    L === nothing && return nothing
+    A = F2AffineMap(L, a.target ⊻ L(a.source))
+    is_invertible(L) || return nothing
+    if ea
+        all(v -> v >> N == 0, view(L.cols, 1:N)) || return nothing
+    end
+    return ccz_equivalent_function(F, A) == G ? A : nothing
+end
+
+"""Depth-first affine recovery with paired partitions (Algorithm 6)."""
+function _pr_dfs!(F::SBox{N}, G, left, right, planes_left, planes_right, pl, pr,
+                  hl, hr, a, work, floor, ea, budget, transitive) where {N}
+    _pr_check!(budget) || return nothing
+    if budget.nodes >= budget.max_nodes
+        budget.stopped = :nodes
+        return nothing
+    end
+    budget.nodes += 1
+    _pr_refine!(pl, pr, hl, hr, left, right, planes_left, planes_right,
+                work, floor, budget) || return nothing
+    @inbounds for c = 1:(length(pl.starts)-1)
+        lo = pl.starts[c]
+        if pl.starts[c+1] == lo + 1
+            _pr_insert!(a, left[pl.order[lo]], right[pr.order[lo]], N, ea) || return nothing
+        end
+    end
+    cell, size, xindex = 0, typemax(Int), 0
+    @inbounds for c = 1:(length(pl.starts)-1)
+        lo, hi = pl.starts[c], pl.starts[c+1] - 1
+        for j = lo:hi
+            i = pl.order[j]
+            y = _pr_image(a, left[i])
+            if y === nothing
+                if hi - lo + 1 < size
+                    cell, size, xindex = c, hi - lo + 1, i
+                end
+            else
+                # An affine implication must land in the corresponding target cell.
+                any(k -> right[pr.order[k]] == y, lo:hi) || return nothing
+            end
+        end
+    end
+    cell == 0 && return _pr_certificate(a, F, G, ea)
+    lo, hi = pr.starts[cell], pr.starts[cell+1] - 1
+    # Quadratic graphs have known translations acting transitively (paper
+    # Section 6.1). At the unanchored root all image choices are equivalent.
+    transitive && !a.anchored && (hi = lo)
+    for j = lo:hi
+        _pr_check!(budget) || return nothing
+        yindex = pr.order[j]
+        b = copy(a)
+        _pr_insert!(b, left[xindex], right[yindex], N, ea) || continue
+        ql, qr = copy(pl), copy(pr)
+        _pr_individualize!(ql, cell, xindex)
+        _pr_individualize!(qr, cell, yindex)
+        cert = _pr_dfs!(F, G, left, right, planes_left, planes_right, ql, qr,
+                        copy(hl), copy(hr), b, work, floor, ea, budget, transitive)
+        cert === nothing || return cert
+        budget.stopped === :none || return nothing
+    end
+    return nothing
+end
+
+"""
+    partition_refinement_equivalence(F, G; relation=:ccz, max_nodes=10^6,
+        timeout_seconds=60.0, min_active_hyperplanes=0,
+        max_memory_bytes=512*1024^2) -> SearchOutcome{F2AffineMap}
+
+Kaleyski–Sunde (2026), Algorithms 1–3, 6–7: recover a CCZ or EA affine map
+**from F's graph to G's graph** for arbitrary square SBoxes. `relation` is
+`:ccz` or `:ea`. `Found` contains one verified invertible `F2AffineMap`;
+`Exhausted` with no witnesses proves inequivalence; `BudgetHit` proves nothing.
+
+The deadline covers preprocessing and DFS. A conservative memory estimate bounds
+the transform buffers, hyperplanes and live partition copies before allocating
+them; it is not a process RSS limit. `min_active_hyperplanes` is a refinement
+floor, not a correctness limit: whole cells are retained and may exceed it.
+Zero selects `16*2^n` for n ≤ 7 and `2*2^n` otherwise. The search is complete
+when allowed to exhaust, but its worst-case tree is exponential. Storage is
+O(2^(2n)) for the transform, so larger dimensions may hit the memory budget.
+
+Credits: Nikolay Kaleyski and Joakim Sunde, ePrint 2026/940,
+https://eprint.iacr.org/2026/940. No sboxU, Sage or C++ runtime is required.
+"""
+function partition_refinement_equivalence(
+    F::SBox{N}, G::SBox; relation::Symbol = :ccz, max_nodes::Int = 10^6,
+    timeout_seconds::Real = 60.0, min_active_hyperplanes::Int = 0,
+    max_memory_bytes::Int = 512 * 1024^2,
+) where {N}
+    relation in (:ccz, :ea) || throw(ArgumentError("relation must be :ccz or :ea"))
+    max_nodes >= 0 || throw(ArgumentError("max_nodes must be nonnegative"))
+    timeout_seconds >= 0 || throw(ArgumentError("timeout_seconds must be nonnegative"))
+    min_active_hyperplanes >= 0 || throw(ArgumentError("min_active_hyperplanes must be nonnegative"))
+    max_memory_bytes >= 0 || throw(ArgumentError("max_memory_bytes must be nonnegative"))
+    start = time_ns()
+    budget = _PRBudget(start, Float64(timeout_seconds), max_nodes, 0, :none)
+    region = SearchRegion(:equivalence, "$(relation):$(N)-bit graphs")
+    witnesses = F2AffineMap{2N,UInt32}[]
+    finish = function (cert)
+        elapsed = (time_ns() - start) * 1e-9
+        cert === nothing || push!(witnesses, cert)
+        if cert !== nothing
+            return Found(witnesses, region; nodes_visited = budget.nodes, elapsed_seconds = elapsed)
+        elseif budget.stopped !== :none
+            return BudgetHit(StopPoint(budget.stopped), region, witnesses;
+                             nodes_visited = budget.nodes, elapsed_seconds = elapsed)
+        end
+        return Exhausted(region, witnesses; nodes_visited = budget.nodes, elapsed_seconds = elapsed)
+    end
+    inputbits(G) == N || return finish(nothing)
+    _pr_check!(budget) || return finish(nothing)
+    if max_nodes == 0
+        budget.stopped = :nodes
+        return finish(nothing)
+    end
+    # Check before any ambient-sized allocation, including the indicator FWHT.
+    if Int128(1) << (2N) > max_memory_bytes ÷ 16
+        budget.stopped = :memory
+        return finish(nothing)
+    end
+    left, right = FunctionGraph(F).packed, FunctionGraph(G).packed
+    wf = _pr_graph_walsh(left, 2N)
+    _pr_check!(budget) || return finish(nothing)
+    hf = _pr_intersection_histogram(wf, length(left))
+    wg = _pr_graph_walsh(right, 2N)
+    _pr_check!(budget) || return finish(nothing)
+    hg = _pr_intersection_histogram(wg, length(right))
+    hf == hg || return finish(nothing)
+    floor = min_active_hyperplanes == 0 ? (N <= 7 ? 16 : 2) * length(left) : min_active_hyperplanes
+    classes, nplanes = _pr_select_classes(hf, floor)
+    estimate = (Int128(16) << (2N)) + Int128(nplanes + length(left)) * (64 + 32 * (2N + 2))
+    if estimate > max_memory_bytes
+        budget.stopped = :memory
+        return finish(nothing)
+    end
+    planes_left, hl = _pr_build_planes(wf, length(left), classes, hf)
+    planes_right, hr = _pr_build_planes(wg, length(right), classes, hg)
+    work = _PRWorkspace(2N, length(left), nplanes)
+    pl, pr = _PRPartition(length(left)), _PRPartition(length(right))
+    transitive = algebraic_degree(G) <= 2
+    cert = _pr_dfs!(F, G, left, right, planes_left, planes_right, pl, pr, hl, hr,
+                    _PRAffineMap(N), work, floor, relation === :ea, budget, transitive)
+    return finish(cert)
+end

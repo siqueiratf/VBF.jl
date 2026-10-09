@@ -69,6 +69,7 @@ export is_ccz_equivalent_to_permutation
 export TUDecomposition, tu_decomposition_from_space_basis, get_tu_decompositions
 export apply_tu, core, twist
 export are_ccz_equivalent
+export partition_refinement_equivalence
 
 # tier 7 — APN-specific invariants
 export ortho_derivative, is_quadratic_apn, is_quadratic_apn_rank
