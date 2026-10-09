@@ -68,6 +68,23 @@ This is a correctness correction, isolated in its own commit. It is not a
 heuristic or optimization. The implementation follows the mathematical search
 described and proved in the paper rather than reproducing this printed defect.
 
+### Figure 1 differs from Algorithm 2
+
+For Example 1's seven-bit Gold functions, Figure 1 reports a depth-one
+hyperplane cell of size 16,510. These are the zero-Walsh hyperplanes. With a
+singleton point of weight `u` and the remaining points of weight `v`, the
+two opposite zero-Walsh hyperplanes have weighted intersections `u+63v`
+and `64v`. Algorithm 2 therefore splits that cell into two cells of size
+8,255 whenever `u≠v`. Direct incidence counts verify this: `u=7,v=2` gives
+133 and 128. The paper-profile trace accordingly has hyperplane cell sizes
+`[3556,3556,4572,4572,8255,8255]`, with point cells `[1,127]`.
+
+The implementation follows the signed incidence formula in Algorithm 2 and
+Lemmas 8–10. It does not introduce absolute-value signatures to reproduce the
+figure's unsplit cell. A separate test records this discrepancy and verifies
+both the direct counts and the native trace. Example 2's 21-node search and
+the order-113,792 group are independently recovered.
+
 The public solver and group discovery default to `algorithm=:paper`.
 Algorithms 1–3 use fresh shared random key vectors on every iteration, with
 uniform integer entries in `1:8191` (the pseudocode leaves their range open).
