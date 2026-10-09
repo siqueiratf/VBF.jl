@@ -58,5 +58,10 @@
         @test are_ccz_equivalent(F, wide; strategy = :partition_refinement)
         @test are_ea_equivalent(F, wide; strategy = :partition_refinement)
         @test ea_equivalence_certificate(F, wide) !== nothing
+        @test_throws ArgumentError ea_equivalence_certificate(F, F; strategy = :invalid)
+        @test_throws ArgumentError are_ea_equivalent(F, gold_apn(3, 1); strategy = :invalid)
+        @test_throws ArgumentError ccz_equivalence_certificate(F, F; on_inconclusive = :invalid)
+        # A CCZ certificate API must never accidentally search only EA maps.
+        @test_throws MethodError ccz_equivalence_certificate(F, F; relation = :ea)
     end
 end

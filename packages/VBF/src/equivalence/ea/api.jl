@@ -141,6 +141,8 @@ function are_ea_equivalent(
     min_active_hyperplanes::Int = 0,
     max_memory_bytes::Int = 512 * 1024^2,
 )
+    strategy in (:auto, :partition_refinement, :heggebakk, :ortho_derivative) ||
+        throw(ArgumentError("are_ea_equivalent: unknown strategy $(repr(strategy))"))
     _pr_validate_policy(on_inconclusive)
     inputbits(F) == inputbits(G) || return false
     if strategy in (:auto, :partition_refinement)
@@ -431,6 +433,8 @@ function ea_equivalence_certificate(
     min_active_hyperplanes::Int = 0,
     max_memory_bytes::Int = 512 * 1024^2,
 ) where {N,T}
+    strategy in (:auto, :partition_refinement, :heggebakk) ||
+        throw(ArgumentError("ea_equivalence_certificate: unknown strategy $(repr(strategy))"))
     _pr_validate_policy(on_inconclusive)
     if strategy in (:auto, :partition_refinement)
         result = partition_refinement_equivalence(F, G; relation = :ea,
