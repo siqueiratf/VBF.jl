@@ -50,6 +50,18 @@ function bgp_atomic_toml(path,data)
     return path
 end
 
+# No saved row escapes until every binding, coverage and certificate check
+# finishes. Deadline interruption leaves its on-disk checkpoint unchanged.
+function _bgp_read_switching_checkpoint(path,parent,census,identity;
+    parent_index,check_deadline=nothing)
+    _bgp_switch_audit_check(check_deadline)
+    saved = TOML.parsefile(path)
+    _bgp_switch_audit_check(check_deadline)
+    bgp_audit_switching_parent(saved,parent,census;parent_index,
+        identity,check_deadline)
+    return saved
+end
+
 function bgp_connection_components(n,edges)
     remaining = Set(1:n)
     components = Vector{Int}[]
@@ -172,6 +184,8 @@ that first incomplete parent. Resume validates source/parent binding, independen
 flat dimensions, quotient coverage and graph certificates before accepting rows.
 Timing fields separate the constructor from membership callbacks; parent stage
 seconds are sums, not parallel wall time. Membership includes target-group wait.
+Input-census validation precedes the search timeout and is timed separately.
+Checkpoint audits share that timeout; a stopped audit contributes no saved row.
 """
 function section32_switching(; census_path=joinpath(@__DIR__,"results","section32.toml"),
     limit=1, timeout_seconds=60.0, max_evaluations=10^6, max_nodes=10^6,
@@ -202,9 +216,17 @@ function section32_switching(; census_path=joinpath(@__DIR__,"results","section3
     groups = Dict{Int,Any}()
     group_seconds = Ref(0.0)
     prep_started = time_ns()
-    spectra = absolute_walsh_spectrum.(census.roots)
-    quadratic = is_quadratic_apn.(census.roots)
-    mugshots = Dict(i=>apn_ea_mugshot(census.roots[i]) for i in eachindex(quadratic) if quadratic[i])
+    spectra = Any[nothing for _ in census.roots]
+    quadratic = fill(false,length(census.roots))
+    mugshots = Dict{Int,Any}()
+    for i in eachindex(census.roots)
+        remaining() <= 0 && break
+        spectra[i] = absolute_walsh_spectrum(census.roots[i])
+        remaining() <= 0 && break
+        quadratic[i] = is_quadratic_apn(census.roots[i])
+        remaining() <= 0 && break
+        quadratic[i] && (mugshots[i] = apn_ea_mugshot(census.roots[i]))
+    end
     preparation_seconds = (time_ns()-prep_started)*1e-9
     function get_group(i)
         lock(group_lock) do
@@ -219,13 +241,21 @@ function section32_switching(; census_path=joinpath(@__DIR__,"results","section3
         end
     end
     function process(index)
+        remaining() <= 0 && return
         parent = census.parents[index]
         path = joinpath(directory,"parent_$(lpad(index,3,'0')).toml")
-        saved = resume && save_results && isfile(path) ? TOML.parsefile(path) : nothing
-        if saved !== nothing
+        saved = nothing
+        if resume && save_results && isfile(path)
             t0 = time_ns()
-            bgp_audit_switching_parent(saved,parent,census;parent_index=index,identity)
-            checkpoint_validation_seconds[index] = (time_ns()-t0)*1e-9
+            try
+                saved = _bgp_read_switching_checkpoint(path,parent,census,identity;
+                    parent_index=index,check_deadline=()->remaining()>0)
+            catch err
+                err isa BGPSwitchingAuditDeadline && return
+                rethrow()
+            finally
+                checkpoint_validation_seconds[index] = (time_ns()-t0)*1e-9
+            end
         end
         if saved !== nothing && saved["complete"]
             row = saved

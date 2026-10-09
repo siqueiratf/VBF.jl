@@ -15,6 +15,15 @@ isdefined(@__MODULE__, :bgp_verify_graph_map) || include(joinpath(@__DIR__,"help
 _bgp_switch_require(condition,message) = condition ||
     throw(ArgumentError("switching checkpoint audit: $(message)"))
 
+# Deadline interruption is distinct from a malformed/corrupt checkpoint. A
+# caller may retry a stopped audit; it must never use its unverified prefix.
+struct BGPSwitchingAuditDeadline <: Exception end
+_bgp_switch_audit_check(::Nothing) = nothing
+function _bgp_switch_audit_check(check_deadline)
+    check_deadline() || throw(BGPSwitchingAuditDeadline())
+    return nothing
+end
+
 function _bgp_switch_field(record,key)
     _bgp_switch_require(haskey(record,key),"missing $(key)")
     return record[key]
@@ -37,13 +46,15 @@ end
 
 # Use the library's reduced basis/membership arithmetic for the trivial
 # switching quotient; the affine-flat oracle below supplies its kernel rank.
-function _bgp_switch_trivial_basis(F,direction)
+function _bgp_switch_trivial_basis(F,direction,check_deadline=nothing)
     size = length(F)
     rows = UInt64[typemax(UInt64) >> (64-size)]
     for bit in 0:(inputbits(F)-1)
+        _bgp_switch_audit_check(check_deadline)
         push!(rows,_bgp_switch_mask(x -> !iszero(x & (1 << bit)),size))
     end
     for component in 1:(size-1)
+        _bgp_switch_audit_check(check_deadline)
         isodd(count_ones(component & direction)) && continue
         push!(rows,_bgp_switch_mask(
             x -> isodd(count_ones(component & Int(F.lut[x+1]))),size))
@@ -60,12 +71,13 @@ the constructor's ordered derivative-pair traversal. The trivial quotient is
 computed as the actual rank of affine input functions and output components
 orthogonal to that direction. Truth tables of at most 64 points are supported.
 """
-function bgp_switching_flat_dimensions(F::SBox)
-    n = inputbits(F)
+function bgp_switching_flat_dimensions(F::SBox;check_deadline=nothing)
+    _bgp_switch_audit_check(check_deadline)
     size = length(F)
     _bgp_switch_require(size <= 64,"flat dimension oracle supports at most six bits")
     equations = [UInt64[] for _ in 1:(size-1)]
     for x in 0:(size-4), y in (x+1):(size-3), z in (y+1):(size-2)
+        _bgp_switch_audit_check(check_deadline)
         t = x ⊻ y ⊻ z
         t > z || continue
         direction = Int(F.lut[x+1] ⊻ F.lut[y+1] ⊻ F.lut[z+1] ⊻ F.lut[t+1])
@@ -76,8 +88,10 @@ function bgp_switching_flat_dimensions(F::SBox)
     end
     dimensions = NamedTuple[]
     for direction in 1:(size-1)
-        trivial = _bgp_switch_trivial_basis(F,direction)
+        _bgp_switch_audit_check(check_deadline)
+        trivial = _bgp_switch_trivial_basis(F,direction,check_deadline)
         raw_dimension = size-rank_f2(equations[direction];nbits=size)
+        _bgp_switch_audit_check(check_deadline)
         trivial_dimension = length(trivial)
         _bgp_switch_require(trivial_dimension <= raw_dimension,"invalid trivial subspace rank")
         push!(dimensions,(;direction,raw_dimension,trivial_dimension,
@@ -96,12 +110,18 @@ nonzero quotient combination, with a valid positive certificate for each APN
 neighbour. An incomplete checkpoint retains checked prefixes and undecided
 records; it is never promoted to complete. Optional `identity` binds producer
 provenance without requiring historical checkpoints to match today's source.
+`check_deadline`, when supplied, is a Boolean callback checked between flat,
+rank, quotient and certificate steps. Interruption throws
+`BGPSwitchingAuditDeadline` and returns no checked row. Individual APN tests,
+small GF(2) rank operations and graph-certificate checks finish cooperatively.
 """
 function bgp_audit_switching_parent(row,parent,census;
-    parent_index,identity=nothing,verify_dimensions=true)
+    parent_index,identity=nothing,verify_dimensions=true,check_deadline=nothing)
+    _bgp_switch_audit_check(check_deadline)
     F = parent.function_value
     n = inputbits(F)
     size = length(F)
+    _bgp_switch_require(size <= 64,"checkpoint audit supports at most six bits")
     _bgp_switch_require(_bgp_switch_field(row,"parent_index") == parent_index,
         "parent index differs from checkpoint filename")
     _bgp_switch_require(_bgp_switch_field(row,"parent_lut") == Int.(F.lut),
@@ -126,11 +146,13 @@ function bgp_audit_switching_parent(row,parent,census;
     _bgp_switch_require(length(records) == neighbors,"neighbor count differs from records")
     _bgp_switch_require(neighbors == evaluations,"candidate/APN counts differ for complete APN constraints")
     _bgp_switch_require(differential_uniformity(F) == 2,"parent is not APN")
-    dimensions = verify_dimensions ? bgp_switching_flat_dimensions(F) : nothing
+    _bgp_switch_audit_check(check_deadline)
+    dimensions = verify_dimensions ? bgp_switching_flat_dimensions(F;check_deadline) : nothing
     directions = _bgp_switch_field(row,"directions")
     _bgp_switch_require(length(directions) <= size-1,"too many output directions")
     done_counts = zeros(BigInt,size-1)
     for (index,direction) in enumerate(directions)
+        _bgp_switch_audit_check(check_deadline)
         _bgp_switch_require(_bgp_switch_field(direction,"direction") == index,
             "completed directions are not the ordered prefix")
         raw = _bgp_switch_count(direction,"raw_dimension")
@@ -163,13 +185,14 @@ function bgp_audit_switching_parent(row,parent,census;
             "partial evaluations exceed the active direction")
     end
     by_direction = zeros(Int,size-1)
-    trivial_bases = [_bgp_switch_trivial_basis(F,direction) for direction in 1:(size-1)]
+    trivial_bases = [_bgp_switch_trivial_basis(F,direction,check_deadline) for direction in 1:(size-1)]
     quotient_supports = [UInt64[] for _ in 1:(size-1)]
     seen = Set{Tuple}()
     edges = Tuple{Int,Int}[]
     all_matched = true
     previous_direction = 0
     for record in records
+        _bgp_switch_audit_check(check_deadline)
         lut = _bgp_switch_field(record,"candidate_lut")
         _bgp_switch_require(length(lut) == size &&
             all(value -> value isa Integer && 0 <= value < size,lut),"invalid candidate LUT")
@@ -196,6 +219,7 @@ function bgp_audit_switching_parent(row,parent,census;
             bytes2hex(sha256(UInt8.(lut))),"candidate hash differs from LUT")
         G = SBox{n,UInt8}(UInt8.(lut))
         _bgp_switch_require(differential_uniformity(G) == 2,"candidate is not APN")
+        _bgp_switch_audit_check(check_deadline)
         status = _bgp_switch_field(record,"status")
         _bgp_switch_require(status in ("matched","undecided","outside_known_roots"),"unknown record status")
         if status == "matched"
@@ -216,17 +240,20 @@ function bgp_audit_switching_parent(row,parent,census;
             A = F2AffineMap(F2LinearMap{2n,UInt32}(UInt32.(columns)),UInt32(constant))
             _bgp_switch_require(bgp_verify_graph_map(G,census.roots[target],A),
                 "positive graph certificate is invalid")
+            _bgp_switch_audit_check(check_deadline)
             push!(edges,(parent.root_index,Int(target)))
         else
             all_matched = false
         end
     end
     for index in eachindex(directions)
+        _bgp_switch_audit_check(check_deadline)
         _bgp_switch_require(by_direction[index] == done_counts[index],
             "direction $(index) has missing candidate records")
     end
     _bgp_switch_require(complete == (constructor_complete && all_matched),
         "complete flag disagrees with constructor and membership results")
+    _bgp_switch_audit_check(check_deadline)
     return (;complete,constructor_complete,evaluations,neighbors,edges,
         directions_checked=length(directions),dimensions_verified=verify_dimensions)
 end
@@ -249,8 +276,11 @@ function _bgp_audit_components(count,edges)
 end
 
 """Validate a saved switching directory and reconstruct its summary connection graph."""
-function bgp_audit_switching_results(summary_path,census;verify_dimensions=true)
+function bgp_audit_switching_results(summary_path,census;
+    verify_dimensions=true,check_deadline=nothing)
+    _bgp_switch_audit_check(check_deadline)
     summary = TOML.parsefile(summary_path)
+    _bgp_switch_audit_check(check_deadline)
     identity = Dict("census_sha256"=>census.sha256,"schema"=>"vbf-switching-closure-v1",
         "source_hashes"=>_bgp_switch_field(summary,"source_hashes"),
         "seed"=>_bgp_switch_field(summary,"seed"))
@@ -269,10 +299,11 @@ function bgp_audit_switching_results(summary_path,census;verify_dimensions=true)
     nodes = 0
     matched = Set{Tuple}()
     for index in 1:count
+        _bgp_switch_audit_check(check_deadline)
         path = joinpath(directory,"parent_$(lpad(index,3,'0')).toml")
         row = TOML.parsefile(path)
         audit = bgp_audit_switching_parent(row,census.parents[index],census;
-            parent_index=index,identity,verify_dimensions)
+            parent_index=index,identity,verify_dimensions,check_deadline)
         complete_parents += audit.complete
         evaluations += audit.evaluations
         comparisons += row["comparisons"]
@@ -299,6 +330,7 @@ function bgp_audit_switching_results(summary_path,census;verify_dimensions=true)
         "summary connected components differ")
     _bgp_switch_require(_bgp_switch_field(summary,"conjecture_proved") === false,
         "switching closure does not prove all APN functions are known")
+    _bgp_switch_audit_check(check_deadline)
     return (;complete,parents_checked=count,complete_parents,evaluations,
         comparisons,nodes,edges,components,unique_matched_luts=length(matched))
 end
