@@ -40,6 +40,8 @@ function are_ccz_equivalent(
     on_inconclusive::Symbol = :best_effort, max_nodes::Int = 10^6,
     timeout_seconds::Real = 60.0, min_active_hyperplanes::Int = 0,
     max_memory_bytes::Int = 512 * 1024^2,
+    automorphisms = nothing, automorphism_timeout_seconds::Real = 0.0,
+    threaded::Bool = false,
 )
     strategy in (:auto, :partition_refinement, :canteaut_perrin) ||
         throw(ArgumentError("are_ccz_equivalent: unknown strategy $(repr(strategy))"))
@@ -56,7 +58,7 @@ function are_ccz_equivalent(
         end
     end
     result = partition_refinement_equivalence(F, G; max_nodes, timeout_seconds,
-                                              min_active_hyperplanes, max_memory_bytes)
+        min_active_hyperplanes, max_memory_bytes, automorphisms, automorphism_timeout_seconds, threaded)
     return _pr_decision(result, on_inconclusive, :are_ccz_equivalent)
 end
 
@@ -72,10 +74,12 @@ function ccz_equivalence_certificate(F::SBox, G::SBox;
     on_inconclusive::Symbol = :throw, max_nodes::Int = 10^6,
     timeout_seconds::Real = 60.0, min_active_hyperplanes::Int = 0,
     max_memory_bytes::Int = 512 * 1024^2,
+    automorphisms = nothing, automorphism_timeout_seconds::Real = 0.0,
+    threaded::Bool = false,
 )
     _pr_validate_policy(on_inconclusive)
     result = partition_refinement_equivalence(F, G; max_nodes, timeout_seconds,
-        min_active_hyperplanes, max_memory_bytes)
+        min_active_hyperplanes, max_memory_bytes, automorphisms, automorphism_timeout_seconds, threaded)
     return _pr_witness(result, on_inconclusive, :ccz_equivalence_certificate)
 end
 

@@ -23,19 +23,25 @@ independently to build the LAT.
 """
 
 """
-    walsh_hadamard!(v::Vector{<:Signed}) -> v
+    walsh_hadamard!(v::Vector{<:Signed}; threaded=false) -> v
 
 In-place FWHT. `length(v)` must be a power of 2. After the call,
 `v[u + 1] = ∑ₓ (-1)^{u · x} · v_in[x + 1]`. The element type is
 preserved; choose a width that can hold every intermediate sum.
+`threaded=true` parallelizes independent butterflies for fixed-width vectors
+of at least 2^18 elements when multiple default-pool Julia threads are available.
+Small vectors and BigInt use the serial kernel to avoid scheduling overhead.
 """
-function walsh_hadamard!(v::Vector{<:Signed})
+function walsh_hadamard!(v::Vector{<:Signed}; threaded::Bool = false)
     n_pow = length(v)
     n_pow ≥ 1 || throw(ArgumentError("walsh_hadamard!: empty input"))
     n = trailing_zeros(n_pow)
     1 << n == n_pow || throw(
         ArgumentError("walsh_hadamard!: length $n_pow is not a power of 2"),
     )
+    if threaded && isbitstype(eltype(v)) && n_pow >= (1 << 18) && Threads.nthreads() > 1
+        return _walsh_hadamard_threaded!(v)
+    end
     block = 1
     while block < n_pow
         step = 2 * block
@@ -50,6 +56,40 @@ function walsh_hadamard!(v::Vector{<:Signed})
         block = step
     end
     v
+end
+
+"""Parallel butterflies with a barrier between stages and disjoint writes."""
+function _walsh_hadamard_threaded!(v)
+    pairs = length(v) ÷ 2
+    chunks = prevpow(2, Threads.nthreads())
+    chunk_pairs = pairs ÷ chunks
+    block = 1
+    while block < length(v)
+        # Capturing the stage value in a fresh binding avoids sharing the
+        # loop's reassigned block variable with worker tasks.
+        let stage = block
+            Threads.@threads :dynamic for chunk = 1:chunks
+                lo = (chunk-1) * chunk_pairs
+                if stage <= chunk_pairs
+                    @inbounds for start = (2lo):(2stage):(2(lo+chunk_pairs)-1)
+                        @simd for j = 1:stage
+                            a, b = v[start+j], v[start+j+stage]
+                            v[start+j], v[start+j+stage] = a + b, a - b
+                        end
+                    end
+                else
+                    # A late-stage chunk is one contiguous slice of each half.
+                    start = lo + (lo & -stage)
+                    @inbounds @simd for j = 1:chunk_pairs
+                        a, b = v[start+j], v[start+j+stage]
+                        v[start+j], v[start+j+stage] = a + b, a - b
+                    end
+                end
+            end
+        end
+        block *= 2
+    end
+    return v
 end
 
 """
