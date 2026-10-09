@@ -19,6 +19,8 @@ max_frontier ?= 4096
 max_neighbors ?= 4096
 resume ?= true
 per_root_timeout_seconds ?= 60.0
+threads ?= 1
+workers ?= $(threads)
 
 ARGS = dimension=$(dimension), limit=$(limit), max_evaluations=$(max_evaluations), max_nodes=$(max_nodes), sample_size=$(sample_size), save_results=$(save_results), seed=$(seed), full_search=$(full_search), timeout_seconds=$(timeout_seconds), max_subspaces=$(max_subspaces), max_memory_bytes=$(max_memory_bytes)
 SWITCH_ARGS = $(ARGS), max_comparisons=$(max_comparisons), max_frontier=$(max_frontier), max_neighbors=$(max_neighbors)
@@ -57,12 +59,12 @@ census7: timeout_seconds=7200.0
 census7: max_nodes=typemax(Int)
 census7: max_subspaces=1000000
 census7:
-	$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "section32_sevenbit.jl")); section32_sevenbit(limit=$(limit), timeout_seconds=$(timeout_seconds), per_root_timeout_seconds=$(per_root_timeout_seconds), max_nodes=$(max_nodes), max_subspaces=$(max_subspaces), max_memory_bytes=$(max_memory_bytes), save_results=$(save_results), resume=$(resume), seed=$(seed))'
+	$(JULIA) --threads=$(threads) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "section32_sevenbit.jl")); section32_sevenbit(limit=$(limit), workers=$(workers), timeout_seconds=$(timeout_seconds), per_root_timeout_seconds=$(per_root_timeout_seconds), max_nodes=$(max_nodes), max_subspaces=$(max_subspaces), max_memory_bytes=$(max_memory_bytes), save_results=$(save_results), resume=$(resume), seed=$(seed))'
 
 closure6: limit=716
 closure6: timeout_seconds=7200.0
 closure6:
-	$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "section32_switching.jl")); section32_switching(limit=$(limit), timeout_seconds=$(timeout_seconds), max_evaluations=$(max_evaluations), max_nodes=$(max_nodes), max_memory_bytes=$(max_memory_bytes), save_results=$(save_results), resume=$(resume), seed=$(seed))'
+	$(JULIA) --threads=$(threads) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "section32_switching.jl")); section32_switching(limit=$(limit), workers=$(workers), timeout_seconds=$(timeout_seconds), max_evaluations=$(max_evaluations), max_nodes=$(max_nodes), max_memory_bytes=$(max_memory_bytes), save_results=$(save_results), resume=$(resume), seed=$(seed))'
 
 clean_results:
 	find "$(MAKEFILE_DIR)/results" -type f ! -name .gitkeep -delete
@@ -79,3 +81,4 @@ help:
 	@echo '            timeout_seconds max_subspaces max_memory_bytes'
 	@echo 'Switching:  max_comparisons max_frontier max_neighbors'
 	@echo 'Census: resume per_root_timeout_seconds; explicit limits also apply to named full targets'
+	@echo 'Parallel: threads=16 workers=16 (defaults: one thread/worker)'

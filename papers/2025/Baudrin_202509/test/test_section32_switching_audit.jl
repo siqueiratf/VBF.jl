@@ -167,3 +167,35 @@
         end
     end
 end
+
+@testset "independent switching parent tasks" begin
+    isdefined(@__MODULE__,:_bgp_switching_parent) ||
+        include(joinpath(@__DIR__,"..","section32_switching.jl"))
+    @test_throws ArgumentError section32_switching(workers=0)
+    @test_throws ArgumentError section32_switching(workers=Threads.nthreads()+1)
+    F = gold_apn(4)
+    parent = (;function_value=F,root_index=1,label="thread fixture")
+    census = (;roots=[F],parents=[parent,parent])
+    group = partition_refinement_automorphisms(F;timeout_seconds=Inf,max_nodes=typemax(Int))
+    @test group.complete
+    spectra = [absolute_walsh_spectrum(F)]
+    quadratic = [true]
+    mugshots = Dict(1=>apn_ea_mugshot(F))
+    identity = Dict{String,Any}("source_hashes"=>Dict("fixture"=>repeat("a",64)))
+    run(index) = _bgp_switching_parent(index,parent,census,identity,()->Inf,i->group,
+        spectra,quadratic,mugshots;max_evaluations=typemax(Int),
+        max_nodes=typemax(Int),max_memory_bytes=512*1024^2,seed=940)
+    sequential = [run(1),run(2)]
+    concurrent = Vector{Any}(undef,2)
+    @sync for index in 1:2
+        Threads.@spawn concurrent[index] = run(index)
+    end
+    for index in 1:2
+        @test concurrent[index]["complete"]
+        @test concurrent[index]["records"] == sequential[index]["records"]
+        @test concurrent[index]["directions"] == sequential[index]["directions"]
+        @test concurrent[index]["nodes"] == sequential[index]["nodes"]
+        @test concurrent[index]["constructor_seconds"] >= 0
+        @test concurrent[index]["membership_including_group_wait_seconds"] >= 0
+    end
+end
