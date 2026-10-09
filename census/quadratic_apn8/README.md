@@ -25,8 +25,17 @@ extending them again (APN codimension-1 changes) found **463 more new classes**
 (`theory/hyperplane_scan/new_classes_hyperplane.tsv`; theory in
 [theory/HYPERPLANE.md](theory/HYPERPLANE.md)).
 
+**Framework run (2026-10-09).** An 8-hour run of the B6 = 52 search on the Framework
+desktop (30 threads; about 10 hours in total) found **109,943 verified search-new classes**.
+61 of them are public raw-only classes, and 804 are already in the trial and hyperplane
+lists, so 109,078 are new only in this run (`search_b52/framework_20261009_new.tsv.gz`). Two
+independent capture–recapture checks agree with the census: the unknown classes number
+about 1.6 M, and the search has found about 6–7 % of them
+([search_b52/RUN_20261009_FRAMEWORK.md](search_b52/RUN_20261009_FRAMEWORK.md)).
+
 **Total new CCZ classes so far: 553 (census) + 1 (theory) + 773 (search trial) + 463
-(hyperplane scan) = 1,790.**
+(hyperplane scan) + 109,078 (Framework run) = 110,868.** With the 3,808,491 indexed classes
+and the 546 raw-only public classes, 3,919,905 classes are now known.
 
 Also: 0 of the 553 new functions are CCZ-equivalent to a permutation
 ([permutation/REPORT.md](permutation/REPORT.md)). One more new class came from the
@@ -310,6 +319,7 @@ adds more.
 | [permutation/REPORT.md](permutation/REPORT.md) | 0 of 553 new functions are CCZ-equivalent to a permutation |
 | [crosscheck_raw/REPORT.md](crosscheck_raw/REPORT.md) | All raw files of the authors: 0 coincidences with the 553; 546 raw-only classes |
 | [web/README.md](web/README.md) | Local web page: is a function new or known? |
+| [search_b52/RUN_20261009_FRAMEWORK.md](search_b52/RUN_20261009_FRAMEWORK.md) | Framework run: 109,943 verified classes, yield, composition, capture–recapture |
 | [search_b52/README.md](search_b52/README.md) | Targeted search in the B6 = 52 branch: method, validation, trial (773 new classes), run steps for a larger machine |
 
 ## Files

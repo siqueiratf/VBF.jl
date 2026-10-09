@@ -35,7 +35,12 @@ const OTHER_LISTS = [
     ("search_b52/new_classes_trial_773.tsv", "B6 = 52 search, trial run", :new, 5, :coeffs),
     ("theory/hyperplane_scan/new_classes_hyperplane.tsv", "hyperplane scan", :new, 2, :coeffs),
     ("crosscheck_raw/raw_only_546.tsv", "authors' raw file of May 2025 (langevin.univ-tln.fr)", :public, 3, :lut),
+    # Read after raw_only_546.tsv: its 61 raw546_public rows keep the public verdict.
+    ("search_b52/framework_20261009_new.tsv.gz", "B6 = 52 search, Framework run 2026-10-09", :new, 5, :coeffs),
 ]
+
+"Lines of a list file; `.gz` files are read through `gzip -dc`."
+list_lines(path) = endswith(path, ".gz") ? eachline(`gzip -dc $path`) : eachline(path)
 const N = 8
 const NPAIRS = N * (N - 1) ÷ 2
 const DEFAULT_MODULUS = 0x11B
@@ -61,7 +66,7 @@ function read_others()
     for (file, label, novelty, col, kind) in OTHER_LISTS
         path = joinpath(STUDY_DIR, file)
         isfile(path) || continue
-        for (k, line) in enumerate(eachline(path))
+        for (k, line) in enumerate(list_lines(path))
             f = split(line, '\t')
             (isempty(strip(line)) || f[1] in ("sigma_hash", "sigma")) && continue
             haskey(d, f[1]) && continue

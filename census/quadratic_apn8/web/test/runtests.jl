@@ -90,6 +90,13 @@ const CENSUS = [split(l, '\t') for l in eachline(APN8Web.CENSUS_TSV)]
         st, j = classify(lutstr(lut))
         @test j.status == "raw_public" && j.sigma == r[1]
         @test startswith(j.verdict, "Not in the catalog index, but PUBLIC")
+        # A class found only in the Framework run (compressed list).
+        fw = first(Iterators.filter(l -> occursin("\tnew\t", l),
+            eachline(`gzip -dc $(joinpath(APN8Web.STUDY_DIR, "search_b52", "framework_20261009_new.tsv.gz"))`)))
+        t = split(fw, '\t')
+        st, j = classify(String(t[5]))
+        @test j.status == "listed_new" && j.sigma == t[1]
+        @test j.list_file == "search_b52/framework_20261009_new.tsv.gz"
     end
 
     @testset "Gold x^3 is known" begin

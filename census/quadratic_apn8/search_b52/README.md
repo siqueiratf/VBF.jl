@@ -3,7 +3,14 @@
 **Path**: `census/quadratic_apn8/search_b52/`
 
 **Status**: The method is validated (n = 6 and n = 8). A trial run on this machine
-found new CCZ classes. The long run on the Framework desktop has not started.
+found 773 new CCZ classes. A run of about 10 hours on the Framework desktop (30 threads)
+found 109,943 verified search-new classes: see
+[RUN_20261009_FRAMEWORK.md](RUN_20261009_FRAMEWORK.md) and
+`framework_20261009_new.tsv.gz`.
+
+**NOTE**: The `b6` column of `found.tsv` is the largest bent count over all 6-dim
+subspaces. The P6 profile (bminK order) can give a smaller value (52 instead of 54 for about
+8 % of the new classes). The seed queue uses the recorded value.
 
 ---
 
