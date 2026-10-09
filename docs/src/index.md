@@ -133,6 +133,37 @@ when testing many functions against the same target. Group memory estimates
 include stabilizer chains across the DFS depth and can reject a computation
 before allocating its buffers.
 
+### EA classes and bounded APN exploration
+
+`ea_class_orbits` implements the Walsh-zero subspace orbit correspondence from
+Jules Baudrin, Pierre Galissant and Léo Perrin, *Exploring the Set of APN
+Functions* (BFA 2025), [Section 3.1](https://hal.science/hal-05376704v2).
+Its native backend uses the Kaleyski–Sunde generators; the existing
+ortho-derivative backend remains the default for quadratic APN functions.
+`ea_class_representatives` selects the native backend and constructs a
+function and CCZ graph map for each orbit, including nonquadratic EA classes:
+
+```julia
+F = gold_apn(4, 1)
+r = ea_class_representatives(F; timeout_seconds=30, max_nodes=10^6)
+@assert r.complete && length(r.representatives) == 2
+@assert all(ccz_equivalent_function(F, A) == G
+    for (G, A) in zip(r.representatives, r.mappings))
+```
+
+Exact coverage requires a complete automorphism group, subspace enumeration
+and orbit action. Cached groups certify completeness only for their recorded
+source graph. With all subspaces but a partial group, the orbit count is an
+upper bound; a partial subspace list does not bound the total class count.
+`extract_linear_subspaces_bounded` and `switching_neighbors_bounded` expose
+explicit `SearchOutcome` results for limited searches.
+
+The [2025 paper reproduction](https://github.com/zambonin/VBF.jl/tree/main/papers/2025/Baudrin_202509)
+provides the known six-bit census and bounded switching exploration with saved
+graph witnesses. The native automorphism backend is documented as a method
+extension to the paper's original first stage. Switching results describe
+their searched region and retain undecided comparisons.
+
 ### Optional parallel refinement
 
 Start Julia with `julia --threads=4 --project=.` and pass `threaded=true` to a
