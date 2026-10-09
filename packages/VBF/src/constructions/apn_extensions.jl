@@ -178,6 +178,10 @@ existing coordinate functions; the first unfixed output is restricted to 0 or
 1 using an invertible change of added output coordinates. This need not remove
 all duplicates under those coordinate changes. `Exhausted` certifies that region; caps return
 `BudgetHit`, even if they might coincide with its last solution.
+An optional `observer(F)` is called once per verified APN table and must not
+mutate that table. Nodes count flat candidate triples and output assignments;
+the time budget covers all stages, checked between individual primitives.
+`StopPoint.resume_key` records a diagnostic frontier rather than resumable state.
 """
 function apn_extensions(G::AbstractTruthTable{N,M}; normalize::Bool=true,
     max_nodes::Integer=10^6,max_solutions::Integer=1000,
