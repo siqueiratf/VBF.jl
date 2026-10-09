@@ -41,6 +41,7 @@ end
         expected = Tuple(sort!([_gl_test_restriction_pair(f,u) for u in 1:length(f)-1]))
         actual = gl_restriction_kappa_signature(f)
         @test actual == expected
+        @test gl_restriction_kappa_signature(f;algorithm=:spectral) == expected
         @test actual isa Tuple
         @test length(actual) == length(f)-1
     end
@@ -69,6 +70,8 @@ end
             g = _gl_test_domain_affine(f,columns,rand(rng,0:(1<<n)-1),
                 rand(rng,0:(1<<n)-1),rand(rng,0:1))
             @test gl_restriction_kappa_signature(g) == gl_restriction_kappa_signature(f)
+            @test gl_restriction_kappa_signature(g;algorithm=:spectral) ==
+                gl_restriction_kappa_signature(f;algorithm=:literal)
         end
     end
     # Both functions are affine and every restriction has κ=2^(n-1).
@@ -85,4 +88,18 @@ end
     @test gl_boolean_signature(f)[2] == gl_boolean_signature(g)[2]
     @test gl_kappa(f) == gl_kappa(g)
     @test gl_restriction_kappa_signature(f) != gl_restriction_kappa_signature(g)
+    # A stronger collision: even the sorted signed coefficients agree.
+    h = VBFTable{5,1}(UInt8[1,1,1,0,1,1,1,1,0,0,0,1,1,1,1,0,
+        1,1,1,0,0,1,0,0,0,0,0,0,0,1,1,0])
+    @test sort(walsh_hadamard(1 .- 2Int.(f.lut))) ==
+        sort(walsh_hadamard(1 .- 2Int.(h.lut)))
+    @test gl_restriction_kappa_signature(f) != gl_restriction_kappa_signature(h)
+    @test gl_restriction_kappa_signature(h;algorithm=:spectral) ==
+        gl_restriction_kappa_signature(h;algorithm=:literal)
+    for n in 4:7, _ in 1:20
+        f = VBFTable{n,1}(rand(rng,UInt8[0,1],1 << n))
+        @test gl_restriction_kappa_signature(f;algorithm=:spectral) ==
+            gl_restriction_kappa_signature(f;algorithm=:literal)
+    end
+    @test_throws ArgumentError gl_restriction_kappa_signature(f;algorithm=:unknown)
 end
