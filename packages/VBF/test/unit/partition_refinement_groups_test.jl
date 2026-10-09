@@ -128,7 +128,7 @@
         @test partition_refinement_equivalence(F,G;automorphism_timeout_seconds=1,max_nodes=1) isa BudgetHit
         @test partition_refinement_equivalence(F,G;automorphisms=H,max_memory_bytes=0) isa BudgetHit
         small = gold_apn(3,1)
-        partial = partition_refinement_automorphisms(small;max_nodes=1)
+        partial = partition_refinement_automorphisms(small;max_nodes=1,algorithm=:optimized)
         @test !partial.complete && partial.stop_reason === :nodes
         @test !isempty(partial.generators)
         @test partition_refinement_equivalence(small,small;automorphisms=partial) isa Found

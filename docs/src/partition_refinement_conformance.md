@@ -40,6 +40,22 @@ literal weighted incidences without the native signatures, Walsh transforms
 or compact partitions. Tests compare every intermediate ordered partition,
 truncation result, consistency decision and RNG consumption.
 
+Algorithms 4–7 use leaf-only `ValidEA` checks in the paper profile. Affine
+implications are evaluated to determine the next free point, without the
+optimized profile's early graph-cell rejection. Algorithm 5 starts with an
+empty group, anchors a quadratic graph's origin without individualizing its
+point cell, searches, then adjoins all τₐ actions and finally constructs the
+pointwise kernel. The algorithm retains verified affine witnesses as lifts;
+this supplies exactly the generators required by Lemma 13 without a second
+linear solve for the same action.
+
+The independent reference also transcribes Algorithms 4–7 using explicitly
+enumerated partial affine domains, group elements and point stabilizers.
+Tests exhaust all ordered pairs of tables in dimensions (1,2) and (2,1),
+comparing decisions, first graph actions, DFS counts and full graph groups
+under multiple seeds. Full ambient orders are separately checked against
+exhaustive AGL oracles, including EA restrictions and kernel lifts.
+
 The original implementation used deterministic weights, restored previous cell
 ordering after truncation, seeded quadratic translations before group DFS, and
 propagated EA constraints before leaves. Those choices are extensions, not

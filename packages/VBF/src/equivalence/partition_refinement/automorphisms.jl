@@ -80,7 +80,7 @@ function _pr_auto_dfs!(F::AbstractTruthTable{N,M}, points, planes, pl, pr, hl, h
         yindex = pr.order[lo+j-1]
         touched[yindex] = true
         b = copy(a)
-        _pr_insert!(b, points[xindex], points[yindex], M, ea) || continue
+        _pr_insert!(b, points[xindex], points[yindex], M, ea && work.algorithm!==:paper) || continue
         child_group = _pr_group_stabilizer(H, yindex, budget)
         child_group === nothing && return
         ql, qr = copy(pl), copy(pr)
@@ -122,6 +122,7 @@ function partition_refinement_automorphisms(F::AbstractTruthTable{N,M}; relation
     threaded::Bool = false,
     algorithm::Symbol = :paper, rng::AbstractRNG = Xoshiro(940),
 ) where {N,M}
+    N+M <= 32 || throw(ArgumentError("native graph dimension n+m must fit UInt32"))
     algorithm in (:paper,:optimized) || throw(ArgumentError("algorithm must be :paper or :optimized"))
     relation in (:ccz, :ea) || throw(ArgumentError("relation must be :ccz or :ea"))
     max_nodes >= 0 || throw(ArgumentError("max_nodes must be nonnegative"))
@@ -149,10 +150,13 @@ function partition_refinement_automorphisms(F::AbstractTruthTable{N,M}; relation
         return finish()
     end
     points = FunctionGraph(F).packed
-    kernel, kernel_order = _pr_affine_kernel(F, points, relation === :ea, budget)
-    append!(state.generators, kernel)
-    _pr_check!(budget) || return finish()
-    if algebraic_degree(F) <= 2
+    if algorithm === :optimized
+        kernel, kernel_order = _pr_affine_kernel(F, points, relation === :ea, budget)
+        append!(state.generators, kernel)
+        _pr_check!(budget) || return finish()
+    end
+    quadratic = algebraic_degree(F) <= 2
+    if quadratic && algorithm === :optimized
         for A in _pr_quadratic_translations(F)
             _pr_check!(budget) || return finish()
             p = _pr_graph_permutation(F, A; ea = relation === :ea)
@@ -175,16 +179,33 @@ function partition_refinement_automorphisms(F::AbstractTruthTable{N,M}; relation
     planes, hl = _pr_build_planes(spectrum, length(points), classes, histogram)
     pl, pr = _PRPartition(length(points)), _PRPartition(length(points))
     a, fixed = _PRAffineMap(N,M), Int[]
-    if algebraic_degree(F) <= 2
-        _pr_insert!(a, first(points), first(points), M, relation === :ea)
+    if quadratic
+        _pr_insert!(a, first(points), first(points), M, relation === :ea && algorithm!==:paper)
         push!(fixed, 1)
-        _pr_individualize!(pl, 1, 1); _pr_individualize!(pr, 1, 1)
+        if algorithm === :optimized
+            _pr_individualize!(pl, 1, 1); _pr_individualize!(pr, 1, 1)
+        end
     end
     H = _pr_group_fix(state.group, fixed, budget)
     H === nothing && return finish()
     _pr_auto_dfs!(F, points, planes, pl, pr, hl, copy(hl), a,
         _PRWorkspace((N+M), length(points), nplanes; threaded, algorithm, rng), floor, relation === :ea,
         budget, state, fixed, H, state.epoch)
+    if algorithm === :paper
+        _pr_check!(budget) || return finish()
+        if quadratic
+            for x in 0:(length(F)-1)
+                _pr_check!(budget) || return finish()
+                A = _pr_quadratic_translation(F,x)
+                if _pr_group_add!(state.group,_pr_graph_permutation(F,A;ea=relation===:ea),budget)
+                    push!(state.generators,A)
+                end
+            end
+        end
+        _pr_check!(budget) || return finish()
+        kernel, kernel_order = _pr_affine_kernel(F,points,relation===:ea,budget)
+        append!(state.generators,kernel)
+    end
     return finish()
 end
 
