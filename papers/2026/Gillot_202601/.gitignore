@@ -1,0 +1,5 @@
+/input/*
+/results/*
+!/results/.gitkeep
+!README.md
+!**/README.md
