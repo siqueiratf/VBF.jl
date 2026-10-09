@@ -106,6 +106,7 @@ include("equivalence/ccz/walsh_zeroes.jl")
 include("equivalence/ccz/thickness.jl")
 include("equivalence/ccz/tu_decomposition.jl")
 include("equivalence/ccz/api.jl")
+include("equivalence/partition_refinement/api.jl")
 
 # 6. constructions — building / searching for functions
 include("constructions/switching_neighbors.jl")
