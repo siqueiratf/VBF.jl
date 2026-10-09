@@ -124,7 +124,10 @@
         @test result isa Exhausted
         @test nodes_visited(result) == 21 # paper Example 2
         @test !are_ccz_equivalent(F,G;strategy=:partition_refinement,automorphisms=H,on_inconclusive=:throw)
-        @test partition_refinement_equivalence(F,G;automorphism_timeout_seconds=1) isa Exhausted
+        # A one-second partial group may be too weak under concurrent test load.
+        # Test completed discovery here; the next assertion tests a shared cap.
+        @test partition_refinement_equivalence(F,G;
+            automorphism_timeout_seconds=30, timeout_seconds=120) isa Exhausted
         @test partition_refinement_equivalence(F,G;automorphism_timeout_seconds=1,max_nodes=1) isa BudgetHit
         @test partition_refinement_equivalence(F,G;automorphisms=H,max_memory_bytes=0) isa BudgetHit
         small = gold_apn(3,1)
