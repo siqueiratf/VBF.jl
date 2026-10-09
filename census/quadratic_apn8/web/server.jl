@@ -33,6 +33,7 @@ const CENSUS_TSV = joinpath(STUDY_DIR, "new_classes_553.tsv")
 const OTHER_LISTS = [
     ("new_classes_extra.tsv", "theory experiment (extra class)", :new, 2, :coeffs),
     ("search_b52/new_classes_trial_773.tsv", "B6 = 52 search, trial run", :new, 5, :coeffs),
+    ("theory/hyperplane_scan/new_classes_hyperplane.tsv", "hyperplane scan", :new, 2, :coeffs),
     ("crosscheck_raw/raw_only_546.tsv", "authors' raw file of May 2025 (langevin.univ-tln.fr)", :public, 3, :lut),
 ]
 const N = 8
