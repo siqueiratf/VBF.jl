@@ -22,6 +22,28 @@ graph actions, including the pointwise affine kernel in rank-deficient cases.
 
 ## Conformance work and commit boundaries
 
+### Necessary correction to the printed branching condition
+
+Algorithms 4 and 6 print `|Pᵢ \ Domain(A)| > 1` when selecting a source cell.
+This must be `> 0`. Algorithm 5 anchors `(0,F(0))` without individualizing it;
+the anchor can therefore share a cell with the only remaining free point.
+Section 3's search description and Lemma 16's induction require selecting any
+undetermined graph point whenever the map is not yet determined on the graph.
+
+Counterexample: `F = SBox{2}([0,0,0,1])`. Its four graph points are affine
+independent. After anchoring the first and individually fixing the second and
+third, refinement retains the cells `[second]`, `[third]`, `[first,fourth]`.
+Their free-point counts are `[0,0,1]`: the printed condition selects no cell.
+The independent reference, treating that stuck node as a dead end, returns a
+graph group of order 4 after adjoining translations; the corrected condition
+returns order 24, verified independently by enumerating AGL(4,2). The full
+ambient group has order 192. A dedicated regression test reconstructs this
+node and compares the printed and corrected reference executions.
+
+This is a correctness correction, isolated in its own commit. It is not a
+heuristic or optimization. The implementation follows the mathematical search
+described and proved in the paper rather than reproducing this printed defect.
+
 The public solver and group discovery default to `algorithm=:paper`.
 Algorithms 1–3 use fresh shared random key vectors on every iteration, with
 uniform integer entries in `1:8191` (the pseudocode leaves their range open).

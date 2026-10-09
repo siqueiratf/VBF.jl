@@ -127,7 +127,7 @@ function valid_action(A,left,right,m,ea)
 end
 
 """Algorithms 4/6: direct ordered partitions and explicit stabilizer elements."""
-function dfs(left,right,hleft,hright,pl,pr,hl,hr,A,fixed,H,state,rng,floor,m,ea,nodes,automatic)
+function dfs(left,right,hleft,hright,pl,pr,hl,hr,A,fixed,H,state,rng,floor,m,ea,nodes,automatic,printed_condition=false)
     nodes[] += 1
     nodes[] <= 10000 || error("reference DFS budget exceeded")
     ok,pl,pr,hl,hr = refine(left,right,hleft,hright,pl,pr,hl,hr,rng,floor)
@@ -148,7 +148,8 @@ function dfs(left,right,hleft,hright,pl,pr,hl,hr,A,fixed,H,state,rng,floor,m,ea,
         end
         return action
     end
-    cells = [c for c in eachindex(pl) if any(i -> !haskey(A,left[i]),pl[c])]
+    cells = [c for c in eachindex(pl) if count(i -> !haskey(A,left[i]),pl[c]) > (printed_condition ? 1 : 0)]
+    isempty(cells) && return nothing
     c = first(sort(cells;by=i -> length(pl[i]),alg=MergeSort))
     x = first(i for i in pl[c] if !haskey(A,left[i]))
     touched = Int[]
@@ -162,7 +163,7 @@ function dfs(left,right,hleft,hright,pl,pr,hl,hr,A,fixed,H,state,rng,floor,m,ea,
         ql,qr = deepcopy(pl),deepcopy(pr)
         individualize!(ql,c,x); individualize!(qr,c,y)
         result = dfs(left,right,hleft,hright,ql,qr,deepcopy(hl),deepcopy(hr),B,
-            vcat(fixed,y),stabilize(H,[y]),state,rng,floor,m,ea,nodes,automatic)
+            vcat(fixed,y),stabilize(H,[y]),state,rng,floor,m,ea,nodes,automatic,printed_condition)
         !automatic && result !== nothing && return result
     end
     return nothing
@@ -182,7 +183,7 @@ function equivalence(left,right,d,m;floor=16length(left),seed=940,ea=false,H=[co
 end
 
 """Algorithm 5 graph action, including post-DFS quadratic translations."""
-function automorphisms(points,d,m;quadratic=false,floor=16length(points),seed=940,ea=false)
+function automorphisms(points,d,m;quadratic=false,floor=16length(points),seed=940,ea=false,printed_condition=false)
     length(points)<=4 || error("reference is intentionally limited to four graph points")
     planes,hp = initialize(points,d,floor)
     H = Ref([collect(eachindex(points))])
@@ -192,7 +193,7 @@ function automorphisms(points,d,m;quadratic=false,floor=16length(points),seed=94
     end
     nodes = Ref(0)
     dfs(points,points,planes,planes,[collect(eachindex(points))],[collect(eachindex(points))],
-        hp,deepcopy(hp),A,fixed,H[],H,Xoshiro(seed),floor,m,ea,nodes,true)
+        hp,deepcopy(hp),A,fixed,H[],H,Xoshiro(seed),floor,m,ea,nodes,true,printed_condition)
     if quadratic
         translations = [[(x ⊻ a)+1 for x in 0:(length(points)-1)] for a in 0:(length(points)-1)]
         H[] = closure(vcat(H[],translations),length(points))
