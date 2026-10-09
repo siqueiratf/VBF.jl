@@ -14,6 +14,12 @@
             @test length(native.orbits) == (n == 4 ? 2 : 3)
             @test native.nauts < legacy.nauts
             @test native.group_order !== nothing
+            optimized = ea_class_orbits(F;backend=:partition_refinement,
+                automorphisms=native.automorphisms,subspace_algorithm=:optimized,
+                timeout_seconds=30)
+            @test optimized.complete
+            @test optimized.bases == native.bases
+            @test partition(optimized) == partition(native)
             result = ea_class_representatives(F; timeout_seconds = 30)
             @test result.complete
             @test length(result.representatives) == length(native.orbits)
@@ -89,7 +95,8 @@
         @test limited.stop_reason == :solutions && length(limited.bases) == 1
         for kwargs in ((max_nodes = -1,), (timeout_seconds = -1,),
                        (max_subspaces = -1,), (max_memory_bytes = -1,),
-                       (backend = :unknown,), (algorithm = :unknown,))
+                       (backend = :unknown,), (algorithm = :unknown,),
+                       (subspace_algorithm = :unknown,))
             @test_throws ArgumentError ea_class_orbits(F; kwargs...)
         end
         wrong_width = partition_refinement_automorphisms(gold_apn(3,1))

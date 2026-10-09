@@ -44,7 +44,8 @@ end
 """
     ea_class_orbits(F::SBox; backend=:ortho_derivative, automorphisms=nothing,
         max_nodes=typemax(Int), max_subspaces=typemax(Int), timeout_seconds=Inf,
-        max_memory_bytes=512*1024^2, algorithm=:paper, rng=Xoshiro(940))
+        max_memory_bytes=512*1024^2, algorithm=:paper,
+        subspace_algorithm=:reference, rng=Xoshiro(940))
 
 Partition the n-dimensional Walsh-zero subspaces into EA-class orbits under
 the linear parts of graph automorphisms (Baudrin–Galissant–Perrin 2025,
@@ -55,6 +56,9 @@ or other-source results supply only a verified subgroup, even if marked complete
 `backend=:ortho_derivative` preserves the existing quadratic-APN default.
 Use `backend=:partition_refinement` and explicit limits for bounded native
 computations. The representative API selects the native backend by default.
+`subspace_algorithm=:optimized` selects translation-intersection enumeration;
+`:reference` retains the literal Gauss–Jordan span-extension search. Both
+produce the same ordered bases. Work counts depend on this implementation choice.
 The legacy route certifies the full CCZ group only for `n ≥ 4`, the hypothesis
 of the paper's Proposition 3; smaller dimensions retain subgroup bounds.
 
@@ -82,7 +86,8 @@ function ea_class_orbits(F::SBox{N,T}; backend::Symbol = :ortho_derivative,
     automorphisms = nothing, max_nodes::Int = typemax(Int),
     max_subspaces::Int = typemax(Int), timeout_seconds::Real = Inf,
     max_memory_bytes::Int = 512 * 1024^2,
-    algorithm::Symbol = :paper, rng::AbstractRNG = Xoshiro(940),
+    algorithm::Symbol = :paper, subspace_algorithm::Symbol = :reference,
+    rng::AbstractRNG = Xoshiro(940),
 ) where {N,T}
     backend in (:partition_refinement, :ortho_derivative) ||
         throw(ArgumentError("unknown EA-class orbit backend: $backend"))
@@ -91,6 +96,8 @@ function ea_class_orbits(F::SBox{N,T}; backend::Symbol = :ortho_derivative,
     timeout_seconds >= 0 || throw(ArgumentError("timeout_seconds must be nonnegative"))
     max_memory_bytes >= 0 || throw(ArgumentError("max_memory_bytes must be nonnegative"))
     algorithm in (:paper, :optimized) || throw(ArgumentError("unknown algorithm: $algorithm"))
+    subspace_algorithm in (:reference, :optimized) ||
+        throw(ArgumentError("unknown subspace algorithm: $subspace_algorithm"))
     2N <= 32 || throw(ArgumentError("graph must fit UInt32"))
     backend === :ortho_derivative && automorphisms !== nothing &&
         throw(ArgumentError("supply automorphisms only to the native backend"))
@@ -138,11 +145,12 @@ function ea_class_orbits(F::SBox{N,T}; backend::Symbol = :ortho_derivative,
     subspaces = if timeout_seconds == Inf && max_nodes == typemax(Int) &&
                    max_subspaces == typemax(Int) && max_memory_bytes == typemax(Int)
         Exhausted(SearchRegion(:linear_subspaces, "dimension-$N"),
-            extract_linear_subspaces(zeroes, N; max_bits = 2N); nodes_visited = 0)
+            extract_linear_subspaces(zeroes, N; max_bits = 2N, algorithm=subspace_algorithm); nodes_visited = 0)
     else
         extract_linear_subspaces_bounded(zeroes, N;
             max_bits = 2N, max_nodes = max(0, max_nodes - budget.nodes),
-            max_subspaces = extraction_cap, timeout_seconds = remaining)
+            max_subspaces = extraction_cap, timeout_seconds = remaining,
+            algorithm=subspace_algorithm)
     end
     bases = search_solutions(subspaces)
     budget.nodes += nodes_visited(subspaces)
