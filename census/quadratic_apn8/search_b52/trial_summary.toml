@@ -1,0 +1,21 @@
+thread_seconds = 1978.9999999999995
+date = "2026-10-08 21:34:32"
+verified_new = 773
+distinct_sigma = 3444
+failed = 0
+seeds_done = 67
+census = 0
+outdirs = ["/home/ts/VBF.jl/.claude/worktrees/apn8-census/census/quadratic_apn8/search_b52/results/trial"]
+known = 2671
+search_new = 773
+
+[new_by_b6]
+54 = 340
+56 = 37
+58 = 2
+52 = 394
+
+[profiles_sample]
+"[(30,34),(56,84)]" = 1
+"[(30,34),(54,90)]" = 11
+"[(30,34),(52,96)]" = 8

@@ -1,0 +1,10 @@
+# Generated data of the B6 = 52 extension search (make table / seeds / search / validate).
+# Ignore every file under results/ but keep descending into its directories, so the
+# negations below can still re-include files.
+results/**
+!results/**/
+
+# READMEs are always tracked. Mirror of the negations at the bottom of the root
+# .gitignore; keep this block last.
+!README.md
+!**/README.md
