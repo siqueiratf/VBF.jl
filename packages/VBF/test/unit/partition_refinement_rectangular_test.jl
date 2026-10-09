@@ -52,6 +52,13 @@
                 @test H.complete
                 @test partition_refinement_equivalence(F,G;relation,automorphisms=H) isa Found
             end
+            @test are_ccz_equivalent(F,G;on_inconclusive=:throw)
+            @test are_ea_equivalent(F,G;on_inconclusive=:throw)
+            @test ccz_equivalent_function(F,ccz_equivalence_certificate(F,G))==G
+            c = ea_equivalence_certificate(F,G)
+            @test is_invertible(c.L1) && is_invertible(c.A2)
+            @test all(c.L1(F(c.A2(x))) ⊻ c.A_drift(x)==G(x) for x in 0:(length(F)-1))
+            @test ea_equivalence_certificate(F,G;max_nodes=0,on_inconclusive=:missing)===missing
         end
         F = SBox{2}([0,1,3,2])
         @test partition_refinement_equivalence(F,VBFTable{2,2}(F.lut)) isa Found

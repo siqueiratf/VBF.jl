@@ -20,6 +20,30 @@ with `(n,m) = (1,2)` and `(2,1)`, independently checking the full CCZ and EA
 group orders. Existing tests independently enumerate AGL(4,2) and three-bit
 graph actions, including the pointwise affine kernel in rank-deficient cases.
 
+Decision and certificate APIs also accept rectangular tables. EA certificates
+retain `G(x) = L1(F(A2(x))) ⊻ A_drift(x)` with independent input and output
+widths; graph certificates retain F → G orientation. Legacy square predicates
+using `strategy=:auto` may short-circuit on equality or existing invariants.
+Use the native solver directly, or `strategy=:partition_refinement`, when
+replaying the paper's actual search steps.
+
+### Pointwise-kernel construction (Algorithm 5 / Lemma 13)
+
+Write the graph's affine hull as `p₀ + S`, with `s = dim(S)` and
+`r = n+m-s`. Fixing every graph point means fixing `S` linearly and choosing
+the affine constant `p₀ ⊻ L(p₀)`. In a basis adapted to `S`, the remaining
+linear blocks are an arbitrary shear into `S` and an arbitrary GL(r,2) map.
+Thus the CCZ kernel has order `2^(s*r) * |GL(r,2)|`.
+
+For EA, let `O` be the low-bit output subspace and `k = dim(S ∩ O) = s-n`.
+The graph projects onto all inputs, so `S+O` is the whole ambient space. A
+basis adapted to both subspaces restricts the shear to `S ∩ O`; the EA kernel
+has order `2^(k*r) * |GL(r,2)|`. Elementary transvections generate these
+blocks. The existing GF(2) basis/kernel solvers implement the induced linear
+constraints, parametrizing all invertible solutions rather than enumerating
+them. This supplies the complete kernel required by Algorithm 5, not merely
+one affine extension of each graph action.
+
 ## Conformance work and commit boundaries
 
 ### Necessary correction to the printed branching condition
