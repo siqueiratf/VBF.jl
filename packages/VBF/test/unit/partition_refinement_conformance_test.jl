@@ -51,4 +51,40 @@
         @test_throws ArgumentError are_ccz_equivalent(F,F;algorithm=:invalid)
         @test_throws ArgumentError are_ea_equivalent(F,F;algorithm=:invalid)
     end
+
+    @testset "Algorithms 4–7 against explicit affine spans and groups" begin
+        for (n,m) in ((1,2),(2,1)), code in 0:15
+            F = VBFTable{n,m}([(code >> (m*x)) & ((1<<m)-1) for x in 0:((1<<n)-1)])
+            left = FunctionGraph(F).packed
+            for relation in (:ccz,:ea), seed in (3,940)
+                expected,count = R.automorphisms(left,n+m,m;quadratic=true,seed,ea=relation===:ea)
+                H = partition_refinement_automorphisms(F;relation,rng=Xoshiro(seed))
+                @test H.complete && H.graph_order==length(expected)
+                @test nodes_visited(H)==count
+                actions = [VBF._pr_graph_permutation(F,A) for A in H.generators]
+                @test Set(Tuple.(R.closure(actions,length(F))))==Set(Tuple.(expected))
+                for other in 0:15
+                    G = VBFTable{n,m}([(other >> (m*x)) & ((1<<m)-1) for x in 0:((1<<n)-1)])
+                    action,count = R.equivalence(left,FunctionGraph(G).packed,n+m,m;seed,ea=relation===:ea)
+                    result = partition_refinement_equivalence(F,G;relation,rng=Xoshiro(seed))
+                    @test (result isa Found)==(action!==nothing)
+                    @test nodes_visited(result)==count
+                    if action!==nothing
+                        A = only(search_solutions(result))
+                        @test [Int(A(p) >> m)+1 for p in left]==action
+                    end
+                end
+            end
+        end
+        # Four affine-independent graph points exercise the quadratic anchor
+        # without prematurely individualizing it (Algorithm 5).
+        F = SBox{2}([0,0,0,1])
+        for relation in (:ccz,:ea)
+            expected,count = R.automorphisms(FunctionGraph(F).packed,4,2;
+                quadratic=true,ea=relation===:ea)
+            H = partition_refinement_automorphisms(F;relation)
+            @test H.complete && H.graph_order==length(expected)
+            @test nodes_visited(H)==count
+        end
+    end
 end

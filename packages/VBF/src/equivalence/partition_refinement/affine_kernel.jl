@@ -67,15 +67,15 @@ end
 
 """Known quadratic translations, Lemma 14, in input-high/output-low packing."""
 function _pr_quadratic_translations(F::AbstractTruthTable{N,M}) where {N,M}
-    maps = F2AffineMap{(N+M),UInt32}[]
-    for i = 0:(N-1)
-        a = 1 << i
-        c = UInt32(F(a) ⊻ F(0))
-        cols = UInt32[1 << j for j = 0:((N+M)-1)]
-        for j = 0:(N-1)
-            cols[M+j+1] ⊻= UInt32(F((1 << j) ⊻ a) ⊻ F(1 << j)) ⊻ c
-        end
-        push!(maps, F2AffineMap(F2LinearMap{(N+M),UInt32}(cols), (UInt32(a) << M) | c))
+    return [_pr_quadratic_translation(F,1<<i) for i in 0:(N-1)]
+end
+
+"""Lemma 14's τₐ, evaluated for any input translation a."""
+function _pr_quadratic_translation(F::AbstractTruthTable{N,M},a::Int) where {N,M}
+    c = UInt32(F(a) ⊻ F(0))
+    cols = UInt32[1 << j for j = 0:((N+M)-1)]
+    for j = 0:(N-1)
+        cols[M+j+1] ⊻= UInt32(F((1 << j) ⊻ a) ⊻ F(1 << j)) ⊻ c
     end
-    return maps
+    return F2AffineMap(F2LinearMap{(N+M),UInt32}(cols),(UInt32(a)<<M)|c)
 end

@@ -98,6 +98,16 @@ end
 
 """Extend affine constraints and independently verify a full graph certificate."""
 function _pr_certificate(a::_PRAffineMap, F::AbstractTruthTable{N,M}, G::AbstractTruthTable, ea::Bool) where {N,M}
+    if ea
+        # ValidEA must establish a well-defined, injective input quotient before
+        # completing the ambient map; the paper performs this check at leaves.
+        quotient = _PartialF2Isomorphism(N)
+        for p in FunctionGraph(F).packed
+            y = _pr_image(a,p)
+            y === nothing && return nothing
+            _partial_insert!(quotient,(p ⊻ a.source) >> M,(y ⊻ a.target) >> M) || return nothing
+        end
+    end
     L = _partial_complete(a.linear; output_bits = ea ? M : 0)
     L === nothing && return nothing
     A = F2AffineMap(L, a.target ⊻ L(a.source))
@@ -116,7 +126,7 @@ function _pr_prepare_node!(pl, pr, left, right, a, work, M, ea, fixed)
         if pl.starts[c+1] == lo + 1
             x, y = left[pl.order[lo]], right[pr.order[lo]]
             fresh = _pr_image(a, x) === nothing
-            _pr_insert!(a, x, y, M, ea) || return nothing
+            _pr_insert!(a, x, y, M, ea && work.algorithm!==:paper) || return nothing
             fresh && push!(fixed, pr.order[lo])
         end
     end
@@ -135,7 +145,7 @@ function _pr_prepare_node!(pl, pr, left, right, a, work, M, ea, fixed)
                 if hi - lo + 1 < size
                     cell, size, xindex = c, hi - lo + 1, i
                 end
-            else
+            elseif work.algorithm !== :paper
                 # An affine implication must land in the corresponding target cell.
                 # Graph points are indexed by input, so membership is O(1).
                 target_index = Int(y >> M) + 1
@@ -183,7 +193,7 @@ function _pr_dfs!(F::AbstractTruthTable{N,M}, G, left, right, planes_left, plane
             seen[orbit] = true
         end
         b = copy(a)
-        _pr_insert!(b, left[xindex], right[yindex], M, ea) || continue
+        _pr_insert!(b, left[xindex], right[yindex], M, ea && work.algorithm!==:paper) || continue
         child_group = H === nothing ? nothing : _pr_group_stabilizer(H, yindex, budget)
         H !== nothing && child_group === nothing && return nothing
         ql, qr = copy(pl), copy(pr)
@@ -244,6 +254,7 @@ function partition_refinement_equivalence(
     threaded::Bool = false,
     algorithm::Symbol = :paper, rng::AbstractRNG = Xoshiro(940),
 ) where {N,M}
+    N+M <= 32 || throw(ArgumentError("native graph dimension n+m must fit UInt32"))
     algorithm in (:paper,:optimized) || throw(ArgumentError("algorithm must be :paper or :optimized"))
     relation in (:ccz, :ea) || throw(ArgumentError("relation must be :ccz or :ea"))
     max_nodes >= 0 || throw(ArgumentError("max_nodes must be nonnegative"))
