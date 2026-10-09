@@ -69,7 +69,8 @@ c = ea_equivalence_certificate(F, G)
 
 The graph convention is `(x << n) | F(x)`, so EA maps preserve the **low-bit**
 output subspace. Every recovered map is checked for invertibility and against
-the whole target graph. The search handles arbitrary square SBoxes, including
+the whole target graph. The search handles arbitrary square SBoxes and
+rectangular `VBFTable{N,M}` functions F₂ⁿ → F₂ᵐ, including
 nonpermutations and affine graphs that do not span the ambient space.
 
 Use `on_inconclusive=:throw` or `:missing` for classification. Predicate defaults

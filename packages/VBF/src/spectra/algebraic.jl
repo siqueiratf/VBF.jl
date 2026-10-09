@@ -28,11 +28,11 @@ julia> algebraic_degree(load_literature_sbox("PRESENT"))
 3
 ```
 """
-function algebraic_degree(s::SBox{N,T}) where {N,T}
+function algebraic_degree(s::AbstractTruthTable{N,M}) where {N,M}
     a = anf(s)
     deg = 0
     @inbounds for m = 0:(length(a)-1)
-        a[m+1] == zero(T) && continue
+        iszero(a[m+1]) && continue
         w = count_ones(UInt(m))
         w > deg && (deg = w)
     end

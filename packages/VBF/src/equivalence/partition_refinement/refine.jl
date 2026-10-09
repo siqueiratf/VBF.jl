@@ -42,7 +42,8 @@ end
 
 """Compute the graph indicator's Walsh transform using VBF's native FWHT."""
 function _pr_graph_walsh(points::Vector{UInt32}, d::Int; threaded::Bool = false)
-    v = zeros(Int32, 1 << d)
+    T = length(points) <= typemax(Int32) ? Int32 : Int64
+    v = zeros(T, 1 << d)
     @inbounds for p in points
         v[Int(p)+1] = 1
     end
