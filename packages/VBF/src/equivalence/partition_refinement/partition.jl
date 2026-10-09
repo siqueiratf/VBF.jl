@@ -17,9 +17,20 @@ Base.copy(p::_PRPartition) = _PRPartition(copy(p.order), copy(p.starts))
 """Split paired cells by signed signatures and reject unequal histograms."""
 function _pr_split_pair!(a::_PRPartition, b::_PRPartition, sa, sb)
     a.starts == b.starts || return false
-    starts = Int[1]
+    starts = nothing
     @inbounds for c = 1:(length(a.starts)-1)
         lo, hi = a.starts[c], a.starts[c+1] - 1
+        score = sa[a.order[lo]]
+        if all(j -> sa[a.order[j]] == score, lo:hi)
+            # Uniform cells (including singletons) need neither sorting nor
+            # replacement boundaries. This also rejects a nonuniform mate.
+            all(j -> sb[b.order[j]] == score, lo:hi) || return false
+            starts === nothing || push!(starts, hi + 1)
+            continue
+        end
+        if starts === nothing
+            starts = a.starts[1:c]
+        end
         sort!(view(a.order, lo:hi); by = i -> sa[i])
         sort!(view(b.order, lo:hi); by = i -> sb[i])
         for j = lo:hi
@@ -30,8 +41,10 @@ function _pr_split_pair!(a::_PRPartition, b::_PRPartition, sa, sb)
         end
         push!(starts, hi + 1)
     end
-    a.starts = starts
-    b.starts = copy(starts)
+    if starts !== nothing
+        a.starts = starts
+        b.starts = copy(starts)
+    end
     return true
 end
 
