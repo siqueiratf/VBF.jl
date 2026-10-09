@@ -25,28 +25,42 @@ struct _PRWorkspace{T<:Signed}
     weights::Vector{Int}
     point_weights::Vector{Int}
     point_cells::Vector{Int}
+    threaded::Bool
     direct_threshold::Int
 end
 
 """Allocate safe-width scratch space and choose the direct-summation crossover."""
-function _PRWorkspace(d::Int, npoints::Int, nplanes::Int)
+function _PRWorkspace(d::Int, npoints::Int, nplanes::Int; threaded::Bool = false)
     T = Int128(max(npoints, nplanes)) * 8191 <= typemax(Int32) ? Int32 : Int64
     return _PRWorkspace(
         zeros(T, 1 << d), zeros(Int, npoints), zeros(Int, npoints),
         zeros(Int, nplanes), zeros(Int, nplanes), zeros(UInt32, nplanes),
         zeros(Int, nplanes), zeros(Int, npoints), zeros(Int, npoints),
-        (d * (1 << d)) ÷ npoints,
+        threaded, (d * (1 << d)) ÷ npoints,
     )
 end
 
 """Compute the graph indicator's Walsh transform using VBF's native FWHT."""
-function _pr_graph_walsh(points::Vector{UInt32}, d::Int)
+function _pr_graph_walsh(points::Vector{UInt32}, d::Int; threaded::Bool = false)
     v = zeros(Int32, 1 << d)
     @inbounds for p in points
         v[Int(p)+1] = 1
     end
-    return walsh_hadamard!(v)
+    return walsh_hadamard!(v; threaded)
 end
+
+"""Exact signed incidence sum, shared by serial and threaded direct kernels."""
+@inline function _pr_signed_sum(p, normals, weights, k)
+    score = 0
+    @inbounds @simd for j = 1:k
+        w = weights[j]
+        score += ifelse(isodd(count_ones(p & normals[j])), -w, w)
+    end
+    return score
+end
+
+_pr_parallel_direct(work, points, planes) = work.threaded && Threads.nthreads() > 1 &&
+    points * planes >= (1 << 19)
 
 """Count all nonconstant affine hyperplanes by graph intersection size."""
 function _pr_intersection_histogram(walsh, npoints::Int)
@@ -116,20 +130,21 @@ function _pr_point_scores!(scores, points, planes::_PRPlanes, hp::_PRPartition,
         end
     end
     if k <= work.direct_threshold
-        @inbounds for i in eachindex(points)
-            p, score = points[i], 0
-            @simd for j = 1:k
-                w = work.weights[j]
-                score += ifelse(isodd(count_ones(p & work.normals[j])), -w, w)
+        if _pr_parallel_direct(work, length(points), k)
+            Threads.@threads :dynamic for i in eachindex(points)
+                @inbounds scores[i] = _pr_signed_sum(points[i], work.normals, work.weights, k)
             end
-            scores[i] = score
+        else
+            @inbounds for i in eachindex(points)
+                scores[i] = _pr_signed_sum(points[i], work.normals, work.weights, k)
+            end
         end
     else
         fill!(work.scratch, 0)
         @inbounds for j = 1:k
             work.scratch[Int(work.normals[j])+1] += work.weights[j]
         end
-        walsh_hadamard!(work.scratch)
+        walsh_hadamard!(work.scratch; threaded = work.threaded)
         @inbounds for i in eachindex(points)
             scores[i] = work.scratch[Int(points[i])+1]
         end
@@ -147,20 +162,26 @@ function _pr_plane_scores!(scores, points, pp::_PRPartition, planes::_PRPlanes,
         end
     end
     if length(hp.order) <= work.direct_threshold
-        @inbounds for i in hp.order
-            a, score = planes.normals[i], 0
-            @simd for j in eachindex(points)
-                w = work.point_weights[j]
-                score += ifelse(isodd(count_ones(a & points[j])), -w, w)
+        if _pr_parallel_direct(work, length(points), length(hp.order))
+            Threads.@threads :dynamic for j in eachindex(hp.order)
+                @inbounds begin
+                    i = hp.order[j]
+                    scores[i] = _pr_signed_sum(planes.normals[i], points,
+                        work.point_weights, length(points)) * planes.signs[i]
+                end
             end
-            scores[i] = score * planes.signs[i]
+        else
+            @inbounds for i in hp.order
+                scores[i] = _pr_signed_sum(planes.normals[i], points,
+                    work.point_weights, length(points)) * planes.signs[i]
+            end
         end
     else
         fill!(work.scratch, 0)
         @inbounds for j in eachindex(points)
             work.scratch[Int(points[j])+1] = work.point_weights[j]
         end
-        walsh_hadamard!(work.scratch)
+        walsh_hadamard!(work.scratch; threaded = work.threaded)
         @inbounds for i in hp.order
             scores[i] = Int(work.scratch[Int(planes.normals[i])+1]) * planes.signs[i]
         end

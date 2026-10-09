@@ -103,21 +103,15 @@ function _pr_certificate(a::_PRAffineMap, F::SBox{N}, G::SBox, ea::Bool) where {
     return ccz_equivalent_function(F, A) == G ? A : nothing
 end
 
-"""Depth-first affine recovery with paired partitions (Algorithm 6)."""
-function _pr_dfs!(F::SBox{N}, G, left, right, planes_left, planes_right, pl, pr,
-                  hl, hr, a, work, floor, ea, budget, transitive) where {N}
-    _pr_check!(budget) || return nothing
-    if budget.nodes >= budget.max_nodes
-        budget.stopped = :nodes
-        return nothing
-    end
-    budget.nodes += 1
-    _pr_refine!(pl, pr, hl, hr, left, right, planes_left, planes_right,
-                work, floor, budget) || return nothing
+"""Propagate singleton constraints and choose the next undetermined graph point."""
+function _pr_prepare_node!(pl, pr, left, right, a, work, N, ea, fixed)
     @inbounds for c = 1:(length(pl.starts)-1)
         lo = pl.starts[c]
         if pl.starts[c+1] == lo + 1
-            _pr_insert!(a, left[pl.order[lo]], right[pr.order[lo]], N, ea) || return nothing
+            x, y = left[pl.order[lo]], right[pr.order[lo]]
+            fresh = _pr_image(a, x) === nothing
+            _pr_insert!(a, x, y, N, ea) || return nothing
+            fresh && push!(fixed, pr.order[lo])
         end
     end
     @inbounds for c = 1:(length(pr.starts)-1)
@@ -144,7 +138,32 @@ function _pr_dfs!(F::SBox{N}, G, left, right, planes_left, planes_right, pl, pr,
             end
         end
     end
+    return cell, xindex
+end
+
+"""Depth-first affine recovery with paired partitions (Algorithm 6)."""
+function _pr_dfs!(F::SBox{N}, G, left, right, planes_left, planes_right, pl, pr,
+                  hl, hr, a, work, floor, ea, budget, transitive, H = nothing) where {N}
+    _pr_check!(budget) || return nothing
+    if budget.nodes >= budget.max_nodes
+        budget.stopped = :nodes
+        return nothing
+    end
+    budget.nodes += 1
+    _pr_refine!(pl, pr, hl, hr, left, right, planes_left, planes_right,
+                work, floor, budget) || return nothing
+    fixed = Int[]
+    choice = _pr_prepare_node!(pl, pr, left, right, a, work, N, ea, fixed)
+    choice === nothing && return nothing
+    cell, xindex = choice
     cell == 0 && return _pr_certificate(a, F, G, ea)
+    if H !== nothing
+        H = _pr_group_fix(H, fixed, budget)
+        H === nothing && return nothing
+    end
+    labels = H === nothing || isempty(H.strong) ? nothing : _pr_group_orbits(H, budget)
+    budget.stopped === :none || return nothing
+    seen = labels === nothing ? nothing : falses(length(right))
     lo, hi = pr.starts[cell], pr.starts[cell+1] - 1
     # Quadratic graphs have known translations acting transitively (paper
     # Section 6.1). At the unanchored root all image choices are equivalent.
@@ -152,13 +171,20 @@ function _pr_dfs!(F::SBox{N}, G, left, right, planes_left, planes_right, pl, pr,
     for j = lo:hi
         _pr_check!(budget) || return nothing
         yindex = pr.order[j]
+        if labels !== nothing
+            orbit = labels[yindex]
+            seen[orbit] && continue
+            seen[orbit] = true
+        end
         b = copy(a)
         _pr_insert!(b, left[xindex], right[yindex], N, ea) || continue
+        child_group = H === nothing ? nothing : _pr_group_stabilizer(H, yindex, budget)
+        H !== nothing && child_group === nothing && return nothing
         ql, qr = copy(pl), copy(pr)
         _pr_individualize!(ql, cell, xindex)
         _pr_individualize!(qr, cell, yindex)
         cert = _pr_dfs!(F, G, left, right, planes_left, planes_right, ql, qr,
-                        copy(hl), copy(hr), b, work, floor, ea, budget, transitive)
+                        copy(hl), copy(hr), b, work, floor, ea, budget, transitive, child_group)
         cert === nothing || return cert
         budget.stopped === :none || return nothing
     end
@@ -168,7 +194,8 @@ end
 """
     partition_refinement_equivalence(F, G; relation=:ccz, max_nodes=10^6,
         timeout_seconds=60.0, min_active_hyperplanes=0,
-        max_memory_bytes=512*1024^2) -> SearchOutcome{F2AffineMap}
+        max_memory_bytes=512*1024^2, automorphisms=nothing,
+        automorphism_timeout_seconds=0.0, threaded=false) -> SearchOutcome{F2AffineMap}
 
 Kaleyski–Sunde (2026), Algorithms 1–3, 6–7: recover a CCZ or EA affine map
 **from F's graph to G's graph** for arbitrary square SBoxes. `relation` is
@@ -183,6 +210,17 @@ Zero selects `16*2^n` for n ≤ 7 and `2*2^n` otherwise. The search is complete
 when allowed to exhaust, but its worst-case tree is exponential. Storage is
 O(2^(2n)) for the transform, so larger dimensions may hit the memory budget.
 
+`automorphisms` accepts a verified [`AutomorphismGroupResult`](@ref) or an
+iterable of target-graph affine automorphisms. Every map is revalidated; EA
+pruning also requires output-subspace preservation. Stabilizers branch on
+one target per orbit (Lemma 12). A positive `automorphism_timeout_seconds`
+first discovers a bounded target subgroup; discovery and chain construction
+share the overall deadline, memory estimate and DFS-node budget. Discovery
+is opt-in so easy instances do not pay for a group computation.
+`threaded=true` uses independent parallel incidence sums and large Walsh
+transforms when Julia has multiple default-pool threads. DFS and group updates
+remain serial, and integer signatures, search order and node limits are unchanged.
+
 Credits: Nikolay Kaleyski and Joakim Sunde, ePrint 2026/940,
 https://eprint.iacr.org/2026/940. No sboxU, Sage or C++ runtime is required.
 """
@@ -190,12 +228,15 @@ function partition_refinement_equivalence(
     F::SBox{N}, G::SBox; relation::Symbol = :ccz, max_nodes::Int = 10^6,
     timeout_seconds::Real = 60.0, min_active_hyperplanes::Int = 0,
     max_memory_bytes::Int = 512 * 1024^2,
+    automorphisms = nothing, automorphism_timeout_seconds::Real = 0.0,
+    threaded::Bool = false,
 ) where {N}
     relation in (:ccz, :ea) || throw(ArgumentError("relation must be :ccz or :ea"))
     max_nodes >= 0 || throw(ArgumentError("max_nodes must be nonnegative"))
     timeout_seconds >= 0 || throw(ArgumentError("timeout_seconds must be nonnegative"))
     min_active_hyperplanes >= 0 || throw(ArgumentError("min_active_hyperplanes must be nonnegative"))
     max_memory_bytes >= 0 || throw(ArgumentError("max_memory_bytes must be nonnegative"))
+    automorphism_timeout_seconds >= 0 || throw(ArgumentError("automorphism_timeout_seconds must be nonnegative"))
     start = time_ns()
     budget = _PRBudget(start, Float64(timeout_seconds), max_nodes, 0, :none)
     region = SearchRegion(:equivalence, "$(relation):$(N)-bit graphs")
@@ -218,32 +259,48 @@ function partition_refinement_equivalence(
         return finish(nothing)
     end
     # Check before any ambient-sized allocation, including the indicator FWHT.
-    if Int128(1) << (2N) > max_memory_bytes ÷ 16
+    groups = automorphisms !== nothing || automorphism_timeout_seconds > 0
+    group_memory = groups ? _pr_group_memory(N) : Int128(0)
+    if (Int128(16) << (2N)) + group_memory > max_memory_bytes
         budget.stopped = :memory
         return finish(nothing)
     end
     left, right = FunctionGraph(F).packed, FunctionGraph(G).packed
-    wf = _pr_graph_walsh(left, 2N)
+    wf = _pr_graph_walsh(left, 2N; threaded)
     _pr_check!(budget) || return finish(nothing)
     hf = _pr_intersection_histogram(wf, length(left))
-    wg = _pr_graph_walsh(right, 2N)
+    wg = _pr_graph_walsh(right, 2N; threaded)
     _pr_check!(budget) || return finish(nothing)
     hg = _pr_intersection_histogram(wg, length(right))
     hf == hg || return finish(nothing)
     floor = min_active_hyperplanes == 0 ? (N <= 7 ? 16 : 2) * length(left) : min_active_hyperplanes
     classes, nplanes = _pr_select_classes(hf, floor)
     estimate = (Int128(16) << (2N)) + Int128(nplanes + length(left)) * (64 + 32 * (2N + 2))
+    estimate += group_memory
     if estimate > max_memory_bytes
         budget.stopped = :memory
         return finish(nothing)
     end
+    if automorphism_timeout_seconds > 0
+        remaining = max(0.0, budget.timeout - (time_ns() - start) * 1e-9)
+        discovered = partition_refinement_automorphisms(G; relation,
+            timeout_seconds = min(Float64(automorphism_timeout_seconds), remaining),
+            max_nodes, min_active_hyperplanes, max_memory_bytes, threaded)
+        budget.nodes += discovered.nodes_visited
+        previous = automorphisms isa AutomorphismGroupResult ? automorphisms.generators : automorphisms
+        automorphisms = previous === nothing ? discovered : vcat(collect(previous), discovered.generators)
+        _pr_check!(budget) || return finish(nothing)
+    end
+    H = automorphisms === nothing ? nothing :
+        _pr_checked_automorphisms(G, automorphisms, relation === :ea, budget)
+    _pr_check!(budget) || return finish(nothing)
     planes_left, hl = _pr_build_planes(wf, length(left), classes, hf)
     planes_right, hr = _pr_build_planes(wg, length(right), classes, hg)
-    work = _PRWorkspace(2N, length(left), nplanes)
+    work = _PRWorkspace(2N, length(left), nplanes; threaded)
     pl, pr = _PRPartition(length(left)), _PRPartition(length(right))
     transitive = algebraic_degree(G) <= 2
     cert = _pr_dfs!(F, G, left, right, planes_left, planes_right, pl, pr, hl, hr,
-                    _PRAffineMap(N), work, floor, relation === :ea, budget, transitive)
+                    _PRAffineMap(N), work, floor, relation === :ea, budget, transitive, H)
     return finish(cert)
 end
 
