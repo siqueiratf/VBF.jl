@@ -4,6 +4,13 @@ The original datasets were fetched and all signatures recomputed. The imported
 corpora agree with their original source LUTs and signatures. The fresh public
 comparison baseline has **3,809,037 distinct signatures**.
 
+The subsequent [literature survey](../reports/literature/LITERATURE.md) found
+one further publicly posted quadratic APN representative in Galissant's 2026
+slides. It is absent from this baseline and the checked candidates. The
+supplement is retained separately; all counts below refer to the original
+hash-bound rebuild inputs. The full announced switching results remain an
+unresolved literature comparison source.
+
 | Check | Result |
 |---|---:|
 | Stored quadratic APN records independently recomputed | 4,005,445 |
