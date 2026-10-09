@@ -62,7 +62,7 @@ function load_study(paths, per_source, rng)
             hash = String(cols[hashcol])
             length(hash) == 64 || error("invalid signature at $path:$line_number")
             push!(seen,hash)
-            statuscol === nothing || cols[statuscol] == "new" || continue
+            statuscol === nothing || cols[statuscol] in ("new","search","search-new") || continue
             eligible += 1
             j = eligible <= per_source ? eligible : rand(rng,1:eligible)
             j <= per_source || continue
