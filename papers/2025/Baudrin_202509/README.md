@@ -72,6 +72,13 @@ make -C papers/2025/Baudrin_202509 closure6 save_results=true
 make -C papers/2025/Baudrin_202509 census7 save_results=true
 ```
 
+Both checkpointed drivers support independent parent/root tasks. For example,
+`make -C papers/2025/Baudrin_202509 census7 threads=16 workers=16 save_results=true`
+uses 16 default-pool Julia threads. Each task has its own search state and RNG;
+checkpoints are disjoint and summary reduction follows dataset order. Limits
+apply per search/root, so aggregate memory can grow with the worker count.
+The overall time limit remains shared. Serial execution remains the default.
+
 The expected complete results are 691 EA classes in thirteen quadratic CCZ
 classes, plus 25 in the remaining nonquadratic class: 716 in total, with degree
 counts `{2:13, 3:521, 4:182}`. The cube's CCZ class has three EA classes.
