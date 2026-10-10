@@ -5,5 +5,13 @@
 !/runs/**/
 /archive/class-orbit/source/**
 !/archive/class-orbit/source/**/
+/archive/census/**
+!/archive/census/**/
+# Vendored upstream repositories are raw inputs, including their documentation.
+/archive/census/results/signature_rebuild/sources/
+/archive/census/results/literature_20261009/github/
+/archive/census/results/literature_family_coverage/downloads/
+/rebuilds/**
+!/rebuilds/**/
 !README.md
 !**/README.md

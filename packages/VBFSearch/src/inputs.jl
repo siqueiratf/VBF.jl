@@ -14,14 +14,7 @@ function candidate_lut(encoded)
     length(bytes)==256 && return bytes
     length(bytes)==37 && return UInt8.(decode_quadratic_lut(bytes,8,conway_polynomial(8)))
     length(bytes)==28 || error("expected 28/37 coefficient bytes or 256 LUT bytes")
-    lut=zeros(UInt8,256);t=0
-    for a in 0:7,b in a+1:7
-        t+=1
-        for x in 0:255
-            ((x>>a)&(x>>b)&1)==0 || (lut[x+1] ⊻= bytes[t])
-        end
-    end
-    lut
+    UInt8.(VBF.QuadraticAPNTree.lut(VBF.QuadraticAPNTree.decode_coeffs(encoded,8),8))
 end
 
 """Materialize catalog seeds with exact LUT identity and independent verification."""
