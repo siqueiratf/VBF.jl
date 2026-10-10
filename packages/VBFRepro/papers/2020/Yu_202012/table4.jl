@@ -3,46 +3,11 @@
 #   "Classification of quadratic APN functions with coefficients in F₂ for dimensions up to 9"
 # Section: 3.2, Table 4 — n=9: 8 CCZ classes, 2 previously unknown (s₁, s₂)
 #
-# ─── THE NOVELTY CLAIM, AND EXACTLY HOW FAR WE REPRODUCE IT ───────────────────
-# The paper claims s₁ and s₂ are CCZ-inequivalent to ANY currently known APN function
-# over F₂⁹, and (abstract) that both are AB. An earlier version of this file compared
-# their EA-mugshots against THREE functions — x³, x⁵, x¹⁷ — and left it there.
-#
-# We now compare against EVERY quadratic n=9 entry in the catalog, by σ-MISMATCH, which
-# is the rigorous direction (σ is a CCZ invariant; a mismatch cannot be an artefact — a
-# σ-MATCH, by contrast, would prove nothing). Result: s₁ and s₂ are rigorously
-# CCZ-inequivalent to all 5 quadratic n=9 catalog entries, and to each other.
-#
-# TWO LIMITS ON THAT, STATED PLAINLY — the paper's full claim is NOT reproduced:
-#
-#   (a) σ CANNOT REACH THE NON-QUADRATIC ENTRIES. σ is built from the ortho-derivative,
-#       which is defined only for quadratic APN. The n=9 catalog holds 4 non-quadratic
-#       entries (Kasami x¹³/x²⁴¹, Welch–Niho x¹⁹, Inverse x⁵¹⁰); s₁/s₂ cannot be compared
-#       to them this way. CCZ-equivalence does NOT preserve algebraic degree, so "they
-#       are quadratic and these are not" is NOT an argument. (In fact `sigma_hash` throws
-#       on them — asserted below, so this limit cannot be silently forgotten.)
-#
-#   (b) THE CATALOG IS INCOMPLETE, AND f₇ PROVES IT. f₇ is a Table-4 row the paper treats
-#       as ALREADY KNOWN — yet classify_ccz returns :new for it, i.e. its σ matches no
-#       catalog entry. A function the paper calls known cannot be new; therefore known
-#       n=9 families are simply MISSING from the catalog. This is asserted below as a
-#       standing witness. Consequently a `:new` verdict here means "not in OUR catalog",
-#       NOT "new to the world".
-#
-# Verdict: novelty PARTIALLY reproduced. s₁/s₂ are rigorously CCZ-inequivalent to the 5
-# quadratic n=9 catalog entries and to each other; not compared against the 4
-# non-quadratic entries, nor against the known families the catalog lacks.
-# (n=9 catalog gap records for s₁/s₂ live in the README, not here.)
-#
-# Pseudocode:
-#   1. Build the 8 SBoxes over GF(2⁹); verify APN, quadratic, AB (linearity 2⁵=32)
-#   2. Load EVERY n=9 catalog entry; split quadratic (σ-comparable) / non-quadratic (not)
-#   3. s₁, s₂: assert σ-MISMATCH against every quadratic entry ⟹ rigorous CCZ-inequivalence
-#   4. Assert σ(s₁) ≠ σ(s₂)
-#   5. Assert the two limits: σ undefined on non-quadratic entries; f₇ (known!) reads :new
-# VBF API used: sbox_from_exponents, differential_uniformity, algebraic_degree,
-#   is_almost_bent, sigma_hash, classify_ccz, apn_catalog_names, apn_catalog_metadata,
-#   load_apn_function
+# Scope: formula/APN/quadratic/AB checks on eight publication representatives,
+# and signature separation from the explicitly enumerated curated n9 APN entries.
+# This is not a complete literature corpus. Matching signatures only locate
+# equivalence queries; nonquadratic references require full CCZ methods.
+# No catalog writes or literature-novelty guarantee follows from this report.
 
 include(joinpath(@__DIR__, "helpers.jl"))
 
@@ -63,19 +28,24 @@ const TABLE4_FUNCTIONS = [
 """
     n9_catalog_split() -> (quadratic, non_quadratic)
 
-Every n=9 APN catalog entry, split by whether σ can reach it. `quadratic` entries are
+Every n=9 APN row in the catalog functions table, split by whether σ can reach it.
+Bulk-corpus/construction coverage and literature completeness are not asserted. `quadratic` entries are
 `(name, sigma_hash)`; `non_quadratic` are `(name, algebraic_degree)` — σ is undefined
 there (no ortho-derivative), which is limit (a).
 """
 function n9_catalog_split()
     quad = Tuple{String,String}[]
     nonquad = Tuple{String,Int}[]
-    for name in apn_catalog_names()
-        md = apn_catalog_metadata(name)
-        md["n"] == 9 || continue
-        F = load_apn_function(name)
-        d = algebraic_degree(F)
-        d == 2 ? push!(quad, (name, sigma_hash(F))) : push!(nonquad, (name, d))
+    db = VBFCatalog.load_catalog()
+    try
+        for row in VBFCatalog.list_functions(db; n = 9, is_apn = true)
+            name = row.canonical_name === nothing ? "id:$(row.id)" : row.canonical_name
+            F = VBFCatalog.load_sbox(db, row.id)
+            d = algebraic_degree(F)
+            d == 2 ? push!(quad, (name, sigma_hash(F))) : push!(nonquad, (name, d))
+        end
+    finally
+        VBFCatalog.SQLite.close(db)
     end
     (quad, nonquad)
 end
@@ -101,7 +71,7 @@ function table4_verify()
     push!(checks, ("n=9 catalog has quadratic entries to compare against",
                    !isempty(quad_entries)))
 
-    # 2. Novelty of s₁, s₂ against EVERY quadratic n=9 catalog entry, by σ-MISMATCH.
+    # 2. Separation from the explicitly enumerated curated quadratic entries.
     for (label, F, isnew) in boxes
         isnew || continue
         h = sigma_hash(F)
@@ -112,8 +82,8 @@ function table4_verify()
              "entries ⟹ rigorously CCZ-inequivalent to each",
              mismatch_all),
         )
-        push!(checks, ("$label: classify_ccz ⇒ :new (σ absent from the index)",
-                       classify_ccz(F)[1] === :new))
+        push!(checks, ("$label: signature absent from the enumerated curated quadratic entries",
+                       !isempty(quad_entries) && all(h != qh for (_, qh) in quad_entries)))
     end
 
     # 3. s₁ and s₂ are CCZ-inequivalent to each other (σ-mismatch, rigorous).
@@ -127,7 +97,12 @@ function table4_verify()
                    !isempty(nonquad_entries)))
     if !isempty(nonquad_entries)
         name = nonquad_entries[1][1]
-        G = load_apn_function(name)
+        db = VBFCatalog.load_catalog()
+        G = try
+            VBFCatalog.load_sbox(db, startswith(name, "id:") ? parse(Int, name[4:end]) : name)
+        finally
+            VBFCatalog.SQLite.close(db)
+        end
         threw = false
         try
             sigma_hash(G)
@@ -143,18 +118,13 @@ function table4_verify()
         )
     end
 
-    # 5. LIMIT (b), now CLOSED: f₇ is treated as KNOWN by the paper. It used to read
-    #    :new — proof the n=9 catalog was missing known families, so a `:new` verdict
-    #    was NOT world-novelty. The known-families import (n9_Yu2020_f7_known + the Gold
-    #    / Budaghyan n=9 reps) added it, so f₇ now reads :sigma_match. The lesson stands
-    #    in general (`:new` means "not in OUR index", not "new to mathematics") — this
-    #    check now asserts the hole is closed rather than that it exists.
+    # Positive controls locate reference candidates by signatures. They do not
+    # establish equivalence or completeness of the wider literature database.
     f7 = sbox_from_exponents(n, TABLE4_FUNCTIONS[7][1])
     push!(
         checks,
-        ("limit (b) closed: f₇ — which the PAPER treats as KNOWN — now reads :sigma_match, " *
-         "not :new (the known-families import filled the n=9 catalog hole it used to expose)",
-         classify_ccz(f7)[1] === :sigma_match),
+        ("known f₇ has a signature match among curated references; exact equivalence is separate",
+         any(sigma_hash(f7) == h for (_,h) in quad_entries)),
     )
 
     # Guard against a vacuous novelty test: the catalog lookup must actually be able to
@@ -165,19 +135,18 @@ function table4_verify()
         checks,
         ("non-vacuity: f₅ and f₆ ARE found in the catalog (σ-match) — the :new verdicts " *
          "above are not an artefact of an empty or broken index",
-         classify_ccz(f5)[1] === :sigma_match && classify_ccz(f6)[1] === :sigma_match),
+         any(sigma_hash(f5) == h for (_,h) in quad_entries) && any(sigma_hash(f6) == h for (_,h) in quad_entries)),
     )
 
     (; checks,
        n_quadratic_catalog = length(quad_entries),
        n_nonquadratic_catalog = length(nonquad_entries),
-       note = "Novelty PARTIALLY reproduced. s₁, s₂: rigorously CCZ-inequivalent (σ-mismatch) " *
-              "to all $(length(quad_entries)) quadratic n=9 catalog entries and to each other; " *
-              "both APN, quadratic, AB. NOT compared against the $(length(nonquad_entries)) " *
-              "non-quadratic n=9 entries (σ undefined there; CCZ does not preserve degree), " *
-              "nor against known n=9 families the catalog LACKS — f₇, which the paper calls " *
-              "known, also reads :new, which proves the hole. :new here means 'absent from " *
-              "our catalog', NOT 'new to the world'.")
+       literature_novelty = :unresolved,
+       note = "s₁/s₂ are separated by signatures from the $(length(quad_entries)) explicitly " *
+              "enumerated curated quadratic n9 references and from each other. Matching " *
+              "signatures require exact witnesses. The $(length(nonquad_entries)) nonquadratic " *
+              "curated references and other literature constructions remain unresolved; " *
+              "no literature-completeness or novelty guarantee is established.")
 end
 
 function table4_report(io::IO = stdout)

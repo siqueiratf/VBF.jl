@@ -15,7 +15,9 @@ their generator matrices (`ccz_matrix` / `ea_matrix` / `ae_matrix` /
     [`ccz_equivalence_certificate`](@ref) decide function equivalence directly
     using Kaleyski–Sunde (ePrint 2026/940), without an external code-equivalence
     solver. These matrices remain useful for invariants and downstream binary
-    coding software. `code_weight_enumerator` is only a necessary condition:
+    coding software. No general binary-code permutation search is provided.
+    Native function recovery applies to the function-graph problem, not arbitrary
+    supplied generator matrices. `code_weight_enumerator` is only a necessary condition:
     unequal enumerators prove inequivalence; equal enumerators do not prove it.
 
 Row layout of every matrix (2n+1 rows): row 1 is the constant-1 row,
@@ -27,15 +29,15 @@ the `F(x)`-block bits.
     ccz_matrix(F::SBox{N,T}) -> BitMatrix
 
 The `(2n+1) × 2ⁿ` generator matrix of the CCZ-code of `F`. Column `x`
-is `[1, (x ≪ n) | F(x)]` written LSB-first over `2n` bits with a
-leading constant `1`. (Edel-Pott Theorem 9.)
+is `[1, x₀,…,xₙ₋₁,F(x)₀,…,F(x)ₙ₋₁]`, with LSB-first bits
+within each block. This row order differs from `FunctionGraph` packing. (Edel-Pott Theorem 9.)
 """
 function ccz_matrix(F::SBox{N,T}) where {N,T}
     n_size = 1 << N
     M = falses(2N + 1, n_size)
     @inbounds for x = 0:(n_size-1)
         M[1, x+1] = true
-        v = (UInt64(x) << N) | UInt64(F.lut[x+1])
+        v = UInt64(x) | (UInt64(F.lut[x+1]) << N)
         for b = 0:(2N-1)
             M[b+2, x+1] = ((v >> b) & 1) == 1
         end
@@ -54,9 +56,10 @@ rows `n+2..2n+1`. `F` is EA-equivalent to `G` iff the codes of `F` and
 
 !!! warning "Fixed column packing"
     Earlier versions packed the `y`-columns starting at the constant
-    row (rows `1..n+1`), which is *not* the Edel-Pott EA-code: its
-    weight enumerator differed between affine-equivalent functions,
-    which is impossible for the true C₂.
+    row or exchanged the input and output rows of the graph columns
+    without exchanging the appended columns. Both errors change the code
+    and can violate EA invariance. The graph and appended columns now use
+    the same documented input/output row layout.
 """
 function ea_matrix(F::SBox{N,T}) where {N,T}
     n_size = 1 << N
@@ -64,7 +67,7 @@ function ea_matrix(F::SBox{N,T}) where {N,T}
     M = falses(2N + 1, ncols)
     @inbounds for x = 0:(n_size-1)
         M[1, x+1] = true
-        v = (UInt64(x) << N) | UInt64(F.lut[x+1])
+        v = UInt64(x) | (UInt64(F.lut[x+1]) << N)
         for b = 0:(2N-1)
             M[b+2, x+1] = ((v >> b) & 1) == 1
         end
@@ -95,7 +98,7 @@ function ae_matrix(F::SBox{N,T}) where {N,T}
     M = falses(2N + 1, 3n_size - 2)
     @inbounds for x = 0:(n_size-1)
         M[1, x+1] = true
-        v = (UInt64(x) << N) | UInt64(F.lut[x+1])
+        v = UInt64(x) | (UInt64(F.lut[x+1]) << N)
         for b = 0:(2N-1)
             M[b+2, x+1] = ((v >> b) & 1) == 1
         end
@@ -133,7 +136,7 @@ function ae_perm_matrix(F::SBox{N,T}) where {N,T}
     M = falses(2N + 1, 3n_size - 1)
     @inbounds for x = 0:(n_size-1)
         M[1, x+1] = true
-        v = (UInt64(x) << N) | UInt64(F.lut[x+1])
+        v = UInt64(x) | (UInt64(F.lut[x+1]) << N)
         for b = 0:(2N-1)
             M[b+2, x+1] = ((v >> b) & 1) == 1
         end
@@ -158,19 +161,21 @@ end
     code_weight_enumerator(M::AbstractMatrix{Bool}) -> Vector{Int}
 
 Weight distribution `counts[w+1] = #codewords of Hamming weight w` of
-the binary linear code spanned by the rows of `M`, counted with
-multiplicity `2^(rows - rank)` (which cancels when comparing codes of
-equal row count and dimension). Permutation-equivalent codes have equal
+the binary linear code spanned by the rows of `M`. Each distinct codeword is
+counted once, independently of redundant/zero generator rows. Permutation-equivalent codes have equal
 weight enumerators, so **unequal enumerators prove code inequivalence**;
-the converse does not hold. Cost: `2^rows` Gray-code steps.
+the converse does not hold. Cost: row reduction followed by `2^rank` Gray-code
+steps. The rank is capped at 30; large admitted ranks can still be expensive.
 """
 function code_weight_enumerator(M::AbstractMatrix{Bool})
-    r, len = size(M)
+    reduced=BitMatrix(M)
+    pivots,_=rref_f2!(reduced)
+    r=length(pivots);len=size(M,2)
     r ≤ 30 || throw(ArgumentError("code_weight_enumerator: 2^$r codewords is too many"))
     nw = (len + 63) >>> 6
     rows = [zeros(UInt64, nw) for _ = 1:r]
     for i = 1:r, j = 1:len
-        M[i, j] && (rows[i][((j-1)>>>6)+1] |= UInt64(1) << ((j - 1) & 63))
+        reduced[i, j] && (rows[i][((j-1)>>>6)+1] |= UInt64(1) << ((j - 1) & 63))
     end
     cur = zeros(UInt64, nw)
     counts = zeros(Int, len + 1)

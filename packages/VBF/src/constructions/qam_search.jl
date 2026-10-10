@@ -19,11 +19,11 @@ variable to the elements whose `m`-spaced conjugates are linearly independent
 ([`independent_conjugate_elements`](@ref)).
 
 [`search_qam`](@ref) runs this for a given `(n, m)`, deterministically, returning
-the distinct quadratic APN functions found (deduplicated by EA-class via
-[`apn_ea_mugshot`](@ref)). The reference accelerates the search with a
+quadratic APN representatives (one per invariant bucket by default, or per
+proved EA-class with `confirm=true`). The reference accelerates the search with a
 linear-permutation-group orbit reduction over each variable and Theorem-3
 submatrix pruning; this port instead relies on the exact `is_qam` oracle and the
-EA-class deduplication of the results, which is reuse-faithful but heavier per
+invariant bucketing of the results, which is reuse-faithful but heavier per
 candidate — practical for small `(n, m)`.
 """
 
@@ -182,8 +182,34 @@ function is_cyclic_qam(M::AbstractMatrix{<:Integer}, m::Integer)
     true
 end
 
+# Return :added/:duplicate/:inconclusive. Equal invariants are filters only.
+function _qam_add_candidate!(reps,buckets,S;confirm,timeout_seconds,max_nodes)
+    mug=apn_ea_mugshot(S)
+    bucket=get!(() -> eltype(reps)[],buckets,mug)
+    if !isempty(bucket)
+        confirm || return :duplicate
+        for old in bucket
+            S.lut==old.lut && return :duplicate
+            outcome=partition_refinement_equivalence(S,old;relation=:ea,
+                timeout_seconds,max_nodes)
+            outcome isa BudgetHit && return :inconclusive
+            outcome isa Found && return :duplicate
+        end
+    end
+    push!(bucket,S);push!(reps,S)
+    :added
+end
+
+function _qam_bounds(limit,max_evaluations,timeout_seconds)
+    limit>=0 || throw(ArgumentError("limit must be nonnegative"))
+    max_evaluations>=0 || throw(ArgumentError("max_evaluations must be nonnegative"))
+    timeout_seconds>=0 || throw(ArgumentError("timeout_seconds must be nonnegative"))
+end
+
 """
-    search_qam(n, m; limit=typemax(Int), max_evaluations=1<<22, confirm=false, observer=nothing)
+    search_qam(n, m; limit=typemax(Int), max_evaluations=1<<22,
+               confirm=false, timeout_seconds=Inf,
+               equivalence_timeout_seconds=60, max_equivalence_nodes=10^6, observer=nothing)
 
 Optional `observer(event, value)` reports `:candidate`, `:final_test` (the QAM
 rank criterion), and `:apn` before deduplication. Only `:apn` carries an SBox;
@@ -202,12 +228,13 @@ A [`SearchOutcome`](@ref), **not** a bare vector — the three ways this scan ca
 stop are not interchangeable:
 
   * [`Exhausted`](@ref) — the odometer rolled all the way over. The result is
-    the complete list for the cyclic subspace, so an empty one is a proof that
+    complete under the declared deduplication policy for the cyclic subspace,
+    so an empty one is a proof that
     the subspace holds no quadratic APN function.
   * [`Found`](@ref) — stopped at `limit` results. The rest of the space is
     unexamined.
-  * [`BudgetHit`](@ref) — stopped after `max_evaluations` candidates (a guard
-    for large `(n,m)`). Proves nothing about the remainder.
+  * [`BudgetHit`](@ref) — a candidate, time, or equivalence-decision budget
+    was reached. Proves nothing about the remainder.
 
 Use [`search_solutions`](@ref) to get the functions, and
 [`proves_emptiness`](@ref) rather than `isempty` to ask whether the region was
@@ -225,9 +252,11 @@ coincide too). So the default result is **one function per mugshot**, and
 EA-classes, not a count of them — even when the outcome is `Exhausted`. At
 `n = 7, m = 1` it reports 14 where the truth is 15.
 
-Pass `confirm = true` to split each mugshot bucket with the complete decision for
-quadratic APN ([`ea_mappings_from_ortho_derivative`](@ref) is non-empty iff the
-pair is EA-equivalent), giving one function per genuine EA-class. This is exact but
+Pass `confirm = true` to split each mugshot bucket with [`partition_refinement_equivalence`](@ref) at `relation=:ea`.
+Only a verified witness or exhaustive negative decision can merge/split a bucket;
+a confirmation budget hit yields `BudgetHit` instead of a class decision.
+The retained functions represent distinct EA-classes; an `Exhausted` outcome
+contains every class encountered in this declared space. Confirmation
 costs an EA decision per colliding candidate, so it is affordable only for small
 `(n, m)` — an exhaustive `n = 7` sweep produces ~30k candidates over 14 mugshots
 and would pay tens of thousands of decisions.
@@ -241,9 +270,15 @@ function search_qam(
     limit::Integer = typemax(Int),
     max_evaluations::Integer = 1 << 22,
     confirm::Bool = false,
+    timeout_seconds::Real = Inf,
+    equivalence_timeout_seconds::Real = 60,
+    max_equivalence_nodes::Int = 10^6,
     observer = nothing,
 )
+    _qam_bounds(limit,max_evaluations,timeout_seconds)
+    _qam_bounds(typemax(Int),max_equivalence_nodes,equivalence_timeout_seconds)
     nn = Int(n)
+    2<=nn<=16 || throw(ArgumentError("QAM dimensions must be between 2 and 16"))
     orbits = qam_cyclic_orbits(nn, m)
     k = length(orbits)
     # each free variable lies in the subfield GF(2^d) its orbit closes into
@@ -257,7 +292,7 @@ function search_qam(
     found = SBox{nn,_storage_for(nn)}[]
     # mugshot ⇒ the classes already found under it. With `confirm=false` a bucket
     # holds at most one function (mugshot-dedup); with `confirm=true` it holds one
-    # per genuine EA-class, split by the complete quadratic-APN decision.
+    # per proved EA-class, split by the bounded exact quadratic-APN decision.
     buckets = Dict{APNEAMugshot,Vector{SBox{nn,_storage_for(nn)}}}()
     vals = zeros(Int, k)
     counter = zeros(Int, k)
@@ -275,10 +310,21 @@ function search_qam(
             "free_variables" => k,
             "subfield_sizes" => sizes,
             "confirm" => confirm,
+            "solution_unit" => confirm ? "ea_class" : "mugshot_bucket",
+            "equivalence_timeout_seconds" => Float64(equivalence_timeout_seconds),
+            "max_equivalence_nodes" => max_equivalence_nodes,
         ),
     )
     t0 = time()
+    reason=:nodes
     while true
+        if time()-t0>=timeout_seconds
+            stop=:budget;reason=:time;break
+        elseif length(found)>=limit
+            stop=:limit;break
+        elseif evals>=max_evaluations
+            stop=:budget;break
+        end
         @inbounds for vi = 1:k
             vals[vi] = subfields[vi][counter[vi]+1]
         end
@@ -288,30 +334,14 @@ function search_qam(
         if is_cyclic_qam(M, m)  # Theorem-3-accelerated test
             S = qam_to_sbox(M)
             observer === nothing || observer(:apn, S)
-            mug = apn_ea_mugshot(S)
-            bucket = get!(() -> SBox{nn,_storage_for(nn)}[], buckets, mug)
-            isnew = if isempty(bucket)
-                true
-            elseif confirm
-                # Mugshot equality does not imply EA-equivalence — settle it.
-                !any(c -> !isempty(ea_mappings_from_ortho_derivative(S, c)), bucket)
-            else
-                false
-            end
-            if isnew
-                push!(bucket, S)
-                push!(found, S)
-                if length(found) >= limit
-                    stop = :limit
-                    break
-                end
+            status=_qam_add_candidate!(found,buckets,S;confirm,
+                timeout_seconds=min(equivalence_timeout_seconds,max(0,timeout_seconds-(time()-t0))),
+                max_nodes=max_equivalence_nodes)
+            if status===:inconclusive
+                evals+=1;stop=:budget;reason=:external;break
             end
         end
         evals += 1
-        if evals >= max_evaluations
-            stop = :budget
-            break
-        end
         # odometer increment over the per-variable subfields
         p = 1
         while p <= k
@@ -326,8 +356,8 @@ function search_qam(
     if stop === :budget
         return BudgetHit(
             StopPoint(
-                :nodes,
-                "max_evaluations = $(Int(max_evaluations)) reached";
+                reason,
+                reason===:external ? "EA confirmation inconclusive" : reason===:time ? "timeout_seconds reached" : "max_evaluations = $(Int(max_evaluations)) reached";
                 resume_key = Dict{String,Any}("counter" => copy(counter)),
             ),
             region,
@@ -343,7 +373,10 @@ end
 
 """
     search_qam_full(n; limit=typemax(Int), max_evaluations=1<<24,
-                    modulus=conway_polynomial(n)) -> SearchOutcome{SBox{n}}
+                    modulus=conway_polynomial(n), confirm=false,
+                    timeout_seconds=Inf, max_nodes=typemax(Int),
+                    equivalence_timeout_seconds=60, max_equivalence_nodes=10^6)
+        -> SearchOutcome{SBox{n}}
 
 Construct quadratic APN functions on `F₂ⁿ` by the "guess and determine" search of
 [Yu, Wang and Li (2014)](@cite Yu_201411) over the **full** symmetric QAM
@@ -355,40 +388,63 @@ leading submatrix fails to be **proper** (every nonzero `GF(2)`-combination of
 its `c` rows has rank `≥ c-1`, Cor. 2 — the necessary condition for any submatrix
 of a QAM). Each completed matrix passing [`is_qam`](@ref) yields an APN function
 ([`qam_to_sbox`](@ref)); results are deduplicated by [`apn_ea_mugshot`](@ref) into
-distinct CCZ-classes.
+one representative per mugshot bucket by default. `confirm=true` uses proved
+EA decisions to retain every encountered EA-class (and CCZ-class for quadratic
+APNs). A failed equivalence budget returns `BudgetHit`, never a class decision.
 
 Optional `observer(event, value)` reports completed matrices (`:candidate`),
 QAM rank tests (`:final_test`), and `:apn` SBoxes before deduplication. Observers
 must not mutate the SBoxes.
 
 Returns a [`SearchOutcome`](@ref): [`Exhausted`](@ref) when the tree was walked
-to the end (so the class list is complete and an empty one proves emptiness),
-[`Found`](@ref) when `limit` distinct classes were reached first, or
-[`BudgetHit`](@ref) when `max_evaluations` completed matrices were examined first
-(the space is large, so a budget keeps it bounded). Take the functions with
+to the end (the representative list is complete under the declared deduplication
+policy; an empty one proves emptiness),
+[`Found`](@ref) when `limit` representatives under that policy were reached first, or
+[`BudgetHit`](@ref) when a candidate, node, time, or equivalence budget is reached. Take the functions with
 [`search_solutions`](@ref); ask [`proves_emptiness`](@ref), never `isempty`.
 
-Reproduces the complete small classifications: `n=5` → the single Gold-`x³`
-class, `n=6` → the 13 CCZ-inequivalent quadratic APN classes.
+A full walk certifies only this symmetric zero-diagonal QAM space. It is not a
+classification of arbitrary APN functions. `max_nodes` and `timeout_seconds`
+bound tree traversal, including branches pruned before a completed matrix.
+`modulus` records a basis label; full QAM tests use only GF(2) ranks and XOR.
 """
 function search_qam_full(
     n::Integer;
     limit::Integer = typemax(Int),
     max_evaluations::Integer = 1 << 24,
+    confirm::Bool = false,
+    timeout_seconds::Real = Inf,
+    max_nodes::Int = typemax(Int),
+    equivalence_timeout_seconds::Real = 60,
+    max_equivalence_nodes::Int = 10^6,
     modulus::Integer = conway_polynomial(n),
     observer = nothing,
 )
+    _qam_bounds(limit,max_evaluations,timeout_seconds)
+    _qam_bounds(typemax(Int),max_nodes,equivalence_timeout_seconds)
+    max_equivalence_nodes>=0 || throw(ArgumentError("max_equivalence_nodes must be nonnegative"))
     nn = Int(n)
+    2<=nn<=16 || throw(ArgumentError("QAM dimensions must be between 2 and 16"))
     M = [zeros(Int, nn) for _ = 1:nn]            # symmetric, zero diagonal
-    seen = Set{APNEAMugshot}()
-    reps = SBox{nn}[]
+    reps = SBox{nn,_storage_for(nn)}[]
+    buckets=Dict{APNEAMugshot,Vector{SBox{nn,_storage_for(nn)}}}()
     evals = Ref(0)
     vecbuf = zeros(UInt, nn)
-    # Split the old single `done()` in two: which of the two stops fired decides
-    # whether the result may be read as coverage.
-    hit_limit() = length(reps) >= limit
-    hit_budget() = evals[] >= max_evaluations
-    done() = hit_limit() || hit_budget()
+    started=time();nodes=Ref(0);stop=Ref(:complete)
+    function done()
+        stop[]!==:complete && return true
+        if time()-started>=timeout_seconds;stop[]=:time
+        elseif length(reps)>=limit;stop[]=:limit
+        elseif evals[]>=max_evaluations;stop[]=:evaluations
+        elseif nodes[]>=max_nodes;stop[]=:nodes
+        end
+        stop[]!==:complete
+    end
+    function visit()
+        done() && return false
+        nodes[]+=1
+        true
+    end
 
     # Is the c×c leading submatrix proper (nonzero row-sums have rank ≥ c-1)?
     proper = function (c::Int)
@@ -410,7 +466,7 @@ function search_qam_full(
 
     local fill_col
     fill_entry = function (c::Int, r::Int)
-        done() && return
+        visit() || return
         if r == c
             proper(c) && fill_col(c + 1)
             return
@@ -423,7 +479,7 @@ function search_qam_full(
         end
     end
     fill_col = function (c::Int)
-        done() && return
+        visit() || return
         if c > nn
             evals[] += 1
             observer === nothing || observer(:candidate, nothing)
@@ -435,11 +491,10 @@ function search_qam_full(
             if is_qam(Mat)
                 F = qam_to_sbox(Mat)
                 observer === nothing || observer(:apn, F)
-                mg = apn_ea_mugshot(F)
-                if !(mg in seen)
-                    push!(seen, mg)
-                    push!(reps, F)
-                end
+                status=_qam_add_candidate!(reps,buckets,F;confirm,
+                    timeout_seconds=min(equivalence_timeout_seconds,max(0,timeout_seconds-(time()-started))),
+                    max_nodes=max_equivalence_nodes)
+                status===:inconclusive && (stop[]=:external)
             end
             return
         end
@@ -454,18 +509,22 @@ function search_qam_full(
         :full_qam,
         "full_qam(n=$nn)";
         size = BigInt(1) << (nn * div(nn * (nn - 1), 2)),
-        params = Dict{String,Any}("n" => nn, "modulus" => Int(modulus)),
+        params = Dict{String,Any}("n" => nn, "modulus" => Int(modulus),
+            "confirm"=>confirm,"solution_unit"=>confirm ? "ea_class" : "mugshot_bucket",
+            "completed_matrices"=>evals[],"max_equivalence_nodes"=>max_equivalence_nodes,
+            "equivalence_timeout_seconds"=>Float64(equivalence_timeout_seconds)),
     )
-    if hit_budget()
+    if stop[] in (:evaluations,:nodes,:time,:external)
         return BudgetHit(
-            StopPoint(:nodes, "max_evaluations = $(Int(max_evaluations)) reached"),
+            StopPoint(stop[]===:evaluations ? :nodes : stop[],
+                stop[]===:external ? "EA confirmation inconclusive" : "$(stop[]) budget reached"),
             region,
             reps;
-            nodes_visited = evals[],
+            nodes_visited = nodes[],
             elapsed_seconds = el,
         )
-    elseif hit_limit()
-        return Found(reps, region; nodes_visited = evals[], elapsed_seconds = el)
+    elseif stop[]===:limit
+        return Found(reps, region; nodes_visited = nodes[], elapsed_seconds = el)
     end
-    return Exhausted(region, reps; nodes_visited = evals[], elapsed_seconds = el)
+    return Exhausted(region, reps; nodes_visited = nodes[], elapsed_seconds = el)
 end

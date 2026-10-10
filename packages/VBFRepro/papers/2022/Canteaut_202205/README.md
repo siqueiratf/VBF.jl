@@ -1,5 +1,10 @@
 # Canteaut_202205 — Recovering or Testing Extended-Affine Equivalence
 
+Full current revalidation: all 21,102 registered members passed quadratic APN verification; six extended Walsh spectra and 21,102 distinct exact ortho-derivative signatures were reproduced. This proves pairwise CCZ inequivalence within the two hashed side stores. Exact spectra/signatures are saved by `make section4_5 full_search=true check_ortho=true save_results=true timeout_seconds=600`. The complete thickness/extended-Walsh bucket Table 8 experiment is still unreproduced.
+
+Current audit application (2026-10-10): F053: `make section4_5` now consumes the available 21,102-member corpus. It records input hashes, validates quadratic APN members, computes extended Walsh spectra and optionally exact ortho-derivative signatures. Set full_search=true check_ortho=true with an explicit time budget to reproduce the full distinction experiment. Missing inputs and interrupted runs are inconclusive.
+
+
 **Paper**: Canteaut, Couvreur, Perrin. "Recovering or Testing Extended-Affine Equivalence."
 2022.
 

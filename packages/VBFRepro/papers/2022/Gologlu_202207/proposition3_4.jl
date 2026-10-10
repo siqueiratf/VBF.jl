@@ -32,11 +32,13 @@ function eta_m(F::SBox{N,T}, m::Int) where {N,T}
 end
 
 """
-    proposition3_4_report(; io) -> NamedTuple
+    proposition3_4_report(; io, full_search=false) -> NamedTuple
 
-Verify Proposition III.4 bounds on η_m(NBF) for m ∈ {3, 5} (small odd m).
+Compare the published Proposition III.4 bounds with exact computations for
+m ∈ {3, 5}. The Kim comparison reports the independently verified discrepancy
+(computed η_3=3, published η_3=2). Set `full_search=true` to include m=7.
 """
-function proposition3_4_report(; io::IO = stdout)
+function proposition3_4_report(; io::IO = stdout, full_search::Bool = false)
     print_section("Proposition III.4 — η_m(NBF) bounds", io)
 
     all_ok = true
@@ -55,12 +57,14 @@ function proposition3_4_report(; io::IO = stdout)
         all_ok &= ok
     end
 
-    # Part ii (Kim θ) is out-of-scope: Prop III.4 ii refers to the original Kim
-    # function θ (not θ' — they are CCZ- but not EA-equivalent, so NF can differ).
-    # Constructing the exact θ requires finding U ∈ GF(2^6) satisfying a specific
-    # degree-6 polynomial, which is beyond the scope of this fast verification.
-    println(io, "  [ -- ] Kim θ n=6: η_m(NBF)=2 (Prop III.4 ii) — out-of-scope")
-    println(io, "         (θ and θ' are CCZ-equiv but not EA-equiv; NF differs)")
+    # Exact kappa from the paper (not kappa'). Its coefficient U=2 is a root
+    # of X^6+X^4+X^3+X+1 in the Conway representation used by kim_apn().
+    kim = kim_apn()
+    kim_eta = eta_m(kim, 3)
+    print_check("Kim κ n=6: published η_3=2", kim_eta == 2, io)
+    print_kv("  computed η_3 (all 3-dimensional subspaces)", kim_eta, io)
+    print_kv("  convention", "zero included; count every linear subspace, not disjoint subspace packing", io)
+    all_ok &= kim_eta == 2
 
     # --- Part iii: F3 (m=5): η_m(NBF) = 2 ---
     let
@@ -75,7 +79,7 @@ function proposition3_4_report(; io::IO = stdout)
 
     # --- Part v: F2 family: η_m(NBF) ≥ 1 (m=5, 7) ---
     # m=3 is excluded: gcd(3i,3) ≥ 3 for all i, so F2 requires gcd(3,m)=1
-    for m in [5, 7]
+    for m in (full_search ? [5,7] : [5])
         n = 2m
         candidates_i = [i for i = 1:(m-1) if gcd(3i, m) == 1]
         for i in candidates_i
@@ -88,9 +92,10 @@ function proposition3_4_report(; io::IO = stdout)
         end
     end
 
+    full_search || print_kv("n=14 η_7", "SKIPPED; requires explicit full_search=true", io)
     println(io)
-    print_check("All Proposition III.4 bounds verified", all_ok, io)
-    (; all_ok)
+    print_check("All Proposition III.4 published bounds match", all_ok, io)
+    (; all_ok, kim_eta, kim_published=2, n14_checked=full_search)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

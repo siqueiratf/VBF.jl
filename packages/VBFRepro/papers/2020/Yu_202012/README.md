@@ -6,34 +6,23 @@ APN functions with coefficients in F₂ for dimensions up to 9* (2020).
 **Reproduction:** `packages/VBFRepro/papers/Yu_202012/` — `helpers.jl`, `theorem2.jl`,
 `proposition1.jl`, `algorithm1.jl`, `table1.jl` … `table4.jl`, `report.jl`.
 
-**Verdict:** **Good, with two scoped gaps.** *(Updated after the R1–R10 fix pass;
-196/196 tests, was 55/55.)* Tables 1–4 are transcribed correctly, and every row is
-now verified APN **and** quadratic **and** (n=7, n=9) **AB**. The paper's three real
-contributions are now reproduced or precisely bounded:
+**Verdict:** partial, with explicit bounded scope (audit2026-10-10).
 
-- **n=7 classification — reproduced.** The exhaustive search's σ-classes match
-  Table 2's exactly, and the count is **15 CCZ classes** (14 σ-classes + the Gold
-  x³/x⁹ split, settled by the *complete* EA decision). This also recovered the class
-  the paper's duplicated row had hidden (**P1**).
-- **n=8 CCZ claims — computed, no longer asserted.** The headline claim (the two
-  near-identical trinomials are CCZ-**inequivalent**) is **proven** by σ-mismatch.
-  The two positive Edel–Pott equivalences are proven by the complete EA decision
-  (`make table3_full`, ~265 s/pair).
-- **n=9 novelty — partial, and now honestly bounded.** s₁/s₂ are rigorously
-  CCZ-inequivalent (σ-mismatch) to *all* quadratic n=9 catalog entries and to each
-  other, but σ cannot reach the 4 non-quadratic entries, and the catalog is *missing
-  known families* — f₇, which the paper calls known, also reads `:new`. That hole is
-  now asserted as a standing witness.
+`algorithm1.jl` substitutes VBF's unpruned cyclic-QAM odometer for the paper's
+GetNoneSquare/TranFirRow/GetElemC traversal. Exact oracle checks and candidate
+space exhaustion do not demonstrate Algorithm1's pruning or its performance.
+The wrapper now exposes time/node/equivalence budgets and confirm=true; an
+unfinished equivalence comparison returns BudgetHit. Default mugshot dedup is
+an invariant-bucket lower bound, so the n7 exhaustive14-bucket agreement with
+Table2 does **not** independently prove that exactly15CCZ classes exist in the
+whole region. Signature matches never establish positive equivalence.
 
-**Remaining gaps, both scoped and documented, neither silent:** Theorem 2's *iff* is
-a **normal-basis** statement and VBF's QAM is **bit-basis**, so it is not tested — the
-basis gap is now *asserted* rather than papered over with a tautology; and Algorithm 1
-is **substituted** by `search_qam` (no pruning), which is why n=8/9 are out of reach.
-
-> **Sources:** the `.tex` and the **PDF** were both used; Tables 2–4 were
-> cross-checked against the PDF via `pdftotext`.
-
----
+The n9 table formulas/property checks are evidence about those explicit
+functions. Catalog absence does not establish literature novelty or justify
+adding a new class. Full source coverage and exact comparisons for matching
+invariant buckets, including nonquadratic reference functions using full CCZ
+methods, remain required. The older review sections below are historical
+context; they do not upgrade these scoped claims.
 
 ## Issue Catalog
 
@@ -405,32 +394,14 @@ rigorously CCZ-inequivalent to the 5 quadratic n=9 catalog entries via σ-mismat
 but not to the non-quadratic entries nor to the known families the catalog lacks;
 full claim reproduced ✘.
 
-### Catalog-gap records
+### Unresolved catalog proposals
 
-```
-target: packages/VBFCatalog/data-raw/apn_catalog/n9_apn.toml
-
-name              = "n9_Yu2020_s1"
-n = 9 ; m = 9 ; is_permutation = false
-algebraic_form    = "x^136 + x^132 + x^96 + x^80 + x^36 + x^34 + x^18 + x^17 + x^12 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key           = "Yu_202012"
-source            = "Yu, Kaleyski, Budaghyan, Li, 'Classification of quadratic APN functions with coefficients in F2 for dimensions up to 9', Sec. 3.2 / Table 4 (s1)."
-# lut sha256 = 8a18708763c65f18ee73b3bad55e168aa60d14c0ae37fdbe1b5b80d1603268dc
-# evidence: DU=2, deg=2, AB (linearity 32); sigma ed9af5a8... != every quadratic n9 entry; classify_ccz => :new
-
-name              = "n9_Yu2020_s2"
-n = 9 ; m = 9 ; is_permutation = false
-algebraic_form    = "x^288 + x^272 + x^264 + x^160 + x^144 + x^130 + x^48 + x^34 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key           = "Yu_202012"
-source            = "... Table 4 (s2)."
-# lut sha256 = 1cc1e589cf28daacfc517bdd348348008ecd0b92ba0fcfbf40c6d4d8f7259a5a
-# evidence: DU=2, deg=2, AB; sigma e64887b6... != every quadratic n9 entry and != sigma(s1); classify_ccz => :new
-```
-
-Regenerate LUTs deterministically with `terms_to_lut([(1,e) for e in exps], 9, 529)`
-(modulus 529 = x⁹+x⁴+1, already used by every n9 entry). Optional third record
-`n9_Yu2020_f7` (exps `[264,160,144,132,80,72,66,40,17]`) closes a demonstrated
-catalog hole.
+The former write-ready s1/s2/f7 gap records are removed. The explicit formulas
+remain in Table4, but catalog absence and signature mismatch against a partial
+quadratic reference set do not establish novelty throughout the literature.
+Any future catalog update must first verify source provenance, APN properties,
+and equivalence against the relevant known constructions and references. No
+new catalog classes were added in this audit.
 
 ## Library-reuse note
 

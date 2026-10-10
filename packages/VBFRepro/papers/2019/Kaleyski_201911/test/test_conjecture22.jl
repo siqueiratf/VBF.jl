@@ -25,11 +25,25 @@
     @test all(cx -> cx.n == 4, r4.counterexamples)
     @test r4.no_counterexample           # n<5 does not count against Conjecture 22
 
+    mixed = conjecture22_report(; ns=[4,5], limit=1, io=devnull)
+    @test all(all(cx.n == row.n for cx in search_solutions(row.outcome)) for row in mixed.summary)
+    @test proves_emptiness(mixed.outcomes[2])
+    @test !proves_emptiness(mixed.outcomes[1])
+
     # Sampled mode for the higher dimensions (all-pairs at n=7 is ≈3.9M swaps).
     r7 = conjecture22_report(; ns = [7], limit = 4, pair_samples = 8, io = devnull)
     @test r7.no_counterexample
     @test !only(r7.summary).exhaustive
     @test r7.total_swaps >= 4 * 8
+
+    budget = conjecture22_report(; ns = [5], max_evaluations = 0, io = devnull)
+    @test budget.total_swaps == 0
+    @test only(budget.outcomes) isa BudgetHit
+    @test !only(budget.summary).exhaustive
+    @test only(r5.outcomes) isa Exhausted
+    @test only(r7.outcomes) isa BudgetHit
+    @test only(r7.summary).available_functions >= only(r7.summary).n_functions
+    @test_throws ArgumentError conjecture22_report(; max_evaluations = -1, io = devnull)
 
     # Functions with F(0)=F(1) are covered, not discarded (README R3): every catalog
     # APN in the requested dimension contributes swaps.

@@ -1,6 +1,6 @@
 include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../../paper.mk
 
-.PHONY: help test report section4 algorithm1 theorem4 theorem6 table2 table3 phase2 novelty clean_results
+.PHONY: help test report section4 algorithm1 theorem4 theorem6 theorem6_exact table2 table3 phase2 novelty clean_results
 
 # Overridable parameters
 sample_size ?= 100
@@ -32,6 +32,10 @@ theorem6:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "theorem6.jl")); theorem6_report()'
 
+theorem6_exact:
+	$(JULIA) $(JULIA_PROJECT) -e \
+	  'include(joinpath("$(MAKEFILE_DIR)", "theorem6_exact.jl")); theorem6_exact_report()'
+
 table2:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "table2.jl")); table2_report()'
@@ -44,10 +48,7 @@ phase2:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "report.jl")); phase2_report()'
 
-# representation sanity + paper-novelty validation against the σ-index oracle.
-# The large external census catalogs (BLP22/BLP25) are populated by the GPGPU
-# census pipeline, which lives on the `gpgpu` branch; without them this target
-# reports the catalog as missing and validates only the in-repo reps.
+# Coverage-aware named-source signature report; missing sources are inconclusive.
 novelty:
 	$(JULIA) $(JULIA_PROJECT) -t auto $(MAKEFILE_DIR)/novelty_report.jl
 
@@ -59,4 +60,4 @@ help:
 	@echo 'Paper targets:  test  report  section4  algorithm1  theorem4  theorem6  table2  table3  phase2  novelty  clean_results'
 	@echo '                (theorem6 audits the Main result against the σ-index oracle)'
 	@echo 'Params:         sample_size=$(sample_size)  seed=$(seed)'
-	@echo 'Note: the GPGPU APN-census pipeline (searchers, catalog fetch/pack) lives on the `gpgpu` branch.'
+	@echo 'theorem6_exact replays EA graph witnesses against the tracked Edel-Pott corpus.'

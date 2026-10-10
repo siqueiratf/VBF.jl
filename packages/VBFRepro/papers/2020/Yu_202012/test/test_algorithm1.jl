@@ -57,3 +57,15 @@
     @test setdiff(found_sigmas, sigmas_without_recovered) ==
           Set([sigma_hash(sbox_from_exponents(7, [3, 5, 9, 40, 96]))])
 end
+
+@testset "Algorithm1 substituted traversal preserves uncertainty" begin
+    bounded = algorithm1_run(6; max_evaluations = 1)
+    @test bounded isa BudgetHit
+    @test !proves_emptiness(bounded)
+    timed = algorithm1_run(6; timeout_seconds = 0)
+    @test timed isa BudgetHit
+    @test !is_exhausted(timed)
+    confirmed = algorithm1_run(3; confirm = true, max_evaluations = 10000)
+    @test confirmed isa Exhausted
+    @test confirmed.region.params["solution_unit"] == "ea_class"
+end

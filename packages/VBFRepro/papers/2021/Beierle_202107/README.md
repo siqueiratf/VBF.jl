@@ -1,5 +1,24 @@
 # Beierle_202107 — Linearly Self-Equivalent APN Permutations in Small Dimension
 
+Current audit (2026-10-10): bounded Algorithm1 outcomes already distinguish
+Found, Exhausted and BudgetHit. Additional tests pin zero-time uncertainty and
+completed small searches. Region evidence now records the actual input/output
+linear LUTs, initial partial LUT, and verification/reduction settings; an empty
+bounded result never proves absence outside that specified region. Commutant
+quotient and extendability seeding are still missing, so the paper's pruned
+Algorithm1 traversal and global table-negative claims are not reproduced.
+
+`generate_tuple_matrix_constants_file(n;output=...,full_search=false)` now
+regenerates tuple classes into an explicit output file. n6 generation and
+extended-power-similarity class-set agreement with the committed17blocks are
+tested. n7/n8 regeneration is opt-in (`VBF_REPRO_FULL_SEARCH=true` in tests),
+with expected27/32 assertions enabled there. Generated representatives/order
+are not assumed byte-identical to the historical file: blocks17–19 in n7 use
+reciprocal representatives and block18 has the documented orientation anomaly.
+This is BBL2021 APN-permutation numbering, separate from the quadratic-APN tuple
+catalog of Beierle–Leander2022. No historical constants were silently rewritten.
+The dated review below is historical; this status supersedes resolved plans.
+
 **Paper**: Beierle, Brinkmann, Leander. "Linearly Self-Equivalent APN Permutations in
 Small Dimension." IEEE Transactions on Information Theory, 2021.
 

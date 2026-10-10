@@ -93,9 +93,11 @@ The specification audit driver is retained as
 `partition_refinement_specification_audit.cpp`; see the documentation's
 partition refinement conformance instructions.
 
-`gamma8_probe.jl` retains the historical guard-bypassing rank experiment. It
-uses approximately 1 GB and can take minutes. Run it only via an explicit
-level-3 diagnostic selection. The guarded public API remains unchanged.
+The level-3 `diagnostics/gamma_rank` workload now measures the public n8
+opt-in API with a 2 GiB estimated-storage budget and a 600-second deadline.
+Its Gold8 regression is 11,818. The estimate is not an operating-system
+memory cap; the deadline is checked cooperatively. Historical probe code
+and measurements remain in the archived original benchmark files.
 
 ## Historical evidence
 

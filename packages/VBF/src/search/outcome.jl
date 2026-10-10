@@ -149,7 +149,9 @@ Found(
     Exhausted(region, functions = Any[]; nodes_visited = -1, elapsed_seconds = NaN)
 
 The whole region was walked, so `functions` is the **complete** list of
-solutions it contains. An `Exhausted` with no solutions is the only value in
+solutions it contains **under the solution equivalence/deduplication policy
+declared by the region**. An invariant-bucket representative list is complete
+as a bucket list, not as an equivalence-class list. An `Exhausted` with no solutions is the only value in
 this package that means "this region is empty".
 """
 struct Exhausted{T} <: SearchOutcome{T}
@@ -295,6 +297,8 @@ One line stating exactly what the outcome licenses. Reports print this so a
 `BudgetHit` region can never acquire the wording of an `Exhausted` one.
 """
 coverage_note(o::Exhausted) =
+    get(o.region.params,"solution_unit","")=="mugshot_bucket" && !isempty(o.functions) ?
+    "EXHAUSTED: region $(o.region.id) fully walked; $(length(o.functions)) invariant-bucket representative(s), an EA-class lower bound" :
     isempty(o.functions) ?
     "EXHAUSTED: region $(o.region.id) fully walked, contains no solutions (proof of emptiness)" :
     "EXHAUSTED: region $(o.region.id) fully walked, contains exactly $(length(o.functions)) solution(s)"

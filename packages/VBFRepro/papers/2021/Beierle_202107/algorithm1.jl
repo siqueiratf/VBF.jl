@@ -193,12 +193,19 @@ The region an `APNSearch` run covers: the APN permutations `F` with
 known in advance, so `size` is `nothing` — which is itself the honest statement
 that no coverage fraction can be computed for a partial run.
 """
-apn_search_region(n::Int; class_index::Union{Nothing,Int} = nothing) = SearchRegion(
-    :le_automorphism_class,
-    class_index === nothing ? "BBL2021/n=$n/tuple=unnamed" : "BBL2021/n=$n/class=$class_index";
-    size = nothing,
-    params = Dict{String,Any}("n" => n, "class_index" => class_index),
-)
+function apn_search_region(n::Int; class_index::Union{Nothing,Int} = nothing,
+        input_lut = nothing, output_lut = nothing, seed_sbox = nothing,
+        verify_apn_on_solution::Bool = true)
+    SearchRegion(:le_automorphism_class,
+        class_index === nothing ? "BBL2021/n=$n/tuple=unnamed" : "BBL2021/n=$n/class=$class_index";
+        size = nothing,
+        params = Dict{String,Any}("n" => n, "class_index" => class_index,
+            "input_linear_lut" => input_lut, "output_linear_lut" => output_lut,
+            "initial_partial_lut" => seed_sbox,
+            "relation" => "F(input_linear_lut[x]) = output_linear_lut[F(x)]",
+            "verified_final_apn" => verify_apn_on_solution,
+            "commutant_pruning" => false, "extendability_seeding" => false))
+end
 
 """
     search_outcome(context, region, elapsed) -> VBF.SearchOutcome
@@ -338,9 +345,12 @@ function nextVal(depth::Int, sbox::Vector{Int}, ddt::Matrix{Int};
     )
     seed_used_outputs!(context, sbox)
 
+    region = apn_search_region(n; class_index,
+        input_lut = copy(context.apply_A), output_lut = copy(context.apply_B),
+        seed_sbox = copy(sbox), verify_apn_on_solution)
     t0 = time()
     nextVal(depth, sbox, ddt, context)
-    return search_outcome(context, apn_search_region(n; class_index), time() - t0)
+    return search_outcome(context, region, time() - t0)
 end
 
 @doc"""
@@ -414,9 +424,12 @@ function APNSearch(n::Int, A, B;
     )
     seed_used_outputs!(context, sbox)
 
+    region = apn_search_region(n; class_index,
+        input_lut = copy(context.apply_A), output_lut = copy(context.apply_B),
+        seed_sbox = copy(sbox), verify_apn_on_solution)
     t0 = time()
     nextVal(0, sbox, ddt, context)
-    return search_outcome(context, apn_search_region(n; class_index), time() - t0)
+    return search_outcome(context, region, time() - t0)
 end
 
 @doc"""

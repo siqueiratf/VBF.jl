@@ -41,14 +41,20 @@ function ccz_distinctness(
     sample_size::Int = 10,
     seed::Int = 42,
     save_results::Bool = false,
+    input_dir::AbstractString = joinpath(@__DIR__, "inputs"),
 )
     print_section("ccz-distinctness (sampled, not exhaustive)", io)
-    Random.seed!(seed)
+    sample_size > 0 || throw(ArgumentError("sample_size must be positive"))
     print_kv("seed", seed, io)
     print_kv("sample_size", sample_size, io)
     print_kv("note", "sampled $sample_size / 12921 functions — NOT exhaustive", io)
 
-    path8 = joinpath(@__DIR__, "inputs", "apn_8bit.txt")
+    path8 = joinpath(input_dir, "apn_8bit.txt")
+    if !isfile(path8)
+        print_kv("status", "INCONCLUSIVE: original apn_8bit.txt unavailable", io)
+        return (; status = :unavailable, sample_size = 0, distinct_from_gold = 0,
+                 pairwise_distinct = missing, exhaustive = false)
+    end
     n = 8
 
     # Reference: Gold APN signature for n=8.
@@ -71,16 +77,17 @@ function ccz_distinctness(
     print_kv("distinct signature from Gold", distinct_from_gold, io)
     print_check(
         "all sampled differ from Gold in ortho-derivative signature",
-        distinct_from_gold == length(sampled),
+        !isempty(sampled) && distinct_from_gold == length(sampled),
         io,
     )
 
     # Check for pairwise collisions among sampled functions.
     sig_set = Set(string(s) for s in sigs)
-    pairwise_distinct = length(sig_set) == length(sigs)
+    pairwise_distinct = !isempty(sigs) && length(sig_set) == length(sigs)
     print_check("sampled functions are pairwise distinct in signature", pairwise_distinct, io)
 
     results = (;
+        status = isempty(sampled) ? :inconclusive : :sampled,
         seed,
         sample_size = length(sampled),
         total = 12921,

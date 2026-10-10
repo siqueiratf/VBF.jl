@@ -269,8 +269,12 @@ function section6_vi3_coefficient_sets(
     nsample::Int = 800,
     extra::Vector{Vector{Int}} = Vector{Vector{Int}}(),
 )
+    n > 0 && m > 0 && n % m == 0 || throw(ArgumentError("m must divide positive n"))
+    max_enum >= 0 && nsample >= 0 || throw(ArgumentError("limits must be nonnegative"))
     N = 1 << n
     k = n ÷ m
+    all(cs -> length(cs) == k && all(0 <= c < N for c in cs), extra) ||
+        throw(ArgumentError("control coefficients must belong to GF(2^n)"))
     sets = Vector{Vector{Int}}()
     if BigInt(N)^k ≤ max_enum
         cur = zeros(Int, k)
@@ -328,16 +332,25 @@ function section6_check_theoremVI3_iff(;
     exps = [s.q^j for j in 0:k-1]
 
     sets = section6_vi3_coefficient_sets(n, m; max_enum, nsample, extra)
+    control_keys = Set(Tuple(cs) for cs in extra)
+    generated_keys = Set(Tuple(cs) for cs in sets[1:length(sets)-length(extra)])
+    control_only_keys = setdiff(control_keys, generated_keys)
+    generated_apn = 0
+    control_only_apn = 0
     n_apn = 0
     n_cond = 0
     mismatches = 0
     examples = Vector{Any}()
-    for cs in sets
+    for (index, cs) in enumerate(sets)
         L = terms_to_lut([(cs[j], exps[j]) for j in 1:k], n, mod)
         F = SBox{n}(isotopic_shift_lut(G, L))
         apn = differential_uniformity(F) == 2
         cond = theorem_vi3_conditions(L, s, i).all
         apn && (n_apn += 1)
+        if apn
+            index <= length(sets) - length(extra) && (generated_apn += 1)
+            Tuple(cs) in control_only_keys && (control_only_apn += 1)
+        end
         cond && (n_cond += 1)
         if apn != cond
             mismatches += 1
@@ -347,6 +360,9 @@ function section6_check_theoremVI3_iff(;
 
     tested = length(sets)
     exhaustive = BigInt(N)^k ≤ max_enum
+    distinct_tested = length(union(generated_keys, control_keys))
+    space_size = BigInt(N)^k
+    generated_nonvacuous = generated_apn > 0 && generated_apn < length(sets) - length(extra)
     ok = mismatches == 0
     nonvacuous = n_apn > 0 && n_apn < tested
 
@@ -354,15 +370,23 @@ function section6_check_theoremVI3_iff(;
         "Section VI — Theorem VI.3 iff (n=$n, m=$m, k=$k, q=$(s.q), G_$i)")
     print_kv(io, "q-polynomials tested",
         "$tested ($(exhaustive ? "exhaustive" : "sampled from $(BigInt(N)^k)"))")
-    print_kv(io, "APN shifts", n_apn)
+    print_kv(io, "distinct coefficient vectors / full space", "$distinct_tested / $space_size")
+    print_kv(io, "generated sample / additional positive controls",
+        "$(length(generated_keys)) / $(length(control_only_keys)) distinct vectors")
+    print_kv(io, "sampling method", exhaustive ? "enumeration" : "deterministic LCG; not a uniform random sample")
+    print_kv(io, "generated scan has both APN and non-APN cases", generated_nonvacuous)
+    print_kv(io, "APN trial count (duplicates retained; distinct coverage above)", n_apn)
     print_kv(io, "L satisfying conditions (i)+(ii)+(iii)", n_cond)
     print_kv(io, "mismatches (either direction)", mismatches)
-    print_check(io, "G_{i,L} APN ⟺ conditions (i)+(ii)+(iii)", ok)
+    print_check(io, "APN iff conditions on the evaluated coefficient vectors", ok)
     print_check(io, "scan is non-vacuous (both APN and non-APN L present)", nonvacuous)
     isempty(examples) || print_kv(io, "mismatch examples", examples)
 
     (; n, m, k, q = s.q, i, tested, exhaustive, n_apn, n_cond, mismatches, ok,
-       nonvacuous, examples)
+       nonvacuous, generated_nonvacuous, generated_apn, control_only_apn,
+       distinct_tested, generated_distinct = length(generated_keys),
+       additional_controls = length(control_only_keys), space_size,
+       coverage = distinct_tested // space_size, examples)
 end
 
 # ── Theorem VI.3: the n=9 instance (Section VII-B) ────────────────────────────

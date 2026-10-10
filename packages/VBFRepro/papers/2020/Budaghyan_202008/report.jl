@@ -17,8 +17,8 @@ Print a full reproduction report for Budaghyan et al. (2020).
 Scope:
   - Exact:   Theorem IV.1, Corollary IV.2
   - Exact:   Theorem V.1 (i)+(ii), scanned over all 1-/2-term linear L at n=6
-  - Exact:   Theorem VI.3 — conditions (i),(ii),(iii) and the iff, both directions
-  - Exact:   Theorem VI.3 new n=9 APN (explicit parameters from Section VII-B),
+  - Exact:   Theorem VI.3 — iff checked on stated finite coefficient scans and controls
+  - Exact:   Theorem VI.3 published n=9 APN (explicit parameters from Section VII-B),
              LUT-identical to Table I row 8
   - Exact:   Table I — all 8 rows, pairwise CCZ-inequivalent by ortho-derivative
              mugshot (EA = CCZ for quadratic APN, Yoshiara)
@@ -28,7 +28,7 @@ Scope:
              paper's isotopic-shift derivation of it is NOT reproduced — README R8)
   - Not run: Section VII-D (every quadratic APN over GF(2⁶) is a shift of x³) —
              needs general linear L (~2³⁶) plus the Proposition VI.1 normalisation
-  - Not run: Γ-rank column of Table I (VBF's design_ranks throws for n > 7;
+  - Not run: Γ-rank column of Table I (n=8 requires explicit storage/time budgets;
              not needed — the mugshot separates all 8 rows)
 """
 function paper_report(io::IO = stdout)
@@ -45,14 +45,14 @@ function paper_report(io::IO = stdout)
     println(io, "Scope:")
     println(io, "  Exact:   Theorem IV.1, Corollary IV.2")
     println(io, "  Exact:   Theorem V.1 (i)+(ii) over all 1-/2-term linear L at n=6")
-    println(io, "  Exact:   Theorem VI.3 conditions (i),(ii),(iii) — iff, both directions")
-    println(io, "  Exact:   Theorem VI.3 new n=9 APN (Section VII-B explicit params)")
+    println(io, "  Exact:   Theorem VI.3 iff on stated finite scans; n=9 sampled with published controls")
+    println(io, "  Exact:   Theorem VI.3 published n=9 APN (Section VII-B explicit params)")
     println(io, "  Exact:   Table I — all 8 rows, pairwise CCZ-inequivalent (mugshot)")
     println(io, "  Partial: Proposition V.3 (q=2 only)")
     println(io, "  Partial: Lemma VI.6 (cases (i),(ii),(iv) of 5)")
     println(io, "  Loaded:  x⁹ + Tr(x³) over GF(2^8) verified APN (not its shift derivation)")
     println(io, "  Not run: Section VII-D full coverage claim (~2³⁶ general linear L)")
-    println(io, "  Not run: Γ-rank (design_ranks throws for n > 7; mugshot suffices)")
+    println(io, "  Not run: Γ-rank (n=8 is opt-in with storage/time budgets; distinct signatures suffice)")
 
     section4_report(io)
     section5_report(io)

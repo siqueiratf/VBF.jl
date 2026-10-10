@@ -1,93 +1,70 @@
-# Upgrades the Theorem 6 refutation from an invariant match to a decision.
-#
-# theorem6.jl uses the ortho-derivative signature sigma to compare CLASS-A..D
-# against the catalog's indexed sources. That comparison is asymmetric: a sigma
-# MISMATCH certifies CCZ-inequivalence (this is what the paper's Theorem 6
-# legitimately uses), but a sigma MATCH is necessary and not sufficient. A match
-# only LOCATES a candidate; on its own it proves nothing.
-#
-# This script closes that gap. It runs VBF's decision procedure
-# are_ccz_equivalent on the four pairs that theorem6.jl locates. Both sides are
-# quadratic APN, so the call routes through are_ea_equivalent, which is a
-# COMPLETE decision on that class by Yoshiara's theorem (CCZ = EA for quadratic
-# APN). A `true` is therefore a positive result of a complete decision, not a
-# heuristic. Note the documented failure mode of that API runs the other way: an
-# undecided query can degrade to `false`, so a `false` here would need scrutiny,
-# while a `true` does not.
-#
-# Result: all four classes that Kuznetsov (2026) reports as new are
-# CCZ-equivalent to functions published by Edel and Pott in 2009.
-#
-# NO SIGMA INDEX REQUIRED. Unlike theorem6.jl, this script does not open
-# ccz_sigma_index.sqlite (a 682 MB gitignored side store). It reads the four
-# Edel-Pott members straight from the tracked corpus edelpott2009_n8 and takes
-# the paper's own representatives from helpers.jl, so it runs on a fresh clone.
-#
-# READ-ONLY against the paper: the representatives come from helpers.jl, which
-# transcribes the author's own artifact. No paper-specific math is added to VBF.
-#
-# Run:  julia --project=. -t auto packages/VBFRepro/papers/2026/Kuznetsov_202606/theorem6_exact.jl
-
-using VBF, VBFCatalog
+# Positive equivalence follows from a replayed affine graph map, independently
+# checked at all 256 points. No signature equality or negative timeout is used.
+using VBF, VBFCatalog, TOML
 import VBFCatalog: SQLite
-include(joinpath(@__DIR__, "helpers.jl"))   # representative_sboxes
-
-# The genuine pre-2020 known set that the paper's verification omitted.
+include(joinpath(@__DIR__, "helpers.jl"))
+include(joinpath(@__DIR__, "../../../../VBFSearch/src/verification/ea_witness.jl"))
 const DB_EDELPOTT = "edelpott2009_n8"
-
-# Each claimed-new class against the Edel-Pott member sigma placed it with.
-# Member indices are 1-based, matching corpus_function.
-const EXACT_PAIRS = (
-    (:class_a, 18),
-    (:class_b, 5),
-    (:class_c, 3),
-    (:class_d, 4),
-)
+const EXACT_PAIRS = ((:class_a, 18), (:class_b, 5), (:class_c, 3), (:class_d, 4))
+const EXACT_WITNESSES = joinpath(@__DIR__, "test/fixtures/edel_pott_ea_witnesses.toml")
 
 """
-    theorem6_exact_run() -> Vector{NamedTuple}
-
-Decide CCZ-equivalence for each claimed-new class against its Edel-Pott
-counterpart. Returns one row per pair with the verdict and its wall time.
+Replay saved exact EA witnesses against the current paper representatives and
+tracked Edel-Pott corpus. `recover=true` instead runs a bounded native search;
+a budget hit returns `equivalent=missing`, never a negative decision. Positive
+witnesses are checked with the independent stdlib-only graph verifier.
 """
-function theorem6_exact_run()
+function theorem6_exact_run(; recover::Bool = false, timeout_seconds::Real = 60,
+                            max_nodes::Int = 10^6, witness_path = EXACT_WITNESSES)
     reps = representative_sboxes()
+    fixtures = recover ? nothing : TOML.parsefile(witness_path)
     db = SQLite.DB(VBFCatalog.catalog_path())
     try
         map(EXACT_PAIRS) do (nm, i)
             F = getfield(reps, nm)
             G = VBFCatalog.corpus_function(db, DB_EDELPOTT, i)
-            seconds = @elapsed equivalent = are_ccz_equivalent(F, G)
-            (; nm, member = i, equivalent, seconds)
+            cols = Int[]; constant = 0; equivalent = missing; status = :inconclusive
+            seconds = @elapsed if recover
+                result = partition_refinement_equivalence(F, G; relation = :ea,
+                    timeout_seconds, max_nodes, algorithm = :optimized)
+                if result isa Found
+                    A = only(search_solutions(result))
+                    cols = Int.(A.linear.cols); constant = Int(A.constant)
+                    equivalent = IndependentEAWitness.verify_ea_witness(F.lut, G.lut, cols, constant)
+                    equivalent || error("invalid recovered EA witness for $nm")
+                    status = :verified_witness
+                elseif result isa Exhausted
+                    equivalent = false; status = :exhausted
+                end
+            else
+                row = fixtures[String(nm)]
+                row["member"] == i || error("reference member changed")
+                row["candidate_lut"] == Int.(F.lut) || error("paper representative changed")
+                row["reference_lut"] == Int.(G.lut) || error("reference corpus changed")
+                cols = row["columns"]; constant = row["constant"]
+                equivalent = IndependentEAWitness.verify_ea_witness(F.lut, G.lut, cols, constant)
+                equivalent || error("invalid saved EA witness for $nm")
+                status = :verified_witness
+            end
+            (; nm, member = i, equivalent, status, seconds, columns = cols, constant)
         end |> collect
     finally
         SQLite.close(db)
     end
 end
 
-function theorem6_exact_report(io::IO = stdout)
-    print_section("Theorem 6 — exact CCZ decision against Edel-Pott 2009", io)
-    print_kv("Method", "are_ccz_equivalent (complete EA decision for quadratic APN)", io)
-    print_kv("Reference set", "$DB_EDELPOTT (tracked corpus; no sigma index needed)", io)
-
-    rows = theorem6_exact_run()
+function theorem6_exact_report(io::IO = stdout; kwargs...)
+    print_section("Theorem 6 — independently replayed EA witnesses", io)
+    rows = theorem6_exact_run(; kwargs...)
     for r in rows
-        c = uppercase(String(r.nm))[end]
-        print_check("  CLASS-$c CCZ-equivalent to $DB_EDELPOTT #$(r.member) " *
-                    "($(round(r.seconds; digits = 1)) s)", r.equivalent, io)
+        print_kv(String(r.nm), "$(r.status): Edel-Pott 2009 member $(r.member)", io)
     end
-
-    all_equivalent = all(r.equivalent for r in rows)
-    print_check("All four claimed-new classes are Edel-Pott 2009 functions", all_equivalent, io)
-    print_kv("Total wall time", "$(round(sum(r.seconds for r in rows); digits = 1)) s", io)
-    print_kv("Conclusion",
-        all_equivalent ?
-        "Decided, not merely sigma-matched: CLASS-A..D were published in 2009. " *
-        "The novelty claim of Theorem 6 does not hold." :
-        "unexpected — a sigma match did not survive the exact decision; re-check the pairing", io)
+    verified = all(r.equivalent === true for r in rows)
+    print_kv("Conclusion", verified ?
+        "All four representatives are EA-equivalent, hence CCZ-equivalent, to Edel-Pott 2009 functions; they are not new equivalence classes." :
+        "Some comparisons remain unresolved or disagree; do not infer novelty.", io)
     rows
 end
-
 if abspath(PROGRAM_FILE) == @__FILE__
     theorem6_exact_report()
 end

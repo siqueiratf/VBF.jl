@@ -18,6 +18,15 @@ include("test_algorithm1.jl")
     @test check_order_space(identity3, 2) == 3.0
     @test is_permutation_tuple(identity3, identity3) == true
     @test length(gen_permutation_tuples(6)) == 17
-    #@test length(gen_permutation_tuples(7)) == 27
-    #@test length(gen_permutation_tupl8)) == 32
+    generated = generate_tuple_matrix_constants_file(6; output = joinpath(mktempdir(), "n6.toml"))
+    @test generated.count == 17
+    @test verify_generated_tuple_classes(6, generated.blocks)
+    @test length(_load_tuple_matrix_blocks(generated.output)) == 17
+    if get(ENV, "VBF_REPRO_FULL_SEARCH", "false") == "true"
+        for (n, expected) in ((7, 27), (8, 32))
+            generated = generate_tuple_matrix_constants_file(n; output = joinpath(mktempdir(), "n$n.toml"), full_search = true)
+            @test generated.count == expected
+            @test verify_generated_tuple_classes(n, generated.blocks)
+        end
+    end
 end

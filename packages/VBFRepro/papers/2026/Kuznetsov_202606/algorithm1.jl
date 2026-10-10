@@ -21,6 +21,7 @@ import Random
 include("helpers.jl")
 
 function algorithm1_run(; sample_size::Int = 100, seed::Int = 42)
+    sample_size > 0 || throw(ArgumentError("sample_size must be positive"))
     A     = build_A_matrix()
     A_lut = build_A_lut(A)
     param = fc22_sol22(A)
@@ -40,7 +41,7 @@ function algorithm1_run(; sample_size::Int = 100, seed::Int = 42)
     end
 
     density = n_apn / sample_size
-    (; n_apn, sample_size, density, seed)
+    (; n_apn, sample_size, density, seed, exhaustive = false, sampling = :with_replacement)
 end
 
 function algorithm1_report(io::IO = stdout; kwargs...)
@@ -50,7 +51,7 @@ function algorithm1_report(io::IO = stdout; kwargs...)
     print_kv("sample size", r.sample_size, io)
     print_kv("APN functions found", r.n_apn, io)
     print_kv("empirical APN density", string(round(r.density * 100; digits=2)) * " %", io)
-    completeness = r.sample_size >= (1 << 40) ? "exhaustive" : "budget-limited"
+    completeness = "random sampling with replacement; exhaustive=false"
     print_kv("completeness", "$completeness ($(r.sample_size) evaluated)", io)
 end
 

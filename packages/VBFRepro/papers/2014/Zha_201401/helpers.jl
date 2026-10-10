@@ -23,12 +23,12 @@ const safe_inv = gf_inv_zero_safe
     find_omega(N; modulus) -> Int
 
 Primitive cube root of unity ω in F_{2^N}. Requires 3 | (2^N − 1).
-Returns ω = α^{(2^N−1)/3} where α=2 is the primitive element.
+Returns ω = α^{(2^N−1)/3} where α is a verified primitive field element.
 """
 function find_omega(N::Int; modulus::Int = primitive_polynomial(N))
     order = (1 << N) - 1
     @assert order % 3 == 0 "3 must divide 2^N - 1 for cube roots to exist"
-    gf_pow(2, order ÷ 3, N; modulus)
+    gf_pow(gf_primitive_element(N; modulus), order ÷ 3, N; modulus)
 end
 
 """

@@ -12,4 +12,10 @@
     for (i, F) in enumerate(boxes)
         @test is_quadratic_apn(F)  # Table 3 F$i (n=11)
     end
+    mugshots=apn_ea_mugshot.(boxes)
+    @test length(Set(mugshots)) == 6
+    # DDT-only ortho signatures collide for x^3/x^33; adding Walsh separates.
+    @test differential_spectrum(ortho_derivative(boxes[1])) == differential_spectrum(ortho_derivative(boxes[5]))
+    @test mugshots[1] != mugshots[5]
+
 end

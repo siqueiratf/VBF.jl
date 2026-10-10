@@ -1,5 +1,8 @@
 # Edel & Pott (2009) — A new almost perfect nonlinear function which is not quadratic
 
+Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 42 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Edel_200900/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. Historical catalog-gap LUT proposals were regenerated through Julia; see [F060 evidence](../../../../../audit/revalidated_luts.toml). This verifies their APN property and exact encodings; it does not establish novelty against the current reference corpus.
+
+
 - **Citation:** Y. Edel, A. Pott, "A new almost perfect nonlinear function which is not
   quadratic", *Adv. Math. Commun.* 3(1):59–81, 2009.
 - **Reproduction path:** `packages/VBFRepro/papers/2009/Edel_200900/`
@@ -220,8 +223,7 @@ non-quadratic APN entry at any dimension from these papers)
 - `algebraic_form`: Table 7 entry 14.3 = `(No. 14.1) + u^27( tr(u^20 x^3 + u^94 x^5 + u^66 x^9) )`,
   where `No. 14.1 = x^3 + x^6 + x^34 + x^40 + x^72`; GF(2⁷) with `p(x) = x⁷+x+1` (=131), `u = x`.
 - `source`: Table 7 entry 14.3 — "in Table 7, the Example 14.3 is new"; "Our new function 14.3 in
-  Table 7 is inequivalent to all polynomials with coefficients in F₂ (Theorem 10)". **Not
-  currently reproduced** under `packages/VBFRepro/papers/2009/Edel_200900/` (no `table7.jl`).
+  Table 7 is inequivalent to all polynomials with coefficients in F₂ (Theorem 10)". **Now reconstructed and tested by `table7.jl`; historical omission:** under `packages/VBFRepro/papers/2009/Edel_200900/` (no `table7.jl`).
 - `lut = [0, 72, 8, 68, 9, 81, 49, 109, 10, 78, 8, 72, 108, 56, 94, 14, 41, 103, 36, 110, 119, 41,
   74, 16, 106, 40, 109, 43, 91, 9, 108, 58, 18, 108, 95, 37, 127, 17, 2, 104, 48, 66, 119, 1, 50,
   80, 69, 35, 102, 30, 46, 82, 92, 52, 36, 72, 13, 121, 79, 63, 88, 60, 42, 74, 68, 92, 41, 53,

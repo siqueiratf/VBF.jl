@@ -2,7 +2,7 @@ include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../../paper.mk
 
 
 .PHONY: help test report paper_counts component_profiles extension_criteria \
-        estimators dataset_validation catalog_validation clean_results
+        estimators dataset_validation catalog_validation table4_1 clean_results
 
 limit ?= 2147483647
 max_evaluations ?= 1048576
@@ -11,6 +11,9 @@ dataset_path ?=
 save_results ?= false
 seed ?= 42
 full_search ?= false
+profile_depth ?= 5
+profile_nodes ?= 1000000
+profile_subspaces ?= 100000
 check_ortho ?= false
 
 default: help
@@ -26,6 +29,9 @@ paper_counts:
 
 component_profiles:
 	$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "component_profiles.jl")); print_header(); component_profiles_report()'
+
+table4_1:
+	$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "table4_1.jl")); table41_profiles_report(; depth=$(profile_depth), max_nodes=$(profile_nodes), max_subspaces=$(profile_subspaces))'
 
 extension_criteria:
 	$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "extension_criteria.jl")); print_header(); extension_criteria_report()'
@@ -49,6 +55,7 @@ help:
 	@echo '  report                Run bounded aggregate report'
 	@echo '  paper_counts          Check Table 4.1 and Theorem 5.1 arithmetic'
 	@echo '  component_profiles    Check component rank/moment identities on small APN examples'
+	@echo '  table4_1              Bounded eight-bit profile-order controls (both orders)'
 	@echo '  extension_criteria    Check Lemma 4.6, Lemma 4.7, and Theorem 4.9 small cases'
 	@echo '  estimators            Recompute Section 5 total-class estimates'
 	@echo '  dataset_validation    Stream-validate local Zenodo LUT samples'

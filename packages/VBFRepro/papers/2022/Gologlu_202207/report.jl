@@ -32,7 +32,7 @@ function paper_report(; io::IO = stdout, full_search::Bool = false)
     println(io)
 
     r_thm = theorem3_2_report(; io, m_values = [3, 5])
-    r_prop = proposition3_4_report(; io)
+    r_prop = proposition3_4_report(; io, full_search)
     r_t1 = table1_report(; io, include_table3 = true)
 
     r_t2 = nothing

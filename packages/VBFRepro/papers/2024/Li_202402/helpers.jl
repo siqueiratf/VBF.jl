@@ -67,12 +67,11 @@ end
 """
     bipoly_no_roots_f2m(P, m) -> Bool
 
-True iff bivariate P(X,Y) has no (X,Y) ≠ (0,0) roots in GF(2^m)^2.
+True iff bivariate P(X,Y) has no roots in GF(2^m)^2.
 """
 function bipoly_no_roots_f2m(P::Function, m::Int)::Bool
     Fm = 1 << m
     for x in 0:(Fm-1), y in 0:(Fm-1)
-        (x == 0 && y == 0) && continue
         P(x, y) == 0 && return false
     end
     return true

@@ -18,9 +18,9 @@
 #     size (#S < 2^{2j−4}) and by  │  and tested whole by the exact `is_cyclic_qam`
 #     proper-submatrix rank        │  oracle
 #
-# Result-equivalent at small n (both are exhaustive over the same space, and the oracle is
-# exact), but it is the missing pruning that puts the paper's own targets out of reach:
-# n=8 has 2.7×10⁸ candidates and n=9 has 6.9×10¹⁰. So the CLASSIFICATION ITSELF is
+# Covers the cyclic-QAM candidate space with an exact oracle; this does not
+# demonstrate the paper Algorithm1 traversal or pruning. but it is the missing pruning that puts the paper's own targets out of reach:
+# n=8 has 2.7×10⁸ candidates and n=9 has 6.9×10¹⁰. So candidate enumeration and invariant coverage are
 # reproduced only for n ≤ 7 (see test_algorithm1.jl, which runs the full n=7 sweep and
 # checks it against Table 2). n=8 and n=9 are NOT re-derived here; their tables are
 # verified as given.
@@ -29,7 +29,8 @@
 # `search_qam` de-duplicates its results by `apn_ea_mugshot`, and that key MERGES
 # CCZ-inequivalent functions: at n=7 it merges Gold x³ with x⁹, and at n=5 x³ with x⁵.
 # So `length(algorithm1_run(n))` is a LOWER BOUND on the number of CCZ classes, never an
-# equality. Concretely, at n=7 it returns 14 where the true count is 15 — the missing one
+# equality when confirm=false. confirm=true uses bounded exact decisions and
+# stops inconclusively on a comparison budget hit. Concretely, at n=7 it returns 14 where the true count is 15 — the missing one
 # is exactly the Gold x³/x⁹ split (table2.jl settles that split with the complete EA
 # decision). Never quote this length as a class count without that correction.
 #
@@ -56,8 +57,12 @@ function algorithm1_run(
     n::Int;
     limit::Int = typemax(Int),
     max_evaluations::Int = 1 << 20,
+    confirm::Bool = false,
+    timeout_seconds::Real = Inf,
+    equivalence_timeout_seconds::Real = 60,
+    max_equivalence_nodes::Int = 10^6,
 )
-    search_qam(n, 1; limit = limit, max_evaluations = max_evaluations)
+    search_qam(n, 1; limit, max_evaluations, confirm, timeout_seconds, equivalence_timeout_seconds, max_equivalence_nodes)
 end
 
 """
@@ -86,7 +91,8 @@ function algorithm1_report(
     print_kv(io, "completeness", coverage_note(outcome))
     print_kv(io, "expected (Table 1)", 1)
     all_apn = all(differential_uniformity(F) == 2 for F in result)
-    print_check(io, "all found functions are APN", all_apn)
+    isempty(result) ? print_kv(io, "APN validation", "no returned candidates; this is not an existence result") :
+        print_check(io, "all found functions are APN", all_apn)
     (; n_demo, n_classes = length(result), exhaustive = is_exhausted(outcome),
        outcome_tag = outcome_tag(outcome))
 end

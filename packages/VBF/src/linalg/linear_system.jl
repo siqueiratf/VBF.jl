@@ -179,54 +179,18 @@ function solve_f2(
     b::T;
     nbits::Integer = 8 * sizeof(T),
 ) where {T<:Unsigned}
-    @assert 1 ≤ nbits ≤ 8 * sizeof(T)
-    n_rows = length(A)
-    # Augment: row i becomes A[i] | (bit_i_of_b << nbits)
-    work = Vector{T}(undef, n_rows)
-    @inbounds for i = 1:n_rows
-        bit_b = (b >> (i - 1)) & T(1)
-        work[i] = A[i] | (bit_b << nbits)
+    1 <= nbits <= 8sizeof(T) || throw(ArgumentError("nbits exceeds row capacity"))
+    length(A) <= 8sizeof(T) || throw(ArgumentError("packed RHS cannot encode all equations; use a Boolean RHS and wide matrix"))
+    words=zeros(UInt64,cld(Int(nbits),64),length(A))
+    for i in eachindex(A),w in axes(words,1)
+        words[w,i]=UInt64((A[i]>>(64(w-1))) & (sizeof(T)>8 ? T(typemax(UInt64)) : typemax(T)))
     end
-    # Reduce on the first `nbits` columns; track pivots.
-    rank = 0
-    pivot_col_for_row = fill(-1, n_rows)
-    @inbounds for c = 0:(nbits-1)
-        bit = T(1) << c
-        p = 0
-        for i = (rank+1):n_rows
-            if (work[i] & bit) != zero(T)
-                p = i
-                break
-            end
-        end
-        p == 0 && continue
-        work[rank+1], work[p] = work[p], work[rank+1]
-        pivot = work[rank+1]
-        for i = 1:n_rows
-            i == rank + 1 && continue
-            if (work[i] & bit) != zero(T)
-                work[i] ⊻= pivot
-            end
-        end
-        pivot_col_for_row[rank+1] = c
-        rank += 1
-    end
-    # Inconsistency: any row with all-zero left side but non-zero augmented bit
-    @inbounds for i = 1:n_rows
-        left = work[i] & ((T(1) << nbits) - T(1))
-        right = (work[i] >> nbits) & T(1)
-        if left == zero(T) && right == T(1)
-            return nothing
-        end
-    end
-    # Back-substitution: x[pivot_col] = right-augmented bit; free vars stay 0
-    x = zero(T)
-    @inbounds for i = 1:rank
-        col = pivot_col_for_row[i]
-        right = (work[i] >> nbits) & T(1)
-        right == T(1) && (x |= T(1) << col)
-    end
-    x
+    rhs=BitVector((b>>(i-1))&T(1)==1 for i in eachindex(A))
+    x=solve_f2(words,rhs;nbits)
+    x===nothing && return nothing
+    out=zero(T)
+    for w in eachindex(x);out |= T(x[w]) << (64(w-1));end
+    out
 end
 
 """

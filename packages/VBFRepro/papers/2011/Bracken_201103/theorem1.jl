@@ -22,8 +22,13 @@ const THEOREM1_CASES = [
     (2, 1, "n=6  Family 8W (v≠0, w=0)",  1, 0),
     (2, 1, "n=6  Family 7  (v=0, w≠0)",  0, 1),
     (2, 1, "n=6  Family 1  (v=0, w=0)",  0, 0),
+    # n=12, k=4, s=11: the other admissible s modulo 3k.
+    (4, 11, "n=12 s=11 Family 8", 1, 5),
+    (4, 11, "n=12 s=11 Family 8W", 1, 0),
+    (4, 11, "n=12 s=11 Family 7", 0, 1),
+    (4, 11, "n=12 s=11 Family 1", 0, 0),
     # n=12, k=4, s=5: the case used in the paper's Table 2
-    (4, 5, "n=12 Family 8  (v≠0, w≠0)",   1, 5),
+    (4, 5, "n=12 Family 8  (v≠0, w≠0)",   1, 2),
     (4, 5, "n=12 Family 8W (v≠0, w=0)",   1, 0),
     (4, 5, "n=12 Family 7  (v=0, w≠0)",   0, 1),
     (4, 5, "n=12 Family 1  (v=0, w=0)",   0, 0),
@@ -41,7 +46,7 @@ function theorem1_sbox(k::Int, s::Int, v_idx::Int, w_idx::Int;
     n = 3k
     v = v_idx == 0 ? 0 : subfield_elem(n, k, v_idx - 1; modulus)
     w = w_idx == 0 ? 0 : subfield_elem(n, k, w_idx - 1; modulus)
-    SBox(bracken_lut(k, s, 2, v, w; modulus))
+    SBox(bracken_lut(k, s, gf_primitive_element(n; modulus), v, w; modulus))
 end
 
 
@@ -65,6 +70,55 @@ function theorem1_report(io::IO = stdout)
     print_kv("completeness", "exhaustive over listed (k,s,subfamily) tuples", io)
 end
 
+
+"""
+    theorem1_parameter_sweep(k, s; limit=16, full_search=false, timeout_seconds=60)
+
+Enumerate v,w in the embedded subfield with vw != 1. Each candidate is checked
+by the public exact quadratic-APN predicate. Coverage refers to this fixed
+(k,s,u,modulus) parameter grid only, not equivalence classes or all APNs.
+"""
+function theorem1_parameter_sweep(k::Int, s::Int; limit::Int=16,
+        full_search::Bool=false, max_evaluations::Int=typemax(Int),
+        timeout_seconds::Real=60, io::IO=stdout)
+    1 <= 3k <= 16 || throw(ArgumentError("supported materialized dimensions are 3k <= 16"))
+    1 <= s < 3k || throw(ArgumentError("use the Frobenius representative 1 <= s < 3k"))
+    gcd(s, 3k) == 1 && gcd(3, k) == 1 && (k+s) % 3 == 0 ||
+        throw(ArgumentError("inadmissible Theorem 1 parameters"))
+    limit >= 0 && max_evaluations >= 0 && timeout_seconds >= 0 ||
+        throw(ArgumentError("limits must be nonnegative"))
+    n = 3k
+    modulus = primitive_polynomial(n)
+    u = gf_primitive_element(n; modulus)
+    elements = [0; [subfield_elem(n, k, i; modulus) for i in 0:(1 << k)-2]]
+    length(unique(elements)) == 1 << k || error("subfield generator does not enumerate the subfield")
+    pairs = [(v,w) for v in elements for w in elements
+        if gf_mul(v,w,n; modulus) != 1]
+    region = SearchRegion(:construction_parameters, "Bracken2011-k$k-s$s";
+        size=length(pairs), params=Dict{String,Any}("k"=>k, "s"=>s,
+            "modulus"=>modulus, "u"=>u, "ordering"=>"power-indexed subfield"))
+    records = NamedTuple[]
+    started = time_ns()
+    elapsed() = (time_ns() - started) / 1e9
+    stop = nothing
+    for (v,w) in pairs
+        if elapsed() >= timeout_seconds || length(records) >= max_evaluations ||
+                (!full_search && length(records) >= limit)
+            stop = StopPoint(elapsed() >= timeout_seconds ? :time : :nodes,
+                "Unexplored admissible coefficient pairs remain")
+            break
+        end
+        F = SBox(bracken_lut(k,s,u,v,w; modulus))
+        push!(records, (; v, w, quadratic_apn=is_quadratic_apn(F)))
+    end
+    outcome = stop === nothing ?
+        Exhausted(region, records; nodes_visited=length(records), elapsed_seconds=elapsed()) :
+        BudgetHit(stop, region, records; nodes_visited=length(records), elapsed_seconds=elapsed())
+    print_kv("parameter-grid coverage", "$(length(records)) / $(length(pairs))", io)
+    print_kv("invalid candidates", count(r -> !r.quadratic_apn, records), io)
+    print_kv("scope", "fixed construction parameters; no novelty or class-count assertion", io)
+    (; outcome, records, parameter_pairs=length(pairs), elapsed_seconds=elapsed())
+end
 
 if abspath(PROGRAM_FILE) == @__FILE__
     theorem1_report()

@@ -27,13 +27,13 @@ end
     canonical_triplicate(F) -> _Triplicate | nothing
 
 Build the canonical-triplicate structure of `F` (fibres `{i, βi, β²i}` with
-`β = gf_pow(2, (2ⁿ-1)/3, n)`), or `nothing` if `F` is not a canonical triplicate.
+`β = gf_pow(gf_primitive_element(n), (2ⁿ-1)/3, n)`), or `nothing` if `F` is not a canonical triplicate.
 """
 function canonical_triplicate(F::SBox{N,T}) where {N,T}
     n = 1 << N
     (iseven(N) && (n - 1) % 3 == 0) || return nothing
     F.lut[1] == 0 || return nothing
-    β = gf_pow(2, (n - 1) ÷ 3, N)
+    β = gf_pow(gf_primitive_element(N), (n - 1) ÷ 3, N)
     tN = (n - 1) ÷ 3
     t = zeros(Int, 4, tN)
     ol = zeros(Int, n)
@@ -457,7 +457,7 @@ function _zero_sum_triplicate(F::SBox{N,T}) where {N,T}
     n = 1 << N
     (iseven(N) && (n - 1) % 3 == 0) || return nothing
     F.lut[1] == 0 || return nothing
-    β = gf_pow(2, (n - 1) ÷ 3, N)
+    β = gf_pow(gf_primitive_element(N), (n - 1) ÷ 3, N)
     tN = (n - 1) ÷ 3
     t = zeros(Int, 4, tN)
     ol = zeros(Int, n)
@@ -497,7 +497,7 @@ end
 # Build the canonical β-coset triple structure and the x-guess sequence `xgs`.
 function _empty_canonical(N::Int)
     n = 1 << N
-    β = gf_pow(2, (n - 1) ÷ 3, N)
+    β = gf_pow(gf_primitive_element(N), (n - 1) ÷ 3, N)
     tN = (n - 1) ÷ 3
     t = zeros(Int, 4, tN)
     seen = falses(n)

@@ -1,6 +1,5 @@
 include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../../paper.mk
 
-MAKEFILE_DIR  := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 .PHONY: help test report theorem2 theorem3 clean_results
 

@@ -14,6 +14,7 @@ export gauss_jordan!,
 export mobius!, mobius, anf
 export walsh_hadamard!, walsh_hadamard, walsh_transform
 export PRIMITIVE_POLYNOMIALS, primitive_polynomial
+export IRREDUCIBLE_POLYNOMIALS, irreducible_polynomial, gf_primitive_element, gf_multiplicative_order
 export CONWAY_POLYNOMIALS, conway_polynomial
 export gf_mul, gf_pow, gf_inv, gf_inv_zero_safe, gf_monomial_lut
 export gf_trace, gf_relative_trace, in_subfield, subfield_elements
@@ -29,7 +30,7 @@ export random_linear_permutation,
 # (the data/catalog layer's exports moved to the VBFCatalog package)
 
 # tier 5 — algorithms
-export is_invertible, compose, solve_f2, kernel_f2
+export is_invertible, compose, solve_f2, kernel_f2, rref_f2!
 export extract_linear_subspaces, span_from_basis
 export extract_linear_subspaces_bounded
 export smallest_basis,
@@ -79,7 +80,7 @@ export ortho_derivative, is_quadratic_apn, is_quadratic_apn_rank
 export ortho_integral
 export sigma_multiplicities
 export APNEAMugshot, apn_ea_mugshot, component_degree_spectrum
-export gamma_rank, delta_rank
+export gamma_rank, delta_rank, DesignRankBudgetHit
 export bent_components, nonbent_components, nonbent_signature
 export image_set, image_subspaces, pi_multiset
 export ccz_equivalent_quadratic_function

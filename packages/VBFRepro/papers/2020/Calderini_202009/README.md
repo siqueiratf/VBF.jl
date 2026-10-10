@@ -1,5 +1,12 @@
 # Calderini_202009 — Reproduction Review
 
+Scope correction: the Frobenius/inverse power-exponent orbit census is not a full CCZ classification, and an inverse outside the cyclotomic coset does not itself prove EA inequivalence. Predicted counts are now labeled as predictions; the census returns exact_class_count_established=false.
+
+Additional F032 correction: graph-code coordinate blocks now match the documented definition. Kim and Dillon have equal C2 weight enumerators; the previous claimed weight-based separation was caused by the coordinate bug. Their degrees 2 and 4 still prove EA inequivalence. Equality of code weight enumerators is an inconclusive filter.
+
+Current audit application (2026-10-10): F051: `make table_bounds` now runs native, bounded Walsh-zero subspace enumeration for the specified power rows of Tables 2–4. Only exhausted searches yield an upper bound; found subspaces do not themselves count EA classes. The full polynomial-row tables and general code-equivalence classification remain unreproduced.
+
+
 **Paper:** M. Calderini, *On the EA-classes of known APN functions in small
 dimensions*, Cryptogr. Commun. (2020).
 

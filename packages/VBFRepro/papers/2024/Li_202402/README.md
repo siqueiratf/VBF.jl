@@ -1,5 +1,18 @@
 # Li_202402 — Two New Infinite Families of APN Functions in Trivariate Form
 
+## Audit corrections (2026-10-10)
+
+F013 is fixed against LaTeX Theorems 1 and 6. The third Theorem 1
+polynomial is `X^(q²+q+1)+X^(q²+1)+X^(q+1)+X+1`; Proposition 4 uses its
+`q=2` specialization. Both exact bivariate hypotheses are now evaluated over
+**all** GF(2^m)², separately from differential-uniformity verification. Reports
+return the individual hypotheses and their conjunction. Regression controls
+include root-free `m=3` and failing `m=7`; checking the APN property no longer
+stands in for proving a sufficient hypothesis. The historical defects below
+are superseded for these files; proof formalization and large dimensions remain
+outside the bounded reproduction.
+
+
 **Paper**: Li, Kaleyski. "Two New Infinite Families of APN Functions in Trivariate Form."
 2024.
 

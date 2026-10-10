@@ -1,6 +1,17 @@
 # Findings: the four "new" CCZ classes of Kuznetsov (2026) are Edel–Pott (2009) functions
 
-**Status:** refutation of the central novelty claim, established three independent ways.
+**Current replay evidence (2026-10-10):** run `make theorem6_exact`. Explicit EA
+witnesses for artifact A/B/C/D against Edel–Pott members18/5/3/4 are saved under
+`test/fixtures/edel_pott_ea_witnesses.toml` and independently checked against the
+current LUTs on all256 graph points. `theorem6_exact_run(recover=true)` recovers
+new witnesses with bounded native partition refinement. This is the positive
+proof of equivalence; the historical signature/hash comparisons below only
+locate candidates and do not constitute independent proofs of equivalence.
+Earlier external-tool and primary-source claims below have not all been rerun
+in this audit. The conclusion concerns the artifact representatives, whose
+relationship to the printed Appendix remains a separate transcription issue.
+
+**Status:** artifact representatives refute the new-equivalence-class claim by replayed EA witnesses.
 **Subject:** O. Kuznetsov, *"Quadratic APN Functions in Dimension 8 via Gröbner Basis
 Search in a Self-Equivalence Subspace"* (arXiv:2606.11967; submitted to IEEE Trans. Inf. Theory).
 

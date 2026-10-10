@@ -7,13 +7,21 @@ on Information Theory* **68**(1):670-678, 2022 (arXiv:2009.07204).
 
 **Verdict**: Partial
 
-The reproduction covers Algorithm 1's basic variant plus Lemmas 4 and 5 as isolated
-predicates, and those parts are faithful. But every *headline* result of the paper is
-missing: the two dimension-9 APN permutations, the linearity-2⁷ 8-bit function, the six
-extended Walsh spectra 𝒲₀…𝒲₅, Table 1, and the Section 4 LE-automorphism search that
-actually produced all 12,921 / 35 / 5 instances. On top of that, one file reproduces a table
-from a **different publication**, and the entire data-dependent half of the reproduction is
-dead because `inputs/` does not exist and — for the `.txt` datasets — cannot be committed.
+Current audit (2026-10-10): Algorithm1's basic variant and isolated Lemmas4/5
+remain covered. The unrelated61-row rank/Walsh CSV checker was removed;
+`table1_invariants.jl` and its historical make targets now explicitly report
+**unsupported** reconstruction of the actual9-row×6-Walsh-column Table1. No
+foreign table or loaded publication value is presented as verified evidence.
+
+Original dataset checks are optional and return unavailable/inconclusive when
+inputs are absent; empty streams cannot pass APN/quadratic validation. The report
+runs on a fresh checkout and records these gaps. The tracked n8 corpus has12923
+entries, whereas the paper's released dataset is described as12921; corpus
+presence alone does not validate equality to the missing original file. The
+per-instance LE-class assignments and historical8192-instance comparison set
+are still required to reconstruct Table1. No catalog classes have been added.
+The dated review below remains historical context, with these corrections taking
+precedence over its line numbers and resolution plans.
 
 ---
 

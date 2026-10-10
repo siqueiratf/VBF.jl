@@ -7,6 +7,8 @@ save_results ?= true
 max_solutions ?= 1
 timeout_seconds ?= 300
 class_indices ?= all
+full_search ?= false
+output ?= $(MAKEFILE_DIR)/results/AllTuplesMatrices$(n_value).toml
 n_value = $(if $(n),$(n),6)
 
 default: help
@@ -15,15 +17,7 @@ test:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/test/runtests.jl
 
 corollary1_n6n7n8:
-	@echo "ROOT=$(ROOT)"
-	@if [ -z "$(n)" ]; then \
-		$(MAKE) -f "$(MAKEFILE_DIR)/Makefile" corollary1_n6n7n8 n=6 && \
-		$(MAKE) -f "$(MAKEFILE_DIR)/Makefile" corollary1_n6n7n8 n=7 && \
-		$(MAKE) -f "$(MAKEFILE_DIR)/Makefile" corollary1_n6n7n8 n=8; \
-	else \
-		echo "Running Corollary 1 with n=$(n)"; \
-		$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "corollary1_n6n7n8.jl")); tuples_dir = joinpath("$(MAKEFILE_DIR)", "tuples"); mkpath(tuples_dir); tuple_filename = joinpath(tuples_dir, "AllTuples$(n).toml"); matrix_filename = joinpath(tuples_dir, "AllTuplesMatrices$(n).toml"); println(tuple_filename); println(matrix_filename)'; \
-	fi
+	$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "corollary1_n6n7n8.jl")); r=generate_tuple_matrix_constants_file($(n_value); output="$(output)", full_search=$(full_search)); println("generated count=",r.count," output=",r.output); println("same extended-power-similarity classes as committed=",verify_generated_tuple_classes($(n_value),r.blocks))'
 
 algorithm1:
 	@echo "ROOT=$(ROOT)"

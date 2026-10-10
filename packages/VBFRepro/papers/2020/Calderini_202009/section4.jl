@@ -8,7 +8,7 @@
 #      ea_matrix's y-columns previously landed in the wrong row block).
 #   2. Theorem 5 demos via weight enumerators (equivalent codes ⟹ equal WE):
 #      equal WE for pairs the theorem says are code-equivalent, and an
-#      UNEQUAL WE(C₂) proving Kim ≁EA Dillon at the code level.
+#      equal WE(C₂) despite EA-inequivalence proved by differing degrees.
 #   3. Theorem 6: F₁ vs F₁⁻¹ — C₃ cannot separate them (codes equivalent,
 #      equal WE), C₄ does (paper). The C₄ codes here are WE-isospectral for
 #      every shift b (checked), so weight-type invariants provably cannot
@@ -46,8 +46,8 @@ end
 
 Theorem 5 exercised through weight enumerators:
 - CCZ-equivalent pair (Kim, Dillon): equal WE(C₁).
-- EA-inequivalent pair (Kim, Dillon): UNEQUAL WE(C₂) — a code-level *proof*
-  that Kim ≁EA Dillon (algebraic degrees 2 vs 4 give the function-level proof).
+- EA-inequivalent pair (Kim, Dillon): equal WE(C₂), an inconclusive filter.
+  Algebraic degrees 2 vs 4 give the function-level inequivalence proof.
 - Permutation pair (Dillon, Dillon⁻¹): equal WE(C₃) — C₃(F) ≅ C₃(G) holds iff
   F is AE to G or G⁻¹, and Dillon IS affine-equivalent to its inverse.
 """
@@ -61,9 +61,11 @@ function theorem5_demo(io::IO = stdout)
     print_check(io, "WE(C₁(Kim)) == WE(C₁(Dillon))  [CCZ-equivalent pair]", same_c1)
     ok &= same_c1
 
-    diff_c2 = code_weight_enumerator(ea_matrix(K)) != code_weight_enumerator(ea_matrix(D))
-    print_check(io, "WE(C₂(Kim)) ≠ WE(C₂(Dillon))  [proves Kim ≁EA Dillon]", diff_c2)
-    ok &= diff_c2
+    same_c2 = code_weight_enumerator(ea_matrix(K)) == code_weight_enumerator(ea_matrix(D))
+    print_check(io, "WE(C₂(Kim)) == WE(C₂(Dillon)) [equal invariant is inconclusive]", same_c2)
+    different_degrees = algebraic_degree(K) == 2 && algebraic_degree(D) == 4
+    print_check(io, "degrees 2 vs 4 prove Kim EA-inequivalent to Dillon", different_degrees)
+    ok &= same_c2 && different_degrees
 
     same_c3 = code_weight_enumerator(ae_matrix(D)) == code_weight_enumerator(ae_matrix(Dinv))
     print_check(io, "WE(C₃(Dillon)) == WE(C₃(Dillon⁻¹))  [D AE D⁻¹ ⟹ C₃ equiv]", same_c3)

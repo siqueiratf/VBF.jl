@@ -35,7 +35,17 @@ The exponent 2^{-k} mod (2^n−1) equals 2^{2k} when n=3k.
 """
 function bracken_lut(k::Int, s::Int, u::Int, v::Int, w::Int;
                      modulus::Int = primitive_polynomial(3k))::Vector{Int}
-    n  = 3k
+    n = 3k
+    1 <= k && n <= 16 && 1 <= s < n ||
+        throw(ArgumentError("materialized construction requires 3k <= 16 and 1 <= s < 3k"))
+    gcd(s,n) == 1 && gcd(k,3) == 1 && (k+s) % 3 == 0 ||
+        throw(ArgumentError("inadmissible Theorem 1 parameters"))
+    all(0 <= c < (1 << n) for c in (u,v,w)) || throw(ArgumentError("coefficient outside field"))
+    gf_multiplicative_order(u,n; modulus) == (1 << n)-1 ||
+        throw(ArgumentError("u must be primitive"))
+    all(gf_pow(c,1 << k,n; modulus) == c for c in (v,w)) ||
+        throw(ArgumentError("v and w must belong to the embedded subfield"))
+    gf_mul(v,w,n; modulus) != 1 || throw(ArgumentError("Theorem 1 requires vw != 1"))
     e1 = (1 << (2k)) + (1 << (k + s))    # 2^{2k}+2^{k+s}
     e2 = (1 << s) + 1                      # 2^s+1
     e3 = (1 << (2k)) + 1                   # 2^{2k}+1
@@ -44,29 +54,27 @@ function bracken_lut(k::Int, s::Int, u::Int, v::Int, w::Int;
     c2 = u                                         # u
     c3 = v                                         # v
     c4 = gf_mul(w, gf_pow(u, (1 << k) + 1, n; modulus), n; modulus)  # w·u^{2^k+1}
-    [gf_mul(c1, gf_pow(x, e1, n; modulus), n; modulus) ⊻
-     gf_mul(c2, gf_pow(x, e2, n; modulus), n; modulus) ⊻
-     gf_mul(c3, gf_pow(x, e3, n; modulus), n; modulus) ⊻
-     gf_mul(c4, gf_pow(x, e4, n; modulus), n; modulus)
-     for x in 0:(1<<n)-1]
+    terms_to_lut([(c1,e1),(c2,e2),(c3,e3),(c4,e4)], n, modulus)
 end
 
 """
     subfield_elem(n, k, i; modulus) -> Int
 
 The i-th nonzero element of GF(2^k) embedded in GF(2^n) (requires k ∣ n), i.e.
-u^(i·(2^n−1)/(2^k−1)) where u = 2 is the primitive element. Index i ∈ 0..2^k−2.
+u^(i·(2^n−1)/(2^k−1)) where u is a verified primitive element. Index i ∈ 0..2^k−2.
 
-Note: this indexes GF(2^k)* by *powers of the primitive element* u=2, which is a
+Note: this indexes GF(2^k)* by *powers of a verified primitive element*, which is a
 different ordering from core `subfield_elements(n, k)` (that returns the whole
 subfield, including 0, sorted by integer value). The two are therefore not
 interchangeable by indexing.
 
-TODO(promote-to-core): candidate for VBF core as a power-indexed companion to
-`subfield_elements`. Not added to core here to keep the core frozen.
+The power ordering reproduces the paper parameter convention; the arithmetic
+and generator verification are supplied by VBF.
 """
 function subfield_elem(n::Int, k::Int, i::Int;
                         modulus::Int = primitive_polynomial(n))::Int
+    1 <= k <= n <= 16 && n % k == 0 && 0 <= i < (1 << k)-1 ||
+        throw(ArgumentError("invalid subfield dimension or power index"))
     norm = ((1 << n) - 1) ÷ ((1 << k) - 1)
-    gf_pow(2, (i * norm) % ((1 << n) - 1), n; modulus)
+    gf_pow(gf_primitive_element(n; modulus), (i * norm) % ((1 << n) - 1), n; modulus)
 end

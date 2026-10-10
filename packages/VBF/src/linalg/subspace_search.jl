@@ -4,8 +4,9 @@ vector set.
 
 Used by the CCZ-equivalence layer to enumerate the n-dimensional
 F₂-linear subspaces of the Walsh-zeroes set `Z(F)`. Each such subspace
-corresponds to one EA-class in the CCZ-class of `F` — the heart of the
-Canteaut-Perrin framework.
+provides a representative in the CCZ-class of `F` through the
+Canteaut-Perrin framework. Multiple subspaces can yield the same EA-class;
+class counts require subsequent proved EA deduplication.
 
 A simple recursive DFS that enforces **Gauss-Jordan basis (GJB) form**
 to enumerate each subspace exactly once:

@@ -31,9 +31,26 @@
                for x in 0:63]
     @test SBox(lut_ref) == F1_6
 
-    # n=12, k=4, s=5 — all four families APN
-    for (vi, wi) in [(0,0), (0,1), (1,0), (1,5)]
-        F = theorem1_sbox(4, 5, vi, wi; modulus = modulus12)
+    sweep = theorem1_parameter_sweep(2, 1; full_search=true, io=devnull)
+    @test sweep.outcome isa Exhausted
+    @test sweep.parameter_pairs == 13
+    @test all(row.quadratic_apn for row in sweep.records)
+    partial = theorem1_parameter_sweep(4, 11; limit=1, io=devnull)
+    @test partial.outcome isa BudgetHit
+    @test partial.parameter_pairs == 241
+    @test only(partial.records).quadratic_apn
+    stopped = theorem1_parameter_sweep(4, 5; max_evaluations=0, io=devnull)
+    @test isempty(stopped.records)
+    @test stopped.outcome isa BudgetHit
+    @test_throws ArgumentError theorem1_parameter_sweep(4, 1; io=devnull)
+    @test_throws ArgumentError theorem1_parameter_sweep(4, -1; io=devnull)
+    @test_throws ArgumentError theorem1_parameter_sweep(4, 65; io=devnull)
+    @test_throws ArgumentError theorem1_sbox(4, 65, 1, 2)
+    @test_throws ArgumentError theorem1_sbox(4, 5, -1, 2)
+
+    # n=12, k=4, s=5 and s=11 — all four families APN
+    for s in (5, 11), (vi, wi) in [(0,0), (0,1), (1,0), (1,5)]
+        F = theorem1_sbox(4, s, vi, wi; modulus = modulus12)
         @test differential_uniformity(F) == 2
     end
 end

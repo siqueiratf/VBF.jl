@@ -1,5 +1,22 @@
 # Gologlu_202207 — Biprojective Almost Perfect Nonlinear Functions
 
+## Audit corrections (2026-10-10)
+
+F011 is now evaluated for the exact Kim κ from the supplied LaTeX.
+Independent direct Walsh summation and explicit enumeration of every
+3-dimensional span confirm `η₃(κ)=3`, against the printed value 2. The convention
+includes zero and counts every linear subspace; it does not count a disjoint
+packing. Gold x³ also has η₃=3 and the same nonbent signature, yet the two
+verified quadratic APNs have unequal ortho-derivative mugshots. The nonbent
+signature alone therefore does not separate these two classes.
+
+F031 is fixed: default reports exclude `m=7` nonbent enumeration. It requires
+`full_search=true`; explicit opt-in is not a promise of practical completion.
+The report deliberately prints a failed comparison for the paper's Kim value,
+while tests pass by pinning the independently recomputed contradiction. The
+older scope and implementation notes below are historical where superseded.
+
+
 **Paper**: Göloğlu. "Biprojective Almost Perfect Nonlinear Functions." *IEEE Transactions on
 Information Theory* **68**(7), 2022.
 

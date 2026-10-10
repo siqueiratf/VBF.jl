@@ -1,5 +1,10 @@
 # Bracken et al. (2011) — A few more quadratic APN functions
 
+F071 additional evidence: both admissible n=12 Frobenius representatives (s=5 and11) are tested; a bounded coefficient-grid command now exposes 241 admissible pairs per s. Table 2 now builds the literal u^290 term with the correct power index. `make family_separation` independently computes distinct full ortho-derivative signatures for all four Table 2 representatives, proving all six pairwise CCZ inequivalences. This does not compare them to every earlier construction or establish global novelty.
+
+Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 43 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Bracken_201103/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. Historical catalog-gap LUT proposals were regenerated through Julia; see [F060 evidence](../../../../../audit/revalidated_luts.toml). This verifies their APN property and exact encodings; it does not establish novelty against the current reference corpus.
+
+
 - **Citation:** C. Bracken, E. Byrne, N. Markin, G. McGuire, "A few more quadratic APN
   functions", *Cryptogr. Commun.* 3:43–53, 2011.
 - **Reproduction path:** `packages/VBFRepro/papers/2011/Bracken_201103/`
@@ -313,19 +318,19 @@ Field `GF(2^12)`, modulus `x¹²+x⁶+x⁴+x+1 = 4179` (= `primitive_polynomial(
 1. **`n12_BrackenByrneMarkinMcGuire2011_Family8`** — Theorem 2.1 with `k=4, s=5, v=1, w=u²⁷³`.
    LUT recipe `terms_to_lut([(1328,768),(2,33),(1,257),(3747,544)], 12, 4179)`. Fingerprint:
    `lut[0:15] = [0, 2960, 2418, 1775, 3682, 723, 208, 2156, 3848, 959, 3349, 1455, 488, 2686,
-   1077, 2990]`, FNV-1a(64) over the LUT = `2335486592259839811`.
+   1077, 2990]`, legacy word-wise FNV-style hash (offset 1469598103934665603) over the LUT = `2335486592259839811`.
 2. **`n12_BrackenByrneMarkinMcGuire2011_Family8W`** — `k=4, s=5, v=1, w=0`. LUT recipe
    `terms_to_lut([(1328,768),(2,33),(1,257)], 12, 4179)`. Fingerprint:
    `lut[0:15] = [0, 1331, 3385, 1212, 1168, 929, 348, 2779, 2575, 468, 932, 1225, 3879, 1790,
-   3705, 2838]`, FNV-1a(64) = `18054150684828440259`. Its spectrum differs from Family 7's —
+   3705, 2838]`, legacy word-wise hash = `18054150684828440259`. Its spectrum differs from Family 7's —
    this is the separation the paper's Δ-rank could not achieve.
 3. **`n12_BrackenByrneMarkinMcGuire2011_Family7`** — `k=4, s=5, v=0, w=u²⁷³`. LUT recipe
    `terms_to_lut([(1328,768),(2,33),(3747,544)], 12, 4179)`. Fingerprint:
    `lut[0:15] = [0, 2961, 920, 2419, 2006, 2319, 723, 3440, 3686, 1761, 1517, 3088, 2750, 1905,
-   1960, 2845]`, FNV-1a(64) = `1860369106084231363`. Prefer `bib_key = "Bracken_200807"` (the
+   1960, 2845]`, legacy word-wise hash = `1860369106084231363`. Prefer `bib_key = "Bracken_200807"` (the
    family's origin) with `source` citing this paper's Table 2 as the n=12 instance.
 
-**Caveat:** these LUT values come from a C re-implementation of `gf_mul`/`gf_pow` validated
+**Historical caveat (superseded by F060 Julia revalidation):** these LUT values came from a C re-implementation of `gf_mul`/`gf_pow` validated
 against the VBF docstring examples, **not** from Julia. Regenerate with `terms_to_lut` and match
 the fingerprints above before writing any TOML.
 

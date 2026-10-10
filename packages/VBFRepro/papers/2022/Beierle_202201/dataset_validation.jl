@@ -19,12 +19,18 @@ const _DATASETS = [
 Count functions in each dataset file and verify every line has 2^n entries.
 Beierle–Leander (2022), Results section (headline counts).
 """
-function dataset_counts(io::IO = stdout; save_results::Bool = false)
+function dataset_counts(io::IO = stdout; save_results::Bool = false, input_dir::AbstractString = joinpath(@__DIR__, "inputs"))
     print_section("dataset-counts", io)
     results = []
     all_ok = true
     for (fname, n, expected) in _DATASETS
-        path = joinpath(@__DIR__, "inputs", fname)
+        path = joinpath(input_dir, fname)
+        if !isfile(path)
+            print_kv("n=$n", "INCONCLUSIVE: source unavailable ($path)", io)
+            all_ok = false
+            push!(results, (; file = fname, n, status = :unavailable, ok = false))
+            continue
+        end
         expected_len = 1 << n
         count = 0
         malformed = 0
@@ -54,6 +60,12 @@ function dataset_counts(io::IO = stdout; save_results::Bool = false)
             println(f, "# dataset_counts results")
             for r in results
                 println(f, "[[result]]")
+                if hasproperty(r, :status)
+                    println(f, "file = \"$(r.file)\"")
+                    println(f, "n = $(r.n)")
+                    println(f, "status = \"$(r.status)\"")
+                    continue
+                end
                 println(f, "file = \"$(r.file)\"")
                 println(f, "n = $(r.n)")
                 println(f, "count = $(r.count)")
@@ -63,7 +75,8 @@ function dataset_counts(io::IO = stdout; save_results::Bool = false)
             end
         end
     end
-    return (; results, all_ok)
+    status = all_ok ? :passed : any(r -> hasproperty(r, :status) && r.status == :unavailable, results) ? :inconclusive : :failed
+    return (; results, all_ok, status)
 end
 
 """
@@ -79,12 +92,20 @@ function verify_apn(
     sample_size::Int = 100,
     full_search::Bool = false,
     save_results::Bool = false,
+    input_dir::AbstractString = joinpath(@__DIR__, "inputs"),
 )
+    sample_size > 0 || full_search || throw(ArgumentError("sample_size must be positive unless full_search=true"))
     print_section("apn-verification", io)
     results = []
     all_ok = true
     for (fname, n, total) in _DATASETS
-        path = joinpath(@__DIR__, "inputs", fname)
+        path = joinpath(input_dir, fname)
+        if !isfile(path)
+            print_kv("n=$n", "INCONCLUSIVE: source unavailable ($path)", io)
+            all_ok = false
+            push!(results, (; file = fname, n, status = :unavailable, ok = false))
+            continue
+        end
         exhaustive = (n >= 9) || full_search
         limit = exhaustive ? typemax(Int) : sample_size
         checked = 0
@@ -95,7 +116,7 @@ function verify_apn(
             end
             checked += 1
         end
-        ok = isempty(failures)
+        ok = checked > 0 && isempty(failures)
         all_ok = all_ok && ok
         mode = exhaustive ? "exhaustive" : "sampled ($checked / $total)"
         print_kv("file", fname, io)
@@ -113,6 +134,12 @@ function verify_apn(
             println(f, "# verify_apn results")
             for r in results
                 println(f, "[[result]]")
+                if hasproperty(r, :status)
+                    println(f, "file = \"$(r.file)\"")
+                    println(f, "n = $(r.n)")
+                    println(f, "status = \"$(r.status)\"")
+                    continue
+                end
                 println(f, "file = \"$(r.file)\"")
                 println(f, "n = $(r.n)")
                 println(f, "checked = $(r.checked)")
@@ -122,7 +149,8 @@ function verify_apn(
             end
         end
     end
-    return (; results, all_ok)
+    status = all_ok ? :passed : any(r -> hasproperty(r, :status) && r.status == :unavailable, results) ? :inconclusive : :failed
+    return (; results, all_ok, status)
 end
 
 """
@@ -138,12 +166,20 @@ function verify_quadratic(
     sample_size::Int = 100,
     full_search::Bool = false,
     save_results::Bool = false,
+    input_dir::AbstractString = joinpath(@__DIR__, "inputs"),
 )
+    sample_size > 0 || full_search || throw(ArgumentError("sample_size must be positive unless full_search=true"))
     print_section("quadratic-degree", io)
     results = []
     all_ok = true
     for (fname, n, total) in _DATASETS
-        path = joinpath(@__DIR__, "inputs", fname)
+        path = joinpath(input_dir, fname)
+        if !isfile(path)
+            print_kv("n=$n", "INCONCLUSIVE: source unavailable ($path)", io)
+            all_ok = false
+            push!(results, (; file = fname, n, status = :unavailable, ok = false))
+            continue
+        end
         exhaustive = (n >= 9) || full_search
         limit = exhaustive ? typemax(Int) : sample_size
         checked = 0
@@ -154,7 +190,7 @@ function verify_quadratic(
             end
             checked += 1
         end
-        ok = isempty(failures)
+        ok = checked > 0 && isempty(failures)
         all_ok = all_ok && ok
         mode = exhaustive ? "exhaustive" : "sampled ($checked / $total)"
         print_kv("file", fname, io)
@@ -172,6 +208,12 @@ function verify_quadratic(
             println(f, "# verify_quadratic results")
             for r in results
                 println(f, "[[result]]")
+                if hasproperty(r, :status)
+                    println(f, "file = \"$(r.file)\"")
+                    println(f, "n = $(r.n)")
+                    println(f, "status = \"$(r.status)\"")
+                    continue
+                end
                 println(f, "file = \"$(r.file)\"")
                 println(f, "n = $(r.n)")
                 println(f, "checked = $(r.checked)")
@@ -181,5 +223,6 @@ function verify_quadratic(
             end
         end
     end
-    return (; results, all_ok)
+    status = all_ok ? :passed : any(r -> hasproperty(r, :status) && r.status == :unavailable, results) ? :inconclusive : :failed
+    return (; results, all_ok, status)
 end

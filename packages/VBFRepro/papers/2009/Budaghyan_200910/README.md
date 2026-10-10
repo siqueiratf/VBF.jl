@@ -1,5 +1,8 @@
 # Budaghyan, Carlet & Leander (2009) — On a construction of quadratic APN functions
 
+Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 81 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Budaghyan_200910/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. Historical catalog-gap LUT proposals were regenerated through Julia; see [F060 evidence](../../../../../audit/revalidated_luts.toml). This verifies their APN property and exact encodings; it does not establish novelty against the current reference corpus.
+
+
 - **Citation:** L. Budaghyan, C. Carlet, G. Leander, "On a construction of quadratic APN
   functions", *Proc. IEEE Information Theory Workshop (ITW)*, pp. 374–378, 2009.
 - **Reproduction path:** `packages/VBFRepro/papers/2009/Budaghyan_200910/`

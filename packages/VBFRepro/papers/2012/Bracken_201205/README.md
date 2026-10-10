@@ -1,5 +1,8 @@
 # Bracken, Tan & Tan (2012) — Binomial differentially 4 uniform permutations with high nonlinearity
 
+Current audit application (2026-10-10): F070: the existing n=30 streaming/rank checks were revalidated as bounded evidence. Descriptions now say sampled computational evidence, not sampled proof of global differential uniformity. The full injectivity scan, all nonzero derivative rows and n=30 Walsh spectrum remain unverified locally.
+
+
 - **Citation:** C. Bracken, C.H. Tan, Y. Tan, "Binomial differentially 4 uniform permutations with
   high nonlinearity", *Finite Fields Appl.* 18:537–546, 2012.
 - **Reproduction path:** `packages/VBFRepro/papers/2012/Bracken_201205/`
@@ -9,7 +12,7 @@
   under `full_search = true`; Lemma 3.1 is checked as a *spectrum* and Theorem 1.1 as a Walsh
   *value set*, not as a maximum and a bound; Table 1, the Section 5 CCZ remarks and Problem 5.1
   are implemented; and the title claim is exhibited at its smallest genuine instance
-  (`k=10, s=2`, n=30) as a **sampled proof** of the differential half plus a budgeted prefix
+  (`k=10, s=2`, n=30) as a **sampled computational evidence** of the differential half plus a budgeted prefix
   scan of the permutation half. What remains transcribed is named as such: the Walsh spectrum
   at n=30, the Section 1 general family `G`, and the t=2 CCZ-inequivalence the paper itself
   only "expects".
@@ -419,7 +422,7 @@ Defects introduced in our implementation. **All 11 are `[RESOLVED]`** as of 2026
 | **Lemma 4.1** (≤ `2^d` roots) | `section4.jl` `lemma4_1_check` | 8 seeded random trials over `n ∈ {6,8,9}`, `d ≤ 3`; all inside the bound |
 | **Lemma 4.2** (Walsh bound) | `section4.jl` `SECTION4_CASES` | asserted on the `k/t` odd rows it covers; bounds 4, 16, 256, 256, 1024 all **attained** |
 | **Theorem 1.1** Walsh *set* `⊆ {0,±2^{n/2},±2^{(n+2)/2}}` | `section4.jl`, `section5.jl` | n=6: `{0,±16} ⊆ {0,±8,±16}` |
-| **Theorem 1.1** at its smallest genuine instance, n=30 | `theorem1_1.jl` | α primitive verified; `dim ker B_a = t = 2` on 2000 random `a` (**sampled proof** of `Δ_F = 4`, spectrum `{0,4}`); injective on a budgeted prefix |
+| **Theorem 1.1** at its smallest genuine instance, n=30 | `theorem1_1.jl` | α primitive verified; `dim ker B_a = t = 2` on 2000 random `a` (**sampled computational evidence** of `Δ_F = 4`, spectrum `{0,4}`); injective on a budgeted prefix |
 | **Table 1** (all 4 prior rows + this paper's) | `section5.jl` | every row recomputed: perm, du = 4, degree, linearity, nonlinearity, Walsh set |
 | **Section 5** CCZ separation from the inverse | `section5.jl` | `Walsh-set(inverse@6) ⊄ {0,±8,±16}` while `Walsh-set(F@6) ⊆ {0,±8,±16}` |
 | **Problem 5.1** (open problem) | `problem5_1.jl` | permutation half **refuted** at t=1 over all 993 `(v,w)` and six primitive `u`; differential half supported on every sample |

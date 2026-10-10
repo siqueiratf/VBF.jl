@@ -7,6 +7,7 @@ include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../../paper.mk
 limit           ?= 2147483647
 max_evaluations ?= 1048576
 save_results    ?= false
+reps            ?= min_log
 
 default: help
 
@@ -43,12 +44,12 @@ table1:
 table2:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "table2.jl")); \
-	   table2_report(; max_n=7, max_evaluations=$(max_evaluations))'
+	   table2_report(; max_n=7, max_evaluations=$(max_evaluations), reps=:$(reps))'
 
 table2_n7:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "table2.jl")); \
-	   table2_report(; max_n=7, max_evaluations=1<<24)'
+	   table2_report(; max_n=7, max_evaluations=1<<24, reps=:$(reps))'
 
 algorithm3:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/algorithm3.jl

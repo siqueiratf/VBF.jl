@@ -15,6 +15,11 @@
     @test r8.du == 4
     @test r8.n_subsp == 2
 
+    stopped = theorem7_verify(7; max_nodes=0, io=devnull)
+    @test !stopped.complete
+    @test stopped.n_subsp === nothing
+    @test stopped.outcome isa BudgetHit
+
     # Theorem 8 for n=5: Kasami x^15
     t8 = theorem8_verify_n5(; io = devnull)
     @test t8.n_subsp <= 2
@@ -59,13 +64,14 @@
     # Non-Gold classes per dimension, keyed by cyclotomic-coset minimum:
     #   n=5: x^15 (≃ x^{-1});  n=7: x^13→11, x^57→23, x^63;
     #   n=8: x^57→39 (not a permutation);  n=9: x^13, x^19, x^241→47, x^255.
-    ng(n) = Dict(c.rep => c.ea_classes for c in apn_power_ccz_classes(n) if !c.gold)
+    ng(n) = Dict(c.rep => c.predicted_ea_classes for c in apn_power_ccz_classes(n) if !c.gold)
     @test ng(5) == Dict(15 => 1)
     @test ng(7) == Dict(11 => 2, 23 => 2, 63 => 1)   # 23 = coset(57): paper says 1 (P1)
     @test ng(8) == Dict(39 => 1)
     @test ng(9) == Dict(13 => 2, 19 => 2, 47 => 2, 255 => 1)
     for n = 5:9
         r = theorem8_census(n; io = devnull)
+        @test !r.exact_class_count_established
         @test r.ok                                   # matches Remarks 5-7 / Tables 2-4
     end
 end

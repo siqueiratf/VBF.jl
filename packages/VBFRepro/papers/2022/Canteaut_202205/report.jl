@@ -18,6 +18,7 @@ include(joinpath(@__DIR__, "algorithm1.jl"))
 include(joinpath(@__DIR__, "proposition35_36.jl"))
 include(joinpath(@__DIR__, "section4_3.jl"))
 include(joinpath(@__DIR__, "section4_4.jl"))
+include(joinpath(@__DIR__, "section4_5.jl"))
 
 """
     paper_report(io; n_values, verify_min_ea) -> NamedTuple
@@ -41,8 +42,8 @@ Reproduction scope:
   - Tables 3–4 (running times of the authors' Sage implementation) — SKIPPED
     (hardware-specific timings, not mathematical claims; our own timings are
     printed by algorithm1_report)
-  - Section 4.5 (21,102 8-bit functions) — SKIPPED (corpus not in repo;
-    ≈ hours of ortho-derivative bucketing)
+  - Section 4.5 — bounded validation of the available 21,102-member corpus;
+    full spectrum/signature scan is an explicit section4_5 Make target
 """
 function paper_report(
     io::IO = stdout;
@@ -63,6 +64,7 @@ function paper_report(
     r_p35 = proposition35_36_report(; io)
     r_s43 = section4_3_report(; io)
     r_s44 = section4_4_report(; io, verify_min_ea)
+    r_s45 = section4_5_report(; limit=16, io)
 
     print_section("Summary", io)
     print_check("Prop 14 + Cor 15: derivative identities of Jac_lin", r_p14.all_ok, io)
@@ -79,7 +81,7 @@ function paper_report(
     overall = r_p14.all_ok && r_p16.all_ok && r_p18.all_ok && r_p22.all_ok &&
               r_c24.all_ok && r_p25.all_ok && r_alg1.all_ok && r_p35.all_ok &&
               r_s43.all_ok && r_s44.all_ok
-    print_check("Overall reproduction", overall, io)
+    print_check("Overall implemented bounded checks (see individual scopes)", overall, io)
 
     return (;
         proposition14 = r_p14,
@@ -92,6 +94,7 @@ function paper_report(
         proposition35_36 = r_p35,
         section4_3 = r_s43,
         section4_4 = r_s44,
+        section4_5 = r_s45,
         overall,
     )
 end

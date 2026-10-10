@@ -1,5 +1,30 @@
 # Yu_202512 — Classification of Quadratic APN Functions with Coefficients in F₂ in Dimension 10
 
+## Audit corrections (2026-10-10)
+
+F004: `fn_set` now exposes `reps=:min_value` and `:min_log`; Algorithm 3
+and Table 2 record the selected convention. Exhausting the finite restricted
+spaces gives `(1,117)` under minimum integer value and `(4,78)` under minimum
+discrete logarithm at `n=(6,7)`. The latter is the explicit default and matches
+the printed counts; the paper's Definition 2 does **not** specify which
+representatives the authors used. This agreement does not resolve that missing
+information or certify unrestricted class coverage. DFS now stops on its
+actual evaluation budget and reports exhaustion only after traversal finishes.
+Table 2 `n≥8` remains **UNREPRODUCED** by the bounded report.
+
+F005: Table 3 uses the combined ortho-derivative differential **and Walsh**
+mugshot. All six verified quadratic APNs have distinct combined invariants;
+`x³` and `x³³` collide under the previous DDT-only filter. Unequal invariants
+prove inequivalence for these verified quadratic APNs; equal invariants would
+require an equivalence witness or a complete solver. This establishes six
+classes, not an exhaustive classification at `n=11`.
+
+The supplied LaTeX prints **x³** in Tables 1 and 3. Older reproduction notes
+accusing it of printing x⁴ were incorrect and have been removed from the active
+code. Historical review descriptions below are superseded where they disagree
+with these corrections.
+
+
 **Paper**: Yu, Li, Ichanska, Kaleyski. "Classification of quadratic APN functions with
 coefficients in `F₂` in dimension 10." 2025.
 

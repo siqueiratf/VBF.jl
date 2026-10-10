@@ -13,7 +13,7 @@
 #               ortho_derivative, differential_spectrum, sorted_pairs, absolute_walsh_spectrum
 
 include(joinpath(@__DIR__, "helpers.jl"))
-using VBFCatalog
+using VBFCatalog, VBFSearch, TOML, SHA
 
 const _N8_MOD = conway_polynomial(8)
 
@@ -36,6 +36,37 @@ Expected ODDS for the new function (Table 11, index 10):
 [0^38196, 2^22008, 4^4608, 6^456, 8^12]
 """
 expected_odds_new() = Dict(0 => 38196, 2 => 22008, 4 => 4608, 6 => 456, 8 => 12)
+
+"""Verify the fixed EA graph witness to catalog Weng–Tan–Gong member 9.
+
+The polynomial and both LUTs are mathematical data. Attribution to the 2013
+publication depends on the catalog's source provenance; graph equivalence itself
+is verified at every point independently of the equivalence search algorithm.
+"""
+function section5_1_prior_art()
+    evidence = TOML.parsefile(joinpath(@__DIR__,"tests","fixtures","prior_art_ea.toml"))
+    F = new_function_n8_m2()
+    G = Int.(hex2bytes(evidence["target_lut_hex"]))
+    Int.(F.lut) == Int.(hex2bytes(evidence["candidate_lut_hex"])) || error("candidate differs from witness fixture")
+    bytes2hex(sha256(UInt8.(G))) == evidence["target_sha256"] || error("reference fixture digest mismatch")
+    columns, constant = evidence["graph_map_columns"], evidence["graph_map_constant"]
+    witness_verified = verify_ea_witness(Int.(F.lut), G, columns, constant)
+    witness_verified || error("invalid prior-art EA graph witness")
+    source_available = isfile(corpus_store_path("wengtangong2013_n8"))
+    if source_available
+        db = load_catalog()
+        try
+            current = corpus_function(db,"wengtangong2013_n8",9)
+            Int.(current.lut) == G || error("catalog member changed; prior-art attribution must be re-audited")
+        finally
+            close(db)
+        end
+    end
+    return (;witness_verified, reference="wengtangong2013_n8", member=9,
+             attributed_bib_key="WengTanGong_201300", source_available,
+             columns, constant, target_lut=G,
+             conclusion="EA/CCZ equivalent to the stored reference; 2013 attribution follows catalog provenance")
+end
 
 function section5_1_report(io::IO = stdout)
     print_section(io, "Section 5.1: New APN function in dimension 8 (Table 5)")
@@ -71,14 +102,22 @@ function section5_1_report(io::IO = stdout)
                 ds.counts != ds_gold3.counts)
 
     println(io)
-    print_kv(io, "Note on full 27-class classification",
-             "Requires Simon-Berg thesis data (not available locally). " *
-             "Table 10 lists 27 CCZ-class representatives; Table 11 lists their ODDS. " *
-             "All 196863 found APN functions verified pairwise CCZ-inequivalent via ODDS.")
-    print_kv(io, "Γ-rank = 14034", "out of scope (needs Magma)")
-    print_kv(io, "Δ-rank = 438",   "out of scope (n=8 needs ~512 MB — not supported in VBF.jl)")
+    prior_art = section5_1_prior_art()
+    print_check(io,"EA graph witness to Weng–Tan–Gong reference member 9 (all 256 points)", prior_art.witness_verified)
+    print_kv(io,"reference source", prior_art.source_available ? "current corpus matches recorded LUT" : "corpus unavailable; stored reference LUT only")
+    print_kv(io,"novelty", prior_art.conclusion)
+    db = load_catalog()
+    signatures = try
+        [sorted_pairs(odds(load_sbox(db,"SimonBerg_GF4_n8_class_$k"))) for k in 1:27]
+    finally
+        close(db)
+    end
+    print_check(io,"27 catalog representatives have pairwise distinct ODDS", length(Set(signatures)) == 27)
+    print_kv(io,"scope", "27 reference representatives; 196863 total functions are not pairwise inequivalent")
+    print_kv(io, "published Γ-rank = 14034", "not computed in this bounded report; gamma_rank requires explicit n=8 opt-in and memory/time budgets")
+    print_kv(io, "published Δ-rank = 438", "not computed in this bounded report; delta_rank requires explicit n=8 opt-in and memory/time budgets")
     print_kv(io, "|M(G_F)| = 3072","out of scope (needs Magma)")
-    print_kv(io, "completeness", "exact for new function; full 27-class table requires Simon-Berg repo")
+    print_kv(io, "completeness", "exact for new function; 27 reference signatures and prior-art EA witness checked; exhaustive discovery not rerun")
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

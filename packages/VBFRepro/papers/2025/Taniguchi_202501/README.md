@@ -7,20 +7,35 @@ of small codimensions." 2025.
 
 **Verdict**: Mostly complete
 
-Everything implemented reproduces exactly and survives independent re-derivation. Two items
-previously declared out of scope turn out to be tractable, and running them changed the
-picture: the n=6 count in Example 3.3 **contradicts the paper's stated figure**, and the
-Γ-rank claim of Example 4.2 **verifies in 85 seconds**, so the paper's only stated
-inequivalence evidence is now fully reproduced rather than merely transcribed.
+Current audit (2026-10-10): the implemented formula/property checks pass.
+`prior_art.jl` now independently replays an explicit EA witness between
+Example4.2 and Budaghyan–Carlet–Leander2009 eq.(6), a=alpha, modulus285, at all256
+points. The example is separated from Gold yet belongs to a class published in
+2009. This attribution already exists in the catalog; no catalog writes were
+needed. `prior_art_witness(recover=true)` performs bounded witness recovery.
 
-> **Re-review 2026-08-15, Julia 1.12.6**: the suite now executes (50/50 pass, exit 0) and
-> every implemented item passes. One claim from the previous revision is **reversed**: the
-> Γ-rank of Example 4.2 is *not* computable with the repository's own tooling at n=8 — see
-> reproduction issue 12.
+The cross-paper Edel–Pott attribution is now also verified explicitly:
+Table 9 entry 1.3 is `x^3 + u Tr(u^63 x^3 + u^252 x^9)` over the paper's
+Table 2 field (modulus 285, primitive `u=2`). An independent EA witness maps
+Example 4.2 to this primary-source formula. Its displayed alternate polynomial
+`x^3 + u^245 x^33 + u^183 x^66 + u^21 x^144` is byte-identical to corpus
+`edelpott2009_n8` member 5, located by a full LUT scan rather than assumed
+numbering; a second replayed EA witness binds the primary formula to that
+alternate representative. `edel_pott_prior_art_witness(recover=true)` provides
+bounded recovery. Both maps and exact LUT bindings reside in the existing
+prior-art fixture. These are positive proofs, beyond matching spectra.
 
-> **Supersedes a previous revision** on two points, both corrected below: the catalog status
-> (the Example 4.2 entry **exists**) and the Γ-rank feasibility (it is **computable**, and
-> correct).
+The table-driven `count_valid_L_bounded` precomputes field and bilinear tables,
+records modulus, trace-one e0, normalizationL(e0)=0, explored interval, next
+index, and exhaustion status. n4=448 and n5=4608 were recomputed. n6 has2^30
+candidates; a partial count does not validate the historical external value35648
+or the publication's approximate40000. Run `make theorem3_2 n=6` for a bounded
+check, or opt in with `full_search=true` and an explicit time budget. Intervals
+can continue using the returned next_index. n6 enumeration and Gamma-rank
+verification have **not** been rerun in this audit.
+
+The dated review below is retained as historical context; older external-run
+claims, line numbers, and proposed fixes are not current validation evidence.
 
 ---
 

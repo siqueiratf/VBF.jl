@@ -42,50 +42,25 @@ reproduced). Repo verifies properties of hand-provided representatives, not the 
 - theorem4.jl non-permutation assertion "!res.perm == !expected_perm[...]" is obfuscated
   (works only because all expected are false).
 
-## Catalog status — WITHDRAWN 2026-08-19
+## Catalog status — withdrawn and superseded
 
-**The four catalog-gap records below are withdrawn. Do not write them.** They are
-superseded by `FINDINGS.md` in this same directory, which refutes the paper's central
-novelty claim, and by a direct re-check against the current catalog.
+The four former catalog-gap proposals have been removed. Absence from the small
+catalog used by the original review never proved literature novelty; a later
+signature match only located reference candidates.
 
-The original records were not wrong when written; they went stale. They were written
-when `n8_apn.toml` held only `n8_Gold_x3`, `n8_Gold_x9` and `n8_Kasami_x57`, so
-"no sigma match to any n=8 catalog entry" was a statement about three functions. The
-catalog has since gained the `APN-rep`, `CCZ-rep-GF4`, `known-family` and
-`known-sporadic` populations, and every one of the six representatives now matches:
+The current evidence is stronger: `theorem6_exact.jl` independently replays an
+explicit EA graph map for each artifact representative against the tracked
+Edel–Pott 2009 corpus. The pairings are A→18, B→5, C→3, D→4. Saved witnesses bind
+both exact LUTs and provide 16 ambient columns and an affine constant; the
+stdlib-only verifier checks rank, EA block structure, input/output bijections,
+and the identity on all 256 points. Bounded native recovery is also tested.
+These positive witnesses establish EA-equivalence and therefore CCZ-equivalence.
+No new equivalence class should be added for these four representatives.
 
-| representative | `classify_ccz` verdict | matches |
-|---|---|---|
-| CLASS-A | `(:sigma_match, "functions", 566)` | `reprs8_17` (`APN-rep`) |
-| CLASS-B | `(:sigma_match, "functions", 553)` | `reprs8_4` (`APN-rep`) |
-| CLASS-C | `(:sigma_match, "functions", 586)` | `SimonBerg_GF4_n8_class_5` (`CCZ-rep-GF4`) |
-| CLASS-D | `(:sigma_match, "functions", 585)` | `SimonBerg_GF4_n8_class_4` (`CCZ-rep-GF4`) |
-| CLASS-E | `(:sigma_match, "functions", 41)` | `n8_Gold_x3` |
-| CLASS-F | `(:sigma_match, "functions", 42)` | `n8_Gold_x9` |
-
-Reproduce with `classify_ccz(F)` on `representative_sboxes()` from `helpers.jl`; all six
-are `du = 2`, `deg = 2`. No representative returns `:new`. A sigma match is a necessary
-condition for CCZ-equivalence and not a decision, so this refutes novelty without
-identifying the class; `FINDINGS.md` identifies it, mapping CLASS-A/B/C/D to Edel-Pott
-(2009) Table 9 functions 2.1, 1.3, 1.2 and 1.11 by the paper's own published sigma-hashes.
-
-Two further reasons the records must not be written as they stand:
-
-- `bib_key="Kuznetsov_202606"` does not exist. `data-raw/bibliography.bib` has
-  `Kuznetsov_202600`. The catalog gate rejects a `bib_key` with no bibliography row.
-- The catalog admits a CCZ-duplicate only under a name that does not assert novelty.
-  These four would have entered as new classes.
-
-The withdrawn records, kept for the audit trail:
-
-```
-Catalog-gap records (LUTs = repo helpers.jl class_a..d; n=8,m=8,is_permutation=false;
-bib_key="Kuznetsov_202606"; target packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml):
-- n8_Kuznetsov2026_classA  sigma-hash 9d95d9c4a5e2dfdd  (in V_A)
-- n8_Kuznetsov2026_classB  sigma-hash c5f52f5659346f9f  (outside V_A)
-- n8_Kuznetsov2026_classC  sigma-hash 74a30c1a17d45761  (outside V_A)
-- n8_Kuznetsov2026_classD  sigma-hash 024ba500f4bac35b  (outside V_A)
-```
+The older test counts and missing-feature discussion above are historical.
+Current scope and commands appear in the paper README. In particular, named
+signature sources that are missing or incompletely indexed are **inconclusive**,
+not evidence that Theorem6's literal inequivalences all hold.
 
 ## Library-reuse audit
 Duplicates of VBF core (flag):

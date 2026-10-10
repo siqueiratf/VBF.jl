@@ -1,5 +1,22 @@
 # Zha_201401 — Constructing new differentially 4-uniform permutations from the inverse function
 
+## Audit corrections (2026-10-10)
+
+F014 now has executable evidence separate from the printed Table 1.
+Row 3 is pinned at NL=110 and differential spectrum
+`{0:33111,2:31698,4:471}` for every nonzero GF(4) scalar under both field
+representations, against the printed NL=108 and repeated row-4 spectrum.
+`TABLE1_PUBLISHED` preserves the paper's values while the report explicitly
+shows the mismatch. Equal NL=110 invalidates the paper's stated nonlinearity
+separation from reference [16]; it does **not** establish CCZ equivalence.
+A concrete earlier inverse-swap control, `Yuyin_201300.inverse_swap(1,32,8)`
+with modulus 283, has du=4 and NL=110 but a different differential spectrum,
+proving separation from that one reference. Separation from the entire cited
+family and the headline literature novelty claim remain unresolved. The cube
+root helper now selects a verified primitive element rather than assuming
+integer 2 generates the multiplicative group.
+
+
 **Citation**: Z. Zha, L. Hu, S. Sun, *Constructing new differentially 4-uniform
 permutations from the inverse function*, Finite Fields and Their Applications
 25:64–71 (2014).

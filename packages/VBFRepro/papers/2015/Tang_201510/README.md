@@ -1,5 +1,8 @@
 # Tang_201510 — Differentially 4-Uniform Bijections by Permuting the Inverse Function
 
+Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 77 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Tang_201510/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions.
+
+
 **Citation**: D. Tang, C. Carlet, X. Tang, *Differentially 4-uniform bijections
 by permuting the inverse function*, Designs, Codes and Cryptography 77:117–141
 (2015).

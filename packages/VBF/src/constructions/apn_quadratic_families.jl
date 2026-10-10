@@ -13,7 +13,7 @@ only in the divisor `p` of `n` and the parameter conditions:
 | BCP    | Budaghyan–Carlet–Pott 2006      | 3k   | `gcd(k,3)=gcd(s,3k)=1`, `i=s·k mod 3`, `t=3−i`, `g₁≠g₂` | `2^{2k}+2ᵏ+1`        |
 | BCL    | Budaghyan–Carlet–Leander 2008   | 4k   | `gcd(k,2)=gcd(s,2k)=1`, `s≤4k−1`, `i=s·k mod 4`, `t=4−i` | `2^{3k}+2^{2k}+2ᵏ+1` |
 
-Here `α = 2` is the primitive element of the canonical representation, so a `w`
+Here `α = gf_primitive_element(n; modulus)` is a verified multiplicative generator, so a `w`
 of order `2^{2k}+2ᵏ+1` (resp. `2^{3k}+2^{2k}+2ᵏ+1`) is `α^{2ᵏ−1}` — a non-`(2ᵏ−1)`-th
 power, as required by the papers. The `g₁ ≠ g₂` test of the BCP family is
 
@@ -62,7 +62,7 @@ The quadratic APN binomial over `GF(2^{3k})`
 
     F(x) = x^{2ˢ+1} + w · x^{2^{ik} + 2^{tk+s}},   i = s·k mod 3,  t = 3 − i,
 
-with `w = α^{2ᵏ−1}` (`α = 2`, so `w` has order `2^{2k}+2ᵏ+1`). This is the
+with `w = α^{2ᵏ−1}` (with a verified primitive `α`, so `w` has order `2^{2k}+2ᵏ+1`). This is the
 `n` divisible by `3` class: [Budaghyan–Carlet–Pott (2006)](@cite Budaghyan_200603),
 Theorem 2, refined as [Budaghyan–Carlet–Leander (2008)](@cite Budaghyan_200809),
 Theorem 1.
@@ -99,7 +99,7 @@ function bcp_apn(
             "bcp_apn: APN guarantee needs g₁ ≠ g₂, got g₁=g₂=$g1 (k=$kk, s=$ss)",
         ),
     )
-    w = gf_pow(2, (1 << kk) - 1, n; modulus = Int(modulus))  # order 2^{2k}+2ᵏ+1
+    w = gf_pow(gf_primitive_element(n; modulus), (1 << kk) - 1, n; modulus = Int(modulus))  # order 2^{2k}+2ᵏ+1
     SBox{n}(_apn_binomial_lut(n, ss, kk, i, t, w, Int(modulus)))
 end
 
@@ -110,7 +110,7 @@ The quadratic APN binomial over `GF(2^{4k})`
 
     F(x) = x^{2ˢ+1} + w · x^{2^{ik} + 2^{tk+s}},   i = s·k mod 4,  t = 4 − i,
 
-with `w = α^{2ᵏ−1}` (`α = 2`, so `w` has order `2^{3k}+2^{2k}+2ᵏ+1`). This is the
+with `w = α^{2ᵏ−1}` (with a verified primitive `α`, so `w` has order `2^{3k}+2^{2k}+2ᵏ+1`). This is the
 `n` divisible by `4` class: [Budaghyan–Carlet–Leander (2008)](@cite Budaghyan_200809),
 Theorem 2.
 
@@ -142,6 +142,6 @@ function bcl_apn(
     )
     t = 4 - i
     # order 2^{3k} + 2^{2k} + 2ᵏ + 1
-    w = gf_pow(2, (1 << kk) - 1, n; modulus = Int(modulus))
+    w = gf_pow(gf_primitive_element(n; modulus), (1 << kk) - 1, n; modulus = Int(modulus))
     SBox{n}(_apn_binomial_lut(n, ss, kk, i, t, w, Int(modulus)))
 end
