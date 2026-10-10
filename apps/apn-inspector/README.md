@@ -7,6 +7,12 @@ It does not label a signature hit “KNOWN” or corpus absence “literature-ne
 
 ## Run and inspect
 
+To use the inspector inside the documentation, run `make -C docs serve` and
+open `http://127.0.0.1:8088/docs/`. Select **APN inspector** in the sidebar.
+See the [documentation page](../../docs/src/inspector.md) for the walkthrough.
+The published site shows the same interface; validation requires the local
+Julia backend. The browser contacts only the origin serving the page.
+
 From the repository root:
 
 ```sh
@@ -25,6 +31,11 @@ catalog and old sigma index to retrieve named reference functions, plus
 fresh, digest-checked reference controls corpus-absence conclusions. Missing
 or changed provenance stops initialization rather than silently using an old
 baseline. Package/environment setup is local to `apps/apn-inspector/`.
+The shared browser interface lives in `docs/src/assets/apn-inspector.html`;
+the server serves it at `/` (or `/inspector/` when docs are enabled).
+To serve already-built docs, use `make -C apps/apn-inspector serve
+docs=/absolute/path/to/docs/build`. `/docs/` serves only that build directory;
+the same server provides `/api/` for the embedded inspector.
 
 1. Paste a function in the first box and select **Validate and compare with
    corpus**. Input can be 256 integers 0..255 (F(0) first), 56 hexadecimal ANF
