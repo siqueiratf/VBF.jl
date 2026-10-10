@@ -14,11 +14,9 @@ end
 
 function is_permutation_tuple(A::FqMatrix, B::FqMatrix)
     @assert size(A) == size(B) "A and B must have the same dimensions"
-    n = nrows(A)
-    for i in 0:(1 << n - 1)
-        check_order_space(A, i) != check_order_space(B, i) && return false
-    end
-    true
+    # Fixed points of M^i are exactly the cycles whose lengths divide i.
+    # Equal cycle multisets therefore certify every Ord dimension at once.
+    matrix_cycle_structure(A) == matrix_cycle_structure(B)
 end
 
 function same_multiplicative_order(A::FqMatrix, B::FqMatrix)
@@ -122,12 +120,47 @@ function filter_permutation_tuples(pairs::Vector{Tuple{T, T}}) where T <: FqMatr
     filter(pair -> is_permutation_tuple(pair[1], pair[2]), pairs)
 end
 
+"""Prime-order similarity signature; charpoly suffices only for odd prime order."""
+function prime_order_power_signatures(A::FqMatrix)
+    p = _matrix_multiplicative_order(A)
+    Nemo.is_prime(p) || throw(ArgumentError("prime-order matrix required"))
+    if p == 2
+        return [(p, rank(A - identity_matrix(base_ring(A), nrows(A))))]
+    end
+    power = A
+    signatures = Tuple[]
+    for i in 1:(p-1)
+        polynomial = charpoly(power)
+        push!(signatures, (p, Tuple((iszero(coeff(polynomial,j)) ? 0 : 1) for j in 0:degree(polynomial))))
+        power *= A
+    end
+    signatures
+end
+
+"""
+Canonical Definition3 class key: simultaneous nonzero powers, plus swapped
+inverse powers. Odd prime-order matrices are semisimple (X^p-1 is squarefree);
+for order2, involution similarity is determined by rank(M-I). No general matrix
+similarity or APN-class classification is asserted.
+"""
+function extended_power_class_key(a, b)
+    length(a) == length(b) || throw(ArgumentError("power orders differ"))
+    minimum(vcat([(a[i],b[i]) for i in eachindex(a)],
+                 [(b[i],a[i]) for i in eachindex(a)]))
+end
+
 function gen_permutation_tuples(n::Int)::Vector{Tuple{FqMatrix, FqMatrix}}
     rcfs = get_rcfs(n)
     prime_order_rcfs = filter(has_prime_multiplicative_order, rcfs)
-    candidates = candidate_pairs_with_same_cycle_structure(prime_order_rcfs)
-    representatives = remove_extended_power_similar_pairs(candidates)
-    filter_permutation_tuples(representatives)
+    signatures = [prime_order_power_signatures(A) for A in prime_order_rcfs]
+    cycles = matrix_cycle_structure.(prime_order_rcfs)
+    representatives = Dict{Tuple,Tuple{FqMatrix,FqMatrix}}()
+    for i in eachindex(prime_order_rcfs), j in eachindex(prime_order_rcfs)
+        cycles[i] == cycles[j] || continue
+        key = extended_power_class_key(signatures[i], signatures[j])
+        get!(representatives,key,(prime_order_rcfs[i],prime_order_rcfs[j]))
+    end
+    [representatives[k] for k in sort!(collect(keys(representatives)))]
 end
 
 """
@@ -164,6 +197,7 @@ function verify_generated_tuple_classes(n::Int, blocks)
     length(committed) == length(blocks) || return false
     known = [(_gf2_matrix(b.A,n), _gf2_matrix(b.B,n)) for b in committed]
     generated = [(_gf2_matrix(b.A,n), _gf2_matrix(b.B,n)) for b in blocks]
-    all(any(is_extended_power_similar(g, k) for k in known) for g in generated) &&
-        all(any(is_extended_power_similar(k, g) for g in generated) for k in known)
+    key(pair) = extended_power_class_key(prime_order_power_signatures(pair[1]),
+                                         prime_order_power_signatures(pair[2]))
+    Set(key.(generated)) == Set(key.(known))
 end

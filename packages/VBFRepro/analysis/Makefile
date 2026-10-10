@@ -16,10 +16,14 @@ figure_output ?= $(ROOT)/data/repro/analysis/figures
 crossings_csv ?= $(ROOT)/data/perf/archive/generated/benchmarks.csv
 crossings_meta ?= $(ROOT)/data/perf/archive/generated/benchmarks_meta.tex
 manuscript_config ?= $(ROOT)/manuscript/performance/manuscript.toml
+proposal_output ?= $(ROOT)/data/repro/audit/catalog_proposals.toml
+equivalence_timeout ?= 2
+max_equivalence_nodes ?= 100000
 METRICS = VBF_REPRO_ANALYSIS_OUTPUT="$(output)" $(RUN) $(HERE)reproductions/metrics.jl
 PERF = $(RUN) $(HERE)performance/run.jl
 PERFARGS = --database="$(input)" --output="$(performance_output)" --profiles="$(profiles)"
 .PHONY: help instantiate grades papers catalog corpus fast invariants all figures list consolidate inspect export plots test manuscript crossings
+.PHONY: review_catalog_proposals test_catalog_proposals
 instantiate:
 	$(RUN) -e 'using Pkg; Pkg.instantiate()'
 grades:
@@ -48,6 +52,10 @@ plots:
 	$(PERF) plots $(PERFARGS) --dataset=all
 test:
 	$(RUN) $(HERE)performance/test.jl
+review_catalog_proposals:
+	$(JULIA) --startup-file=no --project=$(ROOT) $(HERE)scripts/review_catalog_proposals.jl "$(proposal_output)" $(equivalence_timeout) $(max_equivalence_nodes)
+test_catalog_proposals:
+	$(JULIA) --startup-file=no --project=$(ROOT) $(HERE)test/test_catalog_proposals.jl
 manuscript:
 	$(RUN) $(HERE)performance/manuscript.jl "$(figure_output)" "$(manuscript_config)" "$(input)"
 crossings:
@@ -55,6 +63,7 @@ crossings:
 help:
 	@echo 'VBFRepro analysis: instantiate; grades; fast; invariants; figures; list'
 	@echo 'Performance: consolidate; inspect; export; plots; test'
+	@echo 'Read-only audit: review_catalog_proposals; test_catalog_proposals (root environment)'
 	@echo 'Parameters: input=measurement-directory-or-legacy-SQLite output=DIR performance_output=DIR'
 	@echo 'Presentation: figure_output=DIR manuscript_config=PATH; legacy manuscript/crossings targets'
 	@echo 'No analysis target runs a performance suite or changes the catalog.'

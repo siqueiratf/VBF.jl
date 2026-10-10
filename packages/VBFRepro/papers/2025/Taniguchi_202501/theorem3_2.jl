@@ -113,9 +113,15 @@ function theorem3_2_report(io::IO = stdout; n::Int = 5, full_search::Bool = fals
     if r.exhaustive && n in (4, 5)
         print_check(io, "count matches Example 3.3", r.count == expected)
     elseif n == 6
-        print_kv(io, "publication claim", "approximately 40000; exact value 35648 is a historical external computation, not validated by a bounded run")
+        print_kv(io, "publication claim", "approximately 40000; this is not an exact published count")
+        if r.exhaustive
+            print_check(io, "exhaustive count agrees with historical exact count 35648", r.count == 35648)
+        else
+            print_kv(io, "exact count status", "unresolved by this bounded run; historical value 35648")
+        end
     end
-    merge(r, (; expected, match = r.exhaustive && n in (4,5) ? r.count == expected : missing))
+    merge(r, (; expected, match = r.exhaustive && n in (4,5) ? r.count == expected : missing,
+        historical_count_agreement = r.exhaustive && n == 6 ? r.count == 35648 : missing))
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

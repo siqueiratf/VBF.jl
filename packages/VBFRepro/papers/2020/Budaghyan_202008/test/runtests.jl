@@ -6,3 +6,7 @@ include("test_section5.jl")
 include("test_section6.jl")
 include("test_section7.jl")
 include("test_table1.jl")
+
+include("test_proposition_vi1.jl")
+
+include("test_section7d.jl")

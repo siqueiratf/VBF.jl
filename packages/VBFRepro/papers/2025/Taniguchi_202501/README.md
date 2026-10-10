@@ -25,14 +25,28 @@ alternate representative. `edel_pott_prior_art_witness(recover=true)` provides
 bounded recovery. Both maps and exact LUT bindings reside in the existing
 prior-art fixture. These are positive proofs, beyond matching spectra.
 
-The table-driven `count_valid_L_bounded` precomputes field and bilinear tables,
-records modulus, trace-one e0, normalizationL(e0)=0, explored interval, next
-index, and exhaustion status. n4=448 and n5=4608 were recomputed. n6 has2^30
-candidates; a partial count does not validate the historical external value35648
-or the publication's approximate40000. Run `make theorem3_2 n=6` for a bounded
-check, or opt in with `full_search=true` and an explicit time budget. Intervals
-can continue using the returned next_index. n6 enumeration and Gamma-rank
-verification have **not** been rerun in this audit.
+The table-driven `count_valid_L_bounded` records the field modulus, trace-one
+e0, normalization `L(e0)=0`, explored interval, next index, and exhaustion status.
+The full n=6 domain of **2^30 parameters** was exhausted independently under
+moduli **91 and 97**, yielding **35,648** valid mappings in each representation
+(e0=8 and e0=2 respectively). Recorded commands, source/input hashes and logs
+are under `data/repro/runs/Taniguchi_202501/`; the audit follow-up ledger identifies
+those runs. The publication says approximately 40,000, rather than supplying an
+exact count. This computation counts normalized mappings, not EA or CCZ classes.
+Independent set-based criterion and direct full-DDT checks agree with the table
+counter on deterministic n=4/n=6 coefficient samples. n4=448 and n5=4608 are also
+recomputed by the tests. Gamma-rank verification of Example 4.2 remains separate.
+
+```sh
+bin/vbfrepro run Taniguchi_202501 --target theorem3_2 --param n=6 \
+  --param modulus=91 --param full_search=true --param timeout_seconds=600 \
+  --timeout-seconds 660
+# Repeat with --param modulus=97 for the second field representation.
+```
+
+For bounded execution, use `full_search=false` and `max_evaluations`; the Julia
+API also accepts `start_index` for disjoint interval continuation. A partial count
+never validates the full-domain count.
 
 The dated review below is retained as historical context; older external-run
 claims, line numbers, and proposed fixes are not current validation evidence.

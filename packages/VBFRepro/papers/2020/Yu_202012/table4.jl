@@ -30,11 +30,11 @@ const TABLE4_FUNCTIONS = [
 
 Every n=9 APN row in the catalog functions table, split by whether σ can reach it.
 Bulk-corpus/construction coverage and literature completeness are not asserted. `quadratic` entries are
-`(name, sigma_hash)`; `non_quadratic` are `(name, algebraic_degree)` — σ is undefined
+`(name, sigma_key)`; `non_quadratic` are `(name, algebraic_degree)` — σ is undefined
 there (no ortho-derivative), which is limit (a).
 """
 function n9_catalog_split()
-    quad = Tuple{String,String}[]
+    quad = Tuple{String,Tuple}[]
     nonquad = Tuple{String,Int}[]
     db = VBFCatalog.load_catalog()
     try
@@ -42,7 +42,8 @@ function n9_catalog_split()
             name = row.canonical_name === nothing ? "id:$(row.id)" : row.canonical_name
             F = VBFCatalog.load_sbox(db, row.id)
             d = algebraic_degree(F)
-            d == 2 ? push!(quad, (name, sigma_hash(F))) : push!(nonquad, (name, d))
+            differential_uniformity(F) == 2 || error("catalog APN flag failed independent derivative check: $name")
+            d == 2 ? push!(quad, (name, sigma_key(F))) : push!(nonquad, (name, d))
         end
     finally
         VBFCatalog.SQLite.close(db)
@@ -74,7 +75,7 @@ function table4_verify()
     # 2. Separation from the explicitly enumerated curated quadratic entries.
     for (label, F, isnew) in boxes
         isnew || continue
-        h = sigma_hash(F)
+        h = sigma_key(F)
         mismatch_all = all(h != qh for (_, qh) in quad_entries)
         push!(
             checks,
@@ -89,10 +90,10 @@ function table4_verify()
     # 3. s₁ and s₂ are CCZ-inequivalent to each other (σ-mismatch, rigorous).
     s1 = sbox_from_exponents(n, TABLE4_FUNCTIONS[4][1])
     s2 = sbox_from_exponents(n, TABLE4_FUNCTIONS[8][1])
-    push!(checks, ("σ(s₁) ≠ σ(s₂) ⟹ s₁ and s₂ are CCZ-inequivalent", sigma_hash(s1) != sigma_hash(s2)))
+    push!(checks, ("σ(s₁) ≠ σ(s₂) ⟹ s₁ and s₂ are CCZ-inequivalent", sigma_key(s1) != sigma_key(s2)))
 
     # 4. LIMIT (a): σ is undefined on the non-quadratic n=9 entries, so the comparison
-    #    above cannot reach them. Asserted, not just commented — sigma_hash must THROW.
+    #    above cannot reach them. Asserted, not just commented — sigma_key must THROW.
     push!(checks, ("limit (a): the n=9 catalog has non-quadratic entries σ cannot reach",
                    !isempty(nonquad_entries)))
     if !isempty(nonquad_entries)
@@ -105,13 +106,13 @@ function table4_verify()
         end
         threw = false
         try
-            sigma_hash(G)
+            sigma_key(G)
         catch
             threw = true
         end
         push!(
             checks,
-            ("limit (a) confirmed: sigma_hash throws on non-quadratic $(name) " *
+            ("limit (a) confirmed: sigma_key throws on non-quadratic $(name) " *
              "(deg $(nonquad_entries[1][2])) — CCZ does not preserve degree, so these " *
              "entries are NOT excluded by s₁/s₂ being quadratic",
              threw),
@@ -124,7 +125,7 @@ function table4_verify()
     push!(
         checks,
         ("known f₇ has a signature match among curated references; exact equivalence is separate",
-         any(sigma_hash(f7) == h for (_,h) in quad_entries)),
+         any(sigma_key(f7) == h for (_,h) in quad_entries)),
     )
 
     # Guard against a vacuous novelty test: the catalog lookup must actually be able to
@@ -135,7 +136,7 @@ function table4_verify()
         checks,
         ("non-vacuity: f₅ and f₆ ARE found in the catalog (σ-match) — the :new verdicts " *
          "above are not an artefact of an empty or broken index",
-         any(sigma_hash(f5) == h for (_,h) in quad_entries) && any(sigma_hash(f6) == h for (_,h) in quad_entries)),
+         any(sigma_key(f5) == h for (_,h) in quad_entries) && any(sigma_key(f6) == h for (_,h) in quad_entries)),
     )
 
     (; checks,
@@ -150,7 +151,7 @@ function table4_verify()
 end
 
 function table4_report(io::IO = stdout)
-    print_section(io, "Table 4 — n=9 (8 CCZ classes; s₁, s₂ claimed new and AB)")
+    print_section(io, "Table 4 — n=9 (8 publication representatives; scoped separation)")
     result = table4_verify()
     print_kv(io, "note", result.note)
     print_kv(io, "quadratic n=9 catalog entries (σ-comparable)", result.n_quadratic_catalog)

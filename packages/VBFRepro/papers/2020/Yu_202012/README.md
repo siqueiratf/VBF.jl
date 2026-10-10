@@ -3,28 +3,58 @@
 **Paper:** Y. Yu, N. Kaleyski, L. Budaghyan, Y. Li, *Classification of quadratic
 APN functions with coefficients in F₂ for dimensions up to 9* (2020).
 
-**Reproduction:** `packages/VBFRepro/papers/Yu_202012/` — `helpers.jl`, `theorem2.jl`,
+**Reproduction:** `packages/VBFRepro/papers/2020/Yu_202012/` — `helpers.jl`, `theorem2.jl`,
 `proposition1.jl`, `algorithm1.jl`, `table1.jl` … `table4.jl`, `report.jl`.
 
-**Verdict:** partial, with explicit bounded scope (audit2026-10-10).
+**Verdict:** partial, with explicit bounded scope (audit 2026-10-10).
 
-`algorithm1.jl` substitutes VBF's unpruned cyclic-QAM odometer for the paper's
-GetNoneSquare/TranFirRow/GetElemC traversal. Exact oracle checks and candidate
-space exhaustion do not demonstrate Algorithm1's pruning or its performance.
-The wrapper now exposes time/node/equivalence budgets and confirm=true; an
-unfinished equivalence comparison returns BudgetHit. Default mugshot dedup is
-an invariant-bucket lower bound, so the n7 exhaustive14-bucket agreement with
-Table2 does **not** independently prove that exactly15CCZ classes exist in the
-whole region. Signature matches never establish positive equivalence.
+`algorithm1.jl` now implements the printed odd-dimensional Algorithm 1:
+GetNoneSquare selects one nonzero first-entry representative per Frobenius
+orbit; TranFirRow propagates cyclic entries; GetElemC rejects the preceding
+first-row span and non-proper rectangular submatrices (Definition 3). For a
+full QAM every k-column restriction of a nonzero row combination has rank at
+least k−1, so the proper-submatrix rejection is a necessary condition. Earlier
+first-row entries must be independent, since every QAM row has rank n−1.
+The source pseudocode explicitly assumes odd n = 2m−1; even dimensions retain
+VBF's separately labelled odometer, rather than an undocumented extension.
 
-The n9 table formulas/property checks are evidence about those explicit
+Small complete controls compare **accepted matrices before bucketing**: at n=5,
+pruned and unpruned traversals agree with the entire VBF odometer; expanding
+Frobenius representatives under squaring recovers that full accepted set. The
+n=7 run exhausted its declared Frobenius quotient with **265,957 attempted
+prefixes, 208,208 completed-matrix tests, 31,315 span rejects and 24,340 proper
+submatrix rejects**, recovering 14 invariant buckets matching Table 2. These are
+coverage/invariant facts, not positive equivalence proofs or a complete 15-class
+classification. The n=8/n=9 full regenerations remain unexecuted.
+
+Budgets count attempted prefixes for odd n, completed candidates for the even
+odometer. Unfinished search or EA confirmation returns BudgetHit; default
+mugshot deduplication counts invariant buckets. `confirm=true` uses complete EA
+decisions with explicit budgets and stops inconclusively on a comparison cap.
+`algorithm1_search(...; prune=false,orbit_reduction=false)` exposes the control
+traversal; `algorithm1_run` retains the SearchOutcome interface. Run/persist:
+
+```sh
+make -C packages/VBFRepro/papers/2020/Yu_202012 algorithm1 n_demo=7 timeout_seconds=60 save_results=true
+```
+
+A separate n=7 `confirm=true` run stopped with BudgetHit at an EA comparison
+cap of 10 seconds, after 1,039 prefixes and 854 completed-matrix tests, with
+nine confirmed class representatives. It does not establish the full region's
+class count. The command exposes `equivalence_timeout_seconds` and
+`max_equivalence_nodes` for further bounded attempts.
+
+The saved report includes scope, counts and returned LUTs. Historical R8 below
+records the former substituted implementation and is superseded by this note.
+
+The n=9 table formulas/property checks are evidence about those explicit
 functions. Catalog absence does not establish literature novelty or justify
 adding a new class. Full source coverage and exact comparisons for matching
 invariant buckets, including nonquadratic reference functions using full CCZ
 methods, remain required. The older review sections below are historical
 context; they do not upgrade these scoped claims.
 
-## Issue Catalog
+## Historical issue catalog
 
 ### Paper Issues
 

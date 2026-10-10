@@ -24,4 +24,30 @@
         e0 = trace_one_element(n, mod)
         @test theorem3_2_check(zeros(Int, n), n, mod, T0, e0)
     end
+
+    # Decode independent coefficient samples and compare the table counter with
+    # the original set-based criterion and a direct full DDT of the switched LUT.
+    for n in (4, 6)
+        mod = paper_modulus(n)
+        q = 1 << n
+        total = q^(n-1)
+        T0 = trace_zero_elements(n, mod)
+        e0 = trace_one_element(n, mod)
+        indices = unique([0, 1, q-1, q, total-1, total ÷ 7, total ÷ 3, total ÷ 2])
+        for index in indices
+            coefficients = digits(index; base=q, pad=n)
+            coefficients[n] = 0
+            value = linearized_poly_eval(coefficients, e0, n, mod)
+            denominator = gf_pow(e0, 1 << (n-1), n; modulus=mod)
+            coefficients[n] = gf_mul(value, gf_inv(denominator,n;modulus=mod),n;modulus=mod)
+            @test linearized_poly_eval(coefficients, e0, n, mod) == 0
+            independent = theorem3_2_check(coefficients, n, mod, T0, e0)
+            counter = count_valid_L_bounded(n; start_index=index, max_evaluations=1)
+            @test counter.count == Int(independent)
+            lut = [gf_pow(x,3,n;modulus=mod) ⊻
+                   (gf_trace(x,n;modulus=mod) == 0 ? 0 : linearized_poly_eval(coefficients,x,n,mod))
+                   for x in 0:q-1]
+            @test (differential_uniformity(SBox(lut)) == 2) == independent
+        end
+    end
 end

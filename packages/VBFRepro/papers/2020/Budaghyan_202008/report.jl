@@ -26,8 +26,10 @@ Scope:
   - Partial: Lemma VI.6 (cases (i), (ii), (iv) of 5; (iii) and (v) not implemented)
   - Loaded:  x⁹ + Tr(x³) over GF(2^8) verified APN (the 2006 function itself; the
              paper's isotopic-shift derivation of it is NOT reproduced — README R8)
-  - Not run: Section VII-D (every quadratic APN over GF(2⁶) is a shift of x³) —
-             needs general linear L (~2³⁶) plus the Proposition VI.1 normalisation
+  - Exact:   Proposition VI.1 scalar/Frobenius orbit normalization and witnesses
+  - Exact:   Section VII-D, 13 named quadratic Edel–Pott Table5 representatives,
+             each reached by permutation and2-to-1 L with verified EA maps
+  - Not run: exhaustive general linear-map enumeration or all6bitAPNclassification
   - Not run: Γ-rank column of Table I (n=8 requires explicit storage/time budgets;
              not needed — the mugshot separates all 8 rows)
 """
@@ -51,11 +53,14 @@ function paper_report(io::IO = stdout)
     println(io, "  Partial: Proposition V.3 (q=2 only)")
     println(io, "  Partial: Lemma VI.6 (cases (i),(ii),(iv) of 5)")
     println(io, "  Loaded:  x⁹ + Tr(x³) over GF(2^8) verified APN (not its shift derivation)")
-    println(io, "  Not run: Section VII-D full coverage claim (~2³⁶ general linear L)")
+    println(io, "  Exact:   PropositionVI.1 scalar/Frobenius normalization with explicit witnesses")
+    println(io, "  Exact:   SectionVII-D13namedknownquadraticTable5rows, both L valences")
+    println(io, "  Not run: exhaustion of2³⁶linear maps or classification of all6bitAPNs")
     println(io, "  Not run: Γ-rank (n=8 is opt-in with storage/time budgets; distinct signatures suffice)")
 
     section4_report(io)
     section5_report(io)
+    proposition_vi1_report(io)
     section6_report(io)
     section7_report(io)
     table1_report(io)

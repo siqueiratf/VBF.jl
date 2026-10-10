@@ -4,6 +4,7 @@ include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../../paper.mk
 .PHONY: help test report theorem3_2 table3_1 theorem3_7 example4_2 prior_art clean_results
 
 n            ?= 5
+modulus      ?= paper_modulus($(n))
 save_results ?= false
 seed         ?= 42
 full_search  ?= false
@@ -23,7 +24,7 @@ report:
 theorem3_2:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "theorem3_2.jl")); \
-	   print_header(); theorem3_2_report(; n=$(n), full_search=$(full_search), max_evaluations=$(max_evaluations), timeout_seconds=$(timeout_seconds))'
+	   print_header(); theorem3_2_report(; n=$(n), mod=$(modulus), full_search=$(full_search), max_evaluations=$(max_evaluations), timeout_seconds=$(timeout_seconds))'
 
 table3_1:
 	$(JULIA) $(JULIA_PROJECT) -e \
@@ -61,5 +62,6 @@ help:
 	@echo ''
 	@echo 'Parameters (override with make target param=value):'
 	@echo '  n=$(n)                (theorem3_2 dimension, default 5)'
+	@echo '  modulus=$(modulus)    (theorem3_2 field modulus)'
 	@echo '  save_results=$(save_results)  (true writes to results/)'
 	@echo '  seed=$(seed)'

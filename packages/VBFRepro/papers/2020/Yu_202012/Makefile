@@ -3,6 +3,12 @@ include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../../paper.mk
 .PHONY: help test report theorem1 theorem2 example1 proposition1 algorithm1 table1 table2 table3 table3_full table4
 
 max_evaluations ?= 16777216
+n_demo ?= 7
+timeout_seconds ?= 60
+confirm ?= false
+equivalence_timeout_seconds ?= 60
+max_equivalence_nodes ?= 1000000
+save_results ?= false
 
 # Table 4's novelty oracle (classify_ccz) reads the σ-index side store, which is
 # regenerable and therefore not committed (682 MB fully built). Build the
@@ -42,7 +48,7 @@ proposition1:
 
 algorithm1:
 	$(JULIA) $(JULIA_PROJECT) -e \
-	  'include("$(MAKEFILE_DIR)/algorithm1.jl"); algorithm1_report(; max_evaluations=$(max_evaluations))'
+	  'include("$(MAKEFILE_DIR)/algorithm1.jl"); algorithm1_report(; n_demo=$(n_demo), max_evaluations=$(max_evaluations), timeout_seconds=$(timeout_seconds), confirm=$(confirm), save_results=$(save_results), equivalence_timeout_seconds=$(equivalence_timeout_seconds), max_equivalence_nodes=$(max_equivalence_nodes))'
 
 table1:
 	$(JULIA) $(JULIA_PROJECT) -e \

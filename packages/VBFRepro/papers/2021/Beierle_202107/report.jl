@@ -22,12 +22,12 @@ function print_header(io::IO = stdout)
         "Julia $(VERSION)  |  $(today())")
     println(io)
     println(io, "Scope:")
-    println(io, "  [stored]  Corollary 1: tuple constants (17/27/32); n=6 regeneration tested")
+    println(io, "  [exact]   Corollary 1: fresh n=6/7/8 classes (17/27/32) match stored sets")
     println(io, "  [exact]   Propositions 4, 5: admissibility filters")
-    println(io, "  [exact]   Table 1: admissible classes per n=6,7,8")
-    println(io, "  [bounded] Algorithm 1: unpruned depth-first search; outcomes distinguish exhaustion from timeout")
-    println(io, "  [exact]   Theorem 1: n=6 unique APN perm = Dillon's (CCZ to Kim)")
-    println(io, "  [exact]   n=7 solutions: 6 monomials CCZ-verified")
+    println(io, "  [exact]   Table 1: Proposition4/5 rejection sets; search negatives incomplete")
+    println(io, "  [bounded] Algorithm1: optional Lemma5 pruning and verified Lemma6 seeding; explicit outcomes")
+    println(io, "  [witness] n=6 stored solution CCZ-equivalent to Dillon; uniqueness unverified")
+    println(io, "  [mixed]   n=7 stored solutions: exact quadratic checks; other matches inconclusive")
     println(io)
 end
 
@@ -80,7 +80,7 @@ end
 # Theorem 1 / n=6 search
 # -------------------------------------------------------------------------
 function theorem1_report(io::IO = stdout)
-    print_section("Theorem 1 — n=6 Exhaustive Search", io)
+    print_section("Theorem 1 — Stored n=6 Witness; Exhaustive Uniqueness Unverified", io)
 
     # Load stored n=6 class 5 result
     blocks = _load_tuple_matrix_blocks(
@@ -110,6 +110,7 @@ function theorem1_report(io::IO = stdout)
     print_check(io, "n=6 result is APN", is_apn)
     print_check(io, "n=6 result is permutation", is_perm)
     print_check(io, "n=6 result CCZ-equiv to Dillon's permutation", ccz_dillon)
+    print_kv(io, "uniqueness", "not established; all remaining tuple searches must exhaust")
 
     is_apn && is_perm && ccz_dillon
 end
@@ -118,18 +119,18 @@ end
 # n=7 monomial verification
 # -------------------------------------------------------------------------
 function n7_monomials_report(io::IO = stdout)
-    print_section("n=7 Search Results — Monomial CCZ-Equivalence", io)
+    print_section("n=7 Stored Results — Exact Equivalence Checks and Invariant Filters", io)
 
     blocks = _load_tuple_matrix_blocks(
         joinpath(@__DIR__, "tuples", "AllTuplesMatrices7.toml"))
 
-    # Mapping verified by algebraic degree + delta-rank (CCZ-invariants),
+    # Degree comparison and delta-rank provide only filters,
     # plus direct are_ccz_equivalent for quadratic Gold cases.
     class_to_exponent = Dict(
         4 => 63, 5 => 9, 7 => 5, 8 => 78, 9 => 85, 10 => 88)
     exponent_names = Dict(
         5 => "Gold k=2", 9 => "Gold k=3", 63 => "Inverse",
-        78 => "Niho", 85 => "Kasami", 88 => "Welch")
+        78 => "Niho (inverse Kasami class)", 85 => "Gold x^3 (inverse)", 88 => "Welch")
 
     all_ok = true
     for (cls, exp) in sort(collect(class_to_exponent))
@@ -150,21 +151,23 @@ function n7_monomials_report(io::IO = stdout)
 
         if algebraic_degree(mono_sbox) == 2
             ccz = are_ccz_equivalent(result_sbox, mono_sbox)
-            method = "are_ccz_equivalent"
+            method = "exact CCZ solver"
+            evidence = "CCZ-equivalent=$ccz"
         else
             deg_match = algebraic_degree(result_sbox) == algebraic_degree(mono_sbox)
             dr_match  = delta_rank(result_sbox) == delta_rank(mono_sbox)
             ccz = deg_match && dr_match
-            method = "degree+delta_rank"
+            method = "degree+delta_rank; equivalence inconclusive"
+            evidence = "filters_match=$ccz"
         end
 
         ok = is_apn && is_perm && ccz
         all_ok = all_ok && ok
         name = exponent_names[exp]
-        print_check(io, "class $cls -> x^$exp ($name): APN=$is_apn, perm=$is_perm, CCZ=$ccz ($method)", ok)
+        print_check(io, "class $cls -> x^$exp ($name): APN=$is_apn, perm=$is_perm, $evidence ($method)", ok)
     end
 
-    print_kv(io, "monomials verified", "$(length(class_to_exponent))")
+    print_kv(io, "stored controls checked", "$(length(class_to_exponent))")
     all_ok
 end
 
@@ -182,8 +185,8 @@ function paper_report(io::IO = stdout)
 
     print_section("Summary", io)
     print_check(io, "Table 1 admissibility (all n)", t1_ok)
-    print_check(io, "Theorem 1: n=6 unique APN = Dillon", thm_ok)
-    print_check(io, "n=7 monomial CCZ-equivalence", n7_ok)
+    print_check(io, "n=6 stored witness CCZ-equivalent to Dillon (uniqueness unverified)", thm_ok)
+    print_check(io, "n=7 equivalence evidence/filters (nonquadratic comparisons unresolved)", n7_ok)
 
     t1_ok && thm_ok && n7_ok
 end

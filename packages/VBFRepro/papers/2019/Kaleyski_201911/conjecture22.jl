@@ -110,6 +110,8 @@ function conjecture22_report(; ns::Vector{Int} = [5, 6, 7, 8],
             functions_started = 0
             for row in apn_n
                 s = VBFCatalog.load_sbox(db, row.id)
+                differential_uniformity(s) == 2 ||
+                    error("Catalog function $(row.id) fails the APN precondition of Theorem 17")
                 pairs = swap_pairs_for(s, n; exhaustive, pair_samples, rng)
                 checked_this_function = false
                 for (u1, u2) in pairs

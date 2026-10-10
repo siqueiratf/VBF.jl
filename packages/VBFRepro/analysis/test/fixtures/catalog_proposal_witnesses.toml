@@ -1,0 +1,56 @@
+# Positive finite graph-map certificates, independently replayed by the test.
+# These provide no literature-completeness guarantee.
+
+[[witnesses]]
+candidate = "Zheng2022_F15"
+reference = "Gologlu2022_F2_i1"
+columns = [172, 13, 673, 575, 155, 626, 103, 73, 901, 33, 34816, 364544, 420864, 579584, 130048, 54272, 740352, 270336, 291840, 827392]
+constant = 0
+
+[[witnesses]]
+candidate = "Zheng2022_Remark3_6"
+reference = "Gologlu2022_F2_i2"
+columns = [978, 32, 999, 941, 874, 900, 337, 233, 802, 1016, 1024, 656384, 978944, 299008, 721920, 607232, 388096, 412672, 843776, 452608]
+constant = 0
+
+[[witnesses]]
+candidate = "Zheng2022_Example1"
+reference = "Gologlu2022_F3"
+columns = [292, 801, 11, 720, 527, 215, 127, 410, 609, 558, 32768, 55296, 812032, 441344, 38912, 863232, 162816, 330752, 708608, 165888]
+constant = 0
+
+[[witnesses]]
+candidate = "Calderini2023_F2_n6"
+reference = "reprs6_1"
+columns = [52, 5, 16, 42, 26, 61, 100, 1711, 1131, 2788, 1583, 4075]
+constant = 0
+
+[[witnesses]]
+candidate = "Yu2025_short_n10"
+reference = "Budaghyan2009_x3_Trx9_n10"
+columns = [1, 442, 790, 84, 500, 452, 270, 128, 278, 286, 1024, 428032, 18432, 802816, 432128, 679936, 452608, 913408, 88064, 329728]
+constant = 0
+
+[[witnesses]]
+candidate = "Yu2025_trace_n11"
+reference = "Budaghyan2009_x3_Trx9_n11"
+columns = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152]
+constant = 0
+
+[[witnesses]]
+candidate = "Beierle2022_lin128"
+reference = "beierleleander2022_n8:12658"
+columns = [63, 46, 126, 154, 123, 188, 172, 10, 15529, 24296, 22121, 34389, 12400, 24346, 19119, 50742]
+constant = 0
+
+[[witnesses]]
+candidate = "Li2024_F1_n9"
+reference = "Beierle2022_perm1"
+columns = [332, 365, 379, 336, 233, 270, 29, 41, 70, 512, 40960, 132096, 169984, 230400, 13312, 172032, 156160, 104448]
+constant = 0
+
+[[witnesses]]
+candidate = "Li2024_F2_n9"
+reference = "Beierle2022_perm2"
+columns = [332, 214, 37, 336, 462, 175, 29, 258, 338, 512, 18944, 124416, 14848, 241664, 230400, 170496, 89600, 180736]
+constant = 0

@@ -3,6 +3,7 @@ updated_date = "2026-10-10"
 historical_audit_date = "2026-08-17"
 historical_base = "bf15e59 plus historical uncommitted changes"
 application_base = "347437d"
+followup_base = "951226a"
 julia = "1.13.1"
 finding_count = 36
 historical_findings = "audit/findings.yaml"
@@ -114,19 +115,19 @@ remaining = "APN observations are not substituted for missing hypotheses."
 
 [[findings]]
 id = "F014"
-status = "partial"
-summary = "Printed and computed Table1 rows retained separately; row3 NL110 invalidates its separation argument."
-evidence = ["packages/VBFRepro/papers/2014/Zha_201401/table1.jl"]
-guarantee = "Different differential spectrum separates a specific earlier inverse-swap control."
-remaining = "Separation from the whole earlier family remains unresolved."
+status = "fixed"
+summary = "All 18 source n8 Zha parameter choices are separated from the entire cited inverse two-point-swap family by unequal exact differential/Walsh tuples; 255 normalized functions and all 32640 unordered pairs are covered."
+evidence = ["packages/VBFRepro/papers/2014/Zha_201401/proposition5.jl"]
+guarantee = "Bijective field scaling is verified at all 8355840 graph points; finite family-wide CCZ inequivalence uses general invariants, not the quadratic-APN theorem."
+remaining = "Other earlier DU4 constructions outside the cited inverse-swap family are not covered."
 
 [[findings]]
 id = "F020"
-status = "partial"
-summary = "Existing three-case search results retained; added zero-budget/exhaustion regressions and seed/map region metadata."
-evidence = ["packages/VBFRepro/papers/2021/Beierle_202107/algorithm1.jl"]
-guarantee = "Timeouts remain BudgetHit and cannot prove absence."
-remaining = "Paper commutant pruning and extendability seeding remain unreproduced."
+status = "fixed"
+summary = "Implemented verified Lemma5 commutant-subset prefix pruning and constructive Definition5/Lemma6 seeding for supported paired involutions, including n6 Class14."
+evidence = ["packages/VBFRepro/papers/2021/Beierle_202107/lemma5.jl", "packages/VBFRepro/papers/2021/Beierle_202107/lemma6.jl", "packages/VBFRepro/papers/2021/Beierle_202107/algorithm1.jl"]
+guarantee = "Pruning preserves representative/existence coverage under seed-stabilizing transformations. All 7! normalized 3-bit permutations independently confirm the Gold GL3xGL3 orbit premise; custom preassigned nonzero points are rejected for seeding."
+remaining = "Full commutants and general Jordan-type extendability are not implemented. Full n6 uniqueness and n7/n8 search-negative classifications remain unverified; budget hits prove no absence."
 
 [[findings]]
 id = "F021"
@@ -146,27 +147,27 @@ remaining = "Random phase sampling and unexhausted regions cannot establish glob
 
 [[findings]]
 id = "F023"
-status = "partial"
-summary = "Catalog-member IDs, per-dimension outcomes, sampling/budget metadata and explicit full-search option implemented."
-evidence = ["packages/VBFRepro/papers/2019/Kaleyski_201911/conjecture22.jl"]
-guarantee = "Exhausted refers only to all genuine swaps of the named catalog members; mixed-dimension controls cannot leak solutions."
-remaining = "Full n7/n8 pair sweeps not run; the conjecture over all APN functions remains unproved."
+status = "fixed"
+summary = "Completed all catalog n7/n8 genuine-swap sweeps: 4033320 swaps of500 functions and2271970 swaps of70 functions, no APN swaps. Each selected function passes a full APN precondition check."
+evidence = ["packages/VBFRepro/papers/2019/Kaleyski_201911/conjecture22.jl", "audit/followup_runs.toml"]
+guarantee = "Exhaustion covers every genuine pair of the specified hashed catalog snapshot; Theorem17 is evaluated exactly on verified APN inputs."
+remaining = "Conjecture22 over all APN functions remains unproved; catalog completeness is not assumed."
 
 [[findings]]
 id = "F024"
-status = "partial"
-summary = "Distinct generated coverage and injected published controls are separated; repeated LCG sampling explicitly non-uniform."
-evidence = ["packages/VBFRepro/papers/2020/Budaghyan_202008/section6.jl"]
-guarantee = "Finite iff checks are exact on evaluated vectors. Published positives do not establish non-vacuity of generated sampling."
-remaining = "PropositionVI.1 normalization and complete SectionVII-D classification remain unimplemented."
+status = "fixed"
+summary = "Implemented exact PropositionVI.1 normalization and independently replayed 26 full EA witnesses covering both shift valences for all 13 named quadratic Edel-Pott Table5 representatives."
+evidence = ["packages/VBFRepro/papers/2020/Budaghyan_202008/proposition_vi1.jl", "packages/VBFRepro/papers/2020/Budaghyan_202008/section7d.jl", "packages/VBFRepro/papers/2020/Budaghyan_202008/test/fixtures/section7d_witnesses.toml"]
+guarantee = "Every literal shift and reference passes full finite APN/degree checks; rank, EA block constraints, all 64 graph points, LUT hashes and complete scalar/Frobenius orbit minima are verified."
+remaining = "Existential coverage concerns those 13 named source representatives only. It does not establish exhaustive search of 2^36 maps or completeness of all dimension6 APN classes."
 
 [[findings]]
 id = "F025"
-status = "partial"
-summary = "Exposes bounded exact confirmation; labels odometer substitution and missing pruning honestly."
+status = "fixed"
+summary = "Implemented source Algorithm1 for odd dimensions with Frobenius quotient, first-row span exclusion and proper-submatrix pruning; complete n7 traversal gives 14 invariant buckets."
 evidence = ["packages/VBFRepro/papers/2020/Yu_202012/algorithm1.jl"]
-guarantee = "Budget stops cannot establish absence or exact class count."
-remaining = "Paper Algorithm1 pruning and full search fidelity remain unreproduced."
+guarantee = "Small complete accepted-matrix sets agree with unpruned/core traversal; Frobenius expansion recovers the full domain. Budget-limited equivalence decisions remain inconclusive, not exact class counts."
+remaining = "n7 confirmed EA classification hit its comparison budget; no 15-class count is certified. Even dimensions use the explicitly labelled core odometer, since the printed pseudocode is odd-dimensional."
 
 [[findings]]
 id = "F030"
@@ -210,11 +211,11 @@ remaining = "Completeness of the named sources is an explicit input assumption, 
 
 [[findings]]
 id = "F050"
-status = "partial"
-summary = "Bounded table-driven counting and interval continuation added; counts448 and4608 revalidated."
-evidence = ["packages/VBFRepro/papers/2025/Taniguchi_202501/theorem3_2.jl"]
-guarantee = "Completed integer intervals are counted exactly, permitting bounded continuation."
-remaining = "Full n6 count35648 remains unverified; its2^30-parameter run is an explicit opt-in."
+status = "fixed"
+summary = "Completed the full2^30 normalized n6 mapping count under moduli91 and97:35648 in both fields. Added independent criterion/full-DDT sample comparisons."
+evidence = ["packages/VBFRepro/papers/2025/Taniguchi_202501/theorem3_2.jl", "audit/followup_runs.toml"]
+guarantee = "Exact count of all linearized L with L(e0)=0 for Goldx3 in the two declared field representations; not an equivalence-class count."
+remaining = "The publication approximate40000 wording supplies no exact target; this count establishes neither class completeness nor novelty."
 
 [[findings]]
 id = "F051"
@@ -267,18 +268,18 @@ remaining = "Dry-runs verify paths, not the mathematics of all44 paper reproduct
 [[findings]]
 id = "F063"
 status = "partial"
-summary = "Withdrawn/unsupported write-ready gap proposals retired; safe exact property evidence preserved."
-evidence = ["audit/revalidated_luts.toml"]
-guarantee = "Catalog remains unchanged; invariant equality and historical catalog absence never prove novelty."
-remaining = "Each remaining addition needs sourced construction identity and independently justified equivalence/novelty evidence against the current corpus."
+summary = "Regenerated all 32 proposals; full APN/degree checks passed. Nine positive certificates resolve one functions-table representative, three selected prior controls and five within-inventory duplicates."
+evidence = ["packages/VBFRepro/analysis/scripts/review_catalog_proposals.jl", "packages/VBFRepro/analysis/test/fixtures/catalog_proposal_witnesses.toml"]
+guarantee = "Every positive EA/identity map is independently replayed with exact rank, block and all-point checks; 23 remaining proposals are separated only from explicitly enumerated quadratic references."
+remaining = "Full bulk-corpus coverage, nonquadratic/general CCZ comparisons and sourced literature-wide coverage remain unresolved; no catalog addition or global novelty follows."
 
 [[findings]]
 id = "F064"
-status = "partial"
-summary = "Explicit-output tuple generator restored; fresh n6 class set matched17 stored classes."
+status = "fixed"
+summary = "Fresh n6/n7/n8 tuple generation yielded 17/27/32 classes and exact extended-power-similarity class-set agreement with historical constants."
 evidence = ["packages/VBFRepro/papers/2021/Beierle_202107/corollary1_n6n7n8.jl"]
-guarantee = "Comparison is of extended-power-similarity class sets, not byte-identical tuple orientation or representative numbering."
-remaining = "Fresh n7 generation exceeded90s; n7/n8 counts remain unverified."
+guarantee = "Canonical prime-order power signatures are cross-checked against independent similarity; cycle multisets certify all fixed-power dimensions. These classify linear-automorphism tuples, not APN functions."
+remaining = "No n7/n8 APN search classification follows from regenerating tuple classes; historical representative numbering is not a mathematical guarantee."
 
 [[findings]]
 id = "F070"
@@ -291,7 +292,7 @@ remaining = "Full2^30 injectivity scan, every derivative row and n30 Walsh spect
 [[findings]]
 id = "F071"
 status = "partial"
-summary = "Added s11 n12 regressions; exhaustively verified both 241-pair n12 grids and all six Table 2 pairwise distinctions."
-evidence = ["packages/VBFRepro/papers/2011/Bracken_201103/family_separation.jl"]
-guarantee = "Literal source coefficients now correct; all four verified quadratic APNs have distinct full signatures. Exhaustion covers fixed(k,s,u,modulus) parameter grids only."
-remaining = "n15 parameter grids and comparison against every earlier construction remain unverified; pairwise distinction is not global novelty."
+summary = "Both241-pair n12 grids and all four993-pair n15 grids completed, all candidates quadratic APN; four literal Table2 n12 representatives have six pairwise exact-signature distinctions."
+evidence = ["packages/VBFRepro/papers/2011/Bracken_201103/family_separation.jl", "packages/VBFRepro/papers/2011/Bracken_201103/theorem1.jl", "audit/followup_runs.toml"]
+guarantee = "Exhaustion covers fixed(k,s,u,modulus) coefficient grids only; pairwise n12 CCZ distinctions follow from distinct exact signatures."
+remaining = "Comparison against every earlier construction and equivalence classification of the parameter grids remain unverified; pairwise distinction is not global novelty."

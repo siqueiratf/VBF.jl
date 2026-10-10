@@ -2,8 +2,8 @@
 
 The August 2026 YAML files are a frozen investigation. Their current dispositions
 are in [resolutions.toml](resolutions.toml), covering all 36 IDs without replacing
-historical observations. The application repaired 20 findings, recognized one
-existing fix, and partially addressed 15 research or reproduction boundaries.
+historical observations. The application and follow-up repaired 27 findings, recognized one
+existing fix, and partially addressed eight research or reproduction boundaries.
 Each entry records its implemented change, guarantee, evidence path and remaining work.
 
 A fixed evidence defect does not prove an entire publication. Full finite checks
@@ -12,6 +12,44 @@ Different exact invariants can certify inequivalence; matching invariants cannot
 certify equivalence. Reference absence establishes novelty only relative to an
 explicit, independently sourced reference set. General CCZ comparisons may still
 be needed against nonquadratic representatives of known classes.
+
+## Follow-up of the fifteen partial findings
+
+Seven more findings now have scoped implementation/evidence fixes: F014, F020,
+F023, F024, F025, F050 and F064. F063 and F071 gained additional finite evidence
+while their literature/equivalence requirements remain unresolved. The eight
+partial findings are F004, F032, F040, F051, F052, F063, F070 and F071.
+
+[followup_runs.toml](followup_runs.toml) binds sixteen run manifests/logs and one
+proposal-review snapshot. These include exhaustive counts and traversals, finite
+witness replay, and explicitly budget-limited searches. Each record states its
+precise scope and input evidence; process success is never treated as exhaustion.
+Raw execution artifacts remain ignored under `data/repro/runs/`.
+
+Additional source-faithful evidence includes 26 independently replayed EA
+witnesses for the 13 named Edel–Pott n=6 reference representatives with both shift
+valences; fresh 17/27/32 Beierle tuple classes; verified commutant-subset pruning
+and supported fixed-space seeding; and the complete cited n=8 inverse-swap-family
+comparison. Tuple classes and mapping counts are not APN equivalence-class counts.
+The n=7 Yu source traversal is exhausted as an invariant-bucket computation;
+its attempted exact EA classification remains budget-limited.
+
+```sh
+bin/vbfrepro run Taniguchi_202501 --target theorem3_2 --param n=6 \
+  --param modulus=97 --param full_search=true --param timeout_seconds=600 \
+  --timeout-seconds 660
+bin/vbfrepro run Kaleyski_201911 --target conjecture22 --param 'ns=[7,8]' \
+  --param full_search=true --param timeout_seconds=900 --timeout-seconds 960
+bin/vbfrepro run Bracken_201103 --target parameter_sweep --param k=5 \
+  --param s=13 --param full_search=true --param timeout_seconds=300 \
+  --timeout-seconds 360
+bin/vbfrepro run Budaghyan_202008 --target section7d
+bin/vbfrepro run Zha_201401 --target proposition5 --param save_results=true
+make -C packages/VBFRepro/analysis review_catalog_proposals
+make -C packages/VBFRepro/analysis test_catalog_proposals
+bin/vbfrepro run Beierle_202107 --target corollary1_n6n7n8 \
+  --param n=8 --param full_search=true
+```
 
 ## Reproduce the checks
 

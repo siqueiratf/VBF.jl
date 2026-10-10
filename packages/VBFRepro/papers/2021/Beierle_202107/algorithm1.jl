@@ -1,4 +1,6 @@
 include("helpers.jl")
+include("lemma5.jl")
+include("lemma6.jl")
 
 using VBF: SearchOutcome, Found, Exhausted, BudgetHit, SearchRegion, StopPoint,
            search_solutions, proves_emptiness, is_exhausted, coverage_note,
@@ -26,13 +28,6 @@ using VBF: SearchOutcome, Found, Exhausted, BudgetHit, SearchRegion, StopPoint,
 #   Found      — stopped at `max_solutions`. Nothing is claimed about the rest.
 #   BudgetHit  — `timeout_seconds` expired. Proves nothing.
 #
-# Note on the missing reductions: this implementation lacks the paper's Lemma 5
-# (isSmallest / commutant quotient) and Lemma 6 (extendability seeding) search
-# -space reductions. Those are *reductions* — they shrink the walk without
-# removing solutions — so their absence costs time, not soundness. An
-# `Exhausted` returned here is therefore still a sound proof of emptiness; it is
-# simply much harder to reach than it would be with the reductions in place.
-
 mutable struct APNSearchContext
     n::Int
     space_size::Int
@@ -48,6 +43,10 @@ mutable struct APNSearchContext
     deadline::Union{Nothing, Float64}
     timed_out::Bool
     verify_apn_on_solution::Bool
+    transformations::Vector{Tuple{Vector{Int},Vector{Int}}}
+    pruning_depth::Int
+    nodes::Int
+    pruned::Int
 end
 
 function search_solution_callback(n::Int, on_solution::Function;
@@ -107,6 +106,7 @@ function APNSearchContext(n::Int, apply_A::Vector{Int}, apply_B::Vector{Int};
         deadline,
         false,
         verify_apn_on_solution,
+        Tuple{Vector{Int},Vector{Int}}[], -1, 0, 0,
     )
 end
 
@@ -162,6 +162,7 @@ function APNSearchContext(n::Int;
         deadline,
         false,
         verify_apn_on_solution,
+        Tuple{Vector{Int},Vector{Int}}[], -1, 0, 0,
     )
 end
 
@@ -286,6 +287,7 @@ function nextVal(depth::Int, sbox::Vector{Int}, ddt::Matrix{Int}, context::APNSe
     length(context.solutions) >= context.max_solutions && return context.solutions
     search_timed_out!(context) && return context.solutions
 
+    context.nodes += 1
     if isComplete(sbox)
         return record_complete_solution!(context, sbox)
     end
@@ -302,7 +304,11 @@ function nextVal(depth::Int, sbox::Vector{Int}, ddt::Matrix{Int}, context::APNSe
         assignment_is_valid, assigned_inputs = assign_orbit!(x, y, ord_x, sbox, ddt, context)
 
         if assignment_is_valid
-            nextVal(depth + 1, sbox, ddt, context)
+            if depth > context.pruning_depth || isSmallest(sbox,context.transformations)
+                nextVal(depth + 1, sbox, ddt, context)
+            else
+                context.pruned += 1
+            end
         end
 
         rollback_orbit!(assigned_inputs, sbox, ddt, context)
@@ -360,6 +366,16 @@ Run Algorithm 1 from the linearly self-equivalent APN permutations experiment
 for the matrix pair `(A, B)`. The solutions (via `search_solutions`) are
 complete S-box lookup tables satisfying `F(Bx) = A F(x)` and the APN constraint.
 
+Optional `C_A` (input/B commutant), `C_B` (output/A commutant), and
+`pruning_depth` implement Lemma5 with verified supplied subsets. Known common
+prefix comparisons preserve existence up to those linear transformations.
+`extendability_seeding=true` implements Lemma6 only for verified 3-dimensional
+fixed spaces of supported involutions (including n6Class14). It requires an
+otherwise unassigned initial LUT, allowing only F(0)=0: normalization need not
+preserve custom nonzero-point assignments. It preserves existence up to affine
+equivalence in this unrestricted domain. Exhausted lists enumerate representatives
+under enabled reductions, rather than every literal LUT.
+
 Returns a three-case [`VBF.SearchOutcome`], **not** a bare vector:
 
   * `Exhausted` — the tree was walked to the end; the solution list is complete
@@ -390,18 +406,33 @@ function APNSearch(n::Int, A, B;
                    visit_order::Vector{Int} = c_reference_visit_order(n, class_index),
                    timeout_seconds::Union{Nothing, Real} = nothing,
                    seed_zero::Bool = true,
-                   verify_apn_on_solution::Bool = true)
+                   verify_apn_on_solution::Bool = true,
+                   C_A = [], C_B = [], pruning_depth::Int = 3,
+                   extendability_seeding::Bool = false)
     length(sbox) == 1 << n ||
         error("sbox must have 2^n entries for n = $n")
     length(sbox) == size(ddt, 1) == size(ddt, 2) ||
         error("sbox and ddt sizes must be consistent")
 
+    max_solutions > 0 || throw(ArgumentError("max_solutions must be positive"))
+    timeout_seconds === nothing || timeout_seconds >= 0 || throw(ArgumentError("negative timeout"))
+    extension = extendability_seeding ? lemma6_seed!(sbox,A,B,n) : nothing
+    # Rebuild the seeded restricted DDT once, preventing double-counted pairs.
+    fill!(ddt,0)
+    assigned = copy(sbox)
+    fill!(sbox,-1)
+    for x in eachindex(assigned)
+        assigned[x] == -1 && continue
+        sbox[x]=assigned[x]
+        addDDTInformation(x-1,sbox,ddt) || throw(ArgumentError("seed violates APN constraints"))
+    end
     if seed_zero
         sbox[1] in (-1, 0) || error("C reference search requires sbox[0] to be 0")
         if sbox[1] == -1
             sbox[1] = 0
         end
-        addDDTInformation(0, sbox, ddt)
+        # Zero contributes only when it is newly assigned.
+        assigned[1] == -1 && addDDTInformation(0, sbox, ddt)
     end
 
     # NOTE: A/B are swapped here relative to the function signature.
@@ -422,13 +453,40 @@ function APNSearch(n::Int, A, B;
         timeout_seconds = timeout_seconds,
         verify_apn_on_solution = verify_apn_on_solution,
     )
+    # Public A is output, B input; Lemma5's paper C_A is input.
+    ci = validated_commutant_luts(C_A,B,n)
+    co = validated_commutant_luts(C_B,A,n)
+    identity_lut=collect(0:(1<<n)-1)
+    isempty(ci) && push!(ci,identity_lut)
+    isempty(co) && push!(co,identity_lut)
+    context.transformations=seed_stabilizing_transformations(ci,co,sbox)
+    context.pruning_depth=pruning_depth
     seed_used_outputs!(context, sbox)
 
     region = apn_search_region(n; class_index,
         input_lut = copy(context.apply_A), output_lut = copy(context.apply_B),
         seed_sbox = copy(sbox), verify_apn_on_solution)
+    region.params["commutant_pruning"] = !isempty(C_A) || !isempty(C_B)
+    region.params["commutant_input_luts"] = ci
+    region.params["commutant_output_luts"] = co
+    region.params["pruning_depth"] = pruning_depth
+    region.params["extendability_seeding"] = extendability_seeding
+    region.params["coverage"] = extendability_seeding ? "existence up to affine equivalence via Lemma6" :
+        ((!isempty(C_A) || !isempty(C_B)) ? "existence up to supplied commutant transformations" : "literal LUT enumeration")
+    if extension !== nothing
+        region.params["extendability_evidence"] = Dict(
+            "input_fixed_basis"=>Int.(extension.input.fixed_basis),
+            "output_fixed_basis"=>Int.(extension.output.fixed_basis),
+            "input_extensions"=>length(extension.input.extensions),
+            "output_extensions"=>length(extension.output.extensions),
+            "method"=>extension.input.method,
+            "restriction_lut"=>Int.(extension.restriction_lut),
+            "uniqueness_basis"=>extension.uniqueness_basis)
+    end
     t0 = time()
     nextVal(0, sbox, ddt, context)
+    region.params["visited_nodes"]=context.nodes
+    region.params["pruned_nodes"]=context.pruned
     return search_outcome(context, region, time() - t0)
 end
 
@@ -451,6 +509,11 @@ function APNSearchClasses(n::Int, class_indices = "all";
                           timeout_seconds::Union{Nothing, Real} = nothing,
                           seed_zero::Bool = true,
                           verify_apn_on_solution::Bool = true,
+                          commutant_pruning::Bool = false,
+                          pruning_depth::Int = 3,
+                          extendability_seeding::Bool = false,
+                          save_evidence::Bool = false,
+                          evidence_output::AbstractString = joinpath(@__DIR__,"results","algorithm1_outcomes.toml"),
                           tuples_dir::String = joinpath(@__DIR__, "tuples"))
     classes = normalize_precomputed_tuple_classes(
         n,
@@ -462,6 +525,17 @@ function APNSearchClasses(n::Int, class_indices = "all";
 
     for class_index in classes
         A, B = precomputed_tuple_matrices(n, class_index, tuples_dir = tuples_dir)
+        use_seed = extendability_seeding && n == 6 && class_index == 14
+        if commutant_pruning && use_seed
+            # Verified full fixed-space lifts; not a claimed full commutant.
+            ci = lemma6_extensions(B,n).extensions
+            co = lemma6_extensions(A,n).extensions
+        elseif commutant_pruning
+            ci = [identity_bitmatrix(n),B]
+            co = [identity_bitmatrix(n),A]
+        else
+            ci = []; co = []
+        end
         results[class_index] = APNSearch(
             n,
             A,
@@ -475,9 +549,32 @@ function APNSearchClasses(n::Int, class_indices = "all";
             timeout_seconds = timeout_seconds,
             seed_zero = seed_zero,
             verify_apn_on_solution = verify_apn_on_solution,
+            C_A = ci, C_B = co, pruning_depth = pruning_depth,
+            extendability_seeding = use_seed,
         )
     end
 
+    if save_evidence
+        records=Dict{String,Any}()
+        for (index,outcome) in results
+            records[string(index)]=Dict("outcome"=>string(outcome_tag(outcome)),
+                "solutions"=>search_solutions(outcome),
+                "region"=>Dict(k=>v for (k,v) in outcome.region.params if v !== nothing))
+        end
+        evidence=Dict("n"=>n,"max_solutions"=>max_solutions,
+            "commutant_pruning"=>commutant_pruning,"pruning_depth"=>pruning_depth,
+            "extendability_seeding"=>extendability_seeding,"classes"=>records)
+        timeout_seconds===nothing || (evidence["timeout_seconds"]=Float64(timeout_seconds))
+        mkpath(dirname(abspath(evidence_output)))
+        path=abspath(evidence_output)
+        temporary=tempname(dirname(path))
+        try
+            open(temporary,"w") do io; TOML.print(io,evidence); end
+            mv(temporary,path;force=true)
+        finally
+            isfile(temporary) && rm(temporary)
+        end
+    end
     return results
 end
 

@@ -79,3 +79,29 @@ This checks APN properties and exact little-endian LUT hashes against
 [`audit/revalidated_luts.toml`](../../../audit/revalidated_luts.toml). It writes no
 catalog entries and supplies no novelty guarantee. The script needs only the root
 workspace environment, independently of the optional plotting environment.
+
+The follow-up also regenerates the **32** historical F063 proposals, verifies
+their finite APN/degree properties, recomputes exact invariants, and independently
+replays nine positive equivalence/identity certificates. The current result has
+one representative already in the functions table, three in selected prior
+controls, five duplicates within the proposal inventory, and 23 separated only
+from the explicitly enumerated quadratic references. It compares neither every
+bulk corpus member nor all nonquadratic CCZ representatives, and establishes no
+literature-wide novelty. Empty reference sets and undecided comparisons remain
+explicitly unresolved. No catalog writes occur.
+
+```sh
+make -C packages/VBFRepro/analysis review_catalog_proposals
+make -C packages/VBFRepro/analysis test_catalog_proposals
+# Equivalent root commands:
+julia --project=. packages/VBFRepro/analysis/scripts/review_catalog_proposals.jl
+julia --project=. packages/VBFRepro/analysis/test/test_catalog_proposals.jl
+```
+
+The review script optionally accepts an output path, equivalence timeout per
+pair, and node budget. Make exposes `proposal_output`, `equivalence_timeout`, and
+`max_equivalence_nodes`. Evidence defaults to ignored
+`data/repro/audit/catalog_proposals.toml`, with exact LUTs, full invariant tuples,
+source identities, implementation hashes, reference scopes and verified maps.
+The bounded regression suite replays committed certificate fixtures, including
+forged-map controls; it does not rerun witness recovery or exhaustive searches.
