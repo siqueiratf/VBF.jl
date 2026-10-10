@@ -31,6 +31,27 @@ function _today_utc()
     string(Dates.now(Dates.UTC)) * "Z"
 end
 
+"""Retain exact-LUT check history when replacing a generated catalog."""
+function preserve_equivalence_checks!(db, previous)
+    isfile(previous) || return 0
+    old=SQLite.DB(previous)
+    try
+        exists=only(Int(r.c) for r in DBInterface.execute(old,
+            "SELECT COUNT(*) c FROM sqlite_master WHERE type='table' AND name='equivalence_checks'"))
+        exists==0 && return 0
+        count=0
+        SQLite.transaction(db) do
+            for row in DBInterface.execute(old,"SELECT * FROM equivalence_checks ORDER BY id")
+                SQLite.execute(db,"INSERT INTO equivalence_checks VALUES(?,?,?,?,?,?,?,?,?,?,?)",Tuple(NamedTuple(row)))
+                count+=1
+            end
+        end
+        count
+    finally
+        close(old)
+    end
+end
+
 function insert_curated!(db, family, names, loader, metadata, contributor, source_repo)
     today=_today_utc()
     for name in names
@@ -217,6 +238,13 @@ function main()
               if n > get(before, f, 0)]
     isempty(gained) || @info "Families that grew\n" * join(gained, "\n")
 
+    db=load_catalog(CATALOG_FILE)
+    try
+        retained=preserve_equivalence_checks!(db,FINAL_CATALOG)
+        @info "Retained equivalence check history" checks=retained
+    finally
+        close(db)
+    end
     check_catalog(CATALOG_FILE)
     mv(CATALOG_FILE, FINAL_CATALOG; force = true)
     delete!(ENV, "BFA_CATALOG_PATH")

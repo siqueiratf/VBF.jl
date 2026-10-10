@@ -114,8 +114,14 @@ end
             close(db)
             target=create_catalog(joinpath(dir,"target.sqlite"))
             try
+                previous=load_catalog()
+                SQLite.execute(previous,"UPDATE schema_meta SET schema_version=?",(SCHEMA_VERSION-1,))
+                close(previous)
                 @test cached_corpus!(target,catalog_path(),"large",source)
                 @test corpus_length(target,"large")==3
+                previous=SQLite.DB(catalog_path())
+                SQLite.execute(previous,"UPDATE schema_meta SET schema_version=?",(SCHEMA_VERSION,))
+                close(previous)
                 write(source,"changed\n")
                 @test_throws ErrorException cached_corpus!(target,catalog_path(),"large",source)
                 write(source,"fixture\n")

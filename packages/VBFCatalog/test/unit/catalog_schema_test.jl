@@ -81,6 +81,7 @@ end
         @test "functions" in names
         @test "equivalence_classes" in names
         @test "class_members" in names
+        @test "equivalence_checks" in names
         @test "reconciliation_disagreements" in names
 
         # schema_meta populated (first() is cursor-safe; collect() is not).

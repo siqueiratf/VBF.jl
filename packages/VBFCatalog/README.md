@@ -57,6 +57,53 @@ Old benchmark measurements were preserved locally in
 `data/perf/archive/catalog-benchmarks.sqlite`; measurements are no longer stored
 in the catalog. New timings belong under `data/perf/`.
 
+## Stored equivalence checks
+
+`equivalence_checks` in the main catalog retains pair attempts, including checks
+between reconstructed corpus members. Each row binds the dimension and exact
+LUT hashes to `relation` (`ea` or `ccz`), `status` (`equivalent`, `inequivalent`,
+or `inconclusive`), UTC time, Julia version, VBF source digest, parameters and
+TOML evidence. Positive evidence contains an affine graph witness; negative
+evidence records complete native solver exhaustion. Budget stops remain
+inconclusive. Rebuilding the catalog preserves this history.
+
+```julia
+using VBF, VBFCatalog
+db = load_catalog()
+try
+    F = corpus_function(db, "edelpott2009_n8", 1)
+    G = corpus_function(db, "edelpott2009_n8", 2)
+    check = check_equivalence!(db, F, G; relation=:ccz,
+        timeout_seconds=30, max_nodes=1_000_000)
+    check.status
+    list_equivalence_checks(db, F, G)
+    verify_equivalence_check(check, F, G) # replays positive evidence only
+finally
+    close(db)
+end
+```
+
+Checks reuse verified positives and negatives computed with the same VBF source
+digest and Julia version. Inconclusive pairs can be retried with larger budgets;
+`reuse=false` records a new attempt. Witness orientation follows the sorted LUT
+hashes; verification accepts either input order. Checked LUTs remain in their
+original catalog or corpus, rather than becoming new curated entries.
+
+Stored outcomes are directly queryable:
+
+```sql
+SELECT status, COUNT(*) AS attempts
+FROM equivalence_checks
+WHERE n = 8 AND relation = 'ccz'
+GROUP BY status;
+```
+
+This counts attempts, not classes. The API does not automatically resolve every
+signature bucket or modify class memberships. Exhaustive negatives remain
+implementation-dependent computational evidence, and EA negatives need a
+theorem before they can be interpreted as CCZ negatives. Reference completeness
+and literature novelty are separate questions.
+
 ## Import and rebuild
 
 ```sh
@@ -111,4 +158,5 @@ Absence separates a quadratic APN candidate from the covered quadratic reference
 through the separating invariant. A matching signature requires an equivalence
 check. Neither database size nor absence from it certifies that all published
 constructions or all APN functions have been covered. VBFSearch owns candidate
-validation and equivalence evidence; VBFCatalog supplies the reference data.
+validation and run evidence; VBFCatalog supplies reference data and shared
+equivalence evidence with persistent pair checks.
