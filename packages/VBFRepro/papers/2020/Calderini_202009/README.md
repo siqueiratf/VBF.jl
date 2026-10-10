@@ -1,5 +1,15 @@
 # Calderini_202009 — Reproduction Review
 
+## Scoped feasibility review (2026-10-10)
+
+**F051: Partial.** The local PDF recovers the polynomial material lost from LaTeX Table 3 rows 13 and 14. Sourced row reconstruction and bounded per-row evidence are feasible. Trace-row probes hit their node budgets without an upper bound, so full table counts and EA classification need completed pilot runs before a runtime commitment. Existing function-equivalence APIs can be reused.
+
+This read-only review did not rerun the full paper test suite or establish new
+catalog gaps. See the [eight-finding work plan](../../../../../audit/partial_feasibility.md)
+and [bounded probe evidence](../../../../../audit/partial_feasibility_probes.toml)
+for commands, hashes, acceptance criteria and mathematical limits. This current
+assessment supersedes conflicting historical scope descriptions below.
+
 Scope correction: the Frobenius/inverse power-exponent orbit census is not a full CCZ classification, and an inverse outside the cyclotomic coset does not itself prove EA inequivalence. Predicted counts are now labeled as predictions; the census returns exact_class_count_established=false.
 
 Additional F032 correction: graph-code coordinate blocks now match the documented definition. Kim and Dillon have equal C2 weight enumerators; the previous claimed weight-based separation was caused by the coordinate bug. Their degrees 2 and 4 still prove EA inequivalence. Equality of code weight enumerators is an inconclusive filter.

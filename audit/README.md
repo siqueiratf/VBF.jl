@@ -20,6 +20,14 @@ F023, F024, F025, F050 and F064. F063 and F071 gained additional finite evidence
 while their literature/equivalence requirements remain unresolved. The eight
 partial findings are F004, F032, F040, F051, F052, F063, F070 and F071.
 
+The [three-reviewer feasibility assessment](partial_feasibility.md) evaluates
+these eight requirements without changing their statuses. It identifies a
+49,981-case algebraic reduction as a credible route to the finite n=30 claim,
+an achievable bounded general code-equivalence API, and stronger theorem-backed
+power/reference comparisons. Fresh bounded probe commands and hashes are in
+[partial_feasibility_probes.toml](partial_feasibility_probes.toml). Source
+ambiguities, unfinished full runs and literature-wide completeness remain explicit.
+
 [followup_runs.toml](followup_runs.toml) binds sixteen run manifests/logs and one
 proposal-review snapshot. These include exhaustive counts and traversals, finite
 witness replay, and explicitly budget-limited searches. Each record states its

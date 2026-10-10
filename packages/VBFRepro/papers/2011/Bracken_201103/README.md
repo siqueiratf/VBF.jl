@@ -1,5 +1,15 @@
 # Bracken et al. (2011) — A few more quadratic APN functions
 
+## Scoped feasibility review (2026-10-10)
+
+**F071: Partial.** Finite comparisons against sourced earlier-family representatives are feasible. Table 3’s literal `x³+Tr(x³)` differs from the introduction’s `x³+Tr(x⁹)`; at even n the literal entry is an invertible output-linear transform of Gold. Preserve both readings. Other field-dependent rows need reconciliation. Prior-family coverage and complete equivalence classification of the n=12/n=15 parameter grids remain unresolved; APN grid verification alone does not classify them.
+
+This read-only review did not rerun the full paper test suite or establish new
+catalog gaps. See the [eight-finding work plan](../../../../../audit/partial_feasibility.md)
+and [bounded probe evidence](../../../../../audit/partial_feasibility_probes.toml)
+for commands, hashes, acceptance criteria and mathematical limits. This current
+assessment supersedes conflicting historical scope descriptions below.
+
 F071 additional evidence: both admissible n=12 Frobenius representatives (s=5 and11) are tested; a bounded coefficient-grid command now exposes 241 admissible pairs per s. Table 2 now builds the literal u^290 term with the correct power index. `make family_separation` independently computes distinct full ortho-derivative signatures for all four Table 2 representatives, proving all six pairwise CCZ inequivalences. This does not compare them to every earlier construction or establish global novelty.
 
 F071 follow-up: all four admissible n=15 exponents `s=1,4,7,13` were checked
