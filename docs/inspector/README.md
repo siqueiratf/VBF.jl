@@ -9,17 +9,17 @@ It does not label a signature hit “KNOWN” or corpus absence “literature-ne
 
 To use the inspector inside the documentation, run `make -C docs serve` and
 open `http://127.0.0.1:8088/docs/`. Select **APN inspector** in the sidebar.
-See the [documentation page](../../docs/src/inspector.md) for the walkthrough.
+See the [documentation page](../src/inspector.md) for the walkthrough.
 The published site shows the same interface; validation requires the local
 Julia backend. The browser contacts only the origin serving the page.
 
 From the repository root:
 
 ```sh
-make -C apps/apn-inspector instantiate
-make -C apps/apn-inspector serve
+make -C docs inspector-instantiate
+make -C docs serve-inspector
 # Browse a search or independently validated import:
-make -C apps/apn-inspector serve \
+make -C docs serve-inspector \
   run=/absolute/path/to/experiment
 ```
 
@@ -30,11 +30,11 @@ catalog and old sigma index to retrieve named reference functions, plus
 `data/apn/supplement.tsv` (see [reference setup](../../data/apn/README.md)). The old index supplies record pointers; the
 fresh, digest-checked reference controls corpus-absence conclusions. Missing
 or changed provenance stops initialization rather than silently using an old
-baseline. Package/environment setup is local to `apps/apn-inspector/`.
+baseline. Package/environment setup is local to `docs/inspector/`.
 The shared browser interface lives in `docs/src/assets/apn-inspector.html`;
 the server serves it at `/` (or `/inspector/` when docs are enabled).
-To serve already-built docs, use `make -C apps/apn-inspector serve
-docs=/absolute/path/to/docs/build`. `/docs/` serves only that build directory;
+To serve already-built docs, use `make -C docs serve-built`.
+`/docs/` serves only the documentation build directory;
 the same server provides `/api/` for the embedded inspector.
 
 1. Paste a function in the first box and select **Validate and compare with
@@ -98,7 +98,7 @@ recorded pair checks; `GET /api/classification` exposes the frozen snapshot
 classification report when present. An absent edge is unresolved, never inferred inequivalence.
 
 ```sh
-make -C apps/apn-inspector test
+make -C docs test
 # Recheck the persisted TOML positive witness/invariant certificate without VBF:
 julia --startup-file=no \
   packages/VBFSearch/src/verification/verify_certificate.jl comparison.toml

@@ -9,7 +9,7 @@
 # VBF API used: SBox, gf_monomial_lut
 # VBFCatalog API used: load_catalog, corpus_function
 #
-# Run: julia --threads=1,1 --project=.. runtests.jl  (or `make test` in web/)
+# Run from the repository root: make -C docs test
 
 using HTTP
 using JSON3

@@ -7,7 +7,7 @@ VBF back to either consumer. Independently implemented verifiers remain
 standard-library-only in `src/verification/`.
 
 Read [research assessment](AUDIT.md) for the research assessment and unresolved novelty
-questions. The [web inspector](../../apps/apn-inspector/README.md) uses the
+questions. The [web inspector](../../docs/inspector/README.md) uses the
 same evidence layer. [Reference preparation](../../data/apn/README.md) describes
 the required ignored data artifacts. Julia >= 1.12 and the instantiated root
 project are required. Reports additionally need Python >= 3.11 and matplotlib.
