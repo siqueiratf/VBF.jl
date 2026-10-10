@@ -115,6 +115,11 @@ override upstream checkout paths for data-build scripts only.
 
 ## Reproducible APN command
 
+APN experiment data lives in `data/apn/runs/<experiment>/`; inspector pair
+certificates use `data/apn/runs/web/`. The retired root `search/` tree is removed.
+Its historical class-orbit artifacts live in `data/apn/archive/class-orbit/`,
+with the old code preserved in Git history and a local ignored source snapshot.
+
 `bin/vbf` runs the `VBFSearch` package CLI: search/resume/status/stop, validate/audit,
 compare/classify/verify and publication reports. Production workflows live
 under `packages/VBFSearch/`; Fourier math is `VBF.QuadraticExtensions`, catalog seeds

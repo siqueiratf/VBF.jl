@@ -1,13 +1,21 @@
-# Quadratic APN reference snapshot
+# APN experiment and reference data
 
 The search uses an immutable, independently rebuilt quadratic (8,8)-APN
-reference. This directory holds generated data only; manifests, SQLite files
-and downloaded inputs are ignored by git. It is not a second editable catalog:
+reference. This directory holds reference snapshots, experiment runs and archived
+research artifacts. Generated run files, reference databases and downloaded inputs
+are ignored by git; the small historical class-orbit artifacts remain tracked.
+It is not a second editable catalog:
 seed LUTs come from `VBFCatalog`, while this snapshot supplies original-source
 verification evidence for the comparison baseline.
 
 The default layout is:
 
+- `runs/<experiment>/`: checkpointed search databases, frozen inputs, source
+  snapshots, validation evidence and publication exports. Use one directory per
+  experiment, for example `bin/vbf search --output data/apn/runs/experiment01`.
+- `runs/web/`: saved pair-comparison certificates from the inspector.
+- `archive/class-orbit/`: historical commutant/self-equivalence results, candidate
+  centers, checkpoints, configurations and reports; see its [README](archive/class-orbit/README.md).
 - `reference/comparison.toml`: completed original-source comparison manifest.
 - `reference/fresh_union.sqlite`: exact union of recomputed signatures.
 - `reference/candidate_comparison.toml`: optional digest-bound historical input
@@ -17,7 +25,8 @@ The default layout is:
 In this checkout, the prepared union has 3,809,037 signatures and SHA-256
 `0eed9fb5d3a70bd24b8c8c9eefa61b0b882b9cd540dd06cda0cd430444f7b603`.
 This is a particular reference version, not a claim that all literature is covered.
-The supplement is fingerprinted and validated separately.
+The supplement is fingerprinted and validated separately. Data ownership is
+separate from the implementation in [VBFSearch](../../packages/VBFSearch/README.md).
 
 ## Rebuild or restore
 

@@ -2,7 +2,7 @@
 
 The frontend validates exact eight-bit functions, compares their signatures
 with the independently rebuilt quadratic reference, and runs bounded EA/CCZ
-pair comparisons. It shares the [discovery evidence layer](../../../search/apn/README.md).
+pair comparisons. It shares the [discovery evidence layer](../../../packages/VBFSearch/README.md).
 It does not label a signature hit “KNOWN” or corpus absence “literature-new”.
 
 ## Run and inspect
@@ -48,7 +48,7 @@ baseline. Package/environment setup is local to `web/`.
 5. With `--run PATH`, select **Load candidates**, optionally filtering for
    additional signatures, then **Load** a stored exact LUT. An imported
    historical bundle normally has no “additional” flag; leave that filter off.
-   Every bounded pair check is saved as TOML under `search/apn/results/web/`
+   Every bounded pair check is saved as TOML under `data/apn/runs/web/`
    and, when a run is selected, appended transactionally to its `comparisons`
    table. The inspector can coexist with an enumeration writer because these
    append-only comparisons do not change search cursors.
@@ -72,7 +72,7 @@ CCZ remains the correct relation for an arbitrary nonquadratic target. EA
 inequivalence alone does not settle general CCZ equivalence. All finite checks
 are computation, not proof-assistant formalization. The complete announced 2026
 switching dataset and any unrepresented non-power constructions remain
-comparison gaps; see [AUDIT.md](../../../search/apn/AUDIT.md).
+comparison gaps; see [AUDIT.md](../../../packages/VBFSearch/AUDIT.md).
 
 ## API and verification
 
@@ -90,7 +90,7 @@ classification report when present. An absent edge is unresolved, never inferred
 make -C census/quadratic_apn8/web test
 # Recheck the persisted TOML positive witness/invariant certificate without VBF:
 julia --startup-file=no \
-  search/apn/verify_certificate.jl comparison.toml
+  packages/VBFSearch/src/verification/verify_certificate.jl comparison.toml
 ```
 
 `bin/vbf classify` resolves equal-sigma candidate buckets incrementally,

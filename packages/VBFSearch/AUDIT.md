@@ -1,4 +1,4 @@
-> Production search has moved to `search/apn/`, launched through `bin/vbf`.
+> Production search is implemented by `packages/VBFSearch/`, launched through `bin/vbf`.
 > This assessment records the earlier audit and historical results; see the
 > [current commands and storage](README.md). Old checkpoints are unsupported.
 
@@ -17,7 +17,7 @@ excluded nonquadratic occurrence. The quadratic reference contains **3,809,037
 distinct signatures**, including the 546 public signatures omitted from the
 old index. Its database SHA256 is
 `0eed9fb5d3a70bd24b8c8c9eefa61b0b882b9cd540dd06cda0cd430444f7b603`.
-The [literature survey](../reports/literature/LITERATURE.md) adds one public
+The [literature survey](../../census/quadratic_apn8/reports/literature/LITERATURE.md) adds one public
 quadratic representative from Galissant's 2026 slides, held as a separate
 hash-bound supplement.
 

@@ -5,8 +5,8 @@ file/reference digests. Other records are independently verified; --full true
 rechecks every input instead of reusing that report.
 """
 const REVIEW_HISTORY_USAGE=nothing
-include("../../../../search/apn/evidence.jl")
-include("../../../../search/apn/inputs.jl")
+using VBFSearch: DiscoveryEvidence
+using VBFSearch: DiscoveryInputs
 using .DiscoveryEvidence,.DiscoveryInputs,TOML,Dates
 function review_history(args)
     cfg=Dict("outdir"=>joinpath(@__DIR__,"results","history"),"baseline"=>DEFAULT_REFERENCE,"full"=>"false")

@@ -6,7 +6,7 @@ and the web inspector use its shared API. No runtime dependency flows from
 VBF back to either consumer. Independently implemented verifiers remain
 standard-library-only in `src/verification/`.
 
-Read [research assessment](../../search/apn/AUDIT.md) for the research assessment and unresolved novelty
+Read [research assessment](AUDIT.md) for the research assessment and unresolved novelty
 questions. The [web inspector](../../census/quadratic_apn8/web/README.md) uses the
 same evidence layer. [Reference preparation](../../data/apn/README.md) describes
 the required ignored data artifacts. Julia >= 1.12 and the instantiated root
@@ -15,10 +15,10 @@ project are required. Reports additionally need Python >= 3.11 and matplotlib.
 ## Search, stop and resume
 
 ```sh
-bin/vbf search --output search/apn/results/experiment01 --duration 8h --threads 30
-bin/vbf status search/apn/results/experiment01
-bin/vbf stop search/apn/results/experiment01
-bin/vbf resume search/apn/results/experiment01 --duration 8h --threads 30
+bin/vbf search --output data/apn/runs/experiment01 --duration 8h --threads 30
+bin/vbf status data/apn/runs/experiment01
+bin/vbf stop data/apn/runs/experiment01
+bin/vbf resume data/apn/runs/experiment01 --duration 8h --threads 30
 ```
 
 The default method is V5 Fourier extension, with one worker unless `--threads`
@@ -36,7 +36,7 @@ control comes first; the remaining parents are sampled deterministically with
 is required. To choose discovered functions or another explicit seed set:
 
 ```sh
-bin/vbf search --output search/apn/results/next --input candidates.tsv \
+bin/vbf search --output data/apn/runs/next --input candidates.tsv \
   --parents 100 --duration 8h --threads 30
 ```
 
@@ -93,14 +93,14 @@ or recompute every kernel.
 ## Validate, compare, classify and export
 
 ```sh
-bin/vbf validate --input candidates.tsv --output search/apn/results/import01
-bin/vbf audit search/apn/results/experiment01
-bin/vbf classify search/apn/results/experiment01 --duration 30s --nodes 1000000
+bin/vbf validate --input candidates.tsv --output data/apn/runs/import01
+bin/vbf audit data/apn/runs/experiment01
+bin/vbf classify data/apn/runs/experiment01 --duration 30s --nodes 1000000
 bin/vbf compare --candidate HEX --target HEX --relation ccz \
   --duration 60s --nodes 1000000 --output comparison.toml
 bin/vbf verify comparison.toml
-bin/vbf report search/apn/results/experiment01
-make -C search/apn test
+bin/vbf report data/apn/runs/experiment01
+julia --project=. -e 'using Pkg; Pkg.test("VBFSearch")'
 ```
 
 `validate --limit N` and `audit --limit N` explicitly record partial validation.
@@ -138,7 +138,7 @@ and plotted. This deterministic inspection sample is not a statistical sample.
 
 ```julia
 using VBFSearch
-config = SearchConfig(output="search/apn/results/run01", method=:v5,
+config = SearchConfig(output="data/apn/runs/run01", method=:v5,
                       duration=8*3600, workers=30)
 search(config) # start Julia with --threads=30
 stop!(config.output) # from a separate process

@@ -30,7 +30,7 @@ julia --project=. -t 16 census/quadratic_apn8/rebuild_corpus/rebuild.jl stored \
 
 Every processed LUT must have degree exactly two and every nonzero polar map
 must have rank seven. The latter condition proves APN for quadratic functions.
-The promoted [`signature.jl`](../../../search/apn/verification/signature.jl) uses its own Boolean Möbius transform, binary elimination,
+The promoted [`signature.jl`](../../../packages/VBFSearch/src/verification/signature.jl) uses its own Boolean Möbius transform, binary elimination,
 differential histogram and integer Walsh transform. It calls no VBF
 verification/signature routines. VBF supplies the existing polynomial and
 compact-coefficient decoders; tests compare the independent result with the

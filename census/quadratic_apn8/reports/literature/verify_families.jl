@@ -6,7 +6,7 @@ reference-database membership are separate steps; it proves neither from hashes.
 """
 module VerifyFamilies
 using SHA,TOML
-include("../../../../search/apn/verification/signature.jl")
+include("../../../../packages/VBFSearch/src/verification/signature.jl")
 using .IndependentSignature
 sha(path)=bytes2hex(open(SHA.sha256,path))
 

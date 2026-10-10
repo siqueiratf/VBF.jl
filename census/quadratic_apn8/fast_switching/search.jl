@@ -115,7 +115,7 @@ function main_search(args)
         joinpath(REPO,"packages/VBF/src/constructions/switching_neighbors.jl"),
         joinpath(REPO,"packages/VBF/src/constructions/ea_class_orbits.jl"),
         joinpath(@__DIR__,"../rebuild_corpus/check_candidates.jl"),
-        joinpath(REPO,"search/apn/verification/signature.jl")]
+        joinpath(REPO,"packages/VBFSearch/src/verification/signature.jl")]
     code_hashes = Dict(p=>filehash(p) for p in code_paths)
     metadata = Dict("schema"=>"vbf-n8-switching-pilot-v2","options"=>opts,
         "input_sha256"=>input_hashes,"baseline_sha256"=>baseline_hash,

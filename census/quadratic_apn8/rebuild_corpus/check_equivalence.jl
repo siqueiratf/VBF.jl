@@ -1,7 +1,7 @@
 """Resolve public signature matches with bounded EA searches and explicit witnesses."""
 const EQUIVALENCE_USAGE = nothing
 include("check_candidates.jl")
-include("../../../search/apn/verification/ea_witness.jl")
+include("../../../packages/VBFSearch/src/verification/ea_witness.jl")
 using .IndependentEAWitness
 
 function matched_candidates(references, expected_hashes)
@@ -90,8 +90,8 @@ function check_equivalence(outdir; timeout_seconds=60.0, max_nodes=1_000_000)
     # Pin the verifier, dependencies and the entire loaded VBF source tree.
     vbfpaths = sort(filter(p->endswith(p,".jl"),
         [joinpath(dir,f) for (dir,_,files) in walkdir(joinpath(REPO,"packages/VBF/src")) for f in files]))
-    codepaths = vcat(vbfpaths, [(@__FILE__), joinpath(REPO,"search/apn/verification/ea_witness.jl"),
-        joinpath(@__DIR__,"check_candidates.jl"),joinpath(REPO,"search/apn/verification/signature.jl"),
+    codepaths = vcat(vbfpaths, [(@__FILE__), joinpath(REPO,"packages/VBFSearch/src/verification/ea_witness.jl"),
+        joinpath(@__DIR__,"check_candidates.jl"),joinpath(REPO,"packages/VBFSearch/src/verification/signature.jl"),
         joinpath(@__DIR__,"rebuild.jl"),joinpath(@__DIR__,"../crosscheck_raw/crosscheck.jl"),joinpath(REPO,"Manifest.toml")])
     codehashes = Dict(p=>filehash(p) for p in codepaths)
     identity = Dict("references_sha256"=>filehash(references),

@@ -1,5 +1,9 @@
 /reference/*.sqlite*
 /reference/*.toml
 /supplement.tsv
+/runs/**
+!/runs/**/
+/archive/class-orbit/source/**
+!/archive/class-orbit/source/**/
 !README.md
 !**/README.md
