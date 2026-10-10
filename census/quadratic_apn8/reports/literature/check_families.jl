@@ -6,7 +6,7 @@ This does not classify equal signatures or change the reference database.
 """
 module FamilyCoverage
 using VBF, SHA, TOML, Dates
-include("../../discovery/evidence.jl")
+include("../../../../search/apn/evidence.jl")
 using .DiscoveryEvidence
 const ROOT = normpath(joinpath(@__DIR__, "../../../.."))
 module Calderini
@@ -116,10 +116,10 @@ const DOMAIN_COUNTS = Dict("power"=>255, "bcl_trace"=>255,"zhou_pott"=>120,"tani
 """Fingerprint executable dependencies and private paper inputs used to audit formulas."""
 function source_hashes()
     paths=String[@__FILE__,joinpath(@__DIR__,"family_coverage.toml"),joinpath(ROOT,"Project.toml"),joinpath(ROOT,"Manifest.toml")]
-    for folder in ("packages/VBF/src","packages/VBFCatalog/src","census/quadratic_apn8/rebuild_corpus")
+    for folder in ("packages/VBF/src","packages/VBFCatalog/src","census/quadratic_apn8/rebuild_corpus","search/apn/verification")
         append!(paths,[joinpath(dir,f) for (dir,_,fs) in walkdir(joinpath(ROOT,folder)) for f in fs if endswith(f,".jl")])
     end
-    push!(paths,joinpath(@__DIR__,"../../discovery/evidence.jl"),joinpath(@__DIR__,"check_sources.jl"))
+    push!(paths,joinpath(@__DIR__,"../../../../search/apn/evidence.jl"),joinpath(@__DIR__,"check_sources.jl"))
     for folder in ("papers/2021/Calderini_202100","papers/2022/Gologlu_202207","papers/2022/Li_202207","papers/2021/Budaghyan_202101",
                    "papers/2025/Gologlu_202503","papers/2022/Zheng_202211","papers/2019/Taniguchi_201909")
         append!(paths,[joinpath(dir,f) for (dir,_,fs) in walkdir(joinpath(ROOT,folder)) for f in fs if endswith(f,".jl") || endswith(f,".tex")])

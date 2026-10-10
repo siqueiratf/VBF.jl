@@ -1,0 +1,5 @@
+results/**
+!results/**/
+!/report.py
+!README.md
+!**/README.md

@@ -6,7 +6,7 @@ include("inputs.jl")
 using .DiscoveryEvidence,.DiscoveryStore,.DiscoveryInputs,TOML,Dates
 
 function validate_inputs(args)
-    cfg=Dict("outdir"=>"", "baseline"=>Existing.DEFAULT_OUTPUT,"limit"=>"0","certificate"=>"")
+    cfg=Dict("outdir"=>"", "baseline"=>DEFAULT_REFERENCE,"limit"=>"0","certificate"=>"")
     inputs=String[]
     iseven(length(args)) || error("use --name VALUE pairs")
     for i in 1:2:length(args)
@@ -33,7 +33,7 @@ function validate_inputs(args)
             batch=Dict{String,Any}[]
             each_candidate(path) do row
                 limit>0 && total>=limit && return
-                p=classify(Existing.candidate_lut(row.payload),reference)
+                p=classify(candidate_lut(row.payload),reference)
                 p["apn"] && p["quadratic"] || error("invalid quadratic APN at $path:$(row.line)")
                 p["sigma_hash"]==row.hash || error("signature mismatch at $path:$(row.line)")
                 p["origin"]=Dict("file_sha256"=>input_digest,

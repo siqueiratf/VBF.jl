@@ -17,7 +17,7 @@ const SQL = VBFCatalog.SQLite
 const DBI = VBFCatalog.DBInterface
 const REPO = normpath(joinpath(@__DIR__, "../../.."))
 const DEFAULT_OUTPUT = joinpath(REPO, "census/quadratic_apn8/results/signature_rebuild")
-include("signature.jl")
+include("../../../search/apn/verification/signature.jl")
 using .IndependentSignature
 module RawReaders
 include("../crosscheck_raw/crosscheck.jl")
@@ -218,7 +218,7 @@ function input_identity(desc, limit)
         provenance_hash = bytes2hex(SHA.sha256(sprint(io -> TOML.print(io, entries; sorted=true))))
     end
     codehash = bytes2hex(SHA.sha256(join(filehash.(
-        [@__FILE__, joinpath(@__DIR__, "signature.jl"), joinpath(@__DIR__, "../crosscheck_raw/crosscheck.jl"),
+        [@__FILE__, joinpath(REPO,"search/apn/verification/signature.jl"), joinpath(@__DIR__, "../crosscheck_raw/crosscheck.jl"),
          joinpath(REPO, "Manifest.toml"), joinpath(REPO, "packages/VBF/src/representations/univariate.jl")]))))
     identity = Dict("inputs"=>hashes, "code_sha256"=>codehash, "source_provenance_sha256"=>provenance_hash,
                     "julia_version"=>string(VERSION), "limit"=>limit,

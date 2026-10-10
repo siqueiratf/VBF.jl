@@ -1,7 +1,4 @@
-/results/**
-!/results/**/
-/__pycache__/**
-!/__pycache__/**/
-!report.py
+results/**
+!results/**/
 !README.md
 !**/README.md

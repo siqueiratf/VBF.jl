@@ -4,7 +4,7 @@ include("evidence.jl")
 include("store.jl")
 using .DiscoveryEvidence,.DiscoveryStore,TOML,Dates
 
-function audit_run(dir;baseline=joinpath(@__DIR__,"../results/signature_rebuild"),limit=0)
+function audit_run(dir;baseline=get(ENV,"VBF_APN_REFERENCE",joinpath(@__DIR__,"../../data/apn/reference")),limit=0)
     limit>=0 || error("invalid audit limit")
     db=DiscoveryStore.SQL.DB("file:"*abspath(joinpath(dir,"run.sqlite"))*"?mode=ro")
     rows(sql,args=())=[Dict(String(k)=>v for (k,v) in pairs(r)) for r in DiscoveryStore.DBI.execute(db,sql,args)]

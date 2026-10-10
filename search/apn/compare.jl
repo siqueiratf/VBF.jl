@@ -11,7 +11,7 @@ function compare_cli(args)
         cfg[key]=args[i+1]
     end
     all(k->!isempty(cfg[k]),("candidate","target","out")) || error("--candidate HEX --target HEX --out FILE required")
-    proof=compare(Existing.candidate_lut(cfg["candidate"]),Existing.candidate_lut(cfg["target"]);
+    proof=compare(candidate_lut(cfg["candidate"]),candidate_lut(cfg["target"]);
         relation=Symbol(cfg["relation"]),timeout_seconds=parse(Float64,cfg["seconds"]),max_nodes=parse(Int,cfg["nodes"]))
     mkpath(dirname(abspath(cfg["out"])))
     open(io->TOML.print(io,proof;sorted=true),cfg["out"],"w")

@@ -1,3 +1,7 @@
+> Production search has moved to `search/apn/`, launched through `bin/vbf`.
+> This assessment records the earlier audit and historical results; see the
+> [current commands and storage](README.md). Old checkpoints are unsupported.
+
 # Scientific audit and research status
 
 Audit date: 2026-10-09/10 UTC. Implementation branch:
@@ -57,7 +61,7 @@ A frozen snapshot taken during the ongoing two-hour switching run contains
 exact LUTs were independently validated by the new importer, are quadratic APN,
 and have distinct signatures absent from the reference and supplement. Evidence,
 the snapshot timestamp/digests, CSV/LaTeX tables and SVG/PDF figures are under
-`discovery/results/validated_search_snapshot/`. This is a partial run snapshot,
+`census/quadratic_apn8/discovery/results/validated_search_snapshot/`. This is a partial run snapshot,
 not the final two-hour result. The historical input hashes are separate from
 these functions; the subsequent exact signature-set intersection with all 499,272 historical
 values was empty. The combined reference-plus-study-plus-snapshot class lower
@@ -94,7 +98,7 @@ parameters are k = 1, 3, 5, 7. The workflow constructs and independently verifie
 all four, checks their reference membership and records their signatures. Every
 corpus-absent candidate excludes all four signatures, hence all APN power
 functions. This also closes the Kasami concern theoretically. The existing
-[Kasami computation](../kasami_x57/REPORT.md) supplies further evidence, subject
+[Kasami computation](../../census/quadratic_apn8/kasami_x57/REPORT.md) supplies further evidence, subject
 to the documented sboxU dependency and thread bug. It is unnecessary to
 enumerate the Kasami CCZ class again for this power-function exclusion.
 

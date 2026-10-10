@@ -1,10 +1,10 @@
 # Extension search in the B6 = 52 branch of quadratic APN functions on F_2^8
 
-For new reproducible experiments use the [consolidated pipeline](../discovery/README.md).
+For new reproducible experiments use the [consolidated pipeline](../../../search/apn/README.md).
 This historical runner uses heuristic histogram pruning, per-seed completion
 markers and bounded construction choices; its outputs do not certify exhaustion.
 “New” below means absent from the comparison sources used at execution, not proven
-literature-wide novelty. The [current audit](../discovery/AUDIT.md) records the
+literature-wide novelty. The [current audit](../../../search/apn/AUDIT.md) records the
 source-rebuilt comparison, 61 previously public classes, and statistical limits.
 
 **Path**: `census/quadratic_apn8/search_b52/`
@@ -239,7 +239,7 @@ the catalog, use `novelty_new.tsv` (sigma, coefficients) as the input of a corpu
 
 | File | Content |
 |---|---|
-| `extlib.jl` | Module `Ext`: geometry of Alt(n), fast rank, coefficients, FWHT, Fourier extension (U route), v5 route, coset bent counts, subspace enumeration, brute-force reference |
+| `VBF.QuadraticExtensions` | Promoted package module: geometry of Alt(n), fast rank, coefficients, FWHT, Fourier extension (U route), v5 route, coset bent counts, subspace enumeration, brute-force reference |
 | `common.jl` | Paths, sigma index cache and novelty sets, seeds from `hit_properties.tsv` |
 | `search.jl` | Resumable multi-threaded search (`run_search`, `cli_search`) |
 | `validate.jl` | n = 6 and n = 8 validation (`make test`, `make validate`) |

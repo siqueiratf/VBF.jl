@@ -69,6 +69,13 @@ def export_report(run, output):
     fields=['lut_sha256','sigma_hash','apn','algebraic_degree','differential_uniformity','evidence_level','literature_novelty','lut_hex']
     with (output/'candidates.csv').open('w', newline='') as f:
         writer=csv.DictWriter(f, fieldnames=fields, extrasaction='ignore');writer.writeheader();writer.writerows(candidates)
+    # A round-trippable seed set for an explicit next exploration stage.
+    # Non-APNs and nonquadratic maps remain in the full CSV evidence export.
+    with (output/'seeds.tsv').open('w', newline='') as f:
+        writer=csv.DictWriter(f, fieldnames=['sigma_hash','lut_hex','lut_sha256'],
+                              delimiter='\t', extrasaction='ignore')
+        writer.writeheader()
+        writer.writerows(p for p in candidates if p['apn'] and p['quadratic'])
     with (output/'relationships.csv').open('w',newline='') as f:
         fields=['candidate_sha256','target_sha256','relation','status','equivalent']
         writer=csv.DictWriter(f,fieldnames=fields,extrasaction='ignore');writer.writeheader();writer.writerows(comparisons)

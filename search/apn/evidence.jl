@@ -3,8 +3,8 @@ module DiscoveryEvidence
 using VBF, VBFCatalog, SHA, TOML, Dates
 const SQL = VBFCatalog.SQLite
 const DBI = VBFCatalog.DBInterface
-include("../rebuild_corpus/signature.jl")
-include("../rebuild_corpus/ea_witness.jl")
+include("verification/signature.jl")
+include("verification/ea_witness.jl")
 using .IndependentSignature
 using .IndependentEAWitness
 export properties, open_reference, close_reference, classify, compare, verify_comparison,
@@ -81,7 +81,8 @@ function gold_coverage()
 end
 
 """Require a source-rebuilt reference; freeze its scope and digests, never fall back to an old index."""
-function open_reference(dir; supplement_path=joinpath(@__DIR__,"../results/literature_20261009/supplemental_luts.tsv"))
+function open_reference(dir; supplement_path=get(ENV,"VBF_APN_SUPPLEMENT",joinpath(@__DIR__,"../../data/apn/supplement.tsv")))
+    isfile(joinpath(dir,"comparison.toml")) || error("missing source-rebuilt APN reference: $dir; see data/apn/README.md")
     manifest = TOML.parsefile(joinpath(dir,"comparison.toml"))
     manifest["provenance_complete"] || error("incomplete original-source reference")
     path = abspath(joinpath(dir,"fresh_union.sqlite"))

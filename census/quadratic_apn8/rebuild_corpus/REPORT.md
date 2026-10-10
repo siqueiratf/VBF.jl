@@ -50,7 +50,7 @@ baseline. All 388,343 records tagged `known` match it.
 The union of `desk1/found.tsv`, `new_classes_553.tsv`, `new_classes_extra.tsv`
 and `new_classes_trial_773.tsv` contains 498,840 distinct signatures, of which
 388,404 match the public baseline and 110,436 are absent. There are 787
-duplicate records across these input files. The subsequent [consolidated audit](../discovery/AUDIT.md) also checked the now-available
+duplicate records across these input files. The subsequent [consolidated audit](../../../search/apn/AUDIT.md) also checked the now-available
 463-record hyperplane file. It adds exactly 432 distinct absent signatures,
 reconciling the screenshot's **110,868** whole-study total. The four-file numbers
 in this report retain their original scope; the updated five-file reconciliation
