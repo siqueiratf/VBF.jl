@@ -3,7 +3,7 @@
 # Section: 4.1 Algorithm, Table 1
 #
 # Pseudocode:
-#   F1(x) = x^4 = x^{2²}
+#   F1(x) = x^3 = x^{2^1+1}
 #   F2(x) = x^9 = x^{2³+1}
 #   F3(x) = x^513 + x^192 + x^96 + x^48 + x^33 + x^18 + x^12
 #   Verify: is_quadratic_apn(Fi) for i=1,2,3
@@ -17,7 +17,7 @@ const MOD10 = conway_polynomial(N10)  # 1135
 
 # Table 1 polynomial exponents (univariate over GF(2^10)).
 const TABLE1_EXPONENTS = [
-    [3],                                            # x^3 = x^{2^1+2^0} — Gold k=1 (paper writes x^4, likely typo for x^3)
+    [3],                                            # x^3 = x^{2^1+2^0} — Gold k=1 as printed in the supplied LaTeX
     [9],                                            # x^9 = x^{2^3+2^0} — Gold k=3
     [513, 192, 96, 48, 33, 18, 12],                 # shorter rep for x^3+Tr(x^9) class
 ]

@@ -25,6 +25,40 @@ const TABLE1_EXPECTED = [
     (4, 2, 108, Dict(0=>34335, 2=>29250, 4=>1695), 96),
 ]
 
+# Reuse the earlier paper's construction as a concrete independent reference.
+module ZhaInverseSwapControl
+include(joinpath(@__DIR__,"..","..","2013","Yuyin_201300","helpers.jl"))
+end
+
+# Keep printed claims separate from independently recomputed regression values.
+const TABLE1_PUBLISHED = [
+    (2,2,4,Dict(0=>135,2=>90,4=>15),0),
+    (2,3,22,Dict(0=>2127,2=>1794,4=>111),20),
+    (2,4,108,Dict(0=>34335,2=>29250,4=>1695),108),
+    (4,2,108,Dict(0=>34335,2=>29250,4=>1695),96),
+]
+
+"""Evaluate the nonlinearity-only separation argument against the paper's [16] value.
+Equal nonlinearity is inconclusive; it never proves CCZ equivalence.
+"""
+function proposition5_nonlinearity_evidence(; modulus=primitive_polynomial(8))
+    rows = [table1_compute(s,n;modulus) for (s,n) in ((2,4),(4,2))]
+    # This fixed control is built in the AES representation used by that reproduction.
+    control = ZhaInverseSwapControl.inverse_swap(1,32,8;modulus=283)
+    control_du = differential_uniformity(control)
+    control_nl = compute_nonlinearity(control)
+    control_ds = Dict(sorted_pairs(differential_spectrum(control)))
+    control_du==4 && control_nl==110 || error("inverse-swap control changed; re-audit comparison")
+    return [(;s=r.s,n=r.n,computed_nonlinearity=r.nl,comparison_nonlinearity=110,
+              separates_by_nonlinearity=r.nl != 110,
+              control_source="Yuyin_201300 inverse_swap(1,32,8), modulus 283",
+              control_diff_uniformity=control_du, control_nonlinearity=control_nl,
+              control_differential_spectrum=control_ds,
+              separates_from_control_by_differential_spectrum=Dict(sorted_pairs(r.ds)) != control_ds,
+              conclusion=r.nl == 110 ? "inconclusive against the whole cited family: the nonlinearity argument fails; distinct differential spectrum separates this single control" :
+              "different nonlinearity proves CCZ inequivalence to references with nonlinearity 110") for r in rows]
+end
+
 function table1_compute(s::Int, n::Int; modulus::Int = primitive_polynomial(s * n))
     N = s * n
     t = if iseven(s) && ((1 << s) - 1) % 3 == 0
@@ -45,10 +79,15 @@ end
 function table1_report(io::IO = stdout)
     print_section("Table 1 — Construction 1 (Theorem 1) computational results", io)
 
-    for (s, n, exp_nl, exp_ds, exp_bound) in TABLE1_EXPECTED
+    for (row, (s, n, exp_nl, exp_ds, exp_bound)) in enumerate(TABLE1_EXPECTED)
         r = table1_compute(s, n)
         N = r.N
         label = "sn=$N (s=$s, n=$n)"
+
+        printed = TABLE1_PUBLISHED[row]
+        published_match = r.nl == printed[3] && Dict(sorted_pairs(r.ds)) == printed[4]
+        print_check("$label: matches printed Table 1", published_match, io)
+        published_match || print_kv("$label: paper contradiction", "published NL=$(printed[3]); computed NL=$(r.nl), spectrum=$(Dict(sorted_pairs(r.ds)))", io)
 
         # Nonlinearity
         print_check("$label: NL = $exp_nl", r.nl == exp_nl, io)
@@ -73,6 +112,11 @@ function table1_report(io::IO = stdout)
         # Differential uniformity
         print_check("$label: Δ_f = 4", r.du == 4, io)
     end
+    evidence=proposition5_nonlinearity_evidence()
+    for row in evidence
+        print_kv("Proposition 5 s=$(row.s),n=$(row.n)", row.conclusion, io)
+    end
+    return evidence
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

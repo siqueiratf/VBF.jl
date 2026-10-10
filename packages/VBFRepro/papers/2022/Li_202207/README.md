@@ -1,5 +1,19 @@
 # Li_202207 — Two New Families of Quadratic APN Functions
 
+## Audit corrections (2026-10-10)
+
+The audit fixes F006/F007 now follow the supplied LaTeX Theorem 3 exactly:
+`L(z)=z^(2^(m+s))+μ z^(2^s)+z`, with nonzero `v` in the **embedded** GF(2^m).
+The constructor checks the norm, permutation and scalar hypotheses. Table V row
+12 (`m=3,s=1,μ=32,v=336,modulus=529`) has a pinned LUT digest independently
+recomputed with polynomial-bit field arithmetic, APN verification and an
+ortho-derivative spectrum regression. Exhaustive μ search at `(m,s)=(2,1)`
+returns no admissible parameter. Tests verify all seven nonzero embedded GF(8)
+scalars and reject an ambient-field scalar. These are finite computational
+checks; Γ-rank, family-wide coverage and literature novelty remain unverified.
+The historical implementation issues below are retained as review history.
+
+
 **Paper**: Li, Zhou, Li, Qu. "Two New Families of Quadratic APN Functions." *IEEE
 Transactions on Information Theory* **68**(7):4761-4769, 2022.
 

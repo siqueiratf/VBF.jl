@@ -1,5 +1,8 @@
 # Beierle_202508 — Millions of Inequivalent Quadratic APN Functions in Eight Variables
 
+Current audit application (2026-10-10): F052: `make table4_1` computes both :lex and :bminK profiles for explicitly identified eight-bit corpus members, with node/subspace budgets and side-store hashes. Budget failures return inconclusive entries. This adds the missing executable comparison; full Table 4.1 reconciliation, depth-six enumeration and the publication’s intended ordering remain unresolved.
+
+
 **Paper**: Beierle et al. "Millions of inequivalent quadratic APN functions in eight
 variables." 2025.
 

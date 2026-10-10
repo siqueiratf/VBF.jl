@@ -1,4 +1,54 @@
-# APN reproduction audit — what to run next
+# APN audit — applied findings and remaining research
+
+Updated **2026-10-10**. All 36 historical findings have a current disposition in
+[`audit/resolutions.toml`](audit/resolutions.toml): **20 fixed, 1 already fixed,
+15 partially addressed with explicit remaining work**. “Fixed” means the implementation
+or evidence defect is resolved; it does not prove every claim in the corresponding paper.
+
+The changes correct theorem formulas and hypotheses, field-generator assumptions,
+full-width GF(2) operations, graph-code coordinates, ortho-derivative computation,
+search exhaustion reporting, reference-coverage checks and withdrawn catalog proposals.
+Exact prior-art witnesses are stored and independently replayed; equal invariant
+tuples are never treated as proof of equivalence. No catalog rows were added.
+
+Current experimental evidence:
+
+- The full **21,102-member** Canteaut corpus scan verified every member as quadratic
+  APN, reproduced all six published extended Walsh spectra, and obtained **21,102
+  distinct exact ortho-derivative signatures**. This certifies pairwise CCZ
+  inequivalence within the two explicitly hashed side stores. Saved evidence is
+  `packages/VBFRepro/papers/2022/Canteaut_202205/results/section4_5.toml` (ignored),
+  with execution manifests under `data/repro/runs/Canteaut_202205/`. It does not
+  reproduce every thickness-spectrum claim or certify global corpus completeness.
+- All six reviews previously unable to run Julia now have successful Julia test
+  and report executions. All eight historical LUT proposals were regenerated;
+  APN checks, degrees and encoding hashes are recorded in
+  [`audit/revalidated_luts.toml`](audit/revalidated_luts.toml). These properties
+  alone do not authorize new catalog classes.
+- The three Beierle profile controls reproduce **(30,46)** under lexicographic
+  order and **(30,34)** under the alternative order. The publication’s intended
+  order and the full depth-six table remain unresolved.
+- Both **241-pair n=12** Bracken parameter grids were exhausted and verified APN.
+  Distinct exact signatures establish all six pairwise CCZ inequivalences among
+  the four literal Table 2 representatives; novelty against all earlier
+  constructions remains unresolved.
+- The complete core suite passed **102 test items / 146,742 assertions**; an
+  independent implementation review passed **386 checks**. A budgeted public-API
+  Gold8 Gamma computation returned **11,818**. See
+  [`audit/README.md`](audit/README.md) for reproduction commands and limits.
+
+Remaining work is explicitly scoped: unfinished full searches, source/table
+reconciliation, faithful reproduction of omitted paper pruning, general binary-code
+permutation equivalence, and complete literature/reference coverage. A sampled
+search, invariant collision, missing catalog entry, or incomplete reference list
+cannot establish a previously unknown CCZ class.
+
+## Historical audit (2026-08-17)
+
+The text below is retained as the historical investigation, not a current run plan.
+Its paths, source allegations, catalog counts and timing estimates may be superseded
+by the resolution ledger. In particular F001’s attribution was already corrected,
+Yu’s original LaTeX prints x3, and matching mugshots are not a complete equivalence test.
 
 Audited 2026-08-17 against the working tree (HEAD `bf15e59` plus uncommitted changes),
 Julia 1.12.6, AMD Ryzen 5 5600G / 12 threads / 30.7 GB.
@@ -242,7 +292,8 @@ then add `reps = :min_log` to `fn_set` and switch `table3.jl:82` to `apn_ea_mugs
   corrected mugshot key; n=6 and n=7 must return 4 and 78 under `:min_log` before any n ≥ 8
   number is believed.
 - **Inequivalence certificate** the ortho-derivative mugshot — differential **and** Walsh — which
-  is the paper's own stated criterion and is complete for quadratic APN.
+  is the paper's own stated criterion: unequal exact signatures certify inequivalence for
+  quadratic APNs; equal signatures do not certify equivalence.
 - **Stop condition** stop when n=6 and n=7 reproduce and n ≥ 8 is marked UNREPRODUCED rather
   than asserted. Do **not** keep searching conventions for n=8: with 30 orbits there are 8³⁰
   admissible sets and the search is unbounded.

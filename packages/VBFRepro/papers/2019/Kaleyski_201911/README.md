@@ -1,5 +1,8 @@
 # Kaleyski_201911 — Changing APN Functions at Two Points
 
+Current audit application (2026-10-10): F023: `conjecture22_report` now returns a SearchOutcome per selected catalog region, records available members and selected IDs, and accepts full_search, max_evaluations and timeout_seconds. Samples/interrupted runs are BudgetHit. Exhaustion covers only the explicitly named catalog members, never all APNs or the conjecture globally.
+
+
 **Paper:** N. Kaleyski, *Changing APN functions at two points*, Des. Codes
 Cryptogr. 88(8), 2019.
 

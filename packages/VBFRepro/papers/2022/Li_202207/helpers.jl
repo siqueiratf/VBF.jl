@@ -44,17 +44,18 @@ end
 
 Find the smallest μ ∈ F*_{2^{3m}} satisfying (Theorem 3 conditions):
   (i)  μ^{2^{2m}+2^m+1} ≠ 1   (μ not in kernel of the relative norm N_{F_{3m}/F_m})
-  (ii) L(z) = z^{2^{2m+s}} + μ·z^{2^s} + z is a permutation of F_{2^{3m}}
+  (ii) L(z) = z^{2^{m+s}} + μ·z^{2^s} + z is a permutation of F_{2^{3m}}
 
 gcd(s, m) = 1 is required. Returns (-1, false) when no valid μ exists (e.g. m=1,
 where |F*_{2^3}|=7 divides norm_exp=7, so all elements have norm 1).
 Precomputes z^{e_high} and z^{e_low} for all z to amortise Frobenius cost.
 """
 function find_valid_mu(m::Int, s::Int; modulus::Int = primitive_polynomial(3m))
+    m >= 1 && s >= 1 && gcd(s, m) == 1 || throw(ArgumentError("requires m,s > 0 and gcd(s,m)=1"))
     n          = 3m
     norm_exp   = (1 << (2m)) + (1 << m) + 1
-    e_high     = 1 << (2m + s)
-    e_low      = 1 << s
+    e_high     = 1 << mod(m + s, n)
+    e_low      = 1 << mod(s, n)
     field_size = 1 << n
 
     pow(x, e) = gf_pow(x, e, n; modulus)

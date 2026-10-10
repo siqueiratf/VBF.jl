@@ -237,7 +237,7 @@ end
 
 function _write_tuple_matrix_constants(io::IO, n::Int, blocks)
     write(io, "# This file stores precomputed tuple matrix constants for n = $n.\n")
-    write(io, "# Regenerate it with generate_tuple_matrix_constants_file($n).\n")
+    write(io, "# Regenerate it with generate_tuple_matrix_constants_file($n; output=..., full_search=true).\n")
     write(io, "# Each block stores: tuple LUT, matrix A, matrix B, and optional search result.\n\n")
     write(io, "n = $n\n")
     write(io, "n_blocks = $(length(blocks))\n\n")

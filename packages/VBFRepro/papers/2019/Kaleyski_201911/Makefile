@@ -6,6 +6,10 @@ n_max_ddt     ?= 10
 n_max_formula ?= 20
 limit         ?= 2147483647
 save_results  ?= false
+full_search ?= false
+max_evaluations ?= 2147483647
+timeout_seconds ?= 60
+pair_samples ?= 16
 
 default: help
 
@@ -40,7 +44,7 @@ conjecture21:
 conjecture22:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "conjecture22.jl")); \
-	   print_header(); conjecture22_report(; limit=$(limit))'
+	   print_header(); conjecture22_report(; limit=$(limit), full_search=$(full_search), max_evaluations=$(max_evaluations), timeout_seconds=$(timeout_seconds), pair_samples=$(pair_samples))'
 
 clean_results:
 	rm -rf "$(MAKEFILE_DIR)/results"

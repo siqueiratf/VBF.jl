@@ -22,20 +22,21 @@ const BLP_LUT1 = UInt8[0,136,192,44,123,166,60,133,140,117,32,189,22,186,61,245,
 
     @testset "classify against / outside catalog" begin
         idx = sigma_index([F0, F1])
-        @test classify_against_catalog(F0, idx) == :known        # in catalog
-        @test classify_against_catalog(F1, idx) == :known
-        @test classify_against_catalog(gold_apn(8, 1), idx) == :new   # Gold absent here
+        @test classify_against_catalog(F0, idx) == :signature_match        # in catalog
+        @test classify_against_catalog(F1, idx) == :signature_match
+        @test classify_against_catalog(gold_apn(8, 1), idx) == :signature_absent   # Gold absent here
         idx2 = add_sigmas!(copy(idx), [gold_apn(8, 1), gold_apn(8, 3)])
-        @test classify_against_catalog(gold_apn(8, 1), idx2) == :known  # now present
+        @test classify_against_catalog(gold_apn(8, 1), idx2) == :signature_match  # now present
     end
 
-    @testset "paper's new classes flagged novel vs small catalog" begin
-        reps = representative_sboxes()
+    @testset "signature absence in a restricted sample is not literature novelty" begin
+        @test classify_against_catalog(gold_apn(8, 1), Set{UInt128}()) == :inconclusive
+    reps = representative_sboxes()
         idx = add_sigmas!(sigma_index([F0, F1]), [gold_apn(8, 1), gold_apn(8, 3)])
-        # class A (a genuinely new Kuznetsov class) must be :new vs {BLP sample ∪ Gold}
-        @test classify_against_catalog(reps.class_a, idx) == :new
-        # class E == Gold x³ ⇒ :known
-        @test classify_against_catalog(reps.class_e, idx) == :known
+        # class A (a Kuznetsov representative, equivalent to Edel-Pott 2009) must be :signature_absent vs {BLP sample ∪ Gold}
+        @test classify_against_catalog(reps.class_a, idx) == :signature_absent
+        # class E == Gold x³ ⇒ :signature_match
+        @test classify_against_catalog(reps.class_e, idx) == :signature_match
     end
 
     @testset "dim-7 catalog (generic over n)" begin
@@ -46,8 +47,8 @@ const BLP_LUT1 = UInt8[0,136,192,44,123,166,60,133,140,117,32,189,22,186,61,245,
         @test differential_uniformity(G0) == 2          # dim-7 APN under VBF
         @test algebraic_degree(G0) <= 2
         idx7 = add_sigmas!(Set{UInt128}(), [G0])         # only G0 known
-        @test classify_against_catalog(G0, idx7) == :known
-        @test classify_against_catalog(G1, idx7) == :new # distinct CCZ class
+        @test classify_against_catalog(G0, idx7) == :signature_match
+        @test classify_against_catalog(G1, idx7) == :signature_absent # distinct CCZ class
     end
 
     @testset "index binary round-trip" begin

@@ -4,6 +4,9 @@
     # Small budget: 20 samples, deterministic seed
     r = algorithm1_run(; sample_size = 20, seed = 42)
 
+    @test !r.exhaustive
+    @test r.sampling == :with_replacement
+    @test_throws ArgumentError algorithm1_run(; sample_size = 0)
     @test r.sample_size == 20
     @test 0 <= r.n_apn <= 20
     @test 0.0 <= r.density <= 1.0

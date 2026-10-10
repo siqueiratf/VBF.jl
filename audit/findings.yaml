@@ -30,6 +30,8 @@
 # rely on are in bench/calibration.toml.
 
 meta:
+  application_resolution: "audit/resolutions.toml"
+  application_date: "2026-10-10"
   generated_utc: "2026-08-17T17:00:00Z"
   julia: "1.12.6"
   repo_head: "bf15e59 plus uncommitted working-tree changes"
@@ -152,9 +154,9 @@ findings:
       to_build:
         - a regression test pinning classify_ccz(F) == (:sigma_match, functions, 579)
         - a test asserting are_ea_equivalent(F, corpus_function(db, wengtangong2013_n8, 9)) ==
-        true
+          true
         - enrichment of the existing catalog rows with bib_key = Ichanska_202400 instead of a
-        new entry
+          new entry
       supersession: >-
         CHECKED. The README already reached this conclusion and withdrew its own
         n8_Ichanska2024_new gap record; this audit re-derived it independently with the exact
@@ -232,7 +234,7 @@ findings:
         implemented_tested
       to_build:
         - ea_mappings_from_ortho_derivative on each of the four pairs to upgrade sigma-match to
-        proof
+          proof
         - a regression test pinning the four :sigma_match sources
         - deletion or supersession of REVIEW_Kuznetsov_202606.md's four catalog-gap records
       supersession: >-
@@ -314,7 +316,7 @@ findings:
         - a reps::Symbol = :min_log option on fn_set
         - re-derivation of n=6,7 under :min_log with the paper's 4 and 78 asserted
         - an explicit UNREPRODUCED marker for n=8,9,10 rather than an assertion of the paper's
-        numbers
+          numbers
         - a test file for table2 -- there is none today
       supersession: >-
         CHECKED. No later paper in this repo revisits Yu-Li-Ichanska-Kaleyski Table 2.
@@ -387,7 +389,7 @@ findings:
         implemented_untested
       to_build:
         - switch the key to (differential_spectrum, absolute_walsh_spectrum) of the ortho-
-        derivative -- i.e. apn_ea_mugshot, already exported
+          derivative -- i.e. apn_ea_mugshot, already exported
         - a distinctness assertion in tests/test_table3.jl, which today asserts only APN-ness
       supersession: >-
         CHECKED. No later reproduction revisits this table.
@@ -605,11 +607,11 @@ findings:
         implemented_untested
       to_build:
         - either rename the constant, or add a genuinely primitive n=8 entry and keep the AES
-        modulus under a separate name
+          modulus under a separate name
         - a package test asserting ord(2) == 2^n - 1 for every entry, which would fail today at
-        n=8
+          n=8
         - a grep-driven audit of every primitive_polynomial(8) call site that also uses alpha^i
-        indexing
+          indexing
       supersession: >-
         CHECKED. Two independent reviews (Yuyin_201300, Tang_201510) surfaced it; neither acted,
         and the constant is unchanged in the working tree.
@@ -683,7 +685,7 @@ findings:
         implemented_untested
       to_build:
         - raise the guard to n <= 8 with a documented about 170 s / about 1 GB cost and a
-        warning above n=7
+          warning above n=7
         - correct the docstring's compute it with Magma sentence
         - gamma_rank assertions in papers/2025/Taniguchi_202501/test/test_example4_2.jl
         - a memory-bounded or blocked elimination if n=9 is ever wanted
@@ -853,7 +855,7 @@ findings:
         partial
       to_build:
         - replace the out-of-scope note with K = kim_apn(); eta_m(K, 3), which will print FAIL
-        with 3
+          with 3
         - record N_F(kappa), N_F(x^3) and the two ortho-derivative DDT spectra as the evidence
       supersession: >-
         NOT CHECKED for the eta definition: Gologlu-Pavlu [4] is not in the repository, so
@@ -1003,7 +1005,7 @@ findings:
         - replace with pow(x,q2q1) XOR pow(x,q2+1) XOR pow(x,q+1) XOR x XOR 1
         - fix the printed label at theorem1.jl:92, which matches neither the paper nor the code
         - a regression test asserting the polynomial's VALUE at a fixed x, not just its boolean
-        verdict, so a reciprocal substitution can never pass again
+          verdict, so a reciprocal substitution can never pass again
       supersession: >-
         CHECKED. Nothing later in the repo restates Li-Kaleyski Theorem 1's conditions.
       recomputation: >-
@@ -1158,9 +1160,9 @@ findings:
         - a commutant enumerator Comm(M) over GL(n, F2)
         - isSmallest (lexicographic minimum under C_B o F o C_A), gated by depth <= t
         - Definition 5 is_extendable plus Lemma 6's seeding of Ord(A,1) with the unique 3-bit
-        APN permutation
+          APN permutation
         - per-class persistence of the SearchOutcome so an Exhausted-and-empty class is
-        distinguishable from a BudgetHit
+          distinguishable from a BudgetHit
       supersession: >-
         CHECKED, and the picture CHANGED since the README was written: the working tree now
         carries packages/VBF/src/search/outcome.jl, a three-case SearchOutcome type (Found /
@@ -1249,8 +1251,8 @@ findings:
         implemented_tested
       to_build:
         - nothing new -- confirm = true now splits each bucket with the complete quadratic-APN
-        decision; what is missing is making the paper-local call sites use it and asserting the
-        difference
+          decision; what is missing is making the paper-local call sites use it and asserting the
+          difference
       supersession: >-
         CHECKED, and STALE in the README's favour: qam_search.jl in the working tree now
         documents the x^3/x^5 and x^3/x^9 collisions explicitly at :215-228, offers confirm =
@@ -1484,10 +1486,10 @@ findings:
         implemented_tested
       to_build:
         - Proposition VI.1's normalisation, which is the reduction that would make VII-D
-        reachable
+          reachable
         - an honest coverage denominator on the n=9 sample
         - the n=8 isotopic-shift derivation of x^9 + Tr(x^3), whose parameters the paper does
-        not publish
+          not publish
       supersession: >-
         CHECKED. Budaghyan_202101 is the follow-up (generalised isotopic shift) and does not
         close VII-D either; its own Theorem 3.1 conditions are unimplemented.
@@ -1709,7 +1711,7 @@ findings:
       to_build:
         - an m_values keyword defaulting to [3,5], with [3,5,7] behind full_search
         - a streaming or bitmask subspace representation in expand_subspaces so n=14 becomes
-        bounded
+          bounded
         - a corrected cost note
       supersession: >-
         CHECKED. No later paper exercises nonbent_signature at n=14.
@@ -1773,7 +1775,7 @@ findings:
         partial
       to_build:
         - a Leon-style code-equivalence decision, or a documented decision to stay with the
-        necessary condition
+          necessary condition
       supersession: >-
         CHECKED. Two papers need the same routine; neither has it.
       recomputation: >-
@@ -1840,7 +1842,7 @@ findings:
       to_build:
         - import the Beierle-Leander n=9 (35) and n=10 (5) instance sets as corpora
         - an n >= 9 guard in classify_ccz that refuses to return :new when no corpus covers the
-        dimension
+          dimension
         - a coverage assertion so a novelty claim cannot be made against an empty index
       supersession: >-
         CHECKED across six reproductions (Yu_202012, Budaghyan_202101, Li_202402,
@@ -2312,9 +2314,9 @@ findings:
         implemented_untested
       to_build:
         - nothing new -- run make -C papers/<year>/<id> test and report for all six and record
-        the outcome
+          the outcome
         - regenerate the eight catalog-gap LUTs with the repo's own terms_to_lut and gf_* and
-        compare against the recorded fingerprints
+          compare against the recorded fingerprints
         - update the six READMEs' Test Results sections
       supersession: >-
         CHECKED. Bracken_201205's README, in the same era, DID discharge its equivalent caveat
@@ -2400,11 +2402,11 @@ findings:
         implemented_tested
       to_build:
         - delete table1_invariants.jl, its three make targets, its test file and
-        results/table1_*.toml
+          results/table1_*.toml
         - a real table1.jl bucketing beierleleander2022_n8 by (LE-automorphism class, extended
-        Walsh spectrum)
+          Walsh spectrum)
         - repointing dataset_validation.jl, proposition1.jl and catalog_validation.jl at the
-        tracked 12,923-member corpus instead of the absent inputs/*.txt
+          tracked 12,923-member corpus instead of the absent inputs/*.txt
       supersession: >-
         CHECKED. Canteaut_202205's README reports the same corpus scan from its own direction
         and gets consistent multiplicities, so the data needed to build the real Table 1 is
@@ -2557,8 +2559,9 @@ findings:
         none
       to_build:
         - a single catalog pass writing the records whose evidence is invariant-backed
-        - a rebuild (make -C packages/VBFCatalog/data-build catalog) and gate run (make -C
-        packages/VBFCatalog/data-build check) until it prints catalog-check: OK
+        - >-
+          a rebuild (make -C packages/VBFCatalog/data-build catalog) and gate run (make -C
+          packages/VBFCatalog/data-build check) until it prints catalog-check: OK
         - the matching count updates in packages/VBF/test/unit/catalog_queries_test.jl
       supersession: >-
         PARTIALLY CHECKED. Two records were withdrawn on supersession grounds --
@@ -2640,7 +2643,7 @@ findings:
         partial
       to_build:
         - generate_tuple_matrix_constants_file(n) on top of the existing
-        _write_tuple_matrix_constants
+          _write_tuple_matrix_constants
         - re-enabled n=7 and n=8 count assertions behind full_search
         - a generated-versus-committed equality assertion
       supersession: >-
@@ -2706,7 +2709,7 @@ findings:
         partial
       to_build:
         - a paper-local degree-30 primitive polynomial constant, since core's
-        PRIMITIVE_POLYNOMIALS stops at 16, with an explicit primitivity assertion on alpha=2
+          PRIMITIVE_POLYNOMIALS stops at 16, with an explicit primitivity assertion on alpha=2
         - an opt-in (k=10, s=2) case behind full_search running the streaming permutation check
         - a rank-based derivative check dim ker D_a F == t with a samples limit
       supersession: >-
@@ -2793,7 +2796,7 @@ findings:
         - (4,11) added to THEOREM1_CASES
         - an opt-in n=15 case
         - replacement of the NOVELTY-GAP banner with the ortho-derivative separation, which the
-        repository can already compute
+          repository can already compute
       supersession: >-
         CHECKED. Bracken_200807 is the origin of Family 7 and is reproduced separately;
         Bracken_201205 reuses the same quadrinomial. Neither closes the n=12 sweep.
@@ -2835,4 +2838,3 @@ findings:
         the 4x-per-dimension scaling is unmeasured above n=10; the differential spectrum of the
         ortho-derivative at n=12 is a 2^24 pass and could be minutes rather than tenths of
         seconds
-

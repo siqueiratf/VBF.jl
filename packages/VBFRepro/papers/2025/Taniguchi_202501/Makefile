@@ -1,12 +1,14 @@
 include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../../paper.mk
 
 
-.PHONY: help test report theorem3_2 table3_1 theorem3_7 example4_2 clean_results
+.PHONY: help test report theorem3_2 table3_1 theorem3_7 example4_2 prior_art clean_results
 
 n            ?= 5
 save_results ?= false
 seed         ?= 42
 full_search  ?= false
+max_evaluations ?= 1048576
+timeout_seconds ?= Inf
 
 default: help
 
@@ -21,7 +23,7 @@ report:
 theorem3_2:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "theorem3_2.jl")); \
-	   print_header(); theorem3_2_report(; n=$(n))'
+	   print_header(); theorem3_2_report(; n=$(n), full_search=$(full_search), max_evaluations=$(max_evaluations), timeout_seconds=$(timeout_seconds))'
 
 table3_1:
 	$(JULIA) $(JULIA_PROJECT) -e \
@@ -37,6 +39,9 @@ example4_2:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "example4_2.jl")); \
 	   print_header(); example4_2_report()'
+
+prior_art:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/prior_art.jl
 
 clean_results:
 	rm -rf "$(MAKEFILE_DIR)/results"

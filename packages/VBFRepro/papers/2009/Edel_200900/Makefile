@@ -2,7 +2,7 @@ include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../../paper.mk
 
 
 .PHONY: help test report proposition2 theorem9 table5 table6 \
-        theorem7 theorem10 theorem11 clean_results
+        theorem7 theorem10 theorem11 table7 clean_results
 
 # Overridable parameters
 max_n        ?= 8
@@ -35,6 +35,9 @@ table5:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "table5.jl")); \
 	   print_header(); table5_report(; save_results=$(save_results))'
+
+table7:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/table7.jl
 
 table6:
 	$(JULIA) $(JULIA_PROJECT) -e \

@@ -38,77 +38,84 @@ end
 Enumerate all linearized polynomials L on GF(2^n) with L(e₀) = 0 that satisfy
 Theorem 3.2 (making G(x) = x^3 + Tr(x)L(x) APN). Returns count of valid L.
 """
-function count_valid_L(n::Int; mod::Int = paper_modulus(n), verbose::Bool = false)
-    e0 = trace_one_element(n, mod)
+function count_valid_L_bounded(n::Int; mod::Int = paper_modulus(n),
+        max_evaluations::Int = 1 << 20, timeout_seconds::Real = Inf,
+        start_index::Int = 0, e0::Int = trace_one_element(n, mod))
+    2 <= n <= 6 || throw(ArgumentError("table-driven counter supports 2 <= n <= 6"))
+    max_evaluations >= 0 || throw(ArgumentError("max_evaluations must be nonnegative"))
+    timeout_seconds >= 0 || throw(ArgumentError("timeout_seconds must be nonnegative"))
+    gf_trace(e0, n; modulus = mod) == 1 || throw(ArgumentError("e0 must have trace one"))
+    N = 1 << n; total = N^(n-1)
+    0 <= start_index <= total || throw(ArgumentError("start_index outside enumerated region"))
     T0 = trace_zero_elements(n, mod)
-    N = 1 << n
-
-    # Enumerate all linearized polynomials: L(x) = Σᵢ aᵢ x^{2^i}, aᵢ ∈ GF(2^n)
-    # Constraint: L(e₀) = 0
-    # There are N^n total linearized polys, N^(n-1) with L(e₀) = 0
-    # For n=4: 16^3 = 4096 candidates; n=5: 32^4 = 1048576; n=6: too many (64^5 ≈ 10^9)
-
-    count = 0
-
-    if n <= 5
-        # Exhaustive enumeration
-        # Parameterize: coeffs = [a₀, a₁, ..., a_{n-1}]
-        # Constraint: L(e₀) = Σᵢ aᵢ · e₀^{2^i} = 0
-        # Compute e₀^{2^i} values
-        e0_powers = Vector{Int}(undef, n)
-        xi = e0
-        for i in 1:n
-            e0_powers[i] = xi
-            xi = gf_mul(xi, xi, n; modulus=mod)
+    powers = [gf_pow(e0, 1 << (i-1), n; modulus = mod) for i in 1:n]
+    inv_last = gf_inv(last(powers), n; modulus = mod)
+    # All field arithmetic and B_F are loop-invariant tables. The inner loop
+    # evaluates L and checks injectivity using a 64-bit set of output values.
+    contributions = [gf_mul(c, gf_pow(x, 1 << (i-1), n; modulus = mod), n; modulus = mod)
+                     for i in 1:n, c in 0:N-1, x in T0]
+    dependent = [gf_mul(gf_mul(c, powers[i], n; modulus = mod), inv_last, n; modulus = mod)
+                 for i in 1:n-1, c in 0:N-1]
+    bilinear = [bilinear_form_gold(x, a ⊻ e0, n, mod) for a in T0, x in T0]
+    coeffs = zeros(Int, n); values = zeros(Int, length(T0))
+    count = 0; evaluated = 0; t0 = time()
+    next_index = start_index
+    while next_index < total && evaluated < max_evaluations && time()-t0 < timeout_seconds
+        tmp = next_index; last_coefficient = 0
+        for i in 1:n-1
+            coeffs[i] = tmp % N; tmp ÷= N
+            last_coefficient ⊻= dependent[i, coeffs[i]+1]
         end
-
-        # Fix a_{n-1} as dependent: a_{n-1} = (Σᵢ₌₀^{n-2} aᵢ · e₀^{2^i}) / e₀^{2^{n-1}}
-        # (division in GF(2^n))
-        e0_last_inv = gf_inv(e0_powers[n], n; modulus=mod)
-
-        coeffs = zeros(Int, n)
-        total_candidates = N^(n-1)
-
-        for idx in 0:total_candidates-1
-            # Decode idx into coeffs[1..n-1]
-            tmp = idx
-            partial_sum = 0
-            for i in 1:n-1
-                coeffs[i] = tmp % N
-                tmp ÷= N
-                partial_sum ⊻= gf_mul(coeffs[i], e0_powers[i], n; modulus=mod)
-            end
-            coeffs[n] = gf_mul(partial_sum, e0_last_inv, n; modulus=mod)
-
-            if theorem3_2_check(coeffs, n, mod, T0, e0)
-                count += 1
-            end
+        coeffs[n] = last_coefficient
+        for k in eachindex(T0)
+            v = 0
+            for i in 1:n; v ⊻= contributions[i, coeffs[i]+1, k]; end
+            values[k] = v
         end
-    else
-        verbose && println("  n=$n: exhaustive search infeasible, skipping count")
-        return -1
+        valid = true
+        for j in eachindex(T0)
+            seen = UInt64(0)
+            for k in eachindex(T0)
+                bit = UInt64(1) << (values[k] ⊻ bilinear[j,k])
+                if seen & bit != 0; valid = false; break; end
+                seen |= bit
+            end
+            valid || break
+        end
+        count += valid; evaluated += 1; next_index += 1
     end
-
-    count
+    (; n, mod, e0, count, evaluated, total, start_index, next_index,
+       exhaustive = start_index == 0 && next_index == total,
+       interval_exhausted = next_index == total,
+       status = next_index == total ? :exhausted : :budget_hit,
+       normalization = "L(e0)=0", elapsed_seconds = time()-t0)
 end
 
-function theorem3_2_report(io::IO = stdout; n::Int = 5)
-    mod = paper_modulus(n)
-    print_section("Theorem 3.2 + Example 3.3 (n=$n)", io)
+"""Complete count. n=6 requires an explicit full_search opt-in."""
+function count_valid_L(n::Int; mod::Int = paper_modulus(n), verbose::Bool = false,
+                       full_search::Bool = false, e0::Int = trace_one_element(n, mod))
+    n <= 5 || full_search || throw(ArgumentError("n=$n requires full_search=true, or use count_valid_L_bounded"))
+    r = count_valid_L_bounded(n; mod, e0, max_evaluations = typemax(Int))
+    r.exhaustive || error("counter did not exhaust its specified region")
+    r.count
+end
 
-    if n <= 5
-        cnt = count_valid_L(n; mod=mod, verbose=true)
-        expected = n == 4 ? 448 : n == 5 ? 4608 : -1
-        print_kv(io, "Valid L mappings found", cnt)
-        if expected > 0
-            print_check(io, "count matches paper (expected $expected)", cnt == expected)
-        end
-        return (; n, count=cnt, expected, match=(cnt == expected))
-    else
-        println(io, "  n=$n: exhaustive count infeasible (N^(n-1) = $(big(1<<n)^(n-1)))")
-        println(io, "  Paper claims ~40000 valid L for n=6")
-        return (; n, count=-1, expected=40000, match=false)
+function theorem3_2_report(io::IO = stdout; n::Int = 5, full_search::Bool = false,
+        max_evaluations::Int = n <= 5 ? typemax(Int) : 1 << 20,
+        timeout_seconds::Real = Inf, mod::Int = paper_modulus(n))
+    print_section("Theorem 3.2 + Example 3.3 (n=$n)", io)
+    r = count_valid_L_bounded(n; mod, max_evaluations = full_search ? typemax(Int) : max_evaluations,
+                            timeout_seconds)
+    expected = n == 4 ? 448 : n == 5 ? 4608 : n == 6 ? 40000 : nothing
+    print_kv(io, "region", "$(r.total) linearized L with L(e0)=0; modulus=$(r.mod), e0=$(r.e0)")
+    print_kv(io, "coverage", "$(r.status): $(r.evaluated)/$(r.total), next_index=$(r.next_index)")
+    print_kv(io, "valid mappings in explored interval", r.count)
+    if r.exhaustive && n in (4, 5)
+        print_check(io, "count matches Example 3.3", r.count == expected)
+    elseif n == 6
+        print_kv(io, "publication claim", "approximately 40000; exact value 35648 is a historical external computation, not validated by a bounded run")
     end
+    merge(r, (; expected, match = r.exhaustive && n in (4,5) ? r.count == expected : missing))
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

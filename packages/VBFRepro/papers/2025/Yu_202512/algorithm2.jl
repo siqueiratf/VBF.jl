@@ -22,7 +22,17 @@ include(joinpath(@__DIR__, "algorithm1.jl"))
 
 # Fₙ: one representative per Frobenius orbit of size exactly n in GF(2^n)*.
 # Elements in proper subfields GF(2^d), d|n, d<n have orbit size d < n and are excluded.
-function fn_set(n::Int; modulus::Int = conway_polynomial(n))
+function fn_set(n::Int; modulus::Int = conway_polynomial(n), reps::Symbol=:min_value)
+    reps in (:min_value, :min_log) || throw(ArgumentError("reps must be :min_value or :min_log"))
+    logs = Dict{Int,Int}()
+    if reps == :min_log
+        generator = gf_primitive_element(n; modulus)
+        cur = 1
+        for exponent in 0:(1<<n)-2
+            logs[cur] = exponent
+            cur = gf_mul(cur, generator, n; modulus)
+        end
+    end
     result = Int[]
     assigned = Set{Int}()
     for v in 1:(1 << n) - 1
@@ -35,7 +45,7 @@ function fn_set(n::Int; modulus::Int = conway_polynomial(n))
         end
         uorb = unique(orbit)
         if length(uorb) == n            # orbit size exactly n → outside all proper subfields
-            push!(result, minimum(uorb))
+            push!(result, reps == :min_value ? minimum(uorb) : uorb[argmin([logs[x] for x in uorb])])
         end
         union!(assigned, uorb)
     end
@@ -65,24 +75,22 @@ function _dfs!(H::Matrix{Int}, level::Int, n::Int, num_vars::Int,
                domains::Vector{Vector{Int}},
                count::Ref{Int}, limit::Int, max_evals::Ref{Int};
                modulus::Int)
-    count[] >= limit && return
+    (count[] >= limit || max_evals[] <= 0) && return false
     if level > num_vars
         max_evals[] -= 1
-        max_evals[] < 0 && return
-        if is_qam_fast(H, n; modulus = modulus, cr = cr, id_arr = id_arr)
-            count[] += 1
-        end
-        return
+        is_qam_fast(H, n; modulus, cr, id_arr) && (count[] += 1)
+        return true
     end
     d = level
     for v in domains[level]
-        count[] >= limit && return
-        update_diagonal!(H, d, v, n; modulus = modulus)
+        (count[] >= limit || max_evals[] <= 0) && return false
+        update_diagonal!(H, d, v, n; modulus)
         if is_proper_sub(H, d + 1, n)
-            _dfs!(H, level + 1, n, num_vars, cr, id_arr, domains,
-                  count, limit, max_evals; modulus = modulus)
+            completed = _dfs!(H, level+1, n, num_vars, cr, id_arr, domains, count, limit, max_evals; modulus)
+            completed || return false
         end
     end
+    return true
 end
 
 """
@@ -91,7 +99,8 @@ end
 Algorithm 2: count quadratic APN functions on GF(2^n) with F₂ coefficients.
 `limit` caps the number of APN functions found; `max_evaluations` caps the number
 of full is_qam_fast calls. Returns the raw count of passing H matrices.
-Exhaustive for the default parameters at n≤8; budget-limited for n≥9.
+The returned count is a lower bound unless the selected domain was actually exhausted;
+no unrestricted CCZ classification is implied.
 """
 function generate_apn_f2(
     n::Int;
@@ -99,6 +108,7 @@ function generate_apn_f2(
     max_evaluations::Int = 1 << 20,
     modulus::Int         = conway_polynomial(n),
 )
+    n >= 3 && limit > 0 && max_evaluations > 0 || throw(ArgumentError("requires n>=3 and positive limits"))
     num_vars = n ÷ 2
     cr      = get_cyclic_reps(n)
     id_arr  = get_indices(n, cr)
@@ -125,7 +135,7 @@ function algorithm2_report(io::IO = stdout)
     end
 
     print_kv(io, "note", "Table 2 counts come from Algorithm 3 (partial search), not Algorithm 2")
-    print_kv(io, "completeness", "demo only; Algorithm 2 finds all F₂-coefficient APN matrices")
+    print_kv(io, "completeness", "demo only; count of passing matrices in the selected representative domains")
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

@@ -27,11 +27,14 @@ function partial_search_apn_f2(
     limit::Int           = 200,
     max_evaluations::Int = 1 << 20,
     modulus::Int          = conway_polynomial(n),
+    reps::Symbol         = :min_log,
+    return_stats::Bool    = false,
 )
+    n >= 3 && limit > 0 && max_evaluations > 0 || throw(ArgumentError("requires n>=3 and positive limits"))
     num_vars = n ÷ 2
     cr      = get_cyclic_reps(n)
     id_arr  = get_indices(n, cr)
-    fn      = fn_set(n; modulus = modulus)
+    fn      = fn_set(n; modulus = modulus, reps)
 
     # Algorithm 3: non-first, non-self-paired variables use Fₙ instead of GF(2^n)*.
     # Self-paired diagonal (2d=n) must keep GF(2^{n/2})* to satisfy Theorem 1's
@@ -46,8 +49,10 @@ function partial_search_apn_f2(
     H     = zeros(Int, n, n)
     count = Ref(0)
     evals = Ref(max_evaluations)
-    _dfs!(H, 1, n, num_vars, cr, id_arr, domains, count, limit, evals; modulus = modulus)
-    count[]
+    complete = _dfs!(H, 1, n, num_vars, cr, id_arr, domains, count, limit, evals; modulus)
+    stats = (;count=count[], evaluations=max_evaluations-evals[], exhaustive=complete, reps,
+               domain_sizes=length.(domains), candidate_space=prod(BigInt(length(d)) for d in domains))
+    return return_stats ? stats : count[]
 end
 
 function algorithm3_report(io::IO = stdout)

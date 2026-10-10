@@ -54,7 +54,9 @@ shared runner environment, workspace manifest and package implementation. They d
 or replace paper-specific input/result provenance. Input hashes cover the selected
 paper's `input/`, `inputs/`, `tuples/` and the curated catalog database. External
 corpora and inputs supplied through custom parameters still require the paper's
-own provenance records. The output log is hashed when execution finishes.
+own provenance records. Runtime TOML/JSON fixtures and CSV/TSV tables are included in source hashes, so
+changing an equivalence certificate changes the recorded implementation identity.
+The output log is hashed when execution finishes.
 The `environment` argument records only supplied overrides; the inherited environment is not serialized.
 Runs using private inputs still need those files for replay.
 

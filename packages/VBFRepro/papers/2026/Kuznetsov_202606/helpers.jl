@@ -115,41 +115,6 @@ end
 # ─── Section IV.C — RREF and fc22+sol22 ─────────────────────────────────────
 
 """
-In-place reduced row echelon form of M (BitMatrix) over F₂.
-Returns (pivot_cols, free_cols) as 1-based column index vectors.
-"""
-function rref_f2!(M::BitMatrix)
-    nrows, ncols = size(M)
-    pivot_row = 1
-    pivot_cols = Int[]
-    sizehint!(pivot_cols, min(nrows, ncols))
-    for c in 1:ncols
-        # Find a pivot row at or below current pivot_row
-        found = 0
-        for r in pivot_row:nrows
-            M[r, c] && (found = r; break)
-        end
-        found == 0 && continue
-        push!(pivot_cols, c)
-        # Swap rows
-        if found != pivot_row
-            tmp = copy(M[found, :])
-            M[found, :] = M[pivot_row, :]
-            M[pivot_row, :] = tmp
-        end
-        # Eliminate column c from all other rows
-        prow = M[pivot_row, :]
-        for r in 1:nrows
-            r == pivot_row && continue
-            M[r, c] && (M[r, :] .⊻= prow)
-        end
-        pivot_row += 1
-    end
-    free_cols = setdiff(1:ncols, Set(pivot_cols))
-    pivot_cols, free_cols
-end
-
-"""
 Compute the fc22+sol22 parameterization from M_A.
 
 Returns a NamedTuple with:
@@ -159,7 +124,7 @@ Returns a NamedTuple with:
 """
 function fc22_sol22(A::Matrix{Bool})
     M = build_M_A(A)
-    pivot_cols, free_cols = rref_f2!(M)
+    pivot_cols, free_cols = VBF.rref_f2!(M)
     n_pivots = length(pivot_cols)
     n_free   = length(free_cols)
     S = [Int[] for _ in 1:n_pivots]
@@ -329,4 +294,32 @@ function representative_sboxes()
         class_e = SBox{8}(class_e),
         class_f = SBox{8}(class_f),
     )
+end
+
+# M_A and quadratic_lut use pair-major coefficients, unlike phase2.jl's
+# output-major polynomial variables. These indices always use col_idx.
+const SLICE_INTRA_PAIRS = ((5, 6), (5, 7), (6, 7))
+slice_intra_indices() = [col_idx(p, q, k) + 1 for (p, q) in SLICE_INTRA_PAIRS for k in 0:7]
+slice_center_indices() = setdiff(collect(1:224), slice_intra_indices())
+
+"""Lossless identity of the 200 fixed coordinates of a phase-2 slice."""
+function slice_identifier(c::AbstractVector)
+    length(c) == 224 || throw(ArgumentError("expected 224 pair-major coefficients"))
+    Tuple(Bool(c[i]) for i in slice_center_indices())
+end
+
+"""Exact GF(2) geometry; a slice is the full center projection, not 16 bits."""
+function slice_geometry(A = build_A_matrix())
+    M = build_M_A(A)
+    intra, center = slice_intra_indices(), slice_center_indices()
+    rank_intra = length(first(VBF.rref_f2!(copy(M[:, intra]))))
+    rank_center = length(first(VBF.rref_f2!(copy(M[:, center]))))
+    rank_total = length(first(VBF.rref_f2!(copy(M))))
+    dimension = size(M, 2) - rank_total
+    fiber_dimension = length(intra) - rank_intra
+    projection_dimension = dimension - fiber_dimension
+    _, free_cols = VBF.rref_f2!(copy(M))
+    (; rank_total, rank_intra, rank_center, dimension, fiber_dimension,
+       projection_dimension, slice_count = big(2)^projection_dimension,
+       free_intra = count(in(intra), free_cols), free_center = count(in(center), free_cols))
 end

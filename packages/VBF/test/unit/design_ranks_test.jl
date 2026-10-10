@@ -29,4 +29,18 @@ end
     @test_throws ArgumentError gamma_rank(SBox{8}(gf_monomial_lut(8, 3)))
     @test_throws ArgumentError delta_rank(SBox{8}(gf_monomial_lut(8, 3)))
 end
+@testset "explicit storage/time budgets fail without publishing a partial rank" begin
+    F8=gold_apn(8)
+    @test_throws ArgumentError gamma_rank(F8;allow_large=true)
+    @test_throws DesignRankBudgetHit gamma_rank(F8;allow_large=true,max_memory_bytes=1,timeout_seconds=600)
+    @test_throws DesignRankBudgetHit gamma_rank(F8;allow_large=true,max_memory_bytes=2*1024^3,timeout_seconds=0)
+    @test_throws DesignRankBudgetHit delta_rank(F8;allow_large=true,max_memory_bytes=2*1024^3,timeout_seconds=0)
+    @test_throws DesignRankBudgetHit gamma_rank(gold_apn(4);max_memory_bytes=0)
+    @test_throws ArgumentError gamma_rank(gold_apn(4);timeout_seconds=-1)
+    @test_throws ArgumentError gamma_rank(gold_apn(9);allow_large=true,max_memory_bytes=64*1024^3,timeout_seconds=600)
+    # Optional real n8 verification is deliberately absent from ordinary CI.
+    if get(ENV,"VBF_TEST_DESIGN_RANK8","0")=="1"
+        @test gamma_rank(F8;allow_large=true,max_memory_bytes=2*1024^3,timeout_seconds=600)==11818
+    end
+end
 end

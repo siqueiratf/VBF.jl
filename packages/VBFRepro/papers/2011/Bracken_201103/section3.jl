@@ -7,7 +7,7 @@
 #   1. Instantiate the four subfamilies for n=6 (Table 2 small case).
 #   2. For n=6, compute Δ-ranks; verify Family 1 differs from Families 7/8W/8.
 #   3. For n=12 (Table 2 exact exponents from paper), verify APN only.
-#      Δ-rank for n=12 is out-of-scope (requires a 2^24×2^24 matrix; VBF guards n≤7).
+#      Δ-rank for n=12 is out-of-scope (requires a 2^24×2^24 matrix; VBF supports only n≤8 with explicit budgets).
 #   4. Table 3 delta-rank values for n=12 are reproduced from the paper (loaded).
 #
 # VBF API used: SBox, differential_uniformity, delta_rank, gold_apn, kasami_apn
@@ -59,14 +59,14 @@ function table2_n12_instances()
     modulus = primitive_polynomial(12)
     # GF(16) in GF(2^12): norm = (2^12−1)/(2^4−1) = 4095/15 = 273
     v12 = 1                                           # v = u^0 = 1 ∈ GF(16)
-    w12 = subfield_elem(12, 4, 0; modulus)           # w = u^273 ∈ GF(16)
+    w12 = subfield_elem(12, 4, 1; modulus)           # w = u^273 ∈ GF(16)
     [
         (; family = "8",  label = "n=12 Family 8:  u^16 x^768 + u x^33 + x^257 + u^290 x^544",
-           sbox = theorem1_sbox(4, 5, 1, 5; modulus)),
+           sbox = theorem1_sbox(4, 5, 1, 2; modulus)),
         (; family = "8W", label = "n=12 Family 8W: u^16 x^768 + u x^33 + x^257",
            sbox = theorem1_sbox(4, 5, 1, 0; modulus)),
         (; family = "7",  label = "n=12 Family 7:  u^16 x^768 + u x^33 + u^290 x^544",
-           sbox = theorem1_sbox(4, 5, 0, 1; modulus)),
+           sbox = theorem1_sbox(4, 5, 0, 2; modulus)),
         (; family = "1",  label = "n=12 Family 1:  u^16 x^768 + u x^33",
            sbox = theorem1_sbox(4, 5, 0, 0; modulus)),
     ]
@@ -100,7 +100,7 @@ function section3_report(io::IO = stdout)
     println(io, "    [computed] n=6 Δ-ranks (below) are computed here by VBF.jl.delta_rank.")
     println(io, "    [loaded]   n=12 Δ-ranks (Table 3) are TRANSCRIBED from the paper's")
     println(io, "               original Magma computation — NOT computed in this repo")
-    println(io, "               (VBF.delta_rank guards n≤7; n=12 is a 2^24×2^24 matrix).")
+    println(io, "               (VBF.delta_rank supports n≤8 with explicit budgets; n=12 is a 2^24×2^24 matrix).")
     println(io, "    [UNVERIFIED] Family 7 vs Family 8W are NOT separated in this repo:")
     println(io, "               Δ-rank PROVABLY cannot split them (the paper reports EQUAL")
     println(io, "               Δ-ranks for 7/8W/8). A rigorous split needs Feulner canonical")
@@ -130,7 +130,7 @@ function section3_report(io::IO = stdout)
     # Gold x^3 for n=6
     gold6_dr = delta_rank(gold_apn(6, 1))
     print_kv("n=6 Gold x^3 Δ-rank", gold6_dr, io)
-    print_check("n=6 Family 1 Δ-rank == Gold x^3 (CCZ-equiv)", fam1_dr == gold6_dr, io)
+    print_check("n=6 Family 1 Δ-rank == Gold x^3 (equal invariant; equivalence unresolved)", fam1_dr == gold6_dr, io)
     println(io)
 
     # ── Table 2, n=12: APN check only ──────────────────────────────────────

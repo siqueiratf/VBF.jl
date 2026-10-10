@@ -49,6 +49,10 @@ function catalog_cross_check(io::IO = stdout; sample_size::Int = 20)
 
     # Sample: compare first sample_size functions from the file vs. corpus.
     path8 = joinpath(@__DIR__, "inputs", "apn_8bit.txt")
+    if !isfile(path8)
+        print_kv("cross-check", "INCONCLUSIVE: original apn_8bit.txt unavailable; corpus presence is not source validation", io)
+        return (; n8_found = true, n8_length_ok = len_ok, n8_sample_ok = missing, status = :unavailable)
+    end
     n_compare = min(sample_size, len, _EXPECTED_N8)
     mismatches = 0
     file_sboxes = SBox[]

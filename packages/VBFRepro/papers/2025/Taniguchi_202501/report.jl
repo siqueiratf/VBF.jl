@@ -9,6 +9,7 @@ include(joinpath(@__DIR__, "helpers.jl"))
 include(joinpath(@__DIR__, "table3_1.jl"))
 include(joinpath(@__DIR__, "theorem3_7.jl"))
 include(joinpath(@__DIR__, "example4_2.jl"))
+include(joinpath(@__DIR__, "prior_art.jl"))
 
 function paper_report(io::IO = stdout; save_results::Bool = false)
     print_header(io)
@@ -16,6 +17,7 @@ function paper_report(io::IO = stdout; save_results::Bool = false)
     r_table   = table3_1_report(io)
     r_expsum  = theorem3_7_report(io)
     r_codim2  = example4_2_report(io)
+    r_prior_art = prior_art_report(io)
 
     print_section("Summary", io)
     print_check(io, "Table 3.1: all 13 APN",            r_table.all_apn)
@@ -32,6 +34,7 @@ function paper_report(io::IO = stdout; save_results::Bool = false)
         table3_1      = r_table,
         theorem3_7    = r_expsum,
         example4_2    = r_codim2,
+        prior_art     = r_prior_art,
     )
 
     if save_results

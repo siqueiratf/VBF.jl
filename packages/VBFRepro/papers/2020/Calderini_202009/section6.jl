@@ -43,15 +43,18 @@ Theorem 7: x^{-1} over GF(2ⁿ) has exactly 2 Walsh-zero n-dim subspaces.
 Since x^{-1} is an involution these represent a single EA-class, so any
 permutation CCZ-equivalent to x^{-1} is affine-equivalent to it.
 """
-function theorem7_verify(n::Int; io::IO = stdout)
+function theorem7_verify(n::Int; io::IO = stdout, max_nodes::Int=10_000_000,
+        timeout_seconds::Real=60)
     exp = (1 << n) - 2
     F = power_sbox(n, exp)
     is_perm = is_permutation(F)
     du = differential_uniformity(F)
 
     Z = walsh_zeroes(F)
-    subspaces = extract_linear_subspaces(Z, n; max_bits = 2n)
-    n_subsp = length(subspaces)
+    outcome = extract_linear_subspaces_bounded(Z,n; max_bits=2n,
+        max_nodes, timeout_seconds, algorithm=:optimized)
+    complete = outcome isa Exhausted
+    n_subsp = complete ? length(search_solutions(outcome)) : nothing
 
     n_size = 1 << n
     is_involution = all(F.lut[F.lut[x + 1] + 1] == x for x = 0:(n_size - 1))
@@ -62,20 +65,25 @@ function theorem7_verify(n::Int; io::IO = stdout)
     print_kv(io, "differential uniformity", du)
     print_kv(io, "is involution (F = F⁻¹)", is_involution)
     print_kv(io, "#Walsh-zero $n-dim subspaces", n_subsp)
-    print_check(io, "Theorem 7: exactly 2 simplex codes → 1 EA-class", n_subsp == 2)
+    if complete
+        print_check(io, "Theorem 7: exactly 2 simplex codes → 1 EA-class", n_subsp == 2)
+    else
+        print_kv(io, "Theorem 7 status", "INCONCLUSIVE; subspace budget reached")
+    end
     print_check(io, "x^{-1} is an involution → the 2 spaces give the same class", is_involution)
 
-    return (; n, exp, is_perm, du, n_subsp, is_involution)
+    return (; n, exp, is_perm, du, n_subsp, is_involution, complete, outcome)
 end
 
 """
     coset_class_count(d, n) -> NamedTuple
 
-Remarks 5-7 arithmetic: for a monomial permutation x^d over GF(2ⁿ), the
-CCZ-class of a non-Gold APN power function splits into the EA-classes of F and
-F⁻¹ (Theorem 8); these coincide iff d⁻¹ mod 2ⁿ-1 lies in the cyclotomic coset
-of d (cyclotomic equivalence ⟹ affine equivalence).
-Returns `(; d, inv_exp, coset, same)` — `same == true` ⟹ 1 EA-class, else 2.
+Remarks 5-7 arithmetic: compute the inverse exponent and its Frobenius coset.
+Membership supplies a constructive linear equivalence. Non-membership is
+inconclusive for EA equivalence with affine drift.
+Returns `(; d, inv_exp, coset, same)`. Coset membership proves linear
+equivalence to the inverse; non-membership alone does not prove EA
+inequivalence or establish an exact EA-class count.
 """
 function coset_class_count(d::Int, n::Int)
     m = (1 << n) - 1
@@ -135,17 +143,19 @@ end
 """
     apn_power_ccz_classes(n) -> Vector{NamedTuple}
 
-CCZ-classes of the APN power functions over GF(2ⁿ), one entry per class.
+APN power-exponent orbits under Frobenius and compositional inversion.
+Each orbit is contained in one CCZ-class; different orbits are not proved
+CCZ-inequivalent by this computation.
 
 Cyclotomic classes of exponents (x^d ≃linear x^e iff e ∈ coset(d)) are paired
 with their inverse class (x^d and x^{d⁻¹} are CCZ-equivalent, being
-compositional inverses), so each entry is one CCZ-class. Fields:
+compositional inverses), so each entry is one explicitly verified equivalence orbit. Fields:
 
 - `rep`, `inv_rep` — coset minima of d and d⁻¹ (`inv_rep == rep` iff x^d is
   cyclotomically equivalent to its inverse; `-1` if x^d is not a permutation);
 - `gold` — the class contains a Gold function (either `rep`'s or `inv_rep`'s
   coset holds a Gold exponent). Theorem 8 speaks about the `!gold` classes;
-- `ea_classes` — Theorem 8's prediction for the non-Gold classes: 2 (F and
+- `predicted_ea_classes` — Theorem 8's prediction for the non-Gold classes: 2 (F and
   F⁻¹) unless F⁻¹ is cyclotomically equivalent to F (or does not exist), in
   which case 1.
 """
@@ -161,11 +171,11 @@ function apn_power_ccz_classes(n::Int)
         rep = minimum(c)
         is_perm = gcd(rep, m) == 1
         inv_rep = is_perm ? minimum(cyclotomic_coset(invmod(rep, m), m)) : -1
-        # Pair the class with its inverse class: report each CCZ-class once.
+        # Pair the class with its inverse class: report each inverse-paired exponent orbit once.
         is_perm && inv_rep < rep && continue
         gold = is_gold_exponent(rep, n) || (is_perm && is_gold_exponent(inv_rep, n))
-        ea_classes = (!is_perm || inv_rep == rep) ? 1 : 2
-        push!(out, (; rep, inv_rep, is_perm, gold, ea_classes))
+        predicted_ea_classes = (!is_perm || inv_rep == rep) ? 1 : 2
+        push!(out, (; rep, inv_rep, is_perm, gold, predicted_ea_classes))
     end
     return out
 end
@@ -210,10 +220,10 @@ function theorem8_census(n::Int; io::IO = stdout)
     classes = apn_power_ccz_classes(n)
     non_gold = filter(c -> !c.gold, classes)
     expect = PAPER_NONGOLD_EA_COUNTS[n]
-    print_kv(io, "APN power CCZ-classes over GF(2^$n)", length(classes))
+    print_kv(io, "APN power Frobenius/inverse orbits over GF(2^$n)", length(classes))
     for c in classes
         inv_s = c.is_perm ? "x^$(c.inv_rep)" : "not a permutation"
-        tag = c.gold ? "Gold class" : "non-Gold ⇒ Theorem 8: $(c.ea_classes) EA-class(es)"
+        tag = c.gold ? "Gold class" : "non-Gold orbit; paper-based prediction $(c.predicted_ea_classes), not a computed EA-class count"
         println(io, "  x^$(c.rep) | inverse: $inv_s | $tag")
     end
     ok = true
@@ -226,25 +236,25 @@ function theorem8_census(n::Int; io::IO = stdout)
             # P1: paper claims 1 EA-class for x^57 via a false cyclotomic claim.
             print_check(
                 io,
-                "x^57 (class x^23): computed $(c.ea_classes) EA-classes, paper claims " *
+                "x^57 (orbit x^23): coset arithmetic predicts $(c.predicted_ea_classes), paper claims " *
                 "$paper — known paper error (57⁻¹ = 78 ∉ coset(57))",
-                c.ea_classes == 2,
+                c.predicted_ea_classes == 2,
             )
-            ok &= c.ea_classes == 2
+            ok &= c.predicted_ea_classes == 2
         else
             print_check(
                 io,
-                "x^$(c.rep): $(c.ea_classes) EA-class(es) — matches the paper ($paper)",
-                c.ea_classes == paper,
+                "x^$(c.rep): paper-based prediction $(c.predicted_ea_classes) matches stated count ($paper); classification not performed",
+                c.predicted_ea_classes == paper,
             )
-            ok &= c.ea_classes == paper
+            ok &= c.predicted_ea_classes == paper
         end
     end
     n_listed = length(expect)
-    print_check(io, "All $(length(non_gold)) non-Gold classes accounted for (paper lists $n_listed)",
+    print_check(io, "Non-Gold inverse-paired exponent orbits: $(length(non_gold)) (paper lists $n_listed)",
         length(non_gold) == n_listed)
     ok &= length(non_gold) == n_listed
-    return (; n, classes, non_gold, ok)
+    return (; n, classes, non_gold, ok, exact_class_count_established=false)
 end
 
 """
@@ -288,7 +298,7 @@ function remark5_verify(; io::IO = stdout, check_x57_ae::Bool = false)
 
     r13 = coset_class_count(13, 7)
     print_kv(io, "x^13: 13⁻¹ mod 127", r13.inv_exp)
-    print_check(io, "x^13: inverse in a different coset → 2 EA-classes (Remark 5)", !r13.same)
+    print_check(io, "x^13: inverse in a different coset (this alone does not prove 2 EA-classes)", !r13.same)
     ok &= !r13.same
 
     r63 = coset_class_count(63, 7)
@@ -349,7 +359,7 @@ function remark6_verify(; io::IO = stdout, check_x57::Bool = false)
     # the same value (1) the paper obtains from its single simplex code.
     x57_perm = gcd(57, 255) == 1
     cls = filter(c -> !c.gold, apn_power_ccz_classes(8))
-    thm8_x57 = length(cls) == 1 && cls[1].rep == 39 && cls[1].ea_classes == 1
+    thm8_x57 = length(cls) == 1 && cls[1].rep == 39 && cls[1].predicted_ea_classes == 1
     print_check(io, "x^57 (n=8) is not a permutation (gcd(57,255) = 3)", !x57_perm)
     print_check(io, "Theorem 8 ⇒ 1 EA-class for x^57 (n=8) — the paper's Table 3 value", thm8_x57)
     ok &= !x57_perm && thm8_x57
@@ -374,7 +384,7 @@ function remark7_verify(; io::IO = stdout)
     for d in (13, 19, 241)
         r = coset_class_count(d, 9)
         print_kv(io, "x^$d: d⁻¹ mod 511", r.inv_exp)
-        print_check(io, "x^$d: inverse in a different coset → 2 EA-classes", !r.same)
+        print_check(io, "x^$d: inverse in a different coset; EA count remains a paper claim", !r.same)
         ok &= !r.same
     end
     coset255 = cyclotomic_coset(255, 511)
@@ -390,7 +400,8 @@ end
 Section 6: Theorem 7 (n=5..9), Theorem 8 (n=5 exact), Remarks 5-7,
 Tables 2/3/4 upper-bound columns out of scope (measured cost notes).
 """
-function section6_report(io::IO = stdout)
+function section6_report(io::IO = stdout; full_search::Bool=false,
+        max_nodes::Int=10_000_000, timeout_seconds::Real=60)
     println(io, "# Calderini (2020) — Section 6: EA-classes in dimension 7, 8, 9")
     println(io, "# Scope: Theorem 7 exact n=5..9; Theorem 8 exact n=5; Remarks 5-7 via")
     println(io, "#        cyclotomic cosets + inverse-function simplex counts.")
@@ -399,15 +410,16 @@ function section6_report(io::IO = stdout)
 
     print_section(io, "Theorem 7 — CCZ~x^{-1} iff AE~x^{-1} (5 ≤ n ≤ 9)")
     println(io, "  (n=9 subspace enumeration takes ~4 minutes; n≤8 are seconds)")
-    for n = 5:9
+    for n = 5:(full_search ? 9 : 8)
         println(io, "\n  n=$n:")
-        theorem7_verify(n; io)
+        theorem7_verify(n; io, max_nodes, timeout_seconds)
     end
+    full_search || print_kv(io,"n=9 inverse enumeration","not run; pass full_search=true with explicit budgets")
 
     print_section(io, "Theorem 8 — non-Gold APN power functions, ≤2 EA-classes (n=5 exact)")
     theorem8_verify_n5(; io)
 
-    print_section(io, "Theorem 8 — census of all APN power CCZ-classes, n=5..9")
+    print_section(io, "Theorem 8 — Frobenius/inverse orbit census and stated-count comparison, n=5..9")
     println(io, "  Coset arithmetic (exact) for every APN power class; the \"≤2\" half is")
     println(io, "  exact only for n=5 and the x^{-1}-linked classes (Theorem 7) — the AB")
     println(io, "  classes' simplex counts stay MAGMA-only (measured > 30 min each).")

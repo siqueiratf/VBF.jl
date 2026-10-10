@@ -46,7 +46,7 @@ verify_quadratic:
 
 table1_invariants:
 	@echo "ROOT=$(ROOT)"
-	@echo "Checking Table 1 Γ/Δ-ranks (max_dim=$(max_dim), save_results=$(save_results))"
+	@echo "Table1 reconstruction UNSUPPORTED; reporting gap (max_dim=$(max_dim), save_results=$(save_results))"
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "helpers.jl")); \
 	   include(joinpath("$(MAKEFILE_DIR)", "table1_invariants.jl")); \
@@ -54,7 +54,7 @@ table1_invariants:
 
 walsh_spectrum:
 	@echo "ROOT=$(ROOT)"
-	@echo "Checking Table 1 Walsh spectrum classes (save_results=$(save_results))"
+	@echo "Table1 reconstruction UNSUPPORTED; reporting gap (save_results=$(save_results))"
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "helpers.jl")); \
 	   include(joinpath("$(MAKEFILE_DIR)", "table1_invariants.jl")); \
@@ -125,8 +125,8 @@ help:
 	@echo '  dataset_counts      Count lines + well-formedness check on all three datasets'
 	@echo '  verify_apn          Verify APN property (differential_uniformity == 2)'
 	@echo '  verify_quadratic    Verify algebraic degree == 2'
-	@echo '  table1_invariants   Check Γ/Δ-ranks for Table 1 representatives (up to max_dim)'
-	@echo '  walsh_spectrum      Check Walsh spectrum classes for Table 1 representatives'
+	@echo '  table1_invariants   Report unsupported Table1 reconstruction'
+	@echo '  walsh_spectrum      Report unsupported Table1 reconstruction'
 	@echo '  multiplier_group    Multiplier group order stub (out-of-scope, prints TODO)'
 	@echo '  proposition1        Proposition 1: CCZ-distinctness via ortho-derivative vs. Gold family'
 	@echo '  algorithm1          Algorithm 1: QuadraticAPNSearch (params: n, seed, max_solutions)'

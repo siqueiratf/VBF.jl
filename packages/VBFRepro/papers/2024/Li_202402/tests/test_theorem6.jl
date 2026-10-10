@@ -36,4 +36,9 @@
     lut1 = family1_lut(3, 1)
     lut2 = family2_lut(3, 1)
     @test lut1 != lut2
+    @test theorem6_bivariate_condition(3,1)
+    @test !theorem6_bivariate_condition(7,1)
+    result=theorem6_report(m=2,i=1,io=devnull)
+    @test result.hypotheses_hold && result.bivariate_condition
+
 end

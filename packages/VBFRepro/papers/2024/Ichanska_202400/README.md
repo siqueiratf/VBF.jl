@@ -1,5 +1,26 @@
 # Ichanska_202400 — Pushing the QAM Method for Finding APN Functions Further
 
+## Audit corrections (2026-10-10)
+
+F012 is fixed: cyclic row-combination rank uses `VBF.rank_f2` with all
+`n` field bits. Exhaustive row-selection regressions cover `(9,3)`, `(10,1)` and
+`(10,2)`, plus a matrix whose rank lives entirely above bit 7.
+
+F002 now has a fixed EA graph-map certificate in
+[tests/fixtures/prior_art_ea.toml](tests/fixtures/prior_art_ea.toml). The shared
+independent verifier checks graph equality at all 256 points and invertibility
+of both EA blocks; forged certificates and Gold/WTG-member-1 controls fail.
+When the Weng–Tan–Gong corpus is available, its member 9 must equal the stored
+reference LUT. **EA/CCZ equivalence to that exact reference is certified.**
+Attribution of the reference to 2013 follows the catalog's recorded provenance;
+this test does not independently reconstruct the original 2013 publication.
+The report now recognizes the 27 available Simon-Berg representatives and does
+not call all 196863 stored functions pairwise inequivalent. Historical findings
+below remain history; full discovery/classification was not rerun.
+The core now permits n=8 Γ/Δ ranks with `allow_large=true`, an explicit memory
+budget and finite timeout; this bounded report does not recompute those columns.
+
+
 **Paper**: Ichanska, Berg, Kaleyski, Yu. "Pushing the QAM method for finding APN functions
 further." 2024.
 

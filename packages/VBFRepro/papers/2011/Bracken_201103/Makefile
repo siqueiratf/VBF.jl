@@ -2,6 +2,13 @@ include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../../paper.mk
 
 .PHONY: help test report theorem1 section3 clean_results
 
+limit ?= 16
+full_search ?= false
+max_evaluations ?= 2147483647
+timeout_seconds ?= 60
+k ?= 4
+s ?= 11
+
 default: help
 
 test:
@@ -15,6 +22,12 @@ theorem1:
 
 section3:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/section3.jl
+
+family_separation:
+	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/family_separation.jl
+
+parameter_sweep:
+	$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "theorem1.jl")); theorem1_parameter_sweep($(k),$(s); limit=$(limit), full_search=$(full_search), max_evaluations=$(max_evaluations), timeout_seconds=$(timeout_seconds))'
 
 clean_results:
 	rm -rf "$(MAKEFILE_DIR)/results"

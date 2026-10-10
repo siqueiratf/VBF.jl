@@ -11,3 +11,5 @@ include("test_algorithm1.jl")
 include("test_proposition35_36.jl")
 include("test_section4_3.jl")
 include("test_section4_4.jl")
+
+include("test_section4_5.jl")

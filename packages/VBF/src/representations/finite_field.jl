@@ -4,19 +4,20 @@ GF(2ⁿ) finite-field arithmetic.
 Elements of `GF(2ⁿ)` are represented as `n`-bit non-negative integers
 where bit `i` is the coefficient of `xⁱ`. Multiplication is performed
 mod an irreducible polynomial of degree `n`; this module ships a
-small lookup table of *primitive* irreducibles for `n ∈ 2:16` (each
-chosen so the polynomial generates the multiplicative group of
-`GF(2ⁿ)`) and accepts an explicit modulus as an optional argument.
+small lookup table of irreducible moduli for `n ∈ 2:16` and accepts an explicit modulus as an optional argument.
 
 The bit-pattern convention for the modulus is the polynomial itself
 including its leading `xⁿ` bit, so e.g. `x⁴ + x + 1` is `0b10011 = 19`.
 
 # Public surface
-- [`PRIMITIVE_POLYNOMIALS`](@ref) — `Dict{Int, Int}` of canonical
-  primitives for `n ∈ 2:16`. The n=4, 5, 8 choices match the
+- [`IRREDUCIBLE_POLYNOMIALS`](@ref) — `Dict{Int, Int}` of canonical
+  moduli for `n ∈ 2:16`. The n=4, 5, 8 choices match the
   conventions already used in `data-raw/apn_catalog/n{4,5}_apn.toml`
   and FIPS 197 / AES (n=8 uses Rijndael's `x⁸ + x⁴ + x³ + x + 1`).
-- [`primitive_polynomial`](@ref) — fetch the default modulus for `n`.
+- [`irreducible_polynomial`](@ref) — fetch the default modulus for `n`.
+- [`gf_primitive_element`](@ref) — a verified multiplicative generator.
+  The historical `primitive_polynomial` name refers to a modulus, not a
+  guarantee that element `2` generates its multiplicative group.
 - [`gf_mul`](@ref) — multiplication in `GF(2ⁿ)`.
 - [`gf_pow`](@ref) — square-and-multiply exponentiation.
 - [`gf_inv`](@ref) — multiplicative inverse via Fermat (`a^(2ⁿ - 2)`).
@@ -56,9 +57,9 @@ julia> gf_monomial_lut(4, 3)       # the n=4 Gold x³ APN LUT
 # Primitive-polynomial lookup
 
 """
-    PRIMITIVE_POLYNOMIALS :: Dict{Int, Int}
+    IRREDUCIBLE_POLYNOMIALS :: Dict{Int, Int}
 
-Canonical primitive irreducible polynomial for `GF(2ⁿ)` at each
+Canonical irreducible polynomial for `GF(2ⁿ)` at each
 `n ∈ 2:16`. The value is the integer representation of the polynomial
 including its leading `xⁿ` bit.
 
@@ -66,7 +67,7 @@ These match standard references (Lidl-Niederreiter, FIPS 197 for
 n=8) and the moduli already used by the catalog's hand-computed LUTs
 (`x⁴+x+1` for `n=4`, `x⁵+x²+1` for `n=5`).
 """
-const PRIMITIVE_POLYNOMIALS = Dict{Int,Int}(
+const IRREDUCIBLE_POLYNOMIALS = Dict{Int,Int}(
     2 => 0b111,                       # x² + x + 1
     3 => 0b1011,                      # x³ + x + 1
     4 => 0b10011,                     # x⁴ + x + 1
@@ -83,6 +84,15 @@ const PRIMITIVE_POLYNOMIALS = Dict{Int,Int}(
     15 => 0b1000000000000011,          # x¹⁵ + x + 1
     16 => 0b10000000000101101,         # x¹⁶ + x⁵ + x³ + x² + 1
 )
+
+"""
+    PRIMITIVE_POLYNOMIALS
+
+Historical alias of [`IRREDUCIBLE_POLYNOMIALS`](@ref). The n=8 AES modulus is
+irreducible but not primitive: element `2` has order 51, not 255. Existing field
+bases are preserved. Use [`gf_primitive_element`](@ref) for exponent indexing.
+"""
+const PRIMITIVE_POLYNOMIALS = IRREDUCIBLE_POLYNOMIALS
 
 """
     CONWAY_POLYNOMIALS :: Dict{Int, Int}
@@ -121,7 +131,10 @@ end
 """
     primitive_polynomial(n::Integer) -> Int
 
-Canonical modulus for `GF(2ⁿ)`. Throws `ArgumentError` for `n` outside
+Historical name for the canonical **irreducible** modulus for `GF(2ⁿ)`.
+It does not guarantee that element `2` is primitive; at n=8 it is not.
+Use [`gf_primitive_element`](@ref) when a multiplicative generator is needed.
+Throws `ArgumentError` for `n` outside
 the table; pass an explicit modulus to [`gf_mul`](@ref) for the
 unsupported case.
 """
@@ -133,6 +146,15 @@ function primitive_polynomial(n::Integer)
     )
     PRIMITIVE_POLYNOMIALS[Int(n)]
 end
+
+"""
+    irreducible_polynomial(n::Integer) -> Int
+
+Canonical field modulus, preserving the historical polynomial basis, including
+AES at n=8. Equivalent to [`primitive_polynomial`](@ref), whose name predates
+the distinction between a field modulus and a multiplicative generator.
+"""
+irreducible_polynomial(n::Integer) = primitive_polynomial(n)
 
 # Multiplication, exponentiation, inversion
 
@@ -401,4 +423,84 @@ function gf_is_dth_power(
     order = (1 << n) - 1
     g = gcd(Int(d), order)
     gf_pow(Int(x), order ÷ g, n; modulus = modulus) == 1
+end
+
+# Distinct prime divisors; these field-sized integers need no external package.
+function _gf_prime_factors(n::Int)
+    out=Int[];d=2
+    while d<=n÷d
+        if n%d==0
+            push!(out,d)
+            while n%d==0;n÷=d;end
+        end
+        d+=1
+    end
+    n>1 && push!(out,n)
+    out
+end
+
+function _gf_poly_gcd(a::Int,b::Int)
+    while b!=0
+        while a!=0 && ndigits(a;base=2)>=ndigits(b;base=2)
+            a ⊻= b << (ndigits(a;base=2)-ndigits(b;base=2))
+        end
+        a,b=b,a
+    end
+    a
+end
+
+function _gf_generator_domain(n::Integer,modulus::Integer)
+    nn=Int(n);p=Int(modulus)
+    1<=nn<=(8sizeof(Int)-2)÷2 || throw(ArgumentError("field dimension exceeds safe Int multiplication range"))
+    (1<<nn)<=p<(1<<(nn+1)) || throw(ArgumentError("modulus must have degree n"))
+    if nn==1
+        p==3 || throw(ArgumentError("modulus is reducible"))
+    else
+        gf_pow(2,1<<nn,nn;modulus=p)==2 || throw(ArgumentError("modulus is reducible"))
+        for q in _gf_prime_factors(nn)
+            _gf_poly_gcd(gf_pow(2,1<<(nn÷q),nn;modulus=p) ⊻ 2,p)==1 ||
+                throw(ArgumentError("modulus is reducible"))
+        end
+    end
+    nn,p
+end
+
+function _gf_order(x::Int,n::Int,p::Int,factors)
+    order=(1<<n)-1
+    for q in factors
+        while order%q==0 && gf_pow(x,order÷q,n;modulus=p)==1
+            order÷=q
+        end
+    end
+    order
+end
+
+"""
+    gf_multiplicative_order(x, n; modulus=primitive_polynomial(n)) -> Int
+
+Exact multiplicative order of a nonzero field element. Checks that the modulus
+is irreducible of degree n; rejects zero and elements outside the n-bit field.
+Supports dimensions fitting the existing Int multiplication implementation.
+"""
+function gf_multiplicative_order(x::Integer,n::Integer;modulus::Integer=primitive_polynomial(n))
+    nn,p=_gf_generator_domain(n,modulus)
+    0<x<(1<<nn) || throw(ArgumentError("multiplicative order requires a nonzero n-bit element"))
+    _gf_order(Int(x),nn,p,_gf_prime_factors((1<<nn)-1))
+end
+
+"""
+    gf_primitive_element(n; modulus=primitive_polynomial(n)) -> Int
+
+Smallest nonzero element generating GF(2ⁿ)* in the specified irreducible field
+basis. Primitivity is checked using every prime divisor of 2ⁿ-1. In the default
+AES basis at n=8 the answer is 3; in the Conway basis it is 2. Never change a
+stored polynomial basis merely to make element 2 primitive.
+"""
+function gf_primitive_element(n::Integer;modulus::Integer=primitive_polynomial(n))
+    nn,p=_gf_generator_domain(n,modulus);order=(1<<nn)-1
+    factors=_gf_prime_factors(order)
+    for x in 1:order
+        all(q->gf_pow(x,order÷q,nn;modulus=p)!=1,factors) && return x
+    end
+    error("no generator in the validated field")
 end

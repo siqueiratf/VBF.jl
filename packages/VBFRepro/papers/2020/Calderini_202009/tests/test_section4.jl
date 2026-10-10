@@ -17,7 +17,9 @@
     K = kim_apn()
     Dinv = compositional_inverse(D)
     @test code_weight_enumerator(ccz_matrix(K)) == code_weight_enumerator(ccz_matrix(D))
-    @test code_weight_enumerator(ea_matrix(K)) != code_weight_enumerator(ea_matrix(D))
+    # Correct output-block extension is isospectral; degree supplies the proof.
+    @test code_weight_enumerator(ea_matrix(K)) == code_weight_enumerator(ea_matrix(D))
+    @test algebraic_degree(K) == 2 && algebraic_degree(D) == 4
     @test code_weight_enumerator(ae_matrix(D)) == code_weight_enumerator(ae_matrix(Dinv))
 
     # Theorem 6 with the paper's F₁: not AE to its inverse, C₃ blind to it

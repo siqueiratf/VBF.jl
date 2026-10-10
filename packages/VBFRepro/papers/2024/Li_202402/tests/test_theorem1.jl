@@ -39,4 +39,13 @@
         lut = family1_lut(m, i)
         @test differential_uniformity(SBox(lut)) == 1 << k   # = 4
     end
+    @test theorem1_bivariate_condition(3,1)
+    @test !theorem1_bivariate_condition(7,1)
+    @test theorem1_root_conditions(7,1) == (false,false,false)
+    # The hypothesis checker must include the origin, independently of F's DDT.
+    @test !bipoly_no_roots_f2m((x,y)->x|y,2)
+    @test bipoly_no_roots_f2m((x,y)->1,2)
+    result=theorem1_report(m=2,i=1,io=devnull)
+    @test result.hypotheses_hold && result.bivariate_condition
+
 end

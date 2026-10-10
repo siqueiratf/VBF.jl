@@ -2,7 +2,14 @@ include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../../paper.mk
 
 .PHONY: help test report clean_results table7_full \
         proposition14 section3_2 proposition18 proposition22 corollary24 \
-        proposition25 algorithm1 proposition35_36 section4_3 section4_4
+        proposition25 algorithm1 proposition35_36 section4_3 section4_4 section4_5
+
+limit ?= 16
+full_search ?= false
+check_ortho ?= false
+save_results ?= false
+max_evaluations ?= 2147483647
+timeout_seconds ?= 60
 
 default: help
 
@@ -41,6 +48,9 @@ section4_3:
 
 section4_4:
 	$(JULIA) $(JULIA_PROJECT) $(MAKEFILE_DIR)/section4_4.jl
+
+section4_5:
+	$(JULIA) $(JULIA_PROJECT) -e 'include(joinpath("$(MAKEFILE_DIR)", "section4_5.jl")); section4_5_report(; limit=$(limit), full_search=$(full_search), check_ortho=$(check_ortho), max_evaluations=$(max_evaluations), timeout_seconds=$(timeout_seconds), save_results=$(save_results))'
 
 table7_full:
 	$(JULIA) $(JULIA_PROJECT) -e \

@@ -16,4 +16,13 @@
         r0 == r1 || (all_ok = false; break)
     end
     @test all_ok
+    # Regression: rank must retain field coordinates above bit 7.
+    wide=zeros(Int,10,10); wide[1,2]=256; wide[1,3]=512
+    @test _row_combo_rank(wide,1,0) == 2
+    @test_throws ArgumentError _row_combo_rank(wide,0,0)
+    @test_throws ArgumentError _row_combo_rank(fill(1024,10,10),1,0)
+    for (n,m) in ((9,3),(10,1),(10,2))
+        @test verify_theorem3(;n,m)
+    end
+
 end

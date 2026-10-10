@@ -129,3 +129,41 @@ function gen_permutation_tuples(n::Int)::Vector{Tuple{FqMatrix, FqMatrix}}
     representatives = remove_extended_power_similar_pairs(candidates)
     filter_permutation_tuples(representatives)
 end
+
+"""
+    generate_tuple_matrix_constants_file(n; output, full_search=false)
+
+Regenerate the mathematical tuple classification, writing only to an explicit
+output path. Enumerated representatives/order may differ from the historical
+committed constants; compare extended-power-similarity classes, not indices.
+`n>=7` requires full_search=true. This is the BBL2021 APN-permutation numbering,
+not the separate Beierle--Leander2022 quadratic-APN tuple catalog.
+"""
+function generate_tuple_matrix_constants_file(n::Int; output::AbstractString,
+                                               full_search::Bool = false)
+    2 <= n <= 8 || throw(ArgumentError("tuple generation supports 2 <= n <= 8"))
+    n <= 6 || full_search || throw(ArgumentError("n=$n requires full_search=true"))
+    pairs = gen_permutation_tuples(n)
+    blocks = map(pairs) do (A, B)
+        # A/B orientation is the file's actual stored orientation. The search
+        # API documents its F(Bx)=A F(x) convention separately.
+        Ai = Int.([iszero(A[r,c]) ? 0 : 1 for r in 1:n, c in 1:n])
+        Bi = Int.([iszero(B[r,c]) ? 0 : 1 for r in 1:n, c in 1:n])
+        (; tuple = vcat(_matrix_to_sbox(A), _matrix_to_sbox(B)), A = Ai, B = Bi, search = nothing)
+    end
+    mkpath(dirname(abspath(output)))
+    open(output, "w") do io
+        _write_tuple_matrix_constants(io, n, blocks)
+    end
+    (; n, count = length(blocks), output = abspath(output), blocks)
+end
+
+"""Compare full class sets without assuming historical class numbering."""
+function verify_generated_tuple_classes(n::Int, blocks)
+    committed = _load_tuple_matrix_blocks(joinpath(@__DIR__, "tuples", "AllTuplesMatrices$n.toml"))
+    length(committed) == length(blocks) || return false
+    known = [(_gf2_matrix(b.A,n), _gf2_matrix(b.B,n)) for b in committed]
+    generated = [(_gf2_matrix(b.A,n), _gf2_matrix(b.B,n)) for b in blocks]
+    all(any(is_extended_power_similar(g, k) for k in known) for g in generated) &&
+        all(any(is_extended_power_similar(k, g) for g in generated) for k in known)
+end

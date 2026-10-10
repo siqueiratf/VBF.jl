@@ -6,9 +6,10 @@ using VBF
 # files are skipped when the inputs are absent.
 inputs_present = isfile(joinpath(@__DIR__, "..", "inputs", "apn_8bit.txt"))
 
+include("test_table1_invariants.jl")
+include("test_optional_inputs.jl")
 include("test_dataset_validation.jl")   # self-guards on missing inputs
 if inputs_present
-    include("test_table1_invariants.jl")
     include("test_proposition1.jl")
     include("test_catalog_validation.jl")
 else

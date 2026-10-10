@@ -62,3 +62,20 @@ their original timing protocol; rerunning them does not upgrade historical data.
 
 Independent mathematical evidence, measured API costs, sampling attribution,
 statistical estimates, and publication-layout choices remain distinct.
+
+## Applying the historical audit
+
+The August audit is frozen evidence. Current per-finding dispositions live in
+[`audit/resolutions.toml`](../../../audit/resolutions.toml); they distinguish repaired
+implementation defects from unresolved paper claims and unfinished exhaustive runs.
+
+Revalidate the eight historical LUT proposals through the actual Julia builders:
+
+```sh
+julia --project=. packages/VBFRepro/analysis/scripts/revalidate_audit_luts.jl
+```
+
+This checks APN properties and exact little-endian LUT hashes against
+[`audit/revalidated_luts.toml`](../../../audit/revalidated_luts.toml). It writes no
+catalog entries and supplies no novelty guarantee. The script needs only the root
+workspace environment, independently of the optional plotting environment.

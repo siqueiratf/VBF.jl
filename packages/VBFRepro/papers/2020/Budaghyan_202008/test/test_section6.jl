@@ -79,6 +79,15 @@
     @test r93.nonvacuous
     @test r93.n_apn == 3                 # exactly the three published sets
     @test r93.n_cond == 3
+    @test r93.additional_controls == 3
+    @test r93.generated_apn == 0
+    @test !r93.generated_nonvacuous
+    @test r93.generated_distinct <= 512  # LCG repeats; 800 draws are not 800 distinct cases
+    @test r93.coverage == r93.distinct_tested // BigInt(2)^27
+    @test r63.coverage == 1
+    @test r63.generated_nonvacuous
+    @test_throws ArgumentError section6_vi3_coefficient_sets(6, 4)
+    @test_throws ArgumentError section6_vi3_coefficient_sets(6, 3; nsample=-1)
 
     # Round-trip: isotopic shift of G_1 by the zero map is the zero function,
     # and by a non-degenerate L it is not (Theorem IV.1's discriminating case).

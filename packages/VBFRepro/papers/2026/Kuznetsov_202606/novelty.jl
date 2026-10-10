@@ -1,31 +1,15 @@
 # novelty.jl — Phase-2 CCZ novelty oracle.
 #
-# A function's σ-signature (sorted differential + absolute-Walsh spectra of its
-# ortho-derivative; see table2.jl) is a CCZ-invariant. For quadratic APN,
-# CCZ-equivalence coincides with EA-equivalence (Yoshiara), so σ separates the
-# EA-classes the catalogs are counted in. Hence:
-#   σ(F) ∉ catalog ⇒ F lies in NO known CCZ-class ⇒ genuinely NEW (certain).
-#   σ(F) ∈ catalog ⇒ F is (almost surely) a known class.
-#
-# σ is hashed (SHA-256 → UInt128) so the 3.78M-entry index fits in ~60 MB.
-# A hash collision can only ever turn a truly-new function into a false :known
-# (a missed discovery) — it can never fabricate novelty. So :new verdicts stay
-# sound; for certainty of *duplication* on a :known verdict, confirm with a full
-# CCZ-equivalence test.
-#
-# Known dim-8 quadratic-APN catalog sources (all real, fetched — never fabricated):
-#   • BLP25 : Zenodo 16752428 — Beierle, Langevin, Leander, Polujan, Rasoolzadeh
-#             (2025), 3,775,599 inequivalent quadratic APN (catalogs/apn8_blp2025.txt)
-#   • BLP22 : sboxU apn_8bit_BLP22 (6368 LUTs; catalogs/apn8_blp22.json)
-#   • paper : Kuznetsov (2026) apn_all.json (566 found APN)
-#   • reps  : the 6 CCZ-class representatives A–F (helpers.jl)
-#   • gold  : Gold monomials x³, x⁹
-# Run ./fetch_catalog.sh (and ./fetch_catalog.sh --full for BLP25) to populate.
+# Historical local signature helpers. A mismatch separates quadratic APNs
+# only from the functions actually indexed; a match requires an exact witness.
+# Neither a partial corpus nor a hash-only cache certifies literature novelty.
+# Use VBFCatalog's coverage-aware APIs for corpus comparisons.
+using SHA
+using JSON3
+
 include(joinpath(@__DIR__, "table2.jl"))   # sigma_key, representative_sboxes, VBF, gold_apn
 include(joinpath(@__DIR__, "anf.jl"))      # ANF: compact .anf catalog storage
 using .ANF
-import JSON3
-using SHA
 
 const CAT_DIR   = joinpath(@__DIR__, "catalogs")
 const BLP22     = joinpath(CAT_DIR, "apn8_blp22.json")
@@ -46,17 +30,17 @@ function sig_hash(F::SBox)::UInt128
 end
 # parse_lut_line provided by the ANF module (delimiter-agnostic)
 
-# add σ of an in-memory SBox collection (skips entries with no ortho-derivative)
+# add σ of an in-memory SBox collection; malformed inputs fail closed
 function add_sigmas!(s::Set{UInt128}, sboxes)
     for F in sboxes
-        try push!(s, sig_hash(F)) catch end
+        push!(s, sig_hash(F))
     end
     s
 end
 
 # stream a line-based LUT file (one JSON array per line), σ computed threaded
 function add_sigmas_file!(s::Set{UInt128}, path::AbstractString; batch::Int = 50_000)
-    isfile(path) || return s
+    isfile(path) || throw(ArgumentError("missing signature source: $path"))
     buf = String[]
     function flush_buf!()
         isempty(buf) && return
@@ -64,7 +48,8 @@ function add_sigmas_file!(s::Set{UInt128}, path::AbstractString; batch::Int = 50
         Threads.@threads for i in eachindex(buf)
             try hs[i] = sig_hash(SBox{8}(parse_lut_line(buf[i]))) catch; ok[i] = false end
         end
-        @inbounds for i in eachindex(buf); ok[i] && push!(s, hs[i]); end
+        all(ok) || error("invalid function in signature source $path; refusing a partial index")
+        @inbounds for i in eachindex(buf); push!(s, hs[i]); end
         empty!(buf)
     end
     for ln in eachline(path)
@@ -78,7 +63,7 @@ end
 
 # stream an ANF-packed .anf catalog, σ computed threaded over batches
 function add_sigmas_anf!(s::Set{UInt128}, path::AbstractString; batch::Int = 50_000)
-    isfile(path) || return s
+    isfile(path) || throw(ArgumentError("missing signature source: $path"))
     buf = Vector{Vector{UInt8}}()
     function flush_buf!()
         isempty(buf) && return
@@ -86,7 +71,8 @@ function add_sigmas_anf!(s::Set{UInt128}, path::AbstractString; batch::Int = 50_
         Threads.@threads for i in eachindex(buf)
             try hs[i] = sig_hash(SBox{8}(buf[i])) catch; ok[i] = false end
         end
-        @inbounds for i in eachindex(buf); ok[i] && push!(s, hs[i]); end
+        all(ok) || error("invalid function in signature source $path; refusing a partial index")
+        @inbounds for i in eachindex(buf); push!(s, hs[i]); end
         empty!(buf)
     end
     ANF.foreach_anf_lut(path) do lut
@@ -123,7 +109,7 @@ end
 # σ-index over the small in-memory sources
 sigma_index(catalog::AbstractVector{<:SBox}) = add_sigmas!(Set{UInt128}(), catalog)
 
-# Full known-APN σ-index (BLP25 streamed + BLP22 + paper + reps + gold), cached.
+# Historical local cache, without source provenance; not a novelty certificate.
 function build_sigma_index(; cache=SIG_CACHE, rebuild=false, blp25=true, kwargs...)
     if !rebuild && isfile(cache)
         return load_index(cache)
@@ -139,7 +125,8 @@ end
 # add a catalog's σ, preferring the compact .anf over the raw decimal text
 function add_sigmas_source!(s::Set{UInt128}, anf_path, txt_path)
     isfile(anf_path) ? add_sigmas_anf!(s, anf_path) :
-    isfile(txt_path) ? add_sigmas_file!(s, txt_path) : s
+    isfile(txt_path) ? add_sigmas_file!(s, txt_path) :
+    throw(ArgumentError("missing signature source: $anf_path or $txt_path"))
 end
 
 function save_index(s::Set{UInt128}, path)
@@ -154,17 +141,21 @@ function load_index(path)::Set{UInt128}
     end
 end
 
-# σ-absence is a certain proof of a new CCZ class; σ-presence ⇒ :known.
-classify_against_catalog(F::SBox, index::AbstractSet{UInt128}) =
-    (sig_hash(F) in index) ? :known : :new
+# Scope-limited invariant comparison: positive equivalence is not inferred.
+function classify_against_catalog(F::SBox, index::AbstractSet{UInt128})
+    algebraic_degree(F) == 2 && differential_uniformity(F) == 2 ||
+        throw(ArgumentError("signature comparison requires quadratic APN functions"))
+    isempty(index) && return :inconclusive
+    (sig_hash(F) in index) ? :signature_match : :signature_absent
+end
 
 # build a σ-index from a JSON {"luts":[...]} catalog of n-bit LUTs (n via Val(N)).
 # Generic over dimension — used for the dim-7 known catalog (apn7_known.json).
 function known_sigma_index(json_path::AbstractString, ::Val{N}) where {N}
     s = Set{UInt128}()
-    isfile(json_path) || return s
+    isfile(json_path) || throw(ArgumentError("missing signature source: $json_path"))
     for l in JSON3.read(read(json_path, String)).luts
-        try push!(s, sig_hash(SBox{N}(UInt8.(collect(l))))) catch end
+        push!(s, sig_hash(SBox{N}(UInt8.(collect(l)))))
     end
     s
 end

@@ -18,27 +18,34 @@ const TABLE2_EXPECTED = Dict(6 => 4, 7 => 78, 8 => 142, 9 => 26, 10 => 45)
 
 function table2_report(io::IO = stdout;
                        max_n::Int = 7,
-                       max_evaluations::Int = 1 << 24)
-    print_section(io, "Table 2: APN function counts (Algorithm 2)")
+                       max_evaluations::Int = 1 << 24,
+                       reps::Symbol = :min_log)
+    print_section(io, "Table 2: APN matrix counts (Algorithm 3; explicit representative convention)")
 
     print_kv(io, "paper counts", TABLE2_EXPECTED)
 
+    results = Dict{Int,Any}()
+    print_kv(io, "F_n representative convention", string(reps))
+    print_kv(io, "paper convention", "not specified; counts depend on this choice")
     for n in 6:max_n
         mod = conway_polynomial(n)
         t0  = time()
-        cnt = partial_search_apn_f2(n; limit = 1000, max_evaluations = max_evaluations,
-                                    modulus = mod)
+        stats = partial_search_apn_f2(n; limit = 1000, max_evaluations,
+                                      modulus = mod, reps, return_stats=true)
+        cnt = stats.count
+        results[n] = stats
         elapsed = time() - t0
         expected = get(TABLE2_EXPECTED, n, nothing)
-        exhaustive = (max_evaluations >= 1 << 24) && n <= 7
+        exhaustive = stats.exhaustive
         match = expected !== nothing && cnt == expected
         print_kv(io, "n=$n: count", cnt)
         print_kv(io, "n=$n: time (s)", round(elapsed, digits=3))
         exhaustive && print_check(io, "n=$n: count == $(expected) (paper)", match)
-        !exhaustive && print_kv(io, "n=$n: completeness", "budget-limited")
+        print_kv(io, "n=$n: completeness", exhaustive ? "exhausted the selected representative domains" : "budget-limited; lower bound")
     end
 
-    max_n < 8 && print_kv(io, "n=8,9,10", "out of scope (hours to days)")
+    max_n < 8 && print_kv(io, "n=8,9,10", "UNREPRODUCED; published counts only")
+    return (;reps, results)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

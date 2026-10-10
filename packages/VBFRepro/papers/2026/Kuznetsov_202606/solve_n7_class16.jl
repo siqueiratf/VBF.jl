@@ -58,7 +58,7 @@ end
 
 # 2. Build M_A and parameterize V_A
 M = build_M_A_n(A, n)
-pivot_cols, free_cols = rref_f2!(M)
+pivot_cols, free_cols = VBF.rref_f2!(M)
 n_pivots = length(pivot_cols)
 n_free = length(free_cols)
 S = [Int[] for _ in 1:n_pivots]

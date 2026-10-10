@@ -10,8 +10,8 @@
 #   5. Check three univariate root conditions (Theorem 6):
 #        X^{q²+q+1}+X^{q+1}+X^q+X+1,  X^{q²+q+1}+X^{q²}+1,  X^{q²+q+1}+X+1
 #   6. Check bivariate condition (Theorem 6):
-#        X^{q²+q+1}+X^{q+1}Y^{q²+q}+XY^q+X^{q²+q}+X^{q²}Y^{q²}+X^{q²}Y+X^qY^{q²}
-#        +Y^{q²+q+1}+1  has no (X,Y)≠(0,0) roots in GF(2^m)^2
+#        X^{q²+q+1}+X^{q+1}Y^{q²}+XY^q+X^qY^{q²}+X^{q²}Y+X^{q²}
+#        +Y^{q²+q+1}+Y^{q²+1}+Y^{q²+q}+Y^{q²}+1 has no roots in GF(2^m)^2
 # VBF API used: gf_mul, gf_pow, primitive_polynomial,
 #               differential_uniformity, is_permutation, SBox, print_section, print_check, print_kv
 
@@ -46,8 +46,8 @@ Verify Theorem 6's three univariate sufficient conditions for APN-ness:
 - c2: X^{q²+q+1}+X^{q²}+1          no roots in GF(2^m)
 - c3: X^{q²+q+1}+X+1               no roots in GF(2^m)
 
-The bivariate condition (Theorem 6, p. 18) factors analogously over GF(2^7)
-for q=2; root-freeness verified implicitly by differential_uniformity == 2^k.
+The separate bivariate sufficient hypothesis is checked directly by
+`theorem6_bivariate_condition` over every pair in GF(2^m)^2.
 """
 function theorem6_root_conditions(m::Int, i::Int)
     q    = 1 << i
@@ -69,6 +69,18 @@ function theorem6_root_conditions(m::Int, i::Int)
     return c1, c2, c3
 end
 
+"""Check the complete bivariate no-root hypothesis in Theorem 6 over GF(2^m)^2."""
+function theorem6_bivariate_condition(m::Int, i::Int)
+    q = 1 << i; q2 = q*q; pp = primitive_polynomial(m)
+    pow(x,e) = gf_pow(x,e,m;modulus=pp)
+    mul(x,y) = gf_mul(x,y,m;modulus=pp)
+    return bipoly_no_roots_f2m(m) do x,y
+        pow(x,q2+q+1) ⊻ mul(pow(x,q+1),pow(y,q2)) ⊻ mul(x,pow(y,q)) ⊻
+        mul(pow(x,q),pow(y,q2)) ⊻ mul(pow(x,q2),y) ⊻ pow(x,q2) ⊻
+        pow(y,q2+q+1) ⊻ pow(y,q2+1) ⊻ pow(y,q2+q) ⊻ pow(y,q2) ⊻ 1
+    end
+end
+
 """
     theorem6_report(; m, i, io) -> NamedTuple
 
@@ -85,7 +97,8 @@ function theorem6_report(; m::Int = 3, i::Int = 1, io::IO = stdout)
     print_check("X^{q²+q+1}+X^{q+1}+X^q+X+1  no roots in GF(2^$m)", c1, io)
     print_check("X^{q²+q+1}+X^{q²}+1  no roots in GF(2^$m)", c2, io)
     print_check("X^{q²+q+1}+X+1  no roots in GF(2^$m)", c3, io)
-    print_kv("bivariate condition", "verified implicitly by APN check below", io)
+    c4 = theorem6_bivariate_condition(m, i)
+    print_check("bivariate polynomial has no roots in GF(2^m)^2", c4, io)
 
     lut    = family2_lut(m, i)
     du     = differential_uniformity(SBox(lut))
@@ -101,7 +114,7 @@ function theorem6_report(; m::Int = 3, i::Int = 1, io::IO = stdout)
         print_kv("permutation check (Theorem 7)", "skipped — m/k=$mk even", io)
     end
 
-    return (; conditions = (c1, c2, c3), du, perm_ok, lut)
+    return (; conditions = (c1, c2, c3), bivariate_condition=c4, hypotheses_hold=c1 && c2 && c3 && c4, du, perm_ok, lut)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

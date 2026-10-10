@@ -1,5 +1,7 @@
 # Budaghyan_202101 — Generalized Isotopic Shift Construction for APN Functions
 
+Current F001 cross-reference (2026-10-10): the former invariant coincidence with Edel-Pott2009 Table9 entry1.3 is now supported by independently replayed exact EA witnesses. See [Taniguchi prior-art reproduction](../../2025/Taniguchi_202501/prior_art.jl), which reconstructs the source polynomial and binds it to corpus member5. This establishes the specified equivalences without treating matching signatures as proof.
+
 **Paper**: Budaghyan, Calderini, Carlet, Coulter, Villa. "Generalized isotopic shift
 construction for APN functions." *Designs, Codes and Cryptography* **89**(1):19-32, 2021.
 

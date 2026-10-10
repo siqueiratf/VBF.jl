@@ -7,27 +7,32 @@ Self-Equivalence Subspace." 2026.
 
 **Verdict**: Partial
 
-The `V_A` machinery is correct and was confirmed independently. **The paper's headline claim
-is refuted**: its four "new" CCZ classes are Edel–Pott (2009) switching classes, already
-tracked in this repository. `FINDINGS.md` reached that conclusion and it was re-verified here
-from scratch. Beyond that, this review found **two further, previously unreported errors in
-the paper**, including one that invalidates its core geometry and all downstream coverage
-arithmetic.
+Current audit (2026-10-10): `theorem6_exact.jl` replays independently verified EA
+witnesses for artifact representatives A/B/C/D against Edel–Pott2009 corpus
+members18/5/3/4. Positive equivalence is established by the full affine graph
+identity, never by signature equality. `recover=true` runs a bounded native
+search; an unfinished comparison stays inconclusive. These four representatives
+are therefore previously known CCZ classes. The former catalog-gap proposals in
+`REVIEW_Kuznetsov_202606.md` have been removed.
 
-> ⚠️ **Do not act on `REVIEW_Kuznetsov_202606.md`.** That file is superseded. It still
-> carries four catalog-gap records (`n8_Kuznetsov2026_classA` … `classD`) instructing the
-> updater to write already-published functions into
-> `packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml` under
-> `bib_key = "Kuznetsov_202606"` — the exact failure mode that
-> `packages/VBFCatalog/src/data/sigma.jl:55-60` warns about ("the exact failure that put four
-> withdrawn functions into this catalog (8022d09)"). Verified: the file contains 4 such
-> records, and both `packages/VBFCatalog/corpora/edelpott2009_n8.sqlite` and
-> `yuwangli2014_qam_n8.sqlite` are tracked and already hold these classes.
+`section4.jl` and its tests now compute the full geometry: total rank184,
+intra-column rank24, center-column rank168, center projection kernel0,
+projection dimension40, and **2^40** distinct slices meeting V_A. The RREF free
+coordinates split32center/8intra. `exhaustive_phase2.jl` uses the correct
+pair-major projection indices; phase2's output-major variable indices cannot be
+substituted. `slice_identifier` records all200center coordinates losslessly.
+Phase1 remains sampling with replacement and never reports exhaustive coverage.
 
-> **Re-review 2026-08-15, Julia 1.12.6**: the suite executes green (96/96) and both flagship
-> targets now run. `make theorem6` **confirms the refutation with the repository's own
-> oracle** — it prints `[FAIL] PREMISE HOLDS (no pre-2020 set contains A..D)`. `make novelty`,
-> by contrast, is a **silent no-op** (see reproduction issue 11).
+`make theorem6` and `make novelty` report missing/incomplete named sources as
+inconclusive and signature matches as candidates for an exact check. They do not
+certify completeness throughout the literature. The exact witnesses use the
+tracked19-member reference corpus and need no large signature index.
+
+Run `make test` for the bounded regressions; `make theorem6_exact` replays the
+positive proof. A witness can be regenerated with
+`theorem6_exact_run(;recover=true,timeout_seconds=60,max_nodes=10^6)`.
+The historical review below describes the earlier implementation; its line
+numbers, test counts, and resolution plans are superseded by this status.
 
 ---
 
@@ -388,7 +393,7 @@ CLASS-E 2064, CLASS-F 2127. All other tracked bulk corpora were scanned as befor
 
 | Claimed-new class | Status |
 |-------------------|--------|
-| CLASS-A | **not-new** — σ matches `edelpott2009_n8` #18 and `yuwangli2014_qam_n8` #3 |
+| CLASS-A | **signature match** — exact Edel–Pott equivalence now verified by witnesses; other σ matches `edelpott2009_n8` #18 and `yuwangli2014_qam_n8` #3 |
 | CLASS-B | **not-new** — `edelpott2009_n8` #5, `yuwangli2014_qam_n8` #6 |
 | CLASS-C | **not-new** — `edelpott2009_n8` #3, `yuwangli2014_qam_n8` #4 |
 | CLASS-D | **not-new** — `edelpott2009_n8` #4, `yuwangli2014_qam_n8` #5 |

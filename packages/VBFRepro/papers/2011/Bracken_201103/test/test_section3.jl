@@ -1,5 +1,10 @@
 @testset "section3_test" begin
     include(joinpath(@__DIR__, "..", "section3.jl"))
+    # Literal Table 2 coefficients: distinguish power indices from values.
+    cases = Dict(r.family => r.sbox for r in table2_n12_instances())
+    @test cases["8"] == SBox{12}(terms_to_lut([(1328,768),(2,33),(1,257),(3747,544)],12,4179))
+    @test cases["8W"] == SBox{12}(terms_to_lut([(1328,768),(2,33),(1,257)],12,4179))
+    @test cases["7"] == SBox{12}(terms_to_lut([(1328,768),(2,33),(3747,544)],12,4179))
 
     modulus6 = primitive_polynomial(6)
 

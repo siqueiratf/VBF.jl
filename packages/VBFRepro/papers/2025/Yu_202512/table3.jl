@@ -3,18 +3,16 @@
 # Section: 4.2 Further observation, Table 3
 #
 # Pseudocode:
-#   F1(x) = x^3 = x^{2^1+2^0}   (Gold k=1; paper writes "x^4", likely typo for x^3)
+#   F1(x) = x^3 = x^{2^1+2^0}   (Gold k=1; x^3 is printed in the supplied LaTeX)
 #   F2(x) = x^5 = x^{2^2+2^0}   (Gold k=2)
 #   F3(x) = x^9 = x^{2^3+2^0}   (Gold k=3)
 #   F4(x) = x^17 = x^{2^4+2^0}  (Gold k=4)
 #   F5(x) = x^33 = x^{2^5+2^0}  (Gold k=5)
 #   F6(x) = x^3 + Tr_{GF(2^11)/GF(2)}(x^9)
 #   Verify: is_quadratic_apn(Fi) for i=1..6
-#   Verify: ortho-derivative differential spectra pairwise distinct (CCZ-inequivalence evidence)
+#   Verify: ortho-derivative differential and Walsh spectra pairwise distinct (CCZ-inequivalence evidence)
 # VBF API used: is_quadratic_apn, ortho_derivative, differential_spectrum
 # Note: Table 3 is CONJECTURED (partial Algorithm 3 search; no exhaustive classification for n=11)
-# Note: paper writes "x^4" as first entry; x^4=x^{2^2} is linear (DDT max=2^11), NOT APN.
-#       Correct Gold k=1 representative is x^3=x^{2^1+1}. Treated as a typo in the paper.
 # Note: modulus 2053 = x^11+x^2+1 (primitive); VBF has no conway_polynomial(11)
 
 include(joinpath(@__DIR__, "helpers.jl"))
@@ -45,7 +43,7 @@ const TABLE3_EXPONENTS = [
 ]
 
 const TABLE3_LABELS = [
-    "x^3 (Gold k=1; paper writes x^4)",
+    "x^3 (Gold k=1)",
     "x^5 (Gold k=2)",
     "x^9 (Gold k=3)",
     "x^17 (Gold k=4)",
@@ -63,8 +61,6 @@ function table3_report(io::IO = stdout)
     print_kv(io, "n", N11)
     print_kv(io, "modulus (x^11+x^2+1)", MOD11)
     print_kv(io, "Tr(x^9) exponents (n=11)", TR_X9_EXPS_N11)
-    print_kv(io, "paper notation",
-             "writes x^4 as first entry; x^3 used here (x^4 is linear, not APN)")
     print_kv(io, "completeness",
              "conjectured (partial Algorithm 3; 15 Magma scripts × 12 days)")
 
@@ -77,9 +73,9 @@ function table3_report(io::IO = stdout)
         print_check(io, "F$i = $lbl is quadratic APN over GF(2^11)", ok)
     end
 
-    # Pairwise CCZ-inequivalence via ortho-derivative differential spectra
+    # Pairwise CCZ-inequivalence via ortho-derivative differential and Walsh spectra
     t0 = time()
-    spectra = [differential_spectrum(ortho_derivative(F)) for F in boxes]
+    spectra = [apn_ea_mugshot(F) for F in boxes]
     print_kv(io, "ortho-derivative spectra time (s)", round(time() - t0, digits = 2))
 
     all_distinct = true
@@ -88,8 +84,10 @@ function table3_report(io::IO = stdout)
         all_distinct &= neq
         neq || print_check(io, "F$i and F$j: ortho-derivative spectra COLLIDE (unexpected)", false)
     end
-    print_check(io, "all 6 ortho-derivative spectra pairwise distinct (CCZ-inequivalence evidence)",
+    print_check(io, "all 6 ortho-derivative mugshots pairwise distinct (quadratic CCZ-inequivalence)",
                 all_distinct)
+    print_kv(io,"equal mugshots", "inconclusive; an equivalence witness or complete solver is required")
+    return (;all_distinct, boxes, mugshots=spectra)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

@@ -21,7 +21,7 @@
 # EVIDENCE LEVEL AND COST, measured on this machine with @elapsed
 # (Julia 1.12.6, AMD Ryzen 5 5600G, single-threaded):
 #   α = 2 primitive in GF(2^30)                      : verified, instant
-#   dim ker B_a = 2 for 2000 random a ≠ 0            : 0.46 s   → SAMPLED PROOF
+#   dim ker B_a = 2 for 2000 random a ≠ 0            : 0.46 s   → SAMPLED COMPUTATIONAL EVIDENCE
 #   dim ker B_a = 2 for a = 1..500                   : 0.08 s
 #   injectivity prefix, limit = 2^16 / 2^18 / 2^20   : 0.27 / 0.81 / 3.26 s
 #   exhaustive 2^30 injectivity scan                 : ~55 min EXTRAPOLATED
@@ -83,7 +83,7 @@ function theorem1_1_report(
     all_pass = prim && genuine && dims_ok && p.injective
     print_check("Theorem 1.1 evidence at n = 30 collected", all_pass, io)
     print_kv("evidence level",
-             "differential half: SAMPLED PROOF — the rank criterion is exact per a, " *
+             "differential half: SAMPLED COMPUTATIONAL EVIDENCE — the rank criterion is exact per a, " *
              "so every sampled row is certified, but not all 2^30−1 rows were sampled. " *
              "permutation half: " *
              (p.full_domain ? "EXHAUSTIVE" :

@@ -9,6 +9,14 @@ using Test, TOML, VBFRepro
     @test papers_root() == joinpath(repo_root(), "packages", "VBFRepro", "papers")
     @test_throws ArgumentError paper_path("../Yu_202211d")
     @test_throws ArgumentError paper_path("absent")
+    # A valid --project flag does not imply that the migrated test script exists.
+    for paper in papers
+        directory = paper_path(paper.id)
+        expected = [joinpath(directory,name,"runtests.jl") for name in ("test","tests")
+            if isfile(joinpath(directory,name,"runtests.jl"))]
+        command = read(`make --no-print-directory -n -C $directory test`, String)
+        @test any(path -> occursin(path, replace(command,"//"=>"/")), expected)
+    end
 end
 
 @testset "atomic output ownership and termination race" begin
@@ -86,6 +94,8 @@ end
         mkpath(joinpath(paper,"input"))
         write(joinpath(paper,"input","fixture.txt"), "independent original input\n")
         write(joinpath(project, "Project.toml"), "[deps]\n")
+        fixture = joinpath(paper,"certificate.toml")
+        write(fixture, "columns = [1,2,4]\n")
         write(joinpath(paper, "Makefile"), raw"""
 report:
 	@echo "cwd=$$(pwd)"
@@ -110,6 +120,11 @@ slow:
         @test metadata["environment_overrides"] == Dict("VBF_REPRO_FIXTURE"=>"set")
         @test metadata["status"] == "passed"
         @test !isempty(metadata["source_sha256"])
+        fixture_key = relpath(fixture, project)
+        @test haskey(metadata["source_sha256"], fixture_key)
+        old_hash = metadata["source_sha256"][fixture_key]
+        write(fixture, "columns = [1,2,5]\n")
+        @test VBFRepro._source_hashes(paper,project)[fixture_key] != old_hash
         @test length(metadata["input_sha256"]) == 1
         @test length(metadata["output_log_sha256"]) == 64
         log = read(joinpath(out, "output.log"), String)

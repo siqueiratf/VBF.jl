@@ -1,0 +1,297 @@
+schema_version = 1
+updated_date = "2026-10-10"
+historical_audit_date = "2026-08-17"
+historical_base = "bf15e59 plus historical uncommitted changes"
+application_base = "347437d"
+julia = "1.13.1"
+finding_count = 36
+historical_findings = "audit/findings.yaml"
+status_semantics = "fixed resolves the implementation/evidence defect; it does not prove all publication claims. partial records completed improvements and explicit remaining work."
+
+[[findings]]
+id = "F001"
+status = "fixed"
+summary = "Exact EA witnesses establish Taniguchi Example 4.2 = BCL2009 eq6 = Edel-Pott Table 9 entry1.3. Existing catalog attribution was already corrected."
+evidence = ["packages/VBFRepro/papers/2025/Taniguchi_202501/prior_art.jl"]
+guarantee = "The witness proves equivalence of the specified LUTs; publication attribution is checked against the original source and corpus mapping."
+remaining = "No class-completeness or global novelty conclusion follows."
+
+[[findings]]
+id = "F002"
+status = "fixed"
+summary = "Independently replayed full EA graph witness to Weng-Tan-Gong member9, with forged-map and negative controls."
+evidence = ["packages/VBFRepro/papers/2024/Ichanska_202400/section5_1.jl"]
+guarantee = "All256 graph points, ambient invertibility and EA block constraints verified."
+remaining = "Historical corpus provenance remains an explicit assumption for publication attribution."
+
+[[findings]]
+id = "F003"
+status = "fixed"
+summary = "Withdrawn write-ready gaps removed; four full EA witnesses connect A-D to earlier Edel-Pott representatives."
+evidence = ["packages/VBFRepro/papers/2026/Kuznetsov_202606/novelty.jl"]
+guarantee = "Positive equivalences are proved by replay, not signature equality."
+remaining = "The purported completeness premise remains unsupported; no new class is claimed."
+
+[[findings]]
+id = "F004"
+status = "partial"
+summary = "Explicit representative conventions and exact DFS stop status; min_log gives4/78, min_value gives1/117."
+evidence = ["packages/VBFRepro/papers/2025/Yu_202512/algorithm3.jl"]
+guarantee = "Exhaustion certifies each specified restricted parameter domain."
+remaining = "Authors representative convention is unspecified; dimensions8+ remain unreproduced."
+
+[[findings]]
+id = "F005"
+status = "fixed"
+summary = "Combined differential/Walsh mugshots distinguish six dimension11 examples; removed false x4 source allegation."
+evidence = ["packages/VBFRepro/papers/2025/Yu_202512/table3.jl"]
+guarantee = "Distinct exact invariant tuples prove inequivalence for verified quadratic APNs."
+remaining = "Equal mugshots remain inconclusive. Original LaTeX actually prints x3."
+
+[[findings]]
+id = "F006"
+status = "fixed"
+summary = "Corrected exponent2^(m+s), exact Table V representative, APN and digest regressions."
+evidence = ["packages/VBFRepro/papers/2022/Li_202207/theorem3.jl"]
+guarantee = "Correct source formula and complete finite APN verification of tested representatives."
+remaining = "Does not establish novelty of arbitrary parameter choices."
+
+[[findings]]
+id = "F007"
+status = "fixed"
+summary = "Enforces v in embedded GF(2^m)* and remaining theorem hypotheses."
+evidence = ["packages/VBFRepro/papers/2022/Li_202207/theorem3.jl"]
+guarantee = "Rejects out-of-hypothesis scalars instead of interpreting them as theorem instances."
+remaining = "Higher-dimensional instances require their own bounded/exhaustive checks."
+
+[[findings]]
+id = "F008"
+status = "fixed"
+summary = "Preserved field bases, added verified primitive generator/order APIs and corrected generator-dependent core constructions."
+evidence = ["packages/VBF/src/representations/finite_field.jl"]
+guarantee = "Irreducibility and primitive element order are independently checked; AES root2 order51, generator3 order255."
+remaining = "Legacy primitive_polynomial name is retained with honest irreducible-modulus documentation."
+
+[[findings]]
+id = "F009"
+status = "fixed"
+summary = "Opt-in n8 Gamma/Delta APIs have storage estimates and cooperative time budgets; Gold8 Gamma rank11818 recomputed."
+evidence = ["packages/VBF/src/invariants/design_ranks.jl"]
+guarantee = "Only completed elimination returns an invariant; budget hits throw without a partial rank."
+remaining = "No n9 support or full n8 catalog-rank sweep; storage estimate is not an OS RSS guarantee."
+
+[[findings]]
+id = "F010"
+status = "fixed"
+summary = "Reports ranks184/24/168, projection kernel0 and2^40 slices; corrected coefficient-layout mismatch."
+evidence = ["packages/VBFRepro/papers/2026/Kuznetsov_202606/section4.jl"]
+guarantee = "Exact linear algebra and projection calculations tested."
+remaining = "Dimension or random samples do not establish exhaustion of the2^40-slice region."
+
+[[findings]]
+id = "F011"
+status = "fixed"
+summary = "Independent naive Walsh/3-subspace enumeration confirms Kim eta3=3 versus published2."
+evidence = ["packages/VBFRepro/papers/2022/Gologlu_202207/proposition3_4.jl"]
+guarantee = "The finite n6 discrepancy is reproduced independently and reported as a discrepancy."
+remaining = "The invariant fails to separate these classes; it is not promoted to a complete invariant."
+
+[[findings]]
+id = "F012"
+status = "fixed"
+summary = "Replaced truncated rank helper with full-width VBF.rank_f2; row selections tested through dimension10."
+evidence = ["packages/VBFRepro/papers/2024/Ichanska_202400/theorem3.jl"]
+guarantee = "Rank uses all declared bits."
+remaining = "Arbitrary higher-dimensional search claims remain subject to their actual budgets."
+
+[[findings]]
+id = "F013"
+status = "fixed"
+summary = "Corrected third polynomial and both bivariate hypotheses against original LaTeX; direct checks with negative controls."
+evidence = ["packages/VBFRepro/papers/2024/Li_202402/theorem1.jl"]
+guarantee = "Every stated finite polynomial hypothesis is evaluated separately."
+remaining = "APN observations are not substituted for missing hypotheses."
+
+[[findings]]
+id = "F014"
+status = "partial"
+summary = "Printed and computed Table1 rows retained separately; row3 NL110 invalidates its separation argument."
+evidence = ["packages/VBFRepro/papers/2014/Zha_201401/table1.jl"]
+guarantee = "Different differential spectrum separates a specific earlier inverse-swap control."
+remaining = "Separation from the whole earlier family remains unresolved."
+
+[[findings]]
+id = "F020"
+status = "partial"
+summary = "Existing three-case search results retained; added zero-budget/exhaustion regressions and seed/map region metadata."
+evidence = ["packages/VBFRepro/papers/2021/Beierle_202107/algorithm1.jl"]
+guarantee = "Timeouts remain BudgetHit and cannot prove absence."
+remaining = "Paper commutant pruning and extendability seeding remain unreproduced."
+
+[[findings]]
+id = "F021"
+status = "fixed"
+summary = "Both QAM searches support confirmed EA splitting and explicit confirmation/traversal budgets."
+evidence = ["packages/VBF/src/constructions/qam_search.jl"]
+guarantee = "Confirmed class decisions require an exact witness or exhausted solver; interrupted confirmation remains inconclusive."
+remaining = "Fast default outputs invariant buckets, giving only a class-count lower bound within the stated search space."
+
+[[findings]]
+id = "F022"
+status = "fixed"
+summary = "Slice identity retains all200 center coordinates; approximate16-bit identity removed from exhaustion evidence."
+evidence = ["packages/VBFRepro/papers/2026/Kuznetsov_202606/exhaustive_phase2.jl"]
+guarantee = "Exact identity is used for the defined coefficient slices."
+remaining = "Random phase sampling and unexhausted regions cannot establish global completeness."
+
+[[findings]]
+id = "F023"
+status = "partial"
+summary = "Catalog-member IDs, per-dimension outcomes, sampling/budget metadata and explicit full-search option implemented."
+evidence = ["packages/VBFRepro/papers/2019/Kaleyski_201911/conjecture22.jl"]
+guarantee = "Exhausted refers only to all genuine swaps of the named catalog members; mixed-dimension controls cannot leak solutions."
+remaining = "Full n7/n8 pair sweeps not run; the conjecture over all APN functions remains unproved."
+
+[[findings]]
+id = "F024"
+status = "partial"
+summary = "Distinct generated coverage and injected published controls are separated; repeated LCG sampling explicitly non-uniform."
+evidence = ["packages/VBFRepro/papers/2020/Budaghyan_202008/section6.jl"]
+guarantee = "Finite iff checks are exact on evaluated vectors. Published positives do not establish non-vacuity of generated sampling."
+remaining = "PropositionVI.1 normalization and complete SectionVII-D classification remain unimplemented."
+
+[[findings]]
+id = "F025"
+status = "partial"
+summary = "Exposes bounded exact confirmation; labels odometer substitution and missing pruning honestly."
+evidence = ["packages/VBFRepro/papers/2020/Yu_202012/algorithm1.jl"]
+guarantee = "Budget stops cannot establish absence or exact class count."
+remaining = "Paper Algorithm1 pruning and full search fidelity remain unreproduced."
+
+[[findings]]
+id = "F030"
+status = "fixed"
+summary = "Added wide packed/Boolean rank,RREF,solve,kernel APIs; repaired narrow full-word RHS loss; consumers reuse shared APIs."
+evidence = ["packages/VBF/src/linalg/wide_system.jl"]
+guarantee = "Independent dense-elimination comparisons cover0 through129 columns, empty and inconsistent systems."
+remaining = "Packed layout is explicitly words-by-equations; it is not ordinary integer matrix layout."
+
+[[findings]]
+id = "F031"
+status = "fixed"
+summary = "Expensive dimension14 Gologlu computations are opt-in; bounded default reports complete."
+evidence = ["packages/VBFRepro/papers/2022/Gologlu_202207/report.jl"]
+guarantee = "A skipped computation is reported as unreproduced, not a passing claim."
+remaining = "The expensive instance still needs a separately budgeted execution."
+
+[[findings]]
+id = "F032"
+status = "partial"
+summary = "Fixed graph input/output blocks and distinct-codeword enumeration; preserved native bounded function-equivalence recovery."
+evidence = ["packages/VBF/src/equivalence/ccz/linear_code.jl"]
+guarantee = "EA drift invariance and corrected Kim/Dillon equal-C2-weight regression verified; degrees2/4 prove EA inequivalence."
+remaining = "General arbitrary binary-code permutation solver remains absent. Equal weight enumerators are only necessary filters."
+
+[[findings]]
+id = "F040"
+status = "partial"
+summary = "Reports separate exact function properties, corpus absence and unresolved literature novelty."
+evidence = ["packages/VBFRepro/papers/2020/Yu_202012/table4.jl"]
+guarantee = "Comparisons explicitly name their finite catalog-functions-table reference scope."
+remaining = "A complete sourced reference corpus, known-construction coverage and general CCZ comparisons are needed for a literature-wide guarantee."
+
+[[findings]]
+id = "F041"
+status = "fixed"
+summary = "Missing/incomplete named comparison sources produce inconclusive/unavailable results, never vacuous PASS."
+evidence = ["packages/VBFRepro/papers/2026/Kuznetsov_202606/theorem6.jl"]
+guarantee = "Coverage assertions distinguish absent, incomplete and complete named sources."
+remaining = "Completeness of the named sources is an explicit input assumption, not inferred from catalog presence."
+
+[[findings]]
+id = "F050"
+status = "partial"
+summary = "Bounded table-driven counting and interval continuation added; counts448 and4608 revalidated."
+evidence = ["packages/VBFRepro/papers/2025/Taniguchi_202501/theorem3_2.jl"]
+guarantee = "Completed integer intervals are counted exactly, permitting bounded continuation."
+remaining = "Full n6 count35648 remains unverified; its2^30-parameter run is an explicit opt-in."
+
+[[findings]]
+id = "F051"
+status = "partial"
+summary = "Native bounded simplex-count driver added for the 14 unambiguous power rows of Tables 2-4; inverse enumeration is bounded and power-orbit predictions are explicitly unclassified."
+evidence = ["packages/VBFRepro/papers/2020/Calderini_202009/table_bounds.jl"]
+guarantee = "Only exhaustion produces a simplex-count upper bound; multiple subspaces may represent the same EA class."
+remaining = "Full polynomial-row tables, source-field reconciliation and general code-equivalence classification remain unreproduced."
+
+[[findings]]
+id = "F052"
+status = "partial"
+summary = "Thin VBF profile driver computes both orders; three exact outliers give lex(30,46) versus bminK(30,34)."
+evidence = ["packages/VBFRepro/papers/2025/Beierle_202508/table4_1.jl"]
+guarantee = "Each completed profile is exact for its explicit order and hashed input member; budget failures are inconclusive."
+remaining = "Authors intended ordering, reconciled32892-class input and complete depth6 Table 4.1 scan remain unresolved."
+
+[[findings]]
+id = "F053"
+status = "fixed"
+summary = "Available21102-member corpus now scanned in full; six spectra reproduced and21102 distinct exact signatures verified."
+evidence = ["packages/VBFRepro/papers/2022/Canteaut_202205/section4_5.jl"]
+guarantee = "All members verified quadratic APN; distinct full tuples prove pairwise CCZ inequivalence within these hashed stores. Exact evidence saved optionally."
+remaining = "This addresses the corpus/distinction experiment; Table 8 thickness buckets and all other Section4.5 invariants are not thereby reproduced."
+
+[[findings]]
+id = "F060"
+status = "fixed"
+summary = "All six old paper test/report commands ran in Julia; all eight historical LUT proposals regenerated and matched."
+evidence = ["packages/VBFRepro/analysis/scripts/revalidate_audit_luts.jl"]
+guarantee = "Full finite APN checks, degrees and stable UInt16LE LUT hashes recorded in audit/revalidated_luts.toml."
+remaining = "No novelty, equivalence-class completeness or automatic catalog-write authorization follows from these properties."
+
+[[findings]]
+id = "F061"
+status = "fixed"
+summary = "Removed active validation of a foreign Table1; missing datasets reported unavailable/inconclusive."
+evidence = ["packages/VBFRepro/papers/2022/Beierle_202201/table1_invariants.jl"]
+guarantee = "No foreign data or empty-input check can masquerade as reproduction of the actual paper."
+remaining = "Actual paper Table1 reconstruction remains unsupported and needs source/data recovery."
+
+[[findings]]
+id = "F062"
+status = "already_fixed"
+summary = "Shared paper.mk already repaired migrated execution paths; removed another stale Li2022 override and tested44 script paths."
+evidence = ["packages/VBFRepro/papers/paper.mk"]
+guarantee = "Every registered paper test dry-run resolves an existing test script under the root workspace."
+remaining = "Dry-runs verify paths, not the mathematics of all44 paper reproductions."
+
+[[findings]]
+id = "F063"
+status = "partial"
+summary = "Withdrawn/unsupported write-ready gap proposals retired; safe exact property evidence preserved."
+evidence = ["audit/revalidated_luts.toml"]
+guarantee = "Catalog remains unchanged; invariant equality and historical catalog absence never prove novelty."
+remaining = "Each remaining addition needs sourced construction identity and independently justified equivalence/novelty evidence against the current corpus."
+
+[[findings]]
+id = "F064"
+status = "partial"
+summary = "Explicit-output tuple generator restored; fresh n6 class set matched17 stored classes."
+evidence = ["packages/VBFRepro/papers/2021/Beierle_202107/corollary1_n6n7n8.jl"]
+guarantee = "Comparison is of extended-power-similarity class sets, not byte-identical tuple orientation or representative numbering."
+remaining = "Fresh n7 generation exceeded90s; n7/n8 counts remain unverified."
+
+[[findings]]
+id = "F070"
+status = "partial"
+summary = "Existing n30 streaming/rank checks rerun; sampled proof wording replaced by sampled computational evidence."
+evidence = ["packages/VBFRepro/papers/2012/Bracken_201205/theorem1_1.jl"]
+guarantee = "Rank criterion is exact per tested derivative row; finite injectivity prefix is verified."
+remaining = "Full2^30 injectivity scan, every derivative row and n30 Walsh spectrum remain unverified; timing estimates are historical extrapolations."
+
+[[findings]]
+id = "F071"
+status = "partial"
+summary = "Added s11 n12 regressions; exhaustively verified both 241-pair n12 grids and all six Table 2 pairwise distinctions."
+evidence = ["packages/VBFRepro/papers/2011/Bracken_201103/family_separation.jl"]
+guarantee = "Literal source coefficients now correct; all four verified quadratic APNs have distinct full signatures. Exhaustion covers fixed(k,s,u,modulus) parameter grids only."
+remaining = "n15 parameter grids and comparison against every earlier construction remain unverified; pairwise distinction is not global novelty."

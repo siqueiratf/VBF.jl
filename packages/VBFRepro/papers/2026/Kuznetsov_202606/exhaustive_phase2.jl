@@ -6,7 +6,7 @@ using Printf
 function build_projection_basis()
     A = build_A_matrix()
     M = build_M_A(A)
-    pivot_cols, free_cols = rref_f2!(M)
+    pivot_cols, free_cols = VBF.rref_f2!(M)
     n_free = length(free_cols)
     S = [Int[] for _ in 1:length(pivot_cols)]
     for i in 1:length(pivot_cols)
@@ -15,13 +15,8 @@ function build_projection_basis()
         end
     end
 
-    # The 200 fixed coordinates are those not in PH2_FREE_PAIRS
-    fixed_indices = Int[]
-    for j in 0:7, (p, q) in PH2_PAIRS
-        if !((p, q) in PH2_FREE_PAIRS)
-            push!(fixed_indices, ph2_vi(j, p, q) + 1)
-        end
-    end
+    # c is pair-major (M_A), not output-major (phase2 polynomial variables).
+    fixed_indices = slice_center_indices()
 
     cols = BigInt[]
     for i in 1:n_free

@@ -61,7 +61,7 @@ Checks differential_uniformity == 2 and algebraic_degree == 2 for each.
 """
 function theorem3_2_report(;
     io::IO = stdout,
-    m_values::Vector{Int} = [5, 7],
+    m_values::Vector{Int} = [3, 5],
     limit::Int = typemax(Int),
 )
     print_section("Theorem III.2 — APN verification for F1, F2, F3", io)

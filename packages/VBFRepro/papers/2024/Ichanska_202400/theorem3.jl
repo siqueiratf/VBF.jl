@@ -13,38 +13,20 @@
 
 include(joinpath(@__DIR__, "helpers.jl"))
 
-function _f2_rank(rows::AbstractMatrix)
-    mat = copy(rows)
-    r, n = size(mat)
-    rank = 0
-    for col in 1:n
-        piv = findfirst(row -> mat[row, col] != 0, rank+1:r)
-        piv === nothing && continue
-        piv += rank
-        mat[[rank+1, piv], :] = mat[[piv, rank+1], :]
-        rank += 1
-        for row in 1:r
-            row != rank && mat[row, col] != 0 && (mat[row, :] .⊻= mat[rank, :])
-        end
-    end
-    rank
-end
-
 function _row_combo_rank(M::Matrix{Int}, alpha_mask::Int, shift::Int)
     n = size(M, 1)
-    combo = zeros(Int, n)
+    size(M, 2) == n || throw(ArgumentError("derivative matrix must be square"))
+    0 < alpha_mask < (1 << n) || throw(ArgumentError("row selection must be nonzero and fit n bits"))
+    all(v -> 0 <= v < (1 << n), M) || throw(ArgumentError("matrix entries must be n-bit field elements"))
+    combo = zeros(UInt, n)
     for i in 0:n-1
         (alpha_mask >> i) & 1 == 1 || continue
         shifted_row = mod1(i + 1 + shift, n)
-        combo .⊻= M[shifted_row, :]
-    end
-    bits = zeros(UInt8, 8 * sizeof(Int), n)
-    for (j, v) in enumerate(combo)
-        for bit in 0:7
-            bits[bit+1, j] = (v >> bit) & 1
+        for j in 1:n
+            combo[j] ⊻= UInt(M[shifted_row, j])
         end
     end
-    _f2_rank(bits)
+    return rank_f2(combo; nbits=n)
 end
 
 """
@@ -55,6 +37,7 @@ Theorem 3 (Ichanska et al. 2024): For any nonzero linear combination of rows of 
 (shifted by m positions). Verified for n=4, Gold x^3, all 2^4-1 = 15 nonzero subsets.
 """
 function verify_theorem3(; n::Int = 4, m::Int = 1)
+    n >= 2 && 1 <= m <= n && n % m == 0 || throw(ArgumentError("requires m|n and 1 <= m <= n"))
     mod = conway_polynomial(n)
     b = find_normal_element(n; modulus = mod)
     F = SBox{n}([gf_pow(x, 3, n; modulus = mod) for x in 0:(1<<n)-1])

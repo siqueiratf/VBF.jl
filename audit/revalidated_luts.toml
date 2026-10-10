@@ -1,0 +1,55 @@
+schema_version = 1
+finding = "F060"
+validated_date = "2026-10-10"
+julia = "1.13.1"
+encoding = "unsigned 16-bit little-endian words in input order"
+novelty_verified = false
+reproduce = "julia --project=. packages/VBFRepro/analysis/scripts/revalidate_audit_luts.jl"
+
+[[functions]]
+name = "n7_Budaghyan200904_x3_tr_x9"
+sha256_uint16_le = "586114819eb00b6396e939094ef0bcd09840103004149786f0f3159a056d1d92"
+du = 2
+degree = 2
+
+[[functions]]
+name = "n8_Budaghyan200904_x9_tr_x3"
+sha256_uint16_le = "1375c6271096d7782fa96f8f608ff05e5b7f4e351fade92bcc450fc12eb56837"
+du = 2
+degree = 2
+
+[[functions]]
+name = "n6_Budaghyan200910_eq6_alpha"
+sha256_uint16_le = "ae993c1a057ce5028200b283b3d9ba38649231459334b89a17a751aee4b2af69"
+du = 2
+degree = 2
+
+[[functions]]
+name = "n6_Edel2009_nonquadratic"
+sha256_uint16_le = "172609f46c293810b2698896b817a0343b13676c1e0eb78af99f54b6dcfd75b9"
+du = 2
+degree = 3
+
+[[functions]]
+name = "n7_Edel2009_no14_3"
+sha256_uint16_le = "40026b6e90962e0772cea3376ac57b2c4c70c224a6b72b2de1104e4f97e8b119"
+du = 2
+degree = 2
+
+[[functions]]
+name = "n12_Bracken2011_Family8"
+sha256_uint16_le = "49975b04a245f7b51a5e04f20303319eee06f49d04db0c928ea380aa1054070b"
+du = 2
+degree = 2
+
+[[functions]]
+name = "n12_Bracken2011_Family8W"
+sha256_uint16_le = "018d27ba5ed38b68652cb9d13f553c92f87f68bd5dc350e9875b948e1ff12b1d"
+du = 2
+degree = 2
+
+[[functions]]
+name = "n12_Bracken2011_Family7"
+sha256_uint16_le = "f9d7f4c6290a5591c73a1f5af173ee2331f6223fe7e6253dd374c1f37c653267"
+du = 2
+degree = 2

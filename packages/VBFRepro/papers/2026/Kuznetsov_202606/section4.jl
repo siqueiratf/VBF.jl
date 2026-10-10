@@ -45,7 +45,7 @@ function section4_run(; seed::Int = 42)
     A4 = matmul_f2(A3, A)
     A5 = matmul_f2(A4, A)
 
-    (; A, A_lut, param, n_pivot, n_free,
+    (; A, A_lut, param, n_pivot, n_free, geometry = slice_geometry(A),
        va_zero, va_rand, b_rand,
        A5_is_I = (A5 == I8),
        A1_not_I = (A != I8),
@@ -69,6 +69,14 @@ function section4_report(io::IO = stdout; kwargs...)
     print_kv("rank M_A (pivot variables)", r.n_pivot, io)
     print_check("dim(V_A) = 40", r.n_free == 40, io)
     print_check("rank(M_A) = 184", r.n_pivot == 184, io)
+
+    print_kv("rank on 24 intra coefficients", r.geometry.rank_intra, io)
+    print_kv("rank on 200 center coefficients", r.geometry.rank_center, io)
+    print_kv("center projection kernel dimension", r.geometry.fiber_dimension, io)
+    print_kv("distinct slices meeting V_A", r.geometry.slice_count, io)
+    print_kv("RREF free coordinates (center / intra)", "$(r.geometry.free_center) / $(r.geometry.free_intra)", io)
+    print_check("center projection has dimension 40 (2^40 slices)",
+                r.geometry.projection_dimension == 40, io)
 
     print_check("b=0 maps to zero function (in V_A)", r.va_zero, io)
     print_check("random nonzero b maps to V_A member", r.va_rand, io)

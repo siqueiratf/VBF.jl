@@ -1,5 +1,8 @@
 # Budaghyan_202008 — Constructing APN Functions Through Isotopic Shifts
 
+Current audit application (2026-10-10): F024: generated scan coverage and injected published positive controls are now reported separately. The n=9 LCG draws repeat; they are not a uniform random sample. Non-vacuity of the combined controls does not establish non-vacuity of the generated sample. Full normalization and Section VII-D classification remain unimplemented.
+
+
 **Paper:** L. Budaghyan, M. Calderini, C. Carlet, R. Coulter, I. Villa,
 *Constructing APN Functions Through Isotopic Shifts*, IEEE Trans. Inf. Theory
 66(8):5299–5309, 2020.
