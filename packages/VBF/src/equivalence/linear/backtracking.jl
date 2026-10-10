@@ -122,15 +122,13 @@ function are_linearly_equivalent_perm(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
 
             if ok
                 # Add `c` to the span-basis tracking for cheap candidate checks.
-                push!(span_basis, c)
-                old_span_len = length(span_basis)
-                span_basis = linear_basis(span_basis; nbits = N)
+                previous_span = span_basis
+                span_basis = linear_basis(vcat(span_basis, c); nbits = N)
                 recurse(i + 1)
                 found[] && return
-                # Roll back span basis
-                pop!(span_basis)
-                span_basis = linear_basis(span_basis; nbits = N)
-                _ = old_span_len  # quiet the unused warning
+                # Reduction can reorder and change every row; restore the
+                # previous span rather than removing an arbitrary pivot row.
+                span_basis = previous_span
             end
 
             # Roll back tentative state

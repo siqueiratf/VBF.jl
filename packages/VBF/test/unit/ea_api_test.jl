@@ -1,5 +1,5 @@
-@testitem "ea_api" begin
-using VBFCatalog
+@testitem "ea_api" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
@@ -34,27 +34,27 @@ function _build_ea_perm(F::SBox{4, UInt8}, rng; max_tries = 5000,
 end
 
 @testset "are_ea_equivalent: type checks" begin
-    s4 = load_literature_sbox("PRESENT")
-    s5 = load_apn_function("n5_Gold_x3")
+    s4 = fixture_sbox("PRESENT")
+    s5 = fixture_apn("n5_Gold_x3")
     @test !are_ea_equivalent(s4, s5)
     @test !are_ea_equivalent(s5, s4)
 end
 
 @testset "are_ea_equivalent: unknown strategy throws" begin
-    s = load_literature_sbox("PRESENT")
+    s = fixture_sbox("PRESENT")
     @test_throws ArgumentError are_ea_equivalent(s, s; strategy = :nonexistent)
 end
 
 @testset "are_ea_equivalent: rejects non-permutations" begin
     c = SBox(UInt8[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     @test !are_ea_equivalent(F, c)
     @test !are_ea_equivalent(c, F)
 end
 
-@testset "are_ea_equivalent: reflexivity on 4-bit catalog permutations" begin
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+@testset "are_ea_equivalent: reflexivity on fixed 4-bit permutations" begin
+    for name in fixture_names()
+        s = fixture_sbox(name)
         inputbits(s) == 4 || continue
         is_permutation(s) || continue
         @test are_ea_equivalent(s, s)
@@ -63,7 +63,7 @@ end
 
 @testset "are_ea_equivalent: detects L₁ ∘ F ∘ A₂ ⊕ L_drift constructions" begin
     rng = MersenneTwister(0xBFA87)
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     # 5 constructed pairs, may include L_drift = 0 cases — both must succeed.
     detected = 0
     for _ in 1:8
@@ -79,7 +79,7 @@ end
 
 @testset "ea_equivalence_certificate: verifies the witness" begin
     rng = MersenneTwister(0xBFA88)
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     verified = 0
     for _ in 1:8
         built = _build_ea_perm(F, rng)
@@ -100,15 +100,15 @@ end
 end
 
 @testset "are_ea_equivalent: rejects non-EA-equivalent pair (PRESENT vs SKINNY_4)" begin
-    F = load_literature_sbox("PRESENT")
-    H = load_literature_sbox("SKINNY_4")
+    F = fixture_sbox("PRESENT")
+    H = fixture_sbox("SKINNY_4")
     @test !are_ea_equivalent(F, H)
     @test ea_equivalence_certificate(F, H) === nothing
 end
 
 @testset "are_ea_equivalent: signature-mismatch fast reject" begin
     # Build a pair with deliberately different bucket-size signatures.
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     # Identity at n=4 has trivial structure (all in one bucket).
     id_lut = UInt8[x for x in 0:15]
     G = SBox{4, UInt8}(id_lut)
@@ -174,7 +174,7 @@ end
 end
 
 @testset "are_ea_equivalent: monomial APN is now decided via :auto routing" begin
-    F = load_apn_function("n5_Gold_x3")
+    F = fixture_apn("n5_Gold_x3")
     @test are_ea_equivalent(F, F)   # reflexive — :auto picks :ortho_derivative
     @test are_ea_equivalent(F, F; strategy = :ortho_derivative)
     # :heggebakk's capped search is no longer a silent false negative: the

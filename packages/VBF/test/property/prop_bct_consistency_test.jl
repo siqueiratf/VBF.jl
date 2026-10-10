@@ -1,5 +1,5 @@
 @testitem "prop_bct_consistency" begin
-using VBFCatalog
+
 using VBF
 using Test
 using Random
@@ -7,7 +7,7 @@ using Random
 const RNG = MersenneTwister(0xBFA03)
 
 @testset "BCT ≥ DDT pointwise on 3 random permutations per N ∈ {3,4,5}" begin
-    # (skip N=6 because 64×64×64 = 256k inner iterations × 3 × 4 = 3M; plenty for unit-test budgets but redundant given the catalog tests already cover up to N=8.)
+    # (skip N=6 because 64×64×64 = 256k inner iterations × 3 × 4 = 3M; plenty for unit-test budgets but redundant given the fixed-vector unit tests already cover up to N=8.)
     for N in (3, 4, 5)
         for _ in 1:3
             s = random_permutation_sbox(RNG, Val(N))

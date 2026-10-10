@@ -1,5 +1,5 @@
-@testitem "linear_system" begin
-using VBFCatalog
+@testitem "linear_system" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
@@ -78,7 +78,7 @@ end
 end
 
 @testset "compose: SBox ∘ F2LinearMap and reverse" begin
-    aes = load_literature_sbox("AES")
+    aes = fixture_sbox("AES")
     id8 = identity_linear_map(8)
     @test aes ∘ id8 == aes              # F ∘ id = F
     @test id8 ∘ aes == aes              # id ∘ F = F

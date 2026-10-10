@@ -1,5 +1,5 @@
 @testitem "polynomial" begin
-using VBFCatalog
+
 using VBF
 using Test
 import GaloisFields

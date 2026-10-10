@@ -1,12 +1,12 @@
-@testitem "ea_inner_permutation" begin
-using VBFCatalog
+@testitem "ea_inner_permutation" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
 
 @testset "inner_permutation: reflexive case (F, F) → identity A₂, zero drift" begin
     for name in ("PRESENT", "GIFT", "SKINNY_4")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         N = inputbits(F)
         T = storage_type(F)
         res = inner_permutation(F, F)
@@ -20,7 +20,7 @@ end
     rng = MersenneTwister(0xBFA84)
     N, T = 4, UInt8
     mask = T(0x0F)
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     for _ in 1:5
         # Random invertible linear A₂
         A2_cols, A2 = let
@@ -60,8 +60,8 @@ end
 
 @testset "inner_permutation: rejects EA-inequivalent pair" begin
     # PRESENT and SKINNY_4 have different cryptographic profiles (different DDT/LAT) and are not EA-equivalent.
-    F = load_literature_sbox("PRESENT")
-    H = load_literature_sbox("SKINNY_4")
+    F = fixture_sbox("PRESENT")
+    H = fixture_sbox("SKINNY_4")
     res = inner_permutation(F, H)
     @test res === nothing
 end
@@ -69,7 +69,7 @@ end
 @testset "inner_permutation: A₂ output is always F₂-linear bijection" begin
     # Whatever A₂ the search returns must be invertible.
     rng = MersenneTwister(0xBFA85)
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N, T = 4, UInt8
     mask = T(0x0F)
     for _ in 1:3

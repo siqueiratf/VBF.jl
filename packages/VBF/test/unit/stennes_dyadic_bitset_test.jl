@@ -1,5 +1,5 @@
 @testitem "stennes_dyadic_bitset" begin
-using VBFCatalog
+
 using VBF
 using Test
 

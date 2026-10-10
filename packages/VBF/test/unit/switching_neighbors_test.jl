@@ -1,11 +1,11 @@
-@testitem "switching_neighbors" begin
-using VBFCatalog
+@testitem "switching_neighbors" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
 @testset "switching_neighbors: every neighbour is APN and of switching form" begin
     for name in ("n4_Gold_x3", "n5_Gold_x3")
-        F = load_apn_function(name)
+        F = fixture_apn(name)
         sn = switching_neighbors(F)
         @test length(sn) == (1 << inputbits(F)) - 1
         total = 0
@@ -25,7 +25,7 @@ using Test
 end
 
 @testset "switching_neighbors: deterministic" begin
-    F = load_apn_function("n4_Gold_x3")
+    F = fixture_apn("n4_Gold_x3")
     a = switching_neighbors(F)
     b = switching_neighbors(F)
     @test length.(a) == length.(b)
@@ -33,11 +33,11 @@ end
 end
 
 @testset "switching_neighbors: rejects non-APN input" begin
-    @test_throws ArgumentError switching_neighbors(load_literature_sbox("PRESENT"))  # DU = 4
+    @test_throws ArgumentError switching_neighbors(fixture_sbox("PRESENT"))  # DU = 4
 end
 
 @testset "switching_neighbors: neighbours are distinct within each u" begin
-    F = load_apn_function("n4_Gold_x3")
+    F = fixture_apn("n4_Gold_x3")
     sn = switching_neighbors(F)
     for u in eachindex(sn)
         luts = [G.lut for G in sn[u]]

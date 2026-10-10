@@ -1,15 +1,15 @@
-@testitem "linear_backtracking" begin
-using VBFCatalog
+@testitem "linear_backtracking" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
 
 # Direct unit tests against VBF.are_linearly_equivalent_perm; the public `are_linear_equivalent` strategy-dispatch lives in api.jl and gets tested separately.
 
-@testset "reflexivity: F ~ F for every catalog permutation" begin
-    # Small n so the search is fast even for the catalog's 4-bit entries.
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+@testset "reflexivity: F ~ F for every fixed permutation" begin
+    # Small n so the search is fast even for the fixed 4-bit examples.
+    for name in fixture_names()
+        s = fixture_sbox(name)
         is_permutation(s) || continue
         inputbits(s) ≤ 4 || continue
         @test VBF.are_linearly_equivalent_perm(s, s)
@@ -45,6 +45,17 @@ end
     end
 end
 
+@testset "rollback preserves the previous input span after a failed branch" begin
+    # Frozen witness: reducing a trial basis may change/reorder all its rows.
+    # Popping its last row does not undo the trial vector and loses valid branches.
+    F = SBox(UInt8[14, 6, 8, 2, 13, 15, 12, 0, 5, 4, 7, 3, 11, 10, 1, 9])
+    L = F2LinearMap(UInt8[4, 2, 5, 15])
+    G = L ∘ (F ∘ inv(L))
+    @test G.lut == UInt8[8, 12, 15, 0, 7, 14, 2, 10, 4, 6, 9, 5, 11, 3, 13, 1]
+    @test VBF.are_linearly_equivalent_perm(F, G)
+    @test VBF.are_linearly_equivalent_perm(G, F)
+end
+
 @testset "asymmetry under affine offset (most pairs are not linear-equivalent)" begin
     # Adding a non-zero constant to G almost always breaks linear equivalence — every linear map sends 0 to 0, so F(0) = 0 forces G(0) = 0; if G(0) ≠ 0 and F(0) = 0, the algorithm must say "no".
     F = SBox(UInt8[0, 1, 9, 14, 13, 11, 7, 6, 15, 2, 12, 5, 10, 4, 3, 8])  # n=4 perm, F(0)=0
@@ -61,7 +72,7 @@ end
 @testset "rejection: non-permutation inputs return false" begin
     # constant function (not a permutation)
     c = SBox(UInt8[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     @test !is_permutation(c)
     @test !VBF.are_linearly_equivalent_perm(F, c)
     @test !VBF.are_linearly_equivalent_perm(c, F)

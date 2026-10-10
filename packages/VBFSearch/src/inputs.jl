@@ -1,10 +1,10 @@
 """Reuse the established TSV decoder/sampler and bind prior verification artifacts to frozen inputs."""
 module DiscoveryInputs
-using SHA,TOML,VBF,VBFCatalog,Random
+using SHA,TOML,VBF,VBFCatalog,Random,SQLite,DBInterface
 using ..DiscoveryEvidence
-const ROOT=normpath(joinpath(@__DIR__,"../.."))
-const DEFAULT_REFERENCE=get(ENV,"VBF_APN_REFERENCE",joinpath(ROOT,"data/apn/reference"))
-const DEFAULT_SUPPLEMENT=get(ENV,"VBF_APN_SUPPLEMENT",joinpath(ROOT,"data/apn/supplement.tsv"))
+const ROOT=normpath(joinpath(@__DIR__,"../../.."))
+const DEFAULT_REFERENCE=joinpath(ROOT,"data/apn/reference")
+const DEFAULT_SUPPLEMENT=joinpath(ROOT,"data/apn/supplement.tsv")
 export ROOT, DEFAULT_REFERENCE, DEFAULT_SUPPLEMENT, candidate_lut, catalog_seeds,
        load_study, each_candidate, validated_study, source_fingerprint, implementation_fingerprint
 
@@ -27,11 +27,11 @@ end
 """Materialize catalog seeds with exact LUT identity and independent verification."""
 function catalog_seeds(path)
     catalogpath=VBFCatalog.catalog_path()
-    db=VBFCatalog.SQLite.DB("file:"*abspath(catalogpath)*"?mode=ro")
+    db=SQLite.DB("file:"*abspath(catalogpath)*"?mode=ro")
     seen=Set{String}();count=0
     digest=filehash(catalogpath)
     try
-        foreach(_->nothing,VBFCatalog.DBInterface.execute(db,"BEGIN"))
+        foreach(_->nothing,DBInterface.execute(db,"BEGIN"))
         open(path,"w") do io
             println(io,"sigma_hash\tlut_hex\tcatalog_id\tcatalog_sha256")
             for row in VBFCatalog.list_functions(db;n=8,is_apn=true)
@@ -45,9 +45,9 @@ function catalog_seeds(path)
             end
         end
         filehash(catalogpath)==digest || error("catalog changed during seed extraction")
-        foreach(_->nothing,VBFCatalog.DBInterface.execute(db,"COMMIT"))
+        foreach(_->nothing,DBInterface.execute(db,"COMMIT"))
     finally
-        VBFCatalog.SQLite.close(db)
+        SQLite.close(db)
     end
     count>0 || error("catalog has no quadratic eight-bit APN seeds")
     count

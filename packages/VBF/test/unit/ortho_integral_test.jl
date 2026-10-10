@@ -1,11 +1,11 @@
-@testitem "ortho_integral" begin
-using VBFCatalog
+@testitem "ortho_integral" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
 @testset "ortho_integral: round-trip ortho_derivative(ortho_integral(πF)) == πF" begin
     for name in ("n4_Gold_x3", "n5_Gold_x3", "n5_Gold_x5")
-        F = load_apn_function(name)
+        F = fixture_apn(name)
         π = ortho_derivative(F)
         @test π !== nothing
         Q = ortho_integral(π)
@@ -16,7 +16,7 @@ using Test
 end
 
 @testset "ortho_integral: recovered Q is a quadratic APN" begin
-    F = load_apn_function("n4_Gold_x3")
+    F = fixture_apn("n4_Gold_x3")
     π = ortho_derivative(F)
     Q = ortho_integral(π)
     @test Q !== nothing
@@ -26,7 +26,7 @@ end
 end
 
 @testset "ortho_integral: type preserved" begin
-    F = load_apn_function("n5_Gold_x3")
+    F = fixture_apn("n5_Gold_x3")
     π = ortho_derivative(F)
     Q = ortho_integral(π)
     @test Q isa SBox{5, UInt8}

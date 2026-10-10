@@ -29,6 +29,7 @@ include("data/bibliography.jl")
 include("data/corpus.jl")
 include("data/sigma.jl")
 include("data/ccz_fingerprint.jl")
+include("data/reference.jl")
 
 include("exports.jl")
 

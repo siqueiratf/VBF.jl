@@ -1,10 +1,10 @@
-@testitem "anomaly_scoring" begin
-using VBFCatalog
+@testitem "anomaly_scoring" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
 @testset "table_anomaly: unknown table → ArgumentError" begin
-    s = load_literature_sbox("PRESENT")
+    s = fixture_sbox("PRESENT")
     @test_throws ArgumentError table_anomaly(s, :NOPE)
 end
 
@@ -14,7 +14,7 @@ end
 end
 
 @testset "AES has a measurable positive anomaly on all three tables" begin
-    aes = load_literature_sbox("AES")
+    aes = fixture_sbox("AES")
 
     # AES is famously better than random across all three tables: DDT uniformity 4 vs random ~8, LAT linearity 32 vs random ~64, BCT uniformity 6 vs random ~8. Anomalies should be > 1 bit each.
     @test Float64(table_anomaly(aes, :DDT)) > 1.0
@@ -23,14 +23,14 @@ end
 end
 
 @testset "PRESENT has positive DDT and LAT anomalies" begin
-    s = load_literature_sbox("PRESENT")
+    s = fixture_sbox("PRESENT")
     @test Float64(table_anomaly(s, :DDT)) > 0.0
     @test Float64(table_anomaly(s, :LAT)) > 0.0
 end
 
-@testset "table_anomaly is non-negative on every catalog permutation" begin
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+@testset "table_anomaly is non-negative on every fixed permutation" begin
+    for name in fixture_names()
+        s = fixture_sbox(name)
         is_permutation(s) || continue
         for table in (:DDT, :LAT, :BCT)
             @test table_anomaly(s, table; precision = 80) ≥ 0
@@ -39,9 +39,9 @@ end
 end
 
 @testset "table_negative_anomaly returns a BigFloat without throwing" begin
-    # Negative anomalies can technically be negative or positive depending on the spectrum; just confirm the function evaluates and produces a finite BigFloat for the canonical catalog entries.
+    # Negative anomalies can technically be negative or positive depending on the spectrum; just confirm the function evaluates and produces a finite BigFloat for the fixed regression examples.
     for name in ("AES", "PRESENT", "Midori_Sb0")
-        s = load_literature_sbox(name)
+        s = fixture_sbox(name)
         for table in (:DDT, :LAT)
             v = table_negative_anomaly(s, table; precision = 80)
             @test v isa BigFloat
@@ -51,7 +51,7 @@ end
 end
 
 @testset "AES has dramatically higher anomaly than random-DU permutations" begin
-    aes_anomaly = Float64(table_anomaly(load_literature_sbox("AES"), :DDT; precision = 80))
+    aes_anomaly = Float64(table_anomaly(fixture_sbox("AES"), :DDT; precision = 80))
     @test aes_anomaly > 1000.0
 end
 

@@ -1,5 +1,5 @@
-@testitem "ea_soundness_regression" begin
-using VBFCatalog
+@testitem "ea_soundness_regression" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
@@ -87,7 +87,7 @@ end
     idn = SBox{4,UInt8}(UInt8.(0:15))
     @test are_ea_equivalent(c3, c5)
     @test are_ea_equivalent(c3, idn)
-    @test !are_ea_equivalent(load_literature_sbox("PRESENT"), c3)
+    @test !are_ea_equivalent(fixture_sbox("PRESENT"), c3)
 end
 
 @testset "bug 4: even-n quadratic APN graph automorphisms + orbit census" begin

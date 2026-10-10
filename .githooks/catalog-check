@@ -44,7 +44,7 @@ cd "$ROOT" || exit 2
 DB="packages/VBFCatalog/BFA_catalog.sqlite"
 APN_DIR="packages/VBFCatalog/data-raw/apn_catalog"
 LIT_TOML="packages/VBFCatalog/data-raw/literature_sboxes.toml"
-QUERIES_TEST="packages/VBF/test/unit/catalog_queries_test.jl"
+QUERIES_TEST="packages/VBFCatalog/test/unit/catalog_queries_test.jl"
 CATALOG_SRC="packages/VBFCatalog/src/data/catalog.jl"
 
 # Paths whose change can desync the catalog. Keep in sync with the CI job and
@@ -275,7 +275,7 @@ fi
 
 # Every test item whose expectations depend on catalog contents. Adding a
 # catalog-reading test item? Add it here.
-TESTS="${VBF_CATALOG_TESTS:-catalog_content|catalog_queries|catalog_schema|apn_catalog|apn_reps_catalog|literature_sboxes|simonberg_catalog|corpus|sigma_coverage|sigma_multiplicities|ccz_fingerprint}"
+TESTS="${VBF_CATALOG_TESTS:-catalog_content|catalog_queries|catalog_schema|apn_catalog|apn_reps_catalog|literature_sboxes|simonberg_catalog|corpus|sigma_coverage|apn_monomial_form|reference_snapshot|fingerprint_lookup}"
 
 if [[ "${VBF_SKIP_CATALOG_TESTS:-}" == "1" ]]; then
     red "catalog-check: test items SKIPPED via VBF_SKIP_CATALOG_TESTS=1."
@@ -292,7 +292,7 @@ if ! command -v julia >/dev/null 2>&1; then
 fi
 
 bold "catalog-check [2/2]: test items /$TESTS/"
-VBF_TEST_NAME="$TESTS" julia --startup-file=no --project=packages/VBF \
+VBFCATALOG_TEST_NAME="$TESTS" julia --startup-file=no --project=packages/VBFCatalog \
     -e 'using Pkg; Pkg.test()'
 tests=$?
 if [[ $tests -ne 0 ]]; then

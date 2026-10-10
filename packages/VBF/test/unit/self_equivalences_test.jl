@@ -1,19 +1,19 @@
-@testitem "self_equivalences" begin
-using VBFCatalog
+@testitem "self_equivalences" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
 
 @testset "linear_equivalences: empty for non-permutations" begin
     c = SBox(UInt8[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     @test isempty(linear_equivalences(F, c))
     @test isempty(linear_equivalences(c, F))
 end
 
 @testset "self_linear_equivalences: contains identity, all verify" begin
     for name in ("PRESENT", "GIFT", "SKINNY_4")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         N = inputbits(F)
         T = storage_type(F)
         sl = self_linear_equivalences(F)
@@ -32,7 +32,7 @@ end
 
 @testset "linear_equivalences: agrees with are_linear_equivalent" begin
     rng = MersenneTwister(0xBFA_B2)
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N, T = 4, UInt8
     mask = T(0x0F)
     # Conjugate: should be linearly equivalent, so non-empty.
@@ -61,7 +61,7 @@ end
 
 @testset "self_linear_equivalences: monomial APN has a non-trivial group" begin
     # Gold APN x^3 over GF(2^5) has a large linear self-equivalence group (the multiplicative + Frobenius structure). Must be more than just the identity.
-    F = load_apn_function("n5_Gold_x3")
+    F = fixture_apn("n5_Gold_x3")
     sl = self_linear_equivalences(F)
     @test length(sl) > 1
     N, T = 5, UInt8
@@ -73,7 +73,7 @@ end
 end
 
 @testset "self_affine_equivalences: superset of linear, all verify" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N, T = 4, UInt8
     sa = self_affine_equivalences(F)
     @test !isempty(sa)

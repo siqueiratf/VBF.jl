@@ -1,5 +1,5 @@
-@testitem "sbox_ops" begin
-using VBFCatalog
+@testitem "sbox_ops" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
@@ -21,7 +21,7 @@ end
         @test typeof(inv) == typeof(s)   # preserves {N,T}
     end
     # a known permutation S-box inverts to its functional inverse
-    aes = load_literature_sbox("AES")
+    aes = fixture_sbox("AES")
     ainv = compositional_inverse(aes)
     @test all(ainv(aes(x)) == x for x = 0:255)
     # non-permutations are rejected
@@ -29,17 +29,17 @@ end
     @test_throws ArgumentError compositional_inverse(SBox(UInt8[0, 0, 2, 3]))
 end
 
-@testset "is_permutation: literature catalog" begin
-    for name in literature_sbox_names()
-        meta = literature_sbox_metadata(name)
-        @test is_permutation(load_literature_sbox(name)) == meta["is_permutation"]
+@testset "is_permutation: fixed literature examples" begin
+    for name in fixture_names()
+        meta = fixture_metadata(name)
+        @test is_permutation(fixture_sbox(name)) == meta["is_permutation"]
     end
 end
 
 @testset "inv: involutive" begin
     # inv(inv(s)) == s for every permutation
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+    for name in fixture_names()
+        s = fixture_sbox(name)
         if is_permutation(s)
             @test inv(inv(s)) == s
         end
@@ -47,8 +47,8 @@ end
 end
 
 @testset "inv: s ∘ inv(s) is identity" begin
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+    for name in fixture_names()
+        s = fixture_sbox(name)
         is_permutation(s) || continue
         sinv = inv(s)
         n = 1 << inputbits(s)
@@ -59,8 +59,8 @@ end
     end
 end
 
-@testset "inv: AES_inv from catalog equals inv(AES)" begin
-    @test load_literature_sbox("AES_inv") == inv(load_literature_sbox("AES"))
+@testset "inv: fixed AES_inv equals inv(AES)" begin
+    @test fixture_sbox("AES_inv") == inv(fixture_sbox("AES"))
 end
 
 @testset "inv: rejects non-permutation" begin

@@ -24,8 +24,9 @@ using SQLite
 using VBF
 using VBFCatalog
 using SHA,TOML,Dates
-include("../../../search/apn/evidence.jl")
-using .DiscoveryEvidence
+import VBFSearch
+using VBFSearch: candidate_properties, open_reference, close_reference, classify, compare, verify_comparison
+const properties = candidate_properties
 
 const WEB_DIR = @__DIR__
 const STUDY_DIR = dirname(WEB_DIR)
@@ -60,7 +61,7 @@ mutable struct State
     rows::Int                                 # rows in the index (n = 8)
     dblock::ReentrantLock                     # SQLite connections are not thread safe
     others::Dict{String,NamedTuple}           # sigma hash -> entry of OTHER_LISTS
-    reference::DiscoveryEvidence.Reference
+    reference::VBFCatalog.AuditedAPNReference
 end
 
 """Read the lists of OTHER_LISTS. A header line (first field `sigma_hash` or `sigma`) is skipped;
@@ -114,7 +115,7 @@ function init!()
     for r in DBInterface.execute(idx, "SELECT COUNT(*) c FROM ccz_sigma_index WHERE n = $N")
         rows = Int(r.c)
     end
-    reference=DiscoveryEvidence.open_reference(get(ENV,"VBF_APN_REFERENCE",normpath(joinpath(WEB_DIR,"../../../data/apn/reference"))))
+    reference=VBFSearch.open_reference(get(ENV,"VBF_APN_REFERENCE",normpath(joinpath(WEB_DIR,"../../../data/apn/reference"))))
     st = State(idx, cat, read_census(), rows, ReentrantLock(), read_others(),reference)
     # A coverage gap makes classify_ccz throw. Fail at start, not at the first request.
     classify_ccz(SBox{N}(gf_monomial_lut(N, 3; modulus = DEFAULT_MODULUS));
@@ -249,7 +250,7 @@ function analyze(text::AbstractString)
     res["format_note"] = note
     F = SBox{N}(lut)
     evidence=lock(st.dblock) do
-        DiscoveryEvidence.classify(F.lut,st.reference;detailed=true)
+        VBFSearch.classify(F.lut,st.reference;detailed=true)
     end
     merge!(res,evidence)
     du = evidence["differential_uniformity"]
@@ -395,9 +396,9 @@ function run_ea!(j::EAJob, F, G;relation=:ea,timeout_seconds=30,max_nodes=1_000_
             j.state = "running"
             j.started = time()
         end
-        proof=DiscoveryEvidence.compare(F.lut,G.lut;relation,timeout_seconds,max_nodes)
+        proof=VBFSearch.compare(F.lut,G.lut;relation,timeout_seconds,max_nodes)
         proof["created_utc"]=string(Dates.now(Dates.UTC))
-        proof["algorithm_sha256"]=DiscoveryEvidence.filehash(joinpath(STUDY_DIR,"../../search/apn/evidence.jl"))
+        proof["algorithm_sha256"]=proof["source_sha256"]
         dir=joinpath(STUDY_DIR,"../../search/apn/results/web")
         mkpath(dir)
         open(io->TOML.print(io,proof;sorted=true),joinpath(dir,"comparison_$(time_ns()).toml"),"w")

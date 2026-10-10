@@ -16,6 +16,7 @@ const LITERATURE_PATH = normpath(joinpath(@__DIR__, "..", "data-raw", "literatur
 const APN_CATALOG_DIR = normpath(joinpath(@__DIR__, "..", "data-raw", "apn_catalog"))
 
 include(joinpath(@__DIR__, "load_sources.jl"))
+include(joinpath(@__DIR__, "reuse_verified_corpus.jl"))
 
 function _git_sha()
     try
@@ -218,6 +219,18 @@ function _chain_external_imports()
         required = get(src, "required", false) === true
         env_var  = get(src, "env_var", "")
         env_val  = get(ENV, env_var, "")
+        reuse_audit = get(ENV, "BFA_REUSE_CORPUS_AUDIT", "")
+        if !isempty(reuse_audit) && haskey(src, "reuse_corpus")
+            source_path = joinpath(env_val, src["check_path"])
+            isfile(source_path) || error("verified corpus reuse requires the original source: $source_path")
+            target = load_catalog()
+            try
+                reuse_verified_corpus!(target, FINAL_CATALOG, src["reuse_corpus"], source_path, reuse_audit)
+            finally
+                close(target)
+            end
+            continue
+        end
         # Sources without an upstream URL are local-only: only include their
         # script when the env var already points to a valid path.  This avoids
         # loading optional heavy dependencies (e.g. Parquet2, JSON3) into

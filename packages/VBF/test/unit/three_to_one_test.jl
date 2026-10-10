@@ -1,6 +1,6 @@
 @testitem "three_to_one" begin
 using VBF
-using VBFCatalog
+
 using Test
 using Random
 

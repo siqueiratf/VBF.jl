@@ -1,5 +1,5 @@
 @testitem "anf" begin
-using VBFCatalog
+
 using VBF
 using Test
 using Random

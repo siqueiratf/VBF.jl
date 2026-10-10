@@ -1,5 +1,5 @@
 @testitem "f2_affine_map" begin
-using VBFCatalog
+
 using VBF
 using Test
 

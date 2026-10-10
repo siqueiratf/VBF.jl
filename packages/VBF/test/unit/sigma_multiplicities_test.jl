@@ -1,17 +1,17 @@
-@testitem "sigma_multiplicities" begin
-using VBFCatalog
+@testitem "sigma_multiplicities" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
 @testset "sigma_multiplicities: validation" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     @test_throws ArgumentError sigma_multiplicities(F; k = 1)
 end
 
 @testset "sigma_multiplicities: total mass = 2ⁿ" begin
     # σ is computed for each s ∈ F₂ⁿ, so the spectrum should have exactly 2ⁿ entries (with multiplicity).
     for name in ("PRESENT", "GIFT", "SKINNY_4")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         sp = sigma_multiplicities(F)
         @test total_mass(sp) == (1 << inputbits(F))
     end
@@ -19,7 +19,7 @@ end
 
 @testset "sigma_multiplicities: invariant under inv(F) (CCZ-invariance)" begin
     for name in ("PRESENT", "GIFT", "SKINNY_4", "Midori_Sb0")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         is_permutation(F) || continue
         @test sigma_multiplicities(F) == sigma_multiplicities(inv(F))
     end
@@ -29,7 +29,7 @@ end
     # σ-multiplicities is a CCZ-invariant — in particular an EA-invariant.
     using Random
     rng = MersenneTwister(0xBFA_A1)
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N, T = 4, UInt8
     mask = T(0x0F)
     sp_F = sigma_multiplicities(F)
@@ -58,14 +58,14 @@ end
     end
 end
 
-@testset "sigma_multiplicities: agrees on EA-equivalent inputs (catalog spot)" begin
-    F1 = load_apn_function("n5_Gold_x3")
-    F2 = load_apn_function("n5_Gold_x3")
+@testset "sigma_multiplicities: agrees on EA-equivalent inputs (fixed examples)" begin
+    F1 = fixture_apn("n5_Gold_x3")
+    F2 = fixture_apn("n5_Gold_x3")
     @test sigma_multiplicities(F1) == sigma_multiplicities(F2)
 end
 
 @testset "sigma_multiplicities: k ≥ 2 produces a non-trivial spectrum" begin
-    F = load_apn_function("n5_Gold_x3")
+    F = fixture_apn("n5_Gold_x3")
     sp4 = sigma_multiplicities(F; k = 4)
     @test total_mass(sp4) == 32
     # k = 6 also works (just exercises the loop)

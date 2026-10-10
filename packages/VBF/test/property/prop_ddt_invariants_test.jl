@@ -1,5 +1,5 @@
 @testitem "prop_ddt_invariants" begin
-using VBFCatalog
+
 using VBF
 using Test
 using Random

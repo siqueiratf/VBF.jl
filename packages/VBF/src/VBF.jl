@@ -75,6 +75,7 @@ include("invariants/bent.jl")
 include("invariants/image.jl")
 include("invariants/pi_multiset.jl")
 include("invariants/design_ranks.jl")
+include("invariants/classification_keys.jl")
 
 # 5. equivalence — the relation hierarchy
 include("equivalence/linear/backtracking.jl")

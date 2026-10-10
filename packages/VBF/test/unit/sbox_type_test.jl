@@ -1,5 +1,5 @@
 @testitem "sbox_type" begin
-using VBFCatalog
+
 using VBF
 using Test
 

@@ -1,5 +1,5 @@
-@testitem "stennes_representative" begin
-using VBFCatalog
+@testitem "stennes_representative" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
@@ -15,7 +15,7 @@ end
 @testset "B ∘ representative == F ∘ A on the full domain" begin
     # The invariant `B(rep(x)) == F(A(x))` is what defines the returned maps; check it for every input on a range of representative S-boxes.
     for name in ("PRESENT", "GIFT", "Midori_Sb0", "SKINNY_4", "Piccolo")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         result = linear_representative(F)
         N = inputbits(F)
         @testset "$name" begin
@@ -28,7 +28,7 @@ end
 
 @testset "reflexivity: linear_representative is a function of the class" begin
     for name in ("PRESENT", "GIFT", "SERPENT_S3")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         r1 = linear_representative(F).representative
         r2 = linear_representative(F).representative
         @test r1 == r2
@@ -36,12 +36,12 @@ end
 end
 
 @testset "Stennes ↔ backtracking agree on linear equivalence (n ≤ 4)" begin
-    # For every pair of 4-bit catalog permutations: linear equivalence decided by Stennes (reps equal) must match the LPP backtracking decision.
-    names = filter(literature_sbox_names()) do n
-        s = load_literature_sbox(n)
+    # For every pair of fixed 4-bit permutations: linear equivalence decided by Stennes (reps equal) must match the LPP backtracking decision.
+    names = filter(fixture_names()) do n
+        s = fixture_sbox(n)
         is_permutation(s) && inputbits(s) == 4
     end
-    sboxes = [load_literature_sbox(n) for n in names]
+    sboxes = [fixture_sbox(n) for n in names]
     reps = [linear_representative(s).representative for s in sboxes]
     for i in eachindex(sboxes), j in i:lastindex(sboxes)
         stennes_decides = reps[i] == reps[j]
@@ -54,7 +54,7 @@ end
     rng = MersenneTwister(0xBFA63)
     N = 4
     T = UInt8
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     @test inputbits(F) == N
     mask = T((T(1) << N) - T(1))
     base_rep = linear_representative(F).representative
@@ -77,9 +77,9 @@ end
 
 @testset "n=5 monomial APN: Gold x³, x⁵, Kasami x¹⁵ have distinct reps" begin
     # Linear-equivalence classes are determined by the Frobenius orbit of the monomial exponent. For n=5 the orbits of 3, 5, 15 are disjoint.
-    F3  = load_apn_function("n5_Gold_x3")
-    F5  = load_apn_function("n5_Gold_x5")
-    F15 = load_apn_function("n5_Kasami_x15")
+    F3  = fixture_apn("n5_Gold_x3")
+    F5  = fixture_apn("n5_Gold_x5")
+    F15 = fixture_apn("n5_Kasami_x15")
     r3  = linear_representative(F3).representative
     r5  = linear_representative(F5).representative
     r15 = linear_representative(F15).representative
@@ -92,10 +92,10 @@ end
 
 @testset "F(0) ≠ 0 path: representative still computed correctly" begin
     # AES has AES(0) = 0x63 ≠ 0 — exercises the `else` branch of the init special case in `linear_representative`. We only check the B ∘ rep == F ∘ A invariant; AES at n=8 is expensive otherwise.
-    aes = load_literature_sbox("AES")
+    aes = fixture_sbox("AES")
     @test aes(0) != 0
     # Test on a small mod: build a 4-bit permutation with F(0) != 0.
-    P = load_literature_sbox("PRESENT")  # PRESENT(0) = 0xC ≠ 0
+    P = fixture_sbox("PRESENT")  # PRESENT(0) = 0xC ≠ 0
     @test P(0) != 0
     result = linear_representative(P)
     for x in 0:15

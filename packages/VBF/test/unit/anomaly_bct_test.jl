@@ -1,5 +1,5 @@
 @testitem "anomaly_bct" begin
-using VBFCatalog
+
 using VBF
 using Test
 

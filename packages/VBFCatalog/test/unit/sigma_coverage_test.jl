@@ -66,11 +66,12 @@ end
     @test classify_ccz(gold_apn(8, 1); index = idx)[1] === :new
 end
 
-@testset "an index predating sigma_coverage is treated as complete" begin
+@testset "an index without coverage evidence cannot establish absence" begin
     idx = SQLite.DB()
     SQLite.execute(idx, "CREATE TABLE ccz_sigma_index (sigma_hash TEXT NOT NULL, " *
                         "n INTEGER NOT NULL, source TEXT NOT NULL, member_idx INTEGER)")
-    @test classify_ccz(gold_apn(8, 1); index = idx)[1] === :new
+    @test_throws ErrorException classify_ccz(gold_apn(8, 1); index = idx)
+    @test_throws ErrorException is_novel(gold_apn(8, 1); index = idx)
 end
 
 @testset "a covered dimension still reports :sigma_match" begin

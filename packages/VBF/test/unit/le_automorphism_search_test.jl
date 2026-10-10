@@ -1,12 +1,11 @@
 @testitem "le_automorphism_search" begin
 using VBF
-using VBFCatalog
 using TOML
 using Test
 
-# Beierle–Leander 2022's n=7 LE-automorphism canonical-class tuples (re-housed from the upstream into VBFCatalog data). The paper reports quadratic APN found in classes 1, 7, 16, 19; the constrained search must reproduce that.
-tuples = TOML.parsefile(joinpath(pkgdir(VBFCatalog), "data-raw",
-                                 "le_automorphism_tuples", "n7.toml"))
+# Beierle–Leander 2022 reports quadratic APNs in these four n=7 canonical classes.
+# Frozen tuples test the mathematical algorithm, independently of the catalog.
+tuples = TOML.parsefile(joinpath(@__DIR__, "..", "support", "le_automorphism_n7.toml"))
 
 @testset "BL22 n=7: classes 1, 7, 16, 19 each yield a quadratic APN" begin
     for cls in ("class1", "class7", "class16", "class19")

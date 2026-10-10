@@ -49,6 +49,7 @@ no_autorun = "BFA_QAPN8_NO_AUTORUN"
 
 [[source]]
 name       = "beierle2025"
+reuse_corpus = "beierle2025_n8"
 label      = "Beierle et al. 2025 (Zenodo 16752428, 3.4 GB)"
 env_var    = "BFA_BEIERLE2025_PATH"
 check_path = "new_apns.txt"

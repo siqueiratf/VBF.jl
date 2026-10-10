@@ -1,21 +1,18 @@
 """Audit persisted candidates, witness maps and the enumeration ledger without trusting stored verdicts."""
-const AUDIT_USAGE=nothing
-include("evidence.jl")
-include("store.jl")
-using .DiscoveryEvidence,.DiscoveryStore,TOML,Dates
 
-function audit_run(dir;baseline=get(ENV,"VBF_APN_REFERENCE",joinpath(@__DIR__,"../../data/apn/reference")),limit=0)
+function audit_run(dir;baseline=get(ENV,"VBF_APN_REFERENCE",DEFAULT_REFERENCE),limit=0,supplement=DEFAULT_SUPPLEMENT)
     limit>=0 || error("invalid audit limit")
     db=DiscoveryStore.SQL.DB("file:"*abspath(joinpath(dir,"run.sqlite"))*"?mode=ro")
     rows(sql,args=())=[Dict(String(k)=>v for (k,v) in pairs(r)) for r in DiscoveryStore.DBI.execute(db,sql,args)]
-    reference=open_reference(baseline)
+    reference=nothing
     checked=0;units_checked=0
     try
+        reference=open_reference(baseline;supplement_path=supplement)
         DiscoveryStore.execute!(db,"BEGIN")
         only(rows("PRAGMA integrity_check"))["integrity_check"]=="ok" || error("database integrity failure")
         identity=TOML.parse(only(rows("SELECT value FROM metadata WHERE key='run'"))["value"])["identity"]
         expected=identity["reference"]
-        all(k->expected[k]==reference.metadata[k],("sha256","manifest_sha256","supplement_sha256","signatures")) || error("reference changed since this experiment")
+        all(k->expected[k]==VBFCatalog.reference_metadata(reference)[k],("sha256","manifest_sha256","supplement_sha256","signatures")) || error("reference changed since this experiment")
         archive=joinpath(dir,"source")
         if isdir(archive)
             for (path,digest) in identity["code"]
@@ -102,14 +99,11 @@ function audit_run(dir;baseline=get(ENV,"VBF_APN_REFERENCE",joinpath(@__DIR__,".
             "kernel_completeness"=>"trusted search algorithm; stored basis and coverage ledger checked, not a separate nullspace computation",
             "v5_coverage"=>"contiguous coset ledger; extension filters need algorithm replay",
             "literature_novelty"=>"unresolved","generated_utc"=>string(Dates.now(Dates.UTC)),
-            "reference_sha256"=>reference.metadata["sha256"])
+            "reference_sha256"=>VBFCatalog.reference_metadata(reference)["sha256"])
         atomic_toml(joinpath(dir,"audit.toml"),result);println(result);result
     finally
         DiscoveryStore.SQL.intransaction(db) && DiscoveryStore.execute!(db,"ROLLBACK")
-        DiscoveryStore.SQL.close(db);close_reference(reference)
+        DiscoveryStore.SQL.close(db)
+        reference===nothing || close_reference(reference)
     end
-end
-if abspath(PROGRAM_FILE)==(@__FILE__)
-    length(ARGS) in (1,3) || error("usage: audit.jl RUN_DIRECTORY [--limit N]")
-    audit_run(ARGS[1];limit=length(ARGS)==3 ? parse(Int,ARGS[3]) : 0)
 end

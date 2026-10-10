@@ -40,15 +40,21 @@
 # Also: coefficient strings, component forms, ranks, subspaces of Comp(F) with a given
 # number of bent elements, the bent counts of all cosets x + V of a subspace V (Fourier),
 # the U-class key, and a brute-force reference for small n.
-# VBF API used: SBox; histogram fingerprints use the SHA standard library.
+# VBF APIs supply representations, GF(2) elimination and Walsh transforms;
+# histogram fingerprints use the SHA standard library.
 
 """
     QuadraticExtensions
 
 Fourier extensions of quadratic component spaces. Forms use square-free Boolean
 ANF coordinates and decomposable bivectors test the APN condition. See the
-file's derivation and small-dimension brute-force verifier. The workflow at
-`search/apn` supplies persistence and independently validates returned functions.
+file's derivation and small-dimension brute-force verifier. Experiment storage,
+reference comparisons and independent validation belong to the consuming
+`VBFSearch` application.
+
+Coefficient conversion helpers encode the square-free quadratic part only;
+they do not preserve affine terms of an arbitrary quadratic function. Packed
+form ranks use the alternating-matrix representation specific to this module.
 
 Histogram keys are necessary filters only; matching keys do not establish
 EA/CCZ equivalence and must not justify skipping an exhaustive search.
@@ -61,7 +67,7 @@ export Geometry, geometry, form_rank, form_rank_slow, coeffs_from_hex, hex_from_
        subspaces_of_comp, best_hyperplane_bent, bent_fourier, flat_fourier, BETA8,
        coset_bent_counts!, bent_mask, gauss_binom, V5Work, v5_extensions, function_of, max_bent_dim
 
-using ..VBF: SBox
+using ..VBF: SBox, linear_basis, rank_f2, gauss_jordan!, walsh_hadamard!
 using SHA
 
 "Fingerprint a histogram; equality is not an equivalence certificate."
@@ -213,25 +219,18 @@ end
 
 # --- F_2 linear algebra on UInt32 vectors ---------------------------------------------
 
-"Reduced row echelon form; pivot = highest set bit. Returns (rows, pivots), pivots decreasing."
+"""
+    rref(vs::AbstractVector{UInt32}) -> (rows, pivots)
+
+Canonical reduced basis with highest-bit pivots in decreasing order. Reversing
+bits adapts VBF's lowest-bit-first elimination without changing the quotient
+coordinates used by `lift` and the extension enumeration.
+"""
 function rref(vs::AbstractVector{UInt32})
-    rows = UInt32[]; piv = Int[]
-    for v0 in vs
-        v = v0
-        for (r, p) in zip(rows, piv)
-            (v >> p) & 1 == 1 && (v ⊻= r)
-        end
-        v == 0 && continue
-        p = 31 - leading_zeros(v)
-        for i in eachindex(rows)
-            (rows[i] >> p) & 1 == 1 && (rows[i] ⊻= v)
-        end
-        push!(rows, v); push!(piv, p)
-    end
-    o = sortperm(piv; rev = true)
-    rows[o], piv[o]
+    rows = bitreverse.(linear_basis(bitreverse.(vs)))
+    rows, [31 - leading_zeros(r) for r in rows]
 end
-span_dim(vs) = length(rref(vs)[1])
+span_dim(vs::AbstractVector{UInt32}) = rank_f2(vs)
 
 "Canonical key of a subspace: its RREF rows (pivots decreasing)."
 s_key(vs) = rref(vs)[1]
@@ -263,33 +262,10 @@ function pivots_masks(R, piv, N)
     Pmask, ((UInt32(1) << N) - UInt32(1)) & ~Pmask
 end
 
-# --- fast Walsh-Hadamard transform ------------------------------------------------------
+# --- Walsh-Hadamard transform -----------------------------------------------------------
 
-"In-place unnormalized Walsh-Hadamard transform (length a power of 2, >= 8)."
-function fwht!(a::AbstractVector{T}) where {T<:Integer}
-    n = length(a)
-    @inbounds for i in 1:8:n                    # first three levels in blocks of 8
-        a0 = a[i]; a1 = a[i+1]; a2 = a[i+2]; a3 = a[i+3]
-        a4 = a[i+4]; a5 = a[i+5]; a6 = a[i+6]; a7 = a[i+7]
-        b0 = a0 + a1; b1 = a0 - a1; b2 = a2 + a3; b3 = a2 - a3
-        b4 = a4 + a5; b5 = a4 - a5; b6 = a6 + a7; b7 = a6 - a7
-        c0 = b0 + b2; c1 = b1 + b3; c2 = b0 - b2; c3 = b1 - b3
-        c4 = b4 + b6; c5 = b5 + b7; c6 = b4 - b6; c7 = b5 - b7
-        a[i] = c0 + c4; a[i+1] = c1 + c5; a[i+2] = c2 + c6; a[i+3] = c3 + c7
-        a[i+4] = c0 - c4; a[i+5] = c1 - c5; a[i+6] = c2 - c6; a[i+7] = c3 - c7
-    end
-    h = 8
-    while h < n
-        @inbounds for i in 0:2h:n-1
-            @simd ivdep for j in i+1:i+h
-                x = a[j]; y = a[j+h]
-                a[j] = x + y; a[j+h] = x - y
-            end
-        end
-        h <<= 1
-    end
-    a
-end
+"In-place unnormalized Walsh transform; delegates to VBF's checked signed-vector kernel."
+fwht!(a::Vector{<:Signed}) = walsh_hadamard!(a)
 
 # --- the extension step ---------------------------------------------------------------
 
@@ -398,26 +374,26 @@ end
 end
 
 """
-Solve {c . v = 1 : c in Z} over F_2^D. Returns (particular solution, kernel basis) or
-nothing when the system is inconsistent.
+Solve {c . v = 1 : c in Z} over F_2^D, with `0 <= D <= 31`. Returns
+(particular solution with free variables zero, kernel basis in increasing free-bit
+order), or nothing when inconsistent. Scratch buffers are overwritten.
+
+Use VBF's elimination on rows augmented by one RHS bit: unlike `solve_f2`,
+the number of constraints is not bounded by the bit width of the RHS scalar.
 """
 function solve_ones(Z::Vector{UInt32}, D::Int, rows::Vector{UInt32} = UInt32[],
                     piv::Vector{Int} = Int[], K::Vector{UInt32} = UInt32[])
+    0 <= D <= 31 || throw(ArgumentError("affine dimension must be between 0 and 31"))
     aug = UInt32(1) << D                      # right-hand side bit
+    all(c -> c < aug, Z) || throw(ArgumentError("constraint exceeds the affine dimension"))
     empty!(rows); empty!(piv); empty!(K)
-    @inbounds for c in Z
-        v = c | aug
-        for (r, p) in zip(rows, piv)
-            (v >> p) & 1 == 1 && (v ⊻= r)
-        end
-        v == aug && return nothing             # 0 = 1
-        v == 0 && continue
-        p = trailing_zeros(v)                  # pivot = lowest set bit (< D)
-        for i in eachindex(rows)
-            (rows[i] >> p) & 1 == 1 && (rows[i] ⊻= v)
-        end
-        push!(rows, v); push!(piv, p)
-    end
+    append!(rows, (c | aug for c in Z))
+    # At dimension zero every present equation is 0 = 1.
+    D == 0 && return isempty(Z) ? (UInt32(0), K) : nothing
+    rank = gauss_jordan!(rows; nbits = D)
+    any(==(aug), @view(rows[rank+1:end])) && return nothing
+    resize!(rows, rank)
+    append!(piv, (trailing_zeros(r) for r in rows))
     v0 = UInt32(0)                             # free variables 0
     for (r, p) in zip(rows, piv)
         (r >> D) & 1 == 1 && (v0 |= UInt32(1) << p)
@@ -557,7 +533,7 @@ function bent_fourier(G::Geometry)
     sum(parts)
 end
 
-"beta for n = 8 (checked by `make table` and `make validate`)."
+"Fourier coefficients of the bent indicator at n = 8; recompute with `bent_fourier(geometry(8))`."
 const BETA8 = [112881664, -888832, 28672, -4096, 4096]
 
 # --- bent counts of all cosets x + V (Fourier) ---------------------------------------------

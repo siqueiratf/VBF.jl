@@ -1,0 +1,12 @@
+[deps]
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+DBInterface = "a10d1c49-ce27-4219-8d33-6db1a4562965"
+ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
+SQLite = "0aa819cd-b072-5ff4-a722-6bc24af294d9"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+VBF = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
+VBFCatalog = "806e9246-bd0c-40c6-b7ea-7b2eabc2fba0"
+
+[compat]
+julia = "1.12"

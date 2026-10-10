@@ -1,5 +1,5 @@
 @testitem "random_objects" begin
-using VBFCatalog
+
 using VBF
 using Test
 using Random

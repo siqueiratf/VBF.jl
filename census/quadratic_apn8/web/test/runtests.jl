@@ -151,7 +151,7 @@ const CENSUS = [split(l, '\t') for l in eachline(APN8Web.CENSUS_TSV)]
         end
         result=APN8Web.job_dict(job)
         @test result["state"]=="done" && result["equivalent"]===true
-        @test APN8Web.DiscoveryEvidence.verify_comparison(result["evidence"])
+        @test APN8Web.VBFSearch.verify_comparison(result["evidence"])
         @test call("GET","/api/ea/$id/certificate").status==200
         @test call("POST","/api/compare",JSON3.write(Dict("candidate"=>"x^3","target"=>"x^3","max_nodes"=>0))).status==400
         @test call("GET","/api/candidates").status==400

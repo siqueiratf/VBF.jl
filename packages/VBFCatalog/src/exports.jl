@@ -35,3 +35,6 @@ export sigma_key, sigma_hash, build_sigma_index!, classify_ccz, is_novel
 export ccz_fingerprint_key, ccz_fingerprint_hash, build_ccz_fingerprint_index!
 export ccz_fingerprint_index_path, classify_ccz_fingerprint, is_novel_fingerprint
 export populate_ccz_equivalence_classes!, sigma_index_path
+
+export AuditedAPNReference, open_apn_reference, close_apn_reference
+export reference_metadata, reference_contains_signature, reference_exact_lut_match
