@@ -357,3 +357,19 @@ n6–n10 — that inconsistency is what broke R6 (now worked around paper-locall
 2. **Should Example 9 be reproduced at all**, given P1? Recommended: reproduce it
    *as a paper-issue witness* (compute the three APN swaps and their degrees),
    since that is a genuine, defensible finding.
+
+
+### F023 complete finite catalog sweeps (2026-10-10)
+
+The full n=7 sweep checked **4,033,320 genuine swaps across 500 functions**;
+the n=8 sweep checked **2,271,970 genuine swaps across 70 functions**.
+No APN swap was found. Every selected catalog function must now pass a full
+APN precondition check before the theorem test; invalid metadata aborts the run.
+VBFRepro records the catalog SHA-256, implementation/input hashes, parameters,
+logs and execution status. This is evidence for the specified catalog snapshot,
+not a proof of Conjecture 22 over every APN function.
+
+```sh
+bin/vbfrepro run Kaleyski_201911 --target conjecture22 --param 'ns=[7,8]' \
+  --param full_search=true --param timeout_seconds=900 --timeout-seconds 960
+```

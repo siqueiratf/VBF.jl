@@ -10,6 +10,7 @@ full_search ?= false
 max_evaluations ?= 2147483647
 timeout_seconds ?= 60
 pair_samples ?= 16
+ns ?= [5,6,7,8]
 
 default: help
 
@@ -44,7 +45,7 @@ conjecture21:
 conjecture22:
 	$(JULIA) $(JULIA_PROJECT) -e \
 	  'include(joinpath("$(MAKEFILE_DIR)", "conjecture22.jl")); \
-	   print_header(); conjecture22_report(; limit=$(limit), full_search=$(full_search), max_evaluations=$(max_evaluations), timeout_seconds=$(timeout_seconds), pair_samples=$(pair_samples))'
+	   print_header(); conjecture22_report(; ns=$(ns), limit=$(limit), full_search=$(full_search), max_evaluations=$(max_evaluations), timeout_seconds=$(timeout_seconds), pair_samples=$(pair_samples))'
 
 clean_results:
 	rm -rf "$(MAKEFILE_DIR)/results"
@@ -67,3 +68,4 @@ help:
 	@echo '  n_max_formula=$(n_max_formula)   max n for formula in table2'
 	@echo '  limit=$(limit)   max functions per dimension in table1/conjecture22'
 	@echo '  save_results=$(save_results)   write TOML to results/'
+	@echo '  ns=$(ns)   dimensions for conjecture22 (Julia vector)'

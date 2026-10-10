@@ -1,9 +1,11 @@
 include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../../paper.mk
 
-.PHONY: help test report clean_results theorem1 theorem2 theorem3 theorem4 theorem5 theorem6 example1 table1 table2
+.PHONY: help test report clean_results theorem1 theorem2 theorem3 theorem4 theorem5 theorem6 example1 table1 table2 proposition5
 
 limit          ?= 2147483647
 save_results   ?= false
+max_evaluations ?= 2147483647
+timeout_seconds ?= 60
 
 default: help
 
@@ -61,7 +63,12 @@ table2:
 	  'include(joinpath("$(MAKEFILE_DIR)", "table2.jl")); \
 	   print_header(); table2_report()'
 
+proposition5:
+	$(JULIA) $(JULIA_PROJECT) -e \
+	  'include(joinpath("$(MAKEFILE_DIR)", "proposition5.jl")); \
+	   proposition5_family_report(max_evaluations=$(max_evaluations),timeout_seconds=$(timeout_seconds),save_results=$(save_results))'
+
 help:
 	@echo 'Paper: Zha_201401 — Differentially 4-uniform permutations from inverse'
-	@echo 'Targets: test  report  theorem1..6  example1  table1  table2  clean_results'
-	@echo 'Params:  limit  save_results'
+	@echo 'Targets: test  report  theorem1..6  example1  table1  table2  proposition5  clean_results'
+	@echo 'Params:  limit  save_results  max_evaluations  timeout_seconds'

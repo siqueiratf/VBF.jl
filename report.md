@@ -1,8 +1,8 @@
 # APN audit — applied findings and remaining research
 
 Updated **2026-10-10**. All 36 historical findings have a current disposition in
-[`audit/resolutions.toml`](audit/resolutions.toml): **20 fixed, 1 already fixed,
-15 partially addressed with explicit remaining work**. “Fixed” means the implementation
+[`audit/resolutions.toml`](audit/resolutions.toml): **27 fixed, 1 already fixed,
+8 partially addressed with explicit remaining work**. “Fixed” means the implementation
 or evidence defect is resolved; it does not prove every claim in the corresponding paper.
 
 The changes correct theorem formulas and hypotheses, field-generator assumptions,
@@ -36,6 +36,30 @@ Current experimental evidence:
   independent implementation review passed **386 checks**. A budgeted public-API
   Gold8 Gamma computation returned **11,818**. See
   [`audit/README.md`](audit/README.md) for reproduction commands and limits.
+
+The follow-up closed seven of the fifteen previously partial findings:
+
+- **F014:** Complete cited n=8 inverse-swap-family comparison, with exact scaling
+  identities and unequal general CCZ invariants for every source Zha example.
+- **F020/F064:** Verified paper pruning and supported fixed-space seeding; fresh
+  n=6/7/8 tuple class sets match **17/27/32**. Full APN search classification remains separate.
+- **F023:** All **6,305,290** genuine swaps of the 500 n=7 and 70 n=8 catalog
+  APNs were checked, with no APN swap. Each input passes an independent APN check.
+- **F024:** Exact scalar/Frobenius normalization and **26 full EA witnesses**
+  cover both shift valences for all 13 named quadratic n=6 reference representatives.
+- **F025:** Source odd-dimensional Algorithm 1 now reproduces its pruning and
+  agrees with unpruned small candidate sets. Its complete n=7 traversal yields
+  14 invariant buckets; bounded EA confirmation does not certify a class count.
+- **F050:** Both field representations independently exhaust **2^30** normalized
+  n=6 mappings and return **35,648**. This counts mappings, not equivalence classes.
+
+F071 additionally exhausts all four **993-pair n=15** coefficient grids, without
+claiming literature-wide separation. F063 regenerated all 32 proposals and replayed nine positive certificates: one
+functions-table representative, three selected prior controls, and five
+within-inventory duplicates. The other 23 are separated only from explicit
+quadratic references, with literature-wide novelty unresolved. See [follow-up run bindings](audit/followup_runs.toml)
+and the resolution ledger for exact guarantees. The eight partial findings are
+F004, F032, F040, F051, F052, F063, F070 and F071.
 
 Remaining work is explicitly scoped: unfinished full searches, source/table
 reconciliation, faithful reproduction of omitted paper pruning, general binary-code

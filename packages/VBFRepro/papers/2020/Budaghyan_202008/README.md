@@ -1,30 +1,70 @@
 # Budaghyan_202008 — Constructing APN Functions Through Isotopic Shifts
 
-Current audit application (2026-10-10): F024: generated scan coverage and injected published positive controls are now reported separately. The n=9 LCG draws repeat; they are not a uniform random sample. Non-vacuity of the combined controls does not establish non-vacuity of the generated sample. Full normalization and Section VII-D classification remain unimplemented.
+Current audit application (2026-10-10): F024's missing Proposition VI.1
+normalization and Section VII-D named-reference coverage are implemented.
+`proposition_vi1.jl` minimizes over the complete scalar/Frobenius coefficient
+orbit and provides explicit input/output linear witnesses. Its result is an
+orbit minimum, **not an EA canonical form**; a budget-limited normalization
+must not prune other candidates. Tests independently verify all 512 linearized
+coefficient vectors at n=3 under all 21 group actions, plus normalization
+idempotence, mutation controls and incomplete budgets.
+
+`section7d.jl` reuses the existing source-faithful Edel–Pott (2009) Table 5
+builders, pinned to modulus 91 and ζ = 2. Its 26 tracked regression certificates
+prove that each of the **13 named quadratic APN representatives** is EA-equivalent
+to a literal isotopic shift of Gold x³, both with permutation L and 2-to-1 L.
+Replay verifies full source/target APN and degree, LUT hashes (explicit UInt16
+little endian encoding), linear-map valence, ambient graph-map rank,
+EA output-subspace preservation, all 64 graph points, linearized coefficients,
+and a separately recomputed complete VI.1 orbit minimum. Inequality of full
+invariants separates the 13 reference rows; matching invariants are used only
+as filters before exact EA witnesses. This establishes the publication's
+finite existential coverage claim for those rows. It does **not** classify
+all 6-bit APNs or establish reference completeness beyond that named source.
+
+A fresh deterministic Xoshiro sample (seed 20261010) found all 26 witnesses after
+65,614,477 linear-map trials, with 200 APN trials and 0 undecided comparisons. Trials
+sample basis images uniformly **with replacement**: these counts do not assert
+distinct-map coverage or exhaustion of the 2³⁶ linear-map space. `Found` means the
+requested finite witnesses were obtained; unfinished runs return BudgetHit.
+
+```sh
+make -C packages/VBFRepro/papers/2020/Budaghyan_202008 proposition_vi1
+make -C packages/VBFRepro/papers/2020/Budaghyan_202008 section7d
+make -C packages/VBFRepro/papers/2020/Budaghyan_202008 section7d_discover max_evaluations=100000000 timeout_seconds=120 seed=20261010 save_results=true
+```
+
+Discovery evidence is written only with `save_results=true`, under `results/`.
+The fixed mathematical witnesses under `test/fixtures/` are regression inputs,
+not a substitute for fresh discovery. The older R6/open-question text below
+records the previous missing implementation and is superseded by this note.
+Generated VI.3 scan coverage and injected published positive controls remain
+reported separately: n=9 LCG draws repeat and are not uniform random samples;
+combined controls do not establish non-vacuity of the generated sample.
+
 
 
 **Paper:** L. Budaghyan, M. Calderini, C. Carlet, R. Coulter, I. Villa,
 *Constructing APN Functions Through Isotopic Shifts*, IEEE Trans. Inf. Theory
 66(8):5299–5309, 2020.
 
-**Reproduction:** `packages/VBFRepro/papers/Budaghyan_202008/` — `helpers.jl`, `section4.jl`,
+**Reproduction:** `packages/VBFRepro/papers/2020/Budaghyan_202008/` — `helpers.jl`, `section4.jl`,
 `section5.jl`, `section6.jl`, `section7.jl`, `table1.jl`, `report.jl`.
 
-**Verdict:** **Partial** (upgraded after the R1–R10 fix pass). The paper's
-headline object — the new quadratic APN function over F₂⁹ — is reproduced
-*exactly*, is genuinely APN, and is now **checked to be genuinely new in-repo**:
-all 8 Table I rows are built from the paper's own expressions and are pairwise
-CCZ-inequivalent (8/8 distinct ortho-derivative mugshots, 0 collisions), and the
-new function is also distinct from every quadratic n=9 catalog entry. Theorem
-VI.3 is now reproduced as a genuine **iff** — its conditions (i),(ii),(iii) are
-constructed and tested in both directions at n=6, 8 and 9 (0 mismatches over
-332 379 q-polynomials). Still absent: the Γ-rank column (impossible in-repo,
-honestly so), Section VII-D's coverage claim, the n=8 isotopic-shift derivation
-(R8), and roughly a dozen of the paper's other numbered results.
+**Verdict:** partial overall. The explicit n=9 APN and all eight Table I
+functions are independently verified, with distinct invariants proving
+pairwise CCZ inequivalence within the named table and separation from the
+enumerated quadratic catalog references. This is finite comparison evidence,
+not literature-wide novelty. Theorem VI.3's two directions agree on the stated
+finite coefficient scans and separately reported controls; larger sampled
+spaces are not exhausted. Proposition VI.1 and the named n=6 Section VII-D
+coverage now have exact witnesses. Remaining gaps include the Table I Γ-rank
+column, the n=8 isotopic-shift derivation (R8), and other numbered results.
+The historical review below records the earlier implementation state.
 
 ---
 
-## Issue Catalog
+## Historical issue catalog
 
 ### Paper Issues
 

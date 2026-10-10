@@ -1,0 +1,435 @@
+basis = "polynomial bits: e_i=2^i, i=0..5"
+dimension = 6
+generator = 2
+graph_packing = "(input << 6) | output"
+hash_encoding = "UInt16 little endian LUT values"
+modulus = 91
+reference = "Edel–Pott(2009)Table5 quadratic rows (reused source builders)"
+witness_orientation = "literal Gold isotopic shift -> named reference"
+
+[discovery]
+apn_trials = 200
+evaluations = 65614477
+outcome = "found"
+sampling = "uniform basis images with replacement"
+seed = 20261010
+space_exhausted = false
+space_size = "68719476736"
+undecided = 0
+
+[[witnesses]]
+coefficients = [22, 0, 25, 0, 6, 0]
+columns = [59, 46, 17, 50, 20, 40, 64, 3008, 192, 2176, 3712, 640]
+constant = 0
+images = [9, 12, 62, 23, 58, 53]
+name = "1.1"
+nullity = 0
+source_sha256 = "61d33c6a9982b770d42607d3a07e478e897d5db69f1aa0b733e893a859005907"
+target_sha256 = "4d4a77fd4f08d7c285ad3567b0ec6b1d81231b6a5499973bcb089088b8e99538"
+trial = 6805837
+
+    [witnesses.normalization]
+    coefficients = [22, 0, 2, 0, 63, 0]
+    evaluations = 378
+    k = 11
+    t = 0
+[[witnesses]]
+coefficients = [11, 8, 32, 53, 38, 63]
+columns = [1, 2, 4, 8, 16, 32, 64, 128, 392, 512, 1024, 2184]
+constant = 0
+images = [15, 30, 62, 35, 29, 56]
+name = "1.1"
+nullity = 1
+source_sha256 = "9b145587161e6260c15912098dc6602e2f32494108dc2aa3d42d0ba58a2795d6"
+target_sha256 = "4d4a77fd4f08d7c285ad3567b0ec6b1d81231b6a5499973bcb089088b8e99538"
+trial = 11937989
+
+    [witnesses.normalization]
+    coefficients = [11, 1, 24, 20, 17, 8]
+    evaluations = 378
+    k = 60
+    t = 0
+[[witnesses]]
+coefficients = [27, 8, 3, 36, 45, 37]
+columns = [8, 43, 59, 19, 54, 63, 64, 512, 3840, 1536, 3072, 1728]
+constant = 0
+images = [60, 50, 18, 45, 36, 38]
+name = "1.2"
+nullity = 0
+source_sha256 = "3f5d2c4f594657555ad57d016cf50c0fc932624a9283195e160755cea74d1017"
+target_sha256 = "da60bf71bbb16886e341e0aa962d39f3c358709d739fc39c41c708235a425276"
+trial = 29555090
+
+    [witnesses.normalization]
+    coefficients = [8, 1, 44, 48, 21, 4]
+    evaluations = 378
+    k = 60
+    t = 5
+[[witnesses]]
+coefficients = [27, 48, 9, 27, 25, 15]
+columns = [56, 49, 63, 57, 23, 36, 86, 1667, 576, 1280, 1429, 2965]
+constant = 0
+images = [47, 44, 56, 43, 28, 11]
+name = "1.2"
+nullity = 1
+source_sha256 = "3255506c8950971d848dd2409dd44ccd1c134460759e26a01cbf4cc5a57e758b"
+target_sha256 = "da60bf71bbb16886e341e0aa962d39f3c358709d739fc39c41c708235a425276"
+trial = 15594812
+
+    [witnesses.normalization]
+    coefficients = [8, 1, 57, 35, 62, 34]
+    evaluations = 378
+    k = 3
+    t = 5
+[[witnesses]]
+coefficients = [5, 62, 10, 33, 24, 58]
+columns = [45, 25, 35, 4, 63, 33, 170, 407, 1085, 3242, 2420, 4032]
+constant = 0
+images = [50, 13, 22, 53, 6, 39]
+name = "2.1"
+nullity = 0
+source_sha256 = "dba5f6d70e23c9deadb9bcc9baebc4dcc797f58061a65ee0d64fe162d8f41273"
+target_sha256 = "dc7923b37118a4681367cf26fbd8b18c33851c40402ae3a4f85761ca2b4fa4d8"
+trial = 599751
+
+    [witnesses.normalization]
+    coefficients = [3, 1, 25, 55, 51, 63]
+    evaluations = 378
+    k = 25
+    t = 5
+[[witnesses]]
+coefficients = [9, 57, 16, 39, 37, 24]
+columns = [15, 40, 62, 59, 32, 53, 194, 1570, 404, 3463, 2181, 1797]
+constant = 0
+images = [58, 47, 61, 52, 18, 20]
+name = "2.1"
+nullity = 1
+source_sha256 = "89048b720795197d24bc8da04adc65167fb34b3cb4e014b85aa9eaa04c35508a"
+target_sha256 = "dc7923b37118a4681367cf26fbd8b18c33851c40402ae3a4f85761ca2b4fa4d8"
+trial = 6571925
+
+    [witnesses.normalization]
+    coefficients = [9, 1, 37, 13, 12, 63]
+    evaluations = 378
+    k = 52
+    t = 0
+[[witnesses]]
+coefficients = [32, 1, 51, 44, 60, 38]
+columns = [10, 12, 3, 43, 47, 29, 1269, 3805, 855, 2862, 3272, 1077]
+constant = 0
+images = [36, 25, 45, 29, 24, 50]
+name = "2.10"
+nullity = 0
+source_sha256 = "ba4aa0482d30338f19d82d0aeabdca8e23bd73d93d116c39384ec9f4fac3972e"
+target_sha256 = "ca65820d3af67267e73f110d5b8b3b9c9c4007b2de9ebc7fcad95f50b1d69842"
+trial = 1914788
+
+    [witnesses.normalization]
+    coefficients = [7, 1, 5, 25, 10, 32]
+    evaluations = 378
+    k = 0
+    t = 2
+[[witnesses]]
+coefficients = [15, 2, 7, 36, 6, 61]
+columns = [36, 35, 27, 30, 21, 55, 1126, 3123, 3004, 2857, 330, 4012]
+constant = 0
+images = [21, 15, 13, 34, 37, 2]
+name = "2.10"
+nullity = 1
+source_sha256 = "cfb2add880d1ce02097f45eaaa1aa1b66e25071fcd5ad36f2302e3ae87c4dd69"
+target_sha256 = "ca65820d3af67267e73f110d5b8b3b9c9c4007b2de9ebc7fcad95f50b1d69842"
+trial = 2458881
+
+    [witnesses.normalization]
+    coefficients = [14, 1, 21, 16, 14, 45]
+    evaluations = 378
+    k = 62
+    t = 5
+[[witnesses]]
+coefficients = [16, 61, 10, 58, 47, 8]
+columns = [20, 41, 60, 47, 51, 10, 660, 303, 3237, 1210, 1485, 546]
+constant = 0
+images = [58, 16, 31, 32, 22, 20]
+name = "2.12"
+nullity = 0
+source_sha256 = "d9422f20978db345dadd666ea8112c99c4a62206ee4408543d77c6fdf299971d"
+target_sha256 = "792acd0b900fc968464e0de756d19ceef35ecef91be9d7925a98786943a2f6d2"
+trial = 19225634
+
+    [witnesses.normalization]
+    coefficients = [2, 1, 62, 43, 35, 51]
+    evaluations = 378
+    k = 34
+    t = 4
+[[witnesses]]
+coefficients = [17, 61, 10, 58, 47, 8]
+columns = [20, 41, 60, 47, 51, 10, 660, 303, 3237, 1210, 1485, 546]
+constant = 0
+images = [59, 18, 27, 40, 6, 52]
+name = "2.12"
+nullity = 1
+source_sha256 = "d9422f20978db345dadd666ea8112c99c4a62206ee4408543d77c6fdf299971d"
+target_sha256 = "792acd0b900fc968464e0de756d19ceef35ecef91be9d7925a98786943a2f6d2"
+trial = 19225634
+
+    [witnesses.normalization]
+    coefficients = [3, 1, 62, 43, 35, 51]
+    evaluations = 378
+    k = 34
+    t = 4
+[[witnesses]]
+coefficients = [1, 62, 9, 7, 53, 22]
+columns = [9, 36, 3, 7, 21, 5, 3073, 1452, 338, 1177, 3011, 463]
+constant = 0
+images = [18, 55, 33, 40, 42, 23]
+name = "2.2"
+nullity = 0
+source_sha256 = "021e288220153202832253f945b69186139009281aec26e0b5854bbb06ebe6e8"
+target_sha256 = "7b0a1fd23b2124a69dfaa7506fa3a4cb26ff5f1f9bc32f651dd83aa3f3b432dd"
+trial = 1062692
+
+    [witnesses.normalization]
+    coefficients = [1, 1, 10, 41, 41, 7]
+    evaluations = 378
+    k = 25
+    t = 1
+[[witnesses]]
+coefficients = [8, 26, 33, 58, 23, 20]
+columns = [27, 62, 28, 56, 49, 38, 833, 566, 629, 1561, 426, 3932]
+constant = 0
+images = [10, 8, 28, 23, 56, 57]
+name = "2.2"
+nullity = 1
+source_sha256 = "f2693f05b6e4a7d05f106cc4ef2b76753056f97b135e7e8e7d36ce0bc3372d5a"
+target_sha256 = "7b0a1fd23b2124a69dfaa7506fa3a4cb26ff5f1f9bc32f651dd83aa3f3b432dd"
+trial = 2167567
+
+    [witnesses.normalization]
+    coefficients = [8, 1, 36, 22, 27, 2]
+    evaluations = 378
+    k = 37
+    t = 0
+[[witnesses]]
+coefficients = [17, 13, 37, 6, 21, 28]
+columns = [1, 37, 10, 32, 7, 29, 1416, 759, 2450, 2967, 3424, 3903]
+constant = 0
+images = [54, 57, 17, 12, 9, 50]
+name = "2.3"
+nullity = 0
+source_sha256 = "a6633c89861f01efb6aac635c9a61145cd7b97466ea7a489ef98bc57f8e23468"
+target_sha256 = "f04f0814fae76d6b94d17ffb85ede106f80a59f25d1a955affa6e2fe519b46cb"
+trial = 6054858
+
+    [witnesses.normalization]
+    coefficients = [3, 1, 31, 4, 12, 47]
+    evaluations = 378
+    k = 38
+    t = 4
+[[witnesses]]
+coefficients = [57, 53, 4, 55, 11, 3]
+columns = [10, 36, 24, 45, 28, 29, 472, 816, 3374, 1953, 1858, 2808]
+constant = 0
+images = [55, 14, 0, 50, 26, 12]
+name = "2.3"
+nullity = 1
+source_sha256 = "c0244185288d30a2a40a672772d2f5167ccabd9c698a5fa48b53b1fb301a3415"
+target_sha256 = "f04f0814fae76d6b94d17ffb85ede106f80a59f25d1a955affa6e2fe519b46cb"
+trial = 4611916
+
+    [witnesses.normalization]
+    coefficients = [10, 1, 42, 4, 57, 56]
+    evaluations = 378
+    k = 54
+    t = 4
+[[witnesses]]
+coefficients = [61, 19, 12, 8, 41, 9]
+columns = [1, 48, 55, 27, 62, 47, 3362, 2227, 1904, 3025, 1640, 1360]
+constant = 0
+images = [10, 50, 22, 1, 17, 2]
+name = "2.4"
+nullity = 0
+source_sha256 = "ced2a8d9fc0716cbf4b9bc1e330f2910965b979f68faea1dff6a811f309ed234"
+target_sha256 = "2e0fb8acefb3d5aa7e3eef9354201b4ac0b014e80fa3f52f5527684b75564973"
+trial = 30566011
+
+    [witnesses.normalization]
+    coefficients = [11, 1, 21, 32, 63, 14]
+    evaluations = 378
+    k = 47
+    t = 2
+[[witnesses]]
+coefficients = [22, 37, 35, 49, 14, 56]
+columns = [6, 8, 24, 42, 45, 13, 810, 4076, 2770, 2651, 2749, 3359]
+constant = 0
+images = [23, 47, 12, 40, 38, 18]
+name = "2.4"
+nullity = 1
+source_sha256 = "8aa49d0f8ceefd001487195f547424242d6d6c17741bd05af415929928e76c1a"
+target_sha256 = "2e0fb8acefb3d5aa7e3eef9354201b4ac0b014e80fa3f52f5527684b75564973"
+trial = 10895613
+
+    [witnesses.normalization]
+    coefficients = [22, 1, 27, 43, 36, 21]
+    evaluations = 378
+    k = 29
+    t = 0
+[[witnesses]]
+coefficients = [32, 40, 14, 1, 44, 35]
+columns = [46, 58, 1, 9, 18, 43, 677, 3016, 862, 2514, 947, 1087]
+constant = 0
+images = [8, 18, 45, 30, 17, 5]
+name = "2.5"
+nullity = 0
+source_sha256 = "eb88c391eb78341e8f04a84e109ecb3d09d61f78753566a1ab1c84c80e95caf0"
+target_sha256 = "8a14d049fc61a4446c5665a43791cd62eb025a3b12a8d4c2e46e3daa2389a50c"
+trial = 65614477
+
+    [witnesses.normalization]
+    coefficients = [7, 1, 52, 3, 59, 50]
+    evaluations = 378
+    k = 11
+    t = 2
+[[witnesses]]
+coefficients = [28, 34, 45, 32, 22, 41]
+columns = [18, 3, 58, 25, 7, 20, 244, 1373, 389, 839, 969, 2146]
+constant = 0
+images = [12, 13, 55, 2, 35, 14]
+name = "2.5"
+nullity = 1
+source_sha256 = "acb5c67beb567c99e2d48f1bccac0160666e92a0c406f2542f7517225070eeaa"
+target_sha256 = "8a14d049fc61a4446c5665a43791cd62eb025a3b12a8d4c2e46e3daa2389a50c"
+trial = 15113701
+
+    [witnesses.normalization]
+    coefficients = [10, 1, 49, 21, 23, 20]
+    evaluations = 378
+    k = 27
+    t = 3
+[[witnesses]]
+coefficients = [18, 46, 25, 17, 45, 22]
+columns = [12, 46, 41, 25, 20, 17, 2436, 2066, 3387, 3803, 2970, 2362]
+constant = 0
+images = [15, 57, 45, 60, 11, 48]
+name = "2.6"
+nullity = 0
+source_sha256 = "af468f6c9c7780d3c808735e3eb6cb4c03800c504bb4ef1133b38d7a9a3c5198"
+target_sha256 = "9d5dc8ba27975a35637b4baab07a122779037df65ea537bcc0cc9337f823bc93"
+trial = 16538956
+
+    [witnesses.normalization]
+    coefficients = [3, 1, 28, 5, 11, 4]
+    evaluations = 378
+    k = 44
+    t = 2
+[[witnesses]]
+coefficients = [46, 43, 51, 34, 21, 57]
+columns = [7, 57, 12, 48, 51, 42, 4009, 2003, 2838, 2429, 2555, 375]
+constant = 0
+images = [56, 14, 43, 41, 53, 13]
+name = "2.6"
+nullity = 1
+source_sha256 = "0e6f46131f4b643ee875e593d07c8df12cb433fcbfa4854282b96372b69d69fe"
+target_sha256 = "9d5dc8ba27975a35637b4baab07a122779037df65ea537bcc0cc9337f823bc93"
+trial = 30445867
+
+    [witnesses.normalization]
+    coefficients = [9, 1, 9, 39, 30, 61]
+    evaluations = 378
+    k = 39
+    t = 2
+[[witnesses]]
+coefficients = [44, 3, 32, 32, 31, 20]
+columns = [50, 33, 11, 8, 29, 35, 3402, 1203, 1416, 3481, 1903, 1810]
+constant = 0
+images = [36, 63, 2, 40, 62, 28]
+name = "2.7"
+nullity = 0
+source_sha256 = "45cd5f88f8695bdda09e93dea83ed5c6a5e3c3d335015e1d01571b500cbc5a0d"
+target_sha256 = "681ee6fbddac1412f139037acedb9eed236a9df8b64da22903a6a78a80257e6c"
+trial = 3507756
+
+    [witnesses.normalization]
+    coefficients = [24, 1, 9, 52, 55, 55]
+    evaluations = 378
+    k = 7
+    t = 5
+[[witnesses]]
+coefficients = [35, 14, 8, 49, 21, 47]
+columns = [46, 21, 51, 23, 6, 37, 1274, 2309, 4010, 2611, 3142, 2419]
+constant = 0
+images = [46, 33, 36, 0, 57, 9]
+name = "2.7"
+nullity = 1
+source_sha256 = "7d28f5fa2c8f89ce1bcacb62dc0819aa7b1c5189a9e572fc1e83173d1a40ccf5"
+target_sha256 = "681ee6fbddac1412f139037acedb9eed236a9df8b64da22903a6a78a80257e6c"
+trial = 23162880
+
+    [witnesses.normalization]
+    coefficients = [22, 1, 41, 46, 37, 35]
+    evaluations = 378
+    k = 42
+    t = 2
+[[witnesses]]
+coefficients = [3, 49, 35, 6, 44, 49]
+columns = [17, 18, 41, 29, 28, 33, 1467, 844, 1560, 3372, 2994, 1238]
+constant = 0
+images = [10, 22, 54, 17, 44, 20]
+name = "2.8"
+nullity = 0
+source_sha256 = "8e1a863a1998a46d5566f175b42e1961bad4e1f542e6658b9ff536424a1b4f7a"
+target_sha256 = "ea5a7a5c32eb7499b6655f66ed21fa318146d085f4e06e9373b06d3318983f35"
+trial = 11640768
+
+    [witnesses.normalization]
+    coefficients = [3, 1, 36, 10, 25, 36]
+    evaluations = 378
+    k = 53
+    t = 0
+[[witnesses]]
+coefficients = [35, 61, 34, 63, 42, 53]
+columns = [16, 63, 51, 52, 10, 30, 3376, 2543, 2833, 3789, 3890, 2708]
+constant = 0
+images = [28, 23, 60, 2, 0, 13]
+name = "2.8"
+nullity = 1
+source_sha256 = "f90a7356f8a893deaf58a01de80c170beea829caeb6ebb62618a5be0e11af604"
+target_sha256 = "ea5a7a5c32eb7499b6655f66ed21fa318146d085f4e06e9373b06d3318983f35"
+trial = 1403636
+
+    [witnesses.normalization]
+    coefficients = [22, 1, 27, 42, 44, 24]
+    evaluations = 378
+    k = 34
+    t = 5
+[[witnesses]]
+coefficients = [14, 1, 22, 17, 52, 8]
+columns = [39, 58, 4, 47, 5, 40, 327, 1964, 1177, 204, 452, 3451]
+constant = 0
+images = [52, 5, 25, 43, 15, 24]
+name = "2.9"
+nullity = 0
+source_sha256 = "372e94527b3d1552e54c80e03791e35ee5177f94feb3da2765901e738c9541a2"
+target_sha256 = "52bc3b632a923ecd6c1f26ef56da1a8cc9661e6a75adcacbc1c835ee8d61dea4"
+trial = 3952247
+
+    [witnesses.normalization]
+    coefficients = [14, 1, 22, 17, 52, 8]
+    evaluations = 378
+    k = 0
+    t = 0
+[[witnesses]]
+coefficients = [58, 15, 1, 8, 36, 33]
+columns = [54, 63, 34, 60, 55, 5, 3093, 681, 2825, 3360, 553, 2416]
+constant = 0
+images = [57, 14, 34, 56, 61, 41]
+name = "2.9"
+nullity = 1
+source_sha256 = "a21b7776e4b92a8e9775ca2934776210bf3dc1b8f9606de859964ef060479d61"
+target_sha256 = "52bc3b632a923ecd6c1f26ef56da1a8cc9661e6a75adcacbc1c835ee8d61dea4"
+trial = 12297460
+
+    [witnesses.normalization]
+    coefficients = [24, 1, 1, 27, 20, 48]
+    evaluations = 378
+    k = 21
+    t = 4

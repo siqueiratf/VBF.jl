@@ -2,6 +2,21 @@
 
 F071 additional evidence: both admissible n=12 Frobenius representatives (s=5 and11) are tested; a bounded coefficient-grid command now exposes 241 admissible pairs per s. Table 2 now builds the literal u^290 term with the correct power index. `make family_separation` independently computes distinct full ortho-derivative signatures for all four Table 2 representatives, proving all six pairwise CCZ inequivalences. This does not compare them to every earlier construction or establish global novelty.
 
+F071 follow-up: all four admissible n=15 exponents `s=1,4,7,13` were checked
+with fixed verified primitive `u` and the declared polynomial basis. Each full
+subfield coefficient grid contains **993** admissible `(v,w)` pairs, and every
+constructed function passed the exact quadratic-APN predicate. This exhausts
+those four fixed-parameter grids; it neither classifies their equivalence classes
+nor compares every earlier construction. Source/input hashes and execution logs
+are retained by VBFRepro.
+
+```sh
+bin/vbfrepro run Bracken_201103 --target parameter_sweep --param k=5 \
+  --param s=1 --param full_search=true --param timeout_seconds=300 \
+  --timeout-seconds 360
+# Repeat with s=4,7,13.
+```
+
 Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 43 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Bracken_201103/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. Historical catalog-gap LUT proposals were regenerated through Julia; see [F060 evidence](../../../../../audit/revalidated_luts.toml). This verifies their APN property and exact encodings; it does not establish novelty against the current reference corpus.
 
 

@@ -58,7 +58,7 @@
           Set([sigma_hash(sbox_from_exponents(7, [3, 5, 9, 40, 96]))])
 end
 
-@testset "Algorithm1 substituted traversal preserves uncertainty" begin
+@testset "Algorithm1 traversal preserves uncertainty" begin
     bounded = algorithm1_run(6; max_evaluations = 1)
     @test bounded isa BudgetHit
     @test !proves_emptiness(bounded)
@@ -68,4 +68,45 @@ end
     confirmed = algorithm1_run(3; confirm = true, max_evaluations = 10000)
     @test confirmed isa Exhausted
     @test confirmed.region.params["solution_unit"] == "ea_class"
+end
+
+@testset "Algorithm1 exact prefix pruning and Frobenius quotient" begin
+    # Compare actual accepted matrices, before invariant bucketing. At n=5 the
+    # complete nonzero cyclic-entry domain has 31² matrices; zero entries cannot
+    # occur in a QAM, because its first row has n-1 independent nonzero entries.
+    function matrices(n;prune,orbit_reduction)
+        seen=Set{Tuple}()
+        stats=algorithm1_search(n;prune,orbit_reduction,max_evaluations=100000,
+            observer=(event,H)->push!(seen,Tuple(vec(H))))
+        @test stats.outcome isa Exhausted
+        (;seen,stats)
+    end
+    raw=matrices(5;prune=false,orbit_reduction=false)
+    pruned=matrices(5;prune=true,orbit_reduction=false)
+    @test !isempty(raw.seen)
+    @test raw.seen == pruned.seen
+    @test pruned.stats.final_tests < raw.stats.final_tests
+    odometer=Set{Tuple}()
+    for a in 0:31,b in 0:31
+        H=qam_from_cyclic(5,1,[a,b])
+        is_qam(H) && push!(odometer,Tuple(vec(H)))
+    end
+    @test odometer == raw.seen
+    # Every retained orbit-representative APN expands to exactly the complete
+    # accepted matrix set under entrywise Frobenius (Proposition 1).
+    quotient=matrices(5;prune=true,orbit_reduction=true)
+    expanded=Set{Tuple}()
+    for H in quotient.seen,t in 0:4
+        push!(expanded,Tuple(gf_pow(v,1 << t,5) for v in H))
+    end
+    @test expanded == raw.seen
+    @test quotient.stats.prefixes < pruned.stats.prefixes
+    @test !algorithm1_is_proper(zeros(Int,2,3),5)
+    sample=reshape(collect(first(raw.seen)),5,5)
+    @test algorithm1_is_proper(view(sample,1:2,1:3),5)
+    @test rank_f2(UInt.(sample[1,2:end]);nbits=5)==4
+    @test_throws ArgumentError algorithm1_run(1)
+    @test_throws ArgumentError algorithm1_run(5;max_evaluations=-1)
+    @test algorithm1_search(6;max_evaluations=0).implementation == :even_dimension_odometer
+    @test !is_exhausted(algorithm1_run(5;max_evaluations=0))
 end

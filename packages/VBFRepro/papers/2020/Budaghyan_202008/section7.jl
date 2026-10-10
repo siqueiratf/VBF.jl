@@ -19,7 +19,8 @@
 #        re-verifies the 2006 function; the paper's claim (that it arises as an
 #        isotopic shift G_{3,L}, k=4, m=2) is NOT reproduced — see README R8.
 #   Section VII-D (n=6):
-#     6. Scan all 1-term shifts G_{1,L}, L(x) = u·x^{2^j}, and collect EA-classes.
+#     6. Replay exact EA witnesses for each of13namedquadraticTable5rows,
+#        from both permutation and2-to-1 linear L (section7d.jl).
 # VBF API used: apn_ea_mugshot, algebraic_degree, SBox, differential_uniformity,
 #               gold_apn, terms_to_lut, gf_trace, load_apn_function (VBFCatalog)
 
@@ -162,7 +163,7 @@ the non-Gold quadratic APN classes over GF(2⁶)).
 It is **not** a test of Section VII-D.  Section VII-D claims that *every*
 quadratic APN over GF(2⁶) is EA-equivalent to an isotopic shift of x³, which
 needs a search over general linear L (GL(6,2) ∪ 2-to-1 maps, ~2³⁶ maps) modulo
-the Proposition VI.1 normalisation — neither is implemented here (README R6).
+the Proposition VI.1 normalisation — the bounded discovery and exact finite coverage witnesses are now implemented in section7d.jl. Exhausting all linear maps is not required for the named existential claim.
 """
 function section7_check_n6_1term_shift_classes(; io::IO = devnull)
     n  = 6
@@ -195,16 +196,19 @@ function section7_check_n6_1term_shift_classes(; io::IO = devnull)
     print_kv(io, "note",
         "NOT Section VII-D: that claim (every quadratic APN over GF(2⁶) is an " *
         "isotopic shift of x³) needs general linear L (~2³⁶) + Prop. VI.1 " *
-        "normalisation — not implemented (README R6)")
+        "normalisation; see section7d.jl for26exactEAcoveragewitnesses")
 
     (; nclasses, gold_reachable, only_gold)
 end
+
+include(joinpath(@__DIR__,"section7d.jl"))
 
 function section7_report(io::IO = stdout)
     print_section(io, "Section VII: Computational Results")
     section7_check_n8_reference(; io)
     section7_check_n9_inequivalence(; io)
     section7_check_n6_1term_shift_classes(; io)
+    section7d_report(io)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

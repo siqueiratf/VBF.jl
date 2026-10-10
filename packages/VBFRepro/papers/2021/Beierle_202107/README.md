@@ -1,23 +1,72 @@
 # Beierle_202107 — Linearly Self-Equivalent APN Permutations in Small Dimension
 
-Current audit (2026-10-10): bounded Algorithm1 outcomes already distinguish
-Found, Exhausted and BudgetHit. Additional tests pin zero-time uncertainty and
-completed small searches. Region evidence now records the actual input/output
-linear LUTs, initial partial LUT, and verification/reduction settings; an empty
-bounded result never proves absence outside that specified region. Commutant
-quotient and extendability seeding are still missing, so the paper's pruned
-Algorithm1 traversal and global table-negative claims are not reproduced.
+Current audit application (2026-10-10): F064 is now reproduced freshly in all
+three dimensions. Generation yields **17/27/32** classes for n=6/7/8 and exact
+extended-power-similarity class-set agreement with the historical constants.
+Measured after Julia startup: 1.24 s / 0.40 s / 0.48 s. The generator removes a redundant
+fixed-point scan (equal permutation cycle multisets already determine every
+Ord dimension) and caches the exact Definition3 simultaneous-power class key.
+For odd prime order, characteristic polynomials determine similarity because
+X^p−1 is squarefree; for order 2, rank(M−I) determines the involution type.
+Tests compare these keys to the previous similarity routine. Historical tuple
+orientation/order is untouched. These are **linear-automorphism tuple classes,
+not APN equivalence classes**.
 
-`generate_tuple_matrix_constants_file(n;output=...,full_search=false)` now
-regenerates tuple classes into an explicit output file. n6 generation and
-extended-power-similarity class-set agreement with the committed17blocks are
-tested. n7/n8 regeneration is opt-in (`VBF_REPRO_FULL_SEARCH=true` in tests),
-with expected27/32 assertions enabled there. Generated representatives/order
-are not assumed byte-identical to the historical file: blocks17–19 in n7 use
-reciprocal representatives and block18 has the documented orientation anomaly.
-This is BBL2021 APN-permutation numbering, separate from the quadratic-APN tuple
-catalog of Beierle–Leander2022. No historical constants were silently rewritten.
-The dated review below is historical; this status supersedes resolved plans.
+F020's missing reductions are implemented: Lemma5 accepts verified commuting
+linear permutations and rejects a branch only when a fully known shared prefix
+proves that a transformed completion is smaller. Unknown entries stop the
+comparison. A supplied seed restricts pruning to transformations preserving its
+domain and values. The threshold `pruning_depth` implements the paper's optional
+early-depth check; this need not yield exactly one representative per class.
+
+Definition5/Lemma6 has a constructive, verified implementation for identity
+matrices with fixed-space dimension ≤3 and paired square-zero involutions
+(im(M+I)=ker(M+I), dimension ≤3). This covers n=6 Class 14: all 168 GL(3,2) restrictions have
+invertible commuting lifts, and x³ can be fixed on the eight fixed points.
+The uniqueness premise is independently verified by enumerating all 7! zero-fixing
+3-bit permutations using the full public DDT: their 1344 APN members are exactly
+GL(3,2)∘x³∘GL(3,2). Unsupported Jordan types are rejected, rather than assumed extendable.
+This seeding preserves **existence up to affine equivalence**, not every literal LUT.
+It requires an otherwise unassigned initial LUT (only F(0)=0 may be present).
+Custom nonzero-point assignments are rejected, even if compatible with the fixed
+restriction, because the affine normalization need not preserve them. Ordinary
+commutant pruning still permits custom seeds using only seed-stabilizing maps.
+
+A 45-second-per-class reduced n=6 replay exhausted classes 1,2,3,7,15 with no solutions;
+classes 10,11,14 hit their time budget. **Theorem 1's exhaustive uniqueness and the
+full Table 1 search-negative columns remain unverified**. No n=7/8 exhaustive
+Algorithm1 classifications were run. The active report now states these limits
+and treats nonquadratic degree/delta-rank agreement as inconclusive equivalence
+evidence. The dated review below is historical and superseded by this status.
+
+Reproduce tuple generation (outputs are ignored):
+
+```sh
+make -C packages/VBFRepro/papers/2021/Beierle_202107 corollary1_n6n7n8 n=7 full_search=true
+make -C packages/VBFRepro/papers/2021/Beierle_202107 corollary1_n6n7n8 n=8 full_search=true
+```
+
+Replay reduced searches with explicit persisted outcome evidence:
+
+```sh
+make -C packages/VBFRepro/papers/2021/Beierle_202107 algorithm1 n=6 class_indices=1,2,3,7,10,11,15,14 timeout_seconds=45 save_results=false save_evidence=true
+```
+
+`results/algorithm1_outcomes.toml` records actual input/output maps, seeds,
+verified commutant subsets, reduction settings, visited/pruned node counts,
+solutions, and three-case outcomes. `save_evidence=false` is the default.
+The VBFRepro runner additionally records configuration, source hashes and logs.
+The API defaults to no reductions; the named Make target enables verified
+commutant subsets and Class 14 seeding. Other classes use only the identity and
+supplied automorphism as safe commutant subsets, not the entire commutant.
+
+```julia
+using VBFRepro
+run_paper("Beierle_202107"; target="algorithm1", parameters=Dict(
+    "n"=>"6", "class_indices"=>"1,2,3,7,10,11,15,14",
+    "timeout_seconds"=>"45", "save_results"=>"false", "save_evidence"=>"true"),
+    timeout_seconds=240)
+```
 
 **Paper**: Beierle, Brinkmann, Leander. "Linearly Self-Equivalent APN Permutations in
 Small Dimension." IEEE Transactions on Information Theory, 2021.

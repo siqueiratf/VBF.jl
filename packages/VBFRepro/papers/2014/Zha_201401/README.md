@@ -11,11 +11,26 @@ shows the mismatch. Equal NL=110 invalidates the paper's stated nonlinearity
 separation from reference [16]; it does **not** establish CCZ equivalence.
 A concrete earlier inverse-swap control, `Yuyin_201300.inverse_swap(1,32,8)`
 with modulus 283, has du=4 and NL=110 but a different differential spectrum,
-proving separation from that one reference. Separation from the entire cited
-family and the headline literature novelty claim remain unresolved. The cube
+proving separation from that one reference. `proposition5.jl` now checks the
+entire cited inverse two-point-swap family at n=8: 255 normalized LUTs, all
+32,640 unordered pairs (including zero), and all 8,355,840 scaling-identity
+graph points. The source trace conditions select 9,180 DU4 pairs among 32,385
+nonzero pairs. Exact differential and absolute-Walsh spectra separate all 18
+nonzero-scalar Zha instances from this entire finite family and its affine
+equivalents. Unequal invariants prove CCZ inequivalence; equal invariants never
+prove equivalence. These are DU4 permutations, so no quadratic-APN theorem is
+used. The broader claim of separation from every earlier construction remains
+unresolved. The cube
 root helper now selects a verified primitive element rather than assuming
 integer 2 generates the multiplicative group.
 
+
+Run the bounded comparison with `make -C packages/VBFRepro/papers/2014/Zha_201401 proposition5 timeout_seconds=60 save_results=true`.
+Evidence is optional under `results/proposition5.toml`; an interrupted run is
+reported as inconclusive. The earlier source is [Yu, Wang and Li, IACR 2011/047](https://eprint.iacr.org/2011/047.pdf), Section 4,
+Proposition 4, Theorem 1, Corollary 1 and Remark 2. The local earlier-paper source
+is absent; these hypotheses were checked against that original public PDF.
+The historical review below predates this finite-family extension.
 
 **Citation**: Z. Zha, L. Hu, S. Sun, *Constructing new differentially 4-uniform
 permutations from the inverse function*, Finite Fields and Their Applications
