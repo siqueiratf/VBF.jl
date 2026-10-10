@@ -73,12 +73,11 @@ All inputs and evidence stay on the server you run.
 | Absent signature in a reference | Inequivalent to that documented quadratic corpus; does not establish literature-wide novelty |
 
 Every verdict retains its reference scope and provenance. See the
-[research audit](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFSearch/AUDIT.md)
-for outstanding coverage gaps. Recheck a downloaded certificate independently:
+[Search guarantees](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFSearch/README.md)
+for outstanding coverage gaps. Check a downloaded certificate through VBF:
 
 ```sh
-julia --startup-file=no \
-  packages/VBFSearch/src/verification/verify_certificate.jl comparison.toml
+bin/vbf verify comparison.toml
 ```
 
 Publication tables and standalone figures come from `bin/vbf report`.

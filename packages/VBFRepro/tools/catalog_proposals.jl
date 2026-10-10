@@ -1,5 +1,5 @@
 # Read-only revalidation of the 32 historical F063 proposals. Root Julia project.
-# Full invariants are filters. Positive graph maps are independently replayed.
+# Full invariants are filters. Positive graph maps are checked through VBF.
 using VBF, VBFCatalog, VBFSearch, VBFRepro, SHA, TOML
 using VBFSearch.APNPowerEvidence
 const PROPOSAL_PAPERS=VBFRepro.papers_root()
@@ -134,7 +134,7 @@ function finite_catalog_disposition(checks)
     "comparison_incomplete"
 end
 
-"""Use the existing digest-bound n8 snapshot and independent n8 evidence machinery.
+"""Use the existing digest-bound n8 snapshot and VBF-backed n8 evidence machinery.
 The union is already computed. Only its indexed membership is queried; no corpus
 LUT/signature regeneration. Missing or changed snapshots remain unavailable.
 """
@@ -145,7 +145,7 @@ function archived_n8_proposal_evidence(F,reference_dir::AbstractString)
         evidence=VBFSearch.classify(F.lut,r)
         Dict{String,Any}("status"=>"available","reference"=>VBFCatalog.reference_metadata(r),
             "candidate_sha256_uint16_le"=>proposal_lut_sha(F),
-            "independent_n8_properties"=>evidence,"literature_novelty_verified"=>false)
+            "n8_properties"=>evidence,"literature_novelty_verified"=>false)
     catch error
         error isa InterruptException && rethrow()
         Dict{String,Any}("status"=>"unavailable","reason"=>sprint(showerror,error),

@@ -133,3 +133,5 @@ export QuadraticAPNTree, QuadraticRestrictions, QuadraticProfiles
 
 # Mathematical invariant keys (catalog indexes are in VBFCatalog).
 export sigma_key, sigma_hash, ccz_fingerprint_key, ccz_fingerprint_hash
+
+export biprojective_sbox

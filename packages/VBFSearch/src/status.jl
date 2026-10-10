@@ -8,11 +8,9 @@ function status(dir)
     try
         foreach(_->nothing,DBI.execute(db,"BEGIN"))
         config=TOML.parse(scalar("SELECT value FROM metadata WHERE key='run'"))["identity"]["configuration"]
-        units=Dict(String(r.status)=>Int(r.c) for r in rows("SELECT status,COUNT(*) c FROM units GROUP BY status"))
-        candidates=scalar("SELECT COUNT(*) FROM candidates")
-        additional=scalar("SELECT COUNT(DISTINCT sigma) FROM candidates WHERE additional=1")
-        exhausted=scalar("SELECT COUNT(*) FROM metadata WHERE key='plan_complete'")>0 &&
-            sum(values(units))>0 && get(units,"done",0)==sum(values(units))
+        progress=DiscoveryStore.snapshot(db)
+        units=progress["units"];candidates=progress["exact_luts"]
+        additional=progress["additional_signature_buckets"];exhausted=progress["finite_plan_exhausted"]
         println("Run: ",abspath(dir));println("Method: ",config["method"])
         println("Exact candidate LUTs: $candidates; additional signatures: $additional")
         println("Work units: ",join(["$k=$(get(units,k,0))" for k in ("done","pending","paused","running")],", "))

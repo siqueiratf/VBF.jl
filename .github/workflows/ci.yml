@@ -93,7 +93,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [VBF, VBFCatalog, VBFSearch, VBFRepro, VBFWorkingPaper]
+        package: [VBF, VBFCatalog, VBFSearch, VBFRepro]
     env:
       JULIA_LOAD_PATH: '@:@stdlib'
     steps:

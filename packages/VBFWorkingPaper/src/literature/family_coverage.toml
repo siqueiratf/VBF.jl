@@ -12,7 +12,7 @@ name = "APN power functions, including unknown power families"
 status = "theorem_and_finite_check"
 domains = ["power"]
 source = "https://link.springer.com/article/10.1007/s10801-016-0680-z"
-argument = "Yoshiara 2016 Theorem 2 reduces quadratic APN versus arbitrary APN power functions to EA versus Gold. Gold k=1,3,5,7 are independently checked by open_reference. The extra exponent enumeration checks every function x^d, d=1..255, over GF(256)."
+argument = "Yoshiara 2016 Theorem 2 reduces quadratic APN versus arbitrary APN power functions to EA versus Gold. Gold k=1,3,5,7 are checked through VBF by open_reference. The extra exponent enumeration checks every function x^d, d=1..255, over GF(256)."
 
 [[coverage]]
 name = "F1-F2 binomials"
@@ -115,7 +115,7 @@ name = "Shi-Peng-Zheng 2025 generalized bivariate family"
 status = "finite_domain_check"
 domains = ["shi_peng_zheng"]
 source = "https://www.jstage.jst.go.jp/article/transfun/E108.A/9/E108.A_2025EAL2001/_pdf"
-argument = "k=1,3,5,7 exhaust the dimension-eight formula: Frobenius powers repeat modulo 4 and eight consecutive summands cancel. Prior literature checks also save independently verified EA witnesses for all four."
+argument = "k=1,3,5,7 exhaust the dimension-eight formula: Frobenius powers repeat modulo 4 and eight consecutive summands cancel. Historical reports contain EA witnesses for these cases; current comparisons use VBFSearch."
 
 [[coverage]]
 name = "Gologlu-Kolsch new F4 biprojective family"
@@ -146,7 +146,7 @@ argument = "Published concrete instances and released corpora are covered by the
 name = "Baudrin-Galissant-Perrin 2026 complete switching output"
 status = "unresolved_data_availability"
 source = "https://314gali.github.io/files/2026-04-03_APN_exploration_C2.pdf"
-argument = "The one published LUT is independently checked and included as a supplement. The full announced quadratic-CCZ representative list has not been obtained. Need a public release or author-supplied representatives with provenance, then recompute every signature."
+argument = "The one published LUT is checked through VBF and included as a supplement. The full announced quadratic-CCZ representative list has not been obtained. Need a public release or author-supplied representatives with provenance, then recompute every signature."
 
 [[coverage]]
 name = "Other published nonquadratic non-power representatives"

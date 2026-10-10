@@ -17,7 +17,7 @@ function candidate_lut(encoded)
     UInt8.(VBF.QuadraticAPNTree.lut(VBF.QuadraticAPNTree.decode_coeffs(encoded,8),8))
 end
 
-"""Materialize catalog seeds with exact LUT identity and independent verification."""
+"""Materialize catalog seeds with exact LUT identity and VBF verification."""
 function catalog_seeds(path)
     catalogpath=VBFCatalog.catalog_path()
     db=SQLite.DB("file:"*abspath(catalogpath)*"?mode=ro")
@@ -87,37 +87,21 @@ end
 
 source_fingerprint(paths)=Dict(string(i)*":"*basename(p)=>filehash(p) for (i,p) in enumerate(paths))
 
-"""Reuse only a completed, digest-matching independent report; verify every other supplied record."""
-function validated_study(paths,baseline; reuse=true)
-    reportpath=joinpath(baseline,"candidate_comparison.toml")
-    trusted=Set{String}()
-    if reuse && isfile(reportpath)
-        report=TOML.parsefile(reportpath)
-        report["signature_mismatches"]==0 || error("prior verification report contains signature mismatches")
-        report["fresh_union_sha256"]==filehash(joinpath(baseline,"fresh_union.sqlite")) || error("prior candidate report reference changed")
-        union!(trusted,values(report["candidate_sha256"]))
-    end
-    known=Set{String}()
-    proofs=Dict{String,Any}[]
+"""Validate each supplied LUT and signature using VBF, binding the result to its file digest."""
+function validated_study(paths)
+    known=Set{String}();proofs=Dict{String,Any}[]
     for path in paths
-        digest=filehash(path)
-        reused=digest in trusted
-        records=0
+        digest=filehash(path);records=0
         each_candidate(path) do row
-            hash=row.hash
-            if !reused
-                p=properties(candidate_lut(row.payload))
-                p["apn"] && p["quadratic"] || error("invalid quadratic-APN study input $path:$(row.line)")
-                p["sigma_hash"]==hash || error("stored signature mismatch $path:$(row.line)")
-            end
-            push!(known,hash);records+=1
+            p=properties(candidate_lut(row.payload))
+            p["apn"] && p["quadratic"] || error("invalid quadratic-APN study input $path:$(row.line)")
+            p["sigma_hash"]==row.hash || error("stored signature mismatch $path:$(row.line)")
+            push!(known,row.hash);records+=1
         end
-        filehash(path)==digest || error("study input changed during verification: $path")
-        push!(proofs,Dict("path"=>abspath(path),"sha256"=>digest,"records"=>records,
-            "verification"=>reused ? "digest-bound independent candidate report" : "independent full DDT, degree and polar/signature recheck"))
+        filehash(path)==digest || error("study input changed during validation: $path")
+        push!(proofs,Dict("path"=>abspath(path),"sha256"=>digest,"records"=>records,"verification"=>"VBF properties and sigma hash"))
     end
-    known,Dict("sources"=>proofs,"prior_report_sha256"=>isfile(reportpath) ? filehash(reportpath) : "none",
-        "distinct_signatures"=>length(known))
+    known,Dict("sources"=>proofs,"distinct_signatures"=>length(known))
 end
 
 include("provenance.jl")

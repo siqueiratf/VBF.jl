@@ -34,13 +34,9 @@ isdefined(@__MODULE__, :encode_coeffs) || include(joinpath(@__DIR__, "helpers.jl
 using Random
 using Printf
 using Base.Threads
+using VBFSearch: DiscoveryStore, DiscoveryEvidence
 
-"""
-    probe_to_penultimate(rng, n, m) -> (logw, C)
-
-Knuth probe down to `n-1` variables. `logw = sum log d_k`, or `-Inf` on a dead end.
-"""
-probe_to_penultimate(rng,n::Int,m::Int) = VBF.QuadraticAPNTree.probe_to_penultimate(rng,n,m)
+using VBF.QuadraticAPNTree: probe_to_penultimate
 
 """
     sample_line(rng, i, n, m) -> String
@@ -117,43 +113,39 @@ with `samples` lines from `streams` RNG streams. An existing chunk is kept (the 
 resumes). `threads` must equal `Threads.nthreads()`.
 """
 function run_sampling(; outdir::AbstractString, first_seed::Int, nchunks::Int, samples::Int,
-                      threads::Int, streams::Int = threads, n::Int = 8, m::Int = 8,
-                      io::IO = stdout)
+                      threads::Int, streams::Int=threads, n::Int=8, m::Int=8, io::IO=stdout)
     _check_threads(threads)
-    nchunks >= 0 || throw(ArgumentError("nchunks must be >= 0"))
-    samples > 0 || throw(ArgumentError("samples must be > 0"))
-    for s in first_seed:first_seed + nchunks - 1
-        path = joinpath(outdir, "c$(s).tsv")
-        if isfile(path)
-            println(io, "skip  ", path, " (exists)")
-            continue
+    nchunks>=0 && samples>0 && streams>0 || throw(ArgumentError("invalid sampling limits"))
+    mkpath(outdir)
+    identity=Dict("n"=>n,"m"=>m,"samples"=>samples,"streams"=>streams,
+        "julia_version"=>string(VERSION),"vbf_sha256"=>DiscoveryEvidence.solver_fingerprint(),
+        "sampler_sha256"=>DiscoveryEvidence.filehash(@__FILE__),
+        "helpers_sha256"=>DiscoveryEvidence.filehash(joinpath(@__DIR__,"helpers.jl")))
+    ledgerpath=joinpath(outdir,"sampling.toml")
+    # Share the existing exclusive writer lease convention; the chunk manifest is small.
+    lease=open(joinpath(outdir,"writer.lock"),"a+")
+    ccall(:flock,Cint,(Cint,Cint),fd(lease),6)==0 || (close(lease);error("another sampler owns this output"))
+    try
+        !isfile(ledgerpath) && any(f->endswith(f,".tsv"),readdir(outdir)) && error("existing samples have no configuration manifest; use a fresh directory")
+        ledger=isfile(ledgerpath) ? TOML.parsefile(ledgerpath) : Dict("identity"=>identity,"chunks"=>Dict{String,Any}())
+        ledger["identity"]==identity || error("sampling configuration or implementation changed; use a fresh directory")
+        DiscoveryStore.atomic_toml(ledgerpath,ledger)
+        for seed in first_seed:first_seed+nchunks-1
+            name="c$(seed).tsv";path=joinpath(outdir,name)
+            if haskey(ledger["chunks"],name)
+                isfile(path) && DiscoveryEvidence.filehash(path)==ledger["chunks"][name] || error("completed chunk changed: $path")
+                println(io,"skip ",path," (configuration and digest match)");continue
+            end
+            # A crash between the chunk rename and manifest update repeats only that chunk.
+            t=@elapsed lines=sample_chunk(samples,seed;n,m,streams)
+            write_chunk(path,lines)
+            ledger["chunks"][name]=DiscoveryEvidence.filehash(path)
+            DiscoveryStore.atomic_toml(ledgerpath,ledger)
+            @printf(io,"wrote %s (n,m)=(%d,%d) samples=%d streams=%d [%.1fs]\n",path,n,m,samples,streams,t)
+            flush(io)
         end
-        t = @elapsed lines = sample_chunk(samples, s; n, m, streams)
-        write_chunk(path, lines)
-        nh = count(l -> split(l, '\t')[3] != "0", lines)
-        @printf(io, "wrote %s  (n,m)=(%d,%d) samples=%d hits=%d threads=%d streams=%d [%.1fs]\n",
-                path, n, m, samples, nh, threads, streams, t)
-        flush(io)
+    finally
+        close(lease)
     end
     nothing
-end
-
-"""
-    reproduce_check(; ref, seed, samples, threads, streams = threads, n = 8, m = 8, outdir) -> Bool
-
-Regenerate one chunk and compare it byte for byte with the reference file `ref`.
-"""
-function reproduce_check(; ref::AbstractString, seed::Int, samples::Int, threads::Int,
-                         streams::Int = threads, n::Int = 8, m::Int = 8,
-                         outdir::AbstractString, io::IO = stdout)
-    _check_threads(threads)
-    isfile(ref) || error("reference file not found: $ref")
-    path = joinpath(outdir, "c$(seed).tsv")
-    t = @elapsed write_chunk(path, sample_chunk(samples, seed; n, m, streams))
-    same = read(path) == read(ref)
-    @printf(io, "regenerated %s  (seed=%d samples=%d threads=%d streams=%d (n,m)=(%d,%d)) [%.1fs]\n",
-            path, seed, samples, threads, streams, n, m, t)
-    println(io, "reference   ", ref)
-    println(io, same ? "byte-identical: YES" : "byte-identical: NO")
-    same
 end

@@ -29,7 +29,7 @@ function search(config::SearchConfig)
     reference=open_reference(config.reference;supplement_path=config.supplement)
     store=nothing
     try
-    known,validation=validated_study(paths,config.reference)
+    known,validation=validated_study(paths)
     semantic=Dict(k=>cfg[k] for k in ("method","limit","seed","target-b6","v5-bent","orbit-seconds","ea-representatives"))
     identity=Dict("configuration"=>semantic,"inputs"=>source_fingerprint(paths),"code"=>code_identity(),
         "reference"=>Dict(k=>VBFCatalog.reference_metadata(reference)[k] for k in ("sha256","manifest_sha256","supplement_sha256","signatures")),

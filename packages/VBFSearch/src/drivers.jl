@@ -1,4 +1,4 @@
-"""Execute one bounded construction unit; persistence and independent evidence stay in the application."""
+"""Execute one bounded construction unit; persistence and candidate evidence stay in the application."""
 function process_unit!(store,unit,config;reference,geometry,work,known,remaining,stop_wanted)
     localref=reference
     payload=DiscoveryStore.parse_toml(unit["payload"])
@@ -65,7 +65,7 @@ function process_unit!(store,unit,config;reference,geometry,work,known,remaining
         callback=function(event,value)
             p=event===:candidate_complete ? classify(value.candidate.lut,localref) : nothing
             if p!==nothing
-                p["apn"]==value.apn || error("independent APN test disagrees")
+                p["apn"]==value.apn || error("APN result disagrees with VBF")
                 p["role"]="generated"
                 p["additional_signature"]=p["apn"] && p["quadratic"] && !p["reference_signature_match"] && !(p["sigma_hash"] in known)
             end

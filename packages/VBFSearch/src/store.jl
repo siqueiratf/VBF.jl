@@ -21,7 +21,8 @@ struct Store
     path::String
 end
 execute!(db,args...) = (foreach(_->nothing,DBI.execute(db,args...)); nothing)
-query(s,sql,args=()) = [Dict(String(k)=>v for (k,v) in pairs(r)) for r in DBI.execute(s.db,sql,args)]
+query(s::Store,sql,args=()) = query(s.db,sql,args)
+query(db::SQL.DB,sql,args=()) = [Dict(String(k)=>v for (k,v) in pairs(r)) for r in DBI.execute(db,sql,args)]
 
 function transaction(f,s)
     lock(s.guard) do
@@ -207,16 +208,15 @@ function finish!(s,unit,result;done=false)
     end
 end
 
-function snapshot(s)
-    lock(s.guard) do
-        statuses=Dict(String(r["status"])=>Int(r["count"]) for r in query(s,"SELECT status,COUNT(*) count FROM units GROUP BY status"))
-        count=Int(only(query(s,"SELECT COUNT(*) c FROM candidates"))["c"])
-        absent=Int(only(query(s,"SELECT COUNT(DISTINCT sigma) c FROM candidates WHERE reference_absent=1"))["c"])
-        additional=Int(only(query(s,"SELECT COUNT(DISTINCT sigma) c FROM candidates WHERE additional=1"))["c"])
-        Dict("units"=>statuses,"exact_luts"=>count,"corpus_absent_signature_buckets"=>absent,
-            "additional_signature_buckets"=>additional,
-            "finite_plan_exhausted"=>!isempty(query(s,"SELECT value FROM metadata WHERE key='plan_complete'")) && !isempty(statuses) && get(statuses,"done",0)==sum(values(statuses)),
-            "all_apn_classification"=>false,"literature_novelty"=>"unresolved")
-    end
+snapshot(s::Store) = lock(() -> snapshot(s.db), s.guard)
+function snapshot(s::SQL.DB)
+    statuses=Dict(String(r["status"])=>Int(r["count"]) for r in query(s,"SELECT status,COUNT(*) count FROM units GROUP BY status"))
+    count=Int(only(query(s,"SELECT COUNT(*) c FROM candidates"))["c"])
+    absent=Int(only(query(s,"SELECT COUNT(DISTINCT sigma) c FROM candidates WHERE reference_absent=1"))["c"])
+    additional=Int(only(query(s,"SELECT COUNT(DISTINCT sigma) c FROM candidates WHERE additional=1"))["c"])
+    Dict("units"=>statuses,"exact_luts"=>count,"corpus_absent_signature_buckets"=>absent,
+        "additional_signature_buckets"=>additional,
+        "finite_plan_exhausted"=>!isempty(query(s,"SELECT value FROM metadata WHERE key='plan_complete'")) && !isempty(statuses) && get(statuses,"done",0)==sum(values(statuses)),
+        "all_apn_classification"=>false,"literature_novelty"=>"unresolved")
 end
 end

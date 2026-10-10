@@ -1,4 +1,4 @@
-"""Independently verify a candidate's full DDT, ANF degree and quadratic signature."""
+"""Use VBF to verify a candidate's full DDT, ANF degree and quadratic signature."""
 candidate_properties(lut; detailed=false) = properties(lut; detailed)
 
 """Request cooperative stopping at the next supported checkpoint boundary."""
@@ -16,7 +16,7 @@ audit(directory; reference=get(ENV,"VBF_APN_REFERENCE",DEFAULT_REFERENCE),
 """
     validate(inputs; output, reference=..., supplement=..., limit=0)
 
-Independently validate TSV inputs and persist exact LUTs and scoped reference
+Validate TSV inputs and persist exact LUTs and scoped reference
 evidence. Zero limit checks every input row; a positive limit records partial coverage.
 """
 function validate(inputs;output,reference=get(ENV,"VBF_APN_REFERENCE",DEFAULT_REFERENCE),
@@ -28,7 +28,7 @@ function validate(inputs;output,reference=get(ENV,"VBF_APN_REFERENCE",DEFAULT_RE
     store=nothing
     total=0
     try
-        identity=Dict("method"=>"historical_import","inputs"=>source_fingerprint(paths),
+        identity=Dict("method"=>"validation_import","inputs"=>source_fingerprint(paths),
             "reference"=>VBFCatalog.reference_metadata(ref),"code"=>implementation_fingerprint(),"limit"=>limit)
         store=open_store(output,identity)
         for path in paths
@@ -46,7 +46,7 @@ function validate(inputs;output,reference=get(ENV,"VBF_APN_REFERENCE",DEFAULT_RE
                 filehash(path)==digest || error("input changed during validation: $path")
             end
         end
-        summary=merge(snapshot(store),Dict("records_independently_verified"=>total,
+        summary=merge(snapshot(store),Dict("records_verified"=>total,
             "complete_input_validation"=>limit==0,"generated_utc"=>string(Dates.now(Dates.UTC))))
         atomic_toml(joinpath(store.path,"validation.toml"),summary)
         summary
@@ -56,19 +56,11 @@ function validate(inputs;output,reference=get(ENV,"VBF_APN_REFERENCE",DEFAULT_RE
     end
 end
 
-"""Export publication tables, exact seed LUTs and figures; requires Python/matplotlib."""
-function report(directory;output=joinpath(directory,"publication"))
-    run(`python3 $(joinpath(@__DIR__,"report.py")) $directory $output`)
-    abspath(output)
+"""Check a saved comparison through the same VBF APIs used by Search."""
+function verify_certificate(path)
+    verify_comparison(TOML.parsefile(path)) || error("invalid or unresolved comparison certificate")
+    true
 end
-
-# This module is also runnable on its own with only Julia standard libraries.
-module CertificateVerification
-include("verification/verify_certificate.jl")
-end
-
-"""Independently recheck a saved graph witness or quadratic invariant separation."""
-verify_certificate(path) = CertificateVerification.independently_verify_certificate(path)
 
 """Dispatch the repository CLI using the same APIs as Julia and the inspector."""
 main(args=ARGS) = CLI.main(args)

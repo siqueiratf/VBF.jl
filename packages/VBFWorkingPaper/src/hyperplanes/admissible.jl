@@ -40,7 +40,7 @@ Writes hyperplane_theory/results/admissible.tsv.
 function admissible_report(; ns = 4:8, n7_per_class::Int = 3, n8_sample::Int = 100,
                            cap::Int = 2_000_000, seed::Int = 1, io::IO = stdout)
     rng = Xoshiro(seed)
-    out = joinpath(@__DIR__, "../../../../data/apn/runs/hyperplanes/admissible.tsv")
+    out = joinpath(@__DIR__, "../../../../data/working-paper/hyperplanes/admissible.tsv")
     mkpath(dirname(out))
     db = VBFCatalog.load_catalog()
     rows = String[]
@@ -96,59 +96,6 @@ function admissible_report(; ns = 4:8, n7_per_class::Int = 3, n8_sample::Int = 1
         foreach(r -> println(f, r), rows)
     end
     println(io, "wrote ", out)
-end
-
-"""
-    estimate_admissible(C, nv, m; probes, rng) -> (mean, se)
-
-Knuth estimate (METHOD.md, Theorem 3.5) of the number of admissible selections, on the
-same backtracking tree as `count_admissible` (levels = the b with dim Rad_b >= 2).
-"""
-function estimate_admissible(C::Matrix{UInt16}, nv::Int, m::Int; probes::Int = 2000,
-                             rng = Xoshiro(1), drop_whole::Bool = false)
-    1 <= nv <= 7 && 1 <= m <= 8 && probes>=2 || throw(ArgumentError("invalid dimensions/probe count"))
-    W = annihilators(C, nv, m)
-    W === nothing && throw(ArgumentError("expected APN coefficients"))
-    rad = radicals(W, nv, m)
-    npts = (1 << nv) - 1
-    big_b = [b for b in eachindex(rad) if length(rad[b]) >= 3]
-    c1 = zeros(Int, npts)
-    for b in eachindex(rad)
-        length(rad[b]) == 1 && (c1[rad[b][1]] += 1)
-    end
-    opts = [filter(!iszero, options(rad[b])) for b in big_b]
-    # drop_whole: valid when sum of minimal option sizes = number of points (n = 7: every b
-    # must take a single point, HYPERPLANE.md Lemma 3.5)
-    if drop_whole
-        sum(minimum(count_ones,o) for o in opts;init=0)==npts || throw(ArgumentError("whole-radical pruning premise is unproved for this input"))
-        opts = [o[2:end] for o in opts]
-    end
-    full = (UInt128(1) << npts) - 1
-    ws = Float64[]
-    for _ in 1:probes
-        covered = UInt128(0)
-        w = 1.0
-        for i in eachindex(opts)
-            ok = [o for o in opts[i] if o & covered == 0]
-            if isempty(ok)
-                w = 0.0
-                break
-            end
-            w *= length(ok)
-            covered |= ok[rand(rng, 1:length(ok))]
-        end
-        if w > 0
-            rest = full & ~covered
-            while rest != 0
-                p = trailing_zeros(rest) + 1
-                rest &= rest - 1
-                w *= c1[p]
-            end
-        end
-        push!(ws, w)
-    end
-    μ = sum(ws) / probes
-    (μ, sqrt(sum((ws .- μ) .^ 2) / (probes - 1) / probes))
 end
 
 "Knuth estimates of the admissible count for the n = 7 and n = 8 pairs of admissible.tsv."

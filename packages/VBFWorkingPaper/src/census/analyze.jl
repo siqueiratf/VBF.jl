@@ -96,7 +96,7 @@ function analyze_census(paths::AbstractVector{<:AbstractString};
     @printf(io, "weighted coverage  %.4f ± %.4f\n", c, sec)
     @printf(io, "mass from coverage %.4g ± %.3g ;  N >= mass + %.0f  ->  N(cov) = %.4g, N(mass) = %.4g\n",
             Mcov, seMcov, DELTA_KNOWN, Ncov, est.mass + DELTA_KNOWN)
-    @printf(io, "distinct new σ     %d  (repeats among new: %d)  [σ absent from the index]\n",
+    @printf(io, "distinct reference-absent σ     %d  (repeats among new: %d)  [σ absent from the index]\n",
             nnew, (nh - nk) - nnew)
     if new_path !== nothing
         mkpath(dirname(new_path))
@@ -105,11 +105,8 @@ function analyze_census(paths::AbstractVector{<:AbstractString};
                 println(f, h, '\t', cs[1])
             end
         end
-        println(io, "new σ list         ", new_path)
-        if isfile(NEW_CLASSES_FILE)
-            same = read(new_path) == read(NEW_CLASSES_FILE)
-            println(io, "new σ list vs new_classes_553.tsv: ", same ? "identical" : "differs")
-        end
+        println(io, "reference-absent σ list         ", new_path)
+
     end
     @printf(io, "[%.1fs]\n", time() - t0)
 

@@ -3,7 +3,7 @@ using VBFSearch, VBFCatalog
 using VBFSearch: properties, lut_id, each_candidate, validated_study, Fourier, DiscoveryStore, DiscoveryInputs, DiscoveryEvidence
 using VBFSearch.DiscoveryStore
 
-@testset "Independent APN properties and graph witnesses" begin
+@testset "VBF APN properties and graph witnesses" begin
     gold=gold_apn(8).lut
     p=properties(gold;detailed=true)
     @test p["apn"] && p["quadratic"] && p["differential_uniformity"]==2
@@ -67,7 +67,7 @@ end
     end
 end
 
-@testset "Input verification binds prior evidence and retains generation metadata" begin
+@testset "Input validation binds file digests and retains generation metadata" begin
     mktempdir() do d
         p=properties(gold_apn(8).lut)
         path=joinpath(d,"candidate.tsv")
@@ -75,11 +75,11 @@ end
         records=[]
         each_candidate(row->push!(records,row),path)
         @test only(records).fields["parent_sigma"]=="parent"
-        known,proof=validated_study([path],d;reuse=false)
+        known,proof=validated_study([path])
         @test known==Set([p["sigma_hash"]])
         @test only(proof["sources"])["records"]==1
         write(path,"sigma_hash\tlut_hex\n"*repeat("0",64)*"\t"*p["lut_hex"]*"\n")
-        @test_throws ErrorException validated_study([path],d;reuse=false)
+        @test_throws ErrorException validated_study([path])
     end
 end
 
@@ -198,7 +198,7 @@ end
 include("cli.jl")
 include("pipeline.jl")
 
-@testset "Generic independent graph evidence" begin
+@testset "Generic graph evidence" begin
     F=gold_apn(5);G=SBox{5}(F.lut .⊻ 3)
     A=F2AffineMap(identity_linear_map(10),3)
     @test verify_graph_witness(F,G,A)
@@ -210,4 +210,36 @@ include("pipeline.jl")
     @test !verify_ccz_witness(f,f,fill(0,10),0)
     @test !verify_ccz_witness(f[1:31],f[1:31],swap,0)
     @test !verify_ccz_witness(f,f,swap,1<<10)
+end
+
+@testset "Julia report snapshots live progress and exports reusable seeds" begin
+    mktempdir() do dir
+        store=DiscoveryStore.open_store(dir,Dict("test"=>"report"))
+        try
+            F=gold_apn(8);p=properties(F.lut)
+            DiscoveryStore.register!(store,p)
+            DiscoveryStore.seed!(store,F.lut,p["sigma_hash"],"switching")
+            before=DiscoveryStore.query(store,"SELECT * FROM units")
+            output=report(dir)
+            snapshot=report_snapshot(dir)
+            @test snapshot["counts"]["apn_luts"]==1
+            @test snapshot["units"]==Dict("pending"=>1)
+            @test !snapshot["finite_plan_exhausted"]
+            @test DiscoveryStore.query(store,"SELECT * FROM units")==before
+            rows=[];each_candidate(row->push!(rows,row),joinpath(output,"seeds.tsv"))
+            @test only(rows).payload==p["lut_hex"]
+            @test only(rows).hash==p["sigma_hash"]
+            @test isfile(joinpath(output,"snapshot.json"))
+            @test readlines(joinpath(output,"relationships.csv"))==["candidate_sha256,target_sha256,relation,status,equivalent"]
+            proof=compare(F.lut,F.lut)
+            certificate=joinpath(dir,"certificate.toml")
+            open(io->TOML.print(io,proof),certificate,"w")
+            @test verify_certificate(certificate)
+            proof["graph_map_constant"]=1
+            open(io->TOML.print(io,proof),certificate,"w")
+            @test_throws ErrorException verify_certificate(certificate)
+        finally
+            DiscoveryStore.close_store(store)
+        end
+    end
 end

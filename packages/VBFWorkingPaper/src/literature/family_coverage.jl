@@ -1,7 +1,7 @@
-"""Finite n=8 parameter coverage, with independent APN tests and separating invariants.
+"""Finite n=8 parameter coverage, with VBF APN tests and separating invariants.
 
 Run from the root project: julia --compiled-modules=no --startup-file=no --project=. \
-    packages/VBFSearch/tools/literature/check_families.jl OUTPUT_DIR [BASELINE_DIR]
+    packages/VBFWorkingPaper/src/literature/family_coverage.jl OUTPUT_DIR [BASELINE_DIR]
 This does not classify equal signatures or change the reference database.
 """
 module FamilyCoverage
@@ -21,42 +21,27 @@ end
 module Shift
 include("../../../../packages/VBFRepro/src/202101-budaghyan-generalized-shifts/theorem3_1.jl")
 end
-module Sources
-include("check_sources.jl")
+module CLV
+include("../../../../packages/VBFRepro/src/202306-calderini-bivariate-families/helpers.jl")
 end
 
-"""Return four distinct solutions witnessing non-APN, or nothing after every DDT row."""
-function non_apn_witness(lut)
-    length(lut)==256 && all(x->x isa Integer && 0<=x<=255,lut) || error("expected 256 bytes")
-    counts=zeros(Int,256)
-    for a in 1:255
-        fill!(counts,0)
-        for x in 0:255
-            b=Int(lut[x+1] ⊻ lut[(x⊻a)+1])
-            counts[b+1]+=1
-            if counts[b+1]>2
-                xs=[y for y in 0:255 if lut[y+1] ⊻ lut[(y⊻a)+1]==b]
-                return (a,b,xs[1:4]...)
-            end
+clv_lut(family,k,alpha) = family==1 ? UInt8.(CLV.family_f1_lut(4,k,alpha;modulus=19).lut) :
+    family==2 && k==1 ? UInt8.(CLV.family_f2_lut(4,alpha;modulus=19).lut) : throw(ArgumentError("invalid CLV family/index"))
+
+"""The survey's GF(16) Shi–Peng–Zheng formula, with input/output high-half first."""
+function shi_lut(k)
+    mul(x,y)=gf_mul(x,y,4;modulus=19);pow(x,e)=gf_pow(x,e,4;modulus=19)
+    q=1<<k;lut=zeros(UInt8,256)
+    for x in 0:15,y in 0:15
+        xy=mul(x,y)
+        first=pow(x,q+1)⊻mul(x,pow(y,q))⊻pow(y,q+1)
+        second=pow(x,q*q+1)⊻mul(pow(x,q*q),y)⊻pow(y,q*q+1)
+        for i in 0:k-1
+            first⊻=pow(xy,1<<i);second⊻=pow(xy⊻pow(xy,q),1<<i)
         end
+        lut[(x<<4|y)+1]=UInt8(first<<4|second)
     end
-    nothing
-end
-
-"""Evaluate CLV (2023) F1/F2 as stated in arXiv:2204.07462; GF(16), modulus 0x13."""
-function clv_lut(family,k,alpha)
-    family in (1,2) || error("expected CLV family 1 or 2")
-    family==2 && k!=1 && error("CLV F2 has fixed q=2")
-    pow(x,e)=gf_pow(x,e,4;modulus=19)
-    mul(x,y)=gf_mul(x,y,4;modulus=19)
-    q=1<<k
-    f(x,y)=family==1 ? pow(x,q+1) ⊻ mul(x,pow(y,q)) ⊻ mul(alpha,pow(y,q+1)) :
-        pow(x,3) ⊻ mul(x,y) ⊻ mul(x,pow(y,2)) ⊻ mul(alpha,pow(y,3))
-    g(x,y)=family==1 ? pow(x,q*q+1) ⊻ mul(alpha,mul(pow(x,q*q),y)) ⊻
-        mul(pow(1⊻alpha,q),mul(x,pow(y,q*q))) ⊻ mul(alpha,pow(y,q*q+1)) :
-        pow(x,5) ⊻ mul(x,y) ⊻ mul(alpha,mul(pow(x,2),pow(y,2))) ⊻
-        mul(alpha,mul(pow(x,4),y)) ⊻ mul(pow(1⊻alpha,2),mul(x,pow(y,4))) ⊻ mul(alpha,pow(y,5))
-    UInt8[f(x,y) | (g(x,y)<<4) for y in 0:15 for x in 0:15]
+    lut
 end
 
 """Visit the declared finite domains; failed APN criteria are tested, not silently filtered."""
@@ -90,7 +75,7 @@ function visit_parameters(visit)
     end
     visit("li_bivariate", "m=4", Li.theorem2_sbox(4;modulus=19).lut)
     for k in (1,3,5,7)
-        visit("shi_peng_zheng", "k=$k", Sources.shi_lut(k))
+        visit("shi_peng_zheng", "k=$k", shi_lut(k))
     end
     for i in (1,3), b in 0:15, c in 0:15
         visit("calderini_theorem6_2", "i=$i,b=$b,c=$c", Calderini.theorem6_2_sbox(4,i,b,c;modulus=19).lut)
@@ -120,7 +105,7 @@ function source_hashes()
         append!(paths,[joinpath(dir,f) for (dir,_,fs) in walkdir(joinpath(ROOT,folder)) for f in fs if endswith(f,".jl")])
     end
     push!(paths,joinpath(@__DIR__, "../../src/evidence.jl"),joinpath(@__DIR__, "check_sources.jl"))
-    for folder in ("packages/VBFRepro/src/202100-calderini-construction-relations","packages/VBFRepro/src/202207-gologlu-biprojective-apns","packages/VBFRepro/src/202207-li-quadratic-families","packages/VBFRepro/src/202101-budaghyan-generalized-shifts",
+    for folder in ("packages/VBFRepro/src/202100-calderini-construction-relations","packages/VBFRepro/src/202207-gologlu-biprojective-apns","packages/VBFRepro/src/202207-li-quadratic-families","packages/VBFRepro/src/202306-calderini-bivariate-families","packages/VBFRepro/src/202101-budaghyan-generalized-shifts",
                    "packages/VBFRepro/src/202503-gologlu-biprojective-equivalence","packages/VBFRepro/src/202211-zheng-relative-trace","packages/VBFRepro/src/201909-taniguchi-quadratic-apns")
         append!(paths,[joinpath(dir,f) for (dir,_,fs) in walkdir(joinpath(ROOT,folder)) for f in fs if endswith(f,".jl") || endswith(f,".tex")])
     end
@@ -151,17 +136,18 @@ function check_families(outdir,baseline=joinpath(ROOT,"data/apn/archive/census/r
                 visit_parameters() do family,params,input
                     lut=UInt8.(input); id=lut_id(lut)
                     p=get!(cache,id) do
-                        witness=non_apn_witness(lut)
+                        properties_result=properties(lut)
+                        witness=properties_result["apn"] ? nothing : properties_result["non_apn_witness"]
                         result=if witness===nothing
                             result=classify(lut,reference)
                             result["apn"] || error("APN verifier disagreement")
                             result
                         else
-                            Dict{String,Any}("apn"=>false,"quadratic"=>false,"non_apn_witness"=>join(witness,','))
+                            Dict{String,Any}("apn"=>false,"quadratic"=>false,"non_apn_witness"=>join((witness["a"],witness["b"],first(witness["solutions"],4)...),','))
                         end
                         println(luts,join((id,bytes2hex(lut),result["apn"],get(result,"algebraic_degree",""),
                             get(result,"sigma_hash",""),get(result,"reference_signature_match",""),
-                            witness===nothing ? "" : join(witness,',')),'\t'))
+                            witness===nothing ? "" : join((witness["a"],witness["b"],first(witness["solutions"],4)...),',')),'\t'))
                         result
                     end
                     total=totals[family]; total["parameters"]+=1

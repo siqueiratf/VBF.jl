@@ -32,3 +32,10 @@ end
         @test !ispath(joinpath(dir,"bad"))
     end
 end
+
+module CensusTests
+include("census/runtests.jl")
+end
+module FamilyTests
+include("families.jl")
+end

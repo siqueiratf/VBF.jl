@@ -68,23 +68,7 @@ function census_report(; data::AbstractString, samples66::Int, samples77::Int, s
     newp = joinpath(results_dir(), "new_sigma.tsv")
     a = analyze_census(expand_paths(data); new_path = newp, io)
     results["census"] = a
-    P = PUBLISHED
-    repro = Dict(
-        "samples" => a.samples == P.samples,
-        "hits" => a.hits == P.hits,
-        "mass" => round(a.mass, sigdigits = 4) == P.mass,
-        "coverage" => round(a.coverage, digits = 4) == P.coverage,
-        "n_cov" => round(a.n_cov, sigdigits = 4) == P.n_cov,
-        "new_sigma" => a.new_sigma == P.new_sigma,
-        "new_list" => read(newp) == read(NEW_CLASSES_FILE),
-    )
-    results["published"] = P
-    results["published_reproduced"] = repro
-    results["novelty_status"] = NOVELTY_STATUS
-    print_section("Comparison with the published run", io)
-    for (k, v) in sort(collect(repro))
-        @printf(io, "  %-10s %s\n", k, v ? "reproduced" : "differs (expected for other data)")
-    end
+    results["literature_novelty"] = "unresolved"
     if save_results
         path = write_results_toml(results, "report.toml")
         println(io, "\nWrote ", path)

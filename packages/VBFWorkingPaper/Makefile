@@ -17,7 +17,7 @@ PERF := $(RUN) $(ROOT)/packages/VBF/perf/analysis/run.jl
 PERFARGS := --database="$(input)" --output="$(performance_output)" --profiles="$(profiles)"
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help instantiate grades papers catalog corpus fast invariants all figures consolidate inspect export plots test proposals paper stage manuscript crossings
+.PHONY: search-figures help instantiate grades papers catalog corpus fast invariants all figures consolidate inspect export plots test proposals paper stage manuscript crossings
 instantiate:
 	$(RUN) -e 'using Pkg; Pkg.instantiate()'
 grades:
@@ -51,3 +51,6 @@ help:
 	@echo 'Working paper: instantiate; grades; fast; invariants; figures; stage; paper; test'
 	@echo 'Parameters: output=DIR figure_output=DIR paper_output=FRESH_DIR sample=128 seed=20260901 budget=15'
 	@echo 'Saved performance evidence: consolidate; inspect; export; plots; manuscript; crossings'
+
+search-figures:
+	$(RUN) $(HERE)src/search_figures.jl "$(run)" "$(figure_output)"
