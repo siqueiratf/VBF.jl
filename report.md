@@ -61,6 +61,14 @@ quadratic references, with literature-wide novelty unresolved. See [follow-up ru
 and the resolution ledger for exact guarantees. The eight partial findings are
 F004, F032, F040, F051, F052, F063, F070 and F071.
 
+The subsequent [three-agent feasibility review](audit/partial_feasibility.md)
+keeps all eight partial. It identifies an exact n=30 coefficient-orbit reduction
+as a promising finite certification route, a feasible bounded binary-code API,
+and stronger finite-reference/power exclusions. Fresh Yu n=8/9 controls disagree
+with the published counts, so matching n=6/7 does not resolve the convention.
+The review records bounded evidence and proposed acceptance criteria rather than
+promising complete literature novelty or closure of all eight in one session.
+
 Remaining work is explicitly scoped: unfinished full searches, source/table
 reconciliation, faithful reproduction of omitted paper pruning, general binary-code
 permutation equivalence, and complete literature/reference coverage. A sampled

@@ -1,5 +1,15 @@
 # Bracken, Tan & Tan (2012) — Binomial differentially 4 uniform permutations with high nonlinearity
 
+## Scoped feasibility review (2026-10-10)
+
+**F070: Partial.** A candidate exact algebraic reduction covers the specific n=30 instance with **49,981 normalized coefficients**, instead of over one billion derivative parameters. A 256-coefficient probe found derivative/polar rank 28 and every collision right-hand side outside the image. Full closure is plausible after proving both normalization identities, verifying field/coset orders, independent small-field controls and complete reduced enumeration. The probe does not certify the full instance. This paper concerns DU4 permutations, not APN novelty; Walsh support inclusion and a full spectrum distribution are distinct requirements.
+
+This read-only review did not rerun the full paper test suite or establish new
+catalog gaps. See the [eight-finding work plan](../../../../../audit/partial_feasibility.md)
+and [bounded probe evidence](../../../../../audit/partial_feasibility_probes.toml)
+for commands, hashes, acceptance criteria and mathematical limits. This current
+assessment supersedes conflicting historical scope descriptions below.
+
 Current audit application (2026-10-10): F070: the existing n=30 streaming/rank checks were revalidated as bounded evidence. Descriptions now say sampled computational evidence, not sampled proof of global differential uniformity. The full injectivity scan, all nonzero derivative rows and n=30 Walsh spectrum remain unverified locally.
 
 

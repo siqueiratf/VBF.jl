@@ -36,10 +36,10 @@ remaining = "The purported completeness premise remains unsupported; no new clas
 [[findings]]
 id = "F004"
 status = "partial"
-summary = "Explicit representative conventions and exact DFS stop status; min_log gives4/78, min_value gives1/117."
-evidence = ["packages/VBFRepro/papers/2025/Yu_202512/algorithm3.jl"]
+summary = "Explicit representative conventions and exact DFS stop status; min_log gives4/78 at n6/7 but109/25 versus published142/26 at n8/9; min_value gives82 at n8."
+evidence = ["packages/VBFRepro/papers/2025/Yu_202512/algorithm3.jl", "audit/partial_feasibility_probes.toml"]
 guarantee = "Exhaustion certifies each specified restricted parameter domain."
-remaining = "Authors representative convention is unspecified; dimensions8+ remain unreproduced."
+remaining = "Authors representative convention is unspecified; available n8/9 conventions disagree with the paper, independent pruning controls and n10+ reproduction remain unresolved."
 
 [[findings]]
 id = "F005"
