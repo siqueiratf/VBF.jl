@@ -1,7 +1,0 @@
-# ccz_distinctness results
-seed = 42
-sample_size = 3
-total = 12921
-exhaustive = false
-distinct_from_gold = 3
-pairwise_distinct = true

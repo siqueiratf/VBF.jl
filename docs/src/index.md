@@ -168,7 +168,7 @@ upper bound; a partial subspace list does not bound the total class count.
 `extract_linear_subspaces_bounded` and `switching_neighbors_bounded` expose
 explicit `SearchOutcome` results for limited searches.
 
-The [2025 paper reproduction](https://github.com/zambonin/VBF.jl/tree/main/packages/VBFRepro/papers/2025/Baudrin_202509)
+The [2025 paper reproduction](https://github.com/zambonin/VBF.jl/tree/main/packages/VBFRepro/src/202509-baudrin-apn-exploration)
 provides the known six-bit census and bounded switching exploration with saved
 graph witnesses. The native automorphism backend is documented as a method
 extension to the paper's original first stage. Switching results describe

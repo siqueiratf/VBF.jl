@@ -4,10 +4,11 @@ using Test, TOML, VBFRepro
     papers = discover_papers()
     @test length(papers) == 44
     @test length(unique(p.id for p in papers)) == length(papers)
-    @test isfile(joinpath(paper_path("Yu_202211d"), "qam_correspondence.jl"))
+    @test isfile(joinpath(paper_path("202211-yu-qam"), "qam_correspondence.jl"))
     @test isfile(joinpath(repo_root(), "Project.toml"))
-    @test papers_root() == joinpath(repo_root(), "packages", "VBFRepro", "papers")
-    @test_throws ArgumentError paper_path("../Yu_202211d")
+    @test papers_root() == joinpath(repo_root(), "packages", "VBFRepro", "src")
+    @test all(p -> startswith(p.id,p.year) && dirname(p.path)==papers_root(),papers)
+    @test_throws ArgumentError paper_path("../202211-yu-qam")
     @test_throws ArgumentError paper_path("absent")
     # A valid --project flag does not imply that the migrated test script exists.
     for paper in papers
@@ -70,34 +71,39 @@ end
 
 @testset "command-line dispatch" begin
     mktempdir() do temporary
-        @test main(["run", "Yu_202211d", "--target", "help", "--param", "limit=17",
+        @test main(["run", "202211-yu-qam", "--target", "help", "--param", "limit=17",
                     "--timeout-seconds", "10", "--output", joinpath(temporary,"cli")]) == 0
         metadata = TOML.parsefile(joinpath(temporary,"cli","run.toml"))
-        @test metadata["paper"] == "Yu_202211d"
+        @test metadata["paper"] == "202211-yu-qam"
         @test metadata["parameters"]["limit"] == "17"
         @test metadata["timeout_seconds"] == 10
         @test_throws ArgumentError main(["run"])
         @test_throws ArgumentError main(["absent"])
         @test_throws ArgumentError main(["list", "extra"])
-        @test_throws ArgumentError main(["run", "Yu_202211d", "--param", "x"])
-        @test_throws ArgumentError main(["run", "Yu_202211d", "--param", "x=1", "--param", "x=2"])
-        @test_throws ArgumentError main(["test", "Yu_202211d", "--target", "report"])
+        @test_throws ArgumentError main(["run", "202211-yu-qam", "--param", "x"])
+        @test_throws ArgumentError main(["run", "202211-yu-qam", "--param", "x=1", "--param", "x=2"])
+        @test_throws ArgumentError main(["test", "202211-yu-qam", "--target", "report"])
     end
 end
 
 @testset "isolated execution and durable evidence" begin
     mktempdir() do temporary
         root = joinpath(temporary, "papers")
-        paper = joinpath(root, "2026", "Fixture_202600")
+        paper = joinpath(root, "202600-fixture-evidence")
         project = joinpath(temporary, "project")
         mkpath(paper); mkpath(project)
         mkpath(joinpath(paper,"input"))
         write(joinpath(paper,"input","fixture.txt"), "independent original input\n")
         write(joinpath(project, "Project.toml"), "[deps]\n")
+        for kind in ("input","results")
+            directory=joinpath(project,"packages","VBFRepro","src","202600-other-study",kind)
+            mkpath(directory)
+            write(joinpath(directory,"excluded.jl"),"error(\"never import generated evidence\")\n")
+        end
         fixture = joinpath(paper,"certificate.toml")
         write(fixture, "columns = [1,2,4]\n")
-        verifier = joinpath(paper,"verify.py")
-        write(verifier,"print(\"independent verifier\")\n")
+        verifier = joinpath(paper,"verify.jl")
+        write(verifier,"println(\"independent verifier\")\n")
         write(joinpath(paper, "Makefile"), raw"""
 report:
 	@echo "cwd=$$(pwd)"
@@ -111,7 +117,7 @@ slow:
 	@sleep 10
 """)
         out = joinpath(temporary, "passed")
-        result = run_paper("Fixture_202600"; root, project, output=out,
+        result = run_paper("202600-fixture-evidence"; root, project, output=out,
             parameters=Dict(:limit => 17), environment=Dict("VBF_REPRO_FIXTURE"=>"set"))
         @test result.status == "passed"
         @test result.exit_code == 0
@@ -122,6 +128,7 @@ slow:
         @test metadata["environment_overrides"] == Dict("VBF_REPRO_FIXTURE"=>"set")
         @test metadata["status"] == "passed"
         @test !isempty(metadata["source_sha256"])
+        @test !any(key->endswith(key,"excluded.jl"),keys(metadata["source_sha256"]))
         @test haskey(metadata["source_sha256"], relpath(verifier,project))
         fixture_key = relpath(fixture, project)
         @test haskey(metadata["source_sha256"], fixture_key)
@@ -134,23 +141,23 @@ slow:
         @test occursin("cwd=$paper", log)
         @test occursin("parameter=17", log)
         @test occursin("environment=set", log)
-        @test_throws ArgumentError run_paper("Fixture_202600"; root, project, output=out)
-        failed = run_paper("Fixture_202600"; root, project, target="fail", output=joinpath(temporary,"failed"))
+        @test_throws ArgumentError run_paper("202600-fixture-evidence"; root, project, output=out)
+        failed = run_paper("202600-fixture-evidence"; root, project, target="fail", output=joinpath(temporary,"failed"))
         @test failed.status == "failed"
         @test failed.exit_code != 0
-        tested = test_paper("Fixture_202600"; root, project, output=joinpath(temporary,"tested"))
+        tested = test_paper("202600-fixture-evidence"; root, project, output=joinpath(temporary,"tested"))
         @test tested.status == "passed"
         @test tested.target == "test"
-        timed = run_paper("Fixture_202600"; root, project, target="slow", timeout_seconds=0.15,
+        timed = run_paper("202600-fixture-evidence"; root, project, target="slow", timeout_seconds=0.15,
                           output=joinpath(temporary,"timed"))
         @test timed.status == "timed_out"
         @test TOML.parsefile(timed.manifest)["elapsed_seconds"] < 5
-        @test_throws ArgumentError run_paper("Fixture_202600"; root, project, target="-C")
-        @test_throws ArgumentError run_paper("Fixture_202600"; root, project, timeout_seconds=0)
-        @test_throws ArgumentError run_paper("Fixture_202600"; root, project, parameters=Dict("ROOT"=>"bad"))
-        @test_throws ArgumentError run_paper("Fixture_202600"; root, project, parameters=Dict("limit"=>"\$(shell echo x)"))
+        @test_throws ArgumentError run_paper("202600-fixture-evidence"; root, project, target="-C")
+        @test_throws ArgumentError run_paper("202600-fixture-evidence"; root, project, timeout_seconds=0)
+        @test_throws ArgumentError run_paper("202600-fixture-evidence"; root, project, parameters=Dict("ROOT"=>"bad"))
+        @test_throws ArgumentError run_paper("202600-fixture-evidence"; root, project, parameters=Dict("limit"=>"\$(shell echo x)"))
         errored = joinpath(temporary,"errored")
-        @test_throws Base.IOError run_paper("Fixture_202600"; root, project, make="/nonexistent-make", output=errored)
+        @test_throws Base.IOError run_paper("202600-fixture-evidence"; root, project, make="/nonexistent-make", output=errored)
         @test TOML.parsefile(joinpath(errored,"run.toml"))["status"] == "error"
     end
 end

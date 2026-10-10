@@ -10,16 +10,16 @@ using VBFSearch: DiscoveryEvidence
 using .DiscoveryEvidence
 const ROOT = normpath(joinpath(@__DIR__, "../../../.."))
 module Calderini
-include("../../../../packages/VBFRepro/papers/2021/Calderini_202100/helpers.jl")
+include("../../../../packages/VBFRepro/src/202100-calderini-construction-relations/helpers.jl")
 end
 module Gologlu
-include("../../../../packages/VBFRepro/papers/2022/Gologlu_202207/helpers.jl")
+include("../../../../packages/VBFRepro/src/202207-gologlu-biprojective-apns/helpers.jl")
 end
 module Li
-include("../../../../packages/VBFRepro/papers/2022/Li_202207/theorem2.jl")
+include("../../../../packages/VBFRepro/src/202207-li-quadratic-families/theorem2.jl")
 end
 module Shift
-include("../../../../packages/VBFRepro/papers/2021/Budaghyan_202101/theorem3_1.jl")
+include("../../../../packages/VBFRepro/src/202101-budaghyan-generalized-shifts/theorem3_1.jl")
 end
 module Sources
 include("check_sources.jl")
@@ -120,8 +120,8 @@ function source_hashes()
         append!(paths,[joinpath(dir,f) for (dir,_,fs) in walkdir(joinpath(ROOT,folder)) for f in fs if endswith(f,".jl")])
     end
     push!(paths,joinpath(@__DIR__, "../../src/evidence.jl"),joinpath(@__DIR__, "check_sources.jl"))
-    for folder in ("packages/VBFRepro/papers/2021/Calderini_202100","packages/VBFRepro/papers/2022/Gologlu_202207","packages/VBFRepro/papers/2022/Li_202207","packages/VBFRepro/papers/2021/Budaghyan_202101",
-                   "packages/VBFRepro/papers/2025/Gologlu_202503","packages/VBFRepro/papers/2022/Zheng_202211","packages/VBFRepro/papers/2019/Taniguchi_201909")
+    for folder in ("packages/VBFRepro/src/202100-calderini-construction-relations","packages/VBFRepro/src/202207-gologlu-biprojective-apns","packages/VBFRepro/src/202207-li-quadratic-families","packages/VBFRepro/src/202101-budaghyan-generalized-shifts",
+                   "packages/VBFRepro/src/202503-gologlu-biprojective-equivalence","packages/VBFRepro/src/202211-zheng-relative-trace","packages/VBFRepro/src/201909-taniguchi-quadratic-apns")
         append!(paths,[joinpath(dir,f) for (dir,_,fs) in walkdir(joinpath(ROOT,folder)) for f in fs if endswith(f,".jl") || endswith(f,".tex")])
     end
     Dict(relpath(normpath(p),ROOT)=>filehash(p) for p in paths)

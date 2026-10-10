@@ -5,29 +5,36 @@ VBFCatalog and VBFSearch here. Importing `VBFRepro` loads a small standard-libra
 runner; it does not import the papers, solve polynomial systems, or start searches.
 Each paper keeps one claim per runnable Julia file and its own Make targets.
 
+Reproductions live directly under `src/YYYYMM-author-subject/`, for example
+`src/202508-beierle-millions/`. The CLI uses that directory slug; bibliography
+keys remain the original publication identifiers in VBFCatalog. `00` preserves
+an unspecified month. Cross-paper consumers share the optional environment at
+`src/analysis/`: `reproductions/` holds publication metrics, `performance/`
+analyzes timings, and `validation/` compares selected paper constructions.
+
 From the repository root:
 
 ```julia
 using VBFRepro
 discover_papers()                       # 44 paper IDs, years and paths
-paper_path("Yu_202211d")
-run_paper("Yu_202211d"; target="qam_correspondence", timeout_seconds=900)
-test_paper("Taniguchi_201909"; timeout_seconds=900)
-run_paper("Yu_202211d"; target="small_searches",
+paper_path("202211-yu-qam")
+run_paper("202211-yu-qam"; target="qam_correspondence", timeout_seconds=900)
+test_paper("201909-taniguchi-quadratic-apns"; timeout_seconds=900)
+run_paper("202211-yu-qam"; target="small_searches",
           parameters=Dict("max_evaluations"=>1000, "save_results"=>false),
           timeout_seconds=900)
 ```
 
 The runner launches an isolated `make` process in the selected paper directory,
-using the root workspace environment. `papers/paper.mk` supplies this same
+using the root workspace environment. `src/paper.mk` supplies this same
 environment for direct execution:
 
 ```sh
 make -C packages/VBFRepro instantiate
 make -C packages/VBFRepro list
-make -C packages/VBFRepro run paper=Yu_202211d target=qam_correspondence
-make -C packages/VBFRepro/papers/2022/Yu_202211d test
-make -C packages/VBFRepro/papers/2022/Yu_202211d small_searches max_evaluations=1000 save_results=false
+make -C packages/VBFRepro run paper=202211-yu-qam target=qam_correspondence
+make -C packages/VBFRepro/src/202211-yu-qam test
+make -C packages/VBFRepro/src/202211-yu-qam small_searches max_evaluations=1000 save_results=false
 ```
 
 Dependencies are instantiated explicitly once; paper tests do not silently
@@ -61,14 +68,17 @@ The `environment` argument records only supplied overrides; the inherited enviro
 Runs using private inputs still need those files for replay.
 
 Original ignored inputs and historical result files remain beside the migrated
-paper, byte-for-byte, under `papers/<year>/<id>/`. Existing paper targets retain
+paper, byte-for-byte, under `src/<slug>/`. Existing paper targets retain
 their explicit `save_results` controls and paper-local `results/` output; the
 execution log and configuration are consistently stored under `data/repro/`.
 The runner does not rewrite historical evidence or add checkpoint guarantees to
-paper algorithms that lack them. Package-owned new analysis lives in `analysis/`;
+paper algorithms that lack them. Cross-paper analysis lives in `src/analysis/`;
 publication text and publication-specific presentation remain in `manuscript/`.
+The Beierle self-equivalence reproduction retains its four frozen tuple-class
+fixtures for standalone tests and benchmark setup. These record matrices and
+search witnesses; known function references continue to come from VBFCatalog.
 
-See [analysis/README.md](analysis/README.md) for the optional cross-paper audit,
+See [src/analysis/README.md](src/analysis/README.md) for the optional cross-paper analysis,
 grading, comparison and publication-data workflow. API timing workloads live in
 each package's `perf/` environment, including [perf/](perf/) here.
 
@@ -77,6 +87,6 @@ Run lightweight discovery/execution/evidence tests with
 runnable and are deliberately excluded from the runner's fast package tests.
 
 The same runner is available as `bin/vbfrepro list`,
-`bin/vbfrepro run Yu_202211d --target qam_correspondence --timeout-seconds 900`,
-and `bin/vbfrepro test Taniguchi_201909 --timeout-seconds 900` from the root.
+`bin/vbfrepro run 202211-yu-qam --target qam_correspondence --timeout-seconds 900`,
+and `bin/vbfrepro test 201909-taniguchi-quadratic-apns --timeout-seconds 900` from the root.
 Use repeated `--param key=value` flags for target parameters.

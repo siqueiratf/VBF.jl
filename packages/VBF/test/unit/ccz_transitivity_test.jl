@@ -16,7 +16,7 @@ using Test
 # false` while every other pair among {F1, F2, x³, f5} answered `true` — a
 # transitivity violation, since all four share the single n=4 CCZ-class.
 
-# n=4 APN representatives (see packages/VBFRepro/papers/2008/Brinkmann_200812/helpers.jl):
+# n=4 APN representatives (see packages/VBFRepro/src/200812-brinkmann-small-apn-classification/helpers.jl):
 x3 = SBox{4}(gf_monomial_lut(4, 3))                                 # Gold x³, deg 2
 F1 = SBox{4}(UInt8[0, 0, 0, 1, 0, 2, 4, 7, 0, 4, 6, 3, 8, 14, 10, 13])  # Table 2, deg 2
 F2 = SBox{4}(UInt8[0, 0, 0, 1, 0, 2, 4, 7, 0, 4, 6, 3, 8, 14, 11, 12])  # Table 2, deg 3

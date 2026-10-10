@@ -60,7 +60,7 @@ name = "F12 Taniguchi"
 status = "finite_domain_check"
 domains = ["taniguchi"]
 source = "https://doi.org/10.1007/s10623-018-00598-2"
-argument = "i=1,3 modulo 4, a=0..15, b=1..15; every valid and invalid rootless-polynomial choice is tested directly. The source theorem is reproduced under packages/VBFRepro/papers/2019/Taniguchi_201909."
+argument = "i=1,3 modulo 4, a=0..15, b=1..15; every valid and invalid rootless-polynomial choice is tested directly. The source theorem is reproduced under packages/VBFRepro/src/201909-taniguchi-quadratic-apns."
 
 [[coverage]]
 name = "F13 BHK quadrinomials"

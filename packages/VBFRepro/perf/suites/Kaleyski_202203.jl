@@ -1,7 +1,7 @@
 # packages/VBFRepro/perf/suites/Kaleyski_202203.jl — reproduction-benchmark case.
 #
 # CONTRACT: the same one packages/VBF/perf/suites/01_representations.jl states, plus one
-# rule: this file is READ-ONLY against papers/2022/Kaleyski_202203/. It only
+# rule: this file is READ-ONLY against src/202203-kaleyski-ea-invariants/. It only
 # `include`s the paper's own report.jl, unmodified.
 #
 # Paper: Kaleyski, N. (2022), "Deciding EA-equivalence via invariants",
@@ -15,14 +15,14 @@
 
 module Bench_Kaleyski_202203
 using VBF, VBFCatalog
-const PAPER_DIR = normpath(joinpath(@__DIR__, "..", "..", "papers", "2022", "Kaleyski_202203"))
+const PAPER_DIR = normpath(joinpath(@__DIR__, "..", "..", "src", "202203-kaleyski-ea-invariants"))
 cd(() -> include(joinpath(PAPER_DIR, "report.jl")), PAPER_DIR)
 end
 
 function register!(reg)
     call = _ -> Bench_Kaleyski_202203.paper_report(devnull; n_values = [5, 6])
     benchmark!(reg; group = "papers", name = "Kaleyski_202203_report", cost = 2,
-           paper_id = "Kaleyski_202203", mode = "core_only",
+           paper_id = "202203-kaleyski-ea-invariants", mode = "core_only",
            approach = "ea_equivalence_invariants",
            setup = () -> nothing, call = call,
            note = "report.jl default reproduction, n_values=[5,6]; core_only — no bespoke search runs")
