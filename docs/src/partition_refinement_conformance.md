@@ -338,3 +338,33 @@ bits for square functions. Raising the explicit memory allowance permits
 larger computations; this is a resource policy, not a negative result.
 Large-dimension performance parity and the experimental tables remain
 separate claims requiring their own measurements.
+
+## Arbitrary binary generator matrices
+
+`binary_code_equivalence(G,H)` covers a different input problem from Algorithms
+5/7: arbitrary binary linear codes, represented by generators whose rows may be
+redundant. The exact reduction is to invertible linear equivalence of the
+**column multisets** of full-rank rowspace bases. Row reduction supplies source
+pivot columns equal to the standard basis. Search maps their images into target
+columns, propagates linear relations, and preserves zero/duplicate multiplicities.
+Its permutation witness has convention `rowspace(G[:,p]) == rowspace(H)`; an
+independent rank/stack replay checks that assertion.
+
+The implementation reuses the incremental GF(2) isomorphism primitive used in
+Kaleyski–Sunde recovery for ranks up to 32 and existing wide `rank_f2` beyond it.
+This is separate bounded orchestration, not a claim that the paper's graph
+algorithm was extended verbatim. The graph engine relies on distinct graph
+points, input-based indexing, and affine anchors. The older linear-set routine
+discards duplicate counts and materializes membership over the entire ambient
+space, so it is unsuitable for arbitrary generators.
+
+No `2^rank` ambient arrays or external code solver are required. Worst-case
+basis-image search remains exponential. A complete negative is conclusive only
+after valid invariant separation or exhaustion; time, node, and estimated-memory
+stops remain `BudgetHit`. Core row reduction/rank calls are cooperatively timed.
+The implementation is not a promise of practical classification of every large
+code or of equivalence among all APN functions in a dimension.
+
+Independent tests compare literal codeword sets under every small coordinate
+permutation, replay planted rank-33/65 maps, include equal-weight-enumerator
+inequivalent controls, and compare CCZ-code decisions with native graph recovery.

@@ -12,10 +12,8 @@ include(joinpath(@__DIR__, "problem5_1.jl"))
 
 using Dates
 
-# `full_search = true` widens the n ≤ 15 grid (sections 3, 4) and runs Problem
-# 5.1's full 993-pair scan (52.5 s measured here). The n = 30 exhaustive
-# permutation scan (~55 min extrapolated here) needs its OWN opt-in,
-# `n30_full_search = true`, so that widening the cheap grid can never trigger it.
+# `full_search=true` widens the small grid and Problem 5.1. The n30 reduced
+# certificate has its own opt-in; it never triggers a 2^30-input bitmap scan.
 function paper_report(
     io::IO = stdout;
     full_search::Bool = false,
@@ -47,23 +45,20 @@ function paper_report(
     println(io, "                  F = (α+α^4)·x^17, which core are_linear_equivalent")
     println(io, "                  confirms is linear-equivalent to Table 1's first row")
     println(io, "                  (Gold x^5). Paper Issue 2: the paper never says so.")
-    println(io, "  [sampled]     Theorem 1.1 at its smallest GENUINE instance, n=30")
-    println(io, "                  (k=10,s=2): α=2 primitive in GF(2^30) verified, and")
-    println(io, "                  dim ker B_a = t = 2 on every sampled a ≠ 0, which is")
-    println(io, "                  exactly Δ_F = 4 with spectrum {0,4} on those rows.")
-    println(io, "                  The permutation half is a budgeted prefix scan; the")
-    println(io, "                  exhaustive 2^30 scan is opt-in (full_search=true).")
+    println(io, "  [bounded]     Theorem 1.1 at n=30: verified field and coefficient cosets;")
+    println(io, "                  default checks 256 normalized coefficients. Global")
+    println(io, "                  DU4, permutation and Walsh support require all 49,981.")
+    println(io, "                  n30_full_search=true attempts that complete finite certificate.")
     println(io, "  [refuted]     Problem 5.1 — the permutation half is FALSE at t=1:")
     println(io, "                  over all 993 admissible (v,w) the only permutation is")
     println(io, "                  v=w=0. The differential half holds on every sample.")
-    println(io, "  [transcribed] Theorem 1.1's Walsh spectrum at n=30 (a 2^60-operation")
-    println(io, "                  LAT scan) and its CCZ-inequivalence to Gold/Kasami at")
-    println(io, "                  t=2, which the paper itself only 'expects'.")
+    println(io, "  [transcribed] t=2 CCZ-inequivalence to Gold/Kasami, which the paper")
+    println(io, "                  itself only 'expects'; no novelty conclusion follows.")
     println(io, "  [transcribed] the Section 1 general family")
     println(io, "                  G(x) = αx^{2^s+1} + α^{2^k}x^{2^{ik}+2^{tk+s}}")
     println(io, "                  (i ≡ ks, t ≡ −i mod 3): its hypotheses coincide with")
     println(io, "                  Theorem 1.1's (gcd(3k,s)=2), so its smallest instance")
-    println(io, "                  is also n=30 and it is infeasible to scan here.")
+    println(io, "                  is also n=30; general parameter-family certification is not performed.")
 
     section2_report(io)
     section3_report(io; full_search = full_search)

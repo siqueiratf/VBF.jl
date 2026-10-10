@@ -4,6 +4,7 @@ historical_audit_date = "2026-08-17"
 historical_base = "bf15e59 plus historical uncommitted changes"
 application_base = "347437d"
 followup_base = "951226a"
+implementation_base = "2496509"
 julia = "1.13.1"
 finding_count = 36
 historical_findings = "audit/findings.yaml"
@@ -187,18 +188,18 @@ remaining = "The expensive instance still needs a separately budgeted execution.
 
 [[findings]]
 id = "F032"
-status = "partial"
-summary = "Fixed graph input/output blocks and distinct-codeword enumeration; preserved native bounded function-equivalence recovery."
-evidence = ["packages/VBF/src/equivalence/ccz/linear_code.jl"]
-guarantee = "EA drift invariance and corrected Kim/Dillon equal-C2-weight regression verified; degrees2/4 prove EA inequivalence."
-remaining = "General arbitrary binary-code permutation solver remains absent. Equal weight enumerators are only necessary filters."
+status = "fixed"
+summary = "Added bounded exact binary-code permutation recovery using column-multiset basis images; reuses Kaleyski-Sunde partial isomorphisms and wide core GF2 rank, preserving duplicate/zero columns and arbitrary rank."
+evidence = ["packages/VBF/src/equivalence/ccz/code_equivalence.jl", "packages/VBF/test/unit/code_equivalence_test.jl", "audit/implementation_runs.toml"]
+guarantee = "Found permutations are independently replayed by rowspace/rank checks; only completed search or separating invariants certify inequivalence. All 4489 pairs of the 67 length4 binary codes agree with an independent full-codeword/permutation oracle."
+remaining = "Worst-case basis-image search is exponential and practical high-dimensional code classification is not promised. Equal weight enumerators remain only necessary filters; budget hits remain inconclusive."
 
 [[findings]]
 id = "F040"
 status = "partial"
-summary = "Reports separate exact function properties, corpus absence and unresolved literature novelty."
-evidence = ["packages/VBFRepro/papers/2020/Yu_202012/table4.jl"]
-guarantee = "Comparisons explicitly name their finite catalog-functions-table reference scope."
+summary = "Yu s1/s2 have complete finite comparisons against all18 current n9 APN catalog rows and theorem-backed exclusion of every APN power function through all admissible Gold indices."
+evidence = ["packages/VBFRepro/papers/2020/Yu_202012/table4.jl", "packages/VBFRepro/analysis/scripts/apn_power_evidence.jl", "audit/implementation_runs.toml"]
+guarantee = "Actual candidate/Gold/power formulas, properties, LUT hashes and exact invariants are bound and checked; collisions, changed data and budgets fail closed. Separation names the finite catalog snapshot; literature completeness is not inferred."
 remaining = "A complete sourced reference corpus, known-construction coverage and general CCZ comparisons are needed for a literature-wide guarantee."
 
 [[findings]]
@@ -268,10 +269,10 @@ remaining = "Dry-runs verify paths, not the mathematics of all44 paper reproduct
 [[findings]]
 id = "F063"
 status = "partial"
-summary = "Regenerated all 32 proposals; full APN/degree checks passed. Nine positive certificates resolve one functions-table representative, three selected prior controls and five within-inventory duplicates."
-evidence = ["packages/VBFRepro/analysis/scripts/review_catalog_proposals.jl", "packages/VBFRepro/analysis/test/fixtures/catalog_proposal_witnesses.toml"]
-guarantee = "Every positive EA/identity map is independently replayed with exact rank, block and all-point checks; 23 remaining proposals are separated only from explicitly enumerated quadratic references."
-remaining = "Full bulk-corpus coverage, nonquadratic/general CCZ comparisons and sourced literature-wide coverage remain unresolved; no catalog addition or global novelty follows."
+summary = "All32 proposals verified quadratic APN and excluded from every APN power construction. All583 current functions-table comparisons conclusive:31 separated proposals and1 represented. Original9 positive certificates retained; n8 source-rebuilt baseline reused."
+evidence = ["packages/VBFRepro/analysis/scripts/review_catalog_proposals.jl", "packages/VBFRepro/analysis/scripts/apn_power_evidence.jl", "packages/VBFRepro/analysis/test/fixtures/catalog_proposal_witnesses.toml", "audit/implementation_runs.toml"]
+guarantee = "Complete Gold coverage and sourced theorem exclude powers after actual property/formula/hash/invariant checks. Nine positive maps replay at7488 graph points; nonquadratic targets use theorem, general invariants or exhaustive CCZ. Known representatives, proposal duplicates and finite catalog absence retain distinct statuses."
+remaining = "Unlisted non-power constructions, arbitrary nonquadratic classes outside the finite snapshot and sourced literature-wide completeness remain unresolved. No catalog addition or global novelty follows."
 
 [[findings]]
 id = "F064"
@@ -283,11 +284,11 @@ remaining = "No n7/n8 APN search classification follows from regenerating tuple 
 
 [[findings]]
 id = "F070"
-status = "partial"
-summary = "Existing n30 streaming/rank checks rerun; sampled proof wording replaced by sampled computational evidence."
-evidence = ["packages/VBFRepro/papers/2012/Bracken_201205/theorem1_1.jl"]
-guarantee = "Rank criterion is exact per tested derivative row; finite injectivity prefix is verified."
-remaining = "Full2^30 injectivity scan, every derivative row and n30 Walsh spectrum remain unverified; timing estimates are historical extrapolations."
+status = "fixed"
+summary = "Verified coefficient-coset reductions exhaust all49981 normalized derivative/component cases for the specific n30 binomial; every derivative/polar rank is28 and augmented rank29."
+evidence = ["packages/VBFRepro/papers/2012/Bracken_201205/orbit_certificate.jl", "packages/VBFRepro/papers/2012/Bracken_201205/test/test_orbit_certificate.jl", "audit/implementation_runs.toml"]
+guarantee = "Verified field/group orders and both normalization identities cover all2^30-1 nonzero differences/output masks. Complete finite exact rank evidence certifies DU4, permutation status and Walsh support inclusion; independent Python arithmetic replays every49981 row."
+remaining = "Certification concerns the specified n30 instance, not the infinite family, APN novelty or a full signed-frequency histogram. No brute-force2^30 injectivity scan is required because all collision equations are covered by the proved reduction."
 
 [[findings]]
 id = "F071"

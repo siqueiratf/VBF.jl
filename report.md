@@ -1,8 +1,8 @@
 # APN audit — applied findings and remaining research
 
 Updated **2026-10-10**. All 36 historical findings have a current disposition in
-[`audit/resolutions.toml`](audit/resolutions.toml): **27 fixed, 1 already fixed,
-8 partially addressed with explicit remaining work**. “Fixed” means the implementation
+[`audit/resolutions.toml`](audit/resolutions.toml): **29 fixed, 1 already fixed,
+6 partially addressed with explicit remaining work**. “Fixed” means the implementation
 or evidence defect is resolved; it does not prove every claim in the corresponding paper.
 
 The changes correct theorem formulas and hypotheses, field-generator assumptions,
@@ -32,7 +32,7 @@ Current experimental evidence:
   Distinct exact signatures establish all six pairwise CCZ inequivalences among
   the four literal Table 2 representatives; novelty against all earlier
   constructions remains unresolved.
-- The complete core suite passed **102 test items / 146,742 assertions**; an
+- The complete core suite passed **103 test items / 147,156 assertions**; an
   independent implementation review passed **386 checks**. A budgeted public-API
   Gold8 Gamma computation returned **11,818**. See
   [`audit/README.md`](audit/README.md) for reproduction commands and limits.
@@ -54,24 +54,44 @@ The follow-up closed seven of the fifteen previously partial findings:
   n=6 mappings and return **35,648**. This counts mappings, not equivalence classes.
 
 F071 additionally exhausts all four **993-pair n=15** coefficient grids, without
-claiming literature-wide separation. F063 regenerated all 32 proposals and replayed nine positive certificates: one
+claiming literature-wide separation. At that stage, F063 regenerated all 32 proposals and replayed nine positive certificates: one
 functions-table representative, three selected prior controls, and five
 within-inventory duplicates. The other 23 are separated only from explicit
 quadratic references, with literature-wide novelty unresolved. See [follow-up run bindings](audit/followup_runs.toml)
-and the resolution ledger for exact guarantees. The eight partial findings are
+and the resolution ledger for exact guarantees. The eight partial findings were
 F004, F032, F040, F051, F052, F063, F070 and F071.
 
 The subsequent [three-agent feasibility review](audit/partial_feasibility.md)
-keeps all eight partial. It identifies an exact n=30 coefficient-orbit reduction
+kept all eight partial. It identifies an exact n=30 coefficient-orbit reduction
 as a promising finite certification route, a feasible bounded binary-code API,
 and stronger finite-reference/power exclusions. Fresh Yu n=8/9 controls disagree
 with the published counts, so matching n=6/7 does not resolve the convention.
 The review records bounded evidence and proposed acceptance criteria rather than
 promising complete literature novelty or closure of all eight in one session.
 
+That implementation round has now closed **F032** and the finite n=30 scope of
+**F070**. General binary-code recovery reuses the existing Kaleyski–Sunde
+partial-isomorphism machinery instead of enumerating every coordinate
+permutation. An independent full-codeword oracle checked all 4,489 pairs of
+length-four binary codes. The Bracken certificate exhausted all 49,981 reduced
+cases, and independent Python field arithmetic recomputed every derivative,
+collision and polar rank. The specific instance is a DU4 permutation with
+nontrivial Walsh support contained in `{0, ±65536}`.
+
+The latest core suite passed **103 items / 147,156 assertions**; the Bracken
+paper suite passed **9,090 assertions**. [Implementation evidence](audit/implementation_runs.toml)
+binds complete and bounded runs, independent replay and scoped guarantees.
+All 32 audited proposals are excluded from every APN power function; all 583
+current catalog pair checks are conclusive, giving 31 separated proposals and
+one represented. Nine prior/proposal positive certificates remain replayed.
+Yu's s₁/s₂ are also separated from all 18 current n=9 references and all APN
+power functions. F040/F063 remain partial because unlisted non-power classes and
+literature-wide coverage remain unresolved. The six current partial findings are
+**F004, F040, F051, F052, F063 and F071**.
+
 Remaining work is explicitly scoped: unfinished full searches, source/table
-reconciliation, faithful reproduction of omitted paper pruning, general binary-code
-permutation equivalence, and complete literature/reference coverage. A sampled
+reconciliation, equivalence classification of unexhausted regions,
+and complete literature/reference coverage. A sampled
 search, invariant collision, missing catalog entry, or incomplete reference list
 cannot establish a previously unknown CCZ class.
 

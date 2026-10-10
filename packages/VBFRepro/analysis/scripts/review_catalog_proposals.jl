@@ -1,6 +1,8 @@
 # Read-only revalidation of the 32 historical F063 proposals. Root Julia project.
 # Full invariants are filters. Positive graph maps are independently replayed.
 using VBF, VBFCatalog, VBFSearch, SHA, TOML
+include(joinpath(@__DIR__,"apn_power_evidence.jl"))
+using .APNPowerEvidence
 const PROPOSAL_PAPERS=normpath(joinpath(@__DIR__,"..","..","papers"))
 const PROPOSAL_ROOT=normpath(joinpath(PROPOSAL_PAPERS,"..","..",".."))
 module ProposalB20
@@ -84,13 +86,16 @@ end
 Packed low bits are outputs, high bits inputs. Exact rank and block checks precede replay.
 For n8, also run VBFSearch's stdlib-only independent verifier.
 """
-function replay_proposal_ea(F,G,A::F2AffineMap)
+function replay_proposal_graph(F,G,A::F2AffineMap;relation::Symbol=:ea)
+    relation in (:ea,:ccz) || throw(ArgumentError("relation must be EA or CCZ"))
     n=inputbits(F); inputbits(G)==n && inputbits(A)==2n || return false
     cols=Int.(A.linear.cols);constant=Int(A.constant);mask=(1<<n)-1
     rank_f2(UInt.(cols);nbits=2n)==2n || return false
-    all(c->c>>n==0,cols[1:n]) || return false
-    rank_f2(UInt.(cols[1:n]);nbits=n)==n || return false
-    rank_f2(UInt.(cols[n+1:end].>>n);nbits=n)==n || return false
+    if relation==:ea
+        all(c->c>>n==0,cols[1:n]) || return false
+        rank_f2(UInt.(cols[1:n]);nbits=n)==n || return false
+        rank_f2(UInt.(cols[n+1:end].>>n);nbits=n)==n || return false
+    end
     seen=falses(1<<n)
     for x in 0:(1<<n)-1
         p=(x<<n)|Int(F.lut[x+1]);z=constant
@@ -101,26 +106,103 @@ function replay_proposal_ea(F,G,A::F2AffineMap)
         Int(G.lut[y+1])==z&mask || return false
     end
     all(seen) || return false
-    n!=8 || verify_ea_witness(F.lut,G.lut,cols,constant) || return false
+    verifier=relation==:ea ? verify_ea_witness : verify_ccz_witness
+    n!=8 || verifier(F.lut,G.lut,cols,constant) || return false
     true
 end
+replay_proposal_ea(F,G,A::F2AffineMap)=replay_proposal_graph(F,G,A;relation=:ea)
 
-function proposal_pair_evidence(F,G;timeout_seconds::Real=2,max_nodes::Int=100_000)
+function proposal_pair_evidence(F,G;timeout_seconds::Real=2,max_nodes::Int=100_000,relation::Symbol=:ea)
+    relation in (:ea,:ccz) || throw(ArgumentError("relation must be EA or CCZ"))
     timeout_seconds>=0 && max_nodes>=0 || throw(ArgumentError("nonnegative equivalence budgets required"))
     inputbits(F)==inputbits(G) || throw(ArgumentError("different dimensions"))
     if F.lut==G.lut
         A=F2AffineMap(identity_linear_map(2inputbits(F)),0)
-        replay_proposal_ea(F,G,A) || error("identity certificate failed")
+        replay_proposal_graph(F,G,A;relation) || error("identity certificate failed")
         return Dict("status"=>"identical_lut","columns"=>Int.(A.linear.cols),"constant"=>0)
     end
-    result=partition_refinement_equivalence(F,G;relation=:ea,timeout_seconds,max_nodes)
+    result=partition_refinement_equivalence(F,G;relation,timeout_seconds,max_nodes)
     if result isa Found
         A=first(result.functions)
-        replay_proposal_ea(F,G,A) || error("solver certificate failed independent replay")
-        return Dict("status"=>"ea_equivalent_witness_replayed","columns"=>Int.(A.linear.cols),"constant"=>Int(A.constant),"nodes"=>result.nodes_visited)
+        replay_proposal_graph(F,G,A;relation) || error("solver certificate failed independent replay")
+        return Dict("status"=>"$(relation)_equivalent_witness_replayed","columns"=>Int.(A.linear.cols),"constant"=>Int(A.constant),"nodes"=>result.nodes_visited)
     end
-    Dict("status"=>result isa Exhausted ? "exhaustive_ea_inequivalent" : "inconclusive_budget",
+    Dict("status"=>result isa Exhausted ? "exhaustive_$(relation)_inequivalent" : "inconclusive_budget",
          "nodes"=>result.nodes_visited,"elapsed_seconds"=>result.elapsed_seconds)
+end
+
+"""Every explicit catalog target gets a conclusive method or an unresolved outcome.
+EA exhaustion licenses CCZ separation only when BOTH functions are quadratic APNs.
+For arbitrary degree targets use general CCZ invariants or the general graph solver.
+"""
+function finite_target_evidence(F,r,power,controls,sig,matching_checks;
+        timeout_seconds::Real=2,max_nodes::Int=100_000)
+    G=r.F
+    result=Dict{String,Any}("reference"=>r.name,"scope"=>r.scope,
+        "candidate_sha256_uint16_le"=>proposal_lut_sha(F),
+        "reference_sha256_uint16_le"=>proposal_lut_sha(G),"reference_degree"=>r.degree)
+    if r.degree==2
+        if sig!=r.sigma
+            result["status"]="ccz_inequivalent_by_exact_quadratic_invariant"
+        else
+            proof=only(filter(x->x["reference"]==r.name,matching_checks))
+            merge!(result,proof)
+            if proof["status"]=="exhaustive_ea_inequivalent"
+                result["status"]="ccz_inequivalent_by_exhaustive_quadratic_ea"
+            end
+        end
+        return result
+    end
+    identity=power_target_identity(G,controls)
+    result["power_target_identity"]=identity
+    if identity["status"]=="literal_known_power_map"
+        result["status"]=power_exclusion_applies(F,power) ?
+            "ccz_inequivalent_by_yoshiara_power_theorem" : "inconclusive_power_coverage"
+        result["theorem"]=deepcopy(YOSHIARA_POWER_THEOREM)
+        return result
+    end
+    left=sorted_pairs(absolute_walsh_spectrum(F));right=sorted_pairs(absolute_walsh_spectrum(G))
+    if left!=right
+        result["status"]="ccz_inequivalent_by_exact_walsh_spectrum"
+        result["candidate_absolute_walsh"]=[[Int(a),Int(b)] for (a,b) in left]
+        result["reference_absolute_walsh"]=[[Int(a),Int(b)] for (a,b) in right]
+    else
+        merge!(result,proposal_pair_evidence(F,G;relation=:ccz,timeout_seconds,max_nodes))
+    end
+    result
+end
+
+const FINITE_NEGATIVE_STATUSES=Set(["ccz_inequivalent_by_exact_quadratic_invariant",
+    "ccz_inequivalent_by_exhaustive_quadratic_ea","ccz_inequivalent_by_yoshiara_power_theorem",
+    "ccz_inequivalent_by_exact_walsh_spectrum","exhaustive_ccz_inequivalent"])
+const FINITE_POSITIVE_STATUSES=Set(["identical_lut","ea_equivalent_witness_replayed","ccz_equivalent_witness_replayed"])
+
+function finite_catalog_disposition(checks)
+    isempty(checks) && return "no_catalog_references_available"
+    any(x->x["status"] in FINITE_POSITIVE_STATUSES,checks) && return "represented_in_current_catalog"
+    all(x->x["status"] in FINITE_NEGATIVE_STATUSES,checks) && return "ccz_inequivalent_to_current_catalog"
+    "comparison_incomplete"
+end
+
+"""Use the existing digest-bound n8 snapshot and independent n8 evidence machinery.
+The union is already computed. Only its indexed membership is queried; no corpus
+LUT/signature regeneration. Missing or changed snapshots remain unavailable.
+"""
+function archived_n8_proposal_evidence(F,reference_dir::AbstractString)
+    r=nothing
+    try
+        r=VBFSearch.open_reference(reference_dir;supplement_path="")
+        evidence=VBFSearch.classify(F.lut,r)
+        Dict{String,Any}("status"=>"available","reference"=>VBFCatalog.reference_metadata(r),
+            "candidate_sha256_uint16_le"=>proposal_lut_sha(F),
+            "independent_n8_properties"=>evidence,"literature_novelty_verified"=>false)
+    catch error
+        error isa InterruptException && rethrow()
+        Dict{String,Any}("status"=>"unavailable","reason"=>sprint(showerror,error),
+            "reference_dir"=>reference_dir,"literature_novelty_verified"=>false)
+    finally
+        r===nothing || VBFSearch.close_reference(r)
+    end
 end
 
 function proposal_disposition(checks,peers,quadratic_reference_count)
@@ -147,20 +229,28 @@ end
 
 """Validate all32 proposals against explicit functions-table rows and selected controls.
 All selected references have their APN flag checked, and exact sigma tuples recomputed.
-Nonquadratic references remain unresolved. No corpus/index-absence or literature novelty claim.
+Power targets use the complete Gold-domain theorem; other targets use general CCZ methods.
+All claims name their finite references. Literature completeness is never asserted.
 """
-function review_catalog_proposals(;timeout_seconds::Real=2,max_nodes::Int=100_000,io::IO=stdout)
+function review_catalog_proposals(;timeout_seconds::Real=2,max_nodes::Int=100_000,io::IO=stdout,
+        gold_max_evaluations::Int=typemax(Int),gold_timeout_seconds::Real=Inf,
+        n8_reference_dir::AbstractString=get(ENV,"VBF_F063_N8_REFERENCE",joinpath(PROPOSAL_ROOT,"data/apn/archive/census/results/signature_rebuild")))
     timeout_seconds>=0 && max_nodes>=0 || throw(ArgumentError("nonnegative equivalence budgets required"))
     catalog_path=joinpath(pkgdir(VBFCatalog),"BFA_catalog.sqlite")
     catalog_digest=bytes2hex(SHA.sha256(read(catalog_path)))
     candidates=catalog_proposal_candidates();db=load_catalog();references=NamedTuple[]
+    dimensions=sort!(unique(inputbits(c.F) for c in candidates))
+    gold=Dict(n=>build_gold_coverage(n;max_evaluations=gold_max_evaluations,timeout_seconds=gold_timeout_seconds) for n in dimensions)
+    controls=Dict(n=>known_power_controls(n) for n in dimensions)
     corpus_descriptors=Dict{String,Any}[]
     try
-        for n in sort!(unique(inputbits(c.F) for c in candidates)),row in list_functions(db;n,is_apn=true)
+        for n in dimensions,row in list_functions(db;n,is_apn=true)
             G=load_sbox(db,row.id);differential_uniformity(G)==2 || error("invalid APN catalog row$(row.id)")
             d=algebraic_degree(G)
             name=row.canonical_name===nothing ? "id:$(row.id)" : String(row.canonical_name)
-            push!(references,(;name,F=G,degree=d,scope="catalog_functions_table",sigma=d==2 ? sigma_key(G) : nothing))
+            source=Dict("id"=>Int(row.id),"source_repo"=>String(row.source_repo),
+                "bib_key"=>row.bib_key===nothing ? "unspecified" : String(row.bib_key))
+            push!(references,(;name,F=G,degree=d,scope="catalog_functions_table",sigma=d==2 ? sigma_key(G) : nothing,source))
         end
         for corpus in list_corpora(db)
             info=corpus_info(db,corpus)
@@ -170,7 +260,7 @@ function review_catalog_proposals(;timeout_seconds::Real=2,max_nodes::Int=100_00
         if corpus_info(db,name)!==nothing && isfile(corpus_store_path(name))
             G=corpus_function(db,name,12658)
             is_quadratic_apn(G) || error("selected corpus control invalid")
-            push!(references,(;name="$name:12658",F=G,degree=2,scope="selected_bulk_corpus_member",sigma=sigma_key(G)))
+            push!(references,(;name="$name:12658",F=G,degree=2,scope="selected_bulk_corpus_member",sigma=sigma_key(G),source=Dict("corpus"=>name,"member"=>12658)))
         end
     finally
         VBFCatalog.SQLite.close(db)
@@ -181,7 +271,7 @@ function review_catalog_proposals(;timeout_seconds::Real=2,max_nodes::Int=100_00
         modulus=n==10 ? 1135 : 2053
         G=SBox{n}([gf_pow(x,3,n;modulus) ⊻ gf_trace(gf_pow(x,9,n;modulus),n;modulus) for x in 0:(1<<n)-1])
         is_quadratic_apn(G) || error("prior trace-family control invalid")
-        push!(references,(;name="Budaghyan2009_x3_Trx9_n$n",F=G,degree=2,scope="explicit_prior_construction",sigma=sigma_key(G)))
+        push!(references,(;name="Budaghyan2009_x3_Trx9_n$n",F=G,degree=2,scope="explicit_prior_construction",sigma=sigma_key(G),source=Dict("bib_key"=>"Budaghyan_200904","modulus"=>modulus,"recipe"=>"x3+absolute_trace(x9)")))
     end
     signatures=Dict(c.name=>sigma_key(c.F) for c in candidates)
     records=Dict{String,Any}[]
@@ -204,6 +294,10 @@ function review_catalog_proposals(;timeout_seconds::Real=2,max_nodes::Int=100_00
         end
         same_n=[r for r in references if inputbits(r.F)==n]
         status=proposal_disposition(checks,peers,count(r->r.degree==2,same_n))
+        power=gold_power_evidence(F,gold[n])
+        targets=[finite_target_evidence(F,r,power,controls[n],sig,checks;timeout_seconds,max_nodes)
+            for r in same_n if r.scope=="catalog_functions_table"]
+        finite_status=finite_catalog_disposition(targets)
         record=Dict{String,Any}("name"=>c.name,"paper"=>c.paper,"source_locator"=>c.locator,"recipe"=>c.recipe,
             "n"=>n,"du"=>du,"degree"=>degree,"permutation"=>is_permutation(F),
             "lut"=>Int.(F.lut),"sha256_uint16_le"=>proposal_lut_sha(F),
@@ -211,10 +305,16 @@ function review_catalog_proposals(;timeout_seconds::Real=2,max_nodes::Int=100_00
             "sigma_absolute_walsh"=>[[Int(k),Int(v)] for (k,v) in sig[2]],
             "quadratic_reference_count"=>count(r->r.degree==2,same_n),
             "separated_quadratic_references"=>[r.name for r in same_n if r.degree==2 && r.sigma!=sig],
-            "unresolved_nonquadratic_references"=>[r.name for r in same_n if r.degree!=2],
+            "unresolved_nonquadratic_references"=>[r["reference"] for r in targets if r["reference_degree"]!=2 &&
+                !(r["status"] in union(FINITE_NEGATIVE_STATUSES,FINITE_POSITIVE_STATUSES))],
+            "power_exclusion"=>power,"catalog_target_checks"=>targets,
+            "finite_catalog_status"=>finite_status,
+            "finite_catalog_comparison_complete"=>!isempty(targets) && all(r->r["status"] in union(FINITE_NEGATIVE_STATUSES,FINITE_POSITIVE_STATUSES),targets),
+            "remaining_nonpower_scope"=>"Unlisted literature non-power constructions and arbitrary nonquadratic classes are outside this finite catalog snapshot.",
             "equivalence_checks"=>checks,"proposal_pair_checks"=>peers,"status"=>status,"literature_novelty"=>"unresolved")
         push!(records,record)
-        println(io,c.name,": du=",du," degree=",degree," ",status,"; matching references=",length(checks)," proposal pairs=",length(peers))
+        n==8 && (record["archived_n8_comparison"]=archived_n8_proposal_evidence(F,n8_reference_dir))
+        println(io,c.name,": du=",du," degree=",degree," ",status,"; finite catalog=",finite_status,"; all powers=",power["status"])
     end
     bytes2hex(SHA.sha256(read(catalog_path)))==catalog_digest || error("catalog changed during review; rerun against a stable input")
     implementation=Dict{String,Any}[]
@@ -228,6 +328,11 @@ function review_catalog_proposals(;timeout_seconds::Real=2,max_nodes::Int=100_00
         "reference_scope"=>"all current APN functions-table rows at proposal dimensions; bulk member beierleleander2022_n8:12658 if available; explicit prior trace functions at n10/n11",
         "catalog_sha256"=>catalog_digest,"implementation_source_identities"=>implementation,
         "runner_sha256"=>bytes2hex(SHA.sha256(read(@__FILE__))),
+        "power_evidence_helper_sha256"=>bytes2hex(SHA.sha256(read(joinpath(@__DIR__,"apn_power_evidence.jl")))),
+        "gold_coverage"=>[encode_gold_coverage(gold[n]) for n in dimensions],
+        "reference_functions"=>[Dict("name"=>r.name,"n"=>inputbits(r.F),"degree"=>r.degree,
+            "scope"=>r.scope,"source"=>r.source,"lut"=>Int.(r.F.lut),"sha256_uint16_le"=>proposal_lut_sha(r.F)) for r in references],
+        "finite_catalog_comparison_complete"=>all(r["finite_catalog_comparison_complete"] for r in records),
         "source_parameter_note"=>"Zheng Example1 is a verified representative z23 under modulus1033; primitive z2 yields DU4. No assertion about all primitive choices or unspecified publication field basis.",
         "literature_novelty_verified"=>false,"all_bulk_corpora_compared"=>false,
         "catalog_mutated"=>false,"source_identities"=>proposal_code_sources(candidates),

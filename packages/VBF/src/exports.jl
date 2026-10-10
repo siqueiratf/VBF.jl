@@ -66,6 +66,7 @@ export graph_image_by, graph_xor_equivalence
 export ccz_block_decomposition, ea_mapping
 export ccz_matrix, ea_matrix, ae_matrix, ae_perm_matrix
 export code_weight_enumerator
+export binary_code_equivalence, verify_code_equivalence, are_codes_equivalent
 export walsh_zeroes, walsh_zeroes_size
 export thickness, thickness_spectrum, enumerate_ccz_class
 export is_ccz_equivalent_to_permutation
