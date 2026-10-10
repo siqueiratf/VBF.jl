@@ -25,6 +25,9 @@ docs/                  Documenter.jl API-reference site
 Key layout rules:
 - One concept per file, grouped by concept directory under `packages/VBF/src/`.
 - `VBF` must never import `VBFCatalog`.
+- `VBFCatalog` is the canonical source for curated function entries, LUTs and
+  corpora. Consumers load its records through its APIs. Independent paper-formula
+  reconstructions and generated experiment evidence do not form another catalog.
 - Paper scripts in `packages/VBFRepro/papers/` orchestrate experiments; they do not re-implement
   core math that belongs in `packages/VBF`.
 

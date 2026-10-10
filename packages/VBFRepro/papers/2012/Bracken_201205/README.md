@@ -14,8 +14,7 @@ inclusion `{0, ±32768, ±65536}` follows immediately.
 
 The fresh single-thread Julia 1.13.1 run took 5.694 seconds on this machine.
 The complete paper suite passed **9,090 assertions**, including 8,901 independent
-finite-orbit controls. The [complete run manifest](../../../../../data/repro/runs/Bracken_201205/20261010T174551-4199ae95-92c7-4f8c-bbc4-899b445362eb/run.toml)
-and [certificate](results/orbit-20261010T174553-d1404e0e-d140-4efd-a3d5-61fd7e20b5b5/certificate.toml)
+finite-orbit controls. The runner manifest and generated certificate
 bind the result to its inputs and implementation. The per-case CSV SHA256 is
 `2c20b202840f3265a812451b75b5748b66b99fbfe96f66c41bf3668df1759fdb`.
 
@@ -23,8 +22,15 @@ A separate Python verifier using independent polynomial arithmetic and Boolean
 elimination replayed **every one of the 49,981 CSV rows**: derivative rank 28,
 augmented rank 29 and polar rank 28 all matched. Its polar masks were constructed
 from literal `Q(x+y)+Q(x)+Q(y)` evaluations. It imports no VBF routines; see the
-[independent verifier](../../../../../data/repro/audit/independent_controls/n30_full.py)
-and its run/hash bindings in the audit evidence.
+[independent verifier](test/verify_certificate.py). After generating a complete
+certificate, replay it with:
+
+```sh
+python3 packages/VBFRepro/papers/2012/Bracken_201205/test/verify_certificate.py \
+  packages/VBFRepro/papers/2012/Bracken_201205/results/orbit-<run>/coefficients.csv
+```
+
+The verifier prints the CSV hash, checked row count and reconstructed ranks.
 
 The default checks 256 cases and
 reports global conclusions as **inconclusive**. The explicit complete run is:
@@ -46,8 +52,8 @@ The resulting claim concerns this finite DU4 permutation instance; it proves
 neither an infinite parameter family nor CCZ novelty. Walsh **support inclusion**
 for nonzero output masks is certified using polar ranks; full signed-frequency
 histograms are not computed. This current scope supersedes historical sampled
-or brute-force-only descriptions below. Fresh run evidence is recorded in
-[`audit/followup_runs.toml`](../../../../../audit/followup_runs.toml).
+or brute-force-only descriptions below. Run manifests retain source/input hashes
+and execution logs under `data/repro/runs/Bracken_201205/`.
 
 ### Why 49,981 cases cover the complete instance
 

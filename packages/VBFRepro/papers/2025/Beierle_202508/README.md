@@ -4,11 +4,8 @@
 
 **F052: Partial.** A fresh member-9172 control completed both depth-six orders in **0.403 s**: lex level six `(58,90)`, bminK `(58,78)`. This is one member, not a whole-corpus runtime estimate. A resumable, input-hashed profile tally is feasible; the precise 32,892-class reference selection and source ordering still need reconciliation.
 
-This read-only review did not rerun the full paper test suite or establish new
-catalog gaps. See the [eight-finding work plan](../../../../../audit/partial_feasibility.md)
-and [bounded probe evidence](../../../../../audit/partial_feasibility_probes.toml)
-for commands, hashes, acceptance criteria and mathematical limits. This current
-assessment supersedes conflicting historical scope descriptions below.
+The bounded commands and remaining requirements are documented here.
+This current assessment supersedes conflicting historical scope descriptions below.
 
 Current audit application (2026-10-10): F052: `make table4_1` computes both :lex and :bminK profiles for explicitly identified eight-bit corpus members, with node/subspace budgets and side-store hashes. Budget failures return inconclusive entries. This adds the missing executable comparison; full Table 4.1 reconciliation, depth-six enumeration and the publication’s intended ordering remain unresolved.
 

@@ -43,6 +43,44 @@
         end
     end
 
+    @testset "all length-four codes under all coordinate permutations" begin
+        codes=Set{Tuple{Vararg{Int}}}([(0,)]);frontier=[Set([0])]
+        while !isempty(frontier)
+            C=pop!(frontier)
+            for x in 1:15
+                x in C && continue
+                D=union(C,Set(y ⊻ x for y in C));key=Tuple(sort!(collect(D)))
+                key in codes && continue
+                push!(codes,key);push!(frontier,D)
+            end
+        end
+        @test length(codes)==67
+        records=map(collect(codes)) do C
+            span=Set([0]);basis=Int[]
+            for x in C
+                x in span && continue
+                push!(basis,x);union!(span,Set(y ⊻ x for y in span))
+            end
+            G=Bool[isodd(x >> j) for x in basis,j in 0:3]
+            canonical=minimum(sum(1 << permute_word(w,p) for w in C) for p in permutations(4))
+            (;G,C=Set(C),canonical)
+        end
+        @test length(unique(r.canonical for r in records))==16
+        for left in records,right in records
+            result=binary_code_equivalence(left.G,right.G;timeout_seconds=10)
+            expected=left.canonical==right.canonical
+            @test !(result isa BudgetHit)
+            @test (result isa Found)==expected
+            if expected
+                p=only(search_solutions(result))
+                @test Set(permute_word(w,p) for w in left.C)==right.C
+                @test verify_code_equivalence(left.G,right.G,p)
+            else
+                @test proves_emptiness(result)
+            end
+        end
+    end
+
     @testset "degenerate generators, multiplicities and equal invariant collision" begin
         G=Bool[1 0 1 0 1;0 1 1 0 1]
         redundant=vcat(G,G[1:1,:],falses(2,5))

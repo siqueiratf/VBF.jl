@@ -161,7 +161,7 @@ signature of scheduler pressure rather than of a changed implementation.
 CONSEQUENCE FOR THE REPORT: every core-hour figure derived from this file
 carries a +/- 2x uncertainty band on a loaded machine. Estimates are quoted as
 single numbers for readability; read them as within a factor of two. This is
-stated in report.md's method section and is the reason no cost figure in the
+retained as a limitation of this historical measurement; no cost figure in the
 report is given to more than two significant digits.
 """
 

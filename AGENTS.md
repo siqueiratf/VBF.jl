@@ -50,6 +50,9 @@ Primary sources:
 - Reuse `VBF` APIs before writing paper-local helpers. `helpers.jl` is for
   paper-specific math only.
 - Never add a dependency from `VBF` to `VBFCatalog`.
+- Curated function entries, LUTs and corpora belong in `VBFCatalog`; consumers
+  load them through its APIs. Paper reconstructions and run evidence must not
+  become a parallel curated catalog.
 - Keep generated results, local overrides, credentials, and copyrighted paper
   inputs out of git.
 - **Catalog changes are gated.** `packages/VBFCatalog/BFA_catalog.sqlite` is a

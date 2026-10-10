@@ -1,6 +1,6 @@
 # Budaghyan, Carlet & Leander (2009) — Constructing new APN functions from known ones
 
-Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 51 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Budaghyan_200904/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. Historical catalog-gap LUT proposals were regenerated through Julia; see [F060 evidence](../../../../../audit/revalidated_luts.toml). This verifies their APN property and exact encodings; it does not establish novelty against the current reference corpus.
+Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 51 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Budaghyan_200904/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. The paper tests pin the source representatives’ APN properties, degrees and exact little-endian encoding hashes. These regressions do not establish novelty against the reference corpus.
 
 
 - **Citation:** L. Budaghyan, C. Carlet, G. Leander, "Constructing new APN functions from known

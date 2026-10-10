@@ -1,3 +1,4 @@
+using SHA
 @testset "helpers_test" begin
     include(joinpath(@__DIR__, "..", "helpers.jl"))
 
@@ -34,4 +35,10 @@
 
     # ortho-derivative signature defined for the quadratic APN, distinguishes Gold.
     @test od_signature(base, n) !== nothing
+    source = SBox{6}(apn_eq6(6,2;modulus=67))
+    @test differential_uniformity(source)==2
+    @test algebraic_degree(source)==2
+    @test bytes2hex(sha256(UInt8[b for x in source.lut for b in (Int(x)&255,Int(x)>>8)]))==
+        "ae993c1a057ce5028200b283b3d9ba38649231459334b89a17a751aee4b2af69"
+
 end

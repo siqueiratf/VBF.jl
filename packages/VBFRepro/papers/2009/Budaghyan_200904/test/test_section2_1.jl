@@ -1,3 +1,4 @@
+using SHA
 @testset "section2_1_test" begin
     include(joinpath(@__DIR__, "..", "section2_1.jl"))
 
@@ -26,4 +27,11 @@
     end
     @test !g_in_kernel(7, 3, 1, 0)                            # x⁹+tr(x³) out-of-kernel at n=7
     @test differential_uniformity(gold_plus_trace(7, 9, 3)) == 4
+    for (F,digest) in ((apn_x3_tr_x9(7;modulus=131),"586114819eb00b6396e939094ef0bcd09840103004149786f0f3159a056d1d92"),
+            (gold_plus_trace(8,9,3;modulus=283),"1375c6271096d7782fa96f8f608ff05e5b7f4e351fade92bcc450fc12eb56837"))
+        @test differential_uniformity(F)==2
+        @test algebraic_degree(F)==2
+        @test bytes2hex(sha256(UInt8[b for x in F.lut for b in (Int(x)&255,Int(x)>>8)]))==digest
+    end
+
 end

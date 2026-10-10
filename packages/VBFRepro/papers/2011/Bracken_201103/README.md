@@ -4,11 +4,8 @@
 
 **F071: Partial.** Finite comparisons against sourced earlier-family representatives are feasible. Table 3’s literal `x³+Tr(x³)` differs from the introduction’s `x³+Tr(x⁹)`; at even n the literal entry is an invertible output-linear transform of Gold. Preserve both readings. Other field-dependent rows need reconciliation. Prior-family coverage and complete equivalence classification of the n=12/n=15 parameter grids remain unresolved; APN grid verification alone does not classify them.
 
-This read-only review did not rerun the full paper test suite or establish new
-catalog gaps. See the [eight-finding work plan](../../../../../audit/partial_feasibility.md)
-and [bounded probe evidence](../../../../../audit/partial_feasibility_probes.toml)
-for commands, hashes, acceptance criteria and mathematical limits. This current
-assessment supersedes conflicting historical scope descriptions below.
+The bounded commands and remaining requirements are documented here.
+This current assessment supersedes conflicting historical scope descriptions below.
 
 F071 additional evidence: both admissible n=12 Frobenius representatives (s=5 and11) are tested; a bounded coefficient-grid command now exposes 241 admissible pairs per s. Table 2 now builds the literal u^290 term with the correct power index. `make family_separation` independently computes distinct full ortho-derivative signatures for all four Table 2 representatives, proving all six pairwise CCZ inequivalences. This does not compare them to every earlier construction or establish global novelty.
 
@@ -27,7 +24,7 @@ bin/vbfrepro run Bracken_201103 --target parameter_sweep --param k=5 \
 # Repeat with s=4,7,13.
 ```
 
-Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 43 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Bracken_201103/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. Historical catalog-gap LUT proposals were regenerated through Julia; see [F060 evidence](../../../../../audit/revalidated_luts.toml). This verifies their APN property and exact encodings; it does not establish novelty against the current reference corpus.
+Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 43 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Bracken_201103/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. The paper tests pin the source representatives’ APN properties, degrees and exact little-endian encoding hashes. These regressions do not establish novelty against the reference corpus.
 
 
 - **Citation:** C. Bracken, E. Byrne, N. Markin, G. McGuire, "A few more quadratic APN

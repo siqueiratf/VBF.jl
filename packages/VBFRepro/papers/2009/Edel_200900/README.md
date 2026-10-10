@@ -1,6 +1,6 @@
 # Edel & Pott (2009) — A new almost perfect nonlinear function which is not quadratic
 
-Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 42 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Edel_200900/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. Historical catalog-gap LUT proposals were regenerated through Julia; see [F060 evidence](../../../../../audit/revalidated_luts.toml). This verifies their APN property and exact encodings; it does not establish novelty against the current reference corpus.
+Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 42 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Edel_200900/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. The paper tests pin the source representatives’ APN properties, degrees and exact little-endian encoding hashes. These regressions do not establish novelty against the reference corpus.
 
 
 - **Citation:** Y. Edel, A. Pott, "A new almost perfect nonlinear function which is not

@@ -59,6 +59,10 @@ CLAUDE.md
 # touch it.
 !.claude/settings.json
 
+# Independent mathematical verifiers are source, not generated experiment files.
+!packages/VBFRepro/papers/2012/Bracken_201205/test/verify_certificate.py
+!packages/VBFRepro/analysis/test/verify_proposal_witnesses.py
+
 # READMEs are always tracked — including the per-paper review summaries under
 # packages/VBFRepro/papers/<year>/<Paper_ID>/README.md. Git resolves a path by the LAST matching
 # pattern, so this block must stay at the very bottom of the file: a negation
