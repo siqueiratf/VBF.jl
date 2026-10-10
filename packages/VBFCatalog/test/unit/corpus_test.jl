@@ -78,7 +78,7 @@ end
         end
     else
         @test_skip "beierle2025_n8 side store absent; rebuild it with " *
-                   "`make -C packages/VBFCatalog/data-build beierle2025`"
+                   "`make -C packages/VBFCatalog/src/import beierle2025`"
     end
 end
 

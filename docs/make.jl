@@ -6,7 +6,7 @@ using VBFRepro
 
 # The References page renders the catalog's BibTeX file (the single source of truth for both the catalog provenance and the docs bibliography).
 bib = CitationBibliography(
-    joinpath(@__DIR__, "..", "packages", "VBFCatalog", "data-raw", "bibliography.bib");
+    VBFCatalog.bibliography_path();
     style = :authoryear,
 )
 

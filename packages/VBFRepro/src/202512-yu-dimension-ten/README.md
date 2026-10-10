@@ -333,7 +333,7 @@ Evidence: the ortho-derivative differential spectrum was computed for all **14**
 ### Catalog-gap record 1
 
 ```toml
-target: packages/VBFCatalog/data-raw/apn_catalog/n10_apn.toml
+target: packages/VBFCatalog/src/entries/apn_catalog/n10_apn.toml
 name              = "n10_Yu2025_x3_tr_x9_short"
 n                 = 10
 m                 = 10
@@ -356,7 +356,7 @@ of `x³+Tr(x⁹)` built over the same field.
 ### Catalog-gap record 2 (needs a new file)
 
 ```toml
-target: packages/VBFCatalog/data-raw/apn_catalog/n11_apn.toml   (does NOT exist yet)
+target: packages/VBFCatalog/src/entries/apn_catalog/n11_apn.toml   (does NOT exist yet)
 name              = "n11_Gold3_plus_TrX9"
 n                 = 11
 m                 = 11
@@ -372,7 +372,7 @@ Equivalence evidence: δ=2, degree 2. The ortho-derivative differential spectrum
 n=11 catalog entries.
 
 **Caveat**: there is no `n11_apn.toml`; the existing n=11 rows come from
-`data-build/import_known_families.jl`, so maintainers should decide whether n=11 sporadics
+`src/import/import_known_families.jl`, so maintainers should decide whether n=11 sporadics
 belong in a new TOML or in that importer.
 
 ## Library-Reuse Note
@@ -424,6 +424,6 @@ this matters because it is the string a paper author would grep for before writi
 - Should Table 2 be asserted under the `:min_log` convention (matching n=6,7) with n ≥ 8
   marked unreproduced, or should all of Table 2 be demoted to "reported, not reproducible"?
 - Should the n=11 catalog gap create `n11_apn.toml`, or be routed through
-  `data-build/import_known_families.jl`?
+  `src/import/import_known_families.jl`?
 - `n10_apn.toml`'s `algebraic_form` strings say "modulus x^10 + x^3 + 1" (=1033) while
   entries are stored and loaded under Conway 1135 — intentional metadata, or a catalog bug?

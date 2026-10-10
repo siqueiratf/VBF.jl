@@ -259,7 +259,7 @@ own API — 41 reconciled claims, 0 substantive disagreements.
 
 ## Catalog Status
 
-`packages/VBFCatalog/data-raw/apn_catalog/n10_apn.toml` holds 4 power functions; the SQLite
+`packages/VBFCatalog/src/entries/apn_catalog/n10_apn.toml` holds 4 power functions; the SQLite
 adds Gold/Kasami index variants and 6 Taniguchi members (14 n=10 rows in total).
 Ortho-derivative DDT spectra were computed for all quadratic n=10 catalog entries and all
 Göloğlu functions:
@@ -294,7 +294,7 @@ function, so `x^57` and `x^339` are excluded too.
 
 ### Catalog-gap records (3 entries)
 
-Target file for all three: `packages/VBFCatalog/data-raw/apn_catalog/n10_apn.toml`. LUTs are
+Target file for all three: `packages/VBFCatalog/src/entries/apn_catalog/n10_apn.toml`. LUTs are
 1024 entries; regenerate verbatim from the named builder in
 `packages/VBFRepro/src/202207-gologlu-biprojective-apns/theorem3_2.jl` and check against the SHA-256 of
 `canonical_lut_bytes` given below (2 bytes per entry, little-endian).

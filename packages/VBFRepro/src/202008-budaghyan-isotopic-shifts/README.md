@@ -402,7 +402,7 @@ separate task. No TOML was written by this fix pass.
 ### Catalog-gap record
 
 ```
-target file: packages/VBFCatalog/data-raw/apn_catalog/n9_apn.toml
+target file: packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml
 name              = "n9_Budaghyan2020_isotopic_shift"
 n                 = 9
 m                 = 9
@@ -420,7 +420,7 @@ The full 512-entry LUT is in the review transcript. Equivalence evidence:
 `n9_Kasami_x241`, `n9_Welch_Niho_x19`, `n9_Inverse_x510`) are power maps, excluded
 by Yoshiara — exactly as the paper argues in Sec. VII-B. `bib_key
 = "Budaghyan_202008"` already exists at
-`packages/VBFCatalog/data-raw/bibliography.bib:828`.
+`packages/VBFCatalog/src/entries/bibliography.bib:828`.
 
 ### Secondary catalog gaps (block any complete in-repo novelty check at n=9)
 

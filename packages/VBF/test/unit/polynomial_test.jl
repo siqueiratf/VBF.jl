@@ -100,7 +100,7 @@ end
 end
 
 @testset "gf_monomial_lut: matches the committed n=5 entries" begin
-    # n=5 LUTs committed in data-raw/apn_catalog/n5_apn.toml were computed with x⁵ + x² + 1 = 37 as the modulus.
+    # n=5 LUTs committed in src/entries/apn_catalog/n5_apn.toml were computed with x⁵ + x² + 1 = 37 as the modulus.
     @test gf_monomial_lut(5, 3)  == [0, 1, 8, 15, 10, 31, 23, 4, 26, 25, 3, 6, 9, 30, 5, 20,
                                        14, 18, 22, 12, 24, 16, 21, 27, 2, 28, 11, 19, 13, 7, 17, 29]
     @test gf_monomial_lut(5, 5)  == [0, 1, 5, 22, 17, 25, 4, 30, 31, 24, 18, 7, 20, 26, 9, 21,

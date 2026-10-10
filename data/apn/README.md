@@ -23,9 +23,7 @@ The default layout is:
   archived evidence and the reference snapshot used by searches.
 - `reference/comparison.toml`: completed original-source comparison manifest.
 - `reference/fresh_union.sqlite`: exact union of recomputed signatures.
-- `reference/candidate_comparison.toml`: optional digest-bound historical input
-  verification report; other inputs are checked in full.
-- `supplement.tsv`: independently checked public supplemental LUTs and signatures.
+- `supplement.tsv`: VBF-validated public supplemental LUTs and signatures.
 
 In this checkout, the prepared union has 3,809,037 signatures and SHA-256
 `0eed9fb5d3a70bd24b8c8c9eefa61b0b882b9cd540dd06cda0cd430444f7b603`.
@@ -35,14 +33,15 @@ separate from the implementation in [VBFSearch](../../packages/VBFSearch/README.
 
 ## Rebuild or restore
 
-Use the [VBFCatalog reference tools](../../packages/VBFCatalog/tools/reference/README.md)
-and [VBFSearch literature tools](../../packages/VBFSearch/tools/literature/README.md)
+Use the [VBFCatalog import tools](../../packages/VBFCatalog/src/import/README.md)
+and [working-paper literature studies](../../packages/VBFWorkingPaper/README.md)
 to regenerate their artifacts:
 
 ```sh
 # Use a fresh directory: old rebuild identities deliberately reject changed code.
-for stage in fetch stored raw compare; do
-  make -C packages/VBFCatalog/tools/reference "$stage" \
+julia --project=packages/VBFCatalog/src/import packages/VBFCatalog/src/import/reference/fetch.jl /tmp/vbf-apn-reference-rebuild
+for stage in stored raw compare; do
+  make -C packages/VBFCatalog/src/import "$stage" \
     OUTDIR=/tmp/vbf-apn-reference-rebuild threads=16
 done
 mkdir -p data/apn/reference
@@ -51,8 +50,7 @@ cp /tmp/vbf-apn-reference-rebuild/fresh_union.sqlite data/apn/reference/
 cp data/apn/archive/census/results/literature_20261009/supplemental_luts.tsv data/apn/supplement.tsv
 ```
 
-If available, also copy the rebuild's `candidate_comparison.toml`. Alternatively
-restore these exact files from an archived experiment's documented inputs.
+Alternatively restore a completed snapshot from an experiment's documented inputs.
 Keep original raw files and their provenance manifests so another researcher can
 repeat the rebuild. Do not manufacture a completion manifest for an old index.
 

@@ -247,13 +247,13 @@ paper bugs: `test_theorem5_1.jl:12` `@test !row.paper_map_holds`, `test_theorem5
 
 ## Catalog Status — Family 𝓕₄ (Theorem 3.3)
 
-**Status: missing.** `packages/VBFCatalog/data-raw/apn_catalog/n12_apn.toml` contains only
+**Status: missing.** `packages/VBFCatalog/src/entries/apn_catalog/n12_apn.toml` contains only
 `n12_CalderiniLiVilla2023_F1` and `n12_CalderiniLiVilla2023_F2`. The previous revision
 prepared a record but the TOML was never updated.
 
 ### Catalog-gap record
 
-- **target file**: `packages/VBFCatalog/data-raw/apn_catalog/n12_apn.toml`
+- **target file**: `packages/VBFCatalog/src/entries/apn_catalog/n12_apn.toml`
 - **name**: `n12_GologluKolsch2025_F4`
 - **n / m**: `12` / `12`
 - **is_permutation**: `false` (3-to-1; image size 1366)

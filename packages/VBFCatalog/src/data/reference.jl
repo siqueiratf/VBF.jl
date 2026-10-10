@@ -34,7 +34,7 @@ Require the quadratic (8,8)-APN scope, complete declared source provenance, a ma
 the recorded signature count. An optional TSV supplement (`sigma_hash`,
 `lut_hex`) is verified before use. `supplement_signature(lut)` must validate
 that the LUT is a quadratic (8,8)-APN and return its signature hash; the default
-uses VBF, while an independent audit may supply a separate verifier.
+uses VBF; callers may supply a stricter validation policy.
 
 Every `required_signatures` hash must occur in the rebuilt database itself.
 Callers can therefore require representatives used in a mathematical coverage

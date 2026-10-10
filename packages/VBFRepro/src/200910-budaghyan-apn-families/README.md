@@ -102,7 +102,7 @@ Defects introduced in our implementation.
 - **Symptom:** two separate problems.
   1. `report.jl:55-57` still prints "n=9 eqs (7),(8) are catalog-gap candidates … **NOT written
      to VBFCatalog** by this reproduction", but
-     `packages/VBFCatalog/data-raw/apn_catalog/n9_apn.toml` already contains
+     `packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml` already contains
      `n9_Budaghyan2009_eq7` (line 91) and `n9_Budaghyan2009_eq8` (line 103) — confirmed present,
      with LUTs verified byte-identical to `apn_eq7(9,1)` / `apn_eq8(9,1)`.
   2. The claim "(7) and (8) are CCZ-inequivalent to **any function from previously known
@@ -181,7 +181,7 @@ make was reproduced**, including the four frozen ortho-derivative anchors in
 
 ### Catalog-gap record — `n6_BudaghyanCarletLeander2009_eq6_alpha`
 
-- target: `packages/VBFCatalog/data-raw/apn_catalog/n6_apn.toml`
+- target: `packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml`
 - `n = 6`, `m = 6`, `is_permutation = false`, `bib_key = "Budaghyan_200910"`
 - `algebraic_form = "x^3 + a^{-1} Tr(a^3 x^9) in GF(2^6) with a = alpha the primitive element
   (=2), modulus x^6 + x + 1 (=67)"`

@@ -377,7 +377,7 @@ The independent C reimplementation that preceded this run agreed on every load-b
 ### Catalog-gap record
 
 ```
-target file : packages/VBFCatalog/data-raw/apn_catalog/n6_apn.toml
+target file : packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml
 
 name              = "n6_CalderiniLiVilla2023_F2"
 n                 = 6

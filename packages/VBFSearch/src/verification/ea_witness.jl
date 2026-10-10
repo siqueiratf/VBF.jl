@@ -56,5 +56,3 @@ function verify_proposal_witnesses(path)
     (;certificates,points)
 end
 end
-# Existing catalog tools include this file directly; remove the alias with their refactor.
-const IndependentEAWitness=GraphWitnesses

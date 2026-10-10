@@ -37,7 +37,7 @@
 using VBFRepro, VBFCatalog, TOML
 const ROOT = VBFRepro.repo_root()
 const PAPERS = VBFRepro.papers_root()
-const BIB = joinpath(ROOT, "packages", "VBFCatalog", "data-raw", "bibliography.bib")
+const BIB = VBFCatalog.bibliography_path()
 const OUT = get(ENV, "VBF_WORKING_PAPER_OUTPUT", joinpath(ROOT, "data/working-paper/reproductions"))
 const REPORT_ONLY = "--report" in ARGS
 
@@ -269,7 +269,7 @@ function build()
     % Produced by packages/VBFWorkingPaper/src/analysis/reproductions/grades.jl from:
     %   packages/VBFRepro/src/<id>/input/*.tex     (the publication, PDF-converted)
     %   packages/VBFRepro/src/<id>/README.md       (the reproduction review)
-    %   packages/VBFCatalog/data-raw/bibliography.bib
+    %   packages/VBFCatalog/src/entries/bibliography.bib
     %   packages/VBFCatalog/BFA_catalog.sqlite  (bulk_corpora, functions)
     % Regenerate with:  julia --project=. packages/VBFWorkingPaper/src/analysis/reproductions/grades.jl
     """

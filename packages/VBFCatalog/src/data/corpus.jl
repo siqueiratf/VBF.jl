@@ -2,8 +2,8 @@
 Bulk-corpus access. Large function families (hundreds of thousands to millions
 of members) are kept OUT of the `functions` table — which would bloat the
 committed catalog by gigabytes — and instead recorded as a single descriptor
-row in `bulk_corpora`, with the members held in a compact, content-addressed
-**side store** under `corpora/<name>.sqlite`. Each member is stored as a packed
+row in `bulk_corpora`, with compact members in the catalog's `corpus_members`
+table or the shared local `data/catalog/members.sqlite`. Each member is packed
 encoding (currently `quadratic-coeffs-v1`: the weight-≤2 univariate coefficients,
 `VBF.encode_quadratic`); its full LUT is reconstructed on demand via
 `VBF.decode_quadratic_lut`. Full 2ⁿ-byte LUTs are materialised lazily into a
@@ -15,16 +15,63 @@ import DBInterface
 import SHA
 import Scratch
 
-# `corpora/` sits at the VBFCatalog package root (this file is `src/data/`).
-_corpora_dir() = normpath(joinpath(@__DIR__, "..", "..", "corpora"))
+"""Directory for downloaded bulk records and regenerable indexes.
 
+Override with `BFA_DATA_DIR`; defaults to the workspace's `data/catalog/`.
 """
-    corpus_store_path(name) -> String
+catalog_data_dir() = abspath(get(ENV, "BFA_DATA_DIR",
+    joinpath(@__DIR__, "../../../..", "data/catalog")))
 
-Path to the committed side store `corpora/<name>.sqlite` (the compact encodings).
+"""Path holding a corpus: the catalog itself or the local bulk database."""
+function corpus_store_path(db::SQLite.DB, name::AbstractString)
+    info = corpus_info(db, name)
+    info === nothing && throw(ArgumentError("unknown corpus '$name'"))
+    info.store_file in ("catalog","members.sqlite") || error("unsupported corpus store: $(info.store_file)")
+    info.store_file == "catalog" ? catalog_path(db) : joinpath(catalog_data_dir(), info.store_file)
+end
+function corpus_store_path(name::AbstractString)
+    db = load_catalog()
+    try
+        corpus_store_path(db, name)
+    finally
+        close(db)
+    end
+end
+
+"""Visit packed corpus rows in increasing member order with a scoped cursor.
+
+`f(rows)` must consume the cursor before returning. Missing stores are errors;
+this API never creates an empty input database.
 """
-corpus_store_path(name::AbstractString) =
-    joinpath(_corpora_dir(), String(name) * ".sqlite")
+function with_corpus_rows(f::Function, db::SQLite.DB, name::AbstractString; after::Integer=0)
+    path = corpus_store_path(db, name)
+    isfile(path) || error("corpus '$name': store not found at $path")
+    store = path == catalog_path(db) ? db : SQLite.DB("file:" * abspath(path) * "?mode=ro")
+    rows = DBInterface.execute(store,
+        "SELECT idx, coeffs FROM corpus_members WHERE corpus=? AND idx>? ORDER BY idx", (name, after))
+    try
+        f(rows)
+    finally
+        DBInterface.close!(rows)
+        store === db || close(store)
+    end
+end
+
+"""SHA-256 of concatenated packed members in increasing idx order.
+
+The digest binds record order and encoding bytes, independently of SQLite page
+layout. Metadata supplies the fixed record size and count. No equivalence or
+mathematical correctness is implied by this transport checksum.
+"""
+function corpus_digest(db::SQLite.DB, name::AbstractString)
+    ctx = SHA.SHA2_256_CTX()
+    with_corpus_rows(db, name) do rows
+        for row in rows
+            SHA.update!(ctx, row.coeffs)
+        end
+    end
+    bytes2hex(SHA.digest!(ctx))
+end
 
 _row_namedtuple(r) = (; (c => getproperty(r, c) for c in propertynames(r))...)
 
@@ -68,25 +115,27 @@ corpus_length(db::SQLite.DB, name::AbstractString) =
     (i = corpus_info(db, name); i === nothing ? 0 : Int(i.member_count))
 
 """
-    corpus_coefficients(name, i) -> Vector{UInt8}
+    corpus_coefficients(db, name, i) -> Vector{UInt8}
 
 The packed encoding of member `i` (1-based) read from the side store.
 """
-function corpus_coefficients(name::AbstractString, i::Integer)
-    path = corpus_store_path(name)
-    isfile(path) || error("corpus '$name': side store not found at $path")
-    store = SQLite.DB(path)
-    try
-        for r in DBInterface.execute(
-            store,
-            "SELECT coeffs FROM members WHERE idx = $(Int(i)) LIMIT 1",
-        )
-            return Vector{UInt8}(r.coeffs)
+function corpus_coefficients(db::SQLite.DB, name::AbstractString, i::Integer)
+    i > 0 || throw(ArgumentError("member index must be positive"))
+    with_corpus_rows(db, name; after=i-1) do rows
+        for row in rows
+            row.idx == i || break
+            return Vector{UInt8}(row.coeffs)
         end
-    finally
-        close(store)
+        throw(BoundsError(name, i))
     end
-    error("corpus '$name': no member at index $i")
+end
+function corpus_coefficients(name::AbstractString, i::Integer)
+    db = load_catalog()
+    try
+        corpus_coefficients(db, name, i)
+    finally
+        close(db)
+    end
 end
 
 """
@@ -100,7 +149,7 @@ function corpus_function(db::SQLite.DB, name::AbstractString, i::Integer)
     info === nothing && error("unknown corpus '$name'")
     n = Int(info.n)
     mod = Int(info.modulus)
-    lut = decode_quadratic_lut(corpus_coefficients(name, i), n, mod)
+    lut = decode_quadratic_lut(corpus_coefficients(db, name, i), n, mod)
     SBox{n}(lut)
 end
 
@@ -109,56 +158,41 @@ end
 """
     build_corpus_store!(name, encodings) -> NamedTuple
 
-Create the side store `corpora/<name>.sqlite` (overwriting) with one row per
-member, `members(idx INTEGER PRIMARY KEY, coeffs BLOB)`, from an iterable of
-`Vector{UInt8}` `encodings` (in order). Returns
-`(; path, sha256, count, bytes_per_member)`.
+Replace the named corpus's packed records transactionally. Other corpora are
+retained. By default records enter the staging catalog; `external=true` uses
+the shared local bulk database. Returns its location, ordered content digest,
+count and fixed encoding size. Registration supplies the dataset metadata.
 """
-function build_corpus_store!(name::AbstractString, encodings)
-    mkpath(_corpora_dir())
-    path = corpus_store_path(name)
-    isfile(path) && rm(path)
-    store = SQLite.DB(path)
+function build_corpus_store!(name::AbstractString, encodings; external::Bool=false)
+    db = load_catalog()
+    path = external ? joinpath(catalog_data_dir(), "members.sqlite") : catalog_path(db)
+    external && mkpath(dirname(path))
+    store = external ? SQLite.DB(path) : db
+    ctx = SHA.SHA2_256_CTX(); count = 0; bytes_per_member = 0
     try
-        SQLite.execute(
-            store,
-            "CREATE TABLE members (idx INTEGER PRIMARY KEY, coeffs BLOB NOT NULL)",
-        )
-        SQLite.execute(store, "BEGIN")
-        idx = 0
-        bpm = 0
-        for enc in encodings
-            idx += 1
-            bpm = length(enc)
-            SQLite.execute(
-                store,
-                "INSERT INTO members (idx, coeffs) VALUES ($idx, X'" *
-                bytes2hex(enc) *
-                "')",
-            )
-        end
-        SQLite.execute(store, "COMMIT")
-    finally
-        close(store)
-    end
-    # count via the file we just wrote
-    cnt = 0
-    bpm = 0
-    let s = SQLite.DB(path)
-        try
-            for r in DBInterface.execute(
-                s,
-                "SELECT COUNT(*) c, MAX(LENGTH(coeffs)) b FROM members",
-            )
-                cnt = Int(r.c)
-                bpm = r.b === missing ? 0 : Int(r.b)
+        SQLite.execute(store, "CREATE TABLE IF NOT EXISTS corpus_members (corpus TEXT NOT NULL, idx INTEGER NOT NULL CHECK(idx>0), coeffs BLOB NOT NULL, PRIMARY KEY(corpus,idx)) WITHOUT ROWID")
+        SQLite.transaction(store) do
+            DBInterface.execute(store, "DELETE FROM corpus_members WHERE corpus=?", (name,))
+            statement = DBInterface.prepare(store, "INSERT INTO corpus_members VALUES(?,?,?)")
+            try
+                for enc in encodings
+                    count += 1
+                    count == 1 && (bytes_per_member = length(enc))
+                    length(enc) == bytes_per_member && bytes_per_member > 0 || error("inconsistent corpus encoding size")
+                    SHA.update!(ctx, enc)
+                    DBInterface.execute(statement, (name, count, enc))
+                end
+            finally
+                DBInterface.close!(statement)
             end
-        finally
-            close(s)
+            count > 0 || error("empty corpus")
         end
+    finally
+        store === db || close(store)
+        close(db)
     end
-    sha = bytes2hex(SHA.sha256(read(path)))
-    (; path = path, sha256 = sha, count = cnt, bytes_per_member = bpm)
+    (; path, store_file=external ? "members.sqlite" : "catalog",
+       sha256=bytes2hex(SHA.digest!(ctx)), count, bytes_per_member)
 end
 
 """
@@ -261,19 +295,18 @@ function materialize_corpus_luts(
     n = Int(info.n)
     mod = Int(info.modulus)
     powtab = monomial_power_table(n, mod)
+    abspath(path) in (catalog_path(db), abspath(corpus_store_path(db,name))) &&
+        throw(ArgumentError("materialization cannot overwrite its catalog or corpus input"))
     isfile(path) && rm(path)
     out = SQLite.DB(path)
-    src = SQLite.DB(corpus_store_path(name))
     try
         SQLite.execute(
             out,
             "CREATE TABLE members (idx INTEGER PRIMARY KEY, lut BLOB NOT NULL)",
         )
         SQLite.execute(out, "BEGIN")
-        for r in DBInterface.execute(
-            src,
-            "SELECT idx, coeffs FROM members ORDER BY idx",
-        )
+        with_corpus_rows(db, name) do rows
+        for r in rows
             lut = decode_quadratic_lut(
                 Vector{UInt8}(r.coeffs),
                 n,
@@ -288,9 +321,9 @@ function materialize_corpus_luts(
                 "')",
             )
         end
+        end
         SQLite.execute(out, "COMMIT")
     finally
-        close(src)
         close(out)
     end
     path

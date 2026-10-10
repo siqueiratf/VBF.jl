@@ -346,9 +346,9 @@ APN function could arise (δ(G) ∈ {2,4}), and exhaustive checks of the paper's
 test range give **0 of 2016** APN swaps of the Dillon permutation on F₂⁶ and
 **0 of 8128** APN swaps of Gold x³ on F₂⁷ — confirming the l.247 remark. The
 Dillon permutation itself is already catalogued as `n6_Dillon_permutation`
-(`packages/VBFCatalog/data-build/import_known_families.jl:113`, bib key
+(`packages/VBFCatalog/src/import/import_known_families.jl:113`, bib key
 `Browning_201000`). Bibliography entry `Yuyin_201300` already exists
-(`packages/VBFCatalog/data-raw/bibliography.bib:609`).
+(`packages/VBFCatalog/src/entries/bibliography.bib:609`).
 
 **No Catalog-gap records emitted.**
 

@@ -266,7 +266,7 @@ pressure.
 
 ## Catalog status
 
-`packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml` has exactly 4 entries
+`packages/VBFCatalog/src/entries/apn_catalog/n8_apn.toml` has exactly 4 entries
 (`n8_Gold_x3`, `n8_Gold_x9`, `n8_Kasami_x57`, `n8_Calderini2021_thm62`) and **no
 Taniguchi entry**. All three Taniguchi reps are mugshot-distinct from all four
 (and `n8_Kasami_x57` is separated by algebraic degree 4 ≠ 2).

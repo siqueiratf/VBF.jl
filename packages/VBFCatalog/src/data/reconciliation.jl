@@ -7,7 +7,7 @@ upstream sources we cross-check against ([sboxU](@cite Perrin_202500),
 [Xanadu's apn-ccz-graph-framework](@cite Xanadu_202600),
 [`APN-Repository`](@cite Andersen_202500), …). This module is the
 read/write API over that table; the actual import scripts live under
-`data-build/import_*_apn.jl`.
+`src/import/import_*_apn.jl`.
 
 # Disagreement kinds (the `kind` column)
 - `"only_in_some"`         — function present in some sources, absent from others (`present_in` / `absent_from` columns list which).

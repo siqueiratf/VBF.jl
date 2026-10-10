@@ -1,10 +1,8 @@
--- BFA.jl catalog schema (schema_version = 1)
+-- VBFCatalog schema. Rebuild when SCHEMA_VERSION changes; no migrations.
 --
 -- Authoritative source-of-truth lives in this file; the same SQL is
 -- embedded as a constant in src/data/catalog.jl so the schema travels
--- with the package. Bumps require both:
---   1. an incremented `schema_version` row,
---   2. a numbered migration file under data-build/migrations/.
+-- with the package.
 
 CREATE TABLE IF NOT EXISTS schema_meta (
     schema_version INTEGER NOT NULL,
@@ -84,7 +82,7 @@ CREATE INDEX IF NOT EXISTS idx_recon_lut_sha ON reconciliation_disagreements(lut
 
 -- Bulk corpora: large families of functions kept OUT of the `functions` table
 -- (which would bloat by gigabytes). One descriptor row per corpus; the members
--- themselves live in a compact, content-addressed side store under `corpora/`
+-- themselves live in a compact, content-addressed side store in the catalog or shared local bulk store
 -- (a packed encoding — e.g. `quadratic-coeffs-v1`, the weight-≤2 univariate
 -- coefficients) from which each member's LUT is reconstructed on demand. Full
 -- 2ⁿ-byte LUTs are materialised lazily, never committed.
@@ -98,7 +96,7 @@ CREATE TABLE IF NOT EXISTS bulk_corpora (
     modulus          INTEGER NOT NULL,              -- GF(2ⁿ) modulus for encode/decode
     encoding         TEXT    NOT NULL,              -- e.g. "quadratic-coeffs-v1"
     bytes_per_member INTEGER NOT NULL,
-    store_file       TEXT    NOT NULL,              -- path under corpora/ (the side store)
+    store_file       TEXT    NOT NULL,              -- catalog or members.sqlite
     store_sha256     TEXT    NOT NULL,              -- content hash of the side store
     family           TEXT,
     bib_key          TEXT REFERENCES bibliography(bib_key),
@@ -108,9 +106,18 @@ CREATE TABLE IF NOT EXISTS bulk_corpora (
     notes            TEXT
 );
 
+-- Bundled records share the catalog; downloaded records use the identical table
+-- in data/catalog/members.sqlite. store_sha256 hashes encodings in idx order.
+CREATE TABLE IF NOT EXISTS corpus_members (
+    corpus TEXT NOT NULL,
+    idx INTEGER NOT NULL CHECK(idx > 0),
+    coeffs BLOB NOT NULL,
+    PRIMARY KEY(corpus, idx)
+) WITHOUT ROWID;
+
 -- NOTE: the σ-signature novelty index (ccz_sigma_index) is NOT part of the
 -- committed catalog. It is large (one row per catalogued function — millions)
 -- and fully regenerable from the corpora + functions table, so — like the
 -- bulk-corpus LUT stores — it lives in its own side store under
--- corpora/ccz_sigma_index.sqlite (build with `build_sigma_index!`, query with
+-- data/catalog/ccz_sigma_index.sqlite (build with `build_sigma_index!`, query with
 -- `classify_ccz`/`is_novel`; see src/data/sigma.jl).

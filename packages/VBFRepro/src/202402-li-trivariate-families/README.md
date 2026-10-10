@@ -410,7 +410,7 @@ unaffected (7 s): the testsets only use m ∈ {3, 5}.
 ### Catalog-gap record 1
 
 ```
-target file : packages/VBFCatalog/data-raw/apn_catalog/n9_apn.toml
+target file : packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml
 name              = "n9_LiKaleyski2024_F1"
 n                 = 9
 m                 = 9
@@ -435,7 +435,7 @@ modulus 11. First 16 values: `0, 1, 3, 4, 5, 6, 7, 2, 8, 72, 265, 335, 393, 459,
 ### Catalog-gap record 2
 
 ```
-target file : packages/VBFCatalog/data-raw/apn_catalog/n9_apn.toml
+target file : packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml
 name              = "n9_LiKaleyski2024_F2"
 n                 = 9
 m                 = 9

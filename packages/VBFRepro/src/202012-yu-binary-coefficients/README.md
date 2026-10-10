@@ -445,7 +445,7 @@ memory (and see R8: the pruning that would make them feasible is not implemented
 
 **Do not upgrade this verdict to world-novelty.** The n=9 catalog holds only 9
 entries, 5 of them quadratic, and there are **no n=9 bulk corpora** in
-`packages/VBFCatalog/corpora/` (all are n=8). f₇ — which the paper treats as *known*
+`packages/VBFCatalog/BFA_catalog.sqlite and data/catalog/` (all are n=8). f₇ — which the paper treats as *known*
 — also comes back `:new`, which proves known n=9 families are simply absent. σ also
 cannot compare s₁/s₂ against the 4 non-quadratic n=9 entries (CCZ does not preserve
 degree), and Γ/Δ-rank at n=9 is out of reach.

@@ -11,7 +11,7 @@ include(joinpath(@__DIR__, "..", "theorem6_exact.jl"))
     # A corrupted graph map cannot support the same conclusion.
     row = TOML.parsefile(EXACT_WITNESSES)["class_a"]
     bad = copy(row["columns"]); bad[1] = bad[2]
-    @test !IndependentEAWitness.verify_ea_witness(row["candidate_lut"], row["reference_lut"], bad, row["constant"])
+    @test !GraphWitnesses.verify_ea_witness(row["candidate_lut"], row["reference_lut"], bad, row["constant"])
     undecided = theorem6_exact_run(; recover = true, timeout_seconds = 0)
     @test all(ismissing(r.equivalent) && r.status == :inconclusive for r in undecided)
     recovered = theorem6_exact_run(; recover = true, timeout_seconds = 10)
