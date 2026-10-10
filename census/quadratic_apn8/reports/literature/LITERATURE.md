@@ -164,7 +164,7 @@ are useful historical pointers but are not a complete current registry.
 | [Thornburgh exclude-multiplicity dataset](https://github.com/Darrionat/dim8-quadratic-apn-exclude-multiplicities) | Previously omitted bibliographic/data lead. It records graph invariants of known quadratic APNs rather than supplying a separate newly constructed APN corpus. |
 | [SageMath cryptographic-functions library](https://github.com/hoeeg/SageMath_library_for_cryptographic_functions) | May 2026 software with known-family generators and recognition routines. Useful for a parameter-by-parameter family audit; no extra released eight-bit representative list located. Not every parameter choice was instantiated here. |
 | [Shi, CCZ equivalence of bivariate APNs, 2025](https://www.jstage.jst.go.jp/article/transfun/E108.A/9/E108.A_2025EAP1008/_pdf) | Studies the same generalized bivariate formula checked above, rather than supplying a separate representative corpus. |
-| [Calderini–Li–Villa, bivariate families](https://arxiv.org/abs/2204.07462) | Construction-family lead, with claimed new examples in dimension twelve. A parameter-complete instantiation in dimension eight was not performed here; include it in the outstanding family audit. |
+| [Calderini–Li–Villa, bivariate families](https://arxiv.org/abs/2204.07462) | Both families now have complete dimension-eight parameter checks; see [FAMILY_COVERAGE.md](FAMILY_COVERAGE.md). All valid instances have signatures in the rebuilt reference. |
 | [Göloğlu–Kölsch, arXiv:2605.17545](https://arxiv.org/abs/2605.17545) | Triprojective constructions in dimensions divisible by three; relevant to a broader-dimensional registry, not input dimension eight. |
 | [Ma–Liu–Huang, arXiv:2608.11939](https://arxiv.org/abs/2608.11939) | Current primary record is *CCZ-Equivalence and Enumeration of Triprojective APN Functions*, revised September 2026; dimensions divisible by three. Search-engine metadata for this identifier was inconsistent, so it must be pinned by revision. |
 | [Baudrin–Canteaut–Perrin, ePrint 2026/1012](https://eprint.iacr.org/2026/1012) | Structure and linear self-equivalences of known families; no additional released eight-bit corpus located. |
@@ -187,12 +187,15 @@ The public baseline plus the independently verified slide example gives a
 by these specified public inputs**. The supplemental representative is saved
 separately; the hash-bound rebuild database was not modified.
 
-The four checked candidate files still contribute **110,436 distinct signatures
-absent from that extended public baseline**. Combining the specified public
-inputs and those checked candidates certifies a lower bound of **3,919,474
-classes**. This does not establish that every candidate was previously unknown:
-the full announced switching results have not been compared. The screenshot's
-110,868 count remains outside the available input manifest.
+The subsequently reconciled **five** historical candidate files contribute
+**110,868 distinct signatures absent from that extended public baseline**.
+Combining these specified inputs certifies a lower bound of **3,919,906 classes**.
+The added hyperplane input accounts for the 432-class increase over the earlier
+four-file report. The [family audit](FAMILY_COVERAGE.md) further excludes the
+documented construction families and all APN power functions. This does not
+establish that every candidate was previously unknown: the full announced
+switching results have not been compared. Additional later discovery runs are
+counted separately in their own frozen evidence reports.
 
 A class count is not a count of literal functions. State the dimension,
 quadratic restriction, equivalence relation, and data cutoff. For quadratic
