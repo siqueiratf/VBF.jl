@@ -130,6 +130,7 @@ include("constructions/taniguchi.jl")
 include("constructions/le_automorphism_search.jl")
 include("constructions/apn_families.jl")
 include("constructions/apn_quadratic_families.jl")
+include("constructions/biprojective.jl")
 include("constructions/sporadic_apn.jl")
 
 # 7. random object generators

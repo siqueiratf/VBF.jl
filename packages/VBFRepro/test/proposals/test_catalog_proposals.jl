@@ -1,8 +1,8 @@
-# Lightweight finite-property and independently replayed certificate regressions.
+# Lightweight finite-property and VBF-replayed certificate regressions.
 # Run: julia --project=. packages/VBFRepro/test/proposals/test_catalog_proposals.jl
 using Test, TOML
 include(joinpath(@__DIR__, "..", "..", "tools", "catalog_proposals.jl"))
-module IndependentCertificates
+module ProposalCertificates
 include("verify_proposal_witnesses.jl")
 end
 
@@ -58,13 +58,13 @@ end
         file=joinpath(dir,"certificates.toml")
         save()=open(io->TOML.print(io,Dict("proposals"=>independent_rows)),file,"w")
         save()
-        @test IndependentCertificates.verify_proposal_witnesses(file).certificates==9
+        @test ProposalCertificates.verify_proposal_witnesses(file).certificates==9
         independent_rows[1]["equivalence_checks"][1]["columns"][1]=0
         save()
-        @test_throws AssertionError IndependentCertificates.verify_proposal_witnesses(file)
+        @test_throws AssertionError ProposalCertificates.verify_proposal_witnesses(file)
         independent_rows[1]["lut"][1]⊻=1
         save()
-        @test_throws AssertionError IndependentCertificates.verify_proposal_witnesses(file)
+        @test_throws AssertionError ProposalCertificates.verify_proposal_witnesses(file)
     end
     @test equivalence_evidence(boxes["Yu2025_trace_n11"],boxes["Budaghyan2009_x3_Trx9_n11"];timeout_seconds=0)["status"]=="identical_lut"
     @test equivalence_evidence(boxes["Li2024_F1_n9"],boxes["Beierle2022_perm1"];timeout_seconds=0,max_nodes=0)["status"]=="inconclusive_budget"

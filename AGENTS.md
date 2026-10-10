@@ -20,12 +20,12 @@ Primary sources:
   bibliography, importers, and SQLite-backed corpora. It depends on `VBF`.
 - `packages/VBFSearch/`: reproducible search application consuming VBF and VBFCatalog;
   owns experiment state, checkpoints and evidence, never curated catalog writes.
-- `packages/VBFCatalog/tools/reference/`: independent original-source rebuild tools;
+- `packages/VBFCatalog/tools/reference/`: original-source rebuild tools;
   run in the root project and write to `data/apn/rebuilds/`.
-- `packages/VBFSearch/{experiments,tools}/`: research consumers of package APIs.
+- `packages/VBFWorkingPaper/src/{census,hyperplanes,literature}/`: research studies consuming package APIs.
 - `docs/inspector/`: HTTP evidence viewer; own Julia environment.
 - `data/apn/`: reference snapshots, runs, rebuilds and historical artifacts. The
-  root `search/` and `census/` trees are retired; see `packages/VBFSearch/CENSUS_REVIEW.md`.
+  root `search/` and `census/` trees are retired; see `packages/VBFSearch/README.md`.
 - `packages/VBFCatalog/data-build/`: importer/build scripts with their own
   environment. Do not include these from package tests or a casual REPL.
 - `packages/VBFRepro/src/`: standalone paper-reproduction scripts. Keep one paper claim,
@@ -33,7 +33,7 @@ Primary sources:
   runnable on its own.
   Use flat `YYYYMM-author-subject/` folders, e.g. `202508-beierle-millions/`.
   Reproductions must never depend on VBFWorkingPaper.
-  Write new analysis and independent verifiers in Julia.
+  Write consumers in Julia and reuse VBF mathematics; do not add separate verification implementations.
 - `packages/<package>/perf/`: optional BenchmarkTools workloads and profiling.
   Separate development environments; never dependencies of package runtime code.
   Measurements live under `data/perf/`, separate from the curated catalog.

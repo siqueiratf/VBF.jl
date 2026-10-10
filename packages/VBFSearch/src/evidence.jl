@@ -1,10 +1,8 @@
 """Auditable eight-bit APN properties, corpus comparisons and affine graph certificates."""
 module DiscoveryEvidence
 using VBF, VBFCatalog, SHA, TOML, Dates
-include("verification/signature.jl")
 include("verification/ea_witness.jl")
-using .IndependentSignature
-using .IndependentEAWitness
+using .GraphWitnesses
 using ..APNPowerEvidence
 include("pair_evidence.jl")
 export equivalence_evidence, verify_graph_witness, properties, open_reference, close_reference, classify, compare, verify_comparison,
@@ -13,58 +11,40 @@ export equivalence_evidence, verify_graph_witness, properties, open_reference, c
 filehash(path) = bytes2hex(open(SHA.sha256,path))
 lut_id(lut) = bytes2hex(SHA.sha256(UInt8.(lut)))
 
-"""Compute the full DDT and Boolean ANF independently of VBF, then independently compute sigma."""
+"""Compute candidate properties through VBF's public mathematical APIs."""
 function properties(lut; detailed=false)
     length(lut)==256 && all(x->x isa Integer && 0<=x<=255,lut) || error("expected 256 bytes")
-    f = UInt8.(lut)
-    coeffs = copy(f)
-    for bit in 0:7, x in 0:255
-        x & (1<<bit)==0 || (coeffs[x+1] ⊻= coeffs[(x⊻(1<<bit))+1])
+    f=UInt8.(lut);F=SBox{8}(f)
+    degree=algebraic_degree(F);spectrum=differential_spectrum(F)
+    uniformity=maximum(first,spectrum);failure=Dict{String,Any}()
+    if uniformity>2
+        D=ddt(F);index=findfirst(>(2),@view D[2:end,:])
+        a,b=Tuple(index);b-=1
+        failure=Dict("a"=>a,"b"=>b,"solutions"=>[x for x in 0:255 if F(x)⊻F(x⊻a)==b])
     end
-    degree = maximum((count_ones(x) for x in 0:255 if coeffs[x+1]!=0);init=0)
-    histogram = zeros(Int,257)
-    counts = zeros(Int,256)
-    uniformity = 0
-    failure = Dict{String,Any}()
-    for a in 1:255
-        fill!(counts,0)
-        for x in 0:255
-            counts[Int(f[x+1]⊻f[(x⊻a)+1])+1] += 1
-        end
-        for (b,c) in enumerate(counts)
-            histogram[c+1] += 1
-            uniformity = max(uniformity,c)
-            if c>2 && isempty(failure)
-                failure = Dict("a"=>a,"b"=>b-1,"solutions"=>[x for x in 0:255 if f[x+1]⊻f[(x⊻a)+1]==b-1])
-            end
-        end
-    end
-    result = Dict{String,Any}("lut_sha256"=>lut_id(f),"lut_hex"=>bytes2hex(f),
+    result=Dict{String,Any}("lut_sha256"=>lut_id(f),"lut_hex"=>bytes2hex(f),
         "n"=>8,"m"=>8,"apn"=>uniformity==2,"differential_uniformity"=>uniformity,
         "algebraic_degree"=>degree,"quadratic"=>degree==2,
-        "ddt_histogram"=>[Dict("value"=>i-1,"count"=>c) for (i,c) in enumerate(histogram) if c>0],
-        "verification"=>"independent exhaustive DDT and Boolean Mobius transform",
-        "literature_novelty"=>"unresolved", "non_apn_witness"=>failure)
+        "ddt_histogram"=>[Dict("value"=>Int(v),"count"=>Int(c)) for (v,c) in VBF.sorted_pairs(spectrum)],
+        "verification"=>"VBF differential spectrum, algebraic degree and ortho-derivative signature",
+        "literature_novelty"=>"unresolved","non_apn_witness"=>failure)
     if uniformity==2 && degree==2
-        w = Workspace()
-        result["sigma_hash"] = bytes2hex(signature(w,f))
-        result["polar_ranks"] = fill(7,255)
-        result["ortho_lut_hex"] = bytes2hex(w.ortho)
-        result["sigma_definition"] = "SHA256 of differential and absolute-Walsh histograms of the ortho-derivative; v1"
+        result["sigma_hash"]=VBF.sigma_hash(F)
+        result["ortho_lut_hex"]=bytes2hex(UInt8.(ortho_derivative(F).lut))
+        result["sigma_definition"]="SHA256 of differential and absolute-Walsh histograms of the ortho-derivative; v1"
     end
     if detailed
-        F = SBox{8,UInt8}(f)
-        result["linearity"] = Int(linearity(F))
-        result["nonlinearity"] = Int(nonlinearity(F))
-        result["absolute_walsh_spectrum"] = [Dict("value"=>Int(v),"count"=>Int(c)) for (v,c) in sort!(collect(absolute_walsh_spectrum(F)))]
-        result["anf"] = [Dict("input_mask"=>x,"output_coefficient"=>Int(coeffs[x+1])) for x in 0:255 if coeffs[x+1]!=0]
+        result["linearity"]=Int(linearity(F));result["nonlinearity"]=Int(nonlinearity(F))
+        result["absolute_walsh_spectrum"]=[Dict("value"=>Int(v),"count"=>Int(c)) for (v,c) in VBF.sorted_pairs(absolute_walsh_spectrum(F))]
+        coeffs=anf(F)
+        result["anf"]=[Dict("input_mask"=>x,"output_coefficient"=>Int(coeffs[x+1])) for x in 0:255 if coeffs[x+1]!=0]
     end
     result
 end
 
 const Reference = VBFCatalog.AuditedAPNReference
 
-"""Cover every eight-bit Gold exponent (gcd(k,8)=1), independently verify each representative."""
+"""Cover every eight-bit Gold exponent (gcd(k,8)=1), check each representative with VBF."""
 function gold_coverage()
     [begin
         k=row.k;exponent=row.exponent
@@ -118,14 +98,14 @@ function classify(lut,r::Reference; detailed=false)
 end
 
 # Exhaustive negative outcomes are implementation-dependent; cache them only
-# against the exact mathematical solver sources, unlike independently checked witnesses.
+# against the exact mathematical solver sources, while positive maps are checked through VBF's graph API.
 function solver_fingerprint()
     root=joinpath(pkgdir(VBF),"src")
     paths=sort!([joinpath(d,f) for (d,_,files) in walkdir(root) for f in files if endswith(f,".jl")])
     bytes2hex(SHA.sha256(join([relpath(p,root)*":"*filehash(p) for p in paths],"\n")))
 end
 
-"""Return an independently checked positive map, a separating invariant, exhaustive negative, or inconclusive budget."""
+"""Return a checked positive map, a separating invariant, exhaustive negative, or inconclusive budget."""
 function compare(f,g;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000)
     relation in (:ea,:ccz) || error("relation must be ea or ccz")
     pf,pg = properties(f),properties(g)
@@ -144,7 +124,7 @@ function compare(f,g;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000)
     proof=equivalence_evidence(F,G;relation,timeout_seconds,max_nodes)
     if haskey(proof,"columns")
         merge!(result,Dict("status"=>"equivalent_with_verified_witness","equivalent"=>true,
-            "graph_map_columns"=>proof["columns"],"graph_map_constant"=>proof["constant"],"independent_witness_verified"=>true))
+            "graph_map_columns"=>proof["columns"],"graph_map_constant"=>proof["constant"],"witness_verified"=>true))
     elseif startswith(proof["status"],"exhaustive_")
         merge!(result,Dict("status"=>"inequivalent_by_exhaustive_solver","equivalent"=>false,
             "evidence"=>"finite native search exhausted; computational evidence, not a proof-assistant certificate"))

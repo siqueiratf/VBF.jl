@@ -5,7 +5,7 @@ The current drivers search restricted constructions of quadratic (8,8)-APNs.
 Experiment completion and reference absence always have an explicit finite scope.
 """
 module VBFSearch
-using VBF, VBFCatalog, SHA, TOML, Dates, Random, SQLite, DBInterface
+using VBF, VBFCatalog, SHA, TOML, Dates, Random, SQLite, DBInterface, CSV, JSON3
 
 include("power.jl")
 include("evidence.jl")
@@ -22,10 +22,11 @@ include("audit.jl")
 include("classify.jl")
 include("status.jl")
 include("operations.jl")
+include("report.jl")
 include("cli.jl")
 
 export equivalence_evidence, verify_graph_witness, SearchConfig, search, resume, status, stop!, audit, validate, report,
-       candidate_properties, compare, classify, classify_snapshot, open_reference,
+       report_snapshot, candidate_properties, compare, classify, classify_snapshot, open_reference,
        close_reference, verify_comparison, verify_ccz_witness, verify_ea_witness,
        verify_certificate, main
 

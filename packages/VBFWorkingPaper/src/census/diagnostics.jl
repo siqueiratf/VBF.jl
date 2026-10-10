@@ -24,8 +24,7 @@ isdefined(@__MODULE__, :encode_coeffs) || include(joinpath(@__DIR__, "helpers.jl
 using Random
 using VBFCatalog
 
-const SPOT_CORPORA = [("beierle2025_n8", 3_775_599), ("beierleleander2022_n8", 12_923),
-                      ("yuperrin2022_qam_n8", 5_412)]
+const SPOT_CORPORA = ["beierle2025_n8", "beierleleander2022_n8", "yuperrin2022_qam_n8"]
 
 "Recompute sigma hashes of random corpus members and check them against the index."
 function spot_check(; per_corpus::Int = 20, seed::Int = 2024, io::IO = stdout)
@@ -34,7 +33,7 @@ function spot_check(; per_corpus::Int = 20, seed::Int = 2024, io::IO = stdout)
     rng = Xoshiro(seed)
     ok = 0
     tot = 0
-    for (name, cnt) in SPOT_CORPORA, i in rand(rng, 1:cnt, per_corpus)
+    for name in SPOT_CORPORA, i in rand(rng, 1:VBFCatalog.corpus_length(db,name), per_corpus)
         F = VBFCatalog.corpus_function(db, name, i)
         h = VBFCatalog.sigma_hash(F)
         rows = [(String(r.source), Int(r.member_idx)) for r in VBFCatalog.DBInterface.execute(idx,
@@ -46,48 +45,13 @@ function spot_check(; per_corpus::Int = 20, seed::Int = 2024, io::IO = stdout)
     (found = ok, total = tot)
 end
 
-"F_2 rank of a list of row bit vectors."
-function f2rank(rows::Vector{UInt16})
-    r = copy(rows)
-    rk = 0
-    for bit in 15:-1:0
-        piv = findfirst(x -> (x >> bit) & 1 == 1, r)
-        piv === nothing && continue
-        p = r[piv]
-        deleteat!(r, piv)
-        rk += 1
-        for i in eachindex(r)
-            (r[i] >> bit) & 1 == 1 && (r[i] ⊻= p)
-        end
-    end
-    rk
-end
-
-"Counts of components `b.F` (b = 1..2^n-1) with bilinear-form rank 8, 6, 4, 2 (n = 8)."
-function rank_distribution(C::Matrix{UInt16}, n::Int = 8)
-    d = Dict{Int,Int}()
-    for b in 1:(1 << n) - 1
-        rows = UInt16[]
-        for i in 1:n
-            r = UInt16(0)
-            for j in 1:n
-                count_ones(UInt16(b) & C[i, j]) % 2 == 1 && (r |= UInt16(1) << (j - 1))
-            end
-            push!(rows, r)
-        end
-        k = f2rank(rows)
-        d[k] = get(d, k, 0) + 1
-    end
-    [get(d, r, 0) for r in (8, 6, 4, 2)]
-end
-
 "Print invariants of the (8,8) function with coefficient string `coeffs`."
 function properties(coeffs::AbstractString; aut::Bool = false, io::IO = stdout)
     C = decode_coeffs(coeffs, 8)
     F = sbox_from_coeffs(coeffs, 8)
     println(io, "coeffs = ", coeffs)
-    @printf(io, "  du=%d  rank distribution (8,6,4,2) = %s\n", differential_uniformity(F),
-            string(rank_distribution(C)))
+    @printf(io, "  du=%d  rank distribution (8,6,4,2,0) = %s\n", differential_uniformity(F),
+            string(VBF.QuadraticRestrictions.rank_hist(C,8,8)))
     println(io, "  sigma = ", VBFCatalog.sigma_hash(F))
     println(io, "  |abs Walsh spectrum| = ", VBF.sorted_pairs(absolute_walsh_spectrum(F)))
     flush(io)

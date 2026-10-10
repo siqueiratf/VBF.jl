@@ -181,7 +181,7 @@ function check_uniqueness(; n::Int = 8, samples::Int = 5000, hpf::Int = 5, seed:
         end
     end
     summarize(res, n, io)
-    outdir = joinpath(@__DIR__, "../../../../data/apn/runs/hyperplanes")
+    outdir = joinpath(@__DIR__, "../../../../data/working-paper/hyperplanes")
     mkpath(outdir)
     path = joinpath(outdir, "uniq_n$(n).tsv")
     open(path, "w") do f

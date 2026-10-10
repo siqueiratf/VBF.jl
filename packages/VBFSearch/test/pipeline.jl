@@ -39,7 +39,7 @@ end
         @test audit(output;reference,supplement="")["database_integrity"]=="ok"
         input=joinpath(output,"inputs","1_seed.tsv")
         imported=validate([input];output=joinpath(dir,"import"),reference,supplement="",limit=1)
-        @test imported["records_independently_verified"]==1
+        @test imported["records_verified"]==1
         @test !imported["complete_input_validation"]
         @test_throws ErrorException search(config)
     end

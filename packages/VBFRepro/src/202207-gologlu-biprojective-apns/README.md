@@ -359,3 +359,7 @@ Target file for all three: `packages/VBFCatalog/data-raw/apn_catalog/n10_apn.tom
 - Is `F₁(m=4)` genuinely EA-equivalent to `n8_Taniguchi_m1_a0_b2`? This needs
   `are_ea_equivalent`, which could not be run here.
 - Is `F₀` in the Table I/II captions a real (undefined) family, or an extraction artifact?
+
+The shared `biprojective_sbox` evaluator now comes from VBF. Paper scripts retain
+their theorem-specific parameter selection and tests; the general evaluator does
+not claim that arbitrary coefficients produce an APN function.

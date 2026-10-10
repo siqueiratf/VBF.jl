@@ -45,15 +45,15 @@ function gold_reach(n::Int; u::Int = 1, io::IO = stdout)
     cls
 end
 
-"TPPA Example 4.2 (catalog n8_Taniguchi2025_ex4_2) is a hyperplane neighbour of x^3 at n = 8."
+"Check the Example 4.2 signature against extensions of x^3; a match alone is not an equivalence proof."
 function example42_check(; io::IO = stdout)
     s = VBFCatalog.sigma_hash(VBFCatalog.load_apn_function("n8_Taniguchi2025_ex4_2"))
     cls = gold_reach(8; io)
-    println(io, "Example 4.2 sigma ", s, " among the classes of the extensions of x^3|_H: ", s in cls)
+    println(io, "Example 4.2 sigma ", s, " among extension signature buckets (equivalence unresolved): ", s in cls)
     s in cls
 end
 
-"Exact hyperplane-neighbour graph for n = 7 (or 6) on the catalog classes."
+"Hyperplane-neighbour signature graph on the catalog representatives; signature matches do not prove equivalence."
 function graph_small(n::Int; io::IO = stdout)
     reps = catalog_reps(n)
     sig = [VBFCatalog.sigma_hash(SBox{n}(UInt8.(l))) for (_, _, l) in reps]
@@ -92,7 +92,7 @@ function graph_small(n::Int; io::IO = stdout)
     println(io, "  classes with a non-symmetric neighbour list: ", asym)
     println(io, "  degree histogram: ", hist(deg))
     println(io, "  connected components: ", ncomp)
-    path = joinpath(@__DIR__, "../../../../data/apn/runs/hyperplanes/graph_n$(n).tsv")
+    path = joinpath(@__DIR__, "../../../../data/working-paper/hyperplanes/graph_n$(n).tsv")
     mkpath(dirname(path))
     open(path, "w") do f
         println(f, "class_id\tdegree\tneighbours\te_over_2^(n-1)_histogram")
@@ -108,7 +108,7 @@ end
 
 "|Aut| (ortho-derivative method) of the catalog classes of dimension n -> results/aut_n<n>.tsv."
 function aut_small(n::Int; io::IO = stdout)
-    path = joinpath(@__DIR__, "../../../../data/apn/runs/hyperplanes/aut_n$(n).tsv")
+    path = joinpath(@__DIR__, "../../../../data/working-paper/hyperplanes/aut_n$(n).tsv")
     mkpath(dirname(path))
     open(path, "w") do f
         println(f, "class_id\taut")
@@ -127,7 +127,7 @@ function isolated8(; k::Int = 20, seed::Int = 3, extra = [3049449], io::IO = std
     db = VBFCatalog.load_catalog()
     cnt = VBFCatalog.corpus_length(db, "beierle2025_n8")
     ids = vcat(rand(rng, 1:cnt, k), extra)
-    path = joinpath(@__DIR__, "../../../../data/apn/runs/hyperplanes/isolated_n8.tsv")
+    path = joinpath(@__DIR__, "../../../../data/working-paper/hyperplanes/isolated_n8.tsv")
     mkpath(dirname(path))
     res = Vector{Any}(undef, length(ids))
     Threads.@threads :dynamic for t in eachindex(ids)

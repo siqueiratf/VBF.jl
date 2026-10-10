@@ -18,8 +18,6 @@ using VBF
 
 
 const STUDY_TITLE = "Number of CCZ classes of quadratic APN functions on F_2^8"
-const STUDY_DIR = normpath(joinpath(@__DIR__,"../../../../data/apn/archive/census"))
-const LEGACY_DIR = normpath(joinpath(@__DIR__, "..", "..", "..", "VBFRepro", "src", "202508-beierle-millions", "results", "class_count"))
 
 # Known classes: lower bound of Beierle et al. (2025), Theorem 5.1.
 const KNOWN_CLASSES = 3_808_491
@@ -42,23 +40,6 @@ const EXACT_MASS = Dict(
 # Exact tree sizes T(n,m) (exact_count by DFS).
 const EXACT_T = Dict((3, 3) => 168, (3, 4) => 2520, (3, 5) => 26040, (4, 4) => 1_128_960)
 
-# Published results of the 4,012,000-sample run (s1.tsv + chunks c101..c140).
-const PUBLISHED = (
-    samples = 4_012_000,
-    hits = 1661,
-    mass = 5.464e6,
-    mass_se = 1.58e5,
-    coverage = 0.6770,
-    coverage_se = 0.0133,
-    n_cov = 5.621e6,
-    n_cov_se = 1.1e5,
-    new_sigma = 553,
-)
-
-# The 553 new classes of the legacy run (sigma_hash<TAB>coeffs, sorted by hash).
-const NEW_CLASSES_FILE = joinpath(@__DIR__, "../../../../data/apn/archive/census/new_classes_553.tsv")
-const NOVELTY_STATUS = "historical index absence; use VBFSearch validation against the source-rebuilt reference for current evidence"
-
 function print_header(io::IO = stdout)
     println(io, "# Census: ", STUDY_TITLE)
     println(io, "# Knuth estimator of sum 1/|Stab| and sigma-index coverage")
@@ -72,14 +53,7 @@ end
 
 # --- coefficient strings -----------------------------------------------------------
 
-"""
-    encode_coeffs(C, n) -> String
-
-Hex string of `C[a,b]` for `a < b` in row order, two hex digits each
-(28 bytes = 56 characters for `n = 8`).
-"""
-encode_coeffs(C::Matrix{UInt16},n::Int) = VBF.QuadraticAPNTree.encode_coeffs(C,n)
-decode_coeffs(coeffs::AbstractString,n::Int) = VBF.QuadraticAPNTree.decode_coeffs(coeffs,n)
+using VBF.QuadraticAPNTree: encode_coeffs, decode_coeffs
 sbox_from_coeffs(coeffs::AbstractString,n::Int) = SBox{n}(UInt8.(VBF.QuadraticAPNTree.lut(decode_coeffs(coeffs,n),n)))
 
 # --- sample files --------------------------------------------------------------------
@@ -148,7 +122,6 @@ end
 #   <name>_hits.tsv    no header, one row per hit: file, seed, i, logw, e, coeffs.
 #                      logw is the original text, so parse() gives the same Float64.
 
-const DATA_DIR = joinpath(@__DIR__, "../../../../data/apn/archive/census/data")
 const MANIFEST_HEADER = "file\tseed\tsamples\tneg_inf\tzero_e\thits\tsha256"
 
 "True when `path` is a compact manifest (first line is `MANIFEST_HEADER`)."
@@ -290,63 +263,6 @@ function compact_samples(sources, manifest::AbstractString; write_hits::Bool = t
 end
 
 """
-    compact_legacy(legacy_dir = LEGACY_DIR, out_dir = DATA_DIR)
-
-Write `legacy_chunks.tsv` + `legacy_hits.tsv` (s1.tsv, chunks/c101..c140) and
-`legacy_s77_chunks.tsv` (counts only; s77.tsv is too large for the repository).
-Reads the legacy files only.
-"""
-function compact_legacy(legacy_dir::AbstractString = LEGACY_DIR,
-                        out_dir::AbstractString = DATA_DIR; io::IO = stdout)
-    src = [("s1.tsv", joinpath(legacy_dir, "s1.tsv"), 1)]
-    cdir = joinpath(legacy_dir, "chunks")
-    for f in sort(filter(f -> occursin(r"^c\d+\.tsv$", f), readdir(cdir)); by = f -> parse(Int, f[2:end-4]))
-        push!(src, ("chunks/" * f, joinpath(cdir, f), parse(Int, f[2:end-4])))
-    end
-    compact_samples(src, joinpath(out_dir, "legacy_chunks.tsv"); io)
-    s77 = joinpath(legacy_dir, "s77.tsv")
-    isfile(s77) && compact_samples([("s77.tsv", s77, 7)], joinpath(out_dir, "legacy_s77_chunks.tsv");
-                                   write_hits = false, io)
-    nothing
-end
-
-"""
-    verify_sample_file(path, manifest; seed, io) -> Bool
-
-Compare a regenerated sample file with the manifest row of `seed`: counts, SHA-256 and,
-when the hits file exists, every hit row (i, logw, e, coeffs).
-"""
-function verify_sample_file(path::AbstractString, manifest::AbstractString; seed::Int,
-                            io::IO = stdout)
-    rows = filter(r -> r.seed == seed, read_manifest(manifest))
-    length(rows) == 1 || error("manifest $manifest has $(length(rows)) rows with seed $seed")
-    r = only(rows)
-    s = scan_sample_file(path)
-    checks = Pair{String,Bool}[
-        "samples" => s.samples == r.samples,
-        "neg_inf" => s.neg_inf == r.neg_inf,
-        "zero_e" => s.zero_e == r.zero_e,
-        "hits" => length(s.hits) == r.hits,
-    ]
-    hp = hits_path(manifest)
-    if isfile(hp)
-        ref = [(x.i, x.logw, x.e, x.coeffs) for x in get(read_hit_rows(hp), r.file, [])]
-        push!(checks, "hit rows" => s.hits == ref)
-    end
-    push!(checks, "sha256" => s.sha256 == r.sha256)
-    println(io, "regenerated ", path)
-    println(io, "reference   ", manifest, " row ", r.file, " (seed ", r.seed, ")")
-    for (k, v) in checks
-        @printf(io, "  %-9s %s\n", k, v ? "identical" : "DIFFERS")
-    end
-    @printf(io, "  counts: samples=%d neg_inf=%d zero_e=%d hits=%d (reference %d %d %d %d)\n",
-            s.samples, s.neg_inf, s.zero_e, length(s.hits), r.samples, r.neg_inf, r.zero_e, r.hits)
-    ok = all(last, checks)
-    println(io, ok ? "verify_data: PASS (byte-identical)" : "verify_data: FAIL")
-    ok
-end
-
-"""
     mass_estimate(lw, n, m; batches = 20) -> NamedTuple
 
 Knuth estimate of `T(n,m) / (|GL(n,2)| |GL(m,2)|) = sum 1/|Stab|` with its standard
@@ -373,7 +289,7 @@ end
 # --- results -------------------------------------------------------------------------
 
 function results_dir(sub::AbstractString = "")
-    dir = joinpath(@__DIR__, "../../../../data/apn/runs/census", sub)
+    dir = joinpath(@__DIR__, "../../../../data/working-paper/census", sub)
     mkpath(dir)
     dir
 end

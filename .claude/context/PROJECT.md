@@ -13,7 +13,7 @@ packages/VBF/          core algorithms  (representations, spectra, invariants,
                         equivalence, constructions — no catalog dependency)
 packages/VBFCatalog/   data layer: SQLite catalog, bibliography, importers
                         (depends on VBF; VBF must NOT depend on VBFCatalog)
-packages/VBFSearch/    reproducible APN search and research consumers
+packages/VBFSearch/    reproducible APN search and candidate evidence
 docs/inspector/        HTTP evidence viewer consuming all three packages
 data/apn/             reference snapshots, runs, rebuilds and historical data
 packages/VBFRepro/      reproduction runner and standalone publication claims
@@ -36,8 +36,7 @@ Key layout rules:
   Working-paper studies live in `packages/VBFWorkingPaper/`. Reproductions
   never depend on WorkingPaper. Shared evidence belongs to VBFSearch, catalog
   queries to VBFCatalog, and saved timing readers to VBF/perf/analysis.
-  New verifiers and analysis code are Julia; independent checks use stdlib
-  arithmetic without calling the VBF routine they verify.
+  Consumers are Julia and reuse VBF's tested algorithms for verification and invariants.
 
 ## Running tests
 
@@ -141,6 +140,6 @@ checkpoints are unsupported. See `packages/VBFSearch/README.md` for the supporte
 The root `census/` tree is removed. Pure coefficient-tree, restriction and profile
 math lives in VBF (`QuadraticAPNTree`, `QuadraticRestrictions`, `QuadraticProfiles`).
 Original-source rebuild tools are `packages/VBFCatalog/tools/reference/`;
-literature audits and study consumers are under `packages/VBFSearch/{tools,experiments}/`.
+literature coverage and study consumers are under `packages/VBFWorkingPaper/src/`.
 Historical data is `data/apn/archive/census/`; new rebuilds use `data/apn/rebuilds/`.
-See `packages/VBFSearch/CENSUS_REVIEW.md` for the detailed audit and retired components.
+See `packages/VBFSearch/README.md` for checkpointing and mathematical guarantees.

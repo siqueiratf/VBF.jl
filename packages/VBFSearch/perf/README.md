@@ -14,7 +14,7 @@ julia --project=packages/VBFSearch/perf packages/VBFSearch/perf/test.jl
 
 The [shared measurement protocol](../../VBF/perf/README.md) uses BenchmarkTools,
 `evals=1`, explicit seeds, fresh payloads and separate validation. Every selected
-comparison is bounded and its evidence is checked independently outside timing.
+comparison is bounded and its evidence is checked through VBF outside timing.
 Each persistence sample creates a fresh SQLite store in a temporary directory,
 checks the resulting seed record and closes/removes the store afterward. No
 existing experiment, checkpoint or reference corpus is modified.

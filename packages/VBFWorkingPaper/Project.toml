@@ -39,17 +39,5 @@ VBFSearch = "dd0bf59e-0517-4d11-a31d-bfc185ba0bb1"
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources.VBF]
-path = "../VBF"
-
-[sources.VBFCatalog]
-path = "../VBFCatalog"
-
-[sources.VBFRepro]
-path = "../VBFRepro"
-
-[sources.VBFSearch]
-path = "../VBFSearch"
-
 [targets]
 test = ["Test"]

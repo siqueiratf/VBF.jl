@@ -14,7 +14,7 @@ packages depends on it. Importing the package starts no experiment.
 
 Shared measurement/profile readers live in `VBF/perf/analysis/`. Mathematical
 algorithms live in VBF, stored signature summaries in VBFCatalog, and generic
-Gold-power/equivalence evidence and independent witness replay in VBFSearch.
+Gold-power/equivalence evidence and VBF-backed graph witness checks in VBFSearch.
 Finite construction-proposal checks remain in VBFRepro's `tools/` and `test/proposals/`.
 There is no second curated function catalog here.
 
@@ -78,3 +78,16 @@ trials and explicitly supplied historical SQLite repetitions retain distinct
 protocols. `crossings` analyzes archived CSVs; `manuscript input=/path/to/legacy.sqlite`
 builds the older selected-run thesis report. Gold-input corpus projections remain
 assumption-dependent projections, not full-corpus measurements.
+
+Census and hyperplane studies live under `src/census/` and `src/hyperplanes/`;
+finite construction coverage is under `src/literature/`. These use VBF mathematics
+and VBFSearch evidence. Their tests run in the WorkingPaper package suite and use
+generated fixtures. Historical controls and separate verification engines were
+retired. The catalog API/layout consolidation is a separate change.
+
+For publication figures from a search snapshot:
+
+```sh
+make -C packages/VBFWorkingPaper search-figures \
+  run="$PWD/data/apn/runs/experiment01" figure_output="$PWD/data/working-paper/search-figures"
+```
