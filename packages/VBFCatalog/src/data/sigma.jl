@@ -53,6 +53,32 @@ committed).
 """
 sigma_index_path() = joinpath(catalog_data_dir(), "ccz_sigma_index.sqlite")
 
+"""Rebind curated signature rows after catalog IDs change during a rebuild.
+
+Bulk signatures are retained. Compute all replacements before the transaction;
+failure leaves the existing index untouched.
+"""
+function refresh_curated_sigma_index!(db::SQLite.DB;path=sigma_index_path())
+    isfile(path) || return 0
+    rows=[(sigma_hash(load_sbox(db,Int(r.id))),Int(r.n),Int(r.id)) for r in
+        DBInterface.execute(db,"SELECT id,n FROM functions WHERE is_apn=1 AND is_quadratic=1 ORDER BY id")]
+    idx=SQLite.DB(path)
+    try
+        SQLite.execute(idx,_SIGMA_COVERAGE_DDL)
+        SQLite.transaction(idx) do
+            SQLite.execute(idx,"DELETE FROM ccz_sigma_index WHERE source='functions'")
+            SQLite.execute(idx,"DELETE FROM sigma_coverage WHERE source='functions'")
+            for (hash,n,id) in rows
+                SQLite.execute(idx,"INSERT INTO ccz_sigma_index VALUES(?,?,?,?)",(hash,n,"functions",id))
+            end
+            SQLite.execute(idx,"INSERT INTO sigma_coverage VALUES('functions',-1,1)")
+        end
+        length(rows)
+    finally
+        close(idx)
+    end
+end
+
 function _open_sigma_index(; create::Bool = false)
     p = sigma_index_path()
     if !isfile(p) && !create

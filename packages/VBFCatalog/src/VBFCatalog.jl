@@ -29,6 +29,7 @@ include("data/corpus.jl")
 include("data/equivalence.jl")
 include("data/sigma.jl")
 include("data/summary.jl")
+include("data/classification.jl")
 include("data/ccz_fingerprint.jl")
 include("data/reference.jl")
 

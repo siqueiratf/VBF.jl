@@ -33,6 +33,7 @@ export sigma_key, sigma_hash, build_sigma_index!, classify_ccz, is_novel
 export ccz_fingerprint_key, ccz_fingerprint_hash, build_ccz_fingerprint_index!
 export ccz_fingerprint_index_path, classify_ccz_fingerprint, is_novel_fingerprint
 export populate_ccz_equivalence_classes!, sigma_index_path
+export refresh_curated_sigma_index!
 
 export AuditedAPNReference, open_apn_reference, close_apn_reference
 export reference_metadata, reference_contains_signature, reference_exact_lut_match
@@ -41,3 +42,4 @@ export signature_summary, signature_count
 
 export equivalence_evidence, verify_graph_witness, equivalence_solver_fingerprint
 export check_equivalence!, list_equivalence_checks, verify_equivalence_check
+export deduplicate_signature_buckets!, classify_signature_buckets!, classification_summary

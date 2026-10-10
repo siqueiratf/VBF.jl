@@ -36,3 +36,8 @@ large bulk store, skipped datasets remain explicit coverage gaps and affected
 novelty queries refuse a definitive result. `make check` runs the Julia
 source/database agreement check and package tests. There is no Python verifier,
 historical-path adapter, migration runner or selective in-place catalog sync.
+
+`make classify threads=30 CLASSIFY_ARGS='--n 8 --seconds 1'` deduplicates the
+repeated-signature buckets and checkpoints native EA/CCZ classification evidence.
+Repeat with a larger budget to retry unresolved pairs; completed checks are
+reused. See the package guide for the SQL summary and precise guarantees.

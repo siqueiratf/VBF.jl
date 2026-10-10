@@ -248,6 +248,12 @@ function main()
     check_catalog(CATALOG_FILE)
     mv(CATALOG_FILE, FINAL_CATALOG; force = true)
     delete!(ENV, "BFA_CATALOG_PATH")
+    db=load_catalog(FINAL_CATALOG)
+    try
+        refresh_curated_sigma_index!(db)
+    finally
+        close(db)
+    end
     @info "Catalog rebuilt and verified" path=FINAL_CATALOG file_size_bytes=filesize(FINAL_CATALOG) families=length(after) functions=sum(values(after))
 end
 
