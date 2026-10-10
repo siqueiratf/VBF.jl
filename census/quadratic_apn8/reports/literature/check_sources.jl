@@ -163,8 +163,8 @@ function check_sources(root,baseline)
     all(r["status"]=="ea_equivalent" for r in witnesses) || error("unresolved positive equivalence checks")
     code_paths = [joinpath(dir,f) for (dir,_,files) in walkdir(joinpath(REPO,"packages/VBF/src")) for f in files if endswith(f,".jl")]
     append!(code_paths,[(@__FILE__),joinpath(@__DIR__,"prepare_sources.py"),joinpath(@__DIR__,"sources.tsv"),
-        joinpath(REPO,"Manifest.toml"),joinpath(@__DIR__,"../../rebuild_corpus/signature.jl"),
-        joinpath(@__DIR__,"../../rebuild_corpus/ea_witness.jl")])
+        joinpath(REPO,"Manifest.toml"),joinpath(@__DIR__,"../../../../search/apn/verification/signature.jl"),
+        joinpath(@__DIR__,"../../../../search/apn/verification/ea_witness.jl")])
     report = Dict("baseline_sha256"=>baseline_sha,"inputs_sha256"=>inputs_sha,
         "candidate_report_sha256"=>filehash(joinpath(baseline,"candidate_comparison.toml")),
         "distinct_absent_signatures"=>length(missing),"absent_candidate_overlaps"=>count(h->h in candidate_hashes,keys(missing)),

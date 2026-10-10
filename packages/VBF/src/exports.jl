@@ -125,3 +125,5 @@ export table_anomaly, table_negative_anomaly
 # tier 8 — presentation
 export to_markdown, to_latex, table_to_markdown, table_to_latex
 export print_banner, print_section, print_check, print_kv, status_str
+
+export QuadraticExtensions

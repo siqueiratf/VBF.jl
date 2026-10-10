@@ -1,5 +1,5 @@
 # Implements the Fourier extension (n, n-2) -> (n, n) of quadratic functions
-# Study: B6 = 52 extension search (census/quadratic_apn8/search_b52)
+# Beierle et al. (2025), Fourier extension of quadratic component spaces
 #
 # Math:
 #   V = Alt(n) = F_2^N, N = n(n-1)/2, with the basis x_i x_j (1 <= i < j <= n, i outer,
@@ -40,17 +40,37 @@
 # Also: coefficient strings, component forms, ranks, subspaces of Comp(F) with a given
 # number of bent elements, the bent counts of all cosets x + V of a subspace V (Fourier),
 # the U-class key, and a brute-force reference for small n.
-# VBF API used: none (callers use SBox, differential_uniformity)
+# VBF API used: SBox; histogram fingerprints use the SHA standard library.
 
-module Ext
+"""
+    QuadraticExtensions
+
+Fourier extensions of quadratic component spaces. Forms use square-free Boolean
+ANF coordinates and decomposable bivectors test the APN condition. See the
+file's derivation and small-dimension brute-force verifier. The workflow at
+`search/apn` supplies persistence and independently validates returned functions.
+
+Histogram keys are necessary filters only; matching keys do not establish
+EA/CCZ equivalence and must not justify skipping an exhaustive search.
+"""
+module QuadraticExtensions
 
 export Geometry, geometry, form_rank, form_rank_slow, coeffs_from_hex, hex_from_coeffs,
        coord_forms, forms_to_coeffs, lut_from_coeffs, comp_forms, rref, span_dim,
        extensions, extensions_bruteforce, ExtWork, s_key, lift, fwht!, each_rref,
        subspaces_of_comp, best_hyperplane_bent, bent_fourier, flat_fourier, BETA8,
-       coset_bent_counts!, hist_key, bent_mask, gauss_binom, V5Work, v5_extensions
+       coset_bent_counts!, bent_mask, gauss_binom, V5Work, v5_extensions, function_of, max_bent_dim
 
+using ..VBF: SBox
 using SHA
+
+"Fingerprint a histogram; equality is not an equivalence certificate."
+function hist_key(h::AbstractDict)
+    io = IOBuffer()
+    for (v, c) in sort!(collect(h)); print(io, v, ':', c, ','); end
+    d = sha256(take!(io))
+    (reinterpret(UInt64, d[1:8])[1], reinterpret(UInt64, d[9:16])[1])
+end
 
 # --- geometry ---------------------------------------------------------------------
 
@@ -81,7 +101,7 @@ gauss_binom(n, k) = prod(big(2)^(n - i) - 1 for i in 0:k-1; init = big(1)) ÷
 
 "Geometry of Alt(n) (n <= 8): pair indices, flats and rank tables."
 function geometry(n::Int)
-    n <= 8 || error("n <= 8 only")
+    2 <= n <= 8 || throw(ArgumentError("dimension must be between 2 and 8"))
     N = n * (n - 1) ÷ 2
     pair = zeros(Int, n, n); pairs = Tuple{Int,Int}[]; k = 0
     for i in 1:n, j in i+1:n
@@ -732,17 +752,18 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
     (; Ss, nX, nX_used, next_x=start_x+nX_used, du_reject = du_rej, ncand, nT, key, capped, skipped = false)
 end
 
-# --- class keys --------------------------------------------------------------------------
-
-"""
-128-bit key (two UInt64) of a histogram (value => count). Equal classes give equal keys;
-the converse is not guaranteed (see README).
-"""
-function hist_key(h::AbstractDict)
-    io = IOBuffer()
-    for (v, c) in sort!(collect(h)); print(io, v, ':', c, ','); end
-    d = sha256(take!(io))
-    (reinterpret(UInt64, d[1:8])[1], reinterpret(UInt64, d[9:16])[1])
+"""Construct a square quadratic SBox from a basis of alternating coordinate forms."""
+function function_of(G::Geometry, S::AbstractVector{UInt32})
+    c = forms_to_coeffs(S, G.N)
+    c, SBox{G.n}(UInt8.(lut_from_coeffs(G, c)))
 end
 
+"""Largest bent-element count among all k-dimensional subspaces of a component space."""
+function max_bent_dim(comp::Vector{UInt32}, bent::BitVector, k::Int)
+    best = Ref(0); nbest = Ref(0)
+    subspaces_of_comp(comp, bent, k; keep = nb -> begin
+        nb > best[] ? (best[] = nb; nbest[] = 1) : (nb == best[] && (nbest[] += 1)); false
+    end)
+    best[], nbest[]
+end
 end

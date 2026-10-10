@@ -24,7 +24,7 @@ using SQLite
 using VBF
 using VBFCatalog
 using SHA,TOML,Dates
-include("../discovery/evidence.jl")
+include("../../../search/apn/evidence.jl")
 using .DiscoveryEvidence
 
 const WEB_DIR = @__DIR__
@@ -114,7 +114,7 @@ function init!()
     for r in DBInterface.execute(idx, "SELECT COUNT(*) c FROM ccz_sigma_index WHERE n = $N")
         rows = Int(r.c)
     end
-    reference=DiscoveryEvidence.open_reference(joinpath(STUDY_DIR,"results","signature_rebuild"))
+    reference=DiscoveryEvidence.open_reference(get(ENV,"VBF_APN_REFERENCE",normpath(joinpath(WEB_DIR,"../../../data/apn/reference"))))
     st = State(idx, cat, read_census(), rows, ReentrantLock(), read_others(),reference)
     # A coverage gap makes classify_ccz throw. Fail at start, not at the first request.
     classify_ccz(SBox{N}(gf_monomial_lut(N, 3; modulus = DEFAULT_MODULUS));
@@ -397,8 +397,8 @@ function run_ea!(j::EAJob, F, G;relation=:ea,timeout_seconds=30,max_nodes=1_000_
         end
         proof=DiscoveryEvidence.compare(F.lut,G.lut;relation,timeout_seconds,max_nodes)
         proof["created_utc"]=string(Dates.now(Dates.UTC))
-        proof["algorithm_sha256"]=DiscoveryEvidence.filehash(joinpath(STUDY_DIR,"discovery","evidence.jl"))
-        dir=joinpath(STUDY_DIR,"discovery","results","web")
+        proof["algorithm_sha256"]=DiscoveryEvidence.filehash(joinpath(STUDY_DIR,"../../search/apn/evidence.jl"))
+        dir=joinpath(STUDY_DIR,"../../search/apn/results/web")
         mkpath(dir)
         open(io->TOML.print(io,proof;sorted=true),joinpath(dir,"comparison_$(time_ns()).toml"),"w")
         if !isempty(RUN_DIRECTORY[])

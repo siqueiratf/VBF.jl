@@ -3,25 +3,22 @@ const DISCOVERY_USAGE=nothing
 using SHA
 const BOOT_PROVENANCE_SHA=bytes2hex(open(SHA.sha256,joinpath(@__DIR__,"provenance.jl")))
 include("provenance.jl")
-const BOOT_IMPLEMENTATION=source_fingerprint_impl(normpath(joinpath(@__DIR__,"../../..")))
-BOOT_IMPLEMENTATION["census/quadratic_apn8/discovery/provenance.jl"]==BOOT_PROVENANCE_SHA || error("provenance helper changed while loading")
+const BOOT_IMPLEMENTATION=source_fingerprint_impl(normpath(joinpath(@__DIR__,"../..")))
+BOOT_IMPLEMENTATION["search/apn/provenance.jl"]==BOOT_PROVENANCE_SHA || error("provenance helper changed while loading")
 include("evidence.jl")
 include("store.jl")
 include("inputs.jl")
 using .DiscoveryEvidence,.DiscoveryStore,.DiscoveryInputs
 using VBF,VBFCatalog,SHA,TOML,Dates,Random
-module Fourier
-include("../search_b52/common.jl")
-end
-const ROOT=normpath(joinpath(@__DIR__,"../../.."))
+const Fourier=VBF.QuadraticExtensions
 
 function run_options(args)
     cfg=Dict("outdir"=>joinpath(@__DIR__,"results","run"),"resume"=>"false",
         "method"=>"switching","wall-seconds"=>"28800","seconds"=>"60",
         "evaluations"=>"10000","workers"=>string(Threads.nthreads()),
         "limit"=>"1000","seed"=>"82026","chunk-x"=>"128",
-        "target-b6"=>"52","v5-bent"=>"max","baseline"=>Existing.DEFAULT_OUTPUT,
-        "supplement"=>joinpath(ROOT,Existing.SUPPLEMENT),
+        "target-b6"=>"52","v5-bent"=>"max","baseline"=>DEFAULT_REFERENCE,
+        "supplement"=>DEFAULT_SUPPLEMENT,
         "orbit-seconds"=>"0","ea-representatives"=>"0")
     inputs=String[]
     iseven(length(args)) || error("use --name VALUE pairs")
@@ -64,10 +61,13 @@ function scientific_run(args)
     dir=abspath(cfg["outdir"])
     resume || !isdir(dir) || isempty(readdir(dir)) || error("new runs need an empty output directory")
     mkpath(dir)
-    original=unique(vcat([joinpath(ROOT,p) for p in [Existing.STUDY_INPUTS;Existing.SUPPLEMENT]],extra))
+    original=unique(extra)
     frozen=joinpath(dir,"inputs")
     if !resume
         mkpath(frozen)
+        if isempty(original)
+            catalog_seeds(joinpath(frozen,"1_catalog.tsv"))
+        end
         for (i,p) in enumerate(original)
             isfile(p) || error("missing input $p")
             cp(p,joinpath(frozen,string(i)*"_"*basename(p)))
@@ -79,6 +79,7 @@ function scientific_run(args)
     semantic=Dict(k=>cfg[k] for k in ("method","limit","seed","target-b6","v5-bent","orbit-seconds","ea-representatives"))
     identity=Dict("configuration"=>semantic,"inputs"=>source_fingerprint(paths),"code"=>code_identity(),
         "reference"=>Dict(k=>reference.metadata[k] for k in ("sha256","manifest_sha256","supplement_sha256","signatures")),
+        "reference_locations"=>Dict("baseline"=>abspath(cfg["baseline"]),"supplement"=>abspath(cfg["supplement"])),
         "julia"=>string(VERSION))
     store=open_store(dir,identity;resume)
     started=time_ns();remaining()=max(0.0,wall-(time_ns()-started)*1e-9)
@@ -97,24 +98,30 @@ function scientific_run(args)
     end
     errors=String[]
     try
+    # Only a verified resume owning the writer lease may clear a stop request.
+    resume && isfile(joinpath(dir,"STOP")) && rm(joinpath(dir,"STOP"))
     # Archive the exact implementation, including uncommitted work, outside git.
     for (relative,digest) in identity["code"]
         destination=joinpath(dir,"source",relative)
         if !isfile(destination)
-            mkpath(dirname(destination));cp(joinpath(ROOT,relative),destination)
+            mkpath(dirname(destination))
+            temporary=destination*".tmp"
+            cp(joinpath(ROOT,relative),temporary;force=true)
+            filehash(temporary)==digest || error("implementation changed during source archive: $relative")
+            mv(temporary,destination)
         end
         filehash(destination)==digest || error("source archive changed: $relative")
     end
         if isempty(query(store,"SELECT value FROM metadata WHERE key='plan_complete'"))
             transaction(store) do
-            _,seeds=Existing.load_study(paths,max(1,cld(parse(Int,cfg["limit"]),length(paths))),Xoshiro(parse(Int,cfg["seed"])))
+            _,seeds=load_study(paths,max(1,cld(parse(Int,cfg["limit"]),length(paths))),Xoshiro(parse(Int,cfg["seed"])))
             gold=gold_apn(8).lut
             gp=properties(gold)
             pushfirst!(seeds,(gp["sigma_hash"],bytes2hex(gold)))
             unique!(seeds);resize!(seeds,min(length(seeds),parse(Int,cfg["limit"])))
             for (hash,payload) in seeds
                 kind=cfg["method"]=="v5" ? "prepare_v5" : "switching"
-                seed!(store,Existing.candidate_lut(payload),hash,kind)
+                seed!(store,candidate_lut(payload),hash,kind)
             end
             if cfg["method"]=="switching" && parse(Int,cfg["ea-representatives"])>0
                 for seed in query(store,"SELECT * FROM seeds")

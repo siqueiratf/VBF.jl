@@ -6,8 +6,8 @@ Reuse is digest-bound. This rechecks baseline membership, not all 500090 DDTs.
 """
 const CONFIRM_HISTORY_USAGE=nothing
 using TOML,SHA,Dates,VBF,VBFCatalog
-include("../../discovery/evidence.jl")
-include("../../discovery/inputs.jl")
+include("../../../../search/apn/evidence.jl")
+include("../../../../search/apn/inputs.jl")
 using .DiscoveryEvidence,.DiscoveryInputs
 
 """Resolve audited signatures through the existing catalog API, without importing duplicate rows."""
@@ -51,7 +51,7 @@ function confirm_history(familydir,historypath=joinpath(@__DIR__,"../../discover
             reference.metadata[key]==family["reference"][key]==history["reference"][key] || error("different reference scopes")
         end
         filehash(joinpath(baseline,"candidate_comparison.toml"))==history["verification"]["prior_report_sha256"] || error("prior independent report changed")
-        paths=[joinpath(Existing.REPO,s["path"]) for s in history["sources"]]
+        paths=[joinpath(ROOT,s["path"]) for s in history["sources"]]
         all(filehash(p)==s["sha256"] for (p,s) in zip(paths,history["sources"])) || error("candidate changed")
         known,verification=validated_study(paths,baseline)
         length(known)==history["distinct_study_signatures"] || error("history count changed")

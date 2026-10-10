@@ -1,6 +1,7 @@
 using Test,VBF,TOML,SHA
 include("../run.jl")
 include("../classify.jl")
+include("../status.jl")
 
 @testset "Independent APN properties and graph witnesses" begin
     gold=gold_apn(8).lut
@@ -152,5 +153,38 @@ end
         @test_throws ErrorException commit_chunk!(s,u,proof,[p])
         @test only(query(s,"SELECT COUNT(*) c FROM chunks"))["c"]==1
         close_store(s)
+    end
+end
+
+@testset "Status reads live committed progress without changing cursors" begin
+    mktempdir() do dir
+        s=open_store(dir,Dict("configuration"=>Dict("method"=>"v5")))
+        try
+            gold=gold_apn(8).lut;p=properties(gold)
+            seed!(s,gold,p["sigma_hash"],"prepare_v5")
+            register!(s,p)
+            DiscoveryStore.execute!(s.db,"INSERT INTO metadata VALUES('plan_complete','true')")
+            before=query(s,"SELECT * FROM units")
+            output=joinpath(dir,"status.txt")
+            result=open(output,"w") do io
+                redirect_stdout(io) do
+                    status(dir)
+                end
+            end
+            @test result["exact_luts"]==1 && result["additional_signatures"]==0
+            @test result["units"]==Dict("pending"=>1)
+            @test !result["finite_plan_exhausted"]
+            @test query(s,"SELECT * FROM units")==before
+            unit=claim!(s);finish!(s,unit,Dict("test"=>"complete");done=true)
+            result=open(output,"w") do io
+                redirect_stdout(io) do
+                    status(dir)
+                end
+            end
+            @test result["finite_plan_exhausted"]
+            @test occursin("literature novelty: unresolved",read(output,String))
+        finally
+            close_store(s)
+        end
     end
 end

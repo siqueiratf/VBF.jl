@@ -1,8 +1,8 @@
 """Standard-library-only independent verification of an EA/CCZ graph map or quadratic signature separation."""
 const CERTIFICATE_USAGE=nothing
 using SHA,TOML
-include("../rebuild_corpus/signature.jl")
-include("../rebuild_corpus/ea_witness.jl")
+include("verification/signature.jl")
+include("verification/ea_witness.jl")
 using .IndependentSignature,.IndependentEAWitness
 function independently_verify_certificate(path)
     r=TOML.parsefile(path)

@@ -19,7 +19,7 @@
 # VBFCatalog API used: sigma_hash, sigma_index_path, _open_sigma_index, _sigma_gaps
 
 using VBF, VBFCatalog, Printf, Dates
-isdefined(@__MODULE__, :Ext) || include(joinpath(@__DIR__, "extlib.jl"))
+const Ext = VBF.QuadraticExtensions
 using .Ext
 
 const STUDY_DIR = @__DIR__
@@ -79,23 +79,6 @@ end
 "The 553 sigma of the census (new_classes_553.tsv: sigma<TAB>coeffs)."
 census_new_set() = Set(sigma_bits(split(l, '\t')[1]) for l in eachline(NEW553) if !isempty(l))
 
-"Function with component space S (basis = RREF rows of S): (coeffs, SBox{n})."
-function function_of(G::Geometry, S::AbstractVector{UInt32})
-    c = forms_to_coeffs(S, G.N)
-    lut = lut_from_coeffs(G, c)
-    c, SBox{G.n}(UInt8.(lut))
-end
-
-"Maximum number of bent elements of a k-dim subspace of Comp(F) (and how many reach it)."
-function max_bent_dim(comp::Vector{UInt32}, bent::BitVector, k::Int)
-    best = Ref(0); nbest = Ref(0)
-    subspaces_of_comp(comp, bent, k; keep = nb -> begin
-        nb > best[] ? (best[] = nb; nbest[] = 1) : (nb == best[] && (nbest[] += 1)); false
-    end)
-    best[], nbest[]
-end
-
-"Seeds of the B6 = 52 branch from hit_properties.tsv: new hits first, then known hits."
 function seed_rows(; b6::Int = 52)
     rows = [split(l, '\t') for l in eachline(HIT_PROPERTIES)]
     hdr = rows[1]; rows = rows[2:end]
@@ -108,3 +91,6 @@ function seed_rows(; b6::Int = 52)
 end
 
 now_str() = Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
+
+# Historical runners use the promoted implementation.
+const hist_key = Ext.hist_key

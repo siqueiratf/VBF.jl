@@ -2,7 +2,7 @@
 
 Literature cutoff: 2026-10-09. This extends [LITERATURE.md](LITERATURE.md),
 the original-source [corpus rebuild](../../rebuild_corpus/REPORT.md), and the
-[discovery audit](../../discovery/AUDIT.md). It is an evidence report for
+[discovery audit](../../../../search/apn/AUDIT.md). It is an evidence report for
 **VBFCatalog**, not a second curated catalog.
 
 ## Confirmed computational result

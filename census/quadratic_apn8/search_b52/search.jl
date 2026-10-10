@@ -1,7 +1,7 @@
 # Implements the resumable, multi-threaded extension search of the B6 = 52 branch
 # Study: B6 = 52 extension search (census/quadratic_apn8/search_b52)
 #
-# Math (see extlib.jl for the extension step):
+# Math (see VBF.QuadraticExtensions for the extension step):
 #   A seed F is a quadratic APN function on F_2^8 with P6 profile B6 = 52. Comp(F) is an
 #   8-dim subspace of Alt(8).
 #   mode = comp (the literal method): every 6-dim U < Comp(F) with b(U) = 52 bent

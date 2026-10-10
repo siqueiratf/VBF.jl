@@ -5,17 +5,17 @@ file/reference digests. Other records are independently verified; --full true
 rechecks every input instead of reusing that report.
 """
 const REVIEW_HISTORY_USAGE=nothing
-include("evidence.jl")
-include("inputs.jl")
+include("../../../../search/apn/evidence.jl")
+include("../../../../search/apn/inputs.jl")
 using .DiscoveryEvidence,.DiscoveryInputs,TOML,Dates
 function review_history(args)
-    cfg=Dict("outdir"=>joinpath(@__DIR__,"results","history"),"baseline"=>Existing.DEFAULT_OUTPUT,"full"=>"false")
+    cfg=Dict("outdir"=>joinpath(@__DIR__,"results","history"),"baseline"=>DEFAULT_REFERENCE,"full"=>"false")
     iseven(length(args)) || error("use --name VALUE pairs")
     for i in 1:2:length(args)
         key=replace(args[i],r"^--"=>"");haskey(cfg,key) || error("unknown option $key");cfg[key]=args[i+1]
     end
     cfg["full"] in ("true","false") || error("full must be true or false")
-    paths=[joinpath(Existing.REPO,p) for p in Existing.STUDY_INPUTS]
+    paths=[joinpath(ROOT,p) for p in ["census/quadratic_apn8/search_b52/results/desk1/found.tsv", "census/quadratic_apn8/new_classes_553.tsv", "census/quadratic_apn8/new_classes_extra.tsv", "census/quadratic_apn8/search_b52/new_classes_trial_773.tsv", "census/quadratic_apn8/theory/hyperplane_scan/new_classes_hyperplane.tsv"]]
     known,verification=validated_study(paths,cfg["baseline"];reuse=cfg["full"]=="false")
     reference=open_reference(cfg["baseline"])
     seen=Set{String}();absent=Set{String}();sources=Dict{String,Any}[]
@@ -32,7 +32,7 @@ function review_history(args)
                     push!(absent,hash)
                 end
             end
-            push!(sources,Dict("path"=>relpath(path,Existing.REPO),"records"=>count,"distinct_signatures"=>length(hashes),
+            push!(sources,Dict("path"=>relpath(path,ROOT),"records"=>count,"distinct_signatures"=>length(hashes),
                 "additional_absent_signatures"=>length(new_absent),"sha256"=>filehash(path)))
             union!(seen,hashes)
         end

@@ -7,7 +7,7 @@
 #   GL(8) acts on forms and bivectors and preserves the pairing; it is transitive on the
 #   forms of a given rank. So fhat(s) = phi(rank s) takes 5 values, and
 #   sigma_U(t) = sum_{u in U} fhat(t+u) depends only on the rank distribution of t + U.
-#   The search uses the equivalent restricted transform g on V/U (extlib.jl), because
+#   The search uses the equivalent restricted transform g on V/U (VBF.QuadraticExtensions), because
 #   sigma_U(t) = 2^6 g(tau(t)) and g needs 22 x 2^22 operations instead of 2^28 reads.
 #   The table is the reference for that identity. The same sweep checks
 #   beta(r) = Bhat(rank r) (bent indicator), used for the coset bent counts.
