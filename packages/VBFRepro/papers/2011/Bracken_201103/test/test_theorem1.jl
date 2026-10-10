@@ -1,3 +1,4 @@
+using SHA
 @testset "theorem1_test" begin
     include(joinpath(@__DIR__, "..", "theorem1.jl"))
 
@@ -53,4 +54,13 @@
         F = theorem1_sbox(4, s, vi, wi; modulus = modulus12)
         @test differential_uniformity(F) == 2
     end
+    for (vi,wi,digest) in ((1,2,"49975b04a245f7b51a5e04f20303319eee06f49d04db0c928ea380aa1054070b"),
+            (1,0,"018d27ba5ed38b68652cb9d13f553c92f87f68bd5dc350e9875b948e1ff12b1d"),
+            (0,2,"f9d7f4c6290a5591c73a1f5af173ee2331f6223fe7e6253dd374c1f37c653267"))
+        source=theorem1_sbox(4,5,vi,wi;modulus=4179)
+        @test is_quadratic_apn_rank(source)
+        @test algebraic_degree(source)==2
+        @test bytes2hex(sha256(UInt8[b for x in source.lut for b in (Int(x)&255,Int(x)>>8)]))==digest
+    end
+
 end

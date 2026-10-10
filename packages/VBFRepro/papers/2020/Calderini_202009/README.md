@@ -4,11 +4,8 @@
 
 **F051: Partial.** The local PDF recovers the polynomial material lost from LaTeX Table 3 rows 13 and 14. Sourced row reconstruction and bounded per-row evidence are feasible. Trace-row probes hit their node budgets without an upper bound, so full table counts and EA classification need completed pilot runs before a runtime commitment. Existing function-equivalence APIs can be reused.
 
-This read-only review did not rerun the full paper test suite or establish new
-catalog gaps. See the [eight-finding work plan](../../../../../audit/partial_feasibility.md)
-and [bounded probe evidence](../../../../../audit/partial_feasibility_probes.toml)
-for commands, hashes, acceptance criteria and mathematical limits. This current
-assessment supersedes conflicting historical scope descriptions below.
+The bounded commands and remaining requirements are documented here.
+This current assessment supersedes conflicting historical scope descriptions below.
 
 Scope correction: the Frobenius/inverse power-exponent orbit census is not a full CCZ classification, and an inverse outside the cyclotomic coset does not itself prove EA inequivalence. Predicted counts are now labeled as predictions; the census returns exact_class_count_established=false.
 
@@ -32,8 +29,8 @@ for every k, Propositions 2 and 3 are implemented and the paper's own pipeline
 (Procedure 2 → Prop-3 code filter → EA-classes) reproduces the EA-class counts
 independently of `ea_class_orbits`; Theorem 8 is extended to a full census of
 the APN power classes for n=5..9. **Still open:** Theorem 6 is assumed rather
-than verified at the code level (R5, needs a Leon-style code-equivalence
-routine) and Tables 2/3/4 (~47 rows) are not computed (R7, blocked on
+than verified at the code level (R5; the bounded VBF binary-code API
+exists, but the paper comparisons remain unexecuted) and Tables 2/3/4 (~47 rows) are not computed (R7, blocked on
 `extract_linear_subspaces` performance). Both need a decision — see Open
 Questions.
 
@@ -149,10 +146,11 @@ reproduced.**
   level. `section4.jl:109` shows C₄(F₁) and C₄(F₁⁻¹+b) are WE-isospectral **for
   every b**, so the separation is *inferred from the theorem* rather than
   established by it.
-- **Root cause:** Deciding code equivalence needs a Leon-style routine, which the
-  repo does not have.
-- **Resolution plan:** Either add a code-equivalence decision, or label the check
-  honestly as "assumes Theorem 6" instead of presenting it as a verification.
+- **Current capability:** `VBF.binary_code_equivalence` now accepts arbitrary
+  binary generator matrices and verifies permutation witnesses. The paper
+  comparisons have not yet been executed with this API.
+- **Remaining work:** integrate the existing bounded code-equivalence API.
+  Preserve inconclusive outcomes whenever a comparison hits its budget.
   **Needs a decision — see Open Questions.**
 
 **R6. [RESOLVED] `sf_set` deviates from the paper's eq. (4).**
@@ -338,8 +336,8 @@ hygiene.
    pipeline is reproduced end to end and cross-validated against
    `ea_class_orbits` (R3, R4). The two methods agree wherever both apply.
 2. **Is the Theorem 6 status acceptable?** The paper's headline new theorem is
-   used but never verified. Is a Leon-style code-equivalence routine in scope
-   (R5)? — **still open.**
+   used but never verified. The VBF code-equivalence API exists; integration and
+   completed comparisons (R5) remain open.
 3. **Are Tables 2/3/4 a permanent "MAGMA-only" scope decision**, or should
    `extract_linear_subspaces` be optimised (R7)? — **still open.** Note the
    *non-Gold power rows* of Tables 2/3/4 are now derived exactly by

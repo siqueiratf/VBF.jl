@@ -1,7 +1,10 @@
 # Provenance of `analysis/generated/`
 
-Do not edit these files. Rebuild them with `make -C analysis all`.
-`analysis/METRICS.md` says what each table is for.
+Frozen historical output; the source paths below describe the original run.
+The root investigation and its defect tables are retired. Their source snapshot
+is available in Git at `9f0e7d1`; these archived CSVs are not current results.
+Current analysis commands and table definitions live in
+`packages/VBFRepro/analysis/` and require no root investigation files.
 
 | Field | Value |
 |---|---|

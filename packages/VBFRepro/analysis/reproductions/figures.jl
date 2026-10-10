@@ -30,17 +30,6 @@ number(x) = ismissing(x) ? "---" : replace(@sprintf("%.3g", x), r"e([+-]?\d+)" =
 
 read_metric(dir, name) = CSV.read(joinpath(dir, name * ".csv"), DataFrame)
 
-const TOPIC_PT = Dict("construction" => "construção", "classification" => "classificação",
-    "search" => "busca", "modification" => "modificação", "equivalence" => "equivalência",
-    "four_uniform" => "4-uniforme", "theory" => "teoria")
-const KIND_PT = Dict("wrong_value" => "valor incorreto", "wrong_condition" => "condição incorreta",
-    "unsound_negative" => "negativa infundada", "sampling_not_exhaustion" => "amostra como exaustão",
-    "internal_inconsistency" => "inconsistência interna", "scope_restriction" => "escopo restrito",
-    "hard_limit" => "limite de recurso", "tool_limit" => "limite de ferramenta",
-    "theory_limit" => "limite teórico", "unproved_premise" => "premissa não provada",
-    "inferred" => "inferido")
-const TIER_PT = Dict("readme_only" => "relato no README", "paper_confirmed" => "artigo",
-    "code_confirmed" => "código", "recomputed" => "recomputação")
 const INVARIANT_PT = Dict("sigma_signature" => "assinatura σ",
     "od_differential_spectrum" => "esp. dif. da ortoderivada",
     "od_walsh_spectrum" => "esp. Walsh da ortoderivada",
@@ -81,54 +70,6 @@ function figure_invariant_power(inv, out)
     rows, refused
 end
 
-"""Reproduction outcome by topic, as counts of papers in each verdict class."""
-function figure_reproduction_by_topic(rep, out)
-    df = sort(rep, :papers, rev = true)
-    classes = [(:papers_complete, "completa"), (:papers_mostly_complete, "majoritária"),
-        (:papers_partial, "parcial"), (:papers_unstated, "não declarada")]
-    labels = [get(TOPIC_PT, t, t) for t in df.topic]
-    palette = [:seagreen, :steelblue, :goldenrod, :gray70]
-    # Painter's algorithm: draw each cumulative total from the widest inward, so
-    # the strip each pass leaves visible is exactly that class's own count.
-    # Rows are sorted by count, so the top-right corner is the only region free
-    # of bars; anywhere lower the legend would sit on top of the data.
-    plt = plot(; orientation = :h, legend = :topright, yticks = (1:nrow(df), labels),
-        xlabel = "Artigos", size = (900, 430), margin = 6Plots.PlotMeasures.mm,
-        fontfamily = "DejaVu Sans", guidefontsize = 10, tickfontsize = 9, legendfontsize = 9)
-    for k in length(classes):-1:1
-        cumulative = sum(df[!, c] for (c, _) in classes[1:k])
-        bar!(plt, 1:nrow(df), cumulative; orientation = :h, linewidth = 0,
-            color = palette[k], label = classes[k][2], bar_width = 0.65)
-    end
-    savefig(plt, joinpath(out, "fig_reproduction_by_topic.pdf"))
-    df
-end
-
-"""Defect kind against the weakest evidence that established it."""
-function figure_defect_tier(def, out)
-    tiers = ["readme_only", "code_confirmed", "recomputed"]
-    kinds = unique(def.kind)
-    order = sortperm([sum(filter(r -> r.kind == k && r.verification_tier == "recomputed", def).findings;
-        init = 0) * 100 + sum(filter(r -> r.kind == k, def).findings) for k in kinds])
-    kinds = kinds[order]
-    grid = [sum(filter(r -> r.kind == k && r.verification_tier == t, def).findings; init = 0)
-            for k in kinds, t in tiers]
-    plt = heatmap(1:length(tiers), 1:length(kinds), Float64.(grid);
-        xticks = (1:length(tiers), [TIER_PT[t] for t in tiers]),
-        yticks = (1:length(kinds), [get(KIND_PT, k, k) for k in kinds]),
-        color = cgrad(:Blues), colorbar_title = "ocorrências", legend = true,
-        size = (760, 460), margin = 6Plots.PlotMeasures.mm, fontfamily = "DejaVu Sans",
-        guidefontsize = 10, tickfontsize = 9,
-        xlabel = "Nível de evidência registrado na revisão")
-    for i in 1:length(kinds), j in 1:length(tiers)
-        grid[i, j] == 0 && continue
-        annotate!(plt, j, i, Plots.text(string(grid[i, j]), 9,
-            grid[i, j] > maximum(grid) / 2 ? :white : :black, :center))
-    end
-    savefig(plt, joinpath(out, "fig_defect_tier.pdf"))
-    kinds, tiers, grid
-end
-
 """Members against provably distinct signatures, for every stored source."""
 function table_corpus_sigma(sig, out)
     df = sort(filter(r -> r.source != "functions", sig), :member_count, rev = true)
@@ -164,71 +105,12 @@ function table_method_dimension(met, out)
     df
 end
 
-"""Paper ids that the curated grades and the metric tables spell differently."""
-const KEY_ALIAS = Dict("Yu_202211" => "Yu_202211d", "Calderini_202009a" => "Calderini_202009",
-    "Yuyin_201307" => "Yuyin_201300", "Chase_202110a" => "Chase_202110")
-normalise_key(k) = get(KEY_ALIAS, string(k), string(k))
-
-"""Defects per paper against the evidence the publication supplied.
-
-Built from the CURATED grades, not from the automatically derived ones. The two
-disagree on most papers, and the thesis prints the curated table, so any
-aggregate taken from the other source would contradict what the reader sees.
-"""
-function table_evidence_outcome(aud, papers, out)
-    joined = leftjoin(transform(aud, :paper_key => ByRow(normalise_key) => :paper_id),
-        select(papers, :paper_id, :findings_primary, :findings_high, :verdict_class);
-        on = :paper_id)
-    unmatched = count(ismissing, joined.findings_primary)
-    unmatched == 0 || error("$unmatched curated papers do not join to papers.csv")
-    rows = NamedTuple[]
-    open(joinpath(out, "tab_evidence_outcome.tex"), "w") do io
-        println(io, raw"\begin{tabular}{llrrrr}\toprule")
-        println(io, raw"Eixo & Nota & Artigos & Ocorrências & Alta severidade & Ocorr./artigo \\ \midrule")
-        for a in AXES
-            for g in ("f", "h", "o")
-                sub = filter(r -> string(r[a]) == g, joined)
-                isempty(sub) && continue
-                defects = sum(sub.findings_primary)
-                entry = (axis = uppercase(a), grade = g, papers = nrow(sub),
-                    findings = defects, high = sum(sub.findings_high),
-                    per_paper = defects / nrow(sub))
-                push!(rows, entry)
-                println(io, g == "f" ? "\\textbf{" * uppercase(a) * "}" : "", " & ",
-                    GRADE_PT[g], " & ", nrow(sub), " & ", defects, " & ",
-                    sum(sub.findings_high), " & ", decimalpt(entry.per_paper, 2), ROW)
-            end
-            a == last(AXES) || println(io, raw"\midrule")
-        end
-        println(io, raw"\bottomrule\end{tabular}")
-    end
-    DataFrame(rows)
-end
-
-"""Reproduction outcome and defect load for each topic."""
-function table_reproduction_by_topic(rep, out)
-    df = sort(rep, :papers, rev = true)
-    open(joinpath(out, "tab_reproduction_by_topic.tex"), "w") do io
-        println(io, raw"\begin{tabular}{lrrrrr}\toprule")
-        println(io, raw"Tema & Artigos & Completa & Ocorrências & Alta severidade & Recomputadas \\ \midrule")
-        for r in eachrow(df)
-            println(io, get(TOPIC_PT, r.topic, r.topic), " & ", r.papers, " & ",
-                r.papers_complete, " & ", r.findings, " & ", r.findings_high, " & ",
-                r.findings_recomputed, ROW)
-        end
-        println(io, raw"\bottomrule\end{tabular}")
-    end
-    df
-end
-
 const AUDIT_CATEGORY = Dict('A' => "construções quadráticas",
     'B' => "buscas computacionais exaustivas", 'C' => "classificação por equivalência",
     'D' => "instâncias esporádicas e estudos de caso")
 const GRADE_TEX = Dict("f" => "\\gf", "h" => "\\gh", "o" => "\\go")
-const GRADE_PT = Dict("f" => "completo", "h" => "parcial", "o" => "ausente")
 const AXES = ["r1", "r2", "r3", "r4"]
-"""Finding kinds that record an unverifiable claim rather than a divergence."""
-const LIMIT_KINDS = ("tool_limit", "hard_limit", "theory_limit")
+
 """LaTeX row terminator; a raw string would swallow one backslash here."""
 const ROW = " \\\\"
 
@@ -296,29 +178,14 @@ function figure_bfa4r_year(aud, out)
 end
 
 """Macros for every number the prose states, so no figure is quoted by hand."""
-function facts(out; papers, findings, kwargs...)
-    values = Dict{String,Any}(
-        "AnPapers" => nrow(papers),
-        "AnYearMin" => minimum(papers.year), "AnYearMax" => maximum(papers.year),
-        "AnComplete" => count(==("complete"), papers.verdict_class),
-        "AnMostly" => count(==("mostly_complete"), papers.verdict_class),
-        "AnPartial" => count(==("partial"), papers.verdict_class),
-        "AnUnstated" => count(==("unstated"), papers.verdict_class),
-        "AnFindings" => nrow(findings),
-        "AnFindingsHigh" => count(==("high"), findings.severity),
-        "AnFindingsMedium" => count(==("medium"), findings.severity),
-        "AnRecomputed" => count(==("recomputed"), findings.verification_tier),
-        "AnCodeConfirmed" => count(==("code_confirmed"), findings.verification_tier),
-        "AnReadmeOnly" => count(==("readme_only"), findings.verification_tier),
-        "AnPapersWithFinding" => length(unique(findings.paper_id)),
-        "AnUnsoundNegative" => count(==("unsound_negative"), findings.kind),
-        "AnWrongValue" => count(==("wrong_value"), findings.kind),
-        "AnCompleteRegion" => count(==("complete_within_region"), findings.method_completeness))
-    merge!(values, Dict(String(k) => v for (k, v) in kwargs))
-    open(joinpath(out, "facts_analysis.tex"), "w") do io
-        println(io, "% Arquivo gerado por packages/VBFRepro/analysis/reproductions/figures.jl. Não editar à mão.")
+function facts(out; papers, kwargs...)
+    values = Dict{String,Any}("AnPapers"=>nrow(papers),
+        "AnYearMin"=>minimum(papers.year), "AnYearMax"=>maximum(papers.year))
+    merge!(values, Dict(String(k)=>v for (k,v) in kwargs))
+    open(joinpath(out,"facts_analysis.tex"),"w") do io
+        println(io,"% Generated from current inventory and measured results.")
         for key in sort(collect(keys(values)))
-            println(io, "\\newcommand{\\", key, "}{", values[key], "}")
+            println(io,"\\newcommand{\\",key,"}{",values[key],"}")
         end
     end
     values
@@ -329,10 +196,7 @@ function main(args)
     out = abspath(args[1]); mkpath(out)
     input = length(args) >= 2 ? abspath(args[2]) : joinpath(@__DIR__, "../../../../data/repro/analysis/reproductions")
     papers = read_metric(input, "papers")
-    findings = read_metric(input, "findings")
     inv = read_metric(input, "invariant_power")
-    rep = read_metric(input, "reproduction_by_method")
-    def = read_metric(input, "defect_kind_by_tier")
     sig = read_metric(input, "corpus_sigma")
     met = read_metric(input, "method_by_dimension")
     aud = CSV.read(joinpath(@__DIR__, "curated_bfa4r.csv"), DataFrame)
@@ -342,30 +206,25 @@ function main(args)
     table_bfa4r_aggregate(aud, out)
     _, buckets = figure_bfa4r_year(aud, out)
     measured, refused = figure_invariant_power(inv, out)
-    figure_reproduction_by_topic(rep, out)
-    kinds, tiers, grid = figure_defect_tier(def, out)
     corpora = table_corpus_sigma(sig, out)
     table_method_dimension(met, out)
-    evidence = table_evidence_outcome(aud, papers, out)
-    table_reproduction_by_topic(rep, out)
 
-    cheapest = measured[argmin(measured.bench_seconds_per_call), :]
+    cheapest = measured[argmin(measured.batch_seconds_per_member), :]
     strongest = measured[argmax(measured.pair_separation_rate), :]
     useless = filter(r -> r.pair_separation_rate == 0, measured)
-    dearest = isempty(useless) ? missing : useless[argmax(useless.bench_seconds_per_call), :]
+    dearest = isempty(useless) ? missing : useless[argmax(useless.batch_seconds_per_member), :]
     biggest = corpora[argmax(corpora.member_count), :]
     densest = corpora[argmax(corpora.rows_per_sigma_class), :]
-    facts(out; papers, findings,
+    facts(out; papers,
         AnInvPopulation = tex(INVARIANT_POPULATION),
         AnInvSample = measured[1, :population_size],
         AnInvCheapest = get(INVARIANT_PT, cheapest.invariant, cheapest.invariant),
-        AnInvCheapestMs = decimalpt(1000cheapest.bench_seconds_per_call, 3),
+        AnInvCheapestMs = decimalpt(1000cheapest.batch_seconds_per_member, 3),
         AnInvCheapestSep = decimalpt(100cheapest.pair_separation_rate, 2),
         AnInvStrongestSep = decimalpt(100strongest.pair_separation_rate, 2),
         AnInvDearestUseless = ismissing(dearest) ? "---" : get(INVARIANT_PT, dearest.invariant, dearest.invariant),
-        AnInvDearestUselessMs = ismissing(dearest) ? "---" : decimalpt(1000dearest.bench_seconds_per_call, 1),
+        AnInvDearestUselessMs = ismissing(dearest) ? "---" : decimalpt(1000dearest.batch_seconds_per_member, 1),
         AnInvRefused = join([get(INVARIANT_PT, r.invariant, r.invariant) for r in eachrow(refused)], " e "),
-        AnInvRefusedCost = isempty(refused) ? "---" : decimalpt(maximum(refused.bench_seconds_per_call), 2),
         AnCorpusBiggest = countpt(biggest.member_count),
         AnCorpusBiggestSigma = countpt(biggest.sigma_classes),
         AnCorpusDensest = tex(densest.source),
@@ -396,23 +255,10 @@ function main(args)
         AnAuditCatSearchArtifact = count(r -> string(r.category) == "B" && string(r.r3) != "o",
             eachrow(aud)),
         AnAuditArtifact = count(r -> string(r.r3) != "o", eachrow(aud)),
-        AnFindingsWrongRecomputed = count(r -> r.kind == "wrong_value" &&
-            r.verification_tier == "recomputed", eachrow(findings)),
-        AnFindingsWrongRead = count(r -> r.kind == "wrong_value" &&
-            r.verification_tier == "readme_only", eachrow(findings)),
-        AnFindingsInternal = count(==("internal_inconsistency"), findings.kind),
-        # A record whose kind is a limit is an unverified claim, not an
-        # established divergence. The prose must never fold the two together.
-        AnUnverified = count(in(LIMIT_KINDS), findings.kind),
-        AnUnverifiedHigh = count(r -> r.kind in LIMIT_KINDS && r.severity == "high",
-            eachrow(findings)),
-        AnDefects = count(!in(LIMIT_KINDS), findings.kind),
-        AnDefectsHigh = count(r -> !(r.kind in LIMIT_KINDS) && r.severity == "high",
-            eachrow(findings)),
-        AnWrongValueCode = count(r -> r.kind == "wrong_value" &&
-            r.verification_tier == "code_confirmed", eachrow(findings)))
-    println("figures: OK; ", nrow(papers), " artigos, ", nrow(findings), " ocorrências, ",
-        nrow(measured), " invariantes medidos em ", INVARIANT_POPULATION)
+        AnInventory = nrow(papers))
+    println("figures: OK; ",nrow(papers)," papers; ",nrow(measured),
+        " invariants measured in ",INVARIANT_POPULATION)
+
 end
 
 abspath(PROGRAM_FILE) == abspath(@__FILE__) && main(ARGS)

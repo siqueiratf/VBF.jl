@@ -341,7 +341,7 @@ end
 
 if abspath(PROGRAM_FILE)==@__FILE__
     length(ARGS)<=3 || error("usage: review_catalog_proposals.jl [output.toml] [timeout_per_pair=2] [max_nodes=100000]")
-    output=isempty(ARGS) ? joinpath(PROPOSAL_ROOT,"data","repro","audit","catalog_proposals.toml") : abspath(ARGS[1])
+    output=isempty(ARGS) ? joinpath(PROPOSAL_ROOT,"data","repro","analysis","catalog_proposals.toml") : abspath(ARGS[1])
     report=review_catalog_proposals(timeout_seconds=length(ARGS)>=2 ? parse(Float64,ARGS[2]) : 2,
         max_nodes=length(ARGS)>=3 ? parse(Int,ARGS[3]) : 100_000)
     mkpath(dirname(output))

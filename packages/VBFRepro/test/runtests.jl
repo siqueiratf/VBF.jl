@@ -96,6 +96,8 @@ end
         write(joinpath(project, "Project.toml"), "[deps]\n")
         fixture = joinpath(paper,"certificate.toml")
         write(fixture, "columns = [1,2,4]\n")
+        verifier = joinpath(paper,"verify.py")
+        write(verifier,"print(\"independent verifier\")\n")
         write(joinpath(paper, "Makefile"), raw"""
 report:
 	@echo "cwd=$$(pwd)"
@@ -120,6 +122,7 @@ slow:
         @test metadata["environment_overrides"] == Dict("VBF_REPRO_FIXTURE"=>"set")
         @test metadata["status"] == "passed"
         @test !isempty(metadata["source_sha256"])
+        @test haskey(metadata["source_sha256"], relpath(verifier,project))
         fixture_key = relpath(fixture, project)
         @test haskey(metadata["source_sha256"], fixture_key)
         old_hash = metadata["source_sha256"][fixture_key]

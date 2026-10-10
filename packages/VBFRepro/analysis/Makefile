@@ -16,7 +16,7 @@ figure_output ?= $(ROOT)/data/repro/analysis/figures
 crossings_csv ?= $(ROOT)/data/perf/archive/generated/benchmarks.csv
 crossings_meta ?= $(ROOT)/data/perf/archive/generated/benchmarks_meta.tex
 manuscript_config ?= $(ROOT)/manuscript/performance/manuscript.toml
-proposal_output ?= $(ROOT)/data/repro/audit/catalog_proposals.toml
+proposal_output ?= $(ROOT)/data/repro/analysis/catalog_proposals.toml
 equivalence_timeout ?= 2
 max_equivalence_nodes ?= 100000
 METRICS = VBF_REPRO_ANALYSIS_OUTPUT="$(output)" $(RUN) $(HERE)reproductions/metrics.jl

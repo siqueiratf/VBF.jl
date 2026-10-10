@@ -17,7 +17,7 @@ make -C packages/VBFRepro/analysis test
 `reproductions/METRICS.md` defines the scientific metrics. The evidence grades
 are stated proxies over publication inputs and reproduction reviews, not expert
 judgments or mathematical correctness proofs. Private paper inputs are required
-for complete grades. `fast` reads the frozen 42-publication audit, catalog, and
+for complete grades. `fast` discovers the current runnable papers and reads VBFCatalog and its
 corpora; `invariants` performs explicitly bounded computations and records its
 sample, seed, and budget. Outputs default to `data/repro/analysis/reproductions/`.
 Override `output=DIR` consistently for grades, metrics, and figures.
@@ -63,45 +63,45 @@ their original timing protocol; rerunning them does not upgrade historical data.
 Independent mathematical evidence, measured API costs, sampling attribution,
 statistical estimates, and publication-layout choices remain distinct.
 
-## Applying the historical audit
+## Candidate validation and reference comparisons
 
-The August audit is frozen evidence. Current per-finding dispositions live in
-[`audit/resolutions.toml`](../../../audit/resolutions.toml); they distinguish repaired
-implementation defects from unresolved paper claims and unfinished exhaustive runs.
+VBFCatalog owns curated function entries, LUTs, bibliography and corpora.
+Analysis loads known references through its API; it does not maintain another
+catalog or add entries. Paper builders reconstruct specified formulas for
+independent reproduction. Unvalidated proposals and their computed LUTs are
+experiment outputs, with no automatic novelty or catalog admission.
 
-Revalidate the eight historical LUT proposals through the actual Julia builders:
+The source-representative encoding regressions live in the existing tests for
+Budaghyan 2009, Edel–Pott 2009 and Bracken 2011. Run each paper with
+`bin/vbfrepro test <paper-id>`; no root investigation files are required.
 
-```sh
-julia --project=. packages/VBFRepro/analysis/scripts/revalidate_audit_luts.jl
-```
+The proposal review regenerates 32 specified paper representatives, verifies
+quadratic APN properties, and replays nine positive certificates. All 32 were
+excluded from every APN power function through complete Gold-domain coverage
+and Yoshiara's theorem. All 583 current functions-table comparisons were
+conclusive: 31 proposals separated, one represented. Five within-inventory
+duplicates and three selected prior controls remain explicit positive matches;
+31 catalog separations therefore do not identify 31 novel classes.
 
-This checks APN properties and exact little-endian LUT hashes against
-[`audit/revalidated_luts.toml`](../../../audit/revalidated_luts.toml). It writes no
-catalog entries and supplies no novelty guarantee. The script needs only the root
-workspace environment, independently of the optional plotting environment.
-
-The follow-up also regenerates the **32** historical F063 proposals, verifies
-their finite APN/degree properties, recomputes exact invariants, and independently
-replays nine positive equivalence/identity certificates. The current result has
-one representative already in the functions table, three in selected prior
-controls, five duplicates within the proposal inventory, and 23 separated only
-from the explicitly enumerated quadratic references. It compares neither every
-bulk corpus member nor all nonquadratic CCZ representatives, and establishes no
-literature-wide novelty. Empty reference sets and undecided comparisons remain
-explicitly unresolved. No catalog writes occur.
+Non-power constructions outside the named references and literature-wide
+completeness remain unresolved. Empty reference sets, corrupted records and
+budget stops produce inconclusive results. Catalog contents are never changed.
 
 ```sh
 make -C packages/VBFRepro/analysis review_catalog_proposals
 make -C packages/VBFRepro/analysis test_catalog_proposals
-# Equivalent root commands:
-julia --project=. packages/VBFRepro/analysis/scripts/review_catalog_proposals.jl
-julia --project=. packages/VBFRepro/analysis/test/test_catalog_proposals.jl
+python3 packages/VBFRepro/analysis/test/verify_proposal_witnesses.py \
+  data/repro/analysis/catalog_proposals.toml
 ```
 
-The review script optionally accepts an output path, equivalence timeout per
-pair, and node budget. Make exposes `proposal_output`, `equivalence_timeout`, and
-`max_equivalence_nodes`. Evidence defaults to ignored
-`data/repro/audit/catalog_proposals.toml`, with exact LUTs, full invariant tuples,
-source identities, implementation hashes, reference scopes and verified maps.
-The bounded regression suite replays committed certificate fixtures, including
-forged-map controls; it does not rerun witness recovery or exhaustive searches.
+Make exposes `proposal_output`, `equivalence_timeout` and
+`max_equivalence_nodes`. The default output is
+`data/repro/analysis/catalog_proposals.toml`, containing actual LUTs, invariants,
+source hashes, catalog snapshot identity, scopes and verified maps. These are
+derived evidence for the run, not an independent source of curated entries.
+The independent Python replay uses only standard-library integer arithmetic.
+
+The paper inventory comes from `VBFRepro.discover_papers`; catalog contribution
+counts come from VBFCatalog. Historical defect counts and README verdict plots
+are retired. The existing curated publication-evidence grades remain an
+explicit assessment of publication inputs, separate from correctness claims.

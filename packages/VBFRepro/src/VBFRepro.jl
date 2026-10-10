@@ -49,7 +49,7 @@ function _source_hashes(paper, project)
     for root in roots
         for (dir, dirs, files) in walkdir(root)
             filter!(d -> !(d in ("input", "inputs", "results", "tuples", ".git")), dirs)
-            append!(paths, [joinpath(dir, f) for f in files if any(ext -> endswith(f, ext), (".jl", ".toml", ".json", ".csv", ".tsv")) || f == "Makefile"])
+            append!(paths, [joinpath(dir, f) for f in files if any(ext -> endswith(f, ext), (".jl", ".py", ".toml", ".json", ".csv", ".tsv")) || f == "Makefile"])
         end
     end
     push!(paths, joinpath(papers_root(), "paper.mk"))

@@ -21,7 +21,7 @@
 # data/repro/analysis/reproductions/PROVENANCE.md instead.
 #
 # THE SECTIONS.
-#   papers      the 42 reproductions, their defects and their evidence grades
+#   papers      current paper inventory and catalog contributions
 #   catalog     where the APN functions are, by method and by dimension
 #   corpus      what each published corpus carries, in sigma-class terms
 #   invariants  the cost of each invariant against what it separates (SLOW)
@@ -29,7 +29,7 @@
 # Only `invariants` computes anything. The other three sections read files and
 # finish in seconds.
 
-using Printf, TOML, Dates, Random
+using Printf, TOML, Dates, Random, SHA
 using VBF, VBFCatalog, VBFRepro
 
 # The root project depends on VBFCatalog, which depends on SQLite. Reaching the
@@ -42,8 +42,6 @@ const ROOT     = VBFRepro.repo_root()
 const OUT      = get(ENV, "VBF_REPRO_ANALYSIS_OUTPUT", joinpath(ROOT, "data/repro/analysis/reproductions"))
 const TAXONOMY = joinpath(HERE, "taxonomy.toml")
 
-const README_INDEX = joinpath(ROOT, "audit", "readme_index.yaml")
-const FINDINGS     = joinpath(ROOT, "audit", "findings.yaml")
 const BFA4R        = get(ENV, "VBF_REPRO_GRADES", joinpath(OUT, "bfa4r_grades.csv"))
 const BENCHMARKS   = get(ENV, "VBF_REPRO_LEGACY_BENCHMARKS", joinpath(ROOT, "data/perf/archive/generated/benchmarks.csv"))
 const CATALOG_DB   = joinpath(ROOT, "packages", "VBFCatalog", "BFA_catalog.sqlite")
@@ -139,116 +137,6 @@ end
 
 const WRITTEN = Tuple{String,Int,Int}[]
 
-# ── a strict reader for the two audit files ─────────────────────────────────
-#
-# The repository has no YAML dependency, and the two audit files use a small,
-# regular subset of YAML: a list of records, scalars, inline maps, inline lists,
-# folded block scalars and one level of nesting. The reader below accepts that
-# subset and nothing else. It fails loudly rather than dropping a field,
-# because a dropped field would silently shrink a count in the paper.
-
-"Strip a trailing comment and the surrounding quotation marks of a scalar."
-function yaml_scalar(s::AbstractString)
-    t = strip(s)
-    if !startswith(t, '"') && (i = findfirst("  #", t)) !== nothing
-        t = strip(t[1:first(i)-1])
-    end
-    (startswith(t, '"') && endswith(t, '"') && length(t) > 1) && (t = t[2:end-1])
-    return String(t)
-end
-
-"Parse `{a: 1, b: x}` into a Dict of `parent.child` keys."
-function yaml_inline_map!(rec::Dict{String,String}, parent::AbstractString, s::AbstractString)
-    body = strip(s)[2:end-1]
-    for part in split(body, ',')
-        kv = split(part, ':'; limit = 2)
-        length(kv) == 2 || continue
-        rec[parent * "." * strip(kv[1])] = yaml_scalar(kv[2])
-    end
-end
-
-"""
-    yaml_records(path, listkey) -> Vector{Dict{String,String}}
-
-Read the list under `listkey`. One dictionary per record. A nested map gives
-`parent.child` keys. A folded block scalar joins into one line. An inline list
-keeps its brackets, and `yaml_list_items` splits it.
-"""
-function yaml_records(path::AbstractString, listkey::AbstractString)
-    lines = readlines(path)
-    start = findfirst(l -> l == listkey * ":", lines)
-    start === nothing && error("$path: no top-level key `$listkey`")
-
-    recs = Dict{String,String}[]
-    cur = nothing
-    block_key = ""          # the key whose folded scalar is still open
-    block_indent = 0
-    parent = ""             # the depth-4 key of an open nested map
-
-    for j in (start+1):length(lines)
-        raw = lines[j]
-        stripped = strip(raw)
-        # A new top-level key ends the list.
-        if !isempty(stripped) && !startswith(raw, " ")
-            break
-        end
-        (isempty(stripped) || startswith(stripped, "#")) && continue
-        indent = length(raw) - length(lstrip(raw))
-
-        # a folded scalar continues while the indent stays deeper
-        if !isempty(block_key) && indent > block_indent && !occursin(r"^\s*-", raw)
-            cur[block_key] = strip(cur[block_key] * " " * stripped)
-            continue
-        end
-        !isempty(block_key) && (block_key = "")
-
-        if startswith(stripped, "- ")
-            # Only a dash at indent 2 opens a record. A dash deeper than that
-            # is an item of a list inside the record, and no metric reads one.
-            indent == 2 || continue
-            cur === nothing || push!(recs, cur)
-            cur = Dict{String,String}()
-            parent = ""
-            stripped = strip(stripped[3:end])
-            indent += 2
-        end
-        cur === nothing && continue
-
-        m = match(r"^([A-Za-z_][A-Za-z0-9_]*):\s*(.*)$", stripped)
-        if m === nothing
-            # a list item or a deeper structure that no metric reads
-            continue
-        end
-        k, v = m.captures[1], strip(m.captures[2])
-        key = (indent >= 6 && !isempty(parent)) ? parent * "." * k : k
-        indent <= 4 && (parent = "")
-
-        if v in (">-", ">", "|", "|-")
-            cur[key] = ""
-            block_key = key
-            block_indent = indent
-        elseif startswith(v, "{")
-            yaml_inline_map!(cur, key, v)
-        elseif isempty(v)
-            parent = k                      # a nested map opens
-            cur[key] = ""
-        else
-            cur[key] = yaml_scalar(v)
-        end
-    end
-    cur === nothing || push!(recs, cur)
-    return recs
-end
-
-"Split an inline list `[a, b]` into its items."
-yaml_list_items(s::AbstractString) =
-    (t = strip(s); (isempty(t) || t == "[]") ? String[] :
-     String[strip(x) for x in split(strip(t, ['[', ']']), ',') if !isempty(strip(x))])
-
-getf(r::Dict{String,String}, k::AbstractString, d = "") = get(r, k, d)
-getint(r::Dict{String,String}, k::AbstractString, d = 0) =
-    (v = get(r, k, ""); isempty(v) ? d : something(tryparse(Int, v), d))
-
 # ── the shared sources ──────────────────────────────────────────────────────
 
 const TAX = TOML.parsefile(TAXONOMY)
@@ -311,219 +199,37 @@ end
 # ── section: papers ─────────────────────────────────────────────────────────
 
 function section_papers()
-    println("[papers] reading the audit files")
-    papers   = yaml_records(README_INDEX, "papers")
-    findings = yaml_records(FINDINGS, "findings")
-    length(papers) == 42 ||
-        error("readme_index.yaml gave $(length(papers)) papers; the audit states 42")
-    length(findings) == 36 ||
-        error("findings.yaml gave $(length(findings)) findings; the audit states 36")
-
-    taxp = TAX["papers"]
-    ids  = Set(getf(p, "paper_id") for p in papers)
-    for id in ids
-        haskey(taxp, id) ||
-            error("packages/VBFRepro/analysis/reproductions/taxonomy.toml does not classify the paper $id")
-    end
-    for id in keys(taxp)
-        id in ids || error("packages/VBFRepro/analysis/reproductions/taxonomy.toml classifies $id, which the audit does not list")
-    end
-
-    vclass = TAX["verdict_class"]
-    for p in papers
-        v = getf(p, "readme_verdict")
-        haskey(vclass, v) ||
-            error("packages/VBFRepro/analysis/reproductions/taxonomy.toml has no verdict_class for \"$v\"")
-    end
-
-    # the defects of each paper
-    prim = Dict{String,Vector{Dict{String,String}}}()
-    impl = Dict{String,Int}()
-    for f in findings
-        push!(get!(prim, getf(f, "paper_id"), Dict{String,String}[]), f)
-        for other in yaml_list_items(getf(f, "also_implicated"))
-            impl[other] = get(impl, other, 0) + 1
+    println("[papers] discovering runnable reproductions")
+    db = load_catalog(CATALOG_DB)
+    try
+        functions = Dict(String(r.bib_key) => Int(r.c) for r in q(db,
+            "SELECT bib_key, COUNT(*) c FROM functions WHERE is_apn=1 AND bib_key IS NOT NULL GROUP BY bib_key"))
+        corpora = Dict(String(r.bib_key) => Int(r.c) for r in q(db,
+            "SELECT bib_key, SUM(member_count) c FROM bulk_corpora WHERE bib_key IS NOT NULL GROUP BY bib_key"))
+        header, records = read_csv(BFA4R)
+        grades = Dict{String,Vector{String}}()
+        if !isempty(header)
+            positions = Dict(h => i for (i,h) in enumerate(header))
+            for row in records
+                grades[row[positions["paper_id"]]] = [row[positions[r]] for r in ("r1","r2","r3","r4")]
+            end
         end
-    end
-
-    # the evidence grades
-    bh, br = read_csv(BFA4R)
-    grades = Dict{String,Vector{String}}()
-    if isempty(bh)
-        @warn "no BFA-4R grades; the r1..r4 columns stay empty" path = BFA4R expected =
-            "run julia --project=. packages/VBFRepro/analysis/reproductions/grades.jl"
-    else
-        gi = Dict(h => i for (i, h) in enumerate(bh))
-        for r in br
-            grades[r[gi["paper_id"]]] = [r[gi["r1"]], r[gi["r2"]], r[gi["r3"]], r[gi["r4"]]]
+        rows = Vector{Any}[]
+        for paper in discover_papers()
+            classification = get(TAX["papers"], paper.id, Dict{String,Any}())
+            key = get(classification, "catalog_bib_key", paper.id)
+            test_files = sum(count(f -> endswith(f,".jl"), files)
+                for name in ("test","tests") if isdir(joinpath(paper.path,name))
+                for (_,_,files) in walkdir(joinpath(paper.path,name)); init=0)
+            push!(rows, Any[paper.id,parse(Int,paper.year),get(classification,"topic","unclassified"),
+                key,relpath(paper.path,ROOT),test_files,get(functions,key,0),get(corpora,key,0),
+                get(grades,paper.id,["","","",""])...])
         end
+        write_csv("papers.csv", ["paper_id","year","topic","catalog_bib_key","path",
+            "test_files","catalog_functions","corpus_members","r1","r2","r3","r4"], rows)
+    finally
+        db === nothing || SQLite.close(db)
     end
-
-    # what each paper put into the catalog
-    db = open_db(CATALOG_DB)
-    cat_by_key = Dict{String,Int}()
-    for r in q(db, "SELECT bib_key, COUNT(*) c FROM functions WHERE is_apn = 1 AND bib_key IS NOT NULL GROUP BY bib_key")
-        cat_by_key[String(r.bib_key)] = Int(r.c)
-    end
-    corp_by_key = Dict{String,Int}()
-    for r in q(db, "SELECT bib_key, SUM(member_count) c FROM bulk_corpora WHERE bib_key IS NOT NULL GROUP BY bib_key")
-        corp_by_key[String(r.bib_key)] = Int(r.c)
-    end
-
-    # papers.csv
-    rows = Vector{Any}[]
-    for p in sort(papers; by = x -> (getint(x, "year"), getf(x, "paper_id")))
-        id = getf(p, "paper_id")
-        t  = taxp[id]
-        fs = get(prim, id, Dict{String,String}[])
-        g  = get(grades, id, ["", "", "", ""])
-        bk = String(t["catalog_bib_key"])
-        push!(rows, Any[
-            id, getint(p, "year"), t["topic"], bk,
-            isempty(bk) ? "" : get(TAX["bib_group"], bk, ""),
-            getint(p, "paper_text_on_disk.tex_lines"),
-            getint(p, "implementation.paper_local_jl_files"),
-            getint(p, "reproducing_test.files"),
-            getint(p, "reproducing_test.at_test_assertions"),
-            getf(p, "results_dir") == "true",
-            getf(p, "readme_verdict"), vclass[getf(p, "readme_verdict")],
-            getf(p, "readme_test_claim"),
-            getf(p, "implementation.core_src_citing") == "none" ? 0 : 1,
-            length(fs), get(impl, id, 0),
-            count(f -> getf(f, "severity") == "high", fs),
-            count(f -> getf(f, "severity") == "medium", fs),
-            count(f -> getf(f, "verification_tier") == "recomputed", fs),
-            count(f -> getf(f, "verification_tier") == "readme_only", fs),
-            isempty(bk) ? 0 : get(cat_by_key, bk, 0),
-            isempty(bk) ? 0 : get(corp_by_key, bk, 0),
-            g[1], g[2], g[3], g[4]])
-    end
-    write_csv("papers.csv",
-              ["paper_id", "year", "topic", "catalog_bib_key", "method_group",
-               "tex_lines", "jl_files", "test_files", "test_assertions",
-               "results_dir", "readme_verdict", "verdict_class", "readme_test_claim",
-               "cited_by_core_src", "findings_primary", "findings_implicated",
-               "findings_high", "findings_medium", "findings_recomputed",
-               "findings_readme_only", "catalog_functions", "corpus_members",
-               "r1", "r2", "r3", "r4"], rows)
-
-    # findings.csv
-    frows = Vector{Any}[]
-    for f in sort(findings; by = x -> getf(x, "id"))
-        push!(frows, Any[
-            getf(f, "id"), getf(f, "paper_id"),
-            get(taxp, getf(f, "paper_id"), Dict("topic" => ""))["topic"],
-            getf(f, "kind"), getf(f, "severity"), getf(f, "verification_tier"),
-            length(yaml_list_items(getf(f, "tiers"))),
-            length(yaml_list_items(getf(f, "also_implicated"))),
-            getf(f, "method"), getf(f, "method_completeness"),
-            getf(f, "region_size_stated_by_authors") == "true",
-            getf(f, "region_size"), getf(f, "region_left"),
-            getf(f, "verify_and_crossref.implementation_status")])
-    end
-    write_csv("findings.csv",
-              ["finding_id", "paper_id", "topic", "kind", "severity",
-               "verification_tier", "tiers_reached", "papers_implicated",
-               "method", "method_completeness", "region_size_stated_by_authors",
-               "region_size", "region_left", "implementation_status"], frows)
-
-    # reproduction_by_method.csv — the topic against the outcome
-    topics = sort(unique(String(t["topic"]) for t in values(taxp)))
-    classes = sort(unique(values(vclass)))
-    trows = Vector{Any}[]
-    for t in topics
-        sel = [p for p in papers if taxp[getf(p, "paper_id")]["topic"] == t]
-        ids_t = [getf(p, "paper_id") for p in sel]
-        fs = vcat((get(prim, i, Dict{String,String}[]) for i in ids_t)...)
-        counts = [count(p -> vclass[getf(p, "readme_verdict")] == c, sel) for c in classes]
-        push!(trows, Any[t, length(sel), counts...,
-                         length(fs),
-                         count(f -> getf(f, "severity") == "high", fs),
-                         count(f -> getf(f, "verification_tier") == "recomputed", fs),
-                         count(f -> getf(f, "verification_tier") == "readme_only", fs),
-                         count(f -> getf(f, "kind") == "unsound_negative", fs),
-                         count(f -> getf(f, "kind") == "wrong_value", fs),
-                         round(sum(getint(p, "reproducing_test.at_test_assertions") for p in sel) /
-                               max(length(sel), 1); digits = 1)])
-    end
-    write_csv("reproduction_by_method.csv",
-              vcat(["topic", "papers"], ["papers_" * c for c in classes],
-                   ["findings", "findings_high", "findings_recomputed",
-                    "findings_readme_only", "findings_unsound_negative",
-                    "findings_wrong_value", "mean_test_assertions"]), trows)
-
-    # reproduction_by_year.csv
-    yrows = Vector{Any}[]
-    for y in sort(unique(getint(p, "year") for p in papers))
-        sel = [p for p in papers if getint(p, "year") == y]
-        fs = vcat((get(prim, getf(p, "paper_id"), Dict{String,String}[]) for p in sel)...)
-        gsel = [get(grades, getf(p, "paper_id"), ["", "", "", ""]) for p in sel]
-        push!(yrows, Any[y, length(sel),
-                         [count(p -> vclass[getf(p, "readme_verdict")] == c, sel) for c in classes]...,
-                         length(fs),
-                         count(f -> getf(f, "severity") == "high", fs),
-                         round(sum(getint(p, "reproducing_test.at_test_assertions") for p in sel) /
-                               max(length(sel), 1); digits = 1),
-                         count(g -> g[3] == "full", gsel)])
-    end
-    write_csv("reproduction_by_year.csv",
-              vcat(["year", "papers"], ["papers_" * c for c in classes],
-                   ["findings", "findings_high", "mean_test_assertions",
-                    "papers_with_full_artifact"]), yrows)
-
-    # defect_kind_by_tier.csv — long form, one row per non-empty cell
-    kinds = sort(unique(getf(f, "kind") for f in findings))
-    tiers = ["readme_only", "paper_confirmed", "code_confirmed", "recomputed"]
-    krows = Vector{Any}[]
-    for k in kinds, t in tiers
-        sel = [f for f in findings if getf(f, "kind") == k && getf(f, "verification_tier") == t]
-        isempty(sel) && continue
-        push!(krows, Any[k, t, length(sel),
-                         count(f -> getf(f, "severity") == "high", sel),
-                         join(sort(getf.(sel, "id")), " ")])
-    end
-    write_csv("defect_kind_by_tier.csv",
-              ["kind", "verification_tier", "findings", "findings_high", "finding_ids"], krows)
-
-    # evidence_vs_outcome.csv — the BFA-4R grade against the outcome
-    erows = Vector{Any}[]
-    if !isempty(grades)
-        for (ci, crit) in enumerate(["R1", "R2", "R3", "R4"]),
-            gr in ["full", "half", "open"]
-            sel = [p for p in papers
-                   if get(grades, getf(p, "paper_id"), ["", "", "", ""])[ci] == gr]
-            isempty(sel) && continue
-            fs = vcat((get(prim, getf(p, "paper_id"), Dict{String,String}[]) for p in sel)...)
-            push!(erows, Any[crit, gr, length(sel),
-                             [count(p -> vclass[getf(p, "readme_verdict")] == c, sel) for c in classes]...,
-                             length(fs),
-                             count(f -> getf(f, "severity") == "high", fs),
-                             round(length(fs) / max(length(sel), 1); digits = 2)])
-        end
-    end
-    write_csv("evidence_vs_outcome.csv",
-              vcat(["criterion", "grade", "papers"], ["papers_" * c for c in classes],
-                   ["findings", "findings_high", "findings_per_paper"]), erows)
-
-    # method_completeness.csv — what each algorithm can prove
-    mrows = Vector{Any}[]
-    for f in findings
-        mc = getf(f, "method_completeness")
-        isempty(mc) && continue
-        push!(mrows, Any[getf(f, "id"), getf(f, "paper_id"),
-                         get(taxp, getf(f, "paper_id"), Dict("topic" => ""))["topic"],
-                         getf(f, "method"), mc,
-                         getf(f, "region_size_stated_by_authors") == "true",
-                         getf(f, "region_size"), getf(f, "region_left"),
-                         getf(f, "severity")])
-    end
-    write_csv("method_completeness.csv",
-              ["finding_id", "paper_id", "topic", "method", "method_completeness",
-               "region_size_stated_by_authors", "region_size", "region_left",
-               "severity"], mrows)
-
-    db === nothing || SQLite.close(db)
-    return nothing
 end
 
 # ── section: catalog ────────────────────────────────────────────────────────
@@ -878,9 +584,9 @@ function section_invariants()
             errors = 0
             undefined = 0
             stopped = false
-            t0 = time()
+            t0 = time_ns()
             for F in fs
-                if time() - t0 > OPTS.budget
+                if (time_ns() - t0)*1e-9 > OPTS.budget
                     stopped = true
                     break
                 end
@@ -896,7 +602,7 @@ function section_invariants()
                     errors += 1
                 end
             end
-            el = time() - t0
+            el = (time_ns() - t0)*1e-9
             ev = sum(values(keys_seen); init = 0)
             counts = collect(values(keys_seen))
             distinct = length(counts)
@@ -907,7 +613,7 @@ function section_invariants()
             sep = pairs_total == 0 ? "" : round(1 - same / pairs_total; digits = 6)
             push!(rows, Any[name, pname, n, N, ev, undefined, errors, distinct,
                             maxb, singles, sep, secs === nothing ? "" : secs,
-                            round(el; digits = 3),
+                            el,
                             stopped ? "stopped_budget" : "measured",
                             String(inv["note"])])
             @printf("  %-26s %-34s n=%2d N=%4d distinct=%5s sep=%-8s %6.2f s\n",
@@ -946,8 +652,9 @@ function write_provenance(ran::Vector{String}, wall::Float64)
         end
         println(io, "| Wall time | ", round(wall; digits = 1), " s |")
         println(io, "\n## Sources\n")
-        for (label, path) in [("the 42 reproductions", README_INDEX),
-                              ("the 36 audit findings", FINDINGS),
+        println(io, "Paper inventory comes from VBFRepro.discover_papers(); test-file counts are structural, not successful test executions.")
+        for (label, path) in [("the metrics implementation", @__FILE__),
+                              ("paper discovery", joinpath(ROOT,"packages","VBFRepro","src","VBFRepro.jl")),
                               ("the classification", TAXONOMY),
                               ("the evidence grades", BFA4R),
                               ("the measured costs", BENCHMARKS),
@@ -955,7 +662,8 @@ function write_provenance(ran::Vector{String}, wall::Float64)
                               ("the sigma index", SIGMA_DB)]
             st = isfile(path) ? Dates.format(Dates.unix2datetime(mtime(path)),
                                              "yyyy-mm-dd HH:MM") : "ABSENT"
-            println(io, "- ", label, " — `", relpath(path, ROOT), "` (", st, ")")
+            digest = isfile(path) ? open(io -> bytes2hex(sha256(io)),path) : "ABSENT"
+            println(io, "- ", label, " — `", relpath(path, ROOT), "` (", st, "; SHA256 ",digest,")")
         end
         # Every CSV in the directory, and not only the ones that this run
         # wrote. A section that ran earlier must stay visible, with the date of

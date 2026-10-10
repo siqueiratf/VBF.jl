@@ -4,11 +4,8 @@
 
 **F004: Partial.** Fresh restricted-domain traversals completed at n=8 and n=9. Minimum-log representatives give **109 versus 142** and **25 versus 26** in the source table; minimum-value n=8 gives **82**. The n=6/7 agreement therefore does not settle the authors’ convention. Regression evidence and independent pruning controls are feasible; n=10 and faithful Table 2 reproduction remain unresolved.
 
-This read-only review did not rerun the full paper test suite or establish new
-catalog gaps. See the [eight-finding work plan](../../../../../audit/partial_feasibility.md)
-and [bounded probe evidence](../../../../../audit/partial_feasibility_probes.toml)
-for commands, hashes, acceptance criteria and mathematical limits. This current
-assessment supersedes conflicting historical scope descriptions below.
+The bounded commands and remaining requirements are documented here.
+This current assessment supersedes conflicting historical scope descriptions below.
 
 ## Audit corrections (2026-10-10)
 
