@@ -30,8 +30,11 @@ function cached_corpus!(target, previous_path, name, source_path)
     haskey(receipts, name) || return false
     receipt = receipts[name]
     receipt["vbf_source_sha256"] == _import_code_hash() || return false
-    previous = load_catalog(previous_path)
+    # A rebuild must be able to read an older catalog. Receipts and descriptor
+    # validation below establish compatibility of the cached corpus itself.
+    previous = SQLite.DB(previous_path)
     try
+        SQLite.execute(previous, "PRAGMA query_only=ON")
         info = corpus_info(previous, name)
         info === nothing && return false
         isfile(corpus_store_path(previous, name)) || return false

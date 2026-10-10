@@ -1,16 +1,8 @@
 """Decode saved graph maps and check them with VBF's affine-map and graph APIs."""
 module GraphWitnesses
 using VBF, SHA, TOML
+using VBFCatalog: verify_graph_witness
 export verify_graph_witness, verify_ea_witness, verify_ccz_witness, verify_proposal_witnesses, verify_witness_report
-
-"""Check an affine graph map through VBF; EA additionally preserves the output subspace."""
-function verify_graph_witness(F,G,A::F2AffineMap;relation::Symbol=:ea)
-    relation in (:ea,:ccz) || throw(ArgumentError("relation must be EA or CCZ"))
-    inputbits(F)==inputbits(G)==outputbits(F)==outputbits(G) && inputbits(A)==2inputbits(F) || return false
-    is_invertible(A.linear) || return false
-    relation==:ea && !all(iszero(c>>inputbits(F)) for c in A.linear.cols[1:inputbits(F)]) && return false
-    ccz_equivalent_function(F,A)==G
-end
 
 function verify_ccz_witness(f,g,cols,constant; relation=:ccz)
     length(f)==length(g)>=2 && ispow2(length(f)) || return false

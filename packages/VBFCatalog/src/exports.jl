@@ -38,3 +38,6 @@ export AuditedAPNReference, open_apn_reference, close_apn_reference
 export reference_metadata, reference_contains_signature, reference_exact_lut_match
 
 export signature_summary, signature_count
+
+export equivalence_evidence, verify_graph_witness, equivalence_solver_fingerprint
+export check_equivalence!, list_equivalence_checks, verify_equivalence_check

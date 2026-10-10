@@ -4,7 +4,6 @@ using VBF, VBFCatalog, SHA, TOML, Dates
 include("verification/ea_witness.jl")
 using .GraphWitnesses
 using ..APNPowerEvidence
-include("pair_evidence.jl")
 export equivalence_evidence, verify_graph_witness, properties, open_reference, close_reference, classify, compare, verify_comparison,
        verify_ccz_witness, verify_ea_witness, lut_id, filehash, Reference
 
@@ -99,11 +98,7 @@ end
 
 # Exhaustive negative outcomes are implementation-dependent; cache them only
 # against the exact mathematical solver sources, while positive maps are checked through VBF's graph API.
-function solver_fingerprint()
-    root=joinpath(pkgdir(VBF),"src")
-    paths=sort!([joinpath(d,f) for (d,_,files) in walkdir(root) for f in files if endswith(f,".jl")])
-    bytes2hex(SHA.sha256(join([relpath(p,root)*":"*filehash(p) for p in paths],"\n")))
-end
+solver_fingerprint() = VBFCatalog.equivalence_solver_fingerprint()
 
 """Return a checked positive map, a separating invariant, exhaustive negative, or inconclusive budget."""
 function compare(f,g;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000)

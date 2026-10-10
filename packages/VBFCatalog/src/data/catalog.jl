@@ -34,7 +34,7 @@ import Dates
 The schema version this code understands. `load_catalog` refuses
 catalogs whose `schema_meta.schema_version` differs.
 """
-const SCHEMA_VERSION = 7
+const SCHEMA_VERSION = 8
 
 """
     SCHEMA_DDL :: String
