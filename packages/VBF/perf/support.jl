@@ -49,7 +49,7 @@ function source_manifest(package; config=Dict(), paper_ids=String[], input_files
     paths=String[]
     for folder in (joinpath(ROOT,"packages"),)
         for (base,dirs,files) in walkdir(folder)
-            filter!(d->!(d in ("results","input","inputs","tuples",".git","corpora","node_modules","historical")),dirs)
+            filter!(d->!(d in ("VBFWorkingPaper","results","input","inputs","tuples",".git","corpora","node_modules","historical")),dirs)
             for f in files
                 (endswith(f,".jl") || endswith(f,".toml") || f in ("Makefile","paper.mk")) && push!(paths,joinpath(base,f))
             end

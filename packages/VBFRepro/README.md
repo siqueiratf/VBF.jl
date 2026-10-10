@@ -1,6 +1,6 @@
 # VBFRepro
 
-Standalone paper reproductions and their cross-paper analysis consume VBF,
+Standalone paper reproductions consume VBF,
 VBFCatalog and VBFSearch here. Importing `VBFRepro` loads a small standard-library
 runner; it does not import the papers, solve polynomial systems, or start searches.
 Each paper keeps one claim per runnable Julia file and its own Make targets.
@@ -8,9 +8,8 @@ Each paper keeps one claim per runnable Julia file and its own Make targets.
 Reproductions live directly under `src/YYYYMM-author-subject/`, for example
 `src/202508-beierle-millions/`. The CLI uses that directory slug; bibliography
 keys remain the original publication identifiers in VBFCatalog. `00` preserves
-an unspecified month. Cross-paper consumers share the optional environment at
-`src/analysis/`: `reproductions/` holds publication metrics, `performance/`
-analyzes timings, and `validation/` compares selected paper constructions.
+an unspecified month. Cross-paper studies and manuscript analysis belong to VBFWorkingPaper.
+Shared validation evidence belongs to VBFSearch.
 
 From the repository root:
 
@@ -72,14 +71,14 @@ paper, byte-for-byte, under `src/<slug>/`. Existing paper targets retain
 their explicit `save_results` controls and paper-local `results/` output; the
 execution log and configuration are consistently stored under `data/repro/`.
 The runner does not rewrite historical evidence or add checkpoint guarantees to
-paper algorithms that lack them. Cross-paper analysis lives in `src/analysis/`;
-publication text and publication-specific presentation remain in `manuscript/`.
+paper algorithms that lack them. Cross-paper studies and publication presentation belong to VBFWorkingPaper.
+Reproductions never import that package.
 The Beierle self-equivalence reproduction retains its four frozen tuple-class
 fixtures for standalone tests and benchmark setup. These record matrices and
 search witnesses; known function references continue to come from VBFCatalog.
 
-See [src/analysis/README.md](src/analysis/README.md) for the optional cross-paper analysis,
-grading, comparison and publication-data workflow. API timing workloads live in
+The [working paper](../VBFWorkingPaper/README.md) consumes reproduction results.
+The finite proposal checks live in `tools/catalog_proposals.jl` and use VBFSearch evidence. API timing workloads live in
 each package's `perf/` environment, including [perf/](perf/) here.
 
 Run lightweight discovery/execution/evidence tests with

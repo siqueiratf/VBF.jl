@@ -37,6 +37,6 @@ the same selected paper/input identity. The catalog hash is also recorded.
 Collect evidence only after finishing source edits and with unchanged inputs.
 
 Performance analysis, profiling attribution and manuscript export live in
-[analysis/performance](../src/analysis/performance/README.md). That reader supports
+[shared perf analysis](../../VBF/perf/analysis/README.md). That reader supports
 both historical timing artifacts and the new `timings.tsv`/manifest format and
 keeps their different measurement protocols distinct.

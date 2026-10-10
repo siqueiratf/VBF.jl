@@ -1,9 +1,4 @@
-[workspace]
-projects = ["packages/VBF", "packages/VBFCatalog", "packages/VBFSearch", "packages/VBFRepro"]
-
 [deps]
-VBFRepro = "16c7b88e-2149-4d60-a411-73f4bac0dd42"
-VBFSearch = "dd0bf59e-0517-4d11-a31d-bfc185ba0bb1"
 AlgebraicSolving = "66b61cbe-0446-4d5d-9090-1ff510639f9d"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -12,3 +7,9 @@ SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 VBF = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
 VBFCatalog = "806e9246-bd0c-40c6-b7ea-7b2eabc2fba0"
+VBFRepro = "16c7b88e-2149-4d60-a411-73f4bac0dd42"
+VBFSearch = "dd0bf59e-0517-4d11-a31d-bfc185ba0bb1"
+VBFWorkingPaper = "e54c5e26-2b6d-4780-90c4-72aee119c27e"
+
+[workspace]
+projects = ["packages/VBF", "packages/VBFCatalog", "packages/VBFSearch", "packages/VBFRepro", "packages/VBFWorkingPaper"]

@@ -5,7 +5,9 @@ include("verification/signature.jl")
 include("verification/ea_witness.jl")
 using .IndependentSignature
 using .IndependentEAWitness
-export properties, open_reference, close_reference, classify, compare, verify_comparison,
+using ..APNPowerEvidence
+include("pair_evidence.jl")
+export equivalence_evidence, verify_graph_witness, properties, open_reference, close_reference, classify, compare, verify_comparison,
        verify_ccz_witness, verify_ea_witness, lut_id, filehash, Reference
 
 filehash(path) = bytes2hex(open(SHA.sha256,path))
@@ -65,12 +67,12 @@ const Reference = VBFCatalog.AuditedAPNReference
 """Cover every eight-bit Gold exponent (gcd(k,8)=1), independently verify each representative."""
 function gold_coverage()
     [begin
-        exponent=(1<<k)+1
-        p=properties(gf_monomial_lut(8,exponent;modulus=0x11d))
+        k=row.k;exponent=row.exponent
+        p=properties(row.F.lut)
         p["apn"] && p["quadratic"] || error("invalid Gold representative")
         Dict("k"=>k,"exponent"=>exponent,"modulus"=>0x11d,
             "sigma_hash"=>p["sigma_hash"],"lut_sha256"=>p["lut_sha256"])
-    end for k in (1,3,5,7)]
+    end for row in build_gold_coverage(8;modulus=285).records]
 end
 
 """Require a source-rebuilt reference; freeze its scope and digests, never fall back to an old index."""
@@ -139,27 +141,18 @@ function compare(f,g;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000)
         return result
     end
     F,G = SBox{8,UInt8}(UInt8.(f)),SBox{8,UInt8}(UInt8.(g))
-    if F.lut==G.lut
-        A = identity_affine_map(16,UInt32)
-        outcome = nothing
-    else
-        outcome = partition_refinement_equivalence(F,G;relation,timeout_seconds,max_nodes)
-        A = outcome isa Found ? only(search_solutions(outcome)) : nothing
-    end
-    if A!==nothing
-        cols,c = Int.(A.linear.cols),Int(A.constant)
-        check = relation===:ea ? verify_ea_witness : verify_ccz_witness
-        check(f,g,cols,c) || error("solver produced an invalid graph witness")
+    proof=equivalence_evidence(F,G;relation,timeout_seconds,max_nodes)
+    if haskey(proof,"columns")
         merge!(result,Dict("status"=>"equivalent_with_verified_witness","equivalent"=>true,
-            "graph_map_columns"=>cols,"graph_map_constant"=>c,"independent_witness_verified"=>true))
-    elseif outcome isa Exhausted
+            "graph_map_columns"=>proof["columns"],"graph_map_constant"=>proof["constant"],"independent_witness_verified"=>true))
+    elseif startswith(proof["status"],"exhaustive_")
         merge!(result,Dict("status"=>"inequivalent_by_exhaustive_solver","equivalent"=>false,
             "evidence"=>"finite native search exhausted; computational evidence, not a proof-assistant certificate"))
     else
-        merge!(result,Dict("status"=>"inconclusive_budget","equivalent"=>"unresolved",
-            "stop"=>string(outcome.where_it_stopped.reason)))
+        merge!(result,Dict("status"=>"inconclusive_budget","equivalent"=>"unresolved","stop"=>proof["stop"]))
     end
-    outcome===nothing || merge!(result,Dict("nodes"=>nodes_visited(outcome),"seconds"=>elapsed_seconds(outcome)))
+    haskey(proof,"nodes") && (result["nodes"]=proof["nodes"])
+    haskey(proof,"elapsed_seconds") && (result["seconds"]=proof["elapsed_seconds"])
     result
 end
 

@@ -54,7 +54,7 @@ function profile_main(reg,package,args=ARGS)
             cpu=provenance["cpu"],julia_threads=provenance["julia_threads"]),
         warm_seconds=NaN,profiled_seconds=seconds,julia_version=string(VERSION),
         recorded_at=string(now(UTC))))
-    println("saved raw profile ",out," (",length(data)," frames); use VBFRepro analysis for attribution")
+    println("saved raw profile ",out," (",length(data)," frames); use the shared perf analysis reader for attribution")
     out
 end
 end

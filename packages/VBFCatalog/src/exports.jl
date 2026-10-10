@@ -38,3 +38,5 @@ export populate_ccz_equivalence_classes!, sigma_index_path
 
 export AuditedAPNReference, open_apn_reference, close_apn_reference
 export reference_metadata, reference_contains_signature, reference_exact_lut_match
+
+export signature_summary, signature_count

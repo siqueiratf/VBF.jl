@@ -32,13 +32,16 @@ Primary sources:
   theorem, lemma, algorithm, table, or experiment per file, and make each file
   runnable on its own.
   Use flat `YYYYMM-author-subject/` folders, e.g. `202508-beierle-millions/`.
-  Cross-paper metrics, timing analysis and validation live in `src/analysis/`.
+  Reproductions must never depend on VBFWorkingPaper.
   Write new analysis and independent verifiers in Julia.
 - `packages/<package>/perf/`: optional BenchmarkTools workloads and profiling.
   Separate development environments; never dependencies of package runtime code.
   Measurements live under `data/perf/`, separate from the curated catalog.
-- `packages/VBFRepro/`: reproduction runner, standalone paper claims, and
-  cross-paper analysis. Heavy paper dependencies load only in subprocesses.
+- `packages/VBFRepro/`: reproduction runner and standalone paper claims.
+  Heavy paper dependencies load only in subprocesses.
+- `packages/VBFWorkingPaper/`: manuscript studies consuming the other packages;
+  document source and Overleaf submodule live under `doc/`.
+- `packages/VBF/perf/analysis/`: optional shared measurement/profile readers.
 - `docs/`: Documenter.jl API-reference site generated from source docstrings.
 - `.claude/`: Claude source material: project context, original skills, and
   original agent markdown.

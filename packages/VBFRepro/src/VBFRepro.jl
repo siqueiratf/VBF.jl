@@ -2,7 +2,7 @@ module VBFRepro
 
 using Dates, SHA, TOML, UUIDs
 
-export repo_root, papers_root, discover_papers, paper_path, run_paper, test_paper, main
+export paper_bib_key, repo_root, papers_root, discover_papers, paper_path, run_paper, test_paper, main
 
 """Root of the VBF workspace containing the reproducible execution environment."""
 repo_root() = normpath(joinpath(@__DIR__, "..", "..", ".."))
@@ -27,6 +27,9 @@ function paper_path(id::AbstractString; root=papers_root())
     length(matches) == 1 || throw(ArgumentError("paper '$id' has $(length(matches)) matches"))
     return only(matches).path
 end
+
+"""Bibliography identity of a reproduction, or `nothing` for an unregistered slug."""
+paper_bib_key(id::AbstractString) = get(TOML.parsefile(joinpath(@__DIR__, "publications.toml")), String(id), nothing)
 
 function _write_metadata(path, metadata)
     temporary = path * ".tmp"

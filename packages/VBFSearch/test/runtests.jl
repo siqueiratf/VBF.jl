@@ -197,3 +197,17 @@ end
 
 include("cli.jl")
 include("pipeline.jl")
+
+@testset "Generic independent graph evidence" begin
+    F=gold_apn(5);G=SBox{5}(F.lut .⊻ 3)
+    A=F2AffineMap(identity_linear_map(10),3)
+    @test verify_graph_witness(F,G,A)
+    @test !verify_graph_witness(F,G,F2AffineMap(A.linear,4))
+    @test equivalence_evidence(F,G;max_nodes=0)["status"]=="inconclusive_budget"
+    f=collect(0:31);swap=[1<<(i<5 ? i+5 : i-5) for i in 0:9]
+    @test verify_ccz_witness(f,f,swap,0)
+    @test !verify_ea_witness(f,f,swap,0)
+    @test !verify_ccz_witness(f,f,fill(0,10),0)
+    @test !verify_ccz_witness(f[1:31],f[1:31],swap,0)
+    @test !verify_ccz_witness(f,f,swap,1<<10)
+end

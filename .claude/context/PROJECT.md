@@ -16,7 +16,8 @@ packages/VBFCatalog/   data layer: SQLite catalog, bibliography, importers
 packages/VBFSearch/    reproducible APN search and research consumers
 docs/inspector/        HTTP evidence viewer consuming all three packages
 data/apn/             reference snapshots, runs, rebuilds and historical data
-packages/VBFRepro/      reproduction runner, standalone claims and research analysis
+packages/VBFRepro/      reproduction runner and standalone publication claims
+packages/VBFWorkingPaper/ manuscript studies, analysis and Overleaf source under doc/
 packages/*/perf/        optional per-package performance workloads
 data/perf/             performance measurements and provenance
 docs/                  Documenter.jl API-reference site
@@ -32,8 +33,9 @@ Key layout rules:
   core math that belongs in `packages/VBF`.
 - Reproduction folders use flat `YYYYMM-author-subject` slugs, e.g.
   `src/202508-beierle-millions/`; `00` retains an unspecified month.
-  Cross-paper metrics, performance analysis and validation experiments live
-  together under `packages/VBFRepro/src/analysis/` with one optional environment.
+  Working-paper studies live in `packages/VBFWorkingPaper/`. Reproductions
+  never depend on WorkingPaper. Shared evidence belongs to VBFSearch, catalog
+  queries to VBFCatalog, and saved timing readers to VBF/perf/analysis.
   New verifiers and analysis code are Julia; independent checks use stdlib
   arithmetic without calling the VBF routine they verify.
 

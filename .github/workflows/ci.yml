@@ -93,7 +93,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [VBF, VBFCatalog, VBFSearch, VBFRepro]
+        package: [VBF, VBFCatalog, VBFSearch, VBFRepro, VBFWorkingPaper]
     env:
       JULIA_LOAD_PATH: '@:@stdlib'
     steps:
@@ -136,7 +136,7 @@ jobs:
       matrix:
         julia: ['1.12']
         os: [ubuntu-latest]
-        package: [VBF, VBFCatalog, VBFSearch, VBFRepro]
+        package: [VBF, VBFCatalog, VBFSearch, VBFRepro, VBFWorkingPaper]
     steps:
       - name: Check out source
         uses: actions/checkout@v5
@@ -161,3 +161,9 @@ jobs:
         env:
           # Hosted runners are small; cap the worker count so the few heavy items (n=6 CCZ enumeration, affine equivalence) don't contend.
           RETESTITEMS_NWORKERS: '2'
+
+      - name: Check shared perf and proposal consumers
+        if: matrix.package == 'VBFWorkingPaper'
+        run: |
+          julia --startup-file=no --project=packages/VBFWorkingPaper packages/VBF/perf/analysis/test.jl
+          julia --startup-file=no --project=packages/VBFWorkingPaper packages/VBFRepro/test/proposals/test_catalog_proposals.jl
