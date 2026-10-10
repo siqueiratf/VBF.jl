@@ -7,7 +7,7 @@ VBF back to either consumer. Independently implemented verifiers remain
 standard-library-only in `src/verification/`.
 
 Read [research assessment](AUDIT.md) for the research assessment and unresolved novelty
-questions. The [web inspector](../../census/quadratic_apn8/web/README.md) uses the
+questions. The [web inspector](../../apps/apn-inspector/README.md) uses the
 same evidence layer. [Reference preparation](../../data/apn/README.md) describes
 the required ignored data artifacts. Julia >= 1.12 and the instantiated root
 project are required. Reports additionally need Python >= 3.11 and matplotlib.
@@ -191,3 +191,7 @@ prove that an earlier REPL loaded the same bytes currently on disk. The CLI
 starts a fresh worker process. Independently verified positive witnesses remain
 recheckable after source changes; cached exhaustive solver negatives are reused
 only with a matching solver-source fingerprint.
+
+The [census consolidation review](CENSUS_REVIEW.md) records component ownership
+and research limitations. Additional [research experiments](experiments/README.md)
+and [literature audits](tools/literature/README.md) consume the same packages.

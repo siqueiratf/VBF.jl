@@ -20,6 +20,12 @@ Primary sources:
   bibliography, importers, and SQLite-backed corpora. It depends on `VBF`.
 - `packages/VBFSearch/`: reproducible search application consuming VBF and VBFCatalog;
   owns experiment state, checkpoints and evidence, never curated catalog writes.
+- `packages/VBFCatalog/tools/reference/`: independent original-source rebuild tools;
+  run in the root project and write to `data/apn/rebuilds/`.
+- `packages/VBFSearch/{experiments,tools}/`: research consumers of package APIs.
+- `apps/apn-inspector/`: HTTP evidence viewer; own Julia environment.
+- `data/apn/`: reference snapshots, runs, rebuilds and historical artifacts. The
+  root `search/` and `census/` trees are retired; see `packages/VBFSearch/CENSUS_REVIEW.md`.
 - `packages/VBFCatalog/data-build/`: importer/build scripts with their own
   environment. Do not include these from package tests or a casual REPL.
 - `papers/`: standalone paper-reproduction scripts. Keep one paper claim,

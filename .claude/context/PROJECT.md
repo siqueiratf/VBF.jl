@@ -13,6 +13,9 @@ packages/VBF/          core algorithms  (representations, spectra, invariants,
                         equivalence, constructions — no catalog dependency)
 packages/VBFCatalog/   data layer: SQLite catalog, bibliography, importers
                         (depends on VBF; VBF must NOT depend on VBFCatalog)
+packages/VBFSearch/    reproducible APN search and research consumers
+apps/apn-inspector/   HTTP evidence viewer consuming all three packages
+data/apn/             reference snapshots, runs, rebuilds and historical data
 papers/                standalone paper-reproduction scripts
 docs/                  Documenter.jl API-reference site
 ```
@@ -126,3 +129,10 @@ under `packages/VBFSearch/`; Fourier math is `VBF.QuadraticExtensions`, catalog 
 use `VBFCatalog`. Reference evidence defaults to ignored `data/apn/reference`
 and `data/apn/supplement.tsv`. Historical census outputs remain archived; old
 checkpoints are unsupported. See `packages/VBFSearch/README.md` for the supported API.
+
+The root `census/` tree is removed. Pure coefficient-tree, restriction and profile
+math lives in VBF (`QuadraticAPNTree`, `QuadraticRestrictions`, `QuadraticProfiles`).
+Original-source rebuild tools are `packages/VBFCatalog/tools/reference/`;
+literature audits and study consumers are under `packages/VBFSearch/{tools,experiments}/`.
+Historical data is `data/apn/archive/census/`; new rebuilds use `data/apn/rebuilds/`.
+See `packages/VBFSearch/CENSUS_REVIEW.md` for the detailed audit and retired components.

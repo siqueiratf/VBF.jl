@@ -3,7 +3,7 @@
 The search uses an immutable, independently rebuilt quadratic (8,8)-APN
 reference. This directory holds reference snapshots, experiment runs and archived
 research artifacts. Generated run files, reference databases and downloaded inputs
-are ignored by git; the small historical class-orbit artifacts remain tracked.
+are ignored by git; previously tracked historical artifacts remain tracked.
 It is not a second editable catalog:
 seed LUTs come from `VBFCatalog`, while this snapshot supplies original-source
 verification evidence for the comparison baseline.
@@ -16,6 +16,11 @@ The default layout is:
 - `runs/web/`: saved pair-comparison certificates from the inspector.
 - `archive/class-orbit/`: historical commutant/self-equivalence results, candidate
   centers, checkpoints, configurations and reports; see its [README](archive/class-orbit/README.md).
+- `archive/census/`: the former census data tree, including candidate lists,
+  samples, downloaded originals, rebuild databases, scientific reports and
+  checkpoints. See the [archive index](archive/README.md).
+- `rebuilds/<name>/`: new original-source reference rebuilds, separate from
+  archived evidence and the reference snapshot used by searches.
 - `reference/comparison.toml`: completed original-source comparison manifest.
 - `reference/fresh_union.sqlite`: exact union of recomputed signatures.
 - `reference/candidate_comparison.toml`: optional digest-bound historical input
@@ -30,21 +35,20 @@ separate from the implementation in [VBFSearch](../../packages/VBFSearch/README.
 
 ## Rebuild or restore
 
-The original-source rebuild and public-source survey remain research workflows
-under `census/` during the migration. Use the [rebuild instructions](../../census/quadratic_apn8/rebuild_corpus/README.md)
-and [literature survey](../../census/quadratic_apn8/reports/literature/LITERATURE.md)
+Use the [VBFCatalog reference tools](../../packages/VBFCatalog/tools/reference/README.md)
+and [VBFSearch literature tools](../../packages/VBFSearch/tools/literature/README.md)
 to regenerate their artifacts:
 
 ```sh
 # Use a fresh directory: old rebuild identities deliberately reject changed code.
 for stage in fetch stored raw compare; do
-  make -C census/quadratic_apn8/rebuild_corpus "$stage" \
+  make -C packages/VBFCatalog/tools/reference "$stage" \
     OUTDIR=/tmp/vbf-apn-reference-rebuild threads=16
 done
 mkdir -p data/apn/reference
 cp /tmp/vbf-apn-reference-rebuild/comparison.toml data/apn/reference/
 cp /tmp/vbf-apn-reference-rebuild/fresh_union.sqlite data/apn/reference/
-cp census/quadratic_apn8/results/literature_20261009/supplemental_luts.tsv data/apn/supplement.tsv
+cp data/apn/archive/census/results/literature_20261009/supplemental_luts.tsv data/apn/supplement.tsv
 ```
 
 If available, also copy the rebuild's `candidate_comparison.toml`. Alternatively

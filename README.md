@@ -28,6 +28,7 @@ Corpus absence is scoped evidence, not a literature-wide novelty guarantee.
 
 [Search methodology and commands](packages/VBFSearch/README.md) describe seeds, checkpoints,
 validation, equivalence checks and publication exports. `bin/vbf help` lists
-all commands. The [evidence inspector](census/quadratic_apn8/web/README.md) can
-browse these runs. Historical experiments and results remain under `census/`;
-production search code lives in the `VBFSearch` package.
+all commands. The [evidence inspector](apps/apn-inspector/README.md) can
+browse these runs. Historical data is preserved under `data/apn/archive/`;
+the [census review](packages/VBFSearch/CENSUS_REVIEW.md) documents promoted
+mathematics, retained research consumers and retired runners.

@@ -17,7 +17,7 @@ excluded nonquadratic occurrence. The quadratic reference contains **3,809,037
 distinct signatures**, including the 546 public signatures omitted from the
 old index. Its database SHA256 is
 `0eed9fb5d3a70bd24b8c8c9eefa61b0b882b9cd540dd06cda0cd430444f7b603`.
-The [literature survey](../../census/quadratic_apn8/reports/literature/LITERATURE.md) adds one public
+The [literature survey](../../data/apn/archive/census/reports/literature/LITERATURE.md) adds one public
 quadratic representative from Galissant's 2026 slides, held as a separate
 hash-bound supplement.
 
@@ -61,7 +61,7 @@ A frozen snapshot taken during the ongoing two-hour switching run contains
 exact LUTs were independently validated by the new importer, are quadratic APN,
 and have distinct signatures absent from the reference and supplement. Evidence,
 the snapshot timestamp/digests, CSV/LaTeX tables and SVG/PDF figures are under
-`census/quadratic_apn8/discovery/results/validated_search_snapshot/`. This is a partial run snapshot,
+`data/apn/archive/census/discovery/results/validated_search_snapshot/`. This is a partial run snapshot,
 not the final two-hour result. The historical input hashes are separate from
 these functions; the subsequent exact signature-set intersection with all 499,272 historical
 values was empty. The combined reference-plus-study-plus-snapshot class lower
@@ -98,7 +98,7 @@ parameters are k = 1, 3, 5, 7. The workflow constructs and independently verifie
 all four, checks their reference membership and records their signatures. Every
 corpus-absent candidate excludes all four signatures, hence all APN power
 functions. This also closes the Kasami concern theoretically. The existing
-[Kasami computation](../../census/quadratic_apn8/kasami_x57/REPORT.md) supplies further evidence, subject
+[Kasami computation](../../data/apn/archive/census/kasami_x57/REPORT.md) supplies further evidence, subject
 to the documented sboxU dependency and thread bug. It is unnecessary to
 enumerate the Kasami CCZ class again for this power-function exclusion.
 
