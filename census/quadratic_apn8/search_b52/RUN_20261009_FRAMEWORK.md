@@ -1,7 +1,7 @@
 # B6 = 52 search: run on the Framework desktop (2026-10-08/09)
 
 Scientific scope update: the APN/signature results were reconciled against the
-source-rebuilt baseline in the [current audit](../../../search/apn/AUDIT.md). The
+source-rebuilt baseline in the [current audit](../../../packages/VBFSearch/AUDIT.md). The
 capture–recapture calculations below are historical exploratory estimates;
 uniform sampling and independence are not established. They do not certify a
 global class count, coverage fraction or exhaustiveness.

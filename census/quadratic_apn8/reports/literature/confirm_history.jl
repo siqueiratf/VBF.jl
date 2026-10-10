@@ -6,8 +6,8 @@ Reuse is digest-bound. This rechecks baseline membership, not all 500090 DDTs.
 """
 const CONFIRM_HISTORY_USAGE=nothing
 using TOML,SHA,Dates,VBF,VBFCatalog
-include("../../../../search/apn/evidence.jl")
-include("../../../../search/apn/inputs.jl")
+using VBFSearch: DiscoveryEvidence
+using VBFSearch: DiscoveryInputs
 using .DiscoveryEvidence,.DiscoveryInputs
 
 """Resolve audited signatures through the existing catalog API, without importing duplicate rows."""

@@ -399,7 +399,7 @@ function run_ea!(j::EAJob, F, G;relation=:ea,timeout_seconds=30,max_nodes=1_000_
         proof=VBFSearch.compare(F.lut,G.lut;relation,timeout_seconds,max_nodes)
         proof["created_utc"]=string(Dates.now(Dates.UTC))
         proof["algorithm_sha256"]=proof["source_sha256"]
-        dir=joinpath(STUDY_DIR,"../../search/apn/results/web")
+        dir=joinpath(STUDY_DIR,"../../data/apn/runs/web")
         mkpath(dir)
         open(io->TOML.print(io,proof;sorted=true),joinpath(dir,"comparison_$(time_ns()).toml"),"w")
         if !isempty(RUN_DIRECTORY[])

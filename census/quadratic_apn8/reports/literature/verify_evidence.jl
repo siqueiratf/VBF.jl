@@ -6,8 +6,8 @@ original/baseline membership as well, rerun check_sources.jl.
 """
 const VERIFY_LITERATURE_USAGE = nothing
 using SHA, TOML
-include("../../../../search/apn/verification/signature.jl")
-include("../../../../search/apn/verification/ea_witness.jl")
+include("../../../../packages/VBFSearch/src/verification/signature.jl")
+include("../../../../packages/VBFSearch/src/verification/ea_witness.jl")
 using .IndependentSignature, .IndependentEAWitness
 
 function verify_evidence(root)

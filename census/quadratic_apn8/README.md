@@ -2,11 +2,11 @@
 
 **Path**: `census/quadratic_apn8/`
 
-**Current scientific status:** the [consolidated discovery pipeline](../../search/apn/README.md)
-has moved to `search/apn/` with the supported `bin/vbf` command. It provides
+**Current scientific status:** the [consolidated discovery pipeline](../../packages/VBFSearch/README.md)
+is implemented by `packages/VBFSearch/` with the supported `bin/vbf` command. It provides
 reproducible search, transactional resume, independent APN validation,
 bounded EA/CCZ checks, evidence inspection and publication exports. Read its
-[audit](../../search/apn/AUDIT.md) before using the historical novelty or census claims below.
+[audit](../../packages/VBFSearch/AUDIT.md) before using the historical novelty or census claims below.
 The five historical lists contain **110,868 pairwise CCZ-separated quadratic APNs**
 absent from the original-source quadratic reference and the public supplement.
 This is a rigorously scoped finite-computation result; literature-wide novelty

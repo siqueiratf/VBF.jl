@@ -13,12 +13,12 @@ Run from the repository root:
 
 ```sh
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
-bin/vbf search --output search/apn/results/experiment01 --duration 8h --threads 30
-bin/vbf status search/apn/results/experiment01
-bin/vbf stop search/apn/results/experiment01
-bin/vbf resume search/apn/results/experiment01 --duration 8h --threads 30
-bin/vbf audit search/apn/results/experiment01
-bin/vbf report search/apn/results/experiment01
+bin/vbf search --output data/apn/runs/experiment01 --duration 8h --threads 30
+bin/vbf status data/apn/runs/experiment01
+bin/vbf stop data/apn/runs/experiment01
+bin/vbf resume data/apn/runs/experiment01 --duration 8h --threads 30
+bin/vbf audit data/apn/runs/experiment01
+bin/vbf report data/apn/runs/experiment01
 ```
 
 The default construction is checkpointed V5 extension of quadratic eight-bit
