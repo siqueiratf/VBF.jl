@@ -5,7 +5,7 @@ Julia 1.12.6, AMD Ryzen 5 5600G / 12 threads / 30.7 GB.
 Backing data: [`audit/readme_index.yaml`](audit/readme_index.yaml),
 [`audit/findings.yaml`](audit/findings.yaml),
 [`audit/missing_sources.yaml`](audit/missing_sources.yaml),
-[`bench/calibration.toml`](bench/calibration.toml).
+[`packages/VBF/perf/historical/calibration.toml`](packages/VBF/perf/historical/calibration.toml).
 
 ## Summary
 
@@ -109,14 +109,14 @@ all — the blocker is that nobody has run it.
 ## Proposed experiments — top ten leads
 
 Every experiment below has a stop condition; any lead that could not carry one is not here.
-Runtimes are from `bench/calibration.toml` and carry a ±2× band (see Method).
+Runtimes are from `packages/VBF/perf/historical/calibration.toml` and carry a ±2× band (see Method).
 
 ### E1 — Delete the actionable false-novelty record, then upgrade σ-match to proof (F003)
 
 ```julia
 julia --project=. -e '
 using VBF, VBFCatalog
-include("papers/2026/Kuznetsov_202606/helpers.jl")
+include("packages/VBFRepro/papers/2026/Kuznetsov_202606/helpers.jl")
 reps = representative_sboxes()
 for nm in (:class_a, :class_b, :class_c, :class_d)
     F = getfield(reps, nm)
@@ -145,8 +145,8 @@ end'
 ```julia
 julia --project=. -e '
 using VBF, VBFCatalog
-include("papers/2024/Ichanska_202400/helpers.jl")
-include("papers/2024/Ichanska_202400/section5_1.jl")
+include("packages/VBFRepro/papers/2024/Ichanska_202400/helpers.jl")
+include("packages/VBFRepro/papers/2024/Ichanska_202400/section5_1.jl")
 F  = new_function_n8_m2(); db = load_catalog()
 W9 = corpus_function(db, "wengtangong2013_n8", 9)
 W1 = corpus_function(db, "wengtangong2013_n8", 1)
@@ -167,7 +167,7 @@ W1 = corpus_function(db, "wengtangong2013_n8", 1)
 ```julia
 julia --project=. -e '
 using VBF, VBFCatalog
-include("papers/2009/Budaghyan_200910/helpers.jl")
+include("packages/VBFRepro/papers/2009/Budaghyan_200910/helpers.jl")
 F = SBox{8}(UInt8.(apn_eq6(8, 2)))              # BCL 2009 eq. (6), a = alpha
 G = load_apn_function("n8_Taniguchi2025_ex4_2")
 @show length(ea_mappings_from_ortho_derivative(G, F))   # expect 3072
@@ -189,7 +189,7 @@ G = load_apn_function("n8_Taniguchi2025_ex4_2")
 ```julia
 julia --project=. -e '
 using VBF
-include("papers/2026/Kuznetsov_202606/helpers.jl")
+include("packages/VBFRepro/papers/2026/Kuznetsov_202606/helpers.jl")
 M = build_M_A(build_A_matrix())
 intra  = [col_idx(p,q,k)+1 for (p,q) in ((4,5),(4,6),(5,6)) for k in 0:7]
 center = setdiff(1:224, intra)
@@ -212,7 +212,7 @@ println((rank_of(M), rank_of(M[:,intra]), rank_of(M[:,center])))'
 # after changing helpers.jl:56 and theorem3.jl:38 to 1 << (m + s)
 julia --project=. -e '
 using VBF, VBFCatalog
-include("papers/2022/Li_202207/helpers.jl")
+include("packages/VBFRepro/papers/2022/Li_202207/helpers.jl")
 F = theorem3_sbox(3, 1; mu = 32, v = 336)     # Table V row 12, modulus 529
 @show differential_uniformity(F), algebraic_degree(F)
 @show sorted_pairs(differential_spectrum(ortho_derivative(F)))'
@@ -231,8 +231,8 @@ F = theorem3_sbox(3, 1; mu = 32, v = 336)     # Table V row 12, modulus 529
 ### E6 — Settle the Yu 2025 Table 2 convention and repair Table 3's key (F004, F005)
 
 ```bash
-make -C papers/2025/Yu_202512 table2_n7      # today: 1 and 117 against the paper's 4 and 78
-make -C papers/2025/Yu_202512 table3         # today: two [FAIL] lines from a sigma collision
+make -C packages/VBFRepro/papers/2025/Yu_202512 table2_n7      # today: 1 and 117 against the paper's 4 and 78
+make -C packages/VBFRepro/papers/2025/Yu_202512 table3         # today: two [FAIL] lines from a sigma collision
 ```
 then add `reps = :min_log` to `fn_set` and switch `table3.jl:82` to `apn_ea_mugshot`.
 
@@ -314,7 +314,7 @@ rc = search_qam_full(7, 1; confirm = true)
 # after implementing Comm(M), isSmallest and Lemma 6 seeding
 julia --project=. -e '
 using VBF
-include("papers/2021/Beierle_202107/algorithm1.jl")
+include("packages/VBFRepro/papers/2021/Beierle_202107/algorithm1.jl")
 out = APNSearch(6, A, B; timeout_seconds = 86_400)
 @show typeof(out)                       # must be Exhausted, not BudgetHit
 @show proves_emptiness(out), search_solutions(out)'
@@ -410,7 +410,7 @@ above and should be fixed regardless of their rank here.
 ## Reproduction debt
 
 **READMEs with no paper text on disk: none.** All 42 paper directories carry both `.tex` and
-`.pdf` under `input/`. One is misfiled: `papers/2022/Li_202207/input/tex_source/` contains the
+`.pdf` under `input/`. One is misfiled: `packages/VBFRepro/papers/2022/Li_202207/input/tex_source/` contains the
 `.tex` of a *different* paper, whose own reproduction lives elsewhere in the tree
 (`audit/missing_sources.yaml` MS18).
 
@@ -509,7 +509,7 @@ Table 2 and Table 3 failures by executing the repository's own make targets; and
 such throughout: every figure in a `readme_only` finding, and every cost derived from a
 non-calibration key.
 
-**Calibration.** `bench/calibration.toml` was generated 2026-08-16 — one day old, well inside
+**Calibration.** `packages/VBF/perf/historical/calibration.toml` was generated 2026-08-16 — one day old, well inside
 the thirty-day window — so it was **not** regenerated. It was spot-checked instead: `is_apn` at
 n=8 reproduced to 7 %, at n=10 to 1.8×, and `ortho_derivative` at n=8 to 2.1×, the spread growing
 with per-call cost, which is scheduler pressure rather than drift. **Every core-hour figure in

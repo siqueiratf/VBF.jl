@@ -1,0 +1,197 @@
+% ---------------------------------------------------------------------------
+% manuscript/performance/crossings.tex — the benchmark crossings, ready to paste into a paper.
+%
+% This file is NOT generated. Edit it. It reads the six files that
+% packages/VBFRepro/analysis/performance/crossings.jl writes into data/repro/analysis/performance/crossings/, and it draws the two
+% figures that the raw data supports.
+%
+% Regenerate the data with:  make -C packages/VBFRepro/analysis crossings
+%
+% PREAMBLE. The document must load these packages.
+%
+%   \usepackage{booktabs}
+%   \usepackage{tikz}
+%   \usepackage{pgfplots}
+%   \pgfplotsset{compat=1.17}
+%
+% PATH. Set \bmxgen if the generated files are not beside the document.
+%
+%   \providecommand{\bmxgen}{data/repro/analysis/performance/crossings/}
+%
+% The document must also \input the two fact files, so the prose can quote a
+% single figure and keep it in step with the tables.
+%
+%   \input{data/perf/archive/generated/benchmarks_meta.tex}
+%   \input{data/repro/analysis/performance/crossings/crossings_facts.tex}
+% ---------------------------------------------------------------------------
+
+\providecommand{\bmxgen}{data/repro/analysis/performance/crossings/}
+
+% Keep one series of a shared data file. pgfplots drops every row whose
+% `caseid` (or `groupid`) is not the one that the plot asks for.
+\pgfplotsset{
+  discard if not/.style 2 args={
+    x filter/.code={
+      \edef\tempa{\thisrow{#1}}\edef\tempb{#2}%
+      \ifx\tempa\tempb\else\def\pgfmathresult{inf}\fi}}}
+
+% ── crossing 1 ──────────────────────────────────────────────────────────────
+
+\begin{table}[htbp]
+  \centering
+  \caption[Measured growth against the predicted exponent]{%
+    Measured growth against the predicted exponent, on \bmMetaCPU{} under
+    Julia \bmMetaJulia{}. The suite fits $\log_2$ of the minimum time against
+    $n$, so the slope is an exponent and not a time. A prediction marked
+    $\geq$ is a lower bound: each unit of work itself grows with $n$, so a
+    measured slope above the bound agrees with the model. The five series
+    marked \emph{inconclusive} have a fastest point under one microsecond,
+    where the fixed cost of one call is a large part of the measurement. A
+    series marked \emph{curved fit} misses the straight line by more than half
+    a bit, so its slope is an average over two regimes and not one exponent.
+    \bmxGrowthConfirms{} of the \bmxGrowthConclusive{} conclusive series meet
+    their predicted exponent.}
+  \label{tab:bmx-growth}
+  \input{\bmxgen crossing_growth_table.tex}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        width=0.8\linewidth, height=6cm,
+        xlabel={dimension $n$}, ylabel={minimum time (s)},
+        ymode=log, log basis y=10,
+        grid=major, grid style={gray!25},
+        legend pos=north west, legend cell align=left,
+        legend style={font=\scriptsize, draw=none, fill=none},
+        tick label style={font=\small},
+      ]
+      % Each caseid comes from crossings_facts.tex, so an edit to
+      % manuscript/performance/crossings.toml can never move a curve without moving its label.
+      \addplot+[mark=*] table[x=n, y=seconds,
+        discard if not={caseid}{\bmxCaseidInvariantsGammaRank}] {\bmxgen crossing_growth.dat};
+      \addlegendentry{\texttt{gamma\_rank}, slope \bmxSlopeInvariantsGammaRank}
+      \addplot+[mark=square*] table[x=n, y=seconds,
+        discard if not={caseid}{\bmxCaseidSpectraDdt}] {\bmxgen crossing_growth.dat};
+      \addlegendentry{\texttt{ddt}, slope \bmxSlopeSpectraDdt}
+      \addplot+[mark=triangle*] table[x=n, y=seconds,
+        discard if not={caseid}{\bmxCaseidSpectraLat}] {\bmxgen crossing_growth.dat};
+      \addlegendentry{\texttt{lat}, slope \bmxSlopeSpectraLat}
+      \addplot+[mark=diamond*] table[x=n, y=seconds,
+        discard if not={caseid}{\bmxCaseidInvariantsOrthoDerivative}] {\bmxgen crossing_growth.dat};
+      \addlegendentry{\texttt{ortho\_derivative}, slope \bmxSlopeInvariantsOrthoDerivative}
+    \end{axis}
+  \end{tikzpicture}
+  \caption[Growth of four invariants]{%
+    Growth of four operations. A straight line on this axis is an exponential
+    cost, and its gradient is the slope of
+    Table~\ref{tab:bmx-growth}. \texttt{gamma\_rank} rises by
+    \bmxSlopeInvariantsGammaRank{} bits for each unit of $n$, which is the
+    steepest series in the suite and the reason its guard exists.}
+  \label{fig:bmx-growth}
+\end{figure}
+
+% ── crossing 2 ──────────────────────────────────────────────────────────────
+
+\begin{table}[htbp]
+  \centering
+  \caption[The cost of a yes against the cost of a no]{%
+    The cost of a yes against the cost of a no, for the
+    \bmxPolarityPairs{} decision procedures that the suite measures on both
+    answers. The widest pair is \bmxPolarityWidestRelation{} equivalence at
+    $n=\bmxPolarityWidestN{}$, where the two answers differ by a factor of
+    \bmxPolarityWidestFactor{}. A cheap invariant refutes the negative pair
+    before any search starts, and the positive pair must produce a witness.
+    One mean over both answers therefore has no meaning, and a search plan
+    must budget the two answers apart.}
+  \label{tab:bmx-polarity}
+  \input{\bmxgen crossing_polarity_table.tex}
+\end{table}
+
+% ── crossing 3 ──────────────────────────────────────────────────────────────
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        width=0.8\linewidth, height=6.5cm,
+        xlabel={minimum time (s)}, ylabel={allocated bytes},
+        xmode=log, ymode=log, log basis x=10, log basis y=2,
+        grid=major, grid style={gray!25},
+        legend pos=north west, legend columns=2, legend cell align=left,
+        legend style={font=\scriptsize, draw=none, fill=none},
+        tick label style={font=\small},
+        % Two cases allocate nothing. A log axis cannot hold a zero, so the
+        % filter turns them into nan and pgfplots drops them.
+        y filter/.expression={\thisrow{bytes}>0 ? \thisrow{bytes} : nan},
+      ]
+      % Each groupid comes from crossings_facts.tex. The seven plots are
+      % written out one by one, because a \foreach around \addplot fails on
+      % an old pgfplots.
+      \addplot+[only marks, mark size=1.3pt] table[x=seconds, y=bytes,
+        discard if not={groupid}{\bmxGroupidCatalog}] {\bmxgen crossing_memory.dat};
+      \addlegendentry{catalog}
+      \addplot+[only marks, mark size=1.3pt] table[x=seconds, y=bytes,
+        discard if not={groupid}{\bmxGroupidConstructions}] {\bmxgen crossing_memory.dat};
+      \addlegendentry{constructions}
+      \addplot+[only marks, mark size=1.3pt] table[x=seconds, y=bytes,
+        discard if not={groupid}{\bmxGroupidEquivalence}] {\bmxgen crossing_memory.dat};
+      \addlegendentry{equivalence}
+      \addplot+[only marks, mark size=1.3pt] table[x=seconds, y=bytes,
+        discard if not={groupid}{\bmxGroupidInvariants}] {\bmxgen crossing_memory.dat};
+      \addlegendentry{invariants}
+      \addplot+[only marks, mark size=1.3pt] table[x=seconds, y=bytes,
+        discard if not={groupid}{\bmxGroupidLinalg}] {\bmxgen crossing_memory.dat};
+      \addlegendentry{linalg}
+      \addplot+[only marks, mark size=1.3pt] table[x=seconds, y=bytes,
+        discard if not={groupid}{\bmxGroupidRepresentations}] {\bmxgen crossing_memory.dat};
+      \addlegendentry{representations}
+      \addplot+[only marks, mark size=1.3pt] table[x=seconds, y=bytes,
+        discard if not={groupid}{\bmxGroupidSpectra}] {\bmxgen crossing_memory.dat};
+      \addlegendentry{spectra}
+      % The 4 GiB ceiling that the reach table uses.
+      \draw[dashed, gray] ({rel axis cs:0,0} |- {axis cs:1,4294967296})
+                       -- ({rel axis cs:1,0} |- {axis cs:1,4294967296})
+        node[above left, font=\scriptsize, black] {4\,GiB};
+    \end{axis}
+  \end{tikzpicture}
+  \caption[Allocation against time]{%
+    Allocation against time, one mark for each of the \bmMetaCases{} measured
+    cases. The heaviest case is \bmxMemHeaviestCase{} at $n=\bmxMemHeaviestN{}$,
+    which allocates \bmxMemHeaviestGiB{}~GiB; \bmxMemAboveOneGiB{} cases
+    allocate at least one GiB on a machine that holds
+    \bmxMemMachineGB{}~GB. The dashed line is the 4~GiB ceiling of
+    Table~\ref{tab:bmx-reach}. No case that allocates at least one GiB goes
+    above \bmxMemRateLargeMaxGiB{}~GiB/s, which is the allocation throughput
+    of this machine; a small allocation stays in the cache and reaches
+    \bmxMemRateMaxGiB{}~GiB/s in \bmxMemRateMaxCase{}.
+    \emph{Caution:} the axis counts what one call allocates in total. It is
+    not the peak resident memory.}
+  \label{fig:bmx-memory}
+\end{figure}
+
+\begin{table}[htbp]
+  \centering
+  \caption[The heaviest cases]{%
+    The fifteen cases that allocate the most, with the time that each one
+    costs. The last column is the allocation rate. No case of this size goes
+    above \bmxMemRateLargeMaxGiB{}~GiB/s, so a case at that rate waits for
+    memory and not for arithmetic. The three slowest rates in the column
+    belong to the cases that search rather than allocate.}
+  \label{tab:bmx-memory}
+  \input{\bmxgen crossing_memory_table.tex}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption[The reachable dimensions]{%
+    Crossings 1 and 4 together: the largest $n$ that one hour of one core
+    reaches, and the largest $n$ that 4~GiB of allocation reaches, from the
+    fitted growth of the time and of the allocation. A bound $>n$ means the
+    ceiling lies more than eight units of $n$ past the largest measured point,
+    where the fit no longer carries the claim. Four of the five conclusive
+    operations stop for the reason of memory, not of time.}
+  \label{tab:bmx-reach}
+  \input{\bmxgen crossing_reach_table.tex}
+\end{table}

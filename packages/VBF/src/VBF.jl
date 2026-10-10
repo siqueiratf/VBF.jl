@@ -4,7 +4,7 @@
 Algorithms for analysing **vectorial Boolean functions** (S-boxes) in Julia:
 differential/linear/boomerang spectra, the linear/affine/EA/CCZ equivalence
 hierarchy, and APN-specific invariants and constructions. Paper-reproduction
-scripts live under `papers/`.
+scripts live under `packages/VBFRepro/papers/`.
 
 Source is grouped by concept (each directory is a chapter of the algorithm
 catalog); files load in dependency order:

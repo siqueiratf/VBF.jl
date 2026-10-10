@@ -1,0 +1,6 @@
+# Local measurements, logs, generated reports and immutable source archives.
+/**
+!/**/
+!.gitignore
+!README.md
+!**/README.md

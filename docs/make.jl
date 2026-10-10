@@ -2,6 +2,7 @@ using Documenter
 using DocumenterCitations
 using VBF
 using VBFCatalog
+using VBFRepro
 
 # The References page renders the catalog's BibTeX file (the single source of truth for both the catalog provenance and the docs bibliography).
 bib = CitationBibliography(
@@ -70,10 +71,18 @@ open(joinpath(API_DIR, "catalog.md"), "w") do io
 end
 push!(api_pages, "api/catalog.md")
 
+open(joinpath(API_DIR, "reproduction.md"), "w") do io
+    println(io, "# VBFRepro\n")
+    println(io, "```@autodocs")
+    println(io, "Modules = [VBFRepro]")
+    println(io, "```")
+end
+push!(api_pages, "api/reproduction.md")
+
 makedocs(
     sitename = "VBF",
     authors = "Gustavo Zambonin",
-    modules = [VBF, VBFCatalog],
+    modules = [VBF, VBFCatalog, VBFRepro],
     warnonly = true,
     # Run `DOCS_FIX=true julia --project=docs docs/make.jl` to rewrite drifted jldoctest blocks in the source to their actual output.
     doctest = get(ENV, "DOCS_FIX", "false") == "true" ? :fix : true,
@@ -81,6 +90,7 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "APN inspector" => "inspector.md",
+        "Reproductions and performance" => "reproductions.md",
         "2026/940 algorithm conformance" => "partition_refinement_conformance.md",
         "API reference" => api_pages,
         "References" => "references.md",
