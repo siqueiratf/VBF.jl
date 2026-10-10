@@ -37,6 +37,49 @@ const CENSUS = [split(l, '\t') for l in eachline(APN8Web.CENSUS_TSV)]
         @test call("GET", "/nothing").status == 404
         h = JSON3.read(String(call("GET", "/api/health").body))
         @test h.ok && h.census == 553 && h.index_rows > 4_000_000
+        @test String(call("GET", "/inspector/").body) == APN8Web.PAGE
+        @test APN8Web.PAGE == read(joinpath(APN8Web.REPO_ROOT,"docs/src/assets/apn-inspector.html"), String)
+        @test occursin("/api/health", APN8Web.PAGE)
+        @test call("GET", "/docs/").status == 404
+    end
+
+    @testset "documentation and API share one origin" begin
+        mktempdir() do dir
+            build = joinpath(dir, "build")
+            mkpath(joinpath(build, "assets"))
+            mkpath(joinpath(build, "inspector"))
+            write(joinpath(build, "index.html"), "Documentation home")
+            write(joinpath(build, "inspector.html"), "Inspector docs (flat URL)")
+            write(joinpath(build, "inspector", "index.html"), "Inspector docs (pretty URL)")
+            write(joinpath(build, "assets", "apn-inspector.html"), APN8Web.PAGE)
+            write(joinpath(build, "assets", "docs.css"), "body {}")
+            secret = joinpath(dir, "private.txt")
+            write(secret, "must not be served")
+            symlink(secret, joinpath(build, "leak.txt"))
+            APN8Web.DOCS_DIRECTORY[] = build
+            try
+                @test HTTP.header(call("GET", "/"), "Location") == "/docs/"
+                @test HTTP.header(call("GET", "/docs"), "Location") == "/docs/"
+                @test String(call("GET", "/docs/").body) == "Documentation home"
+                @test String(call("GET", "/docs/inspector.html").body) == "Inspector docs (flat URL)"
+                @test HTTP.header(call("GET", "/docs/inspector"), "Location") == "/docs/inspector/"
+                @test String(call("GET", "/docs/inspector/").body) == "Inspector docs (pretty URL)"
+                r = call("GET", "/docs/assets/apn-inspector.html")
+                @test String(r.body) == APN8Web.PAGE
+                @test HTTP.header(r, "Content-Type") == "text/html; charset=utf-8"
+                @test HTTP.header(call("GET", "/docs/assets/docs.css"), "Content-Type") == "text/css; charset=utf-8"
+                @test call("GET", "/docs/missing").status == 404
+                for path in ("/docs/../private.txt", "/docs/%2e%2e/private.txt",
+                             "/docs/%2e%2e%2fprivate.txt", "/docs/%00", "/docs/leak.txt")
+                    @test call("GET", path).status == 400
+                end
+                @test call("GET", "/api/health").status == 200
+                @test classify("x^3")[2].apn
+                @test call("GET", "/inspector/").status == 200
+            finally
+                APN8Web.DOCS_DIRECTORY[] = ""
+            end
+        end
     end
 
     @testset "coefficient decoder agrees with VBF.QuadraticAPNTree.lut" begin

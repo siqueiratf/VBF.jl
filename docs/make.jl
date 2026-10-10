@@ -80,6 +80,7 @@ makedocs(
     plugins = [bib],
     pages = [
         "Home" => "index.md",
+        "APN inspector" => "inspector.md",
         "2026/940 algorithm conformance" => "partition_refinement_conformance.md",
         "API reference" => api_pages,
         "References" => "references.md",
@@ -92,8 +93,10 @@ makedocs(
     ),
 )
 
-deploydocs(
-    repo = "github.com/zambonin/VBF.jl.git",
-    devbranch = "main",
-    push_preview = false,
-)
+if get(ENV, "DOCS_DEPLOY", "true") == "true"
+    deploydocs(
+        repo = "github.com/zambonin/VBF.jl.git",
+        devbranch = "main",
+        push_preview = false,
+    )
+end
