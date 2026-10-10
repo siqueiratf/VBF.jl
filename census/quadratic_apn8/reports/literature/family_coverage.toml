@@ -1,0 +1,155 @@
+dimension = 8
+literature_cutoff = "2026-10-09"
+literature_complete = false
+numbering = "F1-F15 below refers to Calderini-Budaghyan-Carlet 2021 Table 2; later papers reuse these labels differently."
+
+[downloaded_source_sha256]
+"sources/carlet_2026.pdf" = "42a61b4bda0cafc5183ae856eed928309f476c87d1c6efa2824600ec270314d4"
+"sources/kolsch_2024_v2.pdf" = "011823acdbf2160a2827c0c677c8ffbd9d218eed5e176f837b9470f8da7a3cd1"
+
+[[coverage]]
+name = "APN power functions, including unknown power families"
+status = "theorem_and_finite_check"
+domains = ["power"]
+source = "https://link.springer.com/article/10.1007/s10801-016-0680-z"
+argument = "Yoshiara 2016 Theorem 2 reduces quadratic APN versus arbitrary APN power functions to EA versus Gold. Gold k=1,3,5,7 are independently checked by open_reference. The extra exponent enumeration checks every function x^d, d=1..255, over GF(256)."
+
+[[coverage]]
+name = "F1-F2 binomials"
+status = "excluded_by_parameters"
+source = "https://doi.org/10.21857/ygjwrcdkgy"
+argument = "2021 Table 2 requires n>=12, n=p*k, p in {3,4}, gcd(k,p)=1; n=8 is inadmissible."
+
+[[coverage]]
+name = "F3 hexanomials and equivalent pentanomials"
+status = "covered_by_published_reduction"
+domains = ["carlet", "zhou_pott"]
+source = "https://doi.org/10.21857/ygjwrcdkgy"
+additional_source = "https://escholarship.org/content/qt8h67z6mh/qt8h67z6mh_noSplash_724b3bafc5bc02dd37a7ae506d09ef41.pdf"
+argument = "Calderini-Budaghyan-Carlet 2021 section 4 places hexanomials within Carlet's family and proves their relation to pentanomials. Gologlu-Kolsch Theorem B.3 makes every Carlet function EA-equivalent to Zhou-Pott when m is even (here m=4). This is a theoretical reduction; all literal hexanomial coefficients and field-basis choices are not enumerated."
+
+[[coverage]]
+name = "F4 absolute-trace cubic"
+status = "finite_domain_check"
+domains = ["bcl_trace"]
+source = "https://doi.org/10.21857/ygjwrcdkgy"
+argument = "All 255 nonzero parameters a in GF(256); field modulus 0x11d."
+
+[[coverage]]
+name = "F5-F9 relative traces and trinomial/quadrinomial families"
+status = "excluded_by_dimension"
+source = "https://doi.org/10.21857/ygjwrcdkgy"
+argument = "Each requires 3 dividing n."
+
+[[coverage]]
+name = "F10 Zhou-Pott and Carlet's projective-polynomial family"
+status = "finite_domain_check_and_reduction"
+domains = ["zhou_pott", "carlet"]
+source = "https://escholarship.org/content/qt8h67z6mh/qt8h67z6mh_noSplash_724b3bafc5bc02dd37a7ae506d09ef41.pdf"
+argument = "Zhou-Pott: i=1,3; every j mod 4 and alpha!=0 are tested, including choices excluded by the traditional sufficient conditions. Carlet: xy paired with every monic projective form x^(q+1)+beta*x^q*y+gamma*x*y^q+delta*y^(q+1), q=2^i, i=1,3. Theorem B.3 supplies coverage of equivalent presentations."
+
+[[coverage]]
+name = "F11 and generalized isotopic shift"
+status = "published_instances_checked_general_method_open"
+domains = ["generalized_shift_table1"]
+source = "https://link.springer.com/article/10.1007/s10623-020-00803-1"
+argument = "All twelve explicit dimension-eight Table 1 functions are tested. No claim to exhaust all linear-polynomial coefficients in the general necessary-and-sufficient construction. A general search criterion can produce new individual classes."
+
+[[coverage]]
+name = "F12 Taniguchi"
+status = "finite_domain_check"
+domains = ["taniguchi"]
+source = "https://doi.org/10.1007/s10623-018-00598-2"
+argument = "i=1,3 modulo 4, a=0..15, b=1..15; every valid and invalid rootless-polynomial choice is tested directly. The source theorem is reproduced under papers/2019/Taniguchi_201909."
+
+[[coverage]]
+name = "F13 BHK quadrinomials"
+status = "excluded_by_parameters"
+source = "https://doi.org/10.21857/ygjwrcdkgy"
+argument = "The infinite family requires n=2m with m odd and 3 not dividing m; the sporadic branch requires n=10. Here m=4."
+
+[[coverage]]
+name = "F14 Gologlu biprojective family"
+status = "finite_domain_check"
+domains = ["gologlu_f1"]
+source = "https://doi.org/10.1109/TIT.2022.3157798"
+argument = "i=1,3 are every admissible Frobenius index mod 4. Field isomorphisms and input/output basis choices preserve EA equivalence."
+
+[[coverage]]
+name = "F15 Gologlu second biprojective family"
+status = "excluded_by_parameters"
+source = "https://doi.org/10.1109/TIT.2022.3157798"
+argument = "Requires m odd; m=4 here."
+
+[[coverage]]
+name = "Gologlu 2022 sporadic F3"
+status = "excluded_by_dimension"
+source = "https://doi.org/10.1109/TIT.2022.3157798"
+argument = "Theorem III.2 defines this sporadic function at m=5, n=10."
+
+[[coverage]]
+name = "Li-Zhou-Li-Qu 2022 bivariate family"
+status = "finite_domain_check"
+domains = ["li_bivariate"]
+source = "https://doi.org/10.1109/TIT.2022.3157810"
+argument = "Theorem 2 has a single formula at m=4; its trivariate Theorem 3 requires n divisible by 3."
+
+[[coverage]]
+name = "Calderini-Li-Villa 2023 extended bivariate families"
+status = "finite_domain_check"
+domains = ["clv_f1", "clv_f2"]
+source = "https://arxiv.org/abs/2204.07462"
+additional_source = "https://arxiv.org/html/2402.11329v2"
+argument = "F1: k=1,3 mod 4 and all alpha in GF(16). F2: fixed q=2 and all alpha. All parameters are tested, including inadmissible ones. Kolsch 2024 Theorem 2.4 further reduces F1 to Gologlu when 3 does not divide m."
+
+[[coverage]]
+name = "Calderini-Budaghyan-Carlet 2021 normalized subclasses and 2026 criteria"
+status = "finite_domain_check_restricted_normal_form"
+domains = ["calderini_f1", "calderini_f2", "calderini_theorem6_2", "zhou_pott"]
+source = "https://doi.org/10.21857/ygjwrcdkgy"
+additional_source = "https://dergipark.org.tr/en/download/article-file/5480102"
+argument = "All i,h,k,r modulo 4, b in GF(16), nonzero c in GF(16) for the implemented F1/F2 normal forms; includes non-coprime i studied in 2026. Theorem 6.2 additionally tests both coprime indices and all b,c. This does not exhaust arbitrary quadruples of linearized polynomials P,Q,R,S from the general Carlet criterion. The 2026 Dobbertin representations require n divisible by 5."
+
+[[coverage]]
+name = "Shi-Peng-Zheng 2025 generalized bivariate family"
+status = "finite_domain_check"
+domains = ["shi_peng_zheng"]
+source = "https://www.jstage.jst.go.jp/article/transfun/E108.A/9/E108.A_2025EAL2001/_pdf"
+argument = "k=1,3,5,7 exhaust the dimension-eight formula: Frobenius powers repeat modulo 4 and eight consecutive summands cancel. Prior literature checks also save independently verified EA witnesses for all four."
+
+[[coverage]]
+name = "Gologlu-Kolsch new F4 biprojective family"
+status = "excluded_by_parameters"
+source = "https://escholarship.org/content/qt8h67z6mh/qt8h67z6mh_noSplash_724b3bafc5bc02dd37a7ae506d09ef41.pdf"
+argument = "Theorem 3.3 requires m=2 mod 4; m=4 here."
+
+[[coverage]]
+name = "Zheng-Kan-Li-Peng-Tang 2022 relative-trace family"
+status = "excluded_by_parameters"
+source = "https://doi.org/10.1109/TIT.2022.3186899"
+argument = "Requires n=2m with m odd; m=4 here."
+
+[[coverage]]
+name = "Trivariate and triprojective infinite families"
+status = "excluded_by_dimension"
+source = "https://eprint.iacr.org/2022/1522"
+additional_source = "https://arxiv.org/abs/2605.17545"
+argument = "The specified constructions require n=3m. This does not exclude unspecified future trivariate formulas in another dimension."
+
+[[coverage]]
+name = "QAM, switching, graph extension and codimension modifications"
+status = "general_search_methods"
+source = "https://link.springer.com/article/10.1007/s12095-025-00851-1"
+argument = "Published concrete instances and released corpora are covered by the original-source rebuild and literature checks. Arbitrary search-method outputs are not a previously known list of equivalence classes. No exhaustive enumeration of these general methods is claimed."
+
+[[coverage]]
+name = "Baudrin-Galissant-Perrin 2026 complete switching output"
+status = "unresolved_data_availability"
+source = "https://314gali.github.io/files/2026-04-03_APN_exploration_C2.pdf"
+argument = "The one published LUT is independently checked and included as a supplement. The full announced quadratic-CCZ representative list has not been obtained. Need a public release or author-supplied representatives with provenance, then recompute every signature."
+
+[[coverage]]
+name = "Other published nonquadratic non-power representatives"
+status = "requires_individual_source_coverage"
+source = "https://emis.muni.cz/journals/JACO/Volume35_3/p72q12l317124710.fulltext.pdf"
+argument = "Degree is not CCZ invariant. Any such target requires a general CCZ comparison, a checked quadratic representative, or an applicable theorem. A quadratic-only reference database cannot exclude arbitrary nonquadratic targets by their literal degree."
