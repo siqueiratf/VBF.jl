@@ -23,7 +23,7 @@ Primary sources:
 - `packages/VBFCatalog/tools/reference/`: independent original-source rebuild tools;
   run in the root project and write to `data/apn/rebuilds/`.
 - `packages/VBFSearch/{experiments,tools}/`: research consumers of package APIs.
-- `apps/apn-inspector/`: HTTP evidence viewer; own Julia environment.
+- `docs/inspector/`: HTTP evidence viewer; own Julia environment.
 - `data/apn/`: reference snapshots, runs, rebuilds and historical artifacts. The
   root `search/` and `census/` trees are retired; see `packages/VBFSearch/CENSUS_REVIEW.md`.
 - `packages/VBFCatalog/data-build/`: importer/build scripts with their own

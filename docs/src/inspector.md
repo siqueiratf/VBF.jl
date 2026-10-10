@@ -82,6 +82,6 @@ julia --startup-file=no \
 ```
 
 Publication tables and standalone figures come from `bin/vbf report`.
-See the [inspector guide](https://github.com/zambonin/VBF.jl/blob/main/apps/apn-inspector/README.md)
+See the [inspector guide](https://github.com/zambonin/VBF.jl/blob/main/docs/inspector/README.md)
 for API routes and the [search guide](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFSearch/README.md)
 for checkpointing, classification and reports.

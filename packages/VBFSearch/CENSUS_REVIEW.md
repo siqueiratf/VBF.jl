@@ -20,7 +20,7 @@ checked by SHA-256. The root `census/` folder is removed.
 | `rebuild_corpus/` | `VBFCatalog/tools/reference` | Keep independently verified, hash-bound rebuilds and comparisons as catalog-consuming tools. They produce a separate reference and never curate catalog entries. |
 | Original record decoding in `crosscheck_raw/crosscheck.jl` | `VBFCatalog/tools/reference/raw_readers.jl` | Extract only record decoding; stop including the complete old fast audit engine to obtain a parser. Negative decimal LUT values and unsupported high binary-mask bits are rejected. |
 | `reports/literature/`, historical input reconciliation | `VBFSearch/tools/literature` | Retain finite construction-domain audits, download manifests, evidence replay and digest-bound candidate reconciliation. Formula enumeration belongs to research orchestration until a general, documented construction API is justified. |
-| `web/` | `apps/apn-inspector` | Make the frontend an explicit package consumer with its own HTTP environment. Use the core coefficient representation, archived input lists and `data/apn/runs/web/` certificates. |
+| `web/` | `docs/inspector` | Make the frontend an explicit package consumer with its own HTTP environment. Use the core coefficient representation, archived input lists and `data/apn/runs/web/` certificates. |
 | B52 and old switching runners; ad hoc index, properties and export probes | Historical source snapshot and Git | Retire duplicate search/checkpoint/oracle implementations and broken one-off probes. Supported discovery remains `bin/vbf`; existing profile/reference/evidence APIs provide their reusable capabilities. |
 | Hyperplane scan TSV runner and analysis | Historical source snapshot and Git | Preserve the complete algorithm and results. Its traversal is a distinct construction; it has not been integrated into the production checkpoint driver. Restriction/extension primitives are now available for that future driver. |
 | Kasami/power and explicit control exporters | `VBFSearch/experiments` | Keep scientifically specific consumer scripts using existing constructions and equivalence primitives. Avoid promoting catalog IDs and historical report formatting into VBF. |
@@ -194,5 +194,5 @@ All originals are available in the ignored historical source snapshot.
 | `theory/hyperplane_theory/admissible.jl` | `packages/VBFSearch/experiments/hyperplanes/admissible.jl` |
 | `theory/hyperplane_theory/neighbours.jl` | `packages/VBFSearch/experiments/hyperplanes/neighbours.jl` |
 | `validate.jl` | `packages/VBFSearch/experiments/census/validate.jl` |
-| `web/server.jl` | `apps/apn-inspector/server.jl` |
-| `web/test/runtests.jl` | `apps/apn-inspector/test/runtests.jl` |
+| `web/server.jl` | `docs/inspector/server.jl` |
+| `web/test/runtests.jl` | `docs/inspector/test/runtests.jl` |

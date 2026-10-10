@@ -14,7 +14,7 @@ packages/VBF/          core algorithms  (representations, spectra, invariants,
 packages/VBFCatalog/   data layer: SQLite catalog, bibliography, importers
                         (depends on VBF; VBF must NOT depend on VBFCatalog)
 packages/VBFSearch/    reproducible APN search and research consumers
-apps/apn-inspector/   HTTP evidence viewer consuming all three packages
+docs/inspector/        HTTP evidence viewer consuming all three packages
 data/apn/             reference snapshots, runs, rebuilds and historical data
 papers/                standalone paper-reproduction scripts
 docs/                  Documenter.jl API-reference site
