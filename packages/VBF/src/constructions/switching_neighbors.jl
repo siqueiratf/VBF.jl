@@ -169,6 +169,8 @@ function _sn_apn_coset(
     check = nothing,
     verified = nothing,
     diagnostics = nothing,
+    start_combination::Integer = 1,
+    checkpoint = nothing,
 ) where {N,T}
     n_size = 1 << N
     result = SBox{N,T}[]
@@ -176,11 +178,16 @@ function _sn_apn_coset(
     nb = length(basis)
     evaluations = 0
     if nb == 0
+        start_combination == 1 || throw(ArgumentError("combination cursor exceeds empty switching space"))
+        checkpoint === nothing || checkpoint(:direction_complete,
+            (; direction=Int(uu), next_direction=Int(uu)+1, next_combination=big(1), evaluations=0))
         _sn_diagnostic(diagnostics, :direction_complete,
             (; direction=Int(uu), evaluations, neighbors=0))
         return result
     end
-    @inbounds for combo in _sn_combinations(nb)
+    combinations = _sn_combinations(nb)
+    start_combination <= last(combinations)+1 || throw(ArgumentError("combination cursor exceeds switching space"))
+    @inbounds for combo in start_combination:last(combinations)
         _sn_check(check, :candidate, Int(uu), combo)
         evaluations += 1
         observer === nothing || observer(:candidate, nothing)
@@ -196,13 +203,19 @@ function _sn_apn_coset(
         push!(seen, lut)
         G = SBox{N,T}(lut)
         observer === nothing || observer(:final_test, nothing)
-        if differential_uniformity(G) ≤ 2
+        apn = differential_uniformity(G) ≤ 2
+        if apn
             push!(result, G)
             observer === nothing || observer(:apn, G)
             verified === nothing || verified(G)
         end
+        checkpoint === nothing || checkpoint(:candidate_complete,
+            (; direction=Int(uu), combination=combo, next_direction=Int(uu),
+               next_combination=combo+1, candidate=G, apn))
         _sn_check(check, :candidate_done, Int(uu), combo)
     end
+    checkpoint === nothing || checkpoint(:direction_complete,
+        (; direction=Int(uu), next_direction=Int(uu)+1, next_combination=big(1), evaluations))
     _sn_diagnostic(diagnostics, :direction_complete,
         (; direction=Int(uu), evaluations, neighbors=length(result)))
     return result
@@ -228,6 +241,7 @@ end
 function _sn_neighbors(
     F::SBox{N,T}, observer = nothing, check = nothing, verified = nothing,
     diagnostics = nothing,
+    start_direction::Int = 1, start_combination::Integer = 1, checkpoint = nothing,
 ) where {N,T}
     _sn_check(check, :validation, 0, 0)
     differential_uniformity(F) ≤ 2 ||
@@ -262,14 +276,17 @@ function _sn_neighbors(
 
     _sn_constraints!(systems, flut, check)
 
-    result = Vector{Vector{SBox{N,T}}}(undef, n_size - 1)
-    for uu = 1:(n_size-1)
+    result = [SBox{N,T}[] for _ in 1:(n_size-1)]
+    for uu = start_direction:(n_size-1)
         basis = _sn_kernel(systems[uu], check, uu)
         raw_dimension = n_size - length(systems[uu].pivot_rows)
         _sn_diagnostic(diagnostics, :kernel,
             (; direction=uu, raw_dimension, quotient_dimension=length(basis),
                trivial_dimension=raw_dimension-length(basis)))
-        result[uu] = _sn_apn_coset(F, T(uu), basis, observer, check, verified, diagnostics)
+        checkpoint === nothing || checkpoint(:kernel,
+            (; direction=uu, raw_dimension, quotient_dimension=length(basis), basis))
+        result[uu] = _sn_apn_coset(F, T(uu), basis, observer, check, verified, diagnostics,
+            uu == start_direction ? start_combination : 1, checkpoint)
     end
     return result
 end
@@ -329,6 +346,16 @@ cannot be interrupted. Zero budgets return before validating the input.
 `StopPoint.resume_key` identifies the stopped stage, direction and position;
 it is a diagnostic frontier, not a serialized resumable linear system.
 The observer has the same events and contract as `switching_neighbors`.
+`start_direction` and `start_combination` select a suffix of the deterministic
+enumeration. A checkpoint callback receives `:kernel` (including the quotient
+basis), `:candidate_complete` (including the tested candidate and the next
+cursor), and `:direction_complete`. It must persist a candidate and its next
+cursor together before returning, and must not mutate supplied values. Resuming
+reconstructs the constraint systems for the interrupted parent, then skips
+completed directions and combinations. `Exhausted` covers only the selected
+suffix; a caller must audit the earlier prefix before claiming full coverage.
+Optional `stop_requested()` returns true to stop cooperatively with reason
+`:external`, preserving completed candidates and their checkpoint cursors.
 Optional `diagnostics(event, value)` reports `:kernel` with the switching
 direction, full constraint-kernel dimension, quotient dimension and removed
 trivial dimension; `:direction_complete` with per-direction candidate and APN
@@ -342,12 +369,19 @@ function switching_neighbors_bounded(
     max_neighbors::Integer = typemax(Int),
     observer = nothing,
     diagnostics = nothing,
+    start_direction::Integer = 1,
+    start_combination::Integer = 1,
+    checkpoint = nothing,
+    stop_requested = nothing,
 ) where {N,T}
     max_evaluations >= 0 || throw(ArgumentError("max_evaluations must be nonnegative"))
     max_neighbors >= 0 || throw(ArgumentError("max_neighbors must be nonnegative"))
     timeout_seconds >= 0 || throw(ArgumentError("timeout_seconds must be nonnegative"))
     isfinite(timeout_seconds) || timeout_seconds == Inf ||
         throw(ArgumentError("timeout_seconds must be finite or Inf"))
+    1 <= start_direction <= (1<<N) || throw(ArgumentError("invalid switching direction cursor"))
+    start_combination >= 1 || throw(ArgumentError("invalid switching combination cursor"))
+    start_direction == (1<<N) && start_combination != 1 && throw(ArgumentError("invalid exhausted cursor"))
     started = time_ns()
     elapsed() = Float64(time_ns() - started) / 1e9
     evaluations = Ref(0)
@@ -358,10 +392,14 @@ function switching_neighbors_bounded(
             "max_evaluations" => max_evaluations,
             "timeout_seconds" => timeout_seconds,
             "max_neighbors" => max_neighbors,
+            "start_direction" => start_direction,
+            "start_combination" => string(start_combination),
         ),
     )
     function check(stage, direction, position)
-        reason = if length(found) >= max_neighbors
+        reason = if stop_requested !== nothing && stop_requested()
+            :external
+        elseif length(found) >= max_neighbors
             :solutions
         elseif elapsed() >= timeout_seconds
             :time
@@ -385,7 +423,8 @@ function switching_neighbors_bounded(
         return nothing
     end
     try
-        _sn_neighbors(F, observer, check, G -> push!(found, G), diagnostics)
+        _sn_neighbors(F, observer, check, G -> push!(found, G), diagnostics,
+            Int(start_direction), start_combination, checkpoint)
     catch err
         err isa _SNStopped || rethrow()
         _sn_diagnostic(diagnostics, :stop,

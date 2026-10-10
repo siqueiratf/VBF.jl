@@ -60,9 +60,9 @@ const CENSUS = [split(l, '\t') for l in eachline(APN8Web.CENSUS_TSV)]
         @test st == 200
         @test j.format == "lut"
         @test j.apn && j.algebraic_degree == 2
-        @test j.status == "known"
+        @test j.status == "reference_match"
         @test j.ea_available
-        @test startswith(j.verdict, "KNOWN (sigma matches ")
+        @test occursin("equivalence unresolved",j.verdict)
     end
 
     @testset "census member (one of the 553)" begin
@@ -70,43 +70,43 @@ const CENSUS = [split(l, '\t') for l in eachline(APN8Web.CENSUS_TSV)]
         st, j = classify(String(c))
         @test st == 200
         @test j.format == "coefficients"
-        @test j.status == "census"
+        @test j.status == "study_match"
         @test j.sigma == h
         @test j.census_line == 7
         # The same function as a newline-separated LUT.
         st2, j2 = classify(join(APN8Web.coeffs_to_lut(String(c)), "\n"))
-        @test j2.format == "lut" && j2.status == "census" && j2.census_line == 7
+        @test j2.format == "lut" && j2.status == "study_match" && j2.census_line == 7
     end
 
     @testset "other lists: extra class, search trial, raw-only" begin
         st, j = classify("60586b23865a010415cf78320eb7700de3f03212e2d82ccc969a6142")
-        @test st == 200 && j.status == "listed_new"
+        @test st == 200 && j.status == "study_match"
         @test j.list_file == "new_classes_extra.tsv" && j.list_line == 2
         t = split(collect(eachline(joinpath(APN8Web.STUDY_DIR, "search_b52", "new_classes_trial_773.tsv")))[2], '\t')
         st, j = classify(String(t[5]))
-        @test j.status == "listed_new" && j.sigma == t[1]
+        @test j.status == "study_match" && j.sigma == t[1]
         r = split(collect(eachline(joinpath(APN8Web.STUDY_DIR, "crosscheck_raw", "raw_only_546.tsv")))[2], '\t')
         lut = [parse(Int, r[3][2k - 1:2k]; base = 16) for k in 1:256]
         st, j = classify(lutstr(lut))
-        @test j.status == "raw_public" && j.sigma == r[1]
-        @test startswith(j.verdict, "Not in the catalog index, but PUBLIC")
+        @test j.status == "reference_match" && j.sigma == r[1]
+        @test j.reference_signature_match
         # A class found only in the Framework run (compressed list).
         fw = first(Iterators.filter(l -> occursin("\tnew\t", l),
             eachline(`gzip -dc $(joinpath(APN8Web.STUDY_DIR, "search_b52", "framework_20261009_new.tsv.gz"))`)))
         t = split(fw, '\t')
         st, j = classify(String(t[5]))
-        @test j.status == "listed_new" && j.sigma == t[1]
+        @test j.status == "study_match" && j.sigma == t[1]
         @test j.list_file == "search_b52/framework_20261009_new.tsv.gz"
     end
 
     @testset "Gold x^3 is known" begin
         st, j = classify("x^3")
         @test j.format == "polynomial"
-        @test j.status == "known"
+        @test j.status == "reference_match"
         st2, j2 = classify(join(gf_monomial_lut(8, 3; modulus = 0x11B), " "))
-        @test j2.status == "known" && j2.sigma == j.sigma
+        @test j2.status == "reference_match" && j2.sigma == j.sigma
         st3, j3 = classify("x^3 mod=0x11D")
-        @test j3.status == "known"
+        @test j3.status == "reference_match"
     end
 
     @testset "non-APN random LUT" begin
@@ -137,5 +137,59 @@ const CENSUS = [split(l, '\t') for l in eachline(APN8Web.CENSUS_TSV)]
         end
         @test occursin("found 3", classify("1 2 3")[2].error)
         @test occursin("outside 0..255", classify(join(fill(300, 256), " "))[2].error)
+    end
+
+    @testset "bounded pair comparison and downloadable witness" begin
+        body=JSON3.write(Dict("candidate"=>"x^3","target"=>"x^3","relation"=>"ccz"))
+        r=call("POST","/api/compare",body)
+        @test r.status==200
+        id=JSON3.read(String(r.body)).id
+        deadline=time()+30
+        job=APN8Web.JOBS[id]
+        while APN8Web.job_dict(job)["state"] in ("queued","running") && time()<deadline
+            sleep(0.01)
+        end
+        result=APN8Web.job_dict(job)
+        @test result["state"]=="done" && result["equivalent"]===true
+        @test APN8Web.DiscoveryEvidence.verify_comparison(result["evidence"])
+        @test call("GET","/api/ea/$id/certificate").status==200
+        @test call("POST","/api/compare",JSON3.write(Dict("candidate"=>"x^3","target"=>"x^3","max_nodes"=>0))).status==400
+        @test call("GET","/api/candidates").status==400
+        gold=APN8Web.analyze("x^3")
+        @test gold["apn_power_function_comparison"]=="unresolved_gold_invariant_match"
+        extra=APN8Web.analyze("60586b23865a010415cf78320eb7700de3f03212e2d82ccc969a6142")
+        @test extra["apn_power_function_comparison"]=="inequivalent_to_all_apn_power_functions"
+        @test extra["literature_novelty"]=="unresolved"
+    end
+
+    @testset "saved candidate browsing and pair ledger" begin
+        mktempdir() do dir
+            db=APN8Web.SQLite.DB(joinpath(dir,"run.sqlite"))
+            execute(sql,args=())=foreach(_->nothing,APN8Web.DBInterface.execute(db,sql,args))
+            execute("CREATE TABLE candidates(lut_id TEXT,evidence TEXT,additional INTEGER)")
+            execute("CREATE TABLE comparisons(id INTEGER PRIMARY KEY,candidate_id TEXT,target_id TEXT,relation TEXT,evidence TEXT)")
+            p=APN8Web.analyze("x^3")
+            encoded=sprint(io->APN8Web.TOML.print(io,p;sorted=true))
+            execute("INSERT INTO candidates VALUES(?,?,0)",(p["lut_sha256"],encoded))
+            APN8Web.SQLite.close(db)
+            open(io->APN8Web.TOML.print(io,Dict("scope"=>"fixture snapshot")),joinpath(dir,"classification.toml"),"w")
+            APN8Web.RUN_DIRECTORY[]=dir
+            try
+                r=call("GET","/api/candidates?limit=1&offset=0&additional=false")
+                @test r.status==200
+                @test call("GET","/api/classification").status==200
+                parsed=JSON3.read(String(r.body))
+                @test parsed.total==1 && only(parsed.candidates).lut_sha256==p["lut_sha256"]
+                @test JSON3.read(String(call("GET","/api/candidates?additional=true").body)).total==0
+                job=APN8Web.EAJob(1000,"fixture","queued",nothing,"",time(),0.0,Dict{String,Any}())
+                F=SBox{8}(gold_apn(8).lut)
+                APN8Web.run_ea!(job,F,F;relation=:ccz)
+                @test APN8Web.job_dict(job)["state"]=="done"
+                ledger=JSON3.read(String(call("GET","/api/relationships").body))
+                @test length(ledger.comparisons)==1 && only(ledger.comparisons).equivalent
+            finally
+                APN8Web.RUN_DIRECTORY[]=""
+            end
+        end
     end
 end

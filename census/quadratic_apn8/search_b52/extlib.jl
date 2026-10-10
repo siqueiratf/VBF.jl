@@ -615,7 +615,9 @@ coset bent counts and of g5).
 """
 function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work::V5Work;
                        beta::Vector{Int}, du_filter::Bool = true, max_kernel::Int = 12,
-                       max_x::Int = typemax(Int), should_skip::Function = k -> false)
+                       max_x::Int = typemax(Int), should_skip::Function = k -> false,
+                       start_x::Int = 1, should_stop::Function = () -> false)
+    max_x >= 0 && start_x >= 1 || error("invalid coset cursor or chunk size")
     r = coset_bent_counts!(work.cnt, G, V5, beta)
     R, Qmask, D = r.R, r.Qmask, r.D
     cnt = work.cnt
@@ -627,7 +629,9 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
         v == need * r.scale && push!(X, UInt32(t - 1))
     end
     nX = length(X)
-    length(X) > max_x && resize!(X, max_x)
+    start_x <= nX+1 || error("coset cursor exceeds extension space")
+    stop_x = max_x > nX ? nX : min(nX,start_x+max_x-1)
+    X = X[start_x:stop_x]
     # flats of V5^perp and g5
     C = UInt32[]; Cidx = Int[]
     @inbounds for (fi, w) in enumerate(G.flats)
@@ -648,8 +652,8 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
     key = hist_key(Dict(vcat([(Int(k), v) for (k, v) in hc], [(100_000_000 + Int(k), v) for (k, v) in hg])))
     Ss = Set{Vector{UInt32}}()
     should_skip(key) &&
-        return (; Ss, nX, nX_used = 0, du_reject = 0, ncand = 0, nT = 0, key, capped = false, skipped = true)
-    isempty(X) && return (; Ss, nX, nX_used = 0, du_reject = 0, ncand = 0, nT = 0, key, capped = false, skipped = false)
+        return (; Ss, nX, nX_used = 0, next_x=start_x, du_reject = 0, ncand = 0, nT = 0, key, capped = false, skipped = true)
+    isempty(X) && return (; Ss, nX, nX_used = 0, next_x=start_x, du_reject = 0, ncand = 0, nT = 0, key, capped = false, skipped = false)
     # sorted list of t with small g5 (enough for the largest threshold)
     nWmin = minimum((g0 + Int(g5[x+1])) ÷ 2 for x in X)
     L = UInt32[]
@@ -671,7 +675,10 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
     Z = UInt32[]; pts = work.pts
     Cx = UInt32[]; Tseen = Set{NTuple{3,UInt32}}()
     srows = UInt32[]; spiv = Int[]; sK = UInt32[]
+    nX_used = 0
     for (xi, x) in enumerate(X)
+        should_stop() && break
+        nX_used += 1
         nWU = (g0 + Int(g5[x+1])) ÷ 2
         empty!(Cx)
         du_filter && fill!(pts, 0)
@@ -722,7 +729,7 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
         end
         nT += length(Tseen)
     end
-    (; Ss, nX, nX_used = length(X), du_reject = du_rej, ncand, nT, key, capped, skipped = false)
+    (; Ss, nX, nX_used, next_x=start_x+nX_used, du_reject = du_rej, ncand, nT, key, capped, skipped = false)
 end
 
 # --- class keys --------------------------------------------------------------------------

@@ -23,6 +23,9 @@ using JSON3
 using SQLite
 using VBF
 using VBFCatalog
+using SHA,TOML,Dates
+include("../discovery/evidence.jl")
+using .DiscoveryEvidence
 
 const WEB_DIR = @__DIR__
 const STUDY_DIR = dirname(WEB_DIR)
@@ -57,6 +60,7 @@ mutable struct State
     rows::Int                                 # rows in the index (n = 8)
     dblock::ReentrantLock                     # SQLite connections are not thread safe
     others::Dict{String,NamedTuple}           # sigma hash -> entry of OTHER_LISTS
+    reference::DiscoveryEvidence.Reference
 end
 
 """Read the lists of OTHER_LISTS. A header line (first field `sigma_hash` or `sigma`) is skipped;
@@ -110,7 +114,8 @@ function init!()
     for r in DBInterface.execute(idx, "SELECT COUNT(*) c FROM ccz_sigma_index WHERE n = $N")
         rows = Int(r.c)
     end
-    st = State(idx, cat, read_census(), rows, ReentrantLock(), read_others())
+    reference=DiscoveryEvidence.open_reference(joinpath(STUDY_DIR,"results","signature_rebuild"))
+    st = State(idx, cat, read_census(), rows, ReentrantLock(), read_others(),reference)
     # A coverage gap makes classify_ccz throw. Fail at start, not at the first request.
     classify_ccz(SBox{N}(gf_monomial_lut(N, 3; modulus = DEFAULT_MODULUS));
                  index = idx, catalog = cat)
@@ -226,7 +231,7 @@ end
     analyze(text) -> Dict
 
 Parse and classify one input. The `status` field is one of `error`, `not_apn`,
-`apn_not_quadratic`, `known`, `census`, `new`.
+`apn_not_quadratic`, `reference_match`, `study_match`, `corpus_absent`.
 """
 function analyze(text::AbstractString)
     st = init!()
@@ -243,8 +248,12 @@ function analyze(text::AbstractString)
     res["format"] = fmt
     res["format_note"] = note
     F = SBox{N}(lut)
-    du = Int(differential_uniformity(F))
-    deg = Int(algebraic_degree(F))
+    evidence=lock(st.dblock) do
+        DiscoveryEvidence.classify(F.lut,st.reference;detailed=true)
+    end
+    merge!(res,evidence)
+    du = evidence["differential_uniformity"]
+    deg = evidence["algebraic_degree"]
     res["differential_uniformity"] = du
     res["apn"] = du == 2
     res["algebraic_degree"] = deg
@@ -263,56 +272,55 @@ function analyze(text::AbstractString)
                          "functions). Only the basic properties are given."
         return res
     end
-    h = sigma_hash(F)
+    h = evidence["sigma_hash"]
     res["sigma"] = h
     status, source, member = lock(st.dblock) do
         classify_ccz(F; index = st.index, catalog = st.catalog)
     end
     if status === :sigma_match
         matches, total = index_matches(st, h)
-        res["status"] = "known"
+        res["status"] = "reference_match"
         res["source"] = source
         res["member"] = member
         res["index_rows"] = total
         res["matches"] = [Dict("source" => s, "member" => i) for (s, i) in matches]
-        res["verdict"] = "KNOWN (sigma matches $source member $member)."
+        res["verdict"] = "Reference invariant match ($source member $member); equivalence unresolved."
         res["caveat"] = "A sigma match is necessary but not sufficient for CCZ-equivalence. " *
-                        "The exact EA test settles it (about 10 minutes when the functions " *
-                        "are equivalent, seconds when they are not)."
+                        "A bounded exact test can find a verified graph map, exhaust its search, or remain inconclusive."
         res["ea_available"] = true
+    elseif haskey(st.reference.supplement,h)
+        res["status"]="reference_match"
+        res["target_lut_hex"]=bytes2hex(st.reference.supplement[h])
+        res["verdict"]=evidence["evidence_level"]=="exact_public_lut_match" ?
+            "Identical to a verified public supplement function." : "Public supplement invariant match; equivalence unresolved."
+        res["ea_available"]=true
+    elseif get(evidence,"reference_signature_match",false)
+        res["status"]="reference_match"
+        res["verdict"]="Invariant match in the rebuilt public corpus; equivalence unresolved."
+        res["ea_available"]=haskey(st.others,h)
+        haskey(st.others,h) && (res["target_lut_hex"]=hexlut(other_lut(st.others[h])))
     elseif haskey(st.census, h)
         line, coeffs = st.census[h]
-        res["status"] = "census"
+        res["status"] = "study_match"
         res["census_line"] = line
         res["census_coeffs"] = coeffs
-        res["verdict"] = "NEW, in the census list (one of the 553): line $line of new_classes_553.tsv."
-        res["caveat"] = "The sigma is absent from the index of $(fmtint(KNOWN_CLASSES)) known " *
-                        "classes. Thus the function is CCZ-inequivalent to all indexed " *
-                        "functions (rigorous). The sigma is equal to that of census line $line; " *
-                        "this is necessary but not sufficient for equivalence to that line."
+        res["verdict"] = "Study invariant match: census line $line; equivalence unresolved."
+        res["caveat"] = "Absent from the source-rebuilt quadratic corpus. Literature-wide novelty remains unresolved; a study signature match is not an equivalence certificate."
         res["ea_available"] = true
     elseif haskey(st.others, h)
         e = st.others[h]
-        res["status"] = e.novelty === :new ? "listed_new" : "raw_public"
+        res["status"] = "study_match"
         res["list_file"] = e.file
         res["list_line"] = e.line
         res["list_data"] = e.data
         res["list_kind"] = String(e.kind)
-        res["verdict"] = e.novelty === :new ?
-            "NEW, found in this study: $(e.label), line $(e.line) of $(e.file)." :
-            "Not in the catalog index, but PUBLIC: $(e.label), line $(e.line) of $(e.file)."
-        res["caveat"] = "The sigma is absent from the index of $(fmtint(KNOWN_CLASSES)) known " *
-                        "classes, so the function is CCZ-inequivalent to all indexed functions " *
-                        "(rigorous). The sigma is equal to that of the listed entry; this is " *
-                        "necessary but not sufficient for equivalence to that entry."
+        res["verdict"] = "Study invariant match: $(e.label), line $(e.line); equivalence unresolved."
+        res["caveat"] = "Corpus absence separates the documented quadratic references. Literature-wide novelty and equivalence to this study entry are unresolved."
         res["ea_available"] = true
     else
-        res["status"] = "new"
-        res["verdict"] = "NEW: sigma absent from the index of $(fmtint(KNOWN_CLASSES)) known " *
-                         "classes and from the census list."
-        res["caveat"] = "This is a rigorous CCZ-inequivalence certificate against all indexed " *
-                        "sources ($(fmtint(st.rows)) index rows, n = 8). sigma is a CCZ invariant " *
-                        "of quadratic APN functions, so a mismatch cannot be an artefact."
+        res["status"] = "corpus_absent"
+        res["verdict"] = "CCZ-inequivalent to the documented quadratic corpus; potential novelty."
+        res["caveat"] = "All APN power functions are excluded by the documented Gold checks and Yoshiara 2016. Missing non-power datasets and arbitrary nonquadratic classes remain outside the comparison. Literature-wide novelty remains unresolved."
         res["ea_available"] = false
     end
     res
@@ -330,6 +338,7 @@ mutable struct EAJob
     message::String
     started::Float64
     finished::Float64
+    evidence::Dict{String,Any}
 end
 
 const JOBS = Dict{Int,EAJob}()
@@ -340,13 +349,15 @@ const NEXT_JOB = Ref(0)
 
 "The matched function as an SBox (re-derived on the server, not taken from the client)."
 function target_sbox(st::State, res::Dict)
-    if res["status"] == "known"
+    if haskey(res,"target_lut_hex")
+        return SBox{N}(hex2bytes(res["target_lut_hex"])),"public reference"
+    elseif haskey(res,"source")
         src, m = res["source"], res["member"]
         G = lock(st.dblock) do
             src == "functions" ? load_sbox(st.catalog, m) : corpus_function(st.catalog, src, m)
         end
         return G, "$src member $m"
-    elseif res["status"] in ("listed_new", "raw_public")
+    elseif haskey(res,"list_file")
         e = st.others[res["sigma"]]
         return SBox{N}(other_lut(e)), "$(e.file) line $(e.line)"
     else
@@ -368,7 +379,7 @@ function start_ea(text::AbstractString)
             j.state != "failed" && return j
         end
         NEXT_JOB[] += 1
-        j = EAJob(NEXT_JOB[], label, "queued", nothing, "", time(), 0.0)
+        j = EAJob(NEXT_JOB[], label, "queued", nothing, "", time(), 0.0,Dict{String,Any}())
         JOBS[j.id] = j
         JOB_BY_KEY[key] = j.id
         Threads.@spawn :default run_ea!(j, F, G)
@@ -377,29 +388,56 @@ function start_ea(text::AbstractString)
     job, res
 end
 
-function run_ea!(j::EAJob, F, G)
+function run_ea!(j::EAJob, F, G;relation=:ea,timeout_seconds=30,max_nodes=1_000_000)
     Base.acquire(EA_SEM)
     try
-        j.state = "running"
-        j.started = time()
-        eq = F.lut == G.lut || !isempty(ea_mappings_from_ortho_derivative(F, G))
-        j.result = eq
-        j.message = eq ? "EA-EQUIVALENT to $(j.target) (hence CCZ-equivalent): the class is confirmed." :
-                         "NOT EA-equivalent to $(j.target): the sigma match was a collision. " *
-                         "The input is a different CCZ class than this member."
+        lock(JOBLOCK) do
+            j.state = "running"
+            j.started = time()
+        end
+        proof=DiscoveryEvidence.compare(F.lut,G.lut;relation,timeout_seconds,max_nodes)
+        proof["created_utc"]=string(Dates.now(Dates.UTC))
+        proof["algorithm_sha256"]=DiscoveryEvidence.filehash(joinpath(STUDY_DIR,"discovery","evidence.jl"))
+        dir=joinpath(STUDY_DIR,"discovery","results","web")
+        mkpath(dir)
+        open(io->TOML.print(io,proof;sorted=true),joinpath(dir,"comparison_$(time_ns()).toml"),"w")
+        if !isempty(RUN_DIRECTORY[])
+            db=SQLite.DB(joinpath(RUN_DIRECTORY[],"run.sqlite"))
+            try
+                foreach(_->nothing,DBInterface.execute(db,"PRAGMA busy_timeout=10000"))
+                foreach(_->nothing,DBInterface.execute(db,
+                    "INSERT INTO comparisons(candidate_id,target_id,relation,evidence) VALUES(?,?,?,?)",
+                    (proof["candidate_sha256"],proof["target_sha256"],proof["relation"],sprint(io->TOML.print(io,proof;sorted=true)))))
+            finally
+                SQLite.close(db)
+            end
+        end
+        lock(JOBLOCK) do
+        j.evidence=proof
+        eq=proof["equivalent"]
+        j.result=eq isa Bool ? eq : nothing
+        j.message=proof["status"]=="inconclusive_budget" ? "Inconclusive: budget exhausted; no negative equivalence conclusion." :
+            eq===true ? "Equivalent to $(j.target), with independently verified $(uppercase(string(relation))) graph witness." :
+            "Inequivalent to this target: $(proof["status"]). This does not establish literature-wide novelty."
         j.state = "done"
+        end
     catch e
+        lock(JOBLOCK) do
         j.state = "failed"
         j.message = "EA test failed: " * sprint(showerror, e)
+        end
     finally
-        j.finished = time()
+        lock(JOBLOCK) do;j.finished = time();end
         Base.release(EA_SEM)
     end
 end
 
-job_dict(j::EAJob) = Dict("id" => j.id, "target" => j.target, "state" => j.state,
+job_dict(j::EAJob) = lock(JOBLOCK) do
+    Dict("id" => j.id, "target" => j.target, "state" => j.state,
                           "equivalent" => j.result, "message" => j.message,
+                          "evidence"=>j.evidence,
                           "seconds" => round((j.finished > 0 ? j.finished : time()) - j.started; digits = 1))
+end
 
 # --- HTTP ------------------------------------------------------------------------------
 
@@ -429,9 +467,57 @@ function handle(req::HTTP.Request)
             job, res = start_ea(body_text(req))
             job === nothing && return json_response(400, Dict(
                 "error" => "The exact EA test needs a quadratic APN input with a sigma match " *
-                           "(status known or census). Status: $(res["status"]).",
+                           "(reference or study invariant match). Status: $(res["status"]).",
                 "classify" => res))
             return json_response(200, job_dict(job))
+        elseif req.method == "POST" && path == "/api/compare"
+            data=JSON3.read(body_text(req))
+            relation=Symbol(get(data,:relation,"ccz"));relation in (:ea,:ccz) || return json_response(400,Dict("error"=>"invalid relation"))
+            seconds=Float64(get(data,:timeout_seconds,30));nodes=Int(get(data,:max_nodes,1_000_000))
+            0<seconds<=600 && 0<nodes<=10_000_000 || return json_response(400,Dict("error"=>"invalid comparison budget"))
+            F=SBox{N}(parse_input(String(data.candidate))[1]);G=SBox{N}(parse_input(String(data.target))[1])
+            job=lock(JOBLOCK) do
+                NEXT_JOB[]+=1
+                j=EAJob(NEXT_JOB[],"specified target","queued",nothing,"",time(),0.0,Dict{String,Any}())
+                JOBS[j.id]=j
+                Threads.@spawn :default run_ea!(j,F,G;relation,timeout_seconds=seconds,max_nodes=nodes)
+                j
+            end
+            return json_response(200,job_dict(job))
+        elseif req.method == "GET" && path == "/api/candidates"
+            isempty(RUN_DIRECTORY[]) && return json_response(400,Dict("error"=>"configure --run PATH first"))
+            params=HTTP.queryparams(HTTP.URI(req.target))
+            limit=clamp(parse(Int,get(params,"limit","50")),1,200)
+            offset=max(0,parse(Int,get(params,"offset","0")))
+            where=get(params,"additional","false")=="true" ? " WHERE additional=1" : ""
+            db=SQLite.DB("file:"*joinpath(RUN_DIRECTORY[],"run.sqlite")*"?mode=ro")
+            try
+                total=only([Int(r.c) for r in DBInterface.execute(db,"SELECT COUNT(*) c FROM candidates"*where)])
+                records=[TOML.parse(String(r.evidence)) for r in DBInterface.execute(db,
+                    "SELECT evidence FROM candidates"*where*" ORDER BY lut_id LIMIT ? OFFSET ?",(limit,offset))]
+                return json_response(200,Dict("total"=>total,"candidates"=>records))
+            finally
+                SQLite.close(db)
+            end
+        elseif req.method == "GET" && path == "/api/relationships"
+            isempty(RUN_DIRECTORY[]) && return json_response(400,Dict("error"=>"configure --run PATH first"))
+            db=SQLite.DB("file:"*joinpath(RUN_DIRECTORY[],"run.sqlite")*"?mode=ro")
+            try
+                records=[TOML.parse(String(r.evidence)) for r in DBInterface.execute(db,"SELECT evidence FROM comparisons ORDER BY id DESC LIMIT 200")]
+                return json_response(200,Dict("comparisons"=>records,"scope"=>"recorded pairwise checks; missing edges are unresolved"))
+            finally
+                SQLite.close(db)
+            end
+        elseif req.method == "GET" && path == "/api/classification"
+            file=joinpath(RUN_DIRECTORY[],"classification.toml")
+            if isempty(RUN_DIRECTORY[]) || !isfile(file)
+                return json_response(404,Dict("error"=>"run classify.jl for this candidate snapshot first"))
+            end
+            return json_response(200,TOML.parsefile(file))
+        elseif req.method == "GET" && endswith(path,"/certificate") && startswith(path,"/api/ea/")
+            id=tryparse(Int,split(path,'/')[4]);j=id===nothing ? nothing : get(JOBS,id,nothing)
+            j===nothing && return json_response(404,Dict("error"=>"unknown job"))
+            return HTTP.Response(200,["Content-Type"=>"application/toml","Content-Disposition"=>"attachment; filename=comparison_$(id).toml"],sprint(io->TOML.print(io,j.evidence;sorted=true)))
         elseif req.method == "GET" && startswith(path, "/api/ea/")
             id = tryparse(Int, path[length("/api/ea/") + 1:end])
             j = id === nothing ? nothing : lock(() -> get(JOBS, id, nothing), JOBLOCK)
@@ -440,91 +526,44 @@ function handle(req::HTTP.Request)
         elseif req.method == "GET" && path == "/api/health"
             st = init!()
             return json_response(200, Dict("ok" => true, "index_rows" => st.rows,
-                                            "census" => length(st.census)))
+                                            "census" => length(st.census),"reference"=>st.reference.metadata))
         end
         return json_response(404, Dict("error" => "not found: $(req.method) $path"))
     catch e
+        e isa InputError && return json_response(400,Dict("error"=>e.msg))
         @error "request failed" exception = (e, catch_backtrace())
         return json_response(500, Dict("ok" => false, "status" => "error",
                                        "error" => "internal error: " * sprint(showerror, e)))
     end
 end
 
-const PAGE = """
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<title>APN8 class check</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body{font-family:sans-serif;max-width:60rem;margin:1rem auto;padding:0 1rem;line-height:1.4}
-textarea{width:100%;height:12rem;font-family:monospace}
-table{border-collapse:collapse}td{padding:.2rem .6rem;border-bottom:1px solid #ccc;vertical-align:top}
-td:first-child{font-weight:bold;white-space:nowrap}
-.v{font-size:1.15rem;font-weight:bold;margin:.8rem 0}
-.known{color:#06c}.new{color:#080}.census{color:#080}.listed_new{color:#080}.raw_public{color:#06c}.not_apn,.error{color:#b00}.apn_not_quadratic{color:#a60}
-code{word-break:break-all}
-</style></head><body>
-<h1>Quadratic APN on F<sub>2</sub><sup>8</sup>: known or new CCZ class?</h1>
-<p>Paste one (8,8)-function. The server finds the format.</p>
-<ol>
-<li><b>LUT</b>: 256 integers 0..255, F(0) first. Separate them with spaces, commas or newlines. Brackets are optional. Hex values need the prefix 0x.</li>
-<li><b>Coefficient string</b>: 56 hex digits = 28 bytes c<sub>ij</sub> for 1 &le; i &lt; j &le; 8 (i outer, j inner).
-F(x) = XOR<sub>i&lt;j</sub> x<sub>i</sub>x<sub>j</sub>c<sub>ij</sub>, x<sub>1</sub> = least significant bit (format of new_classes_553.tsv).</li>
-<li><b>Univariate polynomial</b> over GF(2<sup>8</sup>), for example <code>x^3 + a*x^9</code>. Modulus 0x11B by default; add <code>mod=0x11D</code> to change it.
-<code>a</code>, <code>g</code> and <code>ksi</code> are the class of X (the element 0x02). Integer constants are read mod 2.</li>
-</ol>
-<textarea id="in" placeholder="x^3"></textarea><br>
-<button id="go">Classify</button>
-<div id="out"></div>
-<h2>Verdicts</h2>
-<ul>
-<li><b>KNOWN</b>: sigma is in the index of 3,808,491 known classes. A sigma match is necessary but not sufficient for equivalence. The button "exact EA check" runs the complete test (about 10 minutes when equivalent).</li>
-<li><b>NEW, in the census list</b>: sigma is absent from the index (rigorous inequivalence to all indexed functions) and equal to the sigma of one of the 553 census functions.</li>
-<li><b>NEW</b>: sigma is absent from the index and from the census list. This is a rigorous CCZ-inequivalence certificate against all indexed sources.</li>
-<li><b>APN, not quadratic</b>: the sigma oracle needs a quadratic function. Only the basic properties are given.</li>
-<li><b>NOT APN</b>: the differential uniformity is larger than 2.</li>
-</ul>
+const RUN_DIRECTORY=Ref("")
+const PAGE = raw"""
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>APN8 evidence inspector</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><style>
+body{font-family:system-ui;max-width:70rem;margin:2rem auto;padding:0 1rem;line-height:1.5}textarea{width:100%;height:9rem;font-family:monospace}table{border-collapse:collapse;width:100%}td,th{padding:.4rem;border-bottom:1px solid #ddd;text-align:left}code{overflow-wrap:anywhere}button{padding:.4rem;margin:.3rem}svg{max-width:100%;height:180px}pre{white-space:pre-wrap;overflow-wrap:anywhere}#verdict{font-weight:bold}details{margin:1rem 0}
+</style></head><body><h1>APN8 evidence inspector</h1>
+<p>Validate a function, inspect its invariants and compare its graph with a specified target. Corpus absence concerns the documented quadratic references; literature-wide novelty remains unresolved.</p>
+<p>Input: 256 integers (0..255, F(0) first), 56 hexadecimal digits for the 28 quadratic ANF coefficients (i outer, j inner; least significant bit first), or a polynomial such as <code>x^3 mod=0x11D</code>. Polynomial modulus defaults to 0x11B. Field basis matters.</p>
+<textarea id="input" placeholder="x^3"></textarea><button id="validate">Validate and compare with corpus</button><button id="download" disabled>Download validation evidence</button>
+<div id="verdict"></div><div id="properties"></div><div id="reference"></div><div id="matched"></div><div id="walsh"></div><details><summary>Full validation evidence, ANF and ortho-derivative</summary><pre id="evidence"></pre></details>
+<h2>Compare two functions</h2><p>Enter a target below. A positive result includes an independently verified affine graph map. Different signatures separate two verified quadratic APNs. A solver budget stop is inconclusive. EA inequivalence alone does not separate arbitrary CCZ classes.</p>
+<textarea id="target" placeholder="Target LUT, coefficients or polynomial"></textarea>
+<label>Relation <select id="relation"><option value="ccz">CCZ</option><option value="ea">EA</option></select></label>
+<label>Seconds <input id="seconds" type="number" min="0.001" max="600" value="30"></label>
+<label>Node limit <input id="nodes" type="number" min="1" max="10000000" value="1000000"></label><button id="compare">Compare</button><div id="comparison"></div>
+<h2>Saved experiment</h2><p>Start the server with <code>--run PATH</code> to browse the transactional experiment database.</p><button id="browse">Load candidates</button><label><input id="additional" type="checkbox"> Additional signature buckets only</label><div id="candidates"></div>
 <script>
-const \$ = id => document.getElementById(id);
-function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function row(k,v){return v===undefined?'':'<tr><td>'+esc(k)+'</td><td>'+v+'</td></tr>'}
-async function classify(){
-  \$('out').innerHTML='Working...';
-  const r = await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'text/plain'},body:\$('in').value});
-  const j = await r.json();
-  if(j.status==='error'){\$('out').innerHTML='<p class="v error">Parse error: '+esc(j.error)+'</p>';return;}
-  let h='<p class="v '+j.status+'">'+esc(j.verdict)+'</p>';
-  if(j.caveat) h+='<p>'+esc(j.caveat)+'</p>';
-  h+='<table>'+row('Parsed','OK ('+esc(j.format)+'). '+esc(j.format_note))
-    +row('Differential uniformity',j.differential_uniformity)+row('APN',j.apn)
-    +row('Algebraic degree',j.algebraic_degree)
-    +(j.sigma?row('sigma hash','<code>'+j.sigma+'</code>'):'')
-    +(j.index_rows?row('Index rows with this sigma',j.index_rows):'')
-    +(j.census_coeffs?row('Census coefficients','<code>'+j.census_coeffs+'</code>'):'')
-    +(j.list_file?row('Listed in',esc(j.list_file)+', line '+j.list_line):'')
-    +'</table>';
-  if(j.ea_available){
-    h+='<p><button id="ea">Exact EA check</button> Warning: this takes about 10 minutes when the functions are equivalent. One test runs at a time.</p><div id="eaout"></div>';
-  }
-  \$('out').innerHTML=h;
-  if(j.ea_available) \$('ea').onclick=startEA;
-}
-async function startEA(){
-  \$('ea').disabled=true;
-  const r = await fetch('/api/ea',{method:'POST',headers:{'Content-Type':'text/plain'},body:\$('in').value});
-  const j = await r.json();
-  if(!r.ok){\$('eaout').textContent=j.error;return;}
-  poll(j.id);
-}
-async function poll(id){
-  const r = await fetch('/api/ea/'+id); const j = await r.json();
-  \$('eaout').textContent = j.state==='done'||j.state==='failed' ? j.message+' ('+j.seconds+' s)'
-      : 'EA test against '+j.target+': '+j.state+', '+j.seconds+' s ...';
-  if(j.state==='queued'||j.state==='running') setTimeout(()=>poll(id),5000);
-}
-\$('go').onclick=classify;
-</script>
-</body></html>
+const $=id=>document.getElementById(id);let last=null;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function save(name,data){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+async function request(path,body){const r=await fetch(path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body});const j=await r.json();if(!r.ok)throw Error(j.error||j.verdict||r.status);return j}
+async function validate(){try{$('verdict').textContent='Checking every derivative...';const j=await request('/api/classify',$('input').value);last=j;$('download').disabled=false;$('verdict').textContent=j.verdict;$('reference').textContent=j.caveat||'';$('evidence').textContent=JSON.stringify(j,null,2);$('properties').innerHTML='<table>'+['apn','differential_uniformity','algebraic_degree','linearity','nonlinearity','sigma_hash','lut_sha256','evidence_level','apn_power_function_comparison','literature_novelty'].filter(k=>j[k]!==undefined).map(k=>'<tr><th>'+esc(k)+'</th><td><code>'+esc(j[k])+'</code></td></tr>').join('')+'</table>';if(j.reference)$('reference').textContent+=(" Reference SHA256: "+j.reference.sha256+"; "+j.reference.signatures+" signature buckets.");$('matched').innerHTML=j.ea_available?'<button id="matchedcheck">Compare with matched reference (30 s / 1M nodes)</button>':'';if(j.ea_available)$('matchedcheck').onclick=async()=>{try{const job=await request('/api/ea',$('input').value);poll(job.id)}catch(e){$('comparison').textContent=e.message}};const bins=j.absolute_walsh_spectrum||[],max=Math.max(1,...bins.map(x=>x.count));$('walsh').innerHTML=bins.length?'<p>Absolute Walsh spectrum (counts of all frequency pairs except (0,0))</p><svg viewBox="0 0 600 180" role="img" aria-label="Absolute Walsh spectrum">'+bins.map((b,i)=>{const w=580/bins.length,h=130*b.count/max,x=10+i*w;return '<rect x="'+x+'" y="'+(140-h)+'" width="'+(w-3)+'" height="'+h+'" fill="#246"><title>'+b.value+': '+b.count+'</title></rect><text x="'+x+'" y="165">'+b.value+'</text>'}).join('')+'</svg>':''}catch(e){$('verdict').textContent=e.message}}
+async function poll(id){try{const j=await request('/api/ea/'+id);$('comparison').textContent=j.message||j.state;if(j.state==='queued'||j.state==='running')setTimeout(()=>poll(id),1000);else if(j.evidence&&Object.keys(j.evidence).length){const a=document.createElement('a');a.textContent=' Download comparison certificate';a.href='/api/ea/'+id+'/certificate';$('comparison').append(a)}}catch(e){$('comparison').textContent=e.message}}
+$('validate').onclick=validate;$('download').onclick=()=>save('apn-validation-'+last.lut_sha256+'.json',last);
+$('compare').onclick=async()=>{try{const j=await request('/api/compare',JSON.stringify({candidate:$('input').value,target:$('target').value,relation:$('relation').value,timeout_seconds:Number($('seconds').value),max_nodes:Number($('nodes').value)}));poll(j.id)}catch(e){$('comparison').textContent=e.message}};
+$('browse').onclick=async()=>{try{const j=await request('/api/candidates?additional='+$('additional').checked);$('candidates').innerHTML='<p>'+esc(j.total)+' exact LUTs match this filter; showing first '+j.candidates.length+'. API supports offset and limit.</p><table><tr><th>LUT SHA256</th><th>Evidence</th><th>Inspect</th></tr>'+j.candidates.map((c,i)=>'<tr><td><code>'+esc(c.lut_sha256)+'</code></td><td>'+esc(c.evidence_level)+'</td><td><button data-i="'+i+'">Load</button></td></tr>').join('')+'</table>';try{const c=await request('/api/classification');const p=document.createElement('p');p.textContent='Classification snapshot '+c.created_utc+': '+c.snapshot_luts+' quadratic APN LUTs, '+c.proven_equivalence_components+' proven components, '+c.unresolved_component_pairs+' unresolved pairs; exact class count within that snapshot: '+c.exact_snapshot_class_count_established+'.';$('candidates').prepend(p)}catch(e){};$('candidates').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('input').value=Array.from(j.candidates[Number(b.dataset.i)].lut_hex.matchAll(/../g),x=>parseInt(x[0],16)).join(' ');validate()})}catch(e){$('candidates').textContent=e.message}};
+</script></body></html>
 """
 
 function serve(; host::AbstractString = "127.0.0.1", port::Integer = 8088)
@@ -541,6 +580,8 @@ function main(args = ARGS)
         a = args[i]
         if a == "--port"
             port = parse(Int, args[i + 1]); i += 2
+        elseif a == "--run"
+            RUN_DIRECTORY[]=abspath(args[i+1]);isfile(joinpath(RUN_DIRECTORY[],"run.sqlite")) || error("missing run.sqlite");i+=2
         elseif a == "--host"
             host = args[i + 1]; i += 2
         else
@@ -552,6 +593,6 @@ end
 
 end # module
 
-if abspath(PROGRAM_FILE) == @__FILE__
+if abspath(PROGRAM_FILE) == (@__FILE__)
     APN8Web.main()
 end

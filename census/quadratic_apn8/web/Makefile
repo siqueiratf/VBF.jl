@@ -7,6 +7,7 @@ JFLAGS := $(THREADS) --project=$(WEB)
 
 port ?= 8088
 host ?= 127.0.0.1
+run ?=
 
 .PHONY: help instantiate serve test
 
@@ -20,7 +21,7 @@ instantiate:
 	JULIA_NUM_PRECOMPILE_TASKS=2 $(JULIA) --project=$(WEB) -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
 
 serve:
-	$(JULIA) $(JFLAGS) $(WEB)server.jl --port $(port) --host $(host)
+	$(JULIA) $(JFLAGS) $(WEB)server.jl --port $(port) --host $(host) $(if $(run),--run $(run),)
 
 test:
 	$(JULIA) $(JFLAGS) $(WEB)test/runtests.jl
