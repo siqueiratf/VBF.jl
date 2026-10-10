@@ -16,14 +16,16 @@ packages/VBFCatalog/   data layer: SQLite catalog, bibliography, importers
 packages/VBFSearch/    reproducible APN search and research consumers
 docs/inspector/        HTTP evidence viewer consuming all three packages
 data/apn/             reference snapshots, runs, rebuilds and historical data
-papers/                standalone paper-reproduction scripts
+packages/VBFRepro/      reproduction runner, standalone claims and research analysis
+packages/*/perf/        optional per-package performance workloads
+data/perf/             performance measurements and provenance
 docs/                  Documenter.jl API-reference site
 ```
 
 Key layout rules:
 - One concept per file, grouped by concept directory under `packages/VBF/src/`.
 - `VBF` must never import `VBFCatalog`.
-- Paper scripts in `papers/` orchestrate experiments; they do not re-implement
+- Paper scripts in `packages/VBFRepro/papers/` orchestrate experiments; they do not re-implement
   core math that belongs in `packages/VBF`.
 
 ## Running tests
@@ -32,11 +34,11 @@ Key layout rules:
 # VBF package test suite (ReTestItems, parallel)
 julia -e 'using Pkg; Pkg.activate("packages/VBF"); Pkg.test()'
 
-# Paper-level tests (the moved papers_test.jl is now a ReTestItems item inside
-# packages/VBF — it is picked up automatically by the command above)
+# Reproduction runner tests are independent of core math tests.
+julia -e 'using Pkg; Pkg.activate("packages/VBFRepro"); Pkg.test()'
 
 # Single paper folder (e.g. Yu_202211d)
-make -C papers/Yu_202211d test
+make -C packages/VBFRepro/papers/2022/Yu_202211d test
 ```
 
 Environment knobs: `RETESTITEMS_NWORKERS` (default: min(CPU_THREADS, 8)),
@@ -88,10 +90,10 @@ their own environment — never `include` them from a REPL or test.
 
 See the skill: `.claude/skills/reproduce-paper/SKILL.md`.
 
-Reference pattern: `papers/Beierle_202107/` (older single-folder style).
-Fully-worked recent example: `papers/Yu_202211d/` (multi-file, Makefile, tests).
+Reference pattern: `packages/VBFRepro/papers/2021/Beierle_202107/` (older single-folder style).
+Fully-worked recent example: `packages/VBFRepro/papers/2022/Yu_202211d/` (multi-file, Makefile, tests).
 
-Single-file papers (`papers/*.jl`): expose `reproduce()` returning a NamedTuple
+Single-file papers (`packages/VBFRepro/papers/*.jl`): expose `reproduce()` returning a NamedTuple
 and `report(io=stdout)`. The `papers_test.jl` ReTestItems item calls
 `reproduce()` and checks frozen expected values.
 

@@ -4,7 +4,7 @@ using VBF
 using Test
 
 # Regression tests for the five silent-wrongness bugs found while reproducing
-# Calderini 2020 (papers/Calderini_202009):
+# Calderini 2020 (packages/VBFRepro/papers/2020/Calderini_202009):
 #   1. ea_matrix packed its y-columns at the wrong row offset (not Edel-Pott C₂).
 #   2. apn_ea_mugshot's non-quadratic branch used the basis-dependent
 #      per-coordinate degree_spectrum (not an EA-invariant).

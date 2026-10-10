@@ -6,7 +6,7 @@ paper I just reviewed", "resolve reproduction issues"). This skill is a launcher
 it resolves which papers to fix, then delegates to the **`paper-issue-fixer`**
 subagent.
 
-**Prerequisite:** The target paper(s) must have a `papers/<ID>/README.md` with a
+**Prerequisite:** The target paper(s) must have a `packages/VBFRepro/papers/<year>/<ID>/README.md` with a
 `### Reproduction Issues` section. This README is produced by the `review-paper`
 skill. If no README exists, tell the user to run `/review-paper <ID>` first.
 
@@ -20,20 +20,20 @@ Same resolution logic as `review-paper`:
 2. **No args — git fallback.** Detect papers touched in the working tree:
    ```bash
    git -C "$(git rev-parse --show-toplevel)" status --porcelain \
-     | grep -oE 'papers/[^/]+/' | sed -E 's#papers/([^/]+)/#\1#' | sort -u
+     | grep -oE 'packages/VBFRepro/papers/[^/]+/' | sed -E 's#packages/VBFRepro/papers/([^/]+)/#\1#' | sort -u
    ```
    Then recent commits if empty:
    ```bash
    git -C "$(git rev-parse --show-toplevel)" show --name-only --pretty=format: HEAD \
-     | grep -oE 'papers/[^/]+/' | sed -E 's#papers/([^/]+)/#\1#' | sort -u
+     | grep -oE 'packages/VBFRepro/papers/[^/]+/' | sed -E 's#packages/VBFRepro/papers/([^/]+)/#\1#' | sort -u
    ```
 3. **Still empty** — ask the user which paper ID(s) to fix.
 
 ### Validate before dispatch
 
 For each resolved ID:
-- Confirm `papers/<ID>/` exists.
-- Confirm `papers/<ID>/README.md` exists and contains `### Reproduction Issues`.
+- Confirm `packages/VBFRepro/papers/<year>/<ID>/` exists.
+- Confirm `packages/VBFRepro/papers/<year>/<ID>/README.md` exists and contains `### Reproduction Issues`.
 - If README is missing, report it and suggest running `/review-paper <ID>` first.
 - If the Reproduction Issues section says "None found.", skip that paper and
   tell the user there's nothing to fix.
@@ -68,7 +68,7 @@ invocation.
 Prompt the agent with:
 
 > Fix reproduction issues in the following paper(s): `<ID1>`, `<ID2>`.
-> Read each paper's `papers/<ID>/README.md`, extract the Reproduction Issues,
+> Read each paper's `packages/VBFRepro/papers/<year>/<ID>/README.md`, extract the Reproduction Issues,
 > and resolve each unresolved issue. Run tests after fixing. Update the README
 > to mark fixed issues as [RESOLVED]. Repository root is `<repo_root>`.
 
@@ -145,7 +145,7 @@ After fixing and committing:
   The pipeline is: `/review-paper` → README with issues → `/fix-paper` →
   issues resolved → `git-committer` → atomic commits.
 - The fixer agent never touches Paper Issues — only Reproduction Issues.
-- The fixer agent never modifies `papers/<ID>/input/` source material.
+- The fixer agent never modifies `packages/VBFRepro/papers/<year>/<ID>/input/` source material.
 - The git-committer never modifies files — it only stages and commits.
 - Keep this skill in sync with the `paper-issue-fixer` and `git-committer`
   agent definitions and the README format produced by `review-paper`.

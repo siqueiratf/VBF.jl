@@ -10,16 +10,16 @@ using VBFSearch: DiscoveryEvidence
 using .DiscoveryEvidence
 const ROOT = normpath(joinpath(@__DIR__, "../../../.."))
 module Calderini
-include("../../../../papers/2021/Calderini_202100/helpers.jl")
+include("../../../../packages/VBFRepro/papers/2021/Calderini_202100/helpers.jl")
 end
 module Gologlu
-include("../../../../papers/2022/Gologlu_202207/helpers.jl")
+include("../../../../packages/VBFRepro/papers/2022/Gologlu_202207/helpers.jl")
 end
 module Li
-include("../../../../papers/2022/Li_202207/theorem2.jl")
+include("../../../../packages/VBFRepro/papers/2022/Li_202207/theorem2.jl")
 end
 module Shift
-include("../../../../papers/2021/Budaghyan_202101/theorem3_1.jl")
+include("../../../../packages/VBFRepro/papers/2021/Budaghyan_202101/theorem3_1.jl")
 end
 module Sources
 include("check_sources.jl")
@@ -120,8 +120,8 @@ function source_hashes()
         append!(paths,[joinpath(dir,f) for (dir,_,fs) in walkdir(joinpath(ROOT,folder)) for f in fs if endswith(f,".jl")])
     end
     push!(paths,joinpath(@__DIR__, "../../src/evidence.jl"),joinpath(@__DIR__, "check_sources.jl"))
-    for folder in ("papers/2021/Calderini_202100","papers/2022/Gologlu_202207","papers/2022/Li_202207","papers/2021/Budaghyan_202101",
-                   "papers/2025/Gologlu_202503","papers/2022/Zheng_202211","papers/2019/Taniguchi_201909")
+    for folder in ("packages/VBFRepro/papers/2021/Calderini_202100","packages/VBFRepro/papers/2022/Gologlu_202207","packages/VBFRepro/papers/2022/Li_202207","packages/VBFRepro/papers/2021/Budaghyan_202101",
+                   "packages/VBFRepro/papers/2025/Gologlu_202503","packages/VBFRepro/papers/2022/Zheng_202211","packages/VBFRepro/papers/2019/Taniguchi_201909")
         append!(paths,[joinpath(dir,f) for (dir,_,fs) in walkdir(joinpath(ROOT,folder)) for f in fs if endswith(f,".jl") || endswith(f,".tex")])
     end
     Dict(relpath(normpath(p),ROOT)=>filehash(p) for p in paths)

@@ -19,7 +19,7 @@ using VBF
 
 const STUDY_TITLE = "Number of CCZ classes of quadratic APN functions on F_2^8"
 const STUDY_DIR = normpath(joinpath(@__DIR__,"../../../../data/apn/archive/census"))
-const LEGACY_DIR = normpath(joinpath(@__DIR__, "../../../../papers/2025/Beierle_202508/results/class_count"))
+const LEGACY_DIR = normpath(joinpath(@__DIR__, "../../../../packages/VBFRepro/papers/2025/Beierle_202508/results/class_count"))
 
 # Known classes: lower bound of Beierle et al. (2025), Theorem 5.1.
 const KNOWN_CLASSES = 3_808_491

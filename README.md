@@ -2,9 +2,28 @@
 
 Julia >= 1.12 workspace for vectorial Boolean functions. `packages/VBF` contains
 mathematical algorithms; `packages/VBFCatalog` provides the catalog and corpora;
-`packages/VBFSearch` manages reproducible discovery experiments.
+`packages/VBFSearch` manages reproducible discovery experiments;
+`packages/VBFRepro` runs paper reproductions and comparative research analysis.
 The core package never depends on the catalog. See [project context](.claude/context/PROJECT.md)
 and the [API documentation sources](docs/src).
+
+## Paper reproductions and performance
+
+Paper claims live under `packages/VBFRepro/papers/<year>/<id>/` and share one
+execution environment. The [reproduction runner](packages/VBFRepro/README.md)
+lists and runs selected papers in isolated processes, recording configurations,
+logs, exit status and source identities under `data/repro/runs/`:
+
+```sh
+bin/vbfrepro list
+bin/vbfrepro test Yu_202211d --timeout-seconds 300
+```
+
+Cross-paper metrics and performance analysis share
+[one analysis environment](packages/VBFRepro/analysis/README.md).
+Each package owns optional BenchmarkTools workloads in its `perf/` folder.
+Performance environments are separate from runtime dependencies, and measurements
+are stored under `data/perf/`; benchmark execution leaves the catalog unchanged.
 
 ## Reproducible APN searches
 

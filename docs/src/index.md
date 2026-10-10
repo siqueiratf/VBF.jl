@@ -17,6 +17,10 @@ The source lives at [github.com/zambonin/VBF.jl](https://github.com/zambonin/VBF
   multi-source reconciliation, the bibliography, data importers, and bulk corpora.
 - **VBFSearch** — reproducible discovery, checkpointing, independent validation,
   scoped reference comparisons and publication reports.
+- **VBFRepro** — isolated paper execution, provenance and cross-paper analysis.
+
+See [reproductions and performance](reproductions.md) for paper execution and
+the optional BenchmarkTools workloads in each package's `perf/` folder.
 
 Use the [APN inspector](inspector.md) to inspect functions and their evidence
 interactively alongside this documentation. From a prepared checkout,
@@ -103,7 +107,7 @@ In the explicit optimized profile, quadratic target graphs get automatic
 translation symmetry reduction at the root. The older `:heggebakk`, `:ortho_derivative` and CCZ
 `:canteaut_perrin` strategies remain available explicitly. Native refinement
 decides and recovers one map; it does not replace the APIs enumerating all EA
-maps or entire CCZ classes. See [the reproducible comparison](https://github.com/zambonin/VBF.jl/blob/main/bench/README.md#native-partition-refinement-comparison)
+maps or entire CCZ classes. See [the reproducible comparison](https://github.com/zambonin/VBF.jl/blob/main/data/perf/archive/bench/README.md#native-partition-refinement-comparison)
 for the C++ benchmark and its scope.
 
 ### Automorphism groups and stabilizer pruning
@@ -164,7 +168,7 @@ upper bound; a partial subspace list does not bound the total class count.
 `extract_linear_subspaces_bounded` and `switching_neighbors_bounded` expose
 explicit `SearchOutcome` results for limited searches.
 
-The [2025 paper reproduction](https://github.com/zambonin/VBF.jl/tree/main/papers/2025/Baudrin_202509)
+The [2025 paper reproduction](https://github.com/zambonin/VBF.jl/tree/main/packages/VBFRepro/papers/2025/Baudrin_202509)
 provides the known six-bit census and bounded switching exploration with saved
 graph witnesses. The native automorphism backend is documented as a method
 extension to the paper's original first stage. Switching results describe

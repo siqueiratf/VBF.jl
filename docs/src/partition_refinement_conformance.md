@@ -174,7 +174,7 @@ additional focused regression passes 71 assertions.
 
 ### Verification against the authors' implementation
 
-The optional driver `bench/partition_refinement_specification_audit.cpp`
+The optional driver `packages/VBF/perf/partition_refinement_specification_audit.cpp`
 checks the official C++ revision
 [`c9cec6515b3297abf5c15fedd23e55b43f2ba888`](https://github.com/zskiley/CCZ-EA-equivalence/tree/c9cec6515b3297abf5c15fedd23e55b43f2ba888).
 All 54 source/header files in the executed checkout were verified byte for
@@ -211,7 +211,7 @@ src = pathlib.Path(os.environ['CCZ_REFERENCE']) / 'src'
 files = sorted(str(p) for p in src.rglob('*.cpp')
                if p.name not in ('main.cpp', 'python.cpp', 'group_benchmark.cpp'))
 subprocess.run(['g++', '-std=c++17', '-O2', '-I' + str(src),
-                'bench/partition_refinement_specification_audit.cpp',
+                'packages/VBF/perf/partition_refinement_specification_audit.cpp',
                 *files, '-o', '/tmp/vbf-reference-specification-audit'], check=True)
 subprocess.run(['/tmp/vbf-reference-specification-audit'], check=True)
 PY
@@ -267,7 +267,7 @@ the audit branch's diff against the solver contains only census files.
 The original mixed heads are preserved locally as
 `backup/native-partition-equivalence-mixed-20261009` (`380b8a3`) and
 `backup/apn-literature-audit-mixed-20261009` (`ecb0739`). Commit IDs below and
-the measured revision IDs in `bench/README.md` identify the original history.
+the measured revision IDs in `data/perf/archive/bench/README.md` identify the original history.
 Some replayed commits have new IDs, but their patches and the final VBF source
 tree are unchanged; the recorded benchmark source fingerprints remain valid.
 This separation adds only this documentation note after replaying the solver
@@ -284,7 +284,7 @@ literal pseudocode. They are confined to `algorithm=:optimized`. Earlier optimiz
 - `b6ad7b2`: avoiding boxed counters in threaded score construction.
 
 The paper's experimental tables are separate empirical claims. Small fixture
-comparisons in `bench/` do not reproduce Section 7's sampled corpora, Magma
+comparisons in `packages/VBF/perf/` do not reproduce Section 7's sampled corpora, Magma
 comparisons, large-dimension averages or peak RSS measurements. Implementing
 Algorithms 1–7 does not imply reproducing those hardware-dependent tables.
 

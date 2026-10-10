@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+vbf_repro_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+exec "${VBF_JULIA:-julia}" --startup-file=no --project="$vbf_repro_root" -e 'using VBFRepro; exit(VBFRepro.main(ARGS))' -- "$@"

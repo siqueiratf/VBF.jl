@@ -1,6 +1,6 @@
 ---
 name: reproduce-paper
-description: Reproduce a published cryptography paper in VBF.jl using VBF and VBFCatalog primitives. Use when implementing a new paper reproduction under papers/<slug>/ or papers/<slug>.jl.
+description: Reproduce a published cryptography paper in VBF.jl using VBF and VBFCatalog primitives. Use when implementing a new paper reproduction under packages/VBFRepro/papers/<year>/<slug>/ or packages/VBFRepro/papers/<year>/<slug>.jl.
 ---
 
 # Skill: reproduce-paper
@@ -20,10 +20,10 @@ populate the catalog or produce a second implementation of core VBF logic.
 ## Inputs to gather before starting
 
 1. **Paper identifier** — author–year slug, e.g. `LastName_YYYYMM`.
-2. **PDF (mandatory).** Place the paper PDF in `papers/<slug>/input/`. The agent
+2. **PDF (mandatory).** Place the paper PDF in `packages/VBFRepro/papers/<year>/<slug>/input/`. The agent
    reads the PDF directly — no intermediate conversion. Place the
    `routines_to_implement_list.txt` checklist in
-   `papers/<slug>/codes_mencioned_in_original_paper/`.
+   `packages/VBFRepro/papers/<year>/<slug>/codes_mencioned_in_original_paper/`.
 3. **TeX source (fetch from arXiv when available).** TeX source is the
    preferred reading medium: theorem environments carry exact statement numbers,
    `algorithmic` blocks give pseudocode verbatim, and formula macros resolve
@@ -32,17 +32,17 @@ populate the catalog or produce a second implementation of core VBF logic.
       look for a DOI redirect. The ID looks like `2107.12345` or `cs/0312045`.
    b. Download the source tarball and extract it:
       ```bash
-      mkdir -p papers/<slug>/input/tex_source
+      mkdir -p packages/VBFRepro/papers/<year>/<slug>/input/tex_source
       curl -L "https://arxiv.org/e-print/<arxiv_id>" \
            -o /tmp/paper_source.tar.gz
       tar -xzf /tmp/paper_source.tar.gz \
-          -C papers/<slug>/input/tex_source/ 2>/dev/null || \
+          -C packages/VBFRepro/papers/<year>/<slug>/input/tex_source/ 2>/dev/null || \
         cp /tmp/paper_source.tar.gz \
-           papers/<slug>/input/tex_source/<slug>.tex
+           packages/VBFRepro/papers/<year>/<slug>/input/tex_source/<slug>.tex
       ```
       (Some arXiv submissions are a single `.tex` file instead of a tarball;
       the fallback `cp` handles that case.)
-   c. The `tex_source/` folder is gitignored (matches `papers/*/input/`).
+   c. The `tex_source/` folder is gitignored (matches `packages/VBFRepro/papers/*/input/`).
       Do not commit it.
    d. When the TeX source is present, **read it instead of the PDF** for
       theorem statements, algorithm bodies, and table definitions. Use the PDF
@@ -50,7 +50,7 @@ populate the catalog or produce a second implementation of core VBF logic.
    e. If the paper is not on arXiv (proceedings-only, behind paywall with no
       preprint), skip this step and note it in `PLAN.md`.
 4. **Author artifact** — any reference code the authors published (e.g. a `.py`
-   file). Drop it in `papers/<slug>/codes_mencioned_in_original_paper/`.
+   file). Drop it in `packages/VBFRepro/papers/<year>/<slug>/codes_mencioned_in_original_paper/`.
 5. **Reproduction scope** — which theorems/claims are practical to validate?
    Identify which ones need only small/bounded runs and which are
    computationally infeasible to run in full.
@@ -60,7 +60,7 @@ populate the catalog or produce a second implementation of core VBF logic.
 ## Folder structure to create
 
 ```
-papers/<slug>/
+packages/VBFRepro/papers/<year>/<slug>/
   Makefile
   helpers.jl
   report.jl
@@ -81,10 +81,10 @@ papers/<slug>/
     ...
 ```
 
-Use `papers/Beierle_202201/` as the canonical reference for multi-claim papers —
+Use `packages/VBFRepro/papers/2022/Beierle_202201/` as the canonical reference for multi-claim papers —
 it is the most complete and consistently structured example in the repository.
-For simple single-claim papers, a single `papers/<slug>.jl` is enough (see
-`papers/CanteautCouvreurPerrin2022_orthoderivative.jl`).
+For simple single-claim papers, a single `packages/VBFRepro/papers/<year>/<slug>.jl` is enough (see
+`packages/VBFRepro/papers/CanteautCouvreurPerrin2022_orthoderivative.jl`).
 
 **Naming rule (MANDATORY for multi-file papers):** implementation file names must
 mirror the paper's own section/theorem/algorithm names exactly — `theorem1.jl`,
@@ -165,7 +165,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
 end
 ```
 
-Add a `@testset` block in `papers/papers_test.jl` that calls `_run_paper` and
+Add a `@testset` block in `packages/VBFRepro/papers/papers_test.jl` that calls `_run_paper` and
 checks the frozen expected values from the `reproduce()` return.
 
 ---
@@ -223,8 +223,8 @@ inside a paper folder.
   `timeout_seconds`, or equivalent parameters.
 - **Do not silently write generated results.** Require `save_results=true` or a
   dedicated Makefile target.
-- Store generated artifacts under `papers/<slug>/results/` (already excluded by
-  `.gitignore` pattern `papers/*/results/`).
+- Store generated artifacts under `packages/VBFRepro/papers/<year>/<slug>/results/` (already excluded by
+  `.gitignore` pattern `packages/VBFRepro/papers/*/results/`).
 - If a search is intentionally bounded, the output **must** state whether the
   result is exhaustive or budget-limited.
 - Full/expensive searches are an **explicit opt-in** via `full_search=true` or a
@@ -278,7 +278,7 @@ header text is paper-specific.
 
 ## Test file conventions
 
-Follow the `papers/Beierle_202201/test/` pattern exactly:
+Follow the `packages/VBFRepro/papers/2022/Beierle_202201/test/` pattern exactly:
 
 - `test/runtests.jl`: `using Test; using VBF` (add VBFCatalog only if the tests
   actually use it), then bare `include("test_<claim>.jl")` lines — no wrapper
@@ -318,8 +318,8 @@ The PLAN.md is the contract for the session — keep it current if scope changes
 
 ## Acceptance criteria (minimum bar)
 
-- `make -C papers/<slug> test` passes.
-- `make -C papers/<slug> report` completes without a long search.
+- `make -C packages/VBFRepro/papers/<year>/<slug> test` passes.
+- `make -C packages/VBFRepro/papers/<year>/<slug> report` completes without a long search.
 - Each script runs with the root Julia project.
 - Tests cover at least one round-trip and one APN/invariant verification.
 - All expensive experiments have explicit limits.
@@ -335,9 +335,9 @@ The PLAN.md is the contract for the session — keep it current if scope changes
 
 | Paper | Style | Key files |
 |---|---|---|
-| `papers/CanteautCouvreurPerrin2022_orthoderivative.jl` | single-file | `reproduce()` + `report()` |
-| `papers/Beierle_202201/` | **canonical multi-file reference** | `theorem1.jl`, `algorithm1.jl`, `lemma4.jl`, `paper_report()` |
-| `papers/Yu_202211d/` | multi-file, full | `PLAN.md`, `helpers.jl`, `conjecture2_search.jl`, `Makefile`, `test/` |
+| `packages/VBFRepro/papers/CanteautCouvreurPerrin2022_orthoderivative.jl` | single-file | `reproduce()` + `report()` |
+| `packages/VBFRepro/papers/2022/Beierle_202201/` | **canonical multi-file reference** | `theorem1.jl`, `algorithm1.jl`, `lemma4.jl`, `paper_report()` |
+| `packages/VBFRepro/papers/2022/Yu_202211d/` | multi-file, full | `PLAN.md`, `helpers.jl`, `conjecture2_search.jl`, `Makefile`, `test/` |
 
 ---
 

@@ -1,7 +1,7 @@
 """
 Console report helpers for paper-reproduction scripts.
 
-Every `papers/<slug>/` reproduction prints the same shape of structured
+Every `packages/VBFRepro/papers/<year>/<slug>/` reproduction prints the same shape of structured
 progress — a banner, titled sections, pass/fail checks, key/value lines — so
 that surface lives here once instead of being re-defined in every paper's
 `helpers.jl`. The format is the one documented in the `reproduce-paper` skill:

@@ -64,6 +64,7 @@ jobs:
           - 2023/Calderini_202306
           - 2024/Ichanska_202400
           - 2024/Li_202402
+          - 2025/Gologlu_202503
           - 2025/Beierle_202508
           - 2025/Taniguchi_202501
           - 2025/Yu_202512
@@ -81,7 +82,33 @@ jobs:
         uses: julia-actions/cache@v2
 
       - name: Run paper tests
-        run: make -C papers/${{ matrix.paper }} test
+        run: |
+          julia --startup-file=no --project=. -e 'using Pkg; Pkg.instantiate()'
+          make -C packages/VBFRepro/papers/${{ matrix.paper }} test
+
+  perf-smoke:
+    name: Performance tooling • ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [VBF, VBFCatalog, VBFSearch, VBFRepro]
+    env:
+      JULIA_LOAD_PATH: '@:@stdlib'
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+      - name: Install Julia 1.12
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+      - name: Cache Julia depot
+        uses: julia-actions/cache@v2
+      - name: Instantiate performance environment
+        run: julia --startup-file=no --project=packages/${{ matrix.package }}/perf -e 'using Pkg; Pkg.instantiate()'
+      - name: Check performance tooling
+        run: julia --startup-file=no --project=packages/${{ matrix.package }}/perf packages/${{ matrix.package }}/perf/test.jl
 
   catalog-check:
     # Structural half of .githooks/catalog-check — the same gate the pre-commit
@@ -109,7 +136,7 @@ jobs:
       matrix:
         julia: ['1.12']
         os: [ubuntu-latest]
-        package: [VBF, VBFCatalog, VBFSearch]
+        package: [VBF, VBFCatalog, VBFSearch, VBFRepro]
     steps:
       - name: Check out source
         uses: actions/checkout@v5
