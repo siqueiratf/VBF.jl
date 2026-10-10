@@ -2,9 +2,20 @@
 
 **Path**: `census/quadratic_apn8/`
 
-**Status**: The estimator is validated against exact values for n ≤ 7. The census
-numbers below come from 4,012,000 samples. The 553 novelty claims are **verified**
-against all 10 indexed sources ([reports/verification/REPORT.md](reports/verification/REPORT.md)).
+**Current scientific status:** the [consolidated discovery pipeline](discovery/README.md)
+provides reproducible search, transactional resume, independent APN validation,
+bounded EA/CCZ checks, evidence inspection and publication exports. Read its
+[audit](discovery/AUDIT.md) before using the historical novelty or census claims below.
+The five historical lists contain **110,868 pairwise CCZ-separated quadratic APNs**
+absent from the original-source quadratic reference and the public supplement.
+This is a rigorously scoped finite-computation result; literature-wide novelty
+remains unresolved. The census estimates mass, and converting mass to a class
+count requires additional assumptions; capture–recapture uniformity/independence
+have not been established.
+
+Historical estimator validation used exact cases for n <= 7 and 4,012,000 n = 8
+samples. The 553 examples were verified against the original indexed sources
+([reports/verification/REPORT.md](reports/verification/REPORT.md)).
 The two items that were open are now closed:
 
 - The x^57 Kasami class (three non-quadratic catalog rows) has no quadratic
@@ -29,13 +40,15 @@ extending them again (APN codimension-1 changes) found **463 more new classes**
 desktop (30 threads; about 10 hours in total) found **109,943 verified search-new classes**.
 61 of them are public raw-only classes, and 804 are already in the trial and hyperplane
 lists, so 109,078 are new only in this run (`search_b52/framework_20261009_new.tsv.gz`). Two
-independent capture–recapture checks agree with the census: the unknown classes number
-about 1.6 M, and the search has found about 6–7 % of them
+exploratory capture–recapture calculations suggested about 1.6 M additional
+classes and 6–7 % coverage, conditional on unestablished sampling assumptions
 ([search_b52/RUN_20261009_FRAMEWORK.md](search_b52/RUN_20261009_FRAMEWORK.md)).
 
-**Total new CCZ classes so far: 553 (census) + 1 (theory) + 773 (search trial) + 463
+**Total historical corpus-absent signature buckets: 553 (census) + 1 (theory) + 773 (search trial) + 463
 (hyperplane scan) + 109,078 (Framework run) = 110,868.** With the 3,808,491 indexed classes
-and the 546 raw-only public classes, 3,919,905 classes are now known.
+and the 546 raw-only public classes, this gave a lower bound of 3,919,905 classes.
+The additional public Galissant representative raises that baseline-plus-study
+lower bound to **3,919,906**; it does not establish how many are literature-new.
 
 Also: 0 of the 553 new functions are CCZ-equivalent to a permutation
 ([permutation/REPORT.md](permutation/REPORT.md)). One more new class came from the
@@ -50,8 +63,8 @@ A fresh clone runs `make test` and `make analyze` with the committed data in `da
 
 How many CCZ classes of quadratic APN functions exist on F_2^8?
 
-Beierle et al. (2025) give the lower bound 3,808,491 (Theorem 5.1). This study gives an
-unbiased estimate of the total number N. It also collects sampled APN functions whose CCZ
+Beierle et al. (2025) give the lower bound 3,808,491 (Theorem 5.1). This study estimates orbit mass and explores conditional estimates of the
+class count N; it does not establish an unbiased estimator of N. It also collects sampled APN functions whose CCZ
 invariant σ is absent from the known-class index of VBFCatalog.
 
 ## Mathematics

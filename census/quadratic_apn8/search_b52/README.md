@@ -1,5 +1,12 @@
 # Extension search in the B6 = 52 branch of quadratic APN functions on F_2^8
 
+For new reproducible experiments use the [consolidated pipeline](../discovery/README.md).
+This historical runner uses heuristic histogram pruning, per-seed completion
+markers and bounded construction choices; its outputs do not certify exhaustion.
+“New” below means absent from the comparison sources used at execution, not proven
+literature-wide novelty. The [current audit](../discovery/AUDIT.md) records the
+source-rebuilt comparison, 61 previously public classes, and statistical limits.
+
 **Path**: `census/quadratic_apn8/search_b52/`
 
 **Status**: The method is validated (n = 6 and n = 8). A trial run on this machine

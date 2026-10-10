@@ -50,13 +50,12 @@ baseline. All 388,343 records tagged `known` match it.
 The union of `desk1/found.tsv`, `new_classes_553.tsv`, `new_classes_extra.tsv`
 and `new_classes_trial_773.tsv` contains 498,840 distinct signatures, of which
 388,404 match the public baseline and 110,436 are absent. There are 787
-duplicate records across these input files. This checkout's candidate inputs
-account for 110,436 absent signatures; the screenshot's larger whole-study
-count of 110,868 cannot be reconciled without its independent audit/input
-manifest, which is unavailable. This is an input-scope discrepancy, not an
-APN verification failure or evidence that the extra 432 claimed classes are
-invalid. The exact checked input hashes
-are saved in the candidate report.
+duplicate records across these input files. The subsequent [consolidated audit](../discovery/AUDIT.md) also checked the now-available
+463-record hyperplane file. It adds exactly 432 distinct absent signatures,
+reconciling the screenshot's **110,868** whole-study total. The four-file numbers
+in this report retain their original scope; the updated five-file reconciliation
+and verification methods are in `discovery/results/history/history.toml`.
+The exact checked input hashes are saved in the corresponding reports.
 
 The verifier independently checks Boolean degree two and rank seven of every
 nonzero polar map (the quadratic APN criterion), derives its annihilator, and

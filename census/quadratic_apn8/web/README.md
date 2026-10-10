@@ -1,81 +1,102 @@
-# APN8 class check (local web page)
+# APN8 evidence inspector
 
-**Path**: `census/quadratic_apn8/web/`
+The frontend validates exact eight-bit functions, compares their signatures
+with the independently rebuilt quadratic reference, and runs bounded EA/CCZ
+pair comparisons. It shares the [discovery evidence layer](../discovery/README.md).
+It does not label a signature hit “KNOWN” or corpus absence “literature-new”.
 
-This page tells you if an (8,8)-function is in a known CCZ class of quadratic APN
-functions, in the census list of 553 new classes, or in a new class. Paste the function
-into one input box. The server finds the format.
+## Run and inspect
 
-## Run
+From the repository root:
 
+```sh
+make -C census/quadratic_apn8/web instantiate
+make -C census/quadratic_apn8/web serve
+# Browse a search or independently validated import:
+make -C census/quadratic_apn8/web serve \
+  run=/absolute/path/to/experiment
 ```
-make instantiate            # once: HTTP.jl, JSON3 and the local packages VBF, VBFCatalog
-make serve                  # http://127.0.0.1:8088/
-make serve port=9000        # other port; host=... changes the address (default 127.0.0.1)
-make test                   # tests the request handler without a socket
-```
 
-The server uses two threads: one interactive thread for HTTP and one default thread for
-the exact EA test (`--threads=1,1`). It has its own environment (`Project.toml`,
-`Manifest.toml`). The root `Project.toml` does not change.
+Open `http://127.0.0.1:8088/`. The server uses one default thread for queued
+comparisons and one interactive thread for HTTP (`--threads=1,1`). It needs the
+catalog and old sigma index to retrieve named reference functions, plus
+`results/signature_rebuild/{comparison.toml,fresh_union.sqlite}` and the
+public literature supplement. The old index supplies record pointers; the
+fresh, digest-checked reference controls corpus-absence conclusions. Missing
+or changed provenance stops initialization rather than silently using an old
+baseline. Package/environment setup is local to `web/`.
 
-The server needs the σ-index side store `packages/VBFCatalog/corpora/ccz_sigma_index.sqlite`
-and the catalog. It opens both once at start, read only (`PRAGMA query_only`). Start takes
-some seconds (package load and the first σ). A request takes milliseconds.
+1. Paste a function in the first box and select **Validate and compare with
+   corpus**. Input can be 256 integers 0..255 (F(0) first), 56 hexadecimal ANF
+   digits, or a polynomial such as `x^3 mod=0x11D`. The polynomial default is
+   0x11B; field basis and modulus must match the intended function.
+2. Inspect differential uniformity, APN status, Boolean degree, linearity,
+   nonlinearity, the absolute Walsh plot, sigma, LUT digest, reference digest
+   and the explicitly scoped verdict. Expand the evidence panel for the ANF,
+   polar ranks, ortho-derivative and DDT histogram. A failed APN check includes
+   a difference and its more-than-two solutions.
+3. **Download validation evidence** saves the exact LUT and all displayed
+   evidence as JSON. A reference signature match remains unresolved. If a
+   reference LUT can be loaded, use its comparison button; missing target
+   lookup is not evidence of inequivalence.
+4. For a particular reference or another candidate, paste its function in the
+   second box, choose **CCZ** or **EA**, set time/node limits, and select
+   **Compare**. The result is a verified positive graph witness, a scoped
+   invariant/computational negative, or an inconclusive budget stop. Download
+   the TOML comparison certificate and recheck it with the standard-library
+   verifier below. One comparison executes at a time.
+5. With `--run PATH`, select **Load candidates**, optionally filtering for
+   additional signatures, then **Load** a stored exact LUT. An imported
+   historical bundle normally has no “additional” flag; leave that filter off.
+   Every bounded pair check is saved as TOML under `discovery/results/web/`
+   and, when a run is selected, appended transactionally to its `comparisons`
+   table. The inspector can coexist with an enumeration writer because these
+   append-only comparisons do not change search cursors.
 
-## Input formats
+## Meaning of verdicts
 
-| Format | Example | Rule |
-|---|---|---|
-| LUT | `[0, 1, 8, ...]` | 256 integers 0..255, F(0) first. Separators: spaces, commas, semicolons or newlines. Brackets are optional. Hex values need `0x`. |
-| Coefficient string | `b8fbf84d...` | Exactly 56 hex digits = 28 bytes c_ij for 1 ≤ i < j ≤ 8, i outer, j inner. F(x) = XOR_{i<j} x_i x_j c_ij, x_1 = least significant bit. This is the format of `new_classes_553.tsv`. |
-| Univariate polynomial | `x^3 + a*x^9` | Polynomial over GF(2^8), parsed by `VBF.polynomial_to_lut`. Modulus 0x11B by default; `mod=0x11D` changes it. `a`, `g` and `ksi` are the class of X (the element 0x02). Integer constants are read mod 2. `^` and `**` are powers. |
-
-The server tries the formats in the order coefficient string, LUT, polynomial. It returns
-an error message when no format fits (for example: wrong count of values, a value outside
-0..255, a parse error).
-
-## Output
-
-Every parsed input gives the differential uniformity, "APN" (uniformity 2) and the
-algebraic degree. A quadratic APN function also gives its σ hash and one of these verdicts:
-
-| Verdict | Meaning |
+| Verdict | Guarantee |
 |---|---|
-| **KNOWN (sigma matches source X member i)** | σ is in the index of 3,808,491 known classes (4,005,445 index rows, n = 8). A σ match is necessary but **not sufficient** for CCZ-equivalence. The button "Exact EA check" runs `VBF.ea_mappings_from_ortho_derivative(F, G)` against member i of source X. This takes about 10 minutes when the functions are equivalent and seconds when they are not. |
-| **NEW, in the census list (one of the 553)** | σ is absent from the index. Thus the function is CCZ-inequivalent to all indexed functions (rigorous). σ is equal to the σ of a line of `new_classes_553.tsv`. The EA check against that line is available. |
-| **NEW, found in this study** (status `listed_new`) | σ is absent from the index and equal to a line of `../new_classes_extra.tsv` (theory experiment) or `../search_b52/new_classes_trial_773.tsv` (B6 = 52 search trial). The EA check against that line is available. |
-| **Not in the catalog index, but PUBLIC** (status `raw_public`) | σ is absent from the index and equal to a line of `../crosscheck_raw/raw_only_546.tsv`: one of the 546 classes in the authors' public raw file of May 2025 that are not in their published list. |
-| **NEW: sigma absent from the index and from the census list** | A rigorous CCZ-inequivalence certificate against all indexed sources. σ is a CCZ invariant of quadratic APN functions (Canteaut–Couvreur–Perrin; EA = CCZ for quadratic APN by Yoshiara). |
-| **APN, not quadratic** | The σ oracle needs a quadratic function. The page gives only the basic properties. |
-| **NOT APN** | The differential uniformity is larger than 2. |
+| Not APN | Independent full DDT found differential uniformity greater than two |
+| APN, not quadratic | APN verified; quadratic sigma comparison does not apply |
+| Reference invariant match | Candidate needs an exact comparison; sigma agreement is not an equivalence proof |
+| Study invariant match | Same limitation for a historical candidate; its absence is relative to the specified public reference |
+| Identical public supplement | Literal LUT equality with the independently verified supplemental function |
+| Inequivalent to documented quadratic corpus | Different signatures from all specified quadratic references; literature-wide novelty unresolved |
+| Inequivalent to all APN power functions | Different signatures from all four Gold exponents, using Yoshiara 2016 |
+| Equivalent with verified witness | Invertible affine ambient graph map independently checked on all 256 points; EA additionally preserves the output subspace |
+| Inequivalent by exhaustive solver | Correct native complete solver exhausted its search; computational result, not an independently serialized negative proof tree |
+| Inconclusive budget | No equivalence/inequivalence conclusion |
 
-Novelty is relative to the indexed sources. See `../reports/verification/REPORT.md` for
-the index integrity check.
+CCZ remains the correct relation for an arbitrary nonquadratic target. EA
+inequivalence alone does not settle general CCZ equivalence. All finite checks
+are computation, not proof-assistant formalization. The complete announced 2026
+switching dataset and any unrepresented non-power constructions remain
+comparison gaps; see [AUDIT.md](../discovery/AUDIT.md).
 
-The exact EA test runs in a background task. One test runs at a time. The page asks for
-its state every 5 seconds. The server finds the target function again from the input; it
-does not use a target from the client.
+## API and verification
 
-## HTTP interface
+`POST /api/classify` accepts plain function text. `POST /api/ea` checks the
+server-selected matched target. `POST /api/compare` accepts JSON fields
+`candidate`, `target`, `relation`, `timeout_seconds` and `max_nodes` (server caps:
+600 seconds and ten million nodes). `GET /api/ea/ID` polls a job;
+`GET /api/ea/ID/certificate` downloads its evidence. `GET /api/health` includes
+reference provenance. `GET /api/candidates?limit=50&offset=0&additional=false`
+paginates stored candidates. `GET /api/relationships` returns the latest 200
+recorded pair checks; `GET /api/classification` exposes the frozen snapshot
+classification report when present. An absent edge is unresolved, never inferred inequivalence.
 
-| Route | Body | Result |
-|---|---|---|
-| `GET /` | | The page |
-| `POST /api/classify` | the function as text | JSON; status 400 for a parse error |
-| `POST /api/ea` | the function as text | JSON job (`id`, `state`) |
-| `GET /api/ea/<id>` | | JSON job: `state` (queued, running, done, failed), `equivalent`, `message` |
-| `GET /api/health` | | JSON: index rows, census size |
+```sh
+make -C census/quadratic_apn8/web test
+# Recheck the persisted TOML positive witness/invariant certificate without VBF:
+julia --startup-file=no \
+  census/quadratic_apn8/discovery/verify_certificate.jl comparison.toml
+```
 
-Example: `curl -s -X POST --data-binary 'x^3' http://127.0.0.1:8088/api/classify`
-
-## Tests
-
-`make test` includes `server.jl` and calls `APN8Web.handle` with hand-made
-`HTTP.Request` values. It checks: a beierle2025_n8 member gives KNOWN; a census line (as
-coefficients and as a LUT) gives the census verdict and the correct line; Gold x^3 (as a
-polynomial, a LUT and with modulus 0x11D) gives KNOWN; a random permutation gives NOT APN;
-Kasami x^57 gives "APN, not quadratic"; malformed inputs give status 400 with a message.
-It also compares the coefficient decoder with `QK.lut` from `../qknuth.jl`. The verdict
-"NEW" (absent from the index and the census list) has no test input, because no such
-function is known.
+`discovery/classify.jl` resolves equal-sigma candidate buckets incrementally,
+recording proven components and unresolved pairs. Complete canonical
+classification beyond that finite candidate set, complete literature coverage, an
+independent negative-search certificate and proof-assistant formalization remain
+missing. The interface exposes existing evidence; it does not fill those gaps with a
+novelty label. Publication CSV/LaTeX tables and SVG/PDF figures are generated by
+`discovery/report.py`, rather than screen captures.

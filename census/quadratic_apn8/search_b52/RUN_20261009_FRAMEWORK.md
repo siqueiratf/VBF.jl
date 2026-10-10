@@ -1,5 +1,11 @@
 # B6 = 52 search: run on the Framework desktop (2026-10-08/09)
 
+Scientific scope update: the APN/signature results were reconciled against the
+source-rebuilt baseline in the [current audit](../discovery/AUDIT.md). The
+capture–recapture calculations below are historical exploratory estimates;
+uniform sampling and independence are not established. They do not certify a
+global class count, coverage fraction or exhaustiveness.
+
 **Input**: `results/20261009-search-b52-results/results/desk1/` (copied by the user into the
 main checkout; analysed in a copy at `results/desk1_framework/`, ignored by git).
 **Machine**: Framework desktop, 30 threads (`mode=v5`).

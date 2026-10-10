@@ -9,6 +9,42 @@
     expected = reduce(vcat, grouped; init = typeof(F)[])
     @test !isempty(expected)
 
+    @testset "persisted candidate cursor resumes exactly once" begin
+        direction, combination = Ref(1), Ref(big(1))
+        visits = Tuple{Int,BigInt}[]
+        collected = typeof(F)[]
+        checkpoint = function (event,value)
+            if event === :candidate_complete
+                push!(visits,(value.direction,BigInt(value.combination)))
+                value.apn && push!(collected,value.candidate)
+            end
+            if event in (:candidate_complete,:direction_complete)
+                direction[],combination[] = value.next_direction,BigInt(value.next_combination)
+            end
+        end
+        for _ in 1:(length(expected)+20)
+            r = switching_neighbors_bounded(F;max_evaluations=1,timeout_seconds=Inf,
+                start_direction=direction[],start_combination=combination[],checkpoint)
+            r isa Exhausted && break
+        end
+        @test collected == expected
+        @test length(visits) == length(unique(visits)) == length(expected)
+        @test direction[] == 16 && combination[] == 1
+        @test isempty(search_solutions(switching_neighbors_bounded(F;
+            start_direction=16,timeout_seconds=Inf)))
+        @test_throws ArgumentError switching_neighbors_bounded(F;start_direction=0)
+        @test_throws ArgumentError switching_neighbors_bounded(F;start_direction=17)
+        @test_throws ArgumentError switching_neighbors_bounded(F;start_combination=0)
+        @test_throws ArgumentError switching_neighbors_bounded(F;start_direction=16,start_combination=2)
+    end
+
+    @testset "cooperative external stop" begin
+        stopped=switching_neighbors_bounded(F;stop_requested=()->true)
+        @test stopped isa BudgetHit
+        @test stopped.where_it_stopped.reason==:external
+        @test nodes_visited(stopped)==0
+    end
+
     @testset "one equation per affine two-flat preserves the full system" begin
         using Random
         rng = Xoshiro(82026)
