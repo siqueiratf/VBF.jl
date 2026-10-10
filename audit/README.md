@@ -2,8 +2,8 @@
 
 The August 2026 YAML files are a frozen investigation. Their current dispositions
 are in [resolutions.toml](resolutions.toml), covering all 36 IDs without replacing
-historical observations. The application and follow-up repaired 27 findings, recognized one
-existing fix, and partially addressed eight research or reproduction boundaries.
+historical observations. The application and follow-ups repaired 29 findings, recognized one
+existing fix, and partially addressed six research or reproduction boundaries.
 Each entry records its implemented change, guarantee, evidence path and remaining work.
 
 A fixed evidence defect does not prove an entire publication. Full finite checks
@@ -18,7 +18,7 @@ be needed against nonquadratic representatives of known classes.
 Seven more findings now have scoped implementation/evidence fixes: F014, F020,
 F023, F024, F025, F050 and F064. F063 and F071 gained additional finite evidence
 while their literature/equivalence requirements remain unresolved. The eight
-partial findings are F004, F032, F040, F051, F052, F063, F070 and F071.
+partial findings at that stage were F004, F032, F040, F051, F052, F063, F070 and F071.
 
 The [three-reviewer feasibility assessment](partial_feasibility.md) evaluates
 these eight requirements without changing their statuses. It identifies a
@@ -41,6 +41,50 @@ and supported fixed-space seeding; and the complete cited n=8 inverse-swap-famil
 comparison. Tuple classes and mapping counts are not APN equivalence-class counts.
 The n=7 Yu source traversal is exhausted as an invariant-bucket computation;
 its attempted exact EA classification remains budget-limited.
+
+## Implemented equivalence, n=30 certification and power coverage
+
+The next three-agent round closed F032 and the finite-instance scope of F070.
+The current partial findings are F004, F040, F051, F052, F063 and F071.
+Execution and independent-check bindings are in [implementation_runs.toml](implementation_runs.toml).
+
+- `VBF.binary_code_equivalence` accepts arbitrary Boolean generator matrices.
+  It searches invertible maps of column multisets, preserving duplicates and
+  zero columns. It reuses Kaleyski–Sunde's partial-isomorphism machinery and
+  existing wide GF(2) rank APIs. Positive coordinate permutations are independently
+  replayed; only exhaustion or an exact separating invariant proves a negative.
+  Resource limits return `BudgetHit`. The complete core suite passed 103 items /
+  147,156 assertions; all 4,489 pairs of the 67 length-four codes independently
+  agree with brute-force codeword/coordinate-permutation classification.
+- The specific Bracken n=30 instance now has complete 49,981-case derivative
+  and component evidence. Every derivative/polar rank is 28, every augmented
+  collision rank is 29. Verified field/coset orders and normalization identities
+  cover every original nonzero difference/output mask. An independent Python
+  arithmetic implementation recomputed every row. This certifies DU4, permutation
+  status and nontrivial Walsh support inclusion `{0, ±65536}`; it does not prove
+  an infinite family or APN novelty. The paper suite passed 9,090 assertions.
+- All 32 audited paper proposals are excluded from every APN power function
+  using complete Gold-domain coverage and Yoshiara's theorem. All 583 current
+  catalog comparisons are conclusive: 31 proposals are separated and one is
+  represented. Nine prior/proposal positive certificates remain replayed.
+  Yu's s₁/s₂ are separated from all 18 current n=9 references and all APN power
+  functions. Unlisted non-power constructions and literature completeness
+  remain unresolved, so F040/F063 stay partial. Tests passed 172 and 78 assertions.
+
+Gold and matched power controls bind actual formulas, fields, LUTs and
+invariants; theorem evidence binds the actual candidate. Changed references,
+invariant collisions, missing sources and budget hits fail closed. The source-
+rebuilt 3,809,037-signature n=8 baseline was reused, not rebuilt; its sole proposal
+already has a positive EA witness to known corpus member 12658. The reproduction
+runner suite and docs build also passed; no catalog data changed.
+
+```sh
+bin/vbfrepro run Bracken_201205 --target orbit_certificate \
+  --param full_search=true --param save_results=true --param timeout_seconds=120 \
+  --timeout-seconds 180
+make -C packages/VBFRepro/analysis review_catalog_proposals
+bin/vbfrepro run Yu_202012 --target table4 --timeout-seconds 120
+```
 
 ```sh
 bin/vbfrepro run Taniguchi_202501 --target theorem3_2 --param n=6 \

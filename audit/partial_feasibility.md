@@ -1,5 +1,12 @@
 # Feasibility of the eight remaining partial findings
 
+Implementation update: the subsequent three-agent round closed F032's missing
+general API and F070's finite n=30 scope, and strengthened F040/F063. The new code
+API uses column-multiset basis-image search with existing Kaleyski–Sunde
+partial-isomorphism machinery instead of the initial factorial fallback proposal.
+See [implementation bindings](implementation_runs.toml). The review below is
+retained as the assessment made before those implementations and complete runs.
+
 Reviewed 2026-10-10 against `ed07cc5`, with three read-only reviewers: paper
 source/reproductions, core equivalence, and reference/proposal coverage. This is
 a work-scope assessment, not completion of the outstanding implementations.

@@ -47,12 +47,43 @@ class count. The command exposes `equivalence_timeout_seconds` and
 The saved report includes scope, counts and returned LUTs. Historical R8 below
 records the former substituted implementation and is superseded by this note.
 
-The n=9 table formulas/property checks are evidence about those explicit
-functions. Catalog absence does not establish literature novelty or justify
-adding a new class. Full source coverage and exact comparisons for matching
-invariant buckets, including nonquadratic reference functions using full CCZ
-methods, remain required. The older review sections below are historical
-context; they do not upgrade these scoped claims.
+`table4.jl` verifies the eight explicit n=9 publication representatives are
+quadratic APNs and almost bent. For s₁ and s₂ it compares exact ortho-derivative
+invariant tuples with **all 12 quadratic APN entries in the current catalog
+functions table**, and with all six admissible Gold indices
+`k = 1, 2, 4, 5, 7, 8`. All these tuples differ. Matching invariant tuples for
+the other representatives remain equivalence queries, rather than certificates.
+
+[Yoshiara (2016), Theorem 2](https://link.springer.com/article/10.1007/s10801-016-0680-z)
+states that, for n≥3, a quadratic APN is CCZ-equivalent to an APN power function
+if and only if it is EA-equivalent to a Gold function. Complete Gold coverage
+therefore proves that **s₁ and s₂ are CCZ-inequivalent to every APN power
+function**, including power constructions outside the catalog. This covers the
+six current nonquadratic n=9 reference functions: each is independently
+identified as a literal power map by complete LUT equality to a VBF constructor.
+Degree differences alone are never used to separate classes.
+
+The result is separation from all **18 explicitly enumerated current catalog
+APN entries**, plus the theorem's entire power-function scope. It does not
+establish novelty with respect to unlisted non-power constructions, the entire
+literature, or all n=9 APN classes. No n=9 bulk corpus is present. Incomplete
+Gold coverage, invariant collisions and unavailable references remain
+inconclusive. Gold references are replayed from their exact field parameters,
+LUTs, hashes and invariant tuples before licensing an exclusion.
+
+```sh
+make -C packages/VBFRepro/papers/2020/Yu_202012 table4 save_results=true
+```
+
+This writes `results/table4_evidence.toml` with candidate/reference LUTs and
+hashes, the catalog SHA-256, Gold parameters and exact invariants, theorem
+hypotheses, per-target outcomes and source identities. It reads the catalog
+directly and does not require or regenerate its signature index. The shared
+consumer helper is `analysis/scripts/apn_power_evidence.jl` under VBFRepro;
+it uses VBF's field constructors and exact `sigma_key`, while VBFSearch's
+independent discovery verifier remains specialized to n=8. The older review
+sections below are historical context and are superseded by these scoped
+claims.
 
 ## Historical issue catalog
 

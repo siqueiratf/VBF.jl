@@ -1,31 +1,111 @@
 # Bracken, Tan & Tan (2012) — Binomial differentially 4 uniform permutations with high nonlinearity
 
-## Scoped feasibility review (2026-10-10)
+## Finite n30 certification (2026-10-10)
 
-**F070: Partial.** A candidate exact algebraic reduction covers the specific n=30 instance with **49,981 normalized coefficients**, instead of over one billion derivative parameters. A 256-coefficient probe found derivative/polar rank 28 and every collision right-hand side outside the image. Full closure is plausible after proving both normalization identities, verifying field/coset orders, independent small-field controls and complete reduced enumeration. The probe does not certify the full instance. This paper concerns DU4 permutations, not APN novelty; Walsh support inclusion and a full spectrum distribution are distinct requirements.
+`orbit_certificate.jl` implements a finite coefficient-orbit certificate for
+the literal Theorem 1.1 instance `(k,s)=(10,2)`, modulus 1073741907, alpha 2.
+It verifies field irreducibility, alpha's order, subgroup orders and the agreement
+of the derivative/component coefficient cosets. The full finite certificate completed
+all **49,981** distinct coefficients: every derivative and polar rank was 28,
+every augmented derivative rank was 29, and traversal returned to its initial
+coefficient. It therefore certifies DU4, permutation status and nontrivial Walsh
+support contained in `{0, ±65536}` for this instance. The source's weaker
+inclusion `{0, ±32768, ±65536}` follows immediately.
 
-This read-only review did not rerun the full paper test suite or establish new
-catalog gaps. See the [eight-finding work plan](../../../../../audit/partial_feasibility.md)
-and [bounded probe evidence](../../../../../audit/partial_feasibility_probes.toml)
-for commands, hashes, acceptance criteria and mathematical limits. This current
-assessment supersedes conflicting historical scope descriptions below.
+The fresh single-thread Julia 1.13.1 run took 5.694 seconds on this machine.
+The complete paper suite passed **9,090 assertions**, including 8,901 independent
+finite-orbit controls. The [complete run manifest](../../../../../data/repro/runs/Bracken_201205/20261010T174551-4199ae95-92c7-4f8c-bbc4-899b445362eb/run.toml)
+and [certificate](results/orbit-20261010T174553-d1404e0e-d140-4efd-a3d5-61fd7e20b5b5/certificate.toml)
+bind the result to its inputs and implementation. The per-case CSV SHA256 is
+`2c20b202840f3265a812451b75b5748b66b99fbfe96f66c41bf3668df1759fdb`.
 
-Current audit application (2026-10-10): F070: the existing n=30 streaming/rank checks were revalidated as bounded evidence. Descriptions now say sampled computational evidence, not sampled proof of global differential uniformity. The full injectivity scan, all nonzero derivative rows and n=30 Walsh spectrum remain unverified locally.
+A separate Python verifier using independent polynomial arithmetic and Boolean
+elimination replayed **every one of the 49,981 CSV rows**: derivative rank 28,
+augmented rank 29 and polar rank 28 all matched. Its polar masks were constructed
+from literal `Q(x+y)+Q(x)+Q(y)` evaluations. It imports no VBF routines; see the
+[independent verifier](../../../../../data/repro/audit/independent_controls/n30_full.py)
+and its run/hash bindings in the audit evidence.
+
+The default checks 256 cases and
+reports global conclusions as **inconclusive**. The explicit complete run is:
+
+```sh
+bin/vbfrepro run Bracken_201205 --target orbit_certificate \
+  --param full_search=true --param timeout_seconds=120 \
+  --param save_results=true --timeout-seconds 180
+```
+
+The runner records execution/source/input metadata under `data/repro/runs/`.
+The printed paper-local `results/orbit-.../` directory contains
+`coefficients.csv` (one row per normalized coefficient, three exact ranks), and
+`certificate.toml` (coverage, coset parameters, budgets, source hashes, CSV hash).
+Only a complete walk of all 49,981 distinct coefficients returning to its initial
+value may report `certified`. Interrupted walks return `inconclusive`.
+
+The resulting claim concerns this finite DU4 permutation instance; it proves
+neither an infinite parameter family nor CCZ novelty. Walsh **support inclusion**
+for nonzero output masks is certified using polar ranks; full signed-frequency
+histograms are not computed. This current scope supersedes historical sampled
+or brute-force-only descriptions below. Fresh run evidence is recorded in
+[`audit/followup_runs.toml`](../../../../../audit/followup_runs.toml).
+
+### Why 49,981 cases cover the complete instance
+
+Write `N=2^30-1`, `e1=5`, `e2=2^20+2^12`, and
+`F(x)=alpha*x^e1+alpha^1024*x^e2`. For every nonzero difference `a`, replacing
+`x` by `a*y` and dividing by the nonzero scalar `alpha*a^5` turns its polarized
+derivative into
+
+```
+L_c(y) = y^4+y+c*(y^(2^20)+y^(2^12)),
+c = alpha^1023 * a^(e2-e1).
+```
+
+The multiplicative group is cyclic of verified order N. Its power image has
+order `N/gcd(e2-e1,N)=49981`, because that gcd is 21483. Thus the coefficient
+coset is exactly `alpha^1023 * <alpha^21483>`, and each coefficient covers 21483
+original differences. Rank 28 of `L_c` gives a two-dimensional kernel: every
+nonempty derivative fiber has size 4. To test injectivity, note that
+`F(a*y+a)+F(a*y)=0` is equivalent to `L_c(y)=1+c`; augmented rank 29 makes that
+equation insoluble. Checking this for every coefficient excludes every collision
+over the original 2^30-point domain without a bitmap scan.
+
+For every nonzero component mask `b`, let `u=(b*alpha)^(-1/5)`, which exists
+uniquely since `gcd(5,N)=1`. Invertible input scaling gives
+
+```
+Tr(b*F(u*y)) = Tr(y^5+c*y^e2),
+c = alpha^(1024-e2/5) * b^(1-e2/5),
+```
+
+where division by 5 denotes its modular inverse 644245094 modulo N. This power
+image has the same gcd 21483, and its base exponent 858783948 is congruent to 1023
+modulo 21483. Therefore it is exactly the same 49,981-element coset.
+
+For a Boolean quadratic form q with polar rank r, squaring its Walsh sum and
+using character orthogonality gives `W_q(a)^2` equal to 0 or `2^(2n-r)`.
+Consequently, completed polar ranks in `{28,30}` certify the source inclusion
+`{0, ±2^15, ±2^16}`. If every rank is 28, the support inclusion strengthens to
+`{0, ±2^16}`. Neither inference requires a full LAT or claims signed-frequency
+counts. The trivial output mask b=0 is excluded, as in the nontrivial Walsh
+spectrum convention used by the reproduction.
+
+Tests compare coefficient coverage to every original difference/component in
+dimensions 3, 6, 15; compare derivative and component normalization against literal
+evaluations; use independent dense Boolean elimination; and compute literal DDT
+and Walsh sums exhaustively in dimensions 3 and 6. Reducible moduli, nonprimitive
+alpha, altered coefficients, excluded normalization cases, exhausted budgets,
+and a collision-positive coefficient outside the source coset are controls.
 
 
 - **Citation:** C. Bracken, C.H. Tan, Y. Tan, "Binomial differentially 4 uniform permutations with
   high nonlinearity", *Finite Fields Appl.* 18:537–546, 2012.
 - **Reproduction path:** `packages/VBFRepro/papers/2012/Bracken_201205/`
 - **Paper source:** `input/Bracken et al. - 2012 - Binomial differentially 4 uniform permutations with high nonlinearity.tex`
-- **Verdict:** **Good** (was *Partial*; all 11 reproduction issues resolved on 2026-08-17).
-  The grid now covers 9 of 12 feasible parameter instances on the default test path and all 12
-  under `full_search = true`; Lemma 3.1 is checked as a *spectrum* and Theorem 1.1 as a Walsh
-  *value set*, not as a maximum and a bound; Table 1, the Section 5 CCZ remarks and Problem 5.1
-  are implemented; and the title claim is exhibited at its smallest genuine instance
-  (`k=10, s=2`, n=30) as a **sampled computational evidence** of the differential half plus a budgeted prefix
-  scan of the permutation half. What remains transcribed is named as such: the Walsh spectrum
-  at n=30, the Section 1 general family `G`, and the t=2 CCZ-inequivalence the paper itself
-  only "expects".
+- **Current verdict:** finite Theorem 1.1 instance certified by complete reduced
+  enumeration and independent controls; broader family/equivalence claims remain scoped.
+  The historical issue catalog and earlier measurements below are retained as
+  dated context and superseded by the finite certification above where they differ.
 
 ---
 
@@ -432,16 +512,16 @@ Defects introduced in our implementation. **All 11 are `[RESOLVED]`** as of 2026
 | **Lemma 4.1** (≤ `2^d` roots) | `section4.jl` `lemma4_1_check` | 8 seeded random trials over `n ∈ {6,8,9}`, `d ≤ 3`; all inside the bound |
 | **Lemma 4.2** (Walsh bound) | `section4.jl` `SECTION4_CASES` | asserted on the `k/t` odd rows it covers; bounds 4, 16, 256, 256, 1024 all **attained** |
 | **Theorem 1.1** Walsh *set* `⊆ {0,±2^{n/2},±2^{(n+2)/2}}` | `section4.jl`, `section5.jl` | n=6: `{0,±16} ⊆ {0,±8,±16}` |
-| **Theorem 1.1** at its smallest genuine instance, n=30 | `theorem1_1.jl` | α primitive verified; `dim ker B_a = t = 2` on 2000 random `a` (**sampled computational evidence** of `Δ_F = 4`, spectrum `{0,4}`); injective on a budgeted prefix |
+| **Theorem 1.1**, n=30 | `orbit_certificate.jl`, `theorem1_1.jl` | Complete finite coefficient certificate covers all differences and nonzero components; see current evidence above |
 | **Table 1** (all 4 prior rows + this paper's) | `section5.jl` | every row recomputed: perm, du = 4, degree, linearity, nonlinearity, Walsh set |
 | **Section 5** CCZ separation from the inverse | `section5.jl` | `Walsh-set(inverse@6) ⊄ {0,±8,±16}` while `Walsh-set(F@6) ⊆ {0,±8,±16}` |
 | **Problem 5.1** (open problem) | `problem5_1.jl` | permutation half **refuted** at t=1 over all 993 `(v,w)` and six primitive `u`; differential half supported on every sample |
 | Degeneracy caveat for the t=2 headline | `helpers.jl` `is_degenerate`, `section5.jl` | `e₁ ≡ e₂ ≡ 17 (mod 63)`, and core `are_linear_equivalent(F(2,4), x⁵) = true` |
 | **F ≡ α · `bcp_apn`** for t = 1 | `test/test_section2.jl` | elementwise LUT equality for `(5,1), (5,4), (4,5), (2,1)`; `bcp_apn` throws on `(4,8)`, `(5,10)` |
 
-Still **not** reproduced, and labelled as such in `report.jl`: the Walsh spectrum at n = 30
-(a `2^60`-operation LAT scan), the Section 1 general family `G` (smallest instance also
-n = 30), and the t = 2 CCZ-inequivalence to Gold/Kasami — which the paper itself states only
+Still **not** reproduced: full signed Walsh-frequency histograms at n=30, the
+Section 1 general family `G` beyond the literal finite instance, and the t=2
+CCZ-inequivalence to Gold/Kasami — which the paper itself states only
 as "we expect the case of t=2 to be no different".
 
 ---

@@ -1,0 +1,158 @@
+schema_version = 1
+date = "2026-10-10"
+implementation_base = "2496509"
+julia = "1.13.1"
+scope = "Scoped implementation closure and independently replayed finite results; not global APN novelty"
+artifact_policy = "Raw generated results and logs remain ignored; hashes bind their local contents. Source, tests and this evidence index are tracked."
+catalog_mutated = false
+catalog_sha256 = "9e15275c35fdab7f210d1c7e3e925dfff67c7b119695e20bafca52bb2b0d29a0"
+
+[[checks]]
+id = "F032_independent_codeword_oracle"
+command = "JULIA_DEPOT_PATH=/tmp/vbf-polish-depot:$HOME/.julia julia --startup-file=no --project=. data/repro/audit/independent_controls/code_oracle_check.jl"
+generator_command = "python3 data/repro/audit/independent_controls/code_oracle.py > data/repro/audit/independent_controls/code_oracle.json"
+exit_code = 0
+assertions = 14261
+codes = 67
+coordinate_permutations = 24
+pairs = 4489
+positive = 397
+negative = 4092
+orbits = 16
+scope = "Every binary linear code of length four, independently represented as full codeword sets; every ordered pair compared against all coordinate permutations. Positive witnesses replayed against full codeword sets."
+artifacts = [{ "path" = "data/repro/audit/independent_controls/code_oracle.py", "sha256" = "18dcbfd74bb0d94aad77c3a97771192ef800860a26bb05f79ed4b74d0fb2e6cc" }, { "path" = "data/repro/audit/independent_controls/code_oracle.json", "sha256" = "c358aaa5c0eb68b9e199c6fb5bb09c38a0d86ff59c9ce3aae4c7311de97337ba" }, { "path" = "data/repro/audit/independent_controls/code_oracle_check.jl", "sha256" = "e3ebcadb95fa9672e018a703a18167eb3f733fddfaed4600d1dbbcec5c175e7a" }, { "path" = "data/repro/audit/independent_controls/code_oracle_check.log", "sha256" = "f58e7b623769f814213e7cf740c304ee97867bb30e4293022d956c26992025e2" }]
+
+[[checks]]
+id = "F070_complete_finite_n30"
+command = "JULIA_DEPOT_PATH=/tmp/vbf-polish-depot:$HOME/.julia bin/vbfrepro run Bracken_201205 --target orbit_certificate --param full_search=true --param save_results=true --param timeout_seconds=120 --timeout-seconds 180"
+exit_code = 0
+status = "certified"
+n = 30
+coefficients_checked = 49981
+derivative_rank = 28
+augmented_rank = 29
+polar_rank = 28
+elapsed_seconds = 5.337769876
+original_differences = 1073741823
+multiplicity_per_coefficient = 21483
+guarantee = "Specified finite n30 instance is a DU4 permutation; nonzero-output Walsh support is contained in {0, +/-65536}. Full coverage follows from the checked coefficient-orbit reduction. No signed-frequency histogram, infinite-family proof or APN novelty claim."
+artifacts = [{ "path" = "data/repro/runs/Bracken_201205/20261010T175138-dc203bd1-64f8-4a86-a56f-5608c388f7e4/run.toml", "sha256" = "0b44f9995e2a96ec069d3bd0b9d94150757cc7c3be310667924cc98a763cf115" }, { "path" = "packages/VBFRepro/papers/2012/Bracken_201205/results/orbit-20261010T175140-6e89282d-4f62-4258-a712-1aa1e07ad902/certificate.toml", "sha256" = "42a883a715680f312bef4a5f22e33ae6489cc3fa8071f0f5cb71e128e5741972" }, { "path" = "packages/VBFRepro/papers/2012/Bracken_201205/results/orbit-20261010T175140-6e89282d-4f62-4258-a712-1aa1e07ad902/coefficients.csv", "sha256" = "2c20b202840f3265a812451b75b5748b66b99fbfe96f66c41bf3668df1759fdb" }, { "path" = "data/repro/audit/implementation/n30_final.log", "sha256" = "bae2f0f94e5a408150373a0a9266664afc59efcd4e9bf7535f0f3f3fecda7189" }]
+
+[[checks]]
+id = "F070_independent_complete_rank_replay"
+command = "python3 data/repro/audit/independent_controls/n30_full.py packages/VBFRepro/papers/2012/Bracken_201205/results/orbit-20261010T174345-5422267e-b1f4-4df2-a15d-84af337442be/coefficients.csv > data/repro/audit/independent_controls/n30_full.jsonl"
+exit_code = 0
+coefficients_checked = 49981
+elapsed_seconds = 8.381669649970718
+coefficients_csv_sha256 = "2c20b202840f3265a812451b75b5748b66b99fbfe96f66c41bf3668df1759fdb"
+scope = "Python standard-library polynomial field arithmetic and rank computation; every CSV row. Polar masks derived from literal normalized polynomials. Direct derivative/component normalization controls, irreducibility, primitive order and complete coset traversal also checked. The earlier CSV path has byte-identical content to the final run."
+artifacts = [{ "path" = "data/repro/audit/independent_controls/n30.py", "sha256" = "a2a7ad90a44d5621154ecd6f3190e4da36928e66ff10eeddf18a5d947bf8e435" }, { "path" = "data/repro/audit/independent_controls/n30.json", "sha256" = "eac7324149c5b20a353021de861b3e8b9504a1fa5f1575b2b901c9c7dd7b94f6" }, { "path" = "data/repro/audit/independent_controls/n30_full.py", "sha256" = "ecc17299ca00665ba46bc1c0704d01eb4dadc101aef2cb15db8631f9651e5e5e" }, { "path" = "data/repro/audit/independent_controls/n30_full.jsonl", "sha256" = "f621adc41fbe0a953d809de91131fd282854d48b8865afc62047bcff6089cb71" }]
+
+[[checks]]
+id = "F070_bounded_run"
+exit_code = 0
+artifacts = [{ "path" = "data/repro/runs/Bracken_201205/20261010T174552-d733936b-3a8e-41e8-ac5a-cf76e06ddcb5/run.toml", "sha256" = "ec6449e3dbbe4396195c6dc9cf0b323cfc6c76b49682792820714d1d1d4a2b12" }]
+execution_metadata = "The bound runner manifest records command, parameters, status, source/input hashes and stdout/stderr logs."
+status = "inconclusive"
+global_properties_asserted = false
+
+[[checks]]
+id = "Bracken_full_paper_tests"
+exit_code = 0
+artifacts = [{ "path" = "data/repro/runs/Bracken_201205/20261010T174615-72bfa7cf-2a9a-4930-92a2-935cd1e590d5/run.toml", "sha256" = "7575073161c4ed793ba9f67b040faf95de3682ff6a0626d6dd034992a73b3394" }]
+execution_metadata = "The bound runner manifest records command, parameters, status, source/input hashes and stdout/stderr logs."
+assertions = 9090
+
+[[checks]]
+id = "Bracken_default_report"
+exit_code = 0
+artifacts = [{ "path" = "data/repro/runs/Bracken_201205/20261010T174615-f1ffd7a0-ef24-4946-a533-6067fdcba360/run.toml", "sha256" = "2d4cdb2e3d3cba53db379c564343e164733a41071b405fc13e6c750b75467892" }]
+execution_metadata = "The bound runner manifest records command, parameters, status, source/input hashes and stdout/stderr logs."
+default_n30_status = "inconclusive"
+
+[[checks]]
+id = "VBF_full_tests"
+command = "JULIA_DEPOT_PATH=/tmp/vbf-polish-depot:$HOME/.julia RETESTITEMS_NWORKERS=4 julia --startup-file=no --project=. -e 'using Pkg; Pkg.test(\"VBF\")'"
+exit_code = 0
+artifacts = [{ "path" = "data/repro/audit/implementation/vbf_tests.log", "sha256" = "4eb59bfb4be34ed48d1e67b60d75a9ed6623addd7efc4aeed5333826039f24a2" }]
+test_items = 103
+assertions = 147156
+scope = "Full core suite. Final budget-accounting changes were additionally checked by the 414-assertion focused unit suite and the 14261-assertion independent codeword oracle."
+
+[[checks]]
+id = "VBFRepro_tests"
+command = "JULIA_DEPOT_PATH=/tmp/vbf-polish-depot:$HOME/.julia julia --startup-file=no --project=. -e 'using Pkg; Pkg.test(\"VBFRepro\")'"
+exit_code = 0
+artifacts = [{ "path" = "data/repro/audit/implementation/vbfrepro_tests.log", "sha256" = "071e1274897ec290500a9fb3a51ed7c8842c375ec8b34cee2add939ff6d2df67" }]
+assertions = 100
+
+[[checks]]
+id = "Documenter_build"
+command = "JULIA_DEPOT_PATH=/tmp/vbf-polish-depot:$HOME/.julia julia --startup-file=no --project=docs docs/make.jl"
+exit_code = 0
+artifacts = [{ "path" = "data/repro/audit/implementation/docs_build.log", "sha256" = "197ffd41c8556e51bb2a7827e08ce9750e95e3c9a2dec8235a0b5aa02eff45cd" }]
+
+[[checks]]
+id = "F063_finite_catalog_and_every_APN_power"
+command = "JULIA_DEPOT_PATH=/tmp/vbf-polish-depot:$HOME/.julia make -C packages/VBFRepro/analysis review_catalog_proposals"
+exit_code = 0
+tool_session = 88402
+stdout_location = "tool transcript; no redirected raw log file"
+proposal_count = 32
+apn_power_excluded = 32
+finite_catalog_pair_checks = 583
+finite_catalog_separated = 31
+finite_catalog_represented = 1
+terminal_pair_status_counts = { "ccz_inequivalent_by_yoshiara_power_theorem" = 154, "ccz_inequivalent_by_exact_quadratic_invariant" = 425, "ea_equivalent_witness_replayed" = 1, "exhaustive_ccz_inequivalent" = 2, "ccz_inequivalent_by_exact_walsh_spectrum" = 1 }
+all_bulk_corpora_compared = false
+literature_novelty_verified = false
+guarantee = "All 32 audited paper proposals are quadratic APN and excluded from every APN power function. All 583 current functions-table pair comparisons are terminal. Preserved prior/proposal positive witnesses prevent treating 31 catalog-separated proposals as 31 novel classes."
+artifacts = [{ "path" = "data/repro/audit/catalog_proposals.toml", "sha256" = "9563fde87a728964b3b632438860a405dbe3a1b30a148b28bc2299fa30d1bac9" }]
+gold_domains = { "6" = [1, 5], "8" = [1, 3, 5, 7], "9" = [1, 2, 4, 5, 7, 8], "10" = [1, 3, 7, 9], "11" = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "12" = [1, 5, 7, 11] }
+
+[[checks]]
+id = "F040_Table4_current_catalog_and_every_APN_power"
+command = "JULIA_DEPOT_PATH=/tmp/vbf-polish-depot:$HOME/.julia make -C packages/VBFRepro/papers/2020/Yu_202012 table4 save_results=true"
+exit_code = 0
+tool_session = 74995
+stdout_location = "tool transcript; no redirected raw log file"
+reference_count = 18
+guarantee = "s1 and s2 excluded from all 18 current n9 functions-table references and every APN power function. Controls retained. No completeness claim for non-power constructions or n9 literature."
+literature_novelty_verified = false
+artifacts = [{ "path" = "packages/VBFRepro/papers/2020/Yu_202012/results/table4_evidence.toml", "sha256" = "6fd6d072d24259f40bc4b5d942e3dfebd548addc2b1eb8bae1f0a61727a24ff6" }]
+
+[[checks]]
+id = "F063_targeted_tests"
+command = "JULIA_DEPOT_PATH=/tmp/vbf-polish-depot:$HOME/.julia julia --startup-file=no --project=. packages/VBFRepro/analysis/test/test_catalog_proposals.jl"
+exit_code = 0
+assertions = 172
+tool_session = 12625
+stdout_location = "tool transcript; no redirected raw log file"
+
+[[checks]]
+id = "F040_Table4_targeted_tests"
+command = "JULIA_DEPOT_PATH=/tmp/vbf-polish-depot:$HOME/.julia julia --startup-file=no --project=. packages/VBFRepro/papers/2020/Yu_202012/test/test_table4.jl"
+exit_code = 0
+assertions = 78
+tool_session = 7059
+stdout_location = "tool transcript; no redirected raw log file"
+
+[[checks]]
+id = "F063_independent_positive_witness_replay"
+exit_code = 0
+positive_certificates = 9
+graph_points = 7488
+scope = "Independent Python standard-library replay of ambient invertibility, EA block ranks and every graph point; candidate/reference UInt16LE LUT digests checked. Whole report-file digest was not recorded during that execution; report later refreshed. This evidence binds per-LUT proof contents rather than claiming replay of the final whole-file digest."
+artifacts = [{ "path" = "data/repro/audit/independent_controls/f063_nine_witness_replay.py", "sha256" = "225021a0e16fd3a07a805e266ef48b9420d0b34fed4a539ad4d21bd8f3c4bb80" }, { "path" = "data/repro/audit/independent_controls/f063_nine_witness_replay.log", "sha256" = "acc0e225b47631dbc07d55b5ac00931e39021abb0423a647a50c28917804358a" }, { "path" = "data/repro/audit/independent_controls/f063_nine_witness_replay_provenance.toml", "sha256" = "28d3ede4d8e220d97bf586704f965ad649b5d15ab856fad76413e49dca6f88a4" }]
+
+[source_sha256]
+"packages/VBF/src/equivalence/ccz/code_equivalence.jl" = "fbbefc3c124f5383c84a9f9d72cea8747c8329e68d3bce17ec43337585b61fa8"
+"packages/VBF/test/unit/code_equivalence_test.jl" = "4c446a4c1023705b3b2f02c3f99b09f3314d0d04b559637538f7efca86bb7784"
+"packages/VBF/src/linalg/partial_isomorphism.jl" = "c0dcd6c74a6efdeac97aedc513022c4bc9d229a7f38558cf448fc6c5b8517479"
+"packages/VBFRepro/papers/2012/Bracken_201205/orbit_certificate.jl" = "7061a5c6735a2197963c33295247a815483dcc9691d4f660fe1cd572a24d1579"
+"packages/VBFRepro/papers/2012/Bracken_201205/test/test_orbit_certificate.jl" = "24e798ce61ef5f52a24de295c5e2531149ed074cc7ad621c968879e8779fbf74"
+"packages/VBFRepro/analysis/scripts/apn_power_evidence.jl" = "633c752f6ca397428618486b7cd2b95801a8b425a8bb3ee2295beb15d690d2e0"
+"packages/VBFRepro/analysis/scripts/review_catalog_proposals.jl" = "e3275e45650f4d4b140724ccd19adaf9a336bcca1e3cac84b77663114cfeab3e"
+"packages/VBFRepro/analysis/test/test_catalog_proposals.jl" = "5263d635ac16ea8f8670709695afe6d514fcf4fdfe906de2d66779f86e4c60e9"
+"packages/VBFRepro/papers/2020/Yu_202012/table4.jl" = "98d4debf6f4ba7cfa9c89e0b8b388e54ed655bc618f343854524d9d990d10366"
+"packages/VBFRepro/papers/2020/Yu_202012/test/test_table4.jl" = "6f8266fdbed2c887e46247f921697610ea75f410237acb4a832da2fee3ea2a7d"

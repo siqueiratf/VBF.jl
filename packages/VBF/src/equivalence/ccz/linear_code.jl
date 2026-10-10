@@ -14,10 +14,10 @@ their generator matrices (`ccz_matrix` / `ea_matrix` / `ae_matrix` /
     [`partition_refinement_equivalence`](@ref) and
     [`ccz_equivalence_certificate`](@ref) decide function equivalence directly
     using Kaleyski–Sunde (ePrint 2026/940), without an external code-equivalence
-    solver. These matrices remain useful for invariants and downstream binary
-    coding software. No general binary-code permutation search is provided.
-    Native function recovery applies to the function-graph problem, not arbitrary
-    supplied generator matrices. `code_weight_enumerator` is only a necessary condition:
+    solver. [`binary_code_equivalence`](@ref) additionally searches arbitrary
+    binary generator matrices with explicit budgets and coordinate witnesses.
+    Function recovery applies to the function-graph problem; the general code
+    API searches column-multiset basis maps instead. `code_weight_enumerator` is only a necessary condition:
     unequal enumerators prove inequivalence; equal enumerators do not prove it.
 
 Row layout of every matrix (2n+1 rows): row 1 is the constant-1 row,
