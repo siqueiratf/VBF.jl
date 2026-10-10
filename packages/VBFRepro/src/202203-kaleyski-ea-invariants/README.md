@@ -258,7 +258,7 @@ for every `n ≥ 9`, and a hard-coded partition constant is both wrong and on a 
   surveys the handful of `n ∈ {5,6}` catalog entries and prints raw counts with no
   `print_check` tying anything to a paper figure.
 - **Root cause**: the 12,923-function `F_{2^8}` dataset and the `boolean.h.uib.no` corpus are
-  believed absent — though `packages/VBFCatalog/corpora/beierleleander2022_n8.sqlite`
+  believed absent — though `packages/VBFCatalog/BFA_catalog.sqlite (dataset beierleleander2022_n8)`
   **does** contain exactly 12,923 members.
 - **Resolution plan**:
   1. State explicitly that the 21,105-function census is out of scope.
@@ -353,5 +353,5 @@ already represented in the catalog (`n6_Gold_x3`, `reprs6_*`, `reprs8_*`).
 - Table 1's n=6 row 2.9 `|K| = 7` (paper issue 4) — a typo, or a second EA representative of
   the non-quadratic CCZ class?
 - Does the paper's 21,105-function census cover even `n` only (paper issue 3)?
-- Should the reproduction consume `packages/VBFCatalog/corpora/beierleleander2022_n8.sqlite`
+- Should the reproduction consume `packages/VBFCatalog/BFA_catalog.sqlite (dataset beierleleander2022_n8)`
   (12,923 members = the paper's dataset [1]) for Section 5?

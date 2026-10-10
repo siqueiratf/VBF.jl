@@ -59,6 +59,9 @@ CLAUDE.md
 # touch it.
 !.claude/settings.json
 
+# Downloaded catalog originals, import receipts and derived stores.
+data/catalog/**
+
 # READMEs are always tracked — including the per-paper review summaries under
 # packages/VBFRepro/src/<Paper_ID>/README.md. Git resolves a path by the LAST matching
 # pattern, so this block must stay at the very bottom of the file: a negation

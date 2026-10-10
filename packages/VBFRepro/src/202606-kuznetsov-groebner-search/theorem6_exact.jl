@@ -12,7 +12,7 @@ const EXACT_WITNESSES = joinpath(@__DIR__, "test", "fixtures", "edel_pott_ea_wit
 Replay saved exact EA witnesses against the current paper representatives and
 tracked Edel-Pott corpus. `recover=true` instead runs a bounded native search;
 a budget hit returns `equivalent=missing`, never a negative decision. Positive
-witnesses are checked with the independent stdlib-only graph verifier.
+witnesses are checked with the VBF graph-map replay.
 """
 function theorem6_exact_run(; recover::Bool = false, timeout_seconds::Real = 60,
                             max_nodes::Int = 10^6, witness_path = EXACT_WITNESSES)
@@ -30,7 +30,7 @@ function theorem6_exact_run(; recover::Bool = false, timeout_seconds::Real = 60,
                 if result isa Found
                     A = only(search_solutions(result))
                     cols = Int.(A.linear.cols); constant = Int(A.constant)
-                    equivalent = IndependentEAWitness.verify_ea_witness(F.lut, G.lut, cols, constant)
+                    equivalent = GraphWitnesses.verify_ea_witness(F.lut, G.lut, cols, constant)
                     equivalent || error("invalid recovered EA witness for $nm")
                     status = :verified_witness
                 elseif result isa Exhausted
@@ -42,7 +42,7 @@ function theorem6_exact_run(; recover::Bool = false, timeout_seconds::Real = 60,
                 row["candidate_lut"] == Int.(F.lut) || error("paper representative changed")
                 row["reference_lut"] == Int.(G.lut) || error("reference corpus changed")
                 cols = row["columns"]; constant = row["constant"]
-                equivalent = IndependentEAWitness.verify_ea_witness(F.lut, G.lut, cols, constant)
+                equivalent = GraphWitnesses.verify_ea_witness(F.lut, G.lut, cols, constant)
                 equivalent || error("invalid saved EA witness for $nm")
                 status = :verified_witness
             end

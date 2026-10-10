@@ -1,7 +1,7 @@
 """
 Literature S-box catalog.
 
-Loads `data-raw/literature_sboxes.toml` and exposes its entries as
+Loads `src/entries/literature_sboxes.toml` and exposes its entries as
 `SBox` instances.
 
 # Functions
@@ -16,7 +16,7 @@ import TOML
 const _LITERATURE_CACHE = Ref{Union{Dict{String,Any},Nothing}}(nothing)
 
 _literature_path() = normpath(
-    joinpath(@__DIR__, "..", "..", "data-raw", "literature_sboxes.toml"),
+    joinpath(@__DIR__, "..", "entries", "literature_sboxes.toml"),
 )
 
 function _load_literature_raw()
@@ -24,7 +24,7 @@ function _load_literature_raw()
     cache === nothing || return cache
     path = _literature_path()
     isfile(path) || error(
-        "BFA: literature_sboxes.toml not found at $path — was the package distributed without data-raw/?",
+        "BFA: literature_sboxes.toml not found at $path — was the package distributed without src/entries/?",
     )
     data = TOML.parsefile(path)
     haskey(data, "sboxes") || error("BFA: $path has no [[sboxes]] entries")

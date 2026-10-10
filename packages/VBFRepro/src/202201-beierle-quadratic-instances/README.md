@@ -126,7 +126,7 @@ corrupts `ctr`. **It does not**, and the claim is withdrawn.
 - **Symptom**: no test mentions `absolute_walsh_spectrum`, `linearity`, 16320, 48640 or
   12540.
 - **Root cause**: assumed to require the absent `inputs/apn_8bit.txt`. In fact
-  `packages/VBFCatalog/corpora/beierleleander2022_n8.sqlite` holds all 12,923 functions.
+  `packages/VBFCatalog/BFA_catalog.sqlite (dataset beierleleander2022_n8)` holds all 12,923 functions.
 - **Counter-evidence**: a full corpus scan in pure Python took **27.5 s** and found
   **exactly six** distinct extended Walsh spectra — exactly the paper's 𝒲₀…𝒲₅ — with
   multiplicities **𝒲₀ 9327, 𝒲₁ 3112, 𝒲₂ 308, 𝒲₃ 146, 𝒲₄ 26, 𝒲₅ 4**. The 𝒲₃ count 146
@@ -165,7 +165,7 @@ corrupts `ctr`. **It does not**, and the claim is withdrawn.
   3. Implement the LE-constrained variant of Algorithm 1 (fix `F(Aⁱx) = Bⁱ(y)`; seed
      `F|_{Fix_A}` from a list of k-bit quadratic APN EA-representatives) as
      `algorithm1_le.jl`, with `limit` and `timeout_seconds`.
-  4. Note that `data-raw/le_automorphism_tuples/n7.toml` holds only 4 classes (`class1`,
+  4. Note that `src/entries/le_automorphism_tuples/n7.toml` holds only 4 classes (`class1`,
      `class7`, `class16`, `class19`) and is Beierle–Brinkmann–Leander data, **not** this
      paper's 128.
 
@@ -319,7 +319,7 @@ a different source (see reproduction issue 1).
 **What would be needed to run them**: either (a) manually place the BL21 release files under
 `packages/VBFRepro/src/202201-beierle-quadratic-instances/inputs/`, or (b) — the correct fix — repoint
 `dataset_validation.jl`, `proposition1.jl` and `catalog_validation.jl` at the *committed*
-corpus `packages/VBFCatalog/corpora/beierleleander2022_n8.sqlite` (12,923 members,
+corpus `packages/VBFCatalog/BFA_catalog.sqlite (dataset beierleleander2022_n8)` (12,923 members,
 `modulus = 285`, `encoding = quadratic-coeffs-v1`, `bib_key = Beierle_202201`), which was
 verified working in this review.
 
@@ -362,7 +362,7 @@ multiplicities 9327 / 3112 / 308 / 146 / 26 / 4, with the four linearity-2⁷ me
 | Claimed-new item | Status | Evidence |
 |---|---|---|
 | 12,733 new 8-bit quadratic APN instances (Section 4.2) | **present** (bulk corpus) | `bulk_corpora` row `beierleleander2022_n8`, 12,923 members, `bib_key = Beierle_202201`, side store `corpora/beierleleander2022_n8.sqlite` |
-| The 4 instances with linearity 2⁷, including the explicit Section 1.1 polynomial | **present** (bulk corpus) but **missing from the curated catalog** | corpus indices 12658-12661 have extended Walsh spectrum 𝒲₅; index 12658's OD differential spectrum equals the paper's explicit polynomial's. `data-raw/apn_catalog/n8_apn.toml` has only 5 entries (`n8_Gold_x3`, `n8_Gold_x9`, `n8_Kasami_x57`, `n8_Calderini2021_thm62`, `n8_Taniguchi2025_ex4_2`) — no Beierle–Leander representative. Since the paper answers Carlet's open problem (the first quadratic APN with linearity `2^{n−1}` at n = 8), a curated entry is warranted |
+| The 4 instances with linearity 2⁷, including the explicit Section 1.1 polynomial | **present** (bulk corpus) but **missing from the curated catalog** | corpus indices 12658-12661 have extended Walsh spectrum 𝒲₅; index 12658's OD differential spectrum equals the paper's explicit polynomial's. `src/entries/apn_catalog/n8_apn.toml` has only 5 entries (`n8_Gold_x3`, `n8_Gold_x9`, `n8_Kasami_x57`, `n8_Calderini2021_thm62`, `n8_Taniguchi2025_ex4_2`) — no Beierle–Leander representative. Since the paper answers Carlet's open problem (the first quadratic APN with linearity `2^{n−1}` at n = 8), a curated entry is warranted |
 | 188 new instances from switching (Section 5) | **unverifiable** | not separable from the corpus without the authors' provenance labels |
 | 2 new dimension-9 APN permutations (Section 1.1, Section 4 "Results for n = 9") | **missing** — genuine catalog gap | see records below |
 | Remaining 33 dimension-9 instances | **unverifiable** | LUTs not in the repository (no n=9 corpus) |
@@ -374,7 +374,7 @@ Do not apply without a Julia re-verification pass.
 
 ```
 # Record 1
-target file      : packages/VBFCatalog/data-raw/apn_catalog/n9_apn.toml
+target file      : packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml
 name             : n9_BeierleLeander2022_perm1
 n                : 9
 m                : 9
@@ -393,7 +393,7 @@ lut              : <compute as gf_pow/gf_mul over GF(2^9) mod 529 with u = 28; v
 
 ```
 # Record 2
-target file      : packages/VBFCatalog/data-raw/apn_catalog/n9_apn.toml
+target file      : packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml
 name             : n9_BeierleLeander2022_perm2
 n                : 9
 m                : 9
@@ -426,7 +426,7 @@ A third candidate, a curated-catalog gap only (the class is already in a bulk co
 
 ```
 # Record 3 (optional; class is already in the beierleleander2022_n8 corpus at index 12658)
-target file      : packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml
+target file      : packages/VBFCatalog/src/entries/apn_catalog/n8_apn.toml
 name             : n8_BeierleLeander2022_lin128
 n                : 8, m = 8, is_permutation = false
 modulus          : 285                       # x^8 + x^4 + x^3 + x^2 + 1

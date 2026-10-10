@@ -211,7 +211,7 @@ but the name does not match the data.*
   it verified Conjecture 21 for `1 ≤ n ≤ 10`.
 - **Root cause:** The power-function filter tests
   `haskey(apn_catalog_metadata(name), "monomial_exponent")` — a **TOML-encoding
-  proxy, not a mathematical test**. `packages/VBFCatalog/data-raw/apn_catalog/n5_apn.toml`
+  proxy, not a mathematical test**. `packages/VBFCatalog/src/entries/apn_catalog/n5_apn.toml`
   stores its three power APN (`n5_Gold_x3`, `n5_Gold_x5`, `n5_Kasami_x15`) as raw
   `lut` with no `monomial_exponent` key, so n=5 is skipped without a word.
 - **Resolution plan:**

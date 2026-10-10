@@ -20,13 +20,13 @@ Primary sources:
   bibliography, importers, and SQLite-backed corpora. It depends on `VBF`.
 - `packages/VBFSearch/`: reproducible search application consuming VBF and VBFCatalog;
   owns experiment state, checkpoints and evidence, never curated catalog writes.
-- `packages/VBFCatalog/tools/reference/`: original-source rebuild tools;
-  run in the root project and write to `data/apn/rebuilds/`.
+- `packages/VBFCatalog/src/import/reference/`: original-source rebuild tools;
+  run in the import environment and write to `data/apn/rebuilds/`.
 - `packages/VBFWorkingPaper/src/{census,hyperplanes,literature}/`: research studies consuming package APIs.
 - `docs/inspector/`: HTTP evidence viewer; own Julia environment.
 - `data/apn/`: reference snapshots, runs, rebuilds and historical artifacts. The
   root `search/` and `census/` trees are retired; see `packages/VBFSearch/README.md`.
-- `packages/VBFCatalog/data-build/`: importer/build scripts with their own
+- `packages/VBFCatalog/src/import/`: importer/build scripts with their own
   environment. Do not include these from package tests or a casual REPL.
 - `packages/VBFRepro/src/`: standalone paper-reproduction scripts. Keep one paper claim,
   theorem, lemma, algorithm, table, or experiment per file, and make each file
@@ -62,17 +62,17 @@ Primary sources:
 - Keep generated results, local overrides, credentials, and copyrighted paper
   inputs out of git.
 - **Catalog changes are gated.** `packages/VBFCatalog/BFA_catalog.sqlite` is a
-  tracked build product of `data-raw/`, and the catalog test items rebuild their
-  expected counts from `data-raw/` and compare them against that DB — so editing
+  tracked build product of `src/entries/`, and the catalog test items rebuild their
+  expected counts from `src/entries/` and compare them against that DB — so editing
   one without the other fails CI. After touching anything under
-  `packages/VBFCatalog/{data-raw,data-build,src,corpora}/` or the DB itself,
-  rebuild (`make -C packages/VBFCatalog/data-build catalog`) and run
-  `make -C packages/VBFCatalog/data-build check` until it prints
+  `packages/VBFCatalog/src/` or the DB itself,
+  rebuild (`make -C packages/VBFCatalog/src/import catalog`) and run
+  `make -C packages/VBFCatalog/src/import check` until it prints
   `catalog-check: OK` — before committing, in the same commit. Enable the hook
   that enforces this once per clone: `git config core.hooksPath .githooks`.
   **Never commit a catalog change with `--no-verify`/`-n`.** That flag skips the
   gate outright, and the gate is the only thing standing between a half-updated
-  `data-raw/` and a `catalog_queries_test` count mismatch 40 minutes into CI.
+  `src/entries/` and a `catalog_queries_test` count mismatch 40 minutes into CI.
   Two layers enforce this and neither is optional:
   `.githooks/pre-commit` (runs the gate on every catalog-touching commit) and
   `.githooks/claude-commit-guard` (a Claude Code `PreToolUse` hook, wired up in
@@ -84,7 +84,7 @@ Primary sources:
   Adding a family, or changing how many rows one holds, is not done until every
   total in `packages/VBFCatalog/test/unit/catalog_queries_test.jl` that counts it has
   been updated too — total, per-`n`, `is_apn`, `is_permutation`. The gate
-  reconstructs those same sums from `data-raw/` and fails on the exact figure
+  reconstructs those same sums from `src/entries/` and fails on the exact figure
   that would otherwise surface as a bare CI count mismatch, and it separately
   refuses any family the test never names.
 - Every `README.md` in the repo is a tracked file, `packages/VBFRepro/src/<Paper_ID>/`

@@ -372,7 +372,7 @@ is commented out at `Makefile:44`.
 The paper claims **no new APN function**.
 
 - Dillon's permutation / n=6 class-5 solution: **present** — `n6_Kim` in
-  `packages/VBFCatalog/data-raw/apn_catalog/n6_apn.toml` and `dillon_apn_permutation()` in
+  `packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml` and `dillon_apn_permutation()` in
   core; identical extended Walsh and differential spectra, and identical Γ-rank 1166
   (computed).
 - n=7 solutions `x⁵, x⁹, x⁶³, x⁷⁸, x⁸⁵, x⁸⁸`: **present** as `n7_Gold_x5`, `n7_Gold_x9`,
@@ -384,7 +384,7 @@ The paper claims **no new APN function**.
 - `n7_apn.toml` contains CCZ-**duplicates**: `n7_Kasami_x13` ≡ `n7_Welch_x11`
   (`13⁻¹ = 88 = 2³·11`) and `n7_Kasami_x57` ≡ `n7_Niho_x39` (`57⁻¹ = 78 = 2·39`). Its 8
   monomial entries cover only 6 CCZ classes.
-- `packages/VBFCatalog/data-raw/le_automorphism_tuples/n7.toml` holds a *different* n=7
+- `packages/VBFCatalog/src/entries/le_automorphism_tuples/n7.toml` holds a *different* n=7
   LE-automorphism class numbering (Beierle–Leander 2022, quadratic APN functions, not
   permutations). Only `class1` coincides with this paper's class 1; classes 7, 16, 19 do
   **not** match Corollary 1's indices 7, 16, 19. Two incompatible "n=7 class number" schemes
@@ -417,4 +417,4 @@ Promote-to-core candidates:
 - Is the n=7 block 17/18/19 representative choice deliberate (matching the authors' Zenodo
   code) or accidental? If deliberate, the TOML should say so.
 - Should `packages/VBFRepro/src/202107-beierle-self-equivalence/tuples/` be consolidated with
-  `packages/VBFCatalog/data-raw/le_automorphism_tuples/`?
+  `packages/VBFCatalog/src/entries/le_automorphism_tuples/`?

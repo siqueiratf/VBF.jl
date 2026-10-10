@@ -1,5 +1,5 @@
 """
-Bibliography loader for `data-raw/bibliography.bib`.
+Bibliography loader for `src/entries/bibliography.bib`.
 
 A minimal BibTeX parser that handles the subset BFA needs:
 
@@ -58,10 +58,10 @@ end
 """
     bibliography_path() -> String
 
-Default location of `data-raw/bibliography.bib`.
+Default location of `src/entries/bibliography.bib`.
 """
 bibliography_path() =
-    normpath(joinpath(@__DIR__, "..", "..", "data-raw", "bibliography.bib"))
+    normpath(joinpath(@__DIR__, "..", "entries", "bibliography.bib"))
 
 """
     load_bibliography([path]) -> Vector{BibEntry}

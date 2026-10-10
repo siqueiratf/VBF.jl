@@ -300,7 +300,7 @@ remark's `m/s` odd hypothesis is doing real work.
 | Theorem 4 family (m odd, n∣m) | **not-new** — CCZ-equivalent to Gold by construction |
 
 **No catalog-gap records.** The paper's novelty is up to **EA**, not up to CCZ, and
-`packages/VBFCatalog/data-raw/apn_catalog/README.md` describes the TOML as a CCZ-class
+`packages/VBFCatalog/src/entries/apn_catalog/README.md` describes the TOML as a CCZ-class
 canonical-representative set. Omitting these is the correct decision.
 
 ---

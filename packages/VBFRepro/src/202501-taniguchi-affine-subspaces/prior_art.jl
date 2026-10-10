@@ -1,5 +1,5 @@
 # Example 4.2 is separated from Gold but belongs to a class published in 2009.
-# Replay an explicit EA graph map with a stdlib-only verifier.
+# Replay an explicit EA graph map with a VBF graph-map replay.
 using VBF, VBFCatalog, TOML
 include(joinpath(@__DIR__, "helpers.jl"))
 include(joinpath(@__DIR__, "..", "..", "..", "VBFSearch", "src", "verification", "ea_witness.jl"))
@@ -23,14 +23,14 @@ function prior_art_witness(; recover::Bool = false, timeout_seconds::Real = 60, 
         outcome isa Found || return (; verified = missing, outcome, candidate, reference)
         A = only(search_solutions(outcome))
         columns, constant = Int.(A.linear.cols), Int(A.constant)
-        verified = IndependentEAWitness.verify_ea_witness(candidate, reference, columns, constant)
+        verified = GraphWitnesses.verify_ea_witness(candidate, reference, columns, constant)
         verified || error("invalid recovered prior-art EA witness")
         return (; verified, candidate, reference, columns, constant)
     end
     row = TOML.parsefile(joinpath(@__DIR__, "test", "fixtures", "bcl2009_ea_witness.toml"))
     row["candidate_lut"] == candidate || error("Example 4.2 changed")
     row["reference_lut"] == reference || error("2009 equation changed")
-    verified = IndependentEAWitness.verify_ea_witness(candidate, reference, row["columns"], row["constant"])
+    verified = GraphWitnesses.verify_ea_witness(candidate, reference, row["columns"], row["constant"])
     verified || error("invalid prior-art EA witness")
     (; verified, candidate, reference, columns = row["columns"], constant = row["constant"])
 end
@@ -73,7 +73,7 @@ function edel_pott_prior_art_witness(; recover::Bool = false,
             A = only(search_solutions(result))
             cols, constant = Int.(A.linear.cols), Int(A.constant)
         end
-        verified = IndependentEAWitness.verify_ea_witness(f, g, cols, constant)
+        verified = GraphWitnesses.verify_ea_witness(f, g, cols, constant)
         verified || error("invalid Edel--Pott EA witness")
         (; verified, columns = cols, constant)
     end

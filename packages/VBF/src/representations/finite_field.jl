@@ -12,7 +12,7 @@ including its leading `xⁿ` bit, so e.g. `x⁴ + x + 1` is `0b10011 = 19`.
 # Public surface
 - [`IRREDUCIBLE_POLYNOMIALS`](@ref) — `Dict{Int, Int}` of canonical
   moduli for `n ∈ 2:16`. The n=4, 5, 8 choices match the
-  conventions already used in `data-raw/apn_catalog/n{4,5}_apn.toml`
+  conventions already used in `src/entries/apn_catalog/n{4,5}_apn.toml`
   and FIPS 197 / AES (n=8 uses Rijndael's `x⁸ + x⁴ + x³ + x + 1`).
 - [`irreducible_polynomial`](@ref) — fetch the default modulus for `n`.
 - [`gf_primitive_element`](@ref) — a verified multiplicative generator.

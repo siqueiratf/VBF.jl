@@ -274,7 +274,7 @@ Defects introduced in our implementation.
 > `"x¹⁵ (Kasami)"` is gone. Tests in `test/test_theorem3.jl`.
 >
 > **Step 3 not done — needs a separate go-ahead.** The catalog entry
-> `packages/VBFCatalog/data-raw/apn_catalog/n5_apn.toml` `n5_Kasami_x15` carries the same
+> `packages/VBFCatalog/src/entries/apn_catalog/n5_apn.toml` `n5_Kasami_x15` carries the same
 > mislabel, and renaming it touches `packages/VBFRepro/src/200300-biryukov-equivalence` and requires a catalog
 > rebuild + gate run. Out of scope for a paper-local fix.
 
@@ -293,7 +293,7 @@ Defects introduced in our implementation.
   2. Replace raw `power_sbox` calls with `gold_apn(5,1)`, `gold_apn(5,2)`, `welch_apn(5)`,
      `kasami_apn(5,2)` (yields x¹³, linearly equivalent to x¹¹), `inverse_apn(5)`.
   3. **Cross-cutting catalog defect (separate go-ahead required — outside this paper dir):**
-     `packages/VBFCatalog/data-raw/apn_catalog/n5_apn.toml:24-33` has the same error. The entry
+     `packages/VBFCatalog/src/entries/apn_catalog/n5_apn.toml:24-33` has the same error. The entry
      is named `n5_Kasami_x15` with description `"Kasami APN x^15 = x^(2^4 - 2^2 + 1)"`, but
      `2⁴ − 2² + 1 = 13`, not 15. The stored LUT *is* `x¹⁵` (verified byte-for-byte), i.e. the
      Inverse function. This propagates into `packages/VBFRepro/src/200300-biryukov-equivalence/section3.jl:41` and
@@ -428,7 +428,7 @@ new class):
 - either add `bib_key = "Brinkmann_200812"`, `algebraic_form`, and `source` to the existing
   `reprs6_13` row plus a `ccz_equivalent_to` cross-reference,
 - or add a named TOML entry in
-  `packages/VBFCatalog/data-raw/apn_catalog/n6_apn.toml` with
+  `packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml` with
   `ccz_equivalent_to = "reprs6_13"`.
 
 The Table 5 row-13 LUT (re-verified APN, `differential_uniformity == 2`):

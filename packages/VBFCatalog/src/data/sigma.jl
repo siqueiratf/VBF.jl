@@ -25,7 +25,7 @@ import DBInterface
 # The σ index is large (one row per catalogued function — millions) and fully
 # regenerable from the corpora + functions table, so — like the bulk-corpus LUT
 # stores — it is kept OUT of the committed main catalog in its own side store
-# under corpora/, never committed (see .gitignore). Build it with
+# under data/catalog/, never committed (see .gitignore). Build it with
 # `build_sigma_index!`; the oracle (`classify_ccz`/`is_novel`) reads it.
 
 const _SIGMA_INDEX_DDL =
@@ -48,17 +48,17 @@ const _COVERAGE_ALL_N = -1
 """
     sigma_index_path() -> String
 
-Path to the σ-index side store `corpora/ccz_sigma_index.sqlite` (regenerable, not
+Path to the σ-index side store `data/catalog/ccz_sigma_index.sqlite` (regenerable, not
 committed).
 """
-sigma_index_path() = joinpath(_corpora_dir(), "ccz_sigma_index.sqlite")
+sigma_index_path() = joinpath(catalog_data_dir(), "ccz_sigma_index.sqlite")
 
 function _open_sigma_index(; create::Bool = false)
     p = sigma_index_path()
     if !isfile(p) && !create
         error("σ-index side store not found at $p; build it with build_sigma_index!(load_catalog())")
     end
-    create && mkpath(_corpora_dir())
+    create && mkpath(catalog_data_dir())
     s = SQLite.DB(p)
     if create
         SQLite.execute(s, _SIGMA_INDEX_DDL)
@@ -199,11 +199,11 @@ function build_sigma_index!(
     # NOT indexed and the oracle refuses its dimension — the honest answer.
     # Opening a missing store would instead create an empty file and then throw
     # on `SELECT … FROM members`.
-    let absent = filter(nm -> !isfile(corpus_store_path(nm)), names)
+    let absent = filter(nm -> !isfile(corpus_store_path(db, nm)), names)
         if !isempty(absent)
             @warn "σ-index: side store absent; corpus NOT indexed (its dimension " *
                   "will refuse a novelty lookup)" corpora = absent
-            names = filter(nm -> isfile(corpus_store_path(nm)), names)
+            names = filter(nm -> isfile(corpus_store_path(db, nm)), names)
         end
     end
     for name in names
@@ -211,8 +211,7 @@ function build_sigma_index!(
         info === nothing && continue
         n = Int(info.n); mod = Int(info.modulus)
         powtab = monomial_power_table(n, mod)
-        store = SQLite.DB(corpus_store_path(name))
-        try
+        with_corpus_rows(db, name) do rows
             batch_idx = Int[]; batch_co = Vector{UInt8}[]
             flush_batch = function ()
                 isempty(batch_idx) && return
@@ -235,13 +234,11 @@ function build_sigma_index!(
                 empty!(batch_idx); empty!(batch_co)
                 GC.gc(false)
             end
-            for r in DBInterface.execute(store, "SELECT idx, coeffs FROM members ORDER BY idx")
+            for r in rows
                 push!(batch_idx, Int(r.idx)); push!(batch_co, Vector{UInt8}(r.coeffs))
                 length(batch_idx) >= batch && flush_batch()
             end
             flush_batch()
-        finally
-            close(store)
         end
     end
 

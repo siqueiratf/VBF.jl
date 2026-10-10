@@ -8,11 +8,11 @@ The curated catalog and data layer for [`VBF`](https://github.com/). Provides:
     representatives — content-addressed by LUT SHA-256, with full provenance;
   - query helpers (`list_functions`, `find_function`, `load_sbox`, …);
   - multi-source reconciliation against the upstream APN corpora;
-  - a BibTeX-backed bibliography and content-addressed artifact scaffolding.
+  - a BibTeX-backed bibliography for source provenance.
 
 Depends on `VBF` for the S-box type and the statistics used to characterise
 each row; `VBF` never depends on this package. Dev-time importers that
-(re)build the catalog from the upstream checkouts live under `data-build/`.
+(re)build the catalog from the upstream checkouts live under `src/import/`.
 """
 module VBFCatalog
 
@@ -24,7 +24,6 @@ include("data/catalog.jl")
 include("data/queries.jl")
 include("data/reconciliation.jl")
 include("data/apn_catalog.jl")
-include("data/artifacts.jl")
 include("data/bibliography.jl")
 include("data/corpus.jl")
 include("data/sigma.jl")

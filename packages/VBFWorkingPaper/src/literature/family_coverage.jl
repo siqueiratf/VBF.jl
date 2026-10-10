@@ -101,7 +101,7 @@ const DOMAIN_COUNTS = Dict("power"=>255, "bcl_trace"=>255,"zhou_pott"=>120,"tani
 """Fingerprint executable dependencies and private paper inputs used to audit formulas."""
 function source_hashes()
     paths=String[@__FILE__,joinpath(@__DIR__, "family_coverage.toml"),joinpath(ROOT,"Project.toml"),joinpath(ROOT,"Manifest.toml")]
-    for folder in ("packages/VBF/src","packages/VBFCatalog/src","packages/VBFCatalog/tools/reference","packages/VBFSearch/src")
+    for folder in ("packages/VBF/src","packages/VBFCatalog/src","packages/VBFCatalog/src/import/reference","packages/VBFSearch/src")
         append!(paths,[joinpath(dir,f) for (dir,_,fs) in walkdir(joinpath(ROOT,folder)) for f in fs if endswith(f,".jl")])
     end
     push!(paths,joinpath(@__DIR__, "../../src/evidence.jl"),joinpath(@__DIR__, "check_sources.jl"))

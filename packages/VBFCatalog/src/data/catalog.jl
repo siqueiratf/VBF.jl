@@ -10,15 +10,14 @@ primary specification.
 The schema DDL lives in `src/data/schema.sql` (authoritative) and is
 embedded as `SCHEMA_DDL` (a constant string) so the package can rebuild
 a catalog from scratch without reading a separate file. Schema version
-bumps require both an incremented `schema_version` value *and* a
-migration script under `data-build/migrations/`.
+changes require an incremented `schema_version` and a fresh rebuild.
 
 # Public surface
 - [`SCHEMA_VERSION`](@ref)  — the version this code understands.
 - [`catalog_path`](@ref)    — default on-disk location of the catalog.
 - [`load_catalog`](@ref)    — open an existing SQLite catalog.
 - [`create_catalog`](@ref)  — create a fresh (empty) catalog at the
-  given path; used by `data-build/build_catalog.jl`.
+  given path; used by `src/import/build_catalog.jl`.
 - [`canonical_lut_bytes`](@ref) — produce the canonical byte serialisation
   of an `SBox` LUT, suitable for hashing or insertion into `lut_blob`.
 - [`lut_sha256_hex`](@ref)  — SHA-256 of `canonical_lut_bytes`.
@@ -35,31 +34,14 @@ import Dates
 The schema version this code understands. `load_catalog` refuses
 catalogs whose `schema_meta.schema_version` differs.
 """
-const SCHEMA_VERSION = 6
+const SCHEMA_VERSION = 7
 
 """
     SCHEMA_DDL :: String
 
-Authoritative DDL embedded at package-build time: `src/data/schema.sql` plus
-`src/data/benchmark.sql`.
+Authoritative DDL from `src/data/schema.sql`.
 """
-const SCHEMA_DDL = read(joinpath(@__DIR__, "schema.sql"), String) * "\n" *
-                   read(joinpath(@__DIR__, "benchmark.sql"), String)
-
-"""Preserve non-regenerable observations when installing a rebuilt catalog."""
-function _copy_benchmark_history!(db::SQLite.DB, source::AbstractString)
-    isfile(source) || return
-    SQLite.execute(db, "ATTACH DATABASE " * _sql_quote(source) * " AS previous_benchmarks")
-    try
-        present = [String(r.name) for r in DBInterface.execute(db,
-            "SELECT name FROM previous_benchmarks.sqlite_master WHERE type='table' AND name='benchmark'")]
-        isempty(present) || SQLite.execute(db,
-            "INSERT INTO benchmark SELECT * FROM previous_benchmarks.benchmark")
-    finally
-        SQLite.execute(db, "DETACH DATABASE previous_benchmarks")
-    end
-    nothing
-end
+const SCHEMA_DDL = read(joinpath(@__DIR__, "schema.sql"), String)
 
 """
     catalog_path() -> String
@@ -68,7 +50,7 @@ Default location of the SQLite catalog (`BFA_catalog.sqlite` at the
 package root).
 
 `ENV["BFA_CATALOG_PATH"]`, when set and non-empty, overrides it. The rebuild in
-`data-build/build_catalog.jl` uses that to assemble a new catalog at a temporary
+`src/import/build_catalog.jl` uses that to assemble a new catalog at a temporary
 path and verify it before it replaces the committed file, so a rebuild that
 cannot reproduce the catalog destroys nothing. Leave the variable unset for
 normal use.
@@ -77,6 +59,19 @@ function catalog_path()
     override = get(ENV, "BFA_CATALOG_PATH", "")
     isempty(override) || return normpath(override)
     normpath(joinpath(@__DIR__, "..", "..", "BFA_catalog.sqlite"))
+end
+
+"""Return the actual main database filename, including for read-only URI handles."""
+function catalog_path(db::SQLite.DB)
+    rows = DBInterface.execute(db, "PRAGMA database_list")
+    try
+        for row in rows
+            row.name == "main" && return String(row.file)
+        end
+        error("catalog has no main database")
+    finally
+        DBInterface.close!(rows)
+    end
 end
 
 """
@@ -186,8 +181,8 @@ function load_catalog(path::AbstractString = catalog_path())
             path,
             " — run\n",
             "    julia --project=",
-            pkg_root,
-            " data-build/build_catalog.jl\n",
+            joinpath(pkg_root,"src","import"),
+            " ", joinpath(pkg_root,"src","import","build_catalog.jl"), "\n",
             "to create it",
         )
         throw(ArgumentError(msg))
@@ -218,7 +213,7 @@ function _verify_schema!(db::SQLite.DB, path::AbstractString)
     isequal(v, SCHEMA_VERSION) || throw(
         ArgumentError(
             "$path has schema_version $v but this BFA expects $SCHEMA_VERSION; " *
-            "re-run data-build/build_catalog.jl",
+            "re-run src/import/build_catalog.jl",
         ),
     )
     db

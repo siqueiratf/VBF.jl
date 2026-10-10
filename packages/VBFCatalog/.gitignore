@@ -1,11 +1,4 @@
-# Regenerable σ-index side store (build with build_sigma_index!). Large (one row
-# per catalogued function — millions) and derived; never committed.
-corpora/ccz_sigma_index.sqlite
-corpora/ccz_fingerprint_index.sqlite
-# Large 2025 bulk corpus (3,775,599 members, about 175 MiB — over GitHub's 100 MB
-# per-file limit). Regenerate with
-#   make -C data-build beierle2025 BFA_BEIERLE2025_PATH=<dir holding new_apns.txt>
-# after you download new_apns.txt (3.4 GB) from https://zenodo.org/records/16752428.
-corpora/beierle2025_n8.sqlite
-# scratch / lazy LUT materialisation
+BFA_catalog.sqlite.building
 *_luts.sqlite
+!README.md
+!**/README.md

@@ -86,9 +86,9 @@ done
 touched_list="$(sed '/^$/d;s/^/  /' <<<"$touched")"
 
 REBUILD="Fix the cause, do not route around it:
-    make -C packages/VBFCatalog/data-build catalog   # rebuild the DB from data-raw
+    make -C packages/VBFCatalog/src/import catalog   # rebuild the DB from source entries
     git add packages/VBFCatalog/BFA_catalog.sqlite
-    make -C packages/VBFCatalog/data-build check     # until 'catalog-check: OK'
+    make -C packages/VBFCatalog/src/import check     # until 'catalog-check: OK'
 
 To bypass deliberately, set VBF_SKIP_CATALOG_CHECK=1 in the environment and say
 so in the commit message — do not reach for --no-verify."
@@ -101,8 +101,8 @@ if grep -qE -- '--no-verify|(^|\s)-[A-Za-z]*n[A-Za-z]*(\s|$)' <<<"$unquoted"; th
     deny "Refusing: --no-verify/-n would skip the catalog gate, and this commit stages catalog pipeline files:
 
 $touched_list
-BFA_catalog.sqlite is a tracked build product of data-raw/, and the catalog test
-items rebuild their expected counts from data-raw/ and compare them to that DB.
+BFA_catalog.sqlite is a tracked build product of src/entries/, and the catalog test
+items rebuild their expected counts from src/entries/ and compare them to that DB.
 Committing one without the other is exactly what breaks catalog_queries_test in CI.
 
 Re-run the commit without --no-verify.

@@ -1,0 +1,98 @@
+[[source]]
+cache_name = "sboxU"
+check_kind = "dir"
+check_path = "sboxU/scripts/apnDB"
+env_var = "BFA_SBOXU_PATH"
+importer = "import_apn_reps.jl"
+label = "APN reps"
+name = "apn_reps"
+no_autorun = "BFA_REPS_NO_AUTORUN"
+required = true
+revision = "7066b825c979ceefa901e7be3b2afcc63f587bcf"
+upstream = "https://github.com/lpp-crypto/sboxU.git"
+[[source]]
+cache_name = "sboxU"
+check_kind = "dir"
+check_path = "sboxU/scripts/apnDB"
+env_var = "BFA_SBOXU_PATH"
+importer = "import_quadratic_apn_8bit.jl"
+label = "quadratic APN 8-bit corpora"
+name = "quadratic_apn_8bit"
+no_autorun = "BFA_QAPN8_NO_AUTORUN"
+revision = "7066b825c979ceefa901e7be3b2afcc63f587bcf"
+upstream = "https://github.com/lpp-crypto/sboxU.git"
+[[source]]
+cache_name = "beierle2025"
+check_kind = "file"
+check_path = "new_apns.txt"
+download = "https://langevin.univ-tln.fr/data/apns/new_apns.txt.gz"
+env_var = "BFA_BEIERLE2025_PATH"
+importer = "import_beierle2025.jl"
+label = "Beierle et al. 2025 (Zenodo 16752428, 3.4 GB)"
+name = "beierle2025"
+no_autorun = "BFA_BEIERLE2025_NO_AUTORUN"
+published_bytes = 3395265744
+published_md5 = "dd6ae0655ba8a299a3d668cfc6cf10bf"
+required = true
+reuse_corpus = "beierle2025_n8"
+[[source]]
+cache_name = "sboxU"
+check_kind = "dir"
+check_path = "sboxU/scripts/apnDB"
+env_var = "BFA_SBOXU_PATH"
+importer = "import_sboxu_apn.jl"
+label = "sboxU reconciliation"
+name = "sboxu_reconcile"
+no_autorun = "BFA_SBOXU_NO_AUTORUN"
+revision = "7066b825c979ceefa901e7be3b2afcc63f587bcf"
+upstream = "https://github.com/lpp-crypto/sboxU.git"
+[[source]]
+cache_name = "thesis"
+check_kind = "file"
+check_path = "rep1.txt"
+env_var = "BFA_THESIS_PATH"
+importer = "import_simonberg.jl"
+label = "Simon-Berg thesis"
+name = "simonberg"
+no_autorun = "BFA_SIMONBERG_NO_AUTORUN"
+required = true
+revision = "c13952d2458cb692171816b483f4e8ac0c62455a"
+upstream = "https://github.com/Simon-Berg/thesis.git"
+[[source]]
+check_kind = "file"
+check_path = "list_of_APN_functions_for_different_n"
+env_var = "BFA_XANADU_PATH"
+importer = "import_xanadu_apn.jl"
+label = "Xanadu APN"
+name = "xanadu"
+no_autorun = "BFA_XANADU_NO_AUTORUN"
+[[source]]
+check_kind = "dir"
+check_path = "database/apn"
+env_var = "BFA_APN_REPO_PATH"
+importer = "import_apn_repository.jl"
+label = "APN-Repository"
+name = "apn_repo"
+no_autorun = "BFA_APN_REPO_NO_AUTORUN"
+[[source]]
+check_kind = "file"
+check_path = "apn_all.json"
+env_var = "BFA_KUZNETSOV2026_PATH"
+importer = "import_kuznetsov2026.jl"
+label = "Kuznetsov 2026 original JSON dataset"
+name = "kuznetsov2026"
+no_autorun = "BFA_KUZNETSOV_NO_AUTORUN"
+[[source]]
+builtin = true
+importer = "import_known_families.jl"
+label = "known APN families (constructed)"
+name = "known_families"
+no_autorun = "BFA_KNOWN_FAMILIES_NO_AUTORUN"
+required = true
+[[source]]
+builtin = true
+importer = "import_sporadic_known.jl"
+label = "known sporadic APN classes (constructed)"
+name = "known_sporadic"
+no_autorun = "BFA_KNOWN_SPORADIC_NO_AUTORUN"
+required = true

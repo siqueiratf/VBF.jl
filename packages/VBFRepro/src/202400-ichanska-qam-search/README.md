@@ -42,7 +42,7 @@ QAM API written for this exact paper that is never called.
 > during this review**: `packages/VBFCatalog/BFA_catalog.sqlite` contains all 27
 > representatives as first-class rows `SimonBerg_GF4_n8_class_1 … _27` (family
 > `CCZ-rep-GF4`, confirmed count 27), **and** the bulk corpus `simonberg_gf4_n8`
-> (`packages/VBFCatalog/corpora/simonberg_gf4_n8.sqlite`) with **exactly 196,863 members** —
+> (`packages/VBFCatalog/BFA_catalog.sqlite (dataset simonberg_gf4_n8)`) with **exactly 196,863 members** —
 > the paper's §5.1 headline count. Loading all 27 database representatives and computing
 > their ortho-derivative differential spectra (ODDS) maps them **bijectively and in order**
 > onto Table 11 indices 1-27 (class *k* ↔ Table 11 index *k*, all 27 distinct, all du=2).
@@ -320,7 +320,7 @@ mapping. **Not re-verified this pass**: Δ-rank 438, Γ-rank 14034, `|𝓜(G_F)|
 
 | Claimed-new object | Status |
 |--------------------|--------|
-| Table 5 / Table 10 #10, the "new" (8,2) APN function | **not-new.** `is_novel(F) == false`; `classify_ccz(F) == (:sigma_match, "functions", 579)`. `are_ea_equivalent` returns `true` against **all** of: `wengtangong2013_n8` member 9 (bib_key `WengTanGong_201300`, **2013** — predates the paper and is absent from its reference list), `reprs8_34` (sboxU quadratic-APN CCZ-class representative, `functions.id = 579`), and `SimonBerg_GF4_n8_class_10` (`functions.id = 591`). It is therefore absent from `packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml` but **already present in the catalog under three other names**. |
+| Table 5 / Table 10 #10, the "new" (8,2) APN function | **not-new.** `is_novel(F) == false`; `classify_ccz(F) == (:sigma_match, "functions", 579)`. `are_ea_equivalent` returns `true` against **all** of: `wengtangong2013_n8` member 9 (bib_key `WengTanGong_201300`, **2013** — predates the paper and is absent from its reference list), `reprs8_34` (sboxU quadratic-APN CCZ-class representative, `functions.id = 579`), and `SimonBerg_GF4_n8_class_10` (`functions.id = 591`). It is therefore absent from `packages/VBFCatalog/src/entries/apn_catalog/n8_apn.toml` but **already present in the catalog under three other names**. |
 
 Verification levels reached: formula reproduced ✓; APN property verified from the full DDT ✓;
 no parameter family (a single explicit function); **novelty/equivalence claim checked ✓ and
@@ -352,7 +352,7 @@ importing it would create a duplicate. The correct action is to enrich the exist
 `bib_key = "Ichanska_202400"` and the Table-5 `algebraic_form`.
 
 The repository already ships a prebuilt σ-signature index at
-`packages/VBFCatalog/corpora/ccz_sigma_index.sqlite` covering all eight n = 8 sources, so the
+`data/catalog/ccz_sigma_index.sqlite` covering all eight n = 8 sources, so the
 novelty escalation the previous revision recommended as "never checked" is a single call to
 `is_novel(F)` / `classify_ccz(F)`. It returns **not novel**.
 

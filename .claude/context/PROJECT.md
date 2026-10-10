@@ -88,7 +88,7 @@ do not maintain a second inventory here. Bulk corpus records remain distinct
 from the curated functions table. Use `list_corpora` and `corpus_info` to inspect
 their current member counts and provenance.
 
-Data-build importers live under `packages/VBFCatalog/data-build/` and run in
+Data-build importers live under `packages/VBFCatalog/src/import/` and run in
 their own environment — never `include` them from a REPL or test.
 
 ## Paper-reproduction conventions
@@ -121,7 +121,9 @@ style/docs). Never skip hooks. Never amend published commits.
 ## Environment variables for catalog importers
 
 `BFA_SBOXU_PATH`, `BFA_XANADU_PATH`, `BFA_APN_REPO_PATH`, `BFA_THESIS_PATH` —
-override upstream checkout paths for data-build scripts only.
+override original-source cache paths for `src/import/` scripts. `BFA_DATA_DIR`
+selects local bulk/index storage under `data/catalog/`. Curated entries and small
+compact corpora share `BFA_catalog.sqlite`; old measurements live in `data/perf/`.
 
 ## Reproducible APN command
 
@@ -139,7 +141,7 @@ checkpoints are unsupported. See `packages/VBFSearch/README.md` for the supporte
 
 The root `census/` tree is removed. Pure coefficient-tree, restriction and profile
 math lives in VBF (`QuadraticAPNTree`, `QuadraticRestrictions`, `QuadraticProfiles`).
-Original-source rebuild tools are `packages/VBFCatalog/tools/reference/`;
+Original-source rebuild tools are `packages/VBFCatalog/src/import/reference/`;
 literature coverage and study consumers are under `packages/VBFWorkingPaper/src/`.
 Historical data is `data/apn/archive/census/`; new rebuilds use `data/apn/rebuilds/`.
 See `packages/VBFSearch/README.md` for checkpointing and mathematical guarantees.

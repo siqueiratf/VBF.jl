@@ -29,25 +29,23 @@ If **any** file under these paths is in the commit — staged, modified, or
 untracked:
 
 ```
-packages/VBFCatalog/data-raw/     packages/VBFCatalog/BFA_catalog.sqlite
-packages/VBFCatalog/data-build/   packages/VBFCatalog/src/
-packages/VBFCatalog/corpora/
+packages/VBFCatalog/src/     packages/VBFCatalog/BFA_catalog.sqlite
 ```
 
 then, before staging anything, run:
 
 ```bash
-make -C packages/VBFCatalog/data-build check
+make -C packages/VBFCatalog/src/import check
 ```
 
-This must end in `catalog-check: OK`. It verifies that `data-raw` and the
+This must end in `catalog-check: OK`. It verifies that `src/entries` and the
 committed `BFA_catalog.sqlite` still agree and then runs the catalog test items.
 
 - **Non-zero exit → do NOT commit.** Report the script's output verbatim and
-  stop. The usual cause is a `data-raw` edit whose catalog rebuild was
+  stop. The usual cause is a `src/entries` edit whose catalog rebuild was
   forgotten: the DB is a tracked build product, and the catalog tests
   reconstruct their expected counts from the TOMLs and compare them against it.
-  The fix is `make -C packages/VBFCatalog/data-build catalog` plus
+  The fix is `make -C packages/VBFCatalog/src/import catalog` plus
   `git add packages/VBFCatalog/BFA_catalog.sqlite`, and that is the fixer's job,
   not yours.
 - **Never** set `VBF_SKIP_CATALOG_CHECK` or `VBF_SKIP_CATALOG_TESTS` to get past
@@ -100,7 +98,7 @@ You receive: a paper ID and a summary of what was fixed.
 1. `cd` to repo root. Run `git status` to see all modifications.
 2. Run `make -C packages/VBFRepro/src/<Paper_ID> test`. If it fails → halt and report.
    If anything under the catalog paths above changed, also run
-   `make -C packages/VBFCatalog/data-build check` — halt and report unless it
+   `make -C packages/VBFCatalog/src/import check` — halt and report unless it
    ends in `catalog-check: OK`.
 3. Analyze the diff: `git diff` and `git diff --cached` (if anything staged).
 4. Group changes into logical commits (see heuristics above).

@@ -111,11 +111,7 @@ jobs:
         run: julia --startup-file=no --project=packages/${{ matrix.package }}/perf packages/${{ matrix.package }}/perf/test.jl
 
   catalog-check:
-    # Structural half of .githooks/catalog-check — the same gate the pre-commit
-    # hook runs, as a backstop for clones that never enabled the hook. Needs no
-    # Julia and finishes in seconds, so a data-raw change committed without its
-    # rebuilt BFA_catalog.sqlite is named as such here instead of surfacing 40
-    # minutes later as a bare count mismatch in catalog_queries_test.
+    # Same Julia source/database agreement check as the local hook.
     name: Catalog sync
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -123,7 +119,15 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v5
 
-      - name: Check data-raw against the committed catalog
+      - name: Install Julia 1.12
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+      - name: Cache Julia depot
+        uses: julia-actions/cache@v2
+      - name: Instantiate catalog environment
+        run: julia --startup-file=no --project=packages/VBFCatalog -e 'using Pkg; Pkg.instantiate()'
+      - name: Check entries against the committed catalog
         run: .githooks/catalog-check --structure-only
 
   test:

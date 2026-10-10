@@ -277,7 +277,7 @@ during this re-review:
 The paper claims **one new APN function** (Section 6.1.1 / Theorem 6.2 at n=8).
 
 - Theorem 6.2 new n=8 class: **present** — `n8_Calderini2021_thm62` in
-  `packages/VBFCatalog/data-raw/apn_catalog/n8_apn.toml` (parameters `m=4, i=1, b=1, c=6`,
+  `packages/VBFCatalog/src/entries/apn_catalog/n8_apn.toml` (parameters `m=4, i=1, b=1, c=6`,
   modulus 19). The catalog LUT was verified APN with `deg = 2`, and its ortho-derivative
   signature is exactly the single class produced by the 10 valid `(b,c)` pairs
   `{(1,6),(1,7),(8,4),(8,11),(10,2),(10,14),(12,3),(12,9),(15,5),(15,13)}`. Novelty versus
@@ -306,7 +306,7 @@ source            = "Edel and Pott, Adv. Math. Commun. 3(1):59-81 (2009); indepe
 lut               = [0, 57, 27, 52, 45, 22, 15, 2, 49, 45, 21, 31, 44, 18, 49, 57, 19, 62, 52, 47, 4, 11, 58, 35, 12, 36, 20, 10, 11, 33, 10, 54, 61, 61, 33, 23, 15, 13, 10, 30, 46, 43, 13, 62, 12, 43, 54, 7, 31, 43, 63, 29, 55, 33, 46, 14, 34, 51, 61, 58, 58, 41, 28, 57]
 ```
 
-Target file: `packages/VBFCatalog/data-raw/apn_catalog/n6_apn.toml`. Note that this LUT is
+Target file: `packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml`. Note that this LUT is
 *not* a permutation and *not* injective — that is correct; it is the APN function, not
 Dillon's permutation.
 

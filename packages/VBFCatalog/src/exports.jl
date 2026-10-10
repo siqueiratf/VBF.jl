@@ -19,9 +19,6 @@ export cross_source_matches, multi_source_functions
 # declarative APN catalog
 export apn_catalog_names, apn_catalog_metadata, load_apn_function
 
-# artifacts
-export artifact_path, have_artifact, list_artifacts
-
 # bibliography
 export BibEntry, load_bibliography, parse_bibtex, bibliography_path
 
@@ -29,6 +26,7 @@ export BibEntry, load_bibliography, parse_bibtex, bibliography_path
 export list_corpora, corpus_info, corpus_length, corpus_function
 export corpus_coefficients, corpus_store_path, materialize_corpus_luts
 export build_corpus_store!, register_corpus!
+export catalog_data_dir, with_corpus_rows, corpus_digest
 
 # σ-signature CCZ classification + novelty oracle
 export sigma_key, sigma_hash, build_sigma_index!, classify_ccz, is_novel
