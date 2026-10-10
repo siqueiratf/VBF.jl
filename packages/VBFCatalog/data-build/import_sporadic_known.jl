@@ -57,24 +57,24 @@ function sporadic_known()
     push!(out, ("n9_BCL2008_Tr_x9_x3",
         () -> trace_plus_monomial(9, 9, 3; modulus = 529),
         "Budaghyan_200809",
-        "Tr_1^9(x^9) + x^3 over GF(2^9), mod x^9+x^4+1. Budaghyan et al. 2020 Table I row 4 (Gamma-rank 47890); Budaghyan-Carlet-Leander 2008. See papers/Budaghyan_202008/README.md."))
+        "Tr_1^9(x^9) + x^3 over GF(2^9), mod x^9+x^4+1. Budaghyan et al. 2020 Table I row 4 (Gamma-rank 47890); Budaghyan-Carlet-Leander 2008. See packages/VBFRepro/src/202008-budaghyan-isotopic-shifts/README.md."))
 
     push!(out, ("n9_EdelPott2009_x3_x10_x136",
         () -> monomial_sum(9, [(1,3),(1,10),(_zeta_pow(9,438,529),136)]; modulus = 529),
         "Edel_200900",
-        "x^3 + x^10 + z^438 x^136 over GF(2^9), z primitive, mod x^9+x^4+1. Budaghyan et al. 2020 Table I row 7 (Gamma-rank 48608); Edel-Pott 2009 Table 11 entry 8.1. See papers/Budaghyan_202008/README.md."))
+        "x^3 + x^10 + z^438 x^136 over GF(2^9), z primitive, mod x^9+x^4+1. Budaghyan et al. 2020 Table I row 7 (Gamma-rank 48608); Edel-Pott 2009 Table 11 entry 8.1. See packages/VBFRepro/src/202008-budaghyan-isotopic-shifts/README.md."))
 
     push!(out, ("n9_Yu2020_f7_known",
         () -> monomial_sum(9, [(1,e) for e in (264,160,144,132,80,72,66,40,17)]; modulus = 529),
         "Yu_202012",
-        "x^264+x^160+x^144+x^132+x^80+x^72+x^66+x^40+x^17 over GF(2^9), mod x^9+x^4+1. Named as a KNOWN function by Yu et al. 2020; read :new against the catalog before this import (proof the n=9 index was incomplete). See papers/Yu_202012/README.md."))
+        "x^264+x^160+x^144+x^132+x^80+x^72+x^66+x^40+x^17 over GF(2^9), mod x^9+x^4+1. Named as a KNOWN function by Yu et al. 2020; read :new against the catalog before this import (proof the n=9 index was incomplete). See packages/VBFRepro/src/202012-yu-binary-coefficients/README.md."))
 
     # --- n=7 CCZ class recovered from Yu 2020's corrupted Table 2 (its duplicate
     #     row hid this class). Present in the sboxU corpus as reprs7_3 but unnamed.
     push!(out, ("n7_Yu2020_recovered_x3_x5_x9_x40_x96",
         () -> monomial_sum(7, [(1,3),(1,5),(1,9),(1,40),(1,96)]; modulus = primitive_polynomial(7)),
         "Yu_202012",
-        "x^3+x^5+x^9+x^40+x^96 over GF(2^7), mod x^7+x+1. The 15th n=7 CCZ class that Yu et al. 2020 Table 2's duplicated row hid; recovered by exhaustive search in the reproduction. See papers/Yu_202012/README.md."))
+        "x^3+x^5+x^9+x^40+x^96 over GF(2^7), mod x^7+x+1. The 15th n=7 CCZ class that Yu et al. 2020 Table 2's duplicated row hid; recovered by exhaustive search in the reproduction. See packages/VBFRepro/src/202012-yu-binary-coefficients/README.md."))
 
     out
 end

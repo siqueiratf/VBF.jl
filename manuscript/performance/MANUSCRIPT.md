@@ -3,12 +3,12 @@
 Run from the repository root:
 
 ```sh
-make -C packages/VBFRepro/analysis manuscript input=/absolute/historical.sqlite figure_output=/absolute/figures
-make -C packages/VBFRepro/analysis test
+make -C packages/VBFRepro/src/analysis manuscript input=/absolute/historical.sqlite figure_output=/absolute/figures
+make -C packages/VBFRepro/src/analysis test
 ```
 
 The manuscript target uses the existing analysis environment. If dependencies
-are absent, first run `make -C packages/VBFRepro/analysis instantiate`. No benchmark is rerun and
+are absent, first run `make -C packages/VBFRepro/src/analysis instantiate`. No benchmark is rerun and
 the catalog is opened with query-only protection. Override `input=PATH`,
 `figure_output=DIR`, or `manuscript_config=PATH` as needed.
 

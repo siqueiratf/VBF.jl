@@ -1,7 +1,0 @@
-# Beierle–Leander (2022) aggregate report
-dataset_counts_ok = true
-apn_verification_ok = true
-quadratic_degree_ok = true
-table1_ranks_ok = true
-table1_walsh_ok = true
-ccz_distinct_from_gold = 3

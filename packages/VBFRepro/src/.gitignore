@@ -1,0 +1,17 @@
+# Original publication inputs and generated experiments stay local.
+**/input/**
+!**/input/**/
+**/inputs/**
+!**/inputs/**/
+**/results/**
+!**/results/**/
+**/tuples/**
+!**/tuples/**/
+# Frozen tuple-class matrices and witnessed search controls are reproduction
+# fixtures, used by the paper's tests and bounded benchmark setup.
+!202107-beierle-self-equivalence/tuples/AllTuplesMatrices3.toml
+!202107-beierle-self-equivalence/tuples/AllTuplesMatrices6.toml
+!202107-beierle-self-equivalence/tuples/AllTuplesMatrices7.toml
+!202107-beierle-self-equivalence/tuples/AllTuplesMatrices8.toml
+!README.md
+!**/README.md

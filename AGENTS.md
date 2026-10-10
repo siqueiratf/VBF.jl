@@ -28,9 +28,12 @@ Primary sources:
   root `search/` and `census/` trees are retired; see `packages/VBFSearch/CENSUS_REVIEW.md`.
 - `packages/VBFCatalog/data-build/`: importer/build scripts with their own
   environment. Do not include these from package tests or a casual REPL.
-- `packages/VBFRepro/papers/`: standalone paper-reproduction scripts. Keep one paper claim,
+- `packages/VBFRepro/src/`: standalone paper-reproduction scripts. Keep one paper claim,
   theorem, lemma, algorithm, table, or experiment per file, and make each file
   runnable on its own.
+  Use flat `YYYYMM-author-subject/` folders, e.g. `202508-beierle-millions/`.
+  Cross-paper metrics, timing analysis and validation live in `src/analysis/`.
+  Write new analysis and independent verifiers in Julia.
 - `packages/<package>/perf/`: optional BenchmarkTools workloads and profiling.
   Separate development environments; never dependencies of package runtime code.
   Measurements live under `data/perf/`, separate from the curated catalog.
@@ -81,7 +84,7 @@ Primary sources:
   reconstructs those same sums from `data-raw/` and fails on the exact figure
   that would otherwise surface as a bare CI count mismatch, and it separately
   refuses any family the test never names.
-- Every `README.md` in the repo is a tracked file, `packages/VBFRepro/papers/<year>/<Paper_ID>/`
+- Every `README.md` in the repo is a tracked file, `packages/VBFRepro/src/<Paper_ID>/`
   review summaries included. Commit the README you write or edit in the same
   pass; an untracked or uncommitted README is an omission, not a scratch file.
   Never add an ignore pattern that hides one — the negations at the bottom of
@@ -93,7 +96,7 @@ Primary sources:
 - VBF package tests:
   `julia -e 'using Pkg; Pkg.activate("packages/VBF"); Pkg.test()'`
 - Single paper folder:
-  `make -C packages/VBFRepro/papers/<year>/<Paper_ID> test`
+  `make -C packages/VBFRepro/src/<Paper_ID> test`
 - Paper reports should run from the root project, not from a package-local
   project unless that paper's Makefile explicitly does so.
 
@@ -103,8 +106,8 @@ Environment knobs for the main test suite:
 
 ## Paper Reproductions
 
-- Follow the organization used by `packages/VBFRepro/papers/2022/Beierle_202201/` and the recent
-  multi-file example `packages/VBFRepro/papers/2022/Yu_202211d/`.
+- Follow the organization used by `packages/VBFRepro/src/202201-beierle-quadratic-instances/` and the recent
+  multi-file example `packages/VBFRepro/src/202211-yu-qam/`.
 - Mirror the publication closely enough that the paper can be read side by side
   with the implementation.
 - Paper scripts orchestrate experiments; shared reusable math belongs in

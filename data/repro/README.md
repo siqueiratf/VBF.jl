@@ -16,6 +16,6 @@ at their relocated paths. Historical provenance describes its original execution
 and is preserved without rewriting paths or source identities.
 
 Original copyrighted paper inputs and existing experiment results remain beside
-their standalone reproduction under `packages/VBFRepro/papers/<year>/<id>/`.
+their standalone reproduction under `packages/VBFRepro/src/<id>/`.
 They retain the paper's ignore rules and require a separate backup or distribution
 agreement; Git alone does not preserve ignored local files.

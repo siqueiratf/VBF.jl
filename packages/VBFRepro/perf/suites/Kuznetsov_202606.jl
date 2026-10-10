@@ -1,7 +1,7 @@
 # Historical calibration workloads retain the original mathematical fixtures.
 module PerfKuznetsovCalibration
 using VBF
-const PAPER_DIR=normpath(joinpath(@__DIR__,"..","..","papers","2026","Kuznetsov_202606"))
+const PAPER_DIR=normpath(joinpath(@__DIR__, "..", "..", "src", "202606-kuznetsov-groebner-search"))
 include(joinpath(PAPER_DIR,"helpers.jl"))
 include(joinpath(PAPER_DIR,"phase2.jl"))
 const SINGLE = UInt8[0,0,0,128,0,80,240,32,0,144,160,176,16,208,64,0,0,168,210,250,111,151,77,53,212,236,166,30,171,195,41,193,
@@ -16,12 +16,12 @@ end
 function register!(reg)
     P=PerfKuznetsovCalibration
     benchmark!(reg;group="papers",name="Kuznetsov_202606_kernel",n=8,
-        paper_id="Kuznetsov_202606",mode="paper_specific",approach="self-equivalence kernel",
+        paper_id="202606-kuznetsov-groebner-search",mode="paper_specific",approach="self-equivalence kernel",
         setup=P.build_A_matrix,call=P.fc22_sol22,
         validate=(p,v)->(@assert length(v.pivot_cols)==184 && length(v.free_cols)==40),
         note="224-coefficient linear constraints; historical rank 184, dimension 40")
     benchmark!(reg;group="papers",name="Kuznetsov_202606_groebner_slice",n=8,cost=3,samples=3,
-        paper_id="Kuznetsov_202606",mode="paper_specific",approach="Groebner NL=4 slice",
+        paper_id="202606-kuznetsov-groebner-search",mode="paper_specific",approach="Groebner NL=4 slice",
         setup=()->copy(P.SINGLE),call=P.phase2_slice,
         validate=(p,v)->(@assert length(v)==1 && only(v).lut==p),
         parameters=(;variables=24,verify=true),

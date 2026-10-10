@@ -9,7 +9,7 @@ and the [API documentation sources](docs/src).
 
 ## Paper reproductions and performance
 
-Paper claims live under `packages/VBFRepro/papers/<year>/<id>/` and share one
+Paper claims live under `packages/VBFRepro/src/<id>/` and share one
 execution environment. The [reproduction runner](packages/VBFRepro/README.md)
 lists and runs selected papers in isolated processes, recording configurations,
 logs, exit status and source identities under `data/repro/runs/`:
@@ -20,7 +20,7 @@ bin/vbfrepro test Yu_202211d --timeout-seconds 300
 ```
 
 Cross-paper metrics and performance analysis share
-[one analysis environment](packages/VBFRepro/analysis/README.md).
+[one analysis environment](packages/VBFRepro/src/analysis/README.md).
 Each package owns optional BenchmarkTools workloads in its `perf/` folder.
 Performance environments are separate from runtime dependencies, and measurements
 are stored under `data/perf/`; benchmark execution leaves the catalog unchanged.

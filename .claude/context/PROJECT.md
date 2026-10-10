@@ -28,8 +28,14 @@ Key layout rules:
 - `VBFCatalog` is the canonical source for curated function entries, LUTs and
   corpora. Consumers load its records through its APIs. Independent paper-formula
   reconstructions and generated experiment evidence do not form another catalog.
-- Paper scripts in `packages/VBFRepro/papers/` orchestrate experiments; they do not re-implement
+- Paper scripts in `packages/VBFRepro/src/` orchestrate experiments; they do not re-implement
   core math that belongs in `packages/VBF`.
+- Reproduction folders use flat `YYYYMM-author-subject` slugs, e.g.
+  `src/202508-beierle-millions/`; `00` retains an unspecified month.
+  Cross-paper metrics, performance analysis and validation experiments live
+  together under `packages/VBFRepro/src/analysis/` with one optional environment.
+  New verifiers and analysis code are Julia; independent checks use stdlib
+  arithmetic without calling the VBF routine they verify.
 
 ## Running tests
 
@@ -41,7 +47,7 @@ julia -e 'using Pkg; Pkg.activate("packages/VBF"); Pkg.test()'
 julia -e 'using Pkg; Pkg.activate("packages/VBFRepro"); Pkg.test()'
 
 # Single paper folder (e.g. Yu_202211d)
-make -C packages/VBFRepro/papers/2022/Yu_202211d test
+make -C packages/VBFRepro/src/202211-yu-qam test
 ```
 
 Environment knobs: `RETESTITEMS_NWORKERS` (default: min(CPU_THREADS, 8)),
@@ -76,15 +82,10 @@ Main APIs: `load_catalog()`, `list_functions`, `find_function`, `load_sbox`,
 `load_bibliography` / `parse_bibtex`, `list_corpora`, `corpus_info`,
 `corpus_length`, `corpus_function`, `materialize_corpus_luts`.
 
-Catalog content (committed, 603 first-class rows):
-- 18 literature S-boxes (AES, AES-inv, 14 four-bit cipher S-boxes)
-- 28 declarative APN functions (n ∈ {4..10})
-- 530 quadratic-APN CCZ-class representatives
-- 27 Simon-Berg GF(4)-coefficient CCZ representatives over GF(2^8)
-
-Bulk corpora (not first-class rows): Simon Berg 196 863-member corpus, 7
-literature 8-bit quadratic-APN families (Edel-Pott, Weng-Tan-Gong, Yu-Wang-Li,
-Taniguchi, Beierle-Leander, Yu-Perrin, Beierle-Leander-Perrin; 32 916 members).
+Catalog contents and counts come from these APIs and the declarative catalog;
+do not maintain a second inventory here. Bulk corpus records remain distinct
+from the curated functions table. Use `list_corpora` and `corpus_info` to inspect
+their current member counts and provenance.
 
 Data-build importers live under `packages/VBFCatalog/data-build/` and run in
 their own environment — never `include` them from a REPL or test.
@@ -93,12 +94,12 @@ their own environment — never `include` them from a REPL or test.
 
 See the skill: `.claude/skills/reproduce-paper/SKILL.md`.
 
-Reference pattern: `packages/VBFRepro/papers/2021/Beierle_202107/` (older single-folder style).
-Fully-worked recent example: `packages/VBFRepro/papers/2022/Yu_202211d/` (multi-file, Makefile, tests).
+Reference pattern: `packages/VBFRepro/src/202107-beierle-self-equivalence/` (older single-folder style).
+Fully-worked recent example: `packages/VBFRepro/src/202211-yu-qam/` (multi-file, Makefile, tests).
 
-Single-file papers (`packages/VBFRepro/papers/*.jl`): expose `reproduce()` returning a NamedTuple
-and `report(io=stdout)`. The `papers_test.jl` ReTestItems item calls
-`reproduce()` and checks frozen expected values.
+Each reproduction has a standalone Makefile and bounded targets. The lightweight
+runner discovers their slugs without importing scripts; run a paper's own tests
+with `bin/vbfrepro test <slug>`. Bibliography identifiers remain in VBFCatalog.
 
 ## Coding conventions
 

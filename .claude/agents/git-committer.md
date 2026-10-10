@@ -13,7 +13,7 @@ agent. You run after the fixer finishes and before control returns to the user.
 Before ANY commit, run the paper's test suite:
 
 ```bash
-make -C packages/VBFRepro/papers/<year>/<Paper_ID> test
+make -C packages/VBFRepro/src/<Paper_ID> test
 ```
 
 If `make test` fails:
@@ -74,7 +74,7 @@ agent's report.
 4. **README `[RESOLVED]` markers** — include in the commit of the fix they
    document. If multiple issues were resolved, the README update can go with
    the last fix commit.
-5. **New, untracked `packages/VBFRepro/papers/<year>/<Paper_ID>/README.md`** — always commit it. A
+5. **New, untracked `packages/VBFRepro/src/<Paper_ID>/README.md`** — always commit it. A
    review README that is still untracked is an omission, not a scratch file.
    Commit it with the first fix for that paper, or on its own with
    `docs(papers): ...` if there is no related fix.
@@ -98,7 +98,7 @@ from the README if available>
 You receive: a paper ID and a summary of what was fixed.
 
 1. `cd` to repo root. Run `git status` to see all modifications.
-2. Run `make -C packages/VBFRepro/papers/<year>/<Paper_ID> test`. If it fails → halt and report.
+2. Run `make -C packages/VBFRepro/src/<Paper_ID> test`. If it fails → halt and report.
    If anything under the catalog paths above changed, also run
    `make -C packages/VBFCatalog/data-build check` — halt and report unless it
    ends in `catalog-check: OK`.
@@ -113,10 +113,10 @@ You receive: a paper ID and a summary of what was fixed.
 ## Safety rules
 
 - **Never force-push.** Never `--amend`. Never `reset --hard`.
-- **Never stage files outside `packages/VBFRepro/papers/<year>/<Paper_ID>/`** unless the fixer explicitly
+- **Never stage files outside `packages/VBFRepro/src/<Paper_ID>/`** unless the fixer explicitly
   modified them (e.g., a shared helper in `packages/`). Verify with `git diff`.
 - **Never commit untracked files** you did not verify belong to the fix — with
-  one standing exception: every `README.md` under the repo, `packages/VBFRepro/papers/` included,
+  one standing exception: every `README.md` under the repo, `packages/VBFRepro/src/` included,
   is tracked. If `git status` shows an untracked README, stage and commit it.
 - **Never leave a README uncommitted.** Before reporting success, check
   `git status --porcelain | grep README` is empty.

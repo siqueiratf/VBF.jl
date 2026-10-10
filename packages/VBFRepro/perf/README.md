@@ -10,7 +10,7 @@ environment, not dependencies of the VBF runtime package.
 ```sh
 julia --project=packages/VBFRepro/perf -e 'using Pkg; Pkg.instantiate()'
 julia --project=packages/VBFRepro/perf packages/VBFRepro/perf/run.jl --list --level=3
-julia --project=packages/VBFRepro/perf packages/VBFRepro/perf/run.jl --paper=Kaleyski_202203 --level=2 --seconds=1 --samples=3
+julia --project=packages/VBFRepro/perf packages/VBFRepro/perf/run.jl --paper=202203-kaleyski-ea-invariants --level=2 --seconds=1 --samples=3
 julia --project=packages/VBFRepro/perf packages/VBFRepro/perf/test.jl
 ```
 
@@ -37,6 +37,6 @@ the same selected paper/input identity. The catalog hash is also recorded.
 Collect evidence only after finishing source edits and with unchanged inputs.
 
 Performance analysis, profiling attribution and manuscript export live in
-[analysis/performance](../analysis/performance/README.md). That reader supports
+[analysis/performance](../src/analysis/performance/README.md). That reader supports
 both historical timing artifacts and the new `timings.tsv`/manifest format and
 keeps their different measurement protocols distinct.

@@ -1,6 +1,6 @@
 ---
 name: add-experiment
-description: Add a new VBF.jl paper reproduction experiment through a staged multi-agent pipeline. Use when the user asks to add, scaffold, plan, implement, test, or review a new paper experiment under packages/VBFRepro/papers/<year>/<slug>/.
+description: Add a new VBF.jl paper reproduction experiment through a staged multi-agent pipeline. Use when the user asks to add, scaffold, plan, implement, test, or review a new paper experiment under packages/VBFRepro/src/<slug>/.
 ---
 
 # Skill: add-experiment
@@ -16,7 +16,7 @@ flow, holds the approval gate, and can intervene at any checkpoint.
 
 Ask the user for these before spawning any agent:
 
-1. **Paper slug** — `LastName_YYYYMM` format, e.g. `Smith_202309`.
+1. **Paper slug** — `YYYYMM-author-subject`, e.g. `202508-beierle-millions`.
 2. **TeX file path** — absolute or repo-relative path to the converted `.tex`
    (or PDF if TeX is unavailable). Must already exist on disk.
 3. **Author artifact** (optional) — path to any reference code the authors
@@ -24,7 +24,7 @@ Ask the user for these before spawning any agent:
 4. **Routines checklist** (optional) — path to `routines_to_implement_list.txt`.
    If absent, the Paper Extractor will synthesise one.
 
-Target directory: `packages/VBFRepro/papers/<year>/<slug>/`. If it already exists, read its current
+Target directory: `packages/VBFRepro/src/<slug>/`. If it already exists, read its current
 contents before proceeding so agents do not overwrite existing work.
 
 ---
@@ -37,26 +37,26 @@ Each agent writes exactly one named artifact; the next agent reads it.
 [TeX / PDF]
      │
      ▼
-[1] Paper Extractor  ──►  packages/VBFRepro/papers/<year>/<slug>/EXPERIMENTS.md
+[1] Paper Extractor  ──►  packages/VBFRepro/src/<slug>/EXPERIMENTS.md
                                   │
                                   ▼
-[2] Scaffolder       ──►  packages/VBFRepro/papers/<year>/<slug>/  (files created)
-                          packages/VBFRepro/papers/<year>/<slug>/SCAFFOLD_REPORT.md
+[2] Scaffolder       ──►  packages/VBFRepro/src/<slug>/  (files created)
+                          packages/VBFRepro/src/<slug>/SCAFFOLD_REPORT.md
                                   │
                                   ▼
-[3] Reviewer/Planner ──►  packages/VBFRepro/papers/<year>/<slug>/PLAN.md  (created/updated)
-                          packages/VBFRepro/papers/<year>/<slug>/Makefile  (mock, targets only)
+[3] Reviewer/Planner ──►  packages/VBFRepro/src/<slug>/PLAN.md  (created/updated)
+                          packages/VBFRepro/src/<slug>/Makefile  (mock, targets only)
                                   │
                           ◄── APPROVAL GATE ──►
                                   │
                                   ▼
-[4] Implementer      ──►  packages/VBFRepro/papers/<year>/<slug>/*.jl  (code in stubs)
+[4] Implementer      ──►  packages/VBFRepro/src/<slug>/*.jl  (code in stubs)
                                   │
                                   ▼
 [5] Tester           ──►  test results + extended tests
                                   │
                                   ▼
-[6] Final Reviewer   ──►  packages/VBFRepro/papers/<year>/<slug>/REVIEW.md
+[6] Final Reviewer   ──►  packages/VBFRepro/src/<slug>/REVIEW.md
 ```
 
 ---
@@ -74,7 +74,7 @@ that downstream agents use as their shared ground truth.
 You are the Paper Extractor agent for VBF.jl.
 
 Your only job is to read the paper source and produce
-`packages/VBFRepro/papers/<year>/<SLUG>/EXPERIMENTS.md`. Do NOT write any Julia code.
+`packages/VBFRepro/src/<SLUG>/EXPERIMENTS.md`. Do NOT write any Julia code.
 
 ## Inputs
 - TeX file: <TEX_PATH>
@@ -83,7 +83,7 @@ Your only job is to read the paper source and produce
 
 ## What to extract
 
-Read the TeX carefully and write `packages/VBFRepro/papers/<year>/<SLUG>/EXPERIMENTS.md` with these
+Read the TeX carefully and write `packages/VBFRepro/src/<SLUG>/EXPERIMENTS.md` with these
 sections, in order:
 
 ### Paper metadata
@@ -122,7 +122,7 @@ from the claims inventory.
 Anything ambiguous in the TeX that a human should clarify before implementation.
 
 ## Output
-Write exactly one file: `packages/VBFRepro/papers/<year>/<SLUG>/EXPERIMENTS.md`.
+Write exactly one file: `packages/VBFRepro/src/<SLUG>/EXPERIMENTS.md`.
 Report the absolute path and the number of claims extracted.
 ```
 
@@ -145,12 +145,12 @@ stub content. Do not write substantive Julia logic — only the skeleton.
 ```
 You are the Scaffolder agent for VBF.jl.
 
-Read `packages/VBFRepro/papers/<year>/<SLUG>/EXPERIMENTS.md` (already written) and create the complete
-directory skeleton for `packages/VBFRepro/papers/<year>/<SLUG>/`. Do NOT implement any mathematics.
+Read `packages/VBFRepro/src/<SLUG>/EXPERIMENTS.md` (already written) and create the complete
+directory skeleton for `packages/VBFRepro/src/<SLUG>/`. Do NOT implement any mathematics.
 
-## Reference layout (from packages/VBFRepro/papers/2022/Yu_202211d/)
+## Reference layout (from packages/VBFRepro/src/202211-yu-qam/)
 ```
-packages/VBFRepro/papers/<year>/<slug>/
+packages/VBFRepro/src/<slug>/
   Makefile           ← PLACEHOLDER only; Agent 3 will replace it
   helpers.jl
   report.jl
@@ -193,7 +193,7 @@ packages/VBFRepro/papers/<year>/<slug>/
   the directory if it doesn't exist.
 
 ## Output
-Write every file. Then write `packages/VBFRepro/papers/<year>/<SLUG>/SCAFFOLD_REPORT.md` listing:
+Write every file. Then write `packages/VBFRepro/src/<SLUG>/SCAFFOLD_REPORT.md` listing:
 - Every file created (relative path, type: new/existed).
 - Total file count.
 - Any files that already existed and were NOT overwritten (list them).
@@ -221,8 +221,8 @@ checkpoint before code is written.
 You are the Reviewer/Planner agent for VBF.jl.
 
 Read these files and validate the proposed reproduction:
-- `packages/VBFRepro/papers/<year>/<SLUG>/EXPERIMENTS.md`
-- `packages/VBFRepro/papers/<year>/<SLUG>/SCAFFOLD_REPORT.md`
+- `packages/VBFRepro/src/<SLUG>/EXPERIMENTS.md`
+- `packages/VBFRepro/src/<SLUG>/SCAFFOLD_REPORT.md`
 - `packages/VBF/src/` (search for APIs listed in EXPERIMENTS.md)
 
 ## Validation checklist
@@ -233,7 +233,7 @@ For each claim in EXPERIMENTS.md:
 3. Are all "VBF APIs likely needed" actually exported from `packages/VBF`?
    Search `packages/VBF/src/` to confirm. If an API is missing, flag it with
    [MISSING-API] and propose whether it belongs in `packages/VBF` (reusable)
-   or in `packages/VBFRepro/papers/<year>/<SLUG>/helpers.jl` (paper-local).
+   or in `packages/VBFRepro/src/<SLUG>/helpers.jl` (paper-local).
 4. Is the reproducibility classification (Exact/Bounded/Author-artifact/
    Out-of-scope) consistent with the estimated cost?
 5. Does any claim require a VBFCatalog import in the main experiment files?
@@ -241,7 +241,7 @@ For each claim in EXPERIMENTS.md:
 
 ## Produce PLAN.md
 
-Write `packages/VBFRepro/papers/<year>/<SLUG>/PLAN.md` following the template from `packages/VBFRepro/papers/2022/Yu_202211d/PLAN.md`.
+Write `packages/VBFRepro/src/<SLUG>/PLAN.md` following the template from `packages/VBFRepro/src/202211-yu-qam/PLAN.md`.
 Sections required (keep each section concise):
 1. Project Context (two sentences max)
 2. Source Material
@@ -257,7 +257,7 @@ Sections required (keep each section concise):
 
 ## Produce the Makefile
 
-Write `packages/VBFRepro/papers/<year>/<SLUG>/Makefile`, replacing the placeholder from Agent 2.
+Write `packages/VBFRepro/src/<SLUG>/Makefile`, replacing the placeholder from Agent 2.
 Follow the template from `.claude/skills/reproduce-paper/SKILL.md`.
 Rules:
 - Include every Makefile target from EXPERIMENTS.md's "Proposed Makefile target"
@@ -304,16 +304,16 @@ After Agent 3 completes:
 ```
 You are the Implementer agent for VBF.jl.
 
-Your job is to fill in the Julia code stubs in `packages/VBFRepro/papers/<year>/<SLUG>/`. Do not create
-new files — only edit files listed in `packages/VBFRepro/papers/<year>/<SLUG>/SCAFFOLD_REPORT.md`.
+Your job is to fill in the Julia code stubs in `packages/VBFRepro/src/<SLUG>/`. Do not create
+new files — only edit files listed in `packages/VBFRepro/src/<SLUG>/SCAFFOLD_REPORT.md`.
 
 ## Inputs (read all of these before writing a single line of code)
-- `packages/VBFRepro/papers/<year>/<SLUG>/PLAN.md` — architecture constraints, implementation phases,
+- `packages/VBFRepro/src/<SLUG>/PLAN.md` — architecture constraints, implementation phases,
   acceptance criteria.
-- `packages/VBFRepro/papers/<year>/<SLUG>/EXPERIMENTS.md` — per-claim VBF APIs, pseudocode hints,
+- `packages/VBFRepro/src/<SLUG>/EXPERIMENTS.md` — per-claim VBF APIs, pseudocode hints,
   reproducibility classification.
-- `packages/VBFRepro/papers/<year>/<SLUG>/SCAFFOLD_REPORT.md` — which files exist and what they contain.
-- `packages/VBFRepro/papers/<year>/<SLUG>/codes_mencioned_in_original_paper/` — any TeX, routines list,
+- `packages/VBFRepro/src/<SLUG>/SCAFFOLD_REPORT.md` — which files exist and what they contain.
+- `packages/VBFRepro/src/<SLUG>/codes_mencioned_in_original_paper/` — any TeX, routines list,
   author artifact. Read them.
 - `packages/VBF/src/` — search for each API before using it. Never use an API
   you haven't confirmed exists.
@@ -364,7 +364,7 @@ After finishing all phases, write a one-paragraph summary:
 ```
 
 **Orchestrator check after Agent 4:**
-- Run `julia --project=. packages/VBFRepro/papers/<year>/<slug>/test/runtests.jl` to
+- Run `julia --project=. packages/VBFRepro/src/<slug>/test/runtests.jl` to
   get an early signal before the Tester agent runs.
 - If Julia errors on import or syntax, ask Agent 4 to fix them before proceeding.
 
@@ -383,11 +383,11 @@ You are the Tester agent for VBF.jl.
 
 ## Context
 Paper slug: <SLUG>
-Paper folder: packages/VBFRepro/papers/<year>/<SLUG>/
+Paper folder: packages/VBFRepro/src/<SLUG>/
 Root Julia project: /home/tiago/VBF.jl
 
 ## Step 1 — Run tests
-Run: make -C packages/VBFRepro/papers/<year>/<SLUG> test
+Run: make -C packages/VBFRepro/src/<SLUG> test
 Capture stdout and stderr.
 
 ## Step 2 — Diagnose failures
@@ -412,7 +412,7 @@ Leave the placeholder (with an updated comment) only when implementation is
 genuinely incomplete.
 
 ## Step 4 — Final run
-Run make -C packages/VBFRepro/papers/<year>/<SLUG> test again after all edits.
+Run make -C packages/VBFRepro/src/<SLUG> test again after all edits.
 
 ## Output
 Print a test report:
@@ -441,13 +441,13 @@ Does not fix anything — produces a prioritised fix list for the user.
 ```
 You are the Final Reviewer agent for VBF.jl.
 
-Perform a read-only review of `packages/VBFRepro/papers/<year>/<SLUG>/`. Do NOT edit any files.
+Perform a read-only review of `packages/VBFRepro/src/<SLUG>/`. Do NOT edit any files.
 
 ## What to check
 
 ### Correctness
 - Does each claim implementation match the paper section it claims to implement?
-  Read `packages/VBFRepro/papers/<year>/<SLUG>/EXPERIMENTS.md` for the mapping.
+  Read `packages/VBFRepro/src/<SLUG>/EXPERIMENTS.md` for the mapping.
 - Are there any indexing bugs (off-by-one, 0-based vs 1-based)?
 - Are search loops correctly guarded by their limit/max_evaluations parameters?
 - Are save_results guards present and correct?
@@ -475,7 +475,7 @@ Perform a read-only review of `packages/VBFRepro/papers/<year>/<SLUG>/`. Do NOT 
 - Are all overridable parameters documented in help?
 
 ## Output
-Write `packages/VBFRepro/papers/<year>/<SLUG>/REVIEW.md` with these sections:
+Write `packages/VBFRepro/src/<SLUG>/REVIEW.md` with these sections:
 
 ### Critical (must fix before merging)
 Numbered list: file:line — what is wrong — why it matters.
@@ -505,11 +505,11 @@ One paragraph: overall readiness, estimated effort to reach "merge-ready" state.
 
 Run through this before declaring the workflow done:
 
-- [ ] `make -C packages/VBFRepro/papers/<year>/<SLUG> test` passes (or remaining failures are documented).
-- [ ] `make -C packages/VBFRepro/papers/<year>/<SLUG> report` completes without a long search.
+- [ ] `make -C packages/VBFRepro/src/<SLUG> test` passes (or remaining failures are documented).
+- [ ] `make -C packages/VBFRepro/src/<SLUG> report` completes without a long search.
 - [ ] PLAN.md exists and acceptance criteria section is filled.
 - [ ] REVIEW.md exists with no Critical items (or Critical items are tracked).
-- [ ] `packages/VBFRepro/papers/<year>/<SLUG>/results/` is in `.gitignore` (check `git check-ignore`).
+- [ ] `packages/VBFRepro/src/<SLUG>/results/` is in `.gitignore` (check `git check-ignore`).
 - [ ] No VBFCatalog import outside catalog_validation.jl.
 - [ ] No hard-coded absolute paths.
 
@@ -531,6 +531,5 @@ Run through this before declaring the workflow done:
 
 | Paper | Style |
 |---|---|
-| `packages/VBFRepro/papers/CanteautCouvreurPerrin2022_orthoderivative.jl` | single-file |
-| `packages/VBFRepro/papers/2021/Beierle_202107/` | multi-file, Makefile |
-| `packages/VBFRepro/papers/2022/Yu_202211d/` | multi-file, full (canonical reference) |
+| `packages/VBFRepro/src/202107-beierle-self-equivalence/` | multi-file, Makefile |
+| `packages/VBFRepro/src/202211-yu-qam/` | multi-file, full (canonical reference) |

@@ -10,8 +10,8 @@ import JSON3
 import Dates
 
 const APN_ALL = normpath(joinpath(
-    @__DIR__, "..", "..", "..",
-    "papers", "Kuznetsov_202606", "codes_mencioned_in_original_paper", "apn_all.json"))
+    @__DIR__, "..", "..", "VBFRepro", "src",
+    "202606-kuznetsov-groebner-search", "codes_mencioned_in_original_paper", "apn_all.json"))
 
 # Insert one bibliography entry (by key) from data-raw/bibliography.bib, idempotently.
 function ensure_bib!(db::SQLite.DB, key::AbstractString)

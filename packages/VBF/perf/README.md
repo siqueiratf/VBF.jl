@@ -81,7 +81,7 @@ Profiling saves `profile_raw.jls` and a source/configuration manifest under
 `data/perf/<package>/profiles/`. Julia's stdlib profiler samples a separate
 execution; its duration is metadata, never a benchmark statistic. Attribution
 and figure tooling live in
-[VBFRepro/analysis/performance](../../VBFRepro/analysis/performance/README.md).
+[VBFRepro analysis](../../VBFRepro/src/analysis/performance/README.md).
 A very short operation can produce no samples; select a sufficiently long
 workload. Profiles and timings are joined only when their identity is explicit.
 

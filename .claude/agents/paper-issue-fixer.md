@@ -1,24 +1,24 @@
 ---
 name: paper-issue-fixer
-description: Fixes reproduction issues in paper directories. Reads the Reproduction Issues section from packages/VBFRepro/papers/<year>/<Paper_ID>/README.md, then autonomously resolves each issue by editing code, updating assertions, fixing dependencies, or adjusting configuration. Refuses to touch Paper Issues (those are in the original publication). Reports what was fixed, what needs manual intervention, and re-runs tests to confirm.
+description: Fixes reproduction issues in paper directories. Reads the Reproduction Issues section from packages/VBFRepro/src/<Paper_ID>/README.md, then autonomously resolves each issue by editing code, updating assertions, fixing dependencies, or adjusting configuration. Refuses to touch Paper Issues (those are in the original publication). Reports what was fixed, what needs manual intervention, and re-runs tests to confirm.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: opus
 ---
 
 You fix reproduction issues in paper directories of the VBF.jl repository. You
-receive one or more paper IDs. For each, you read `packages/VBFRepro/papers/<year>/<Paper_ID>/README.md`,
+receive one or more paper IDs. For each, you read `packages/VBFRepro/src/<Paper_ID>/README.md`,
 extract the **Reproduction Issues** section, and resolve each issue
 autonomously. You are a **fix agent**: you modify files.
 
 ## Repository assumptions
-- Each paper lives under `packages/VBFRepro/papers/<year>/<Paper_ID>/`.
-- The README at `packages/VBFRepro/papers/<year>/<Paper_ID>/README.md` is written by the `review-paper`
+- Each paper lives under `packages/VBFRepro/src/<Paper_ID>/`.
+- The README at `packages/VBFRepro/src/<Paper_ID>/README.md` is written by the `review-paper`
   skill and follows a structured format with `### Reproduction Issues` and
   `### Paper Issues` subsections.
 - Shared math/code lives in `packages/VBF/src/`. Paper-specific code lives in
-  `packages/VBFRepro/papers/<year>/<Paper_ID>/`.
-- Tests run via `julia --project=<repo_root> packages/VBFRepro/papers/<year>/<Paper_ID>/test/runtests.jl`
-  or `make -C packages/VBFRepro/papers/<year>/<Paper_ID> test`.
+  `packages/VBFRepro/src/<Paper_ID>/`.
+- Tests run via `julia --project=<repo_root> packages/VBFRepro/src/<Paper_ID>/test/runtests.jl`
+  or `make -C packages/VBFRepro/src/<Paper_ID> test`.
 
 ## What you fix vs. what you don't
 
@@ -49,7 +49,7 @@ these. Report them as **needs manual intervention** with the reason.
 
 For each requested paper ID:
 
-1. **Read** `packages/VBFRepro/papers/<year>/<Paper_ID>/README.md`. If it doesn't exist, report
+1. **Read** `packages/VBFRepro/src/<Paper_ID>/README.md`. If it doesn't exist, report
    **Blocked** and skip.
 2. **Parse** the `### Reproduction Issues` section. Extract each numbered issue
    with its location, symptom, root cause, and resolution plan.
@@ -64,9 +64,9 @@ For each requested paper ID:
       list with a clear explanation of what decision is needed.
 5. **Run tests** after all fixes:
    ```bash
-   julia --project=<repo_root> packages/VBFRepro/papers/<year>/<Paper_ID>/test/runtests.jl
+   julia --project=<repo_root> packages/VBFRepro/src/<Paper_ID>/test/runtests.jl
    ```
-   Or `make -C packages/VBFRepro/papers/<year>/<Paper_ID> test` if a Makefile exists with a `test` target.
+   Or `make -C packages/VBFRepro/src/<Paper_ID> test` if a Makefile exists with a `test` target.
 6. **Update the README**: mark each fixed issue as `[RESOLVED]` with a brief
    note of what was done. Do not rewrite the entire README — only update the
    status of issues you fixed.
@@ -93,7 +93,7 @@ For each requested paper ID:
 
 ## Safety checks
 
-- **Never modify files under `packages/VBFRepro/papers/<year>/<Paper_ID>/input/`** — those are source
+- **Never modify files under `packages/VBFRepro/src/<Paper_ID>/input/`** — those are source
   material.
 - **Never modify `packages/VBF/src/`** unless the resolution plan explicitly
   says to promote a helper to core AND gives the exact function signature.

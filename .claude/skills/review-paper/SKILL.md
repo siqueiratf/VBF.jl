@@ -14,8 +14,8 @@ the targets and dispatches.
 
 ## 1. Resolve target paper IDs
 
-A paper ID is the author–year directory name under `packages/VBFRepro/papers/<year>/` (author–year slug, e.g.
-`Canteaut_201906`). Resolve targets in this order:
+A paper ID is the author–year directory name under `packages/VBFRepro/src/` (YYYYMM-author-subject slug, e.g.
+`201906-canteaut-butterflies`). Resolve targets in this order:
 
 1. **Args given** — treat each whitespace/comma-separated arg as a paper ID. Use
    them verbatim.
@@ -24,16 +24,16 @@ A paper ID is the author–year directory name under `packages/VBFRepro/papers/<
    ```bash
    # a) uncommitted changes (modified + untracked), mapped to paper IDs
    git -C "$(git rev-parse --show-toplevel)" status --porcelain \
-     | grep -oE 'packages/VBFRepro/papers/[0-9]{4}/[^/]+/' | sed -E 's#packages/VBFRepro/papers/[0-9]{4}/([^/]+)/#\1#' | sort -u
+     | grep -oE 'packages/VBFRepro/src/[0-9]{6}-[^/]+/' | sed -E 's#packages/VBFRepro/src/([0-9]{6}-[^/]+)/#\1#' | sort -u
    # b) if (a) empty: papers touched in the last commit
    git -C "$(git rev-parse --show-toplevel)" show --name-only --pretty=format: HEAD \
-     | grep -oE 'packages/VBFRepro/papers/[0-9]{4}/[^/]+/' | sed -E 's#packages/VBFRepro/papers/[0-9]{4}/([^/]+)/#\1#' | sort -u
+     | grep -oE 'packages/VBFRepro/src/[0-9]{6}-[^/]+/' | sed -E 's#packages/VBFRepro/src/([0-9]{6}-[^/]+)/#\1#' | sort -u
    ```
 3. **Still empty** — do not guess. Ask the user which paper ID(s) to review, or
    suggest listing candidates with `bin/vbfrepro list`.
 
 ### Validate before dispatch
-For each resolved ID, confirm `packages/VBFRepro/papers/<year>/<ID>/` exists and `packages/VBFRepro/papers/<year>/<ID>/input/`
+For each resolved ID, confirm `packages/VBFRepro/src/<ID>/` exists and `packages/VBFRepro/src/<ID>/input/`
 holds `.tex` (or PDF) source. If a directory is missing, report it as **Blocked**
 and drop it from the batch — do not fabricate a review. If an ID looks like a
 typo of an existing dir, surface the closest match instead of proceeding.
@@ -50,7 +50,7 @@ its own cross-paper ranking) — do not spawn one agent per paper.
 Prompt the agent with exactly the resolved ID list, e.g.:
 
 > Review the following paper reproduction(s): `<ID1>`, `<ID2>`. Read each paper's
-> LaTeX source under `packages/VBFRepro/papers/<year>/<ID>/input/` as ground truth and compare against the
+> LaTeX source under `packages/VBFRepro/src/<ID>/input/` as ground truth and compare against the
 > reproduction. Run reproduction tests where reasonable. Read-only — do not modify
 > files.
 
@@ -78,7 +78,7 @@ summary — they are the actionable follow-ups.
 ### 3a. Write the per-paper README (standing step — every review)
 
 After relaying the verdict, **the launcher (main thread) writes** a
-`packages/VBFRepro/papers/<year>/<ID>/README.md` for each reviewed paper, built from the agent's findings.
+`packages/VBFRepro/src/<ID>/README.md` for each reviewed paper, built from the agent's findings.
 The reviewer subagent stays read-only; the file write happens here, not inside the
 review pass. One README per paper; overwrite on re-review.
 
@@ -115,7 +115,7 @@ go-ahead:
   passing the records verbatim. That agent re-verifies APN + novelty before
   writing the `[[apn_functions]]` block. Do not invoke it unless the user asks.
 - **Reuse violations** — if helpers duplicate core, offer to refactor
-  `packages/VBFRepro/papers/<year>/<ID>/helpers.jl` to call the `VBF` export (or promote a genuinely
+  `packages/VBFRepro/src/<ID>/helpers.jl` to call the `VBF` export (or promote a genuinely
   missing primitive into `packages/VBF/src/`). Separate edit task; not part of the
   review.
 
@@ -127,9 +127,9 @@ Run the review first; act on it only after the user chooses to.
 
 - The reviewer agent is **read-only**. All mutation (catalog writes, helper
   refactors) happens in named follow-up steps, never inside the review pass. The
-  standing `packages/VBFRepro/papers/<year>/<ID>/README.md` write (step 3a) is done by the launcher/main
+  standing `packages/VBFRepro/src/<ID>/README.md` write (step 3a) is done by the launcher/main
   thread after the agent returns — not by the reviewer agent.
 - Keep this skill in sync with the agents: if the reviewer agent's name, the
-  `apn-catalog-updater` name, the `packages/VBFRepro/papers/<year>/<ID>/input/` layout, or the catalog path
+  `apn-catalog-updater` name, the `packages/VBFRepro/src/<ID>/input/` layout, or the catalog path
   `packages/VBFCatalog/data-raw/apn_catalog/n<N>_apn.toml` changes, update the
   relevant steps here.

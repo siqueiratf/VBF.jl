@@ -15,7 +15,7 @@ is how a timeout becomes a theorem:
 Returning a bare `Vector` cannot express this: an empty vector reads identically
 whether the tree was exhausted or the deadline expired. That collapse is not
 hypothetical — see the note on `search_qam`/`search_qam_full` below, and
-`packages/VBFRepro/papers/2021/Beierle_202107/algorithm1.jl`, whose `APNSearch` used to compute a
+`packages/VBFRepro/src/202107-beierle-self-equivalence/algorithm1.jl`, whose `APNSearch` used to compute a
 `timed_out` flag and then drop it on return, so a class that ran out of its
 300 s budget was indistinguishable from one proved to contain no APN
 permutation.

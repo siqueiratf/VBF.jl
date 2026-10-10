@@ -1,7 +1,7 @@
 # packages/VBFRepro/perf/suites/Canteaut_202205.jl — reproduction-benchmark case.
 #
 # CONTRACT: the same one packages/VBF/perf/suites/01_representations.jl states, plus one
-# rule: this file is READ-ONLY against papers/2022/Canteaut_202205/. It only
+# rule: this file is READ-ONLY against src/202205-canteaut-ea-equivalence/. It only
 # `include`s the paper's own report.jl, unmodified.
 #
 # Paper: Canteaut, Couvreur, Perrin (2022),
@@ -15,7 +15,7 @@
 
 module Bench_Canteaut_202205
 using VBF, VBFCatalog
-const PAPER_DIR = normpath(joinpath(@__DIR__, "..", "..", "papers", "2022", "Canteaut_202205"))
+const PAPER_DIR = normpath(joinpath(@__DIR__, "..", "..", "src", "202205-canteaut-ea-equivalence"))
 cd(() -> include(joinpath(PAPER_DIR, "report.jl")), PAPER_DIR)
 end
 
@@ -23,7 +23,7 @@ function register!(reg)
     call = _ -> Bench_Canteaut_202205.paper_report(devnull;
         n_values = [5, 6], verify_min_ea = false)
     benchmark!(reg; group = "papers", name = "Canteaut_202205_report", cost = 3, samples = 1,
-           paper_id = "Canteaut_202205", mode = "hybrid",
+           paper_id = "202205-canteaut-ea-equivalence", mode = "hybrid",
            approach = "ea_recovery_jacobian",
            setup = () -> nothing, call = call,
            note = "Algorithm 1 at n_values=[5,6]; verify_min_ea=false")

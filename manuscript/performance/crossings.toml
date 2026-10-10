@@ -1,4 +1,4 @@
-# manuscript/performance/crossings.toml — the metadata that packages/VBFRepro/analysis/performance/crossings.jl needs.
+# manuscript/performance/crossings.toml — the metadata that packages/VBFRepro/src/analysis/performance/crossings.jl needs.
 #
 # The retired custom-timer suite wrote the historical benchmarks.csv. That file holds
 # measurements only. A measurement becomes a result when it meets a prediction
@@ -23,7 +23,7 @@
 schema_version = 1
 source_csv     = "data/perf/archive/generated/benchmarks.csv"
 source_meta    = "data/perf/archive/generated/benchmarks_meta.tex"
-note           = "Edit this file, then run `make -C packages/VBFRepro/analysis crossings`."
+note           = "Edit this file, then run `make -C packages/VBFRepro/src/analysis crossings`."
 
 # ── the fit ──────────────────────────────────────────────────────────────────
 

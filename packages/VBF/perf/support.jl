@@ -49,14 +49,14 @@ function source_manifest(package; config=Dict(), paper_ids=String[], input_files
     paths=String[]
     for folder in (joinpath(ROOT,"packages"),)
         for (base,dirs,files) in walkdir(folder)
-            filter!(d->!(d in ("results","input",".git","corpora","node_modules","historical")),dirs)
+            filter!(d->!(d in ("results","input","inputs","tuples",".git","corpora","node_modules","historical")),dirs)
             for f in files
                 (endswith(f,".jl") || endswith(f,".toml") || f in ("Makefile","paper.mk")) && push!(paths,joinpath(base,f))
             end
         end
     end
     # Bind the actual stored inputs of selected paper workloads without copying them.
-    papers=joinpath(ROOT,"packages","VBFRepro","papers")
+    papers=joinpath(ROOT,"packages","VBFRepro","src")
     if package=="VBFRepro" && isdir(papers)
         for (base,dirs,_) in walkdir(papers)
             filter!(d->!(d in ("results",".git","node_modules")),dirs)

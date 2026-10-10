@@ -6,19 +6,16 @@ export repo_root, papers_root, discover_papers, paper_path, run_paper, test_pape
 
 """Root of the VBF workspace containing the reproducible execution environment."""
 repo_root() = normpath(joinpath(@__DIR__, "..", "..", ".."))
-"""Directory containing standalone paper reproductions, grouped by year."""
-papers_root() = normpath(joinpath(@__DIR__, "..", "papers"))
+"""Source directory containing standalone `YYYYMM-author-subject` reproductions."""
+papers_root() = @__DIR__
 
 """List `(id, year, path)` for papers having a Makefile; no scripts are loaded."""
 function discover_papers(; root=papers_root())
     found = NamedTuple{(:id, :year, :path),Tuple{String,String,String}}[]
-    for year in sort(readdir(root))
-        year_path = joinpath(root, year)
-        isdir(year_path) || continue
-        for id in sort(readdir(year_path))
-            path = joinpath(year_path, id)
-            isfile(joinpath(path, "Makefile")) && push!(found, (;id, year, path=abspath(path)))
-        end
+    for id in sort(readdir(root))
+        occursin(r"^\d{6}-[a-z0-9]+(?:-[a-z0-9]+)*$", id) || continue
+        path = joinpath(root, id)
+        isfile(joinpath(path, "Makefile")) && push!(found, (;id, year=id[1:4], path=abspath(path)))
     end
     return found
 end
@@ -42,28 +39,22 @@ end
 function _source_hashes(paper, project)
     paths = String[]
     roots = [paper]
-    shared_papers = joinpath(project, "packages", "VBFRepro", "papers")
-    isdir(shared_papers) && push!(roots, shared_papers)
+    for package in ("VBF", "VBFCatalog", "VBFSearch", "VBFRepro")
+        source = joinpath(project, "packages", package, "src")
+        isdir(source) && push!(roots, source)
+    end
     # Existing reproductions sometimes include another paper's helpers. Hash the
     # complete paper implementation tree rather than claiming a guessed closure.
     for root in roots
         for (dir, dirs, files) in walkdir(root)
             filter!(d -> !(d in ("input", "inputs", "results", "tuples", ".git")), dirs)
-            append!(paths, [joinpath(dir, f) for f in files if any(ext -> endswith(f, ext), (".jl", ".py", ".toml", ".json", ".csv", ".tsv")) || f == "Makefile"])
+            append!(paths, [joinpath(dir, f) for f in files if any(ext -> endswith(f, ext), (".jl", ".toml", ".json", ".csv", ".tsv", ".mk")) || f == "Makefile"])
         end
     end
     push!(paths, joinpath(papers_root(), "paper.mk"))
     for f in ("Project.toml", "Manifest.toml")
         path = joinpath(project, f)
         isfile(path) && push!(paths, path)
-    end
-    # Package math and catalog source are part of the executed implementation.
-    for package in ("VBF", "VBFCatalog", "VBFSearch", "VBFRepro")
-        source = joinpath(project, "packages", package, "src")
-        isdir(source) || continue
-        for (dir, _, files) in walkdir(source)
-            append!(paths, [joinpath(dir, f) for f in files if endswith(f, ".jl")])
-        end
     end
     return Dict(relpath(path, project) => bytes2hex(sha256(read(path))) for path in sort!(unique(paths)))
 end
@@ -224,7 +215,7 @@ function main(args=ARGS)
     end
     if first(args) == "list"
         length(args) == 1 || throw(ArgumentError("list accepts no arguments"))
-        foreach(p -> println(p.year, "/", p.id), discover_papers())
+        foreach(p -> println(p.id), discover_papers())
         return 0
     end
     command = first(args)
