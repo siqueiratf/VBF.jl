@@ -66,7 +66,7 @@ refused. The runner does not implement resumable timing experiments; select
 remaining workloads for a new run if interrupted. Source hashes describe the
 files present when the run starts, so finish edits before collecting evidence.
 Measurements are hardware-dependent; compare configuration and provenance
-before combining runs. VBFRepro's analysis reader preserves the protocol and
+before combining runs. The shared perf analysis reader preserves the protocol and
 source identity rather than mixing these trials with older custom timings.
 
 ## Diagnostics and profiling
@@ -81,7 +81,7 @@ Profiling saves `profile_raw.jls` and a source/configuration manifest under
 `data/perf/<package>/profiles/`. Julia's stdlib profiler samples a separate
 execution; its duration is metadata, never a benchmark statistic. Attribution
 and figure tooling live in
-[VBFRepro analysis](../../VBFRepro/src/analysis/performance/README.md).
+[shared perf analysis](analysis/README.md).
 A very short operation can produce no samples; select a sufficiently long
 workload. Profiles and timings are joined only when their identity is explicit.
 

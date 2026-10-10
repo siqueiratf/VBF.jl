@@ -1,0 +1,3 @@
+[submodule "packages/VBFWorkingPaper/doc/overleaf"]
+	path = packages/VBFWorkingPaper/doc/overleaf
+	url = https://git@git.overleaf.com/6a134aa4799a9fb2f1e56dd9

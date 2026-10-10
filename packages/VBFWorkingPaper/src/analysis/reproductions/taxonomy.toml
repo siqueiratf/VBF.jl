@@ -1,0 +1,372 @@
+# analysis/taxonomy.toml — the classification that the metrics need.
+#
+# `analysis/metrics.jl` reads this file. It holds the two things that no file in
+# the repository states in a machine-readable form:
+#
+#   1. the subject of known reproduced papers (`topic`);
+#   2. which construction method group each catalog object belongs to.
+#
+# Construction categories are editorial metadata for this working paper.
+#
+# Catalog method and corpus categories require explicit classification.
+# Paper discovery is dynamic and does not depend on this list.
+
+[meta]
+schema_version = 1
+source_of_group_codes = "Working-paper construction taxonomy"
+
+# ── the topic of a paper ────────────────────────────────────────────────────
+#
+# `topic` answers "what kind of result does this paper report?". It is the row
+# paper inventory classification. New papers remain explicitly unclassified.
+#
+#   construction   an infinite family, a polynomial or a structural construction
+#   modification   a change to a known function: switching, isotopic shift,
+#                  a trim, a change on a subspace, a change at some points
+#   search         instances found by a computer search
+#   classification an exhaustive classification inside a bounded region
+#   equivalence    a method to decide or to test equivalence
+#   four_uniform   differentially 4-uniform permutations, not APN functions
+#   theory         a bound, a distance, a non-existence result, a relation
+#                  between known constructions
+#
+# Publication identity is stored in VBFRepro/publications.toml.
+# Function entries and counts are always read from VBFCatalog.
+# `topic_basis` names the evidence for the topic. It is the title of the paper
+# unless a note says otherwise.
+
+[papers.200300-biryukov-equivalence]
+topic = "equivalence"
+topic_basis = "A Toolbox for Cryptanalysis: Linear and Affine Equivalence Algorithms"
+
+[papers.200506-budaghyan-apn-polynomials]
+topic = "construction"
+topic_basis = "New Classes of Almost Bent and Almost Perfect Nonlinear Polynomials"
+
+[papers.200807-bracken-apn-trinomials]
+topic = "construction"
+topic_basis = "New families of quadratic almost perfect nonlinear trinomials and multinomials"
+
+[papers.200812-brinkmann-small-apn-classification]
+topic = "classification"
+topic_basis = "On the classification of APN functions up to dimension five"
+
+[papers.200904-budaghyan-trace-apns]
+topic = "modification"
+topic_basis = "Constructing new APN functions from known ones"
+
+[papers.200910-budaghyan-apn-families]
+topic = "construction"
+topic_basis = "On a construction of quadratic APN functions"
+
+[papers.200900-edel-switching]
+topic = "modification"
+topic_basis = "A new almost perfect nonlinear function which is not quadratic; the function is found by switching"
+
+[papers.201103-bracken-quadratic-apns]
+topic = "construction"
+topic_basis = "A few more quadratic APN functions"
+
+[papers.201205-bracken-du4-permutations]
+topic = "four_uniform"
+topic_basis = "Binomial differentially 4 uniform permutations with high nonlinearity"
+
+[papers.201300-yu-du4-permutations]
+topic = "four_uniform"
+topic_basis = "Constructing Differentially 4 Uniform Permutations from Known Ones"
+
+[papers.201408-li-du4-from-apn]
+topic = "four_uniform"
+topic_basis = "Constructing differentially 4-uniform permutations from quadratic APN permutations"
+
+[papers.201401-zha-inverse-permutations]
+topic = "four_uniform"
+topic_basis = "Constructing new differentially 4-uniform permutations from the inverse function"
+
+[papers.201510-tang-inverse-bijections]
+topic = "four_uniform"
+topic_basis = "Differentially 4-Uniform Bijections by Permuting the Inverse Function"
+
+[papers.201906-canteaut-butterflies]
+topic = "theory"
+topic_basis = "If a generalised butterfly is APN then it operates on 6 bits; a non-existence result"
+
+[papers.201911-kaleyski-two-point-changes]
+topic = "modification"
+topic_basis = "Changing APN Functions at Two Points"
+
+[papers.201909-taniguchi-quadratic-apns]
+topic = "construction"
+topic_basis = "On Some Quadratic APN Functions"
+
+[papers.202008-budaghyan-isotopic-shifts]
+topic = "modification"
+topic_basis = "Constructing APN Functions Through Isotopic Shifts"
+
+[papers.202009-budaghyan-apn-distance]
+topic = "theory"
+topic_basis = "On the Distance Between APN Functions"
+
+[papers.202011-budaghyan-quadrinomials]
+topic = "construction"
+topic_basis = "A New Family of APN Quadrinomials"
+
+[papers.202009-calderini-equivalence-classes]
+topic = "classification"
+topic_basis = "On the EA-classes of known APN functions in small dimensions"
+
+[papers.202000-kalgin-seven-variable]
+topic = "classification"
+topic_basis = "The Classification of Quadratic APN Functions in 7 Variables"
+
+[papers.202012-yu-binary-coefficients]
+topic = "classification"
+topic_basis = "Classification of Quadratic APN Functions with Coefficients in F2 for Dimensions up to 9"
+
+[papers.202107-beierle-self-equivalence]
+topic = "classification"
+topic_basis = "Linearly Self-Equivalent APN Permutations in Small Dimension"
+
+[papers.202101-budaghyan-generalized-shifts]
+topic = "modification"
+topic_basis = "Generalized Isotopic Shift Construction for APN Functions"
+
+[papers.202100-calderini-construction-relations]
+topic = "theory"
+topic_basis = "On Known Constructions of APN and AB Functions and Their Relation to Each Other; Theorem 6.2 gives one new class"
+
+[papers.202110-chase-walsh-zero-spaces]
+topic = "construction"
+topic_basis = "Construction of APN permutations via Walsh zero spaces"
+
+[papers.202201-beierle-quadratic-instances]
+topic = "search"
+topic_basis = "New Instances of Quadratic APN Functions"
+
+[papers.202205-canteaut-ea-equivalence]
+topic = "equivalence"
+topic_basis = "Recovering or Testing Extended-Affine Equivalence"
+
+[papers.202207-gologlu-biprojective-apns]
+topic = "construction"
+topic_basis = "Biprojective Almost Perfect Nonlinear Functions"
+
+[papers.202200-kaleyski-zero-apn-monomials]
+topic = "construction"
+topic_basis = "A doubly-infinite family of 0-APN monomials"
+
+[papers.202203-kaleyski-ea-invariants]
+topic = "equivalence"
+topic_basis = "Deciding EA-equivalence via Invariants"
+
+[papers.202207-li-quadratic-families]
+topic = "construction"
+topic_basis = "Two New Families of Quadratic APN Functions"
+
+[papers.202211-yu-qam]
+topic = "search"
+topic_basis = "Constructing More Quadratic APN Functions with the QAM Method"
+
+[papers.202211-zheng-relative-trace]
+topic = "construction"
+topic_basis = "Constructing New APN Functions Through Relative Trace Functions"
+
+[papers.202306-calderini-bivariate-families]
+topic = "construction"
+topic_basis = "Extending Two Families of Bivariate APN Functions"
+
+[papers.202400-ichanska-qam-search]
+topic = "search"
+topic_basis = "Pushing the QAM Method for Finding APN Functions Further"
+
+[papers.202402-li-trivariate-families]
+topic = "construction"
+topic_basis = "Two New Infinite Families of APN Functions in Trivariate Form"
+
+[papers.202508-beierle-millions]
+citation_key = "Beierle_202508" # Paper citation; catalog contributions use the dataset key.
+topic = "search"
+topic_basis = "Millions of Inequivalent Quadratic APN Functions in Eight Variables"
+
+[papers.202503-gologlu-biprojective-equivalence]
+topic = "equivalence"
+topic_basis = "Equivalences of Biprojective Almost Perfect Nonlinear Functions"
+
+[papers.202501-taniguchi-affine-subspaces]
+topic = "modification"
+topic_basis = "Changing Almost Perfect Nonlinear Functions on Affine Subspaces of Small Codimensions"
+
+[papers.202512-yu-dimension-ten]
+topic = "classification"
+topic_basis = "Classification of Quadratic APN Functions with Coefficients in F2 in Dimension 10"
+
+[papers.202606-kuznetsov-groebner-search]
+topic = "search"
+topic_basis = "Quadratic APN Functions in Dimension 8 via Grobner Basis Search in a Self-Equivalence Subspace"
+
+# ── the reproduction outcome ────────────────────────────────────────────────
+#
+[bib_group]
+Gold_196801       = "A1"
+Kasami_197105     = "A1"
+Nyberg_199400     = "A1"
+Dobbertin_199905  = "A1"
+Dobbertin_199905b = "A1"
+Dobbertin_200100  = "A1"
+Budaghyan_200603  = "A2"
+Budaghyan_200809  = "A2"
+Budaghyan_200910  = "A2"
+Browning_201000   = "A2"
+Taniguchi_201909  = "A2"
+Calderini_202100  = "A3"
+Calderini_202306  = "A3"
+Taniguchi_202501  = "A4"
+Edel_200900       = "B4"
+WengTanGong_201300 = "B4"
+Yu_201411         = "B1"
+Yu_202211         = "B1"
+Beierle_202201    = "B2"
+Beierle_202500    = "B2"
+Yu_202012         = "D"
+
+# A row of the functions table with no bibliography key falls back to its
+# `family` column.
+
+[family_group]
+"APN-rep"      = "C"
+"CCZ-rep-GF4"  = "C"
+"known-sporadic" = "D"
+"APN"          = "D"
+"known-family" = "A1"
+
+# ── the bulk corpora ────────────────────────────────────────────────────────
+#
+# `note` records a property of the published file that a reader of
+# corpus_overlap.csv must know. An empty overlap can come from the file and not
+# from the mathematics.
+
+[corpus.yuwangli2014_qam_n8]
+group = "B1"
+note = ""
+
+[corpus.yuperrin2022_qam_n8]
+group = "B1"
+note = ""
+
+[corpus.beierleleander2022_n8]
+group = "B2"
+note = ""
+
+[corpus.beierleleanderperrin2022_n8]
+group = "B2"
+note = ""
+
+[corpus.beierle2025_n8]
+group = "B2"
+note = "the published file is named new_apns.txt and holds only the functions that the authors treat as new, so an empty overlap with an earlier source is expected"
+
+[corpus.simonberg_gf4_n8]
+group = "B3"
+note = "the sweep keeps every function it accepts, so one CCZ class appears many times"
+
+[corpus.edelpott2009_n8]
+group = "B4"
+note = ""
+
+[corpus.wengtangong2013_n8]
+group = "B4"
+note = ""
+
+[corpus.taniguchi2019_n8]
+group = "A2"
+note = "instances of the Taniguchi family, stored as a corpus for convenience"
+
+# The σ index also indexes the curated functions table under this source name.
+[corpus.functions]
+group = "curated"
+note = "the curated functions table of the catalog, not a published corpus"
+
+# ── the invariants that metric C1 compares ──────────────────────────────────
+#
+# `call` names the function of packages/VBF or packages/VBFCatalog that the
+# script applies. `max_n` refuses a dimension above the guard of the source.
+# `parity` restricts the invariant to even or odd n when the invariant needs it.
+# `bench_case` names the row of data/perf/archive/generated/benchmarks.csv that gives the
+# cost, so the cost column comes from the benchmark suite and not from a second
+# measurement.
+
+[[invariant]]
+name = "sigma_signature"
+call = "sigma_hash"
+max_n = 13
+bench_case = "catalog/sigma_hash"
+note = "the ortho-derivative signature; a mismatch certifies CCZ-inequivalence"
+
+[[invariant]]
+name = "od_differential_spectrum"
+call = "od_diff"
+max_n = 13
+bench_case = "invariants/ortho_derivative"
+note = "the differential spectrum of the ortho-derivative alone, one half of sigma"
+
+[[invariant]]
+name = "od_walsh_spectrum"
+call = "od_walsh"
+max_n = 13
+bench_case = "invariants/ortho_derivative"
+note = "the absolute Walsh spectrum of the ortho-derivative alone, the other half"
+
+[[invariant]]
+name = "apn_ea_mugshot"
+call = "apn_ea_mugshot"
+max_n = 12
+bench_case = "invariants/apn_ea_mugshot"
+note = "necessary and not sufficient for EA-equivalence; matching tuples do not prove equivalence"
+
+[[invariant]]
+name = "pi_multiset"
+call = "pi_multiset"
+max_n = 12
+bench_case = "invariants/pi_multiset"
+note = "the shifted derivative histogram"
+
+[[invariant]]
+name = "component_degree_spectrum"
+call = "component_degree_spectrum"
+max_n = 14
+bench_case = "invariants/component_degree_spectrum"
+note = "the degrees of the components"
+
+[[invariant]]
+name = "differential_spectrum"
+call = "differential_spectrum"
+max_n = 14
+bench_case = "spectra/differential_spectrum"
+note = "the differential spectrum of F itself; the same for every APN function"
+
+[[invariant]]
+name = "absolute_walsh_spectrum"
+call = "absolute_walsh_spectrum"
+max_n = 12
+bench_case = "spectra/absolute_walsh_spectrum"
+note = "the extended Walsh spectrum of F itself"
+
+[[invariant]]
+name = "gamma_rank"
+call = "gamma_rank"
+max_n = 7
+bench_case = "invariants/gamma_rank"
+note = "the source guard refuses n > 7"
+
+[[invariant]]
+name = "delta_rank"
+call = "delta_rank"
+max_n = 7
+bench_case = "invariants/delta_rank"
+note = "the source guard refuses n > 7"
+
+[papers.202509-baudrin-apn-exploration]
+topic = "apn-exploration"
+
+[papers.202601-gillot-known-apns]
+topic = "apn-exploration"

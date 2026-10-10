@@ -12,11 +12,8 @@
 
 include(joinpath(@__DIR__, "helpers.jl"))
 
-using VBFCatalog, SHA, TOML
-if !isdefined(@__MODULE__, :APNPowerEvidence)
-    include(joinpath(@__DIR__, "..", "analysis", "validation", "apn_power_evidence.jl"))
-end
-using .APNPowerEvidence
+using VBFCatalog, VBFSearch, SHA, TOML
+using VBFSearch.APNPowerEvidence
 
 # (exponents, label, is_new)
 const TABLE4_FUNCTIONS = [
@@ -220,7 +217,7 @@ function table4_report(io::IO = stdout;save_results::Bool=false)
             "finite_catalog_separation_proved"=>result.finite_catalog_separation_proved,
             "literature_novelty_verified"=>false,"scope"=>"current catalog functions-table snapshot and every APN power function; no n9 bulk or literature completeness",
             "runner_sha256"=>bytes2hex(SHA.sha256(read(@__FILE__))),
-            "power_evidence_helper_sha256"=>bytes2hex(SHA.sha256(read(joinpath(@__DIR__, "..", "analysis", "validation", "apn_power_evidence.jl")))))
+            "power_evidence_helper_sha256"=>bytes2hex(SHA.sha256(read(joinpath(pkgdir(VBFSearch), "src", "power.jl")))))
         directory=joinpath(@__DIR__, "results");mkpath(directory)
         temporary,out=mktemp(directory)
         try

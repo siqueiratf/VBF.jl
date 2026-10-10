@@ -79,9 +79,10 @@ This writes `results/table4_evidence.toml` with candidate/reference LUTs and
 hashes, the catalog SHA-256, Gold parameters and exact invariants, theorem
 hypotheses, per-target outcomes and source identities. It reads the catalog
 directly and does not require or regenerate its signature index. The shared
-consumer helper is `src/analysis/validation/apn_power_evidence.jl` under VBFRepro;
+consumer helper is `src/power.jl` under VBFSearch;
 it uses VBF's field constructors and exact `sigma_key`, while VBFSearch's
-independent discovery verifier remains specialized to n=8. The older review
+independent APN/signature verifier remains specialized to n=8; graph-witness
+replay now supports square dimensions 1:16. The older review
 sections below are historical context and are superseded by these scoped
 claims.
 
