@@ -1,10 +1,10 @@
-@testitem "ccz_walsh_zeroes" begin
-using VBFCatalog
+@testitem "ccz_walsh_zeroes" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
 @testset "walsh_zeroes: basic shape and ordering" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     Z = walsh_zeroes(F)
     @test eltype(Z) == UInt32
     @test issorted(Z)
@@ -15,7 +15,7 @@ end
 
 @testset "walsh_zeroes: contains the trivial (a, 0) column" begin
     # LAT(a, 0) = 0 for every a ≠ 0 (b = 0 is the zero linear form on output).
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N = inputbits(F)
     Z = walsh_zeroes(F)
     for a in 1:((1 << N) - 1)
@@ -27,7 +27,7 @@ end
 end
 
 @testset "walsh_zeroes: parity with LAT" begin
-    F = load_literature_sbox("GIFT")
+    F = fixture_sbox("GIFT")
     N = inputbits(F)
     L = lat(F)
     Z = walsh_zeroes(F)
@@ -43,21 +43,21 @@ end
 @testset "walsh_zeroes: same size on inv(F) (CCZ-invariance)" begin
     # CCZ-equivalence preserves |Z(F)|. Functional inverse is always CCZ-equivalent to F, so |Z(F)| == |Z(F⁻¹)|.
     for name in ("PRESENT", "GIFT", "SKINNY_4", "Midori_Sb0")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         @test is_permutation(F)
         @test walsh_zeroes_size(F) == walsh_zeroes_size(inv(F))
     end
 end
 
 @testset "walsh_zeroes_size: matches direct count from LAT" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     L = lat(F)
     direct = count(==(0), L)
     @test walsh_zeroes_size(F) == direct
 end
 
 @testset "walsh_zeroes: packing convention (a << N) | b" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N = inputbits(F)
     L = lat(F)
     Z = walsh_zeroes(F)

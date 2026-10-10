@@ -1,11 +1,11 @@
-@testitem "ea_outer_permutation" begin
-using VBFCatalog
+@testitem "ea_outer_permutation" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
 
 @testset "enumerate_bucket_maps: signature mismatch → empty" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     G_lut = UInt8[(i + 1) % 16 for i in 0:15]   # affine, partition will look different
     G = SBox{4, UInt8}(G_lut)
     pF = ea_partition(F, 4)
@@ -16,7 +16,7 @@ using Random
 end
 
 @testset "enumerate_bucket_maps: identity is enumerated" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     p = ea_partition(F, 4)
     maps = enumerate_bucket_maps(p, p)
     @test !isempty(maps)
@@ -27,14 +27,14 @@ end
 
 @testset "enumerate_bucket_maps: distinct sizes → unique map" begin
     # Monomial APN n=5: signature [31, 1] — every bucket has a unique size, so only one bucket map exists.
-    F = load_apn_function("n5_Gold_x3")
+    F = fixture_apn("n5_Gold_x3")
     p = ea_partition(F)
     @test length(enumerate_bucket_maps(p, p)) == 1
 end
 
 @testset "enumerate_bucket_maps: bounded by max_maps (no OOM blow-up)" begin
     # The map count is ∏ₛ mₛ! over equal-size bucket groups; for unstructured partitions this is astronomically large (factorial(21) already overflows Int64). The enumeration must bail to empty rather than exhaust memory.
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     p = ea_partition(F, 4)
     full = enumerate_bucket_maps(p, p)                  # default cap 10^6
     @test !isempty(full)
@@ -53,7 +53,7 @@ end
 
 @testset "outer_permutations: identity is found (full GL when partition is trivial)" begin
     # For monomial APN with signature [31, 1], the only constraint is L(0) = 0; so every linear permutation is found. Verify the count matches |GL(5, F₂)|.
-    F = load_apn_function("n5_Gold_x3")
+    F = fixture_apn("n5_Gold_x3")
     p = ea_partition(F)
     maps = enumerate_bucket_maps(p, p)
     @test length(maps) == 1
@@ -64,7 +64,7 @@ end
 end
 
 @testset "outer_permutations_all: an EA-equivalent G yields ≥ 1 outer L" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     # Construct G = L₁ ∘ F ∘ L₂(· ⊕ a) ⊕ b where L₁, L₂ are fixed and known
     N, T = 4, UInt8
     L1 = F2LinearMap{N, T}(T[0x2, 0x4, 0x8, 0x1])    # cyclic shift
@@ -80,7 +80,7 @@ end
 end
 
 @testset "outer_permutations: every returned L is invertible and bucket-compatible" begin
-    F = load_apn_function("n5_Gold_x3")
+    F = fixture_apn("n5_Gold_x3")
     p = ea_partition(F)
     sigma = enumerate_bucket_maps(p, p)[1]
     Ls = outer_permutations(p, p, sigma, UInt8)

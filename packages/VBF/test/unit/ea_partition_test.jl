@@ -1,11 +1,11 @@
-@testitem "ea_partition" begin
-using VBFCatalog
+@testitem "ea_partition" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
 
 @testset "ea_multiplicities: validation" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     @test_throws ArgumentError ea_multiplicities(F, 3)   # odd k
     @test_throws ArgumentError ea_multiplicities(F, 2)   # k < 4 (also even)
     @test_throws ArgumentError ea_multiplicities(F, 5)   # odd
@@ -14,7 +14,7 @@ end
 @testset "ea_multiplicities: total count invariant" begin
     # The k=4 recursion enumerates (y₁, y₂, y₃) ∈ (F₂ⁿ)^3 — exactly 2^(3n) tuples — and each contributes 1 to exactly one bucket. So sum(multiplicities) must equal 2^(3n).
     for name in ("PRESENT", "GIFT", "Midori_Sb0", "SKINNY_4")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         n = inputbits(F)
         m = ea_multiplicities(F, 4)
         @test sum(m) == (1 << (3n))
@@ -23,13 +23,13 @@ end
 end
 
 @testset "ea_multiplicities: zero-value contribution" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     m = ea_multiplicities(F, 4)
     @test any(>(0), m)
 end
 
 @testset "ea_partition: structure consistency" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     p = ea_partition(F, 4)
     n = inputbits(F)
     @test inputbits(p) == n
@@ -60,9 +60,9 @@ end
         T = UInt8
         mask = T((T(1) << N) - T(1))
         F = if N == 4
-            load_literature_sbox("PRESENT")
+            fixture_sbox("PRESENT")
         else
-            load_apn_function("n5_Gold_x3")
+            fixture_apn("n5_Gold_x3")
         end
         sig_F = ea_partition_signature(F, 4)
         for _ in 1:3
@@ -107,7 +107,7 @@ end
 end
 
 @testset "ea_partition: deterministic" begin
-    F = load_apn_function("n5_Gold_x3")
+    F = fixture_apn("n5_Gold_x3")
     p1 = ea_partition(F)
     p2 = ea_partition(F)
     @test p1.bucket_sizes == p2.bucket_sizes
@@ -115,7 +115,7 @@ end
 end
 
 @testset "ea_partition_signature: sorted descending" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     sig = ea_partition_signature(F, 4)
     @test issorted(sig; rev = true)
     @test sum(sig) == (1 << inputbits(F))

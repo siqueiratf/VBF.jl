@@ -100,7 +100,7 @@ jobs:
         run: .githooks/catalog-check --structure-only
 
   test:
-    name: Test • Julia ${{ matrix.julia }} • ${{ matrix.os }}
+    name: Test • ${{ matrix.package }} • Julia ${{ matrix.julia }} • ${{ matrix.os }}
     needs: [paper-tests, catalog-check]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
@@ -109,6 +109,7 @@ jobs:
       matrix:
         julia: ['1.12']
         os: [ubuntu-latest]
+        package: [VBF, VBFCatalog, VBFSearch]
     steps:
       - name: Check out source
         uses: actions/checkout@v5
@@ -124,12 +125,12 @@ jobs:
       - name: Build package
         uses: julia-actions/julia-buildpkg@v1
         with:
-          project: packages/VBF
+          project: packages/${{ matrix.package }}
 
       - name: Run tests
         uses: julia-actions/julia-runtest@v1
         with:
-          project: packages/VBF
+          project: packages/${{ matrix.package }}
         env:
           # Hosted runners are small; cap the worker count so the few heavy items (n=6 CCZ enumeration, affine equivalence) don't contend.
           RETESTITEMS_NWORKERS: '2'

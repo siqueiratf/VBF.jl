@@ -1,9 +1,8 @@
-using VBFCatalog,TOML
 """Read current committed search progress in one SQLite transaction, including live runs."""
 function status(dir)
     path=joinpath(dir,"run.sqlite");isfile(path) || error("not a search run")
-    db=VBFCatalog.SQLite.DB("file:"*abspath(path)*"?mode=ro")
-    DBI=VBFCatalog.DBInterface
+    db=SQLite.DB("file:"*abspath(path)*"?mode=ro")
+    DBI=DBInterface
     rows(sql)=[NamedTuple(r) for r in DBI.execute(db,sql)]
     scalar(sql)=only(rows(sql))[1]
     try
@@ -21,7 +20,6 @@ function status(dir)
         result=Dict("exact_luts"=>candidates,"additional_signatures"=>additional,"units"=>units,"finite_plan_exhausted"=>exhausted)
         foreach(_->nothing,DBI.execute(db,"ROLLBACK"));result
     finally
-        VBFCatalog.SQLite.close(db)
+        SQLite.close(db)
     end
 end
-abspath(PROGRAM_FILE)==(@__FILE__) && (length(ARGS)==1 ? status(only(ARGS)) : error("expected RUN_DIRECTORY"))

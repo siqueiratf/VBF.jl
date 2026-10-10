@@ -5,9 +5,10 @@ The **ortho-derivative signature** of a quadratic APN function `F` is
 `σ(F) = (diff-spectrum(π_F), abs-Walsh-spectrum(π_F))`, where `π_F` is the
 ortho-derivative (`VBF.ortho_derivative`). By Yoshiara (CCZ = EA for quadratic
 APN) together with the Canteaut–Couvreur–Perrin invariant, a signature mismatch
-`σ(F) ≠ σ(G)` *certifies* `F` and `G` are CCZ-inequivalent. So σ is a sound,
-fast filter for "is this function new?": absence of its σ from the catalog is a
-rigorous proof of a new CCZ class.
+`σ(F) ≠ σ(G)` *certifies* `F` and `G` are CCZ-inequivalent. So σ is a sound
+filter for catalog comparison: absence of its σ certifies inequivalence only
+to the quadratic APNs represented by the documented index coverage. It does
+not establish novelty throughout the literature.
 
 This module hashes σ to a hex string and maintains `ccz_sigma_index` — a σ index
 over every `is_quadratic` APN `functions` row *and* every bulk-corpus member —
@@ -17,29 +18,8 @@ backing [`is_novel`](@ref) / [`classify_ccz`](@ref). It also populates
 
 import SQLite
 import DBInterface
-import SHA
 
-# --- the invariant ----------------------------------------------------------
-
-"""
-    sigma_key(F::SBox) -> Tuple
-
-CCZ-invariant ortho-derivative signature: `(sorted_pairs(diff-spectrum(π_F)),
-sorted_pairs(abs-Walsh-spectrum(π_F)))`. `F` must be a quadratic APN function.
-"""
-function sigma_key(F::SBox)
-    pi = ortho_derivative(F)
-    pi === nothing && error("sigma_key: ortho_derivative undefined (F not APN?)")
-    (sorted_pairs(differential_spectrum(pi)), sorted_pairs(absolute_walsh_spectrum(pi)))
-end
-
-"""
-    sigma_hash(F::SBox) -> String
-
-Stable hex digest (SHA-256 of `string(sigma_key(F))`) usable as a content key.
-Equal hash ⇔ equal σ; different hash ⇒ provably CCZ-inequivalent.
-"""
-sigma_hash(F::SBox) = bytes2hex(SHA.sha256(string(sigma_key(F))))
+# Invariant keys and hashes are implemented and exported by VBF.
 
 # --- side store -------------------------------------------------------------
 # The σ index is large (one row per catalogued function — millions) and fully
@@ -88,16 +68,14 @@ function _open_sigma_index(; create::Bool = false)
 end
 
 # Sources that were deliberately NOT indexed and that could hold an n-bit match.
-# An index built before sigma_coverage existed has no such table; those builds
-# always covered everything (the defaults index the functions table and every
-# corpus), so treat a missing table as "no gaps".
+# Missing coverage metadata is unknown coverage, never evidence of completeness.
 function _sigma_gaps(idx::SQLite.DB, n::Integer)
     has_table = false
     for _ in DBInterface.execute(idx,
             "SELECT name FROM sqlite_master WHERE type='table' AND name='sigma_coverage'")
         has_table = true
     end
-    has_table || return String[]
+    has_table || return ["missing sigma_coverage metadata"]
     gaps = String[]
     for r in DBInterface.execute(idx, string(
             "SELECT source FROM sigma_coverage WHERE indexed = 0 AND n IN (",

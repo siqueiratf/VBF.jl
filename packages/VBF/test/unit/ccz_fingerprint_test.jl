@@ -1,6 +1,6 @@
 @testitem "ccz_fingerprint" begin
     using VBF
-    using VBFCatalog
+
     using Test
 
     # Kim (quadratic, degree 2) and the Dillon permutation (degree 4) are

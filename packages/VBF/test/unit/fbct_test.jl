@@ -1,11 +1,11 @@
-@testitem "fbct" begin
-using VBFCatalog
+@testitem "fbct" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
 @testset "FBCT row/column 0 are 2^N" begin
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+    for name in fixture_names()
+        s = fixture_sbox(name)
         F = fbct(s)
         n = 1 << inputbits(s)
         for a in 1:n
@@ -18,8 +18,8 @@ using Test
 end
 
 @testset "FBCT diagonal F[a, a] == 2^N (b = a ⇒ F(x) ⊕ F(x⊕a) ⊕ F(x⊕a) ⊕ F(x) = 0)" begin
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+    for name in fixture_names()
+        s = fixture_sbox(name)
         F = fbct(s)
         n = 1 << inputbits(s)
         for a in 1:n
@@ -29,16 +29,16 @@ end
 end
 
 @testset "FBCT symmetry: F[a, b] == F[b, a]" begin
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+    for name in fixture_names()
+        s = fixture_sbox(name)
         F = fbct(s)
         @test F == transpose(F)
     end
 end
 
 @testset "FBCT entries are even (N ≥ 2)" begin
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+    for name in fixture_names()
+        s = fixture_sbox(name)
         @test all(iseven, fbct(s))
     end
 end
@@ -51,15 +51,15 @@ end
     @test all(F .== 16)   # constant F gives F(anything) = 7, sum of 4 copies = 0
 end
 
-@testset "fbct_spectrum / fbct_uniformity catalog (locked)" begin
+@testset "fbct_spectrum / fbct_uniformity fixed vectors" begin
     # PRESENT: 4-bit S-box; computed and locked to current value.
-    @test fbct_uniformity(load_literature_sbox("PRESENT"))  ≤ 16
-    @test fbct_uniformity(load_literature_sbox("GIFT"))     ≤ 16
-    @test fbct_uniformity(load_literature_sbox("SKINNY_4")) ≤ 16
+    @test fbct_uniformity(fixture_sbox("PRESENT"))  ≤ 16
+    @test fbct_uniformity(fixture_sbox("GIFT"))     ≤ 16
+    @test fbct_uniformity(fixture_sbox("SKINNY_4")) ≤ 16
 
     # Spectrum total mass excludes row 0, col 0, and the b = a diagonal: (n-1)·(n-1) - (n-1) = (n-1)(n-2)
     n = 16
-    @test total_mass(fbct_spectrum(load_literature_sbox("PRESENT"))) == (n - 1) * (n - 2)
+    @test total_mass(fbct_spectrum(fixture_sbox("PRESENT"))) == (n - 1) * (n - 2)
 end
 
 end

@@ -1,7 +1,7 @@
 using Test,VBF,TOML,SHA
-include("../run.jl")
-include("../classify.jl")
-include("../status.jl")
+using VBFSearch, VBFCatalog
+using VBFSearch: properties, lut_id, each_candidate, validated_study, Fourier, DiscoveryStore, DiscoveryInputs, DiscoveryEvidence
+using VBFSearch.DiscoveryStore
 
 @testset "Independent APN properties and graph witnesses" begin
     gold=gold_apn(8).lut
@@ -47,6 +47,12 @@ end
         for lut in (gold,gold .⊻ UInt8(1),gf_monomial_lut(8,9))
             register!(s,properties(lut))
         end
+        # An exhaustive negative from another solver revision must be replayed.
+        stale=Dict("candidate_sha256"=>lut_id(gold),"target_sha256"=>lut_id(gold .⊻ UInt8(1)),
+            "relation"=>"ea","status"=>"inequivalent_by_exhaustive_solver",
+            "solver_implementation_sha256"=>"obsolete")
+        DiscoveryStore.execute!(s.db,"INSERT INTO comparisons(candidate_id,target_id,relation,evidence) VALUES(?,?,?,?)",
+            (stale["candidate_sha256"],stale["target_sha256"],"ea",DiscoveryStore.texttoml(stale)))
         close_store(s)
         partial=classify_snapshot(dir;nodes=0,max_pairs=1)
         @test partial["snapshot_luts"]==3 && partial["signature_class_lower_bound"]==2
@@ -188,3 +194,6 @@ end
         end
     end
 end
+
+include("cli.jl")
+include("pipeline.jl")

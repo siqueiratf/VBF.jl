@@ -1,24 +1,24 @@
-@testitem "affine_equivalence" begin
-using VBFCatalog
+@testitem "affine_equivalence" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
 
 @testset "are_affine_equivalent: type checks" begin
-    s4 = load_literature_sbox("PRESENT")
-    s5 = load_apn_function("n5_Gold_x3")
+    s4 = fixture_sbox("PRESENT")
+    s5 = fixture_apn("n5_Gold_x3")
     @test !are_affine_equivalent(s4, s5)
     @test !are_affine_equivalent(s5, s4)
 end
 
 @testset "are_affine_equivalent: unknown strategy throws" begin
-    s = load_literature_sbox("PRESENT")
+    s = fixture_sbox("PRESENT")
     @test_throws ArgumentError are_affine_equivalent(s, s; strategy = :nonexistent)
 end
 
 @testset "are_affine_equivalent: handles non-permutations" begin
     c = SBox(UInt8[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     @test !are_affine_equivalent(F, c)
     @test !are_affine_equivalent(c, F)
     @test are_affine_equivalent(c, c)         # reflexivity (general path)
@@ -44,9 +44,9 @@ end
     @test !are_affine_equivalent(F, gold_apn(6, 1))         # distinct APN class
 end
 
-@testset "reflexivity on every 4-bit catalog permutation" begin
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+@testset "reflexivity on every fixed 4-bit permutation" begin
+    for name in fixture_names()
+        s = fixture_sbox(name)
         inputbits(s) == 4 || continue
         is_permutation(s) || continue
         @test are_affine_equivalent(s, s)
@@ -57,7 +57,7 @@ end
     # Construct G(x) = F(x ⊕ a) ⊕ b for random (a, b); must be affine- equivalent to F.
     rng = MersenneTwister(0xBFA71)
     for name in ("PRESENT", "GIFT", "SKINNY_4")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         N = inputbits(F)
         T = storage_type(F)
         mask = T((T(1) << N) - T(1))
@@ -98,9 +98,9 @@ end
 
 @testset "n=5 monomial APN: pairwise NOT affine-equivalent" begin
     # x^3, x^5, x^15 are in distinct Frobenius orbits — adding affine drift doesn't bridge classes.
-    F3  = load_apn_function("n5_Gold_x3")
-    F5  = load_apn_function("n5_Gold_x5")
-    F15 = load_apn_function("n5_Kasami_x15")
+    F3  = fixture_apn("n5_Gold_x3")
+    F5  = fixture_apn("n5_Gold_x5")
+    F15 = fixture_apn("n5_Kasami_x15")
 
     @test  are_affine_equivalent(F3, F3)
     @test  are_affine_equivalent(F5, F5)
@@ -116,7 +116,7 @@ end
     rng = MersenneTwister(0xBFA73)
     N, T = 4, UInt8
     mask = T(0x0F)
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     for _ in 1:5
         cols = T[]
         bs = T[]
@@ -136,7 +136,7 @@ end
 
 @testset "affine_representative is invariant on the affine class" begin
     rng = MersenneTwister(0xBFA74)
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N = inputbits(F)
     T = storage_type(F)
     mask = T((T(1) << N) - T(1))
@@ -151,7 +151,7 @@ end
 end
 
 @testset "affine_class_signature: non-empty and properly sorted" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     sig = affine_class_signature(F)
     @test !isempty(sig)
     @test issorted(sig; by = r -> r.lut)

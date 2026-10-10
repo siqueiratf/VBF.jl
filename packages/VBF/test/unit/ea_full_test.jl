@@ -1,25 +1,25 @@
-@testitem "ea_full" begin
-using VBFCatalog
+@testitem "ea_full" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
 @testset "ea_equivalences: empty for incompatible / non-permutations" begin
-    s4 = load_literature_sbox("PRESENT")
-    s5 = load_apn_function("n5_Gold_x3")
+    s4 = fixture_sbox("PRESENT")
+    s5 = fixture_apn("n5_Gold_x3")
     @test isempty(ea_equivalences(s4, s5))   # different N
     c = SBox(UInt8[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])
     @test isempty(ea_equivalences(s4, c))
 end
 
 @testset "ea_equivalences: non-empty iff are_ea_equivalent" begin
-    F = load_literature_sbox("PRESENT")
-    H = load_literature_sbox("SKINNY_4")
+    F = fixture_sbox("PRESENT")
+    H = fixture_sbox("SKINNY_4")
     @test (!isempty(ea_equivalences(F, F))) == are_ea_equivalent(F, F; strategy = :heggebakk)
     @test (!isempty(ea_equivalences(F, H))) == are_ea_equivalent(F, H; strategy = :heggebakk)
 end
 
 @testset "ea_equivalences: every triple verifies G = L1∘F∘A2 ⊕ A_drift" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N, T = 4, UInt8
     eqs = ea_equivalences(F, F)
     @test !isempty(eqs)
@@ -34,12 +34,12 @@ end
 
 @testset "ea_equivalences: degenerate monomial-APN partition short-circuits" begin
     # n5_Gold_x3 has signature [31, 1]; outer count = |GL(5,F₂)| ≫ default cap, so ea_equivalences returns empty (heggebakk limitation).
-    F = load_apn_function("n5_Gold_x3")
+    F = fixture_apn("n5_Gold_x3")
     @test isempty(ea_equivalences(F, F))
 end
 
 @testset "partition_automorphisms: all bijective + preserve buckets" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N, T = 4, UInt8
     pa = partition_automorphisms(F)
     @test !isempty(pa)
@@ -59,7 +59,7 @@ end
 end
 
 @testset "permutation_order: cycle closure" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N, T = 4, UInt8
     ord = permutation_order(F)
     @test ord ≥ 1

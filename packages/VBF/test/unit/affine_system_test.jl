@@ -1,5 +1,5 @@
 @testitem "affine_system" begin
-using VBFCatalog
+
 using VBF
 using Test
 using Random

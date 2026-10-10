@@ -1,10 +1,10 @@
-@testitem "ortho_derivative" begin
-using VBFCatalog
+@testitem "ortho_derivative" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
 @testset "ortho_derivative: nothing for non-APN functions" begin
-    F = load_literature_sbox("PRESENT")   # DU=4, not APN
+    F = fixture_sbox("PRESENT")   # DU=4, not APN
     @test differential_uniformity(F) > 2
     @test ortho_derivative(F) === nothing
     @test !is_quadratic_apn(F)
@@ -12,7 +12,7 @@ end
 
 @testset "ortho_derivative: defined for quadratic APN" begin
     # n=4: F = x^3 over GF(2⁴) is a quadratic APN.
-    F = load_apn_function("n4_Gold_x3")
+    F = fixture_apn("n4_Gold_x3")
     π = ortho_derivative(F)
     @test π !== nothing
     @test π isa SBox{inputbits(F), storage_type(F)}
@@ -22,14 +22,14 @@ end
 
 @testset "ortho_derivative: not defined for non-quadratic APN" begin
     # n5_Kasami_x15 = x^15 over GF(2⁵) has algebraic degree 4, so its ortho-derivative is undefined.
-    F = load_apn_function("n5_Kasami_x15")
+    F = fixture_apn("n5_Kasami_x15")
     @test algebraic_degree(F) > 2
     @test ortho_derivative(F) === nothing
 end
 
 @testset "ortho_derivative: defining property — π is dual to the linear part of D_a F" begin
     for name in ("n4_Gold_x3", "n5_Gold_x3", "n5_Gold_x5")
-        F = load_apn_function(name)
+        F = fixture_apn(name)
         π = ortho_derivative(F)
         @test π !== nothing
         N = inputbits(F)
@@ -49,15 +49,15 @@ end
 
 @testset "ortho_derivative: identity (π_F)² ≡ … is an APN itself" begin
     # The ortho-derivative is generally a quadratic APN itself (Canteaut-Charpin-Kyureghyan). Spot-check on n=4 Gold x^3.
-    F = load_apn_function("n4_Gold_x3")
+    F = fixture_apn("n4_Gold_x3")
     π = ortho_derivative(F)
     @test π !== nothing
     @test differential_uniformity(π) == 2
 end
 
 @testset "ortho_derivative: distinguishes Frobenius orbits at n=5 (quadratic APN)" begin
-    F3 = load_apn_function("n5_Gold_x3")
-    F5 = load_apn_function("n5_Gold_x5")
+    F3 = fixture_apn("n5_Gold_x3")
+    F5 = fixture_apn("n5_Gold_x5")
     π3 = ortho_derivative(F3)
     π5 = ortho_derivative(F5)
     @test π3 !== nothing
@@ -67,7 +67,7 @@ end
 
 @testset "ortho_derivative: reflexivity" begin
     # F ~_L F always; π_F is a deterministic function of F's LUT.
-    F = load_apn_function("n5_Gold_x3")
+    F = fixture_apn("n5_Gold_x3")
     π1 = ortho_derivative(F)
     π2 = ortho_derivative(F)
     @test π1 == π2

@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 vbf_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-exec "${VBF_JULIA:-julia}" --startup-file=no --project="$vbf_root" "$vbf_root/search/apn/cli.jl" "$@"
+if [[ "${1:-}" == "verify" ]]; then
+  shift
+  exec "${VBF_JULIA:-julia}" --startup-file=no "$vbf_root/packages/VBFSearch/src/verification/verify_certificate.jl" "$@"
+fi
+exec "${VBF_JULIA:-julia}" --startup-file=no --project="$vbf_root" -e 'using VBFSearch; VBFSearch.main(ARGS)' -- "$@"

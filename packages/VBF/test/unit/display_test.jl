@@ -1,5 +1,5 @@
-@testitem "display" begin
-using VBFCatalog
+@testitem "display" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
@@ -25,7 +25,7 @@ end
 end
 
 @testset "table_to_markdown / table_to_latex on a DDT" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     D = ddt(F)
     md = table_to_markdown(D; corner = "a\\b")
     lines = split(md, '\n')

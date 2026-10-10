@@ -1,5 +1,5 @@
-@testitem "subspace_search" begin
-using VBFCatalog
+@testitem "subspace_search" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
@@ -46,7 +46,7 @@ end
 end
 
 @testset "extract_linear_subspaces: every subspace ⊆ z ∪ {0}" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     Z = walsh_zeroes(F)
     bases = extract_linear_subspaces(Z, 4; max_bits = 8)
     @test !isempty(bases)
@@ -62,7 +62,7 @@ end
 
 @testset "extract_linear_subspaces: each subspace counted once" begin
     # span_from_basis(basis) should give the same set across all returned bases — but each set should be unique.
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     Z = walsh_zeroes(F)
     bases = extract_linear_subspaces(Z, 4; max_bits = 8)
     spans = [Set(span_from_basis(b)) for b in bases]
@@ -72,7 +72,7 @@ end
 @testset "extract_linear_subspaces: CCZ-invariance under inv(F) at n=4" begin
     # The number of n-dim subspaces of Z(F) is a CCZ-invariant. inv(F) is CCZ-equivalent to F. So the counts must match.
     for name in ("PRESENT", "GIFT", "SKINNY_4", "Midori_Sb0")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         N = inputbits(F)
         is_permutation(F) || continue
         F_inv = inv(F)

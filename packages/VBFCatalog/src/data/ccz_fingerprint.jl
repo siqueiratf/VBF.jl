@@ -1,13 +1,17 @@
+import SQLite
+import DBInterface
+
 """
 CCZ-invariant fingerprint for fast novelty rejection of **non-quadratic** APN.
 
 The σ signature ([`sigma_hash`](@ref)) needs the ortho-derivative and so only
 applies to quadratic APN. This fingerprint is defined for any APN function via a
 tuple of genuine CCZ-invariants, giving non-quadratic APN the same O(1)
-mismatch-certifies-new filter σ gives quadratics.
+mismatch filter used for quadratics. Absence is scoped to indexed references,
+not a claim of complete literature novelty.
 
 Soundness ledger — every component is a CCZ-invariant, so a fingerprint mismatch
-*certifies* CCZ-inequivalence (a rigorous "new" verdict); equal fingerprints are
+*certifies* CCZ-inequivalence to a compared reference; equal fingerprints are
 necessary but not sufficient (a collision must be confirmed by a full CCZ check):
 
 - differential spectrum (trivial {0,2} multiset for APN, but harmless)
@@ -27,30 +31,7 @@ different tiers never compare equal:
   code weight distribution (abs-Walsh) is the discriminator.
 """
 
-"""
-    ccz_fingerprint_key(F::SBox) -> Tuple
-
-CCZ-invariant fingerprint tuple, n-tiered (see module docstring). `F` should be
-APN. The leading `(N, tier)` makes keys from different dimensions/tiers
-incomparable.
-"""
-function ccz_fingerprint_key(F::SBox{N,T}) where {N,T}
-    ds = sorted_pairs(differential_spectrum(F))
-    ws = sorted_pairs(absolute_walsh_spectrum(F))
-    if N ≤ 7
-        return (N, 1, gamma_rank(F), delta_rank(F), ds, ws)
-    else
-        return (N, 2, ds, ws)
-    end
-end
-
-"""
-    ccz_fingerprint_hash(F::SBox) -> String
-
-Stable hex digest (SHA-256 of `string(ccz_fingerprint_key(F))`). Equal hash ⇔
-equal fingerprint; different hash ⇒ provably CCZ-inequivalent.
-"""
-ccz_fingerprint_hash(F::SBox) = bytes2hex(SHA.sha256(string(ccz_fingerprint_key(F))))
+# Invariant keys and hashes are implemented and exported by VBF.
 
 # --- side store -------------------------------------------------------------
 # Like the σ index, this is regenerable and kept out of the committed catalog in
@@ -130,25 +111,30 @@ end
     classify_ccz_fingerprint(F::SBox; index) -> (status, source, member_idx)
 
 Look up `ccz_fingerprint_hash(F)` in the `ccz_fingerprint_index` side store.
-Returns `(:known, source, member_idx)` for the first match, or
+Returns `(:fingerprint_match, source, member_idx)` for the first match (a
+necessary filter, not proof of equivalence), or
 `(:new, nothing, nothing)` if the fingerprint is absent (a rigorous
 CCZ-inequivalence certificate against every indexed non-quadratic APN). For
 quadratic APN use [`classify_ccz`](@ref) (σ) instead.
 """
-function classify_ccz_fingerprint(F::SBox; index::SQLite.DB = _open_ccz_fingerprint_index())
-    h = ccz_fingerprint_hash(F)
-    q = DBInterface.execute(
-        index,
-        "SELECT source, member_idx FROM ccz_fingerprint_index WHERE fp_hash = " *
-        _sql_quote(h) * " LIMIT 1",
-    )
+function classify_ccz_fingerprint(F::SBox; index::Union{Nothing,SQLite.DB} = nothing)
+    own_index = index === nothing
+    idx = own_index ? _open_ccz_fingerprint_index() : index
     try
-        for r in q
-            return (:known, String(r.source), Int(r.member_idx))
+        h = ccz_fingerprint_hash(F)
+        q = DBInterface.execute(idx,
+            "SELECT source, member_idx FROM ccz_fingerprint_index WHERE fp_hash = ? LIMIT 1",
+            (h,))
+        try
+            for r in q
+                return (:fingerprint_match, String(r.source), Int(r.member_idx))
+            end
+            (:new, nothing, nothing)
+        finally
+            DBInterface.close!(q)
         end
-        (:new, nothing, nothing)
     finally
-        DBInterface.close!(q)
+        own_index && close(idx)
     end
 end
 
@@ -156,7 +142,9 @@ end
     is_novel_fingerprint(F::SBox; index) -> Bool
 
 `true` iff `ccz_fingerprint_hash(F)` is absent from `ccz_fingerprint_index` — a
-new non-quadratic-APN CCZ class relative to the indexed catalog.
+CCZ-inequivalent to the indexed non-quadratic APNs. A `false` result is only
+a fingerprint match and leaves equivalence unresolved; neither result asserts
+complete literature coverage.
 """
-is_novel_fingerprint(F::SBox; index::SQLite.DB = _open_ccz_fingerprint_index()) =
+is_novel_fingerprint(F::SBox; index::Union{Nothing,SQLite.DB} = nothing) =
     classify_ccz_fingerprint(F; index = index)[1] === :new

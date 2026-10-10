@@ -1,5 +1,5 @@
 @testitem "anomaly_lat" begin
-using VBFCatalog
+
 using VBF
 using Test
 

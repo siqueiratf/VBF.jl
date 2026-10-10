@@ -26,12 +26,19 @@
 #
 # To correct only the declarative APN family, which data-raw fully owns, use
 # sync_apn_family.jl — it needs no external source.  See `make sync-apn`.
+# For source/API-only rebuilds, BFA_REUSE_CORPUS_AUDIT may point at a complete
+# independent source-rebuild audit directory. The Beierle store is reused only
+# after verifying original bytes/count, store digest/schema/integrity/count,
+# and the raw/stored comparison evidence. Originals must still be available.
+# Unset this option to rebuild every corpus member from its original LUT.
 
 JULIA   ?= julia
 JFLAGS  ?= --startup-file=no --project=$(CURDIR)
+# Match the committed constructor-family scope; expansion is an explicit change.
+CATALOG_ARGS ?= --max-n 11
 CATALOG := $(CURDIR)/../BFA_catalog.sqlite
 
-.PHONY: all catalog check check-structure sync-apn \
+.PHONY: all catalog check check-structure check-reuse sync-apn \
         apn_reps quadratic_apn_8bit beierle2025 sboxu_reconcile \
         simonberg xanadu apn_repo \
         known_families known_sporadic \
@@ -41,7 +48,7 @@ CATALOG := $(CURDIR)/../BFA_catalog.sqlite
 all: catalog
 
 catalog:
-	$(JULIA) $(JFLAGS) $(CURDIR)/build_catalog.jl
+	$(JULIA) $(JFLAGS) $(CURDIR)/build_catalog.jl $(CATALOG_ARGS)
 
 # ── verification ────────────────────────────────────────────────────────────
 # Run this after ANY catalog change, before committing.  `check` verifies that
@@ -56,6 +63,9 @@ check:
 
 check-structure:
 	$(CHECK) --structure-only
+
+check-reuse:
+	$(JULIA) $(JFLAGS) $(CURDIR)/test/reuse_verified_corpus.jl
 
 # Narrow, in-place sync of the declarative APN family (data-raw/apn_catalog/)
 # into the existing catalog. Needs no external source, so it works on a clone

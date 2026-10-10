@@ -1,5 +1,5 @@
-@testitem "algebraic" begin
-using VBFCatalog
+@testitem "algebraic" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
@@ -19,22 +19,22 @@ end
     @test algebraic_degree(s) == 2
 end
 
-# --- catalog regression ------------------------------------------------------
+# --- fixed-vector regression ------------------------------------------------------
 
-@testset "algebraic_degree catalog regression" begin
+@testset "algebraic_degree fixed-vector regression" begin
     # AES (inversion in GF(2^8)): every coordinate is degree-7 (Daemen-Rijmen).
-    @test algebraic_degree(load_literature_sbox("AES"))     == 7
-    @test algebraic_degree(load_literature_sbox("AES_inv")) == 7
+    @test algebraic_degree(fixture_sbox("AES"))     == 7
+    @test algebraic_degree(fixture_sbox("AES_inv")) == 7
 
     # All "good" 4-bit S-boxes are degree-3 by design (no degree-1 or 2 would be enough to resist higher-order attacks; degree-3 is the standard choice).
-    @test algebraic_degree(load_literature_sbox("PRESENT"))    == 3
-    @test algebraic_degree(load_literature_sbox("GIFT"))       == 3
-    @test algebraic_degree(load_literature_sbox("Midori_Sb0")) == 3
-    @test algebraic_degree(load_literature_sbox("Midori_Sb1")) == 3
-    @test algebraic_degree(load_literature_sbox("SKINNY_4"))   == 3
-    @test algebraic_degree(load_literature_sbox("Piccolo"))    == 3
+    @test algebraic_degree(fixture_sbox("PRESENT"))    == 3
+    @test algebraic_degree(fixture_sbox("GIFT"))       == 3
+    @test algebraic_degree(fixture_sbox("Midori_Sb0")) == 3
+    @test algebraic_degree(fixture_sbox("Midori_Sb1")) == 3
+    @test algebraic_degree(fixture_sbox("SKINNY_4"))   == 3
+    @test algebraic_degree(fixture_sbox("Piccolo"))    == 3
     for i in 0:7
-        @test algebraic_degree(load_literature_sbox("SERPENT_S$i")) == 3
+        @test algebraic_degree(fixture_sbox("SERPENT_S$i")) == 3
     end
 end
 
@@ -47,13 +47,13 @@ end
 end
 
 @testset "degree_spectrum: AES is uniformly degree-7" begin
-    s = load_literature_sbox("AES")
+    s = fixture_sbox("AES")
     sp = degree_spectrum(s)
     @test sorted_pairs(sp) == [7 => 8]
 end
 
 @testset "degree_spectrum: PRESENT (per-bit degrees, locked)" begin
-    s = load_literature_sbox("PRESENT")
+    s = fixture_sbox("PRESENT")
     sp = degree_spectrum(s)
     @test total_mass(sp) == 4         # 4 output bits
     @test maximum(first.(sorted_pairs(sp))) == 3

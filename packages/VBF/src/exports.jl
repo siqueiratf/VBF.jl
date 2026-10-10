@@ -127,3 +127,6 @@ export to_markdown, to_latex, table_to_markdown, table_to_latex
 export print_banner, print_section, print_check, print_kv, status_str
 
 export QuadraticExtensions
+
+# Mathematical invariant keys (catalog indexes are in VBFCatalog).
+export sigma_key, sigma_hash, ccz_fingerprint_key, ccz_fingerprint_hash

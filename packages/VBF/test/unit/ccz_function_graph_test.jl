@@ -1,11 +1,11 @@
-@testitem "ccz_function_graph" begin
-using VBFCatalog
+@testitem "ccz_function_graph" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
 
 @testset "FunctionGraph: construction + basic API" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     g = FunctionGraph(F)
     @test inputbits(g) == 4
     @test length(g) == 16
@@ -20,7 +20,7 @@ end
 end
 
 @testset "FunctionGraph: graph entries pack (x << N) | F(x)" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     g = FunctionGraph(F)
     for entry in g.packed
         x = entry >> 4
@@ -31,7 +31,7 @@ end
 
 @testset "ccz_equivalent_function: identity L recovers F" begin
     for name in ("PRESENT", "GIFT", "SKINNY_4")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         N = inputbits(F)
         L_id = identity_linear_map(2N)
         A_id = F2AffineMap(L_id, UInt8(0))
@@ -41,7 +41,7 @@ end
 
 @testset "ccz_equivalent_function: swap map recovers inv(F)" begin
     # The CCZ map (x, y) → (y, x) applied to graph(F) = {(x, F(x))} gives {(F(x), x)} = graph(F⁻¹).
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     @test is_permutation(F)
     N, T = 4, UInt8
     swap_cols = T[T(1) << ((i + N) % (2N)) for i in 0:(2N - 1)]
@@ -53,7 +53,7 @@ end
 end
 
 @testset "ccz_equivalent_function: non-admissible L returns nothing" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     T = UInt8
     # Collapse the input bits: e_i → 0 for i < N; e_i → e_{i-N} for i ≥ N.
     bad_cols = T[
@@ -66,7 +66,7 @@ end
 end
 
 @testset "ccz_equivalent_function: wrong input length throws" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     L_4 = identity_linear_map(4)   # input length 4, not 2N=8
     A_4 = F2AffineMap(L_4, UInt8(0))
     @test_throws ArgumentError ccz_equivalent_function(F, A_4)
@@ -75,7 +75,7 @@ end
 @testset "ccz_equivalent_function: result preserves DDT (CCZ-invariant)" begin
     # CCZ-equivalence preserves the multiset of DDT entries.
     rng = MersenneTwister(0xBFA91)
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N, T = 4, UInt8
     mask = T(0x0F)
     ref_ddt_sorted = sort(vec(ddt(F)))

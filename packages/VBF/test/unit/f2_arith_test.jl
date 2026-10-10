@@ -1,5 +1,5 @@
 @testitem "f2_arith" begin
-using VBFCatalog
+
 using VBF
 using Test
 using Random

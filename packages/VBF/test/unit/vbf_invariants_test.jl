@@ -1,6 +1,6 @@
-@testitem "vbf_invariants" begin
+@testitem "vbf_invariants" setup=[SBoxFixtures] begin
 using VBF
-using VBFCatalog
+
 using Test
 using Random
 
@@ -29,7 +29,7 @@ end
 end
 
 @testset "bent/nonbent components partition (AES); odd n has none" begin
-    aes = load_literature_sbox("AES")               # n=8: bent_components is fast (just the LAT)
+    aes = fixture_sbox("AES")               # n=8: bent_components is fast (just the LAT)
     @test bent_components(aes) isa Vector{Int}
     @test length(bent_components(aes)) + length(nonbent_components(aes)) == 256
     @test 0 in nonbent_components(aes)              # the zero component is never bent

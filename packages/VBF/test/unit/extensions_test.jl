@@ -29,12 +29,20 @@ end
 
 @testset "randomised top coordinate is reproducible and valid (n=5)" begin
     G4 = SBox{4}(gf_monomial_lut(4, 3))          # 4-bit Gold x³
-    r1 = extend_quadratic_apn(G4; limit=1, rng=MersenneTwister(2))
-    r2 = extend_quadratic_apn(G4; limit=1, rng=MersenneTwister(2))
-    @test r1 == r2
-    @test !isempty(r1)
-    F = r1[1]
-    @test inputbits(F) == 5 && quad_apn(F)
-    @test any(apn_ea_mugshot(t) == apn_ea_mugshot(G4) for t in apn_trims(F))
+    # A random top coordinate need not admit an extension: emptiness is valid.
+    # Test a fixed finite batch, rather than assuming one particular RNG seed hits.
+    hits = 0
+    for seed in 0:15
+        r1 = extend_quadratic_apn(G4; limit=1, rng=MersenneTwister(seed))
+        r2 = extend_quadratic_apn(G4; limit=1, rng=MersenneTwister(seed))
+        @test r1 == r2
+        @test length(r1) <= 1
+        for F in r1
+            hits += 1
+            @test inputbits(F) == 5 && quad_apn(F)
+            @test any(apn_ea_mugshot(t) == apn_ea_mugshot(G4) for t in apn_trims(F))
+        end
+    end
+    @test hits > 0   # the batch exercises successful extension verification too
 end
 end

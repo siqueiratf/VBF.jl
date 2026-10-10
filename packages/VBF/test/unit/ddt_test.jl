@@ -1,5 +1,5 @@
-@testitem "ddt" begin
-using VBFCatalog
+@testitem "ddt" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 
@@ -14,8 +14,8 @@ using Test
 end
 
 @testset "row 0 of DDT" begin
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+    for name in fixture_names()
+        s = fixture_sbox(name)
         d = ddt(s)
         n = 1 << inputbits(s)
         @test d[1, 1] == n            # a=b=0 always 2^n
@@ -26,8 +26,8 @@ end
 end
 
 @testset "row sums == 2^N for every row" begin
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+    for name in fixture_names()
+        s = fixture_sbox(name)
         d = ddt(s)
         n = 1 << inputbits(s)
         for a in 1:n
@@ -37,8 +37,8 @@ end
 end
 
 @testset "all entries even (since N ≥ 2)" begin
-    for name in literature_sbox_names()
-        s = load_literature_sbox(name)
+    for name in fixture_names()
+        s = fixture_sbox(name)
         @test inputbits(s) ≥ 2
         d = ddt(s)
         @test all(iseven, d)
@@ -47,29 +47,29 @@ end
 
 # --- known differential uniformity values from primary sources ---------------
 
-@testset "differential_uniformity catalog regression" begin
+@testset "differential_uniformity fixed-vector regression" begin
     # AES: famously 4-uniform (inversion in GF(2^8)).
-    @test differential_uniformity(load_literature_sbox("AES"))     == 4
-    @test differential_uniformity(load_literature_sbox("AES_inv")) == 4
+    @test differential_uniformity(fixture_sbox("AES"))     == 4
+    @test differential_uniformity(fixture_sbox("AES_inv")) == 4
 
     # 4-bit ciphers, all from their respective spec papers:
-    @test differential_uniformity(load_literature_sbox("PRESENT"))    == 4
-    @test differential_uniformity(load_literature_sbox("GIFT"))       == 6
-    @test differential_uniformity(load_literature_sbox("Midori_Sb0")) == 4
-    @test differential_uniformity(load_literature_sbox("Midori_Sb1")) == 4
-    @test differential_uniformity(load_literature_sbox("SKINNY_4"))   == 4
-    @test differential_uniformity(load_literature_sbox("Piccolo"))    == 4
+    @test differential_uniformity(fixture_sbox("PRESENT"))    == 4
+    @test differential_uniformity(fixture_sbox("GIFT"))       == 6
+    @test differential_uniformity(fixture_sbox("Midori_Sb0")) == 4
+    @test differential_uniformity(fixture_sbox("Midori_Sb1")) == 4
+    @test differential_uniformity(fixture_sbox("SKINNY_4"))   == 4
+    @test differential_uniformity(fixture_sbox("Piccolo"))    == 4
 
     # Serpent: all 8 S-boxes are 4-uniform by design.
     for i in 0:7
-        @test differential_uniformity(load_literature_sbox("SERPENT_S$i")) == 4
+        @test differential_uniformity(fixture_sbox("SERPENT_S$i")) == 4
     end
 end
 
 # --- differential_spectrum ---------------------------------------------------
 
 @testset "differential_spectrum: shape" begin
-    s = load_literature_sbox("PRESENT")
+    s = fixture_sbox("PRESENT")
     sp = differential_spectrum(s)
     n = 1 << inputbits(s)
     # excludes row a=0 → 15 rows × 16 cols = 240 entries
@@ -80,7 +80,7 @@ end
 
 @testset "differential_spectrum: AES values" begin
     # AES DDT is known: non-zero entries are 0, 2, 4. Row-by-row, exactly 1 entry of 4 + 126 entries of 2 + 129 entries of 0 (per row excluding row 0 of a 4-uniform AES-style S-box).
-    s = load_literature_sbox("AES")
+    s = fixture_sbox("AES")
     sp = differential_spectrum(s)
     pairs = sorted_pairs(sp)
     # The DDT entries of AES contain only {0, 2, 4}

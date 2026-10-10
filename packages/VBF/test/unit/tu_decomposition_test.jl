@@ -1,12 +1,12 @@
-@testitem "tu_decomposition" begin
-using VBFCatalog
+@testitem "tu_decomposition" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
 
 @testset "TU round-trip: literature permutations" begin
     for name in ("PRESENT", "GIFT")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         is_permutation(F) || continue
         tds = get_tu_decompositions(F)
         @test !isempty(tds)
@@ -23,7 +23,7 @@ using Random
 end
 
 @testset "TU round-trip: APN permutation (n=5 Gold x³)" begin
-    F = load_apn_function("n5_Gold_x3")
+    F = fixture_apn("n5_Gold_x3")
     @test is_permutation(F)
     tds = get_tu_decompositions(F)
     @test !isempty(tds)
@@ -43,7 +43,7 @@ end
 end
 
 @testset "tu_decomposition_from_space_basis matches subspace thickness" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     N = inputbits(F)
     bases = extract_linear_subspaces(walsh_zeroes(F), N; max_bits = 2N)
     for w in bases
@@ -56,7 +56,7 @@ end
 end
 
 @testset "tu_decomposition_from_space_basis: t = 0 is rejected" begin
-    F = load_literature_sbox("PRESENT")          # N = 4
+    F = fixture_sbox("PRESENT")          # N = 4
     # A subspace lying entirely in the high N bits has thickness 0.
     zero_thickness = UInt32[0x10, 0x20, 0x40, 0x80]
     @test thickness(zero_thickness, 4) == 0
@@ -64,7 +64,7 @@ end
 end
 
 @testset "core / twist" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     td = first(get_tu_decompositions(F))
     c = core(td)
     tw = twist(td)
@@ -80,7 +80,7 @@ end
 end
 
 @testset "get_tu_decompositions: cached bases match" begin
-    F = load_literature_sbox("GIFT")
+    F = fixture_sbox("GIFT")
     N = inputbits(F)
     bases = extract_linear_subspaces(walsh_zeroes(F), N; max_bits = 2N)
     a = get_tu_decompositions(F)
@@ -90,7 +90,7 @@ end
 end
 
 @testset "show smoke test" begin
-    td = first(get_tu_decompositions(load_literature_sbox("PRESENT")))
+    td = first(get_tu_decompositions(fixture_sbox("PRESENT")))
     @test occursin("TUDecomposition", sprint(show, td))
     @test occursin("keyed", sprint(show, MIME"text/plain"(), td))
 end

@@ -1,8 +1,6 @@
 """Auditable eight-bit APN properties, corpus comparisons and affine graph certificates."""
 module DiscoveryEvidence
 using VBF, VBFCatalog, SHA, TOML, Dates
-const SQL = VBFCatalog.SQLite
-const DBI = VBFCatalog.DBInterface
 include("verification/signature.jl")
 include("verification/ea_witness.jl")
 using .IndependentSignature
@@ -62,12 +60,7 @@ function properties(lut; detailed=false)
     result
 end
 
-struct Reference
-    db::SQL.DB
-    statement::Any
-    metadata::Dict{String,Any}
-    supplement::Dict{String,Vector{UInt8}}
-end
+const Reference = VBFCatalog.AuditedAPNReference
 
 """Cover every eight-bit Gold exponent (gcd(k,8)=1), independently verify each representative."""
 function gold_coverage()
@@ -81,69 +74,53 @@ function gold_coverage()
 end
 
 """Require a source-rebuilt reference; freeze its scope and digests, never fall back to an old index."""
-function open_reference(dir; supplement_path=get(ENV,"VBF_APN_SUPPLEMENT",joinpath(@__DIR__,"../../data/apn/supplement.tsv")))
-    isfile(joinpath(dir,"comparison.toml")) || error("missing source-rebuilt APN reference: $dir; see data/apn/README.md")
-    manifest = TOML.parsefile(joinpath(dir,"comparison.toml"))
-    manifest["provenance_complete"] || error("incomplete original-source reference")
-    path = abspath(joinpath(dir,"fresh_union.sqlite"))
-    isfile(path) || error("missing reference database")
-    digest = filehash(path)
-    digest==manifest["fresh_union_sha256"] || error("reference digest mismatch")
-    supplement = Dict{String,Vector{UInt8}}()
-    if !isempty(supplement_path)
-        isfile(supplement_path) || error("missing public supplement")
-        for line in Iterators.drop(eachline(supplement_path),1)
-            isempty(line) && continue
-            cols = split(line,'\t')
-            f = hex2bytes(cols[2])
-            p = properties(f)
-            p["apn"] && p["quadratic"] && p["sigma_hash"]==cols[1] || error("invalid public supplement")
-            supplement[String(cols[1])] = f
-        end
-    end
-    db = SQL.DB("file:"*path*"?mode=ro")
-    count = only([Int(r.c) for r in DBI.execute(db,"SELECT COUNT(*) c FROM signatures")])
-    count==manifest["fresh_union_distinct_signatures"] || error("reference count mismatch")
+function open_reference(dir; supplement_path=get(ENV,"VBF_APN_SUPPLEMENT",joinpath(@__DIR__,"../../../data/apn/supplement.tsv")))
     gold=gold_coverage()
-    for p in gold
-        isempty([r[1] for r in DBI.execute(db,"SELECT 1 FROM signatures WHERE sigma_hash=?",(p["sigma_hash"],))]) &&
-            error("reference omits a Gold class; power-function exclusion cannot be established")
+    checker=function(f)
+        p=properties(f)
+        p["apn"] && p["quadratic"] || error("invalid public supplement")
+        p["sigma_hash"]
     end
-    metadata = Dict{String,Any}("path"=>path,"sha256"=>digest,
-        "manifest_sha256"=>filehash(joinpath(dir,"comparison.toml")),"signatures"=>count,
-        "supplement_sha256"=>isempty(supplement_path) ? "none" : filehash(supplement_path),
-        "supplement_path"=>isempty(supplement_path) ? "none" : abspath(supplement_path),
-        "scope"=>"source-rebuilt quadratic (8,8)-APN representatives plus specified public supplement",
-        "gold_coverage"=>gold,"literature_complete"=>false)
-    Reference(db,DBI.prepare(db,"SELECT 1 FROM signatures WHERE sigma_hash=?"),metadata,supplement)
+    r=VBFCatalog.open_apn_reference(dir;supplement_path,supplement_signature=checker,
+        required_signatures=[p["sigma_hash"] for p in gold])
+    r.metadata["gold_coverage"]=gold
+    r
 end
 
-close_reference(r) = (DBI.close!(r.statement); SQL.close(r.db))
+close_reference(r) = VBFCatalog.close_apn_reference(r)
 
 """A sigma match is a filter; an absent sigma separates only the documented quadratic corpus."""
 function classify(lut,r::Reference; detailed=false)
     p = properties(lut;detailed)
-    p["reference"] = r.metadata
+    p["reference"] = VBFCatalog.reference_metadata(r)
     if !p["apn"]
         p["evidence_level"] = "not_apn"
     elseif !p["quadratic"]
         p["evidence_level"] = "apn_verified_reference_comparison_unavailable"
     else
         hash = p["sigma_hash"]
-        hit = hash in keys(r.supplement) || !isempty(collect(DBI.execute(r.statement,(hash,))))
+        hit = VBFCatalog.reference_contains_signature(r,hash)
         p["evidence_level"] = hit ? "invariant_match_unresolved_equivalence" : "inequivalent_to_documented_quadratic_corpus"
         p["reference_signature_match"] = hit
         p["equivalence"] = "unresolved"
-        gold_match=any(row->row["sigma_hash"]==hash,r.metadata["gold_coverage"])
+        gold_match=any(row->row["sigma_hash"]==hash,VBFCatalog.reference_metadata(r)["gold_coverage"])
         p["apn_power_function_comparison"]=gold_match ? "unresolved_gold_invariant_match" : "inequivalent_to_all_apn_power_functions"
         p["power_function_justification"]=Dict("theorem"=>"Yoshiara 2016, Theorem 2; quadratic APN CCZ-equivalent to a power APN implies EA-equivalent to a Gold function",
             "doi"=>"10.1007/s10801-016-0680-z","gold_k"=>[1,3,5,7],"gold_invariant_match"=>gold_match)
-        if hash in keys(r.supplement) && UInt8.(lut)==r.supplement[hash]
+        if VBFCatalog.reference_exact_lut_match(r,hash,lut)
             p["evidence_level"] = "exact_public_lut_match"
             p["equivalence"] = "identical_public_function"
         end
     end
     p
+end
+
+# Exhaustive negative outcomes are implementation-dependent; cache them only
+# against the exact mathematical solver sources, unlike independently checked witnesses.
+function solver_fingerprint()
+    root=joinpath(pkgdir(VBF),"src")
+    paths=sort!([joinpath(d,f) for (d,_,files) in walkdir(root) for f in files if endswith(f,".jl")])
+    bytes2hex(SHA.sha256(join([relpath(p,root)*":"*filehash(p) for p in paths],"\n")))
 end
 
 """Return an independently checked positive map, a separating invariant, exhaustive negative, or inconclusive budget."""
@@ -154,7 +131,7 @@ function compare(f,g;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000)
         "target_lut_hex"=>pg["lut_hex"],"candidate_sha256"=>pf["lut_sha256"],
         "target_sha256"=>pg["lut_sha256"],"julia_version"=>string(VERSION),
         "solver"=>"partition_refinement_equivalence", "algorithm"=>"paper", "rng_seed"=>940,
-        "source_sha256"=>filehash(@__FILE__),"timeout_seconds"=>timeout_seconds,"max_nodes"=>max_nodes)
+        "source_sha256"=>filehash(@__FILE__),"solver_implementation_sha256"=>solver_fingerprint(),"timeout_seconds"=>timeout_seconds,"max_nodes"=>max_nodes)
     if get(pf,"sigma_hash",nothing)!==nothing && get(pg,"sigma_hash",nothing)!==nothing && pf["sigma_hash"]!=pg["sigma_hash"]
         merge!(result,Dict("status"=>"inequivalent_by_quadratic_invariant","equivalent"=>false,
             "candidate_sigma"=>pf["sigma_hash"],"target_sigma"=>pg["sigma_hash"],

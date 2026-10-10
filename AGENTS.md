@@ -18,6 +18,8 @@ Primary sources:
   constructions. This package must not depend on `VBFCatalog`.
 - `packages/VBFCatalog/`: catalog/data layer for APN functions, S-boxes,
   bibliography, importers, and SQLite-backed corpora. It depends on `VBF`.
+- `packages/VBFSearch/`: reproducible search application consuming VBF and VBFCatalog;
+  owns experiment state, checkpoints and evidence, never curated catalog writes.
 - `packages/VBFCatalog/data-build/`: importer/build scripts with their own
   environment. Do not include these from package tests or a casual REPL.
 - `papers/`: standalone paper-reproduction scripts. Keep one paper claim,
@@ -64,7 +66,7 @@ Primary sources:
   bypass is `VBF_SKIP_CATALOG_CHECK=1`, which prints loudly and must be
   justified in the commit message.
   Adding a family, or changing how many rows one holds, is not done until every
-  total in `packages/VBF/test/unit/catalog_queries_test.jl` that counts it has
+  total in `packages/VBFCatalog/test/unit/catalog_queries_test.jl` that counts it has
   been updated too — total, per-`n`, `is_apn`, `is_permutation`. The gate
   reconstructs those same sums from `data-raw/` and fails on the exact figure
   that would otherwise surface as a bare CI count mismatch, and it separately

@@ -1,5 +1,5 @@
 @testitem "anomaly_ddt" begin
-using VBFCatalog
+
 using VBF
 using Test
 

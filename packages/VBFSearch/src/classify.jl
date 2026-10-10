@@ -4,15 +4,12 @@ Classes refer only to the frozen candidate snapshot, never the full APN space.
 Positive witnesses join components; neither sigma equality nor an inconclusive
 pair is used to merge. Existing pair results are reused at exact LUT identities.
 """
-const CLASSIFICATION_USAGE=nothing
-isdefined(@__MODULE__,:DiscoveryEvidence) || include("evidence.jl")
-using .DiscoveryEvidence,TOML,SHA,Dates
 
 function classify_snapshot(dir;seconds=30.0,nodes=1_000_000,max_pairs=100)
     seconds>=0 && nodes>=0 && max_pairs>=0 || error("invalid classification budget")
-    db=DiscoveryEvidence.SQL.DB(joinpath(dir,"run.sqlite"))
-    rows(sql,args=())=[Dict(String(k)=>v for (k,v) in pairs(r)) for r in DiscoveryEvidence.DBI.execute(db,sql,args)]
-    execute(sql,args=())=foreach(_->nothing,DiscoveryEvidence.DBI.execute(db,sql,args))
+    db=SQLite.DB(joinpath(dir,"run.sqlite"))
+    rows(sql,args=())=[Dict(String(k)=>v for (k,v) in pairs(r)) for r in DBInterface.execute(db,sql,args)]
+    execute(sql,args=())=foreach(_->nothing,DBInterface.execute(db,sql,args))
     try
         execute("PRAGMA busy_timeout=10000")
         execute("PRAGMA synchronous=FULL")
@@ -51,6 +48,7 @@ function classify_snapshot(dir;seconds=30.0,nodes=1_000_000,max_pairs=100)
             proof=TOML.parse(row["evidence"])
             proof["relation"] in ("ea","ccz") || continue
             proof["status"]=="inequivalent_by_exhaustive_solver" || continue
+            get(proof,"solver_implementation_sha256",nothing)==DiscoveryEvidence.solver_fingerprint() || continue
             a,b=proof["candidate_sha256"],proof["target_sha256"]
             haskey(candidates,a) && haskey(candidates,b) && push!(negative,minmax(a,b))
         end
@@ -94,16 +92,7 @@ function classify_snapshot(dir;seconds=30.0,nodes=1_000_000,max_pairs=100)
         mv(joinpath(dir,"classification.toml.tmp"),joinpath(dir,"classification.toml");force=true)
         result
     finally
-        DiscoveryEvidence.SQL.intransaction(db) && execute("ROLLBACK")
-        DiscoveryEvidence.SQL.close(db)
+        SQLite.intransaction(db) && execute("ROLLBACK")
+        SQLite.close(db)
     end
-end
-if abspath(PROGRAM_FILE)==(@__FILE__)
-    length(ARGS) in (1,7) || error("usage: classify.jl RUN_DIRECTORY [--seconds S --nodes N --max-pairs P]")
-    cfg=Dict("seconds"=>"30","nodes"=>"1000000","max-pairs"=>"100")
-    for i in 2:2:length(ARGS)
-        key=replace(ARGS[i],r"^--"=>"");haskey(cfg,key) || error("unknown option $key");cfg[key]=ARGS[i+1]
-    end
-    result=classify_snapshot(ARGS[1];seconds=parse(Float64,cfg["seconds"]),nodes=parse(Int,cfg["nodes"]),max_pairs=parse(Int,cfg["max-pairs"]))
-    println("$(result["proven_equivalence_components"]) proven components; $(result["unresolved_component_pairs"]) unresolved pairs; exact snapshot count: $(result["exact_snapshot_class_count_established"])")
 end

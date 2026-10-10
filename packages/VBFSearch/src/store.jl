@@ -1,8 +1,8 @@
 """Transactional experiment state: exact LUT identity, work cursors and evidence, without invariant-based class merging."""
 module DiscoveryStore
-using ..DiscoveryEvidence, VBF, VBFCatalog, SHA, TOML, Dates
-const SQL=VBFCatalog.SQLite
-const DBI=VBFCatalog.DBInterface
+using ..DiscoveryEvidence, VBF, SQLite, DBInterface, SHA, TOML, Dates
+const SQL=SQLite
+const DBI=DBInterface
 export Store, open_store, close_store, claim!, finish!, checkpoint!, register!,
        add_unit!, query, metadata, snapshot, atomic_toml, texttoml, parse_toml,
        transaction, seed!, commit_chunk!

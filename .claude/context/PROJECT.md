@@ -115,9 +115,9 @@ override upstream checkout paths for data-build scripts only.
 
 ## Reproducible APN command
 
-`bin/vbf` runs `search/apn/cli.jl`: search/resume/status/stop, validate/audit,
+`bin/vbf` runs the `VBFSearch` package CLI: search/resume/status/stop, validate/audit,
 compare/classify/verify and publication reports. Production workflows live
-under `search/apn/`; Fourier math is `VBF.QuadraticExtensions`, catalog seeds
+under `packages/VBFSearch/`; Fourier math is `VBF.QuadraticExtensions`, catalog seeds
 use `VBFCatalog`. Reference evidence defaults to ignored `data/apn/reference`
 and `data/apn/supplement.tsv`. Historical census outputs remain archived; old
-checkpoints are unsupported. See `search/apn/README.md` for the supported API.
+checkpoints are unsupported. See `packages/VBFSearch/README.md` for the supported API.

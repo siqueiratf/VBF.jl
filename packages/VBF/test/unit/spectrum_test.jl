@@ -1,5 +1,5 @@
 @testitem "spectrum" begin
-using VBFCatalog
+
 using VBF
 using Test
 

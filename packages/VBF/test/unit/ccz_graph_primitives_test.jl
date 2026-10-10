@@ -1,5 +1,5 @@
-@testitem "ccz_graph_primitives" begin
-using VBFCatalog
+@testitem "ccz_graph_primitives" setup=[SBoxFixtures] begin
+
 using VBF
 using Test
 using Random
@@ -30,7 +30,7 @@ end
 end
 
 @testset "graph_image_by: identity recovers the graph; swap gives inv(F)" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     g = FunctionGraph(F)
     @test graph_image_by(g, identity_linear_map(8)).packed == g.packed
     # Swap map (x,y)->(y,x): image graph = graph(inv(F)).
@@ -42,7 +42,7 @@ end
 end
 
 @testset "graph_xor_equivalence: self gives {0}; translate detected" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     g = FunctionGraph(F)
     offs = graph_xor_equivalence(g, g)
     @test UInt32(0) in offs
@@ -53,7 +53,7 @@ end
 end
 
 @testset "code matrices: shapes + CCZ-row" begin
-    F = load_literature_sbox("PRESENT")
+    F = fixture_sbox("PRESENT")
     cm = ccz_matrix(F)
     @test size(cm) == (2 * 4 + 1, 16)
     @test all(cm[1, :])                  # leading constant row is all ones
@@ -66,7 +66,7 @@ end
 @testset "ccz_matrix: rank is a CCZ-invariant (F vs inv(F))" begin
     # The CCZ-code's parameters (in particular its dimension = rank of the generator matrix) are CCZ-invariant. inv(F) is CCZ-equivalent.
     for name in ("PRESENT", "GIFT", "SKINNY_4")
-        F = load_literature_sbox(name)
+        F = fixture_sbox(name)
         is_permutation(F) || continue
         rk(M) = rank_f2(UInt64[sum(UInt64(M[r, c]) << (r - 1) for r in 1:size(M, 1))
                                for c in 1:size(M, 2)]; nbits = size(M, 1))
