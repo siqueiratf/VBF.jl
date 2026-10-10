@@ -33,8 +33,8 @@ make -C packages/VBFCatalog/src/import catalog
 make -C packages/VBFCatalog/src/import check
 ```
 
-Commit the entry and rebuilt `BFA_catalog.sqlite` together. The gate checks source
-agreement and runs catalog tests. See the [catalog guide](../../../README.md)
+Commit the entry and rebuilt `data/catalog.sqlite` together. The gate checks source
+agreement and runs catalog tests. See the [catalog guide](../../README.md)
 for original-source fetching, local overrides and bulk corpus storage.
 
 `is_apn` and `is_quadratic` are *derived* at build time

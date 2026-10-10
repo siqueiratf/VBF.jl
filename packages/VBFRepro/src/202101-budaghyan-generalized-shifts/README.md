@@ -236,7 +236,7 @@ The paper claims **15 new APN functions over `F_{2⁹}`**.
   from the catalog.
 - Table 3 row 12 ("eq. to 8.1"): **not-new**; also absent from the catalog.
 - The 15 rows marked `new`: **missing**. The n=9 catalog
-  (`packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml`, 9 entries) contains only Gold
+  (`packages/VBFCatalog/data/apn/n9_apn.toml`, 9 entries) contains only Gold
   `x³/x⁵/x¹⁷`, Kasami `x¹³/x²⁴¹`, Welch/Niho `x¹⁹`, Inverse `x⁵¹⁰`, and
   `n9_Budaghyan2009_eq7`/`n9_Budaghyan2009_eq8`.
 
@@ -262,7 +262,7 @@ source            = "Budaghyan, Calderini, Carlet, Coulter, Villa, 'Generalized 
                      F_{2^3}-polynomials. LUT = terms_to_lut over GF(2^9) with modulus
                      x^9+x^4+1 (=529) and zeta = 2 (ord 511). Re-verified:
                      differential_uniformity = 2, algebraic_degree = 2."
-target file       = packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml
+target file       = packages/VBFCatalog/data/apn/n9_apn.toml
 ```
 
 Per-entry. `name` follows the existing `n<N>_<Author><Year>_<tag>` convention;

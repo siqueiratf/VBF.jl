@@ -321,7 +321,7 @@ paper's actual claim is VERIFIED.**
   vacuous**: that TOML holds only **8 monomials** (Gold x³/x⁵/x⁹, Kasami x¹³/x⁵⁷,
   Welch x¹¹, Niho x³⁹, Inverse x¹²⁶), while the known n=7 list has **488** classes.
   Inequivalence to 8 monomials is not evidence of novelty. Against
-  `BFA_catalog.sqlite` + `ccz_sigma_index` (which *do* hold all 488), the function
+  `data/catalog.sqlite` + `ccz_sigma_index` (which *do* hold all 488), the function
   is **present**.
 - **The paper's claim nonetheless holds rigorously**: F7's σ-hash
   `8456e28c…` occurs **exactly once** among the 488 classes. σ-mismatch is a
@@ -336,7 +336,7 @@ proof.
 ### Catalog-gap record — curated TOML only, **NOT a world-novelty claim**
 
 ```
-target file: packages/VBFCatalog/src/entries/apn_catalog/n7_apn.toml
+target file: packages/VBFCatalog/data/apn/n7_apn.toml
 name           = "n7_KalginIdrisova_new"
 n = 7, m = 7, is_permutation = false
 lut = [0,0,0,1,0,2,4,7,0,4,8,13,16,22,28,27,0,8,16,25,32,42,52,63,75,71,83,94,123,117,103,104,
@@ -394,4 +394,4 @@ equivalent, is needed by §6 here, and would serve other papers. Belongs in
    this paper's R1 had. Owned by the core pass, not fixed here.
 4. **Catalog record.** The `n7_KalginIdrisova_new` TOML record below was **not**
    written (out of scope for this pass). It remains a record for whoever updates
-   `packages/VBFCatalog/src/entries/apn_catalog/n7_apn.toml`.
+   `packages/VBFCatalog/data/apn/n7_apn.toml`.

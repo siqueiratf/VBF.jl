@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS bulk_corpora (
 );
 
 -- Bundled records share the catalog; downloaded records use the identical table
--- in data/catalog/members.sqlite. store_sha256 hashes encodings in idx order.
+-- in packages/VBFCatalog/data/members.sqlite. store_sha256 hashes encodings in idx order.
 CREATE TABLE IF NOT EXISTS corpus_members (
     corpus TEXT NOT NULL,
     idx INTEGER NOT NULL CHECK(idx > 0),
@@ -119,5 +119,5 @@ CREATE TABLE IF NOT EXISTS corpus_members (
 -- committed catalog. It is large (one row per catalogued function — millions)
 -- and fully regenerable from the corpora + functions table, so — like the
 -- bulk-corpus LUT stores — it lives in its own side store under
--- data/catalog/ccz_sigma_index.sqlite (build with `build_sigma_index!`, query with
+-- packages/VBFCatalog/data/ccz_sigma_index.sqlite (build with `build_sigma_index!`, query with
 -- `classify_ccz`/`is_novel`; see src/data/sigma.jl).

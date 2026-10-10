@@ -60,7 +60,13 @@ CLAUDE.md
 !.claude/settings.json
 
 # Downloaded catalog originals, import receipts and derived stores.
-data/catalog/**
+packages/VBFCatalog/data/**
+!packages/VBFCatalog/data/apn/
+!packages/VBFCatalog/data/apn/**
+!packages/VBFCatalog/data/*.toml
+!packages/VBFCatalog/data/*.bib
+packages/VBFCatalog/data/imports.toml
+!packages/VBFCatalog/data/catalog.sqlite
 
 # READMEs are always tracked — including the per-paper review summaries under
 # packages/VBFRepro/src/<Paper_ID>/README.md. Git resolves a path by the LAST matching

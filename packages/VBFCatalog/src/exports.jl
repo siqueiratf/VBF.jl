@@ -4,7 +4,7 @@
 export load_literature_sbox, literature_sbox_names, literature_sbox_metadata
 
 # catalog open / build / content addressing
-export catalog_path, is_catalog_built, load_catalog, create_catalog
+export catalog_path, catalog_source_dir, is_catalog_built, load_catalog, create_catalog
 export canonical_lut_bytes, lut_sha256_hex, SCHEMA_VERSION
 
 # queries

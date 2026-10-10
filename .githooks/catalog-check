@@ -17,13 +17,19 @@ esac
 ROOT="$(git rev-parse --show-toplevel)" || exit 2
 cd "$ROOT" || exit 2
 
-DB="packages/VBFCatalog/BFA_catalog.sqlite"
+DB="packages/VBFCatalog/data/catalog.sqlite"
 
 # Paths whose change can desync the catalog. Keep in sync with the CI job and
 # with the rule in AGENTS.md.
 WATCHED=(
     "packages/VBFCatalog/src/"
-    "packages/VBFCatalog/BFA_catalog.sqlite"
+    "packages/VBFCatalog/data/catalog.sqlite"
+    "packages/VBFCatalog/data/apn/"
+    "packages/VBFCatalog/data/literature_sboxes.toml"
+    "packages/VBFCatalog/data/sporadic.toml"
+    "packages/VBFCatalog/data/corpora.toml"
+    "packages/VBFCatalog/data/sources.toml"
+    "packages/VBFCatalog/data/bibliography.bib"
 )
 
 # One source of truth for the watched set: the CI job, the pre-commit hook and
@@ -44,7 +50,7 @@ fi
 # --- Should we run at all? ---------------------------------------------------
 
 if [[ "$MODE" == "staged" ]]; then
-    staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+    staged="$(git diff --cached --name-only --diff-filter=ACMRD)"
     touched=""
     for path in "${WATCHED[@]}"; do
         hit="$(printf '%s\n' "$staged" | grep -F "$path" || true)"

@@ -415,7 +415,7 @@ CCZ-invariant (Π_F, m_F). Of the two APN functions it *exhibits*:
 ### Catalog-gap record
 
 ```
-target file: packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml
+target file: packages/VBFCatalog/data/apn/n6_apn.toml
 
 name             = "n6_EdelPott_x6_x9_b7x48"
 n                = 6

@@ -11,7 +11,7 @@ import Dates
 
 include(joinpath(@__DIR__, "load_sources.jl"))
 
-# Insert one bibliography entry (by key) from src/entries/bibliography.bib, idempotently.
+# Insert the source's citation from the shared bibliography, idempotently.
 include(joinpath(@__DIR__, "bibliography.jl"))
 
 function main()
@@ -51,6 +51,6 @@ function import_kuznetsov_file(APN_ALL)
     return nothing
 end
 
-if !isinteractive() && get(ENV, "BFA_KUZNETSOV_NO_AUTORUN", "0") != "1"
+if abspath(PROGRAM_FILE)==(@__FILE__)
     main()
 end

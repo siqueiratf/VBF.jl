@@ -122,8 +122,8 @@ style/docs). Never skip hooks. Never amend published commits.
 
 `BFA_SBOXU_PATH`, `BFA_XANADU_PATH`, `BFA_APN_REPO_PATH`, `BFA_THESIS_PATH` —
 override original-source cache paths for `src/import/` scripts. `BFA_DATA_DIR`
-selects local bulk/index storage under `data/catalog/`. Curated entries and small
-compact corpora share `BFA_catalog.sqlite`; old measurements live in `data/perf/`.
+selects local bulk/index storage under `packages/VBFCatalog/data/`. Curated entries and small
+compact corpora share `packages/VBFCatalog/data/catalog.sqlite`; old measurements live in `data/perf/`.
 
 ## Reproducible APN command
 

@@ -4,7 +4,8 @@ import SQLite
 import DBInterface
 import Dates
 
-include(joinpath(@__DIR__, "load_sources.jl"))
+include("load_sources.jl")
+include("write.jl")
 
 # --- extraction -------------------------------------------------------------
 
@@ -120,37 +121,6 @@ function _function_id_by_sha(db::SQLite.DB, sha::AbstractString)
     nothing
 end
 
-function _insert_function_row!(db::SQLite.DB, s::SBox{N, T};
-                               canonical_name::AbstractString,
-                               source_repo::AbstractString,
-                               contributor::AbstractString,
-                               added_date::AbstractString,
-                               notes::AbstractString) where {N, T}
-    is_perm = is_permutation(s)
-    du = differential_uniformity(s)
-    lin = linearity(s)
-    algdeg = algebraic_degree(s)
-    bu = is_perm ? boomerang_uniformity(s) : nothing
-    blob_literal = "X'" * bytes2hex(VBFCatalog.canonical_lut_bytes(s)) * "'"
-    bu_literal = bu === nothing ? "NULL" : string(Int(bu))
-    sql = string(
-        "INSERT INTO functions (",
-        "family, n, m, lut_sha256, lut_blob, algebraic_form, ",
-        "algebraic_degree, differential_uniformity, linearity, boomerang_uniformity, ",
-        "is_apn, is_permutation, is_quadratic, canonical_name, bib_key, ",
-        "source_repo, contributor, added_date, notes) VALUES (",
-        VBFCatalog._sql_quote("APN-rep"), ", ", N, ", ", N, ", ",
-        VBFCatalog._sql_quote(lut_sha256_hex(s)), ", ", blob_literal, ", NULL, ",
-        algdeg, ", ", Int(du), ", ", Int(lin), ", ", bu_literal, ", ",
-        Int(du == 2), ", ", Int(is_perm), ", ", Int(algdeg ≤ 2), ", ",
-        VBFCatalog._sql_quote(canonical_name), ", NULL, ",
-        VBFCatalog._sql_quote(source_repo), ", ",
-        VBFCatalog._sql_quote(contributor), ", ",
-        VBFCatalog._sql_quote(added_date), ", ",
-        VBFCatalog._sql_quote(notes), ")")
-    SQLite.execute(db, sql)
-end
-
 struct RepStats
     parsed::Int
     inserted::Int
@@ -181,7 +151,7 @@ function import_reps!(db::SQLite.DB, entries::Vector{RepEntry}, source_tag::Abst
             merged += 1
         else
             # First-class BFA catalog row originating from sboxU: tag both so the "in-catalog rows include bfa" invariant holds and the upstream provenance is preserved.
-            _insert_function_row!(db, s;
+            insert_function!(db, s; family="APN-rep",
                 canonical_name = e.label,
                 source_repo = bfa_repo * "|" * source_tag,
                 contributor = contributor,
@@ -240,7 +210,6 @@ function main()
     return nothing
 end
 
-# Auto-run when included by build_catalog.jl (non-interactive). The BFA_REPS_NO_AUTORUN guard lets tests `include` this file for its extraction helpers without touching the catalog.
-if !isinteractive() && get(ENV, "BFA_REPS_NO_AUTORUN", "0") != "1"
+if abspath(PROGRAM_FILE)==(@__FILE__)
     main()
 end

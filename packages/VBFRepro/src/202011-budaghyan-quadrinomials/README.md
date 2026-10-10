@@ -366,7 +366,7 @@ n ≤ 7, and a dense 2²⁰×2²⁰ F₂ matrix is ~137 GB.
 
 ## Catalog status
 
-`packages/VBFCatalog/src/entries/apn_catalog/n10_apn.toml` has exactly 4 entries
+`packages/VBFCatalog/data/apn/n10_apn.toml` has exactly 4 entries
 (`n10_Gold_x3`, `n10_Gold_x9`, `n10_Kasami_x57`, `n10_Dobbertin_x339`). All four
 were loaded and compared against C₃/C₇ by ortho-derivative mugshot and exact LUT:
 **no match on any**.
@@ -379,7 +379,7 @@ were loaded and compared against C₃/C₇ by ortho-derivative mugshot and exact
 ### Catalog-gap records
 
 ```
-target: packages/VBFCatalog/src/entries/apn_catalog/n10_apn.toml
+target: packages/VBFCatalog/data/apn/n10_apn.toml
 
 name           = "n10_BudaghyanHellesethKaleyski_C3"
 n = 10, m = 10, is_permutation = false

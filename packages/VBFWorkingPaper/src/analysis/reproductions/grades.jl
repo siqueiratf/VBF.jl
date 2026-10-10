@@ -217,7 +217,7 @@ function build()
 
     # --- corpora bib_keys (community-database inclusion, R4) ----------------
     corpus_keys = Set{String}()
-    db = joinpath(ROOT, "packages", "VBFCatalog", "BFA_catalog.sqlite")
+    db = VBFCatalog.catalog_path()
     if isfile(db)
         catalog=load_catalog(db)
         try
@@ -269,8 +269,8 @@ function build()
     % Produced by packages/VBFWorkingPaper/src/analysis/reproductions/grades.jl from:
     %   packages/VBFRepro/src/<id>/input/*.tex     (the publication, PDF-converted)
     %   packages/VBFRepro/src/<id>/README.md       (the reproduction review)
-    %   packages/VBFCatalog/src/entries/bibliography.bib
-    %   packages/VBFCatalog/BFA_catalog.sqlite  (bulk_corpora, functions)
+    %   packages/VBFCatalog/data/bibliography.bib
+    %   packages/VBFCatalog/data/catalog.sqlite  (bulk_corpora, functions)
     % Regenerate with:  julia --project=. packages/VBFWorkingPaper/src/analysis/reproductions/grades.jl
     """
 

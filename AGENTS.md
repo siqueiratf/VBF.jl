@@ -61,18 +61,18 @@ Primary sources:
   become a parallel curated catalog.
 - Keep generated results, local overrides, credentials, and copyrighted paper
   inputs out of git.
-- **Catalog changes are gated.** `packages/VBFCatalog/BFA_catalog.sqlite` is a
-  tracked build product of `src/entries/`, and the catalog test items rebuild their
-  expected counts from `src/entries/` and compare them against that DB — so editing
+- **Catalog changes are gated.** `packages/VBFCatalog/data/catalog.sqlite` is a
+  tracked build product of `packages/VBFCatalog/data/`, and the catalog test items rebuild their
+  expected counts from its declarations and compare them against that DB — so editing
   one without the other fails CI. After touching anything under
-  `packages/VBFCatalog/src/` or the DB itself,
+  `packages/VBFCatalog/src/`, tracked `packages/VBFCatalog/data/` inputs or `packages/VBFCatalog/data/bibliography.bib`,
   rebuild (`make -C packages/VBFCatalog/src/import catalog`) and run
   `make -C packages/VBFCatalog/src/import check` until it prints
   `catalog-check: OK` — before committing, in the same commit. Enable the hook
   that enforces this once per clone: `git config core.hooksPath .githooks`.
   **Never commit a catalog change with `--no-verify`/`-n`.** That flag skips the
   gate outright, and the gate is the only thing standing between a half-updated
-  `src/entries/` and a `catalog_queries_test` count mismatch 40 minutes into CI.
+  catalog source data and a `catalog_queries_test` count mismatch 40 minutes into CI.
   Two layers enforce this and neither is optional:
   `.githooks/pre-commit` (runs the gate on every catalog-touching commit) and
   `.githooks/claude-commit-guard` (a Claude Code `PreToolUse` hook, wired up in
@@ -84,7 +84,7 @@ Primary sources:
   Adding a family, or changing how many rows one holds, is not done until every
   total in `packages/VBFCatalog/test/unit/catalog_queries_test.jl` that counts it has
   been updated too — total, per-`n`, `is_apn`, `is_permutation`. The gate
-  reconstructs those same sums from `src/entries/` and fails on the exact figure
+  reconstructs those same sums from the declarations and fails on the exact figure
   that would otherwise surface as a bare CI count mismatch, and it separately
   refuses any family the test never names.
 - Every `README.md` in the repo is a tracked file, `packages/VBFRepro/src/<Paper_ID>/`

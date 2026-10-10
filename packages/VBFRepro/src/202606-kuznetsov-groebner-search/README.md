@@ -101,7 +101,7 @@ numbers, test counts, and resolution plans are superseded by this status.
   | CLASS-F (control) | #2 = Gold `x⁹` ✔ | #2 ✔ |
 
   Both corpora are already tracked in `bulk_corpora`
-  (`packages/VBFCatalog/BFA_catalog.sqlite (dataset edelpott2009_n8)`, 22 entries, modulus 285; and
+  (`packages/VBFCatalog/data/catalog.sqlite (dataset edelpott2009_n8)`, 22 entries, modulus 285; and
   `yuwangli2014_qam_n8.sqlite`, 8,179 entries). The match is on full σ — differential *and*
   Walsh — not merely the differential spectrum.
 - **Where the paper goes wrong**: Theorem 6's individual inequivalences are correct (0
@@ -155,7 +155,7 @@ numbers, test counts, and resolution plans are superseded by this status.
 - **Location**: `REVIEW_Kuznetsov_202606.md` (Catalog-gap records section:
   `n8_Kuznetsov2026_classA` … `classD`) versus `FINDINGS.md` §1-3.
 - **Symptom**: `REVIEW_Kuznetsov_202606.md` instructs the catalog updater to add four
-  already-published classes to `packages/VBFCatalog/src/entries/apn_catalog/n8_apn.toml` under
+  already-published classes to `packages/VBFCatalog/data/apn/n8_apn.toml` under
   `bib_key = "Kuznetsov_202606"` — the exact failure mode `sigma.jl:55-60` warns about.
 - **Root cause**: the REVIEW's σ-comparison covered only `n8_apn.toml` (3 curated entries)
   instead of `list_corpora` / `bulk_corpora`, which already hold Edel–Pott 2009 and
@@ -187,13 +187,13 @@ numbers, test counts, and resolution plans are superseded by this status.
   2. Route lookups through `classify_ccz`, which enforces `sigma_coverage`, rather than raw
      SQL.
   3. Import the 3.78M set with the existing
-     `packages/VBFCatalog/src/import/import_beierle2025.jl`, or record an explicit coverage
+     `packages/VBFCatalog/src/import/convert_beierle2025.jl`, or record an explicit coverage
      gap.
 
 ### 3. `theorem6.jl` runs only when the σ-index happens to have been built elsewhere
 
 - **Location**: `theorem6.jl:46` `idx = VBFCatalog._open_sigma_index()`.
-- **Symptom**: `data/catalog/ccz_sigma_index.sqlite` is a regenerable,
+- **Symptom**: `packages/VBFCatalog/data/ccz_sigma_index.sqlite` is a regenerable,
   git-ignored side store (`packages/VBFCatalog/.gitignore:3`) that the `theorem6` target never
   builds. On 2026-08-15 the index existed (built by another workflow) and `make theorem6`
   exited 0; on a clean checkout `_open_sigma_index` throws *"σ-index side store not found"*
@@ -330,7 +330,7 @@ numbers, test counts, and resolution plans are superseded by this status.
 | Table II σ distinctness and Gold identification | `table2.jl` | all six σ distinct ✔; `σ(CLASS-E) = σ(Gold x³)`, `σ(CLASS-F) = σ(Gold x⁹)` ✔ |
 | Theorem 4(3) slice structure | implicit | verified directly: **class_b, class_c, class_e share one NL=4 slice** (identical 200 coefficients of pairs with `p ≤ 4`); **class_d, class_f share another**; class_a is alone. Matches Theorem 4(3) |
 | §V-B Phase 2 (Gröbner) | `phase2.jl` | reimplemented open-source via `AlgebraicSolving`/msolve, with two real author slices embedded as ground truth in `test/test_phase2.jl` (exact set equality). **Executed and passing** (2026-08-15): `phase2_test` 6/6 in 59.9 s reproduces both embedded author slices — the 4-solution MULTI slice (centre + 3 neighbours) and the 1-solution SINGLE slice — with msolve and no Magma. It also *correctly* drops the paper's redundant `det(M_a)=0` generator with a written justification; Remark 8's vacuity is now verified numerically (`rank(L_a) = 7` for every `a ∈ 1..255` on all six representatives) |
-| Theorem 6, database (2) | — | **NO_MATCH confirmed**: scanning `packages/VBFCatalog/BFA_catalog.sqlite (dataset beierleleander2022_n8)` (12,923 entries = the "12,921 file") gives **zero** ortho-derivative-differential-spectrum matches for CLASS-A…F |
+| Theorem 6, database (2) | — | **NO_MATCH confirmed**: scanning `packages/VBFCatalog/data/catalog.sqlite (dataset beierleleander2022_n8)` (12,923 entries = the "12,921 file") gives **zero** ortho-derivative-differential-spectrum matches for CLASS-A…F |
 | Theorem 6, database (1) | `beierle_scan.out` | a committed run log shows 3,775,599 Beierle-2025 entries processed, 0 matches. Not re-runnable in-repo |
 
 ## Items Missing
@@ -380,7 +380,7 @@ Individual make targets exercised:
 | `make table3`     | 0 | `[PASS]` A,E,F ∈ `V_A`; B,C,D ∉ `V_A`; `[PASS] all membership results match paper (Theorem 4)`. |
 | `make theorem4`   | 0 | 30 `[PASS]` lines: all six reps `\|LUT\|=256`, δ=2, degree 2, non-permutation, correct `V_A` flag. |
 | `make algorithm1` | 0 | Prints `APN functions found: 0` / `empirical APN density: 0.0 %` / `completeness: budget-limited (100 evaluated)` — **confirms reproduction issue 7 by execution**. |
-| `make theorem6`   | 0 | **Runs.** The σ-index side store `data/catalog/ccz_sigma_index.sqlite` was present in this environment, so `_open_sigma_index()` succeeded. Output: `[PASS]` literal inequivalences for A–D, `[PASS] CLASS-A..D ∈ Edel-Pott 2009 (genuine pre-2020)`, and `[FAIL] PREMISE HOLDS (no pre-2020 set contains A..D)` — i.e. the script itself declares the paper's premise false. |
+| `make theorem6`   | 0 | **Runs.** The σ-index side store `packages/VBFCatalog/data/ccz_sigma_index.sqlite` was present in this environment, so `_open_sigma_index()` succeeded. Output: `[PASS]` literal inequivalences for A–D, `[PASS] CLASS-A..D ∈ Edel-Pott 2009 (genuine pre-2020)`, and `[FAIL] PREMISE HOLDS (no pre-2020 set contains A..D)` — i.e. the script itself declares the paper's premise false. |
 | `make novelty`    | 0 | **Runs but is a no-op.** Full output is two lines: the banner plus `catalog: MISSING — run ./fetch_catalog.sh`. `novelty_report.jl:14-16` returns early because `catalogs/` is git-ignored (`.gitignore:8`) and **`fetch_catalog.sh` does not exist anywhere in the repository**. No novelty check is performed by this target. |
 
 `make report` and `make full` were not run (outside this review's compute budget).
@@ -451,7 +451,7 @@ Promote-to-core candidates:
 
 - Should `REVIEW_Kuznetsov_202606.md` be deleted, or retained with a "SUPERSEDED by this
   README" banner? Its Catalog-gap records are actively dangerous to the updater.
-- Is importing the Beierle-2025 3.78M corpus (`src/import/import_beierle2025.jl`) in scope,
+- Is importing the Beierle-2025 3.78M corpus (`src/import/convert_beierle2025.jl`) in scope,
   so `theorem6.jl` stops passing check (1) vacuously?
 - `FINDINGS.md` references `verify_edelpott.py` "in this directory" — it is not present. Was
   it dropped, or gitignored?

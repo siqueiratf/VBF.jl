@@ -7,7 +7,7 @@ _import_code_hash() = bytes2hex(SHA.sha256(join(vcat(
     [bytes2hex(open(SHA.sha256, joinpath(dir,f)))
      for (dir,_,files) in walkdir(joinpath(pkgdir(VBF), "src"))
      for f in sort(files) if endswith(f,".jl")],
-    [bytes2hex(open(SHA.sha256,joinpath(@__DIR__,"import_beierle2025.jl")))]), "\n")))
+    [bytes2hex(open(SHA.sha256,joinpath(@__DIR__,"convert_beierle2025.jl")))]), "\n")))
 
 function record_import!(db, name, source_path)
     info = corpus_info(db, name)

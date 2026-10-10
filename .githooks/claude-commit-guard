@@ -87,7 +87,7 @@ touched_list="$(sed '/^$/d;s/^/  /' <<<"$touched")"
 
 REBUILD="Fix the cause, do not route around it:
     make -C packages/VBFCatalog/src/import catalog   # rebuild the DB from source entries
-    git add packages/VBFCatalog/BFA_catalog.sqlite
+    git add packages/VBFCatalog/data/catalog.sqlite
     make -C packages/VBFCatalog/src/import check     # until 'catalog-check: OK'
 
 To bypass deliberately, set VBF_SKIP_CATALOG_CHECK=1 in the environment and say

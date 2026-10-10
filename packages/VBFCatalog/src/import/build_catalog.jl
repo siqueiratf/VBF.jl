@@ -11,12 +11,13 @@ import TOML
 # that calls load_catalog() follows us to the staging file without changes.
 const FINAL_CATALOG = VBFCatalog.catalog_path()
 const CATALOG_FILE = FINAL_CATALOG * ".building"
-ENV["BFA_CATALOG_PATH"] = CATALOG_FILE
 
 include(joinpath(@__DIR__, "load_sources.jl"))
 include(joinpath(@__DIR__, "cache.jl"))
-include(joinpath(@__DIR__, "bibliography.jl"))
+include("bibliography.jl")
+include("write.jl")
 include(joinpath(@__DIR__, "check.jl"))
+include("convert.jl")
 
 function _git_sha()
     try
@@ -32,22 +33,12 @@ end
 
 function insert_curated!(db, family, names, loader, metadata, contributor, source_repo)
     today=_today_utc()
-    statement=DBInterface.prepare(db,"INSERT INTO functions (family,n,m,lut_sha256,lut_blob,algebraic_form,algebraic_degree,differential_uniformity,linearity,boomerang_uniformity,is_apn,is_permutation,is_quadratic,canonical_name,bib_key,source_repo,contributor,added_date,notes) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-    try
-        for name in names
-            meta=metadata(name); F=loader(name)
-            n=inputbits(F); perm=is_permutation(F)
-            du=Int(differential_uniformity(F)); degree=algebraic_degree(F)
-            family=="APN" && du!=2 && error("non-APN declarative entry: $name")
-            DBInterface.execute(statement,(family,n,n,lut_sha256_hex(F),canonical_lut_bytes(F),
-                get(meta,"algebraic_form",nothing),degree,du,Int(linearity(F)),
-                perm ? Int(boomerang_uniformity(F)) : nothing,Int(du==2),Int(perm),Int(degree<=2),
-                name,meta["bib_key"],source_repo,contributor,today,meta["description"]))
-        end
-    finally
-        DBInterface.close!(statement)
+    for name in names
+        meta=metadata(name)
+        insert_function!(db,loader(name); family,canonical_name=name,source_repo,
+            contributor,added_date=today,bib_key=meta["bib_key"],notes=meta["description"],
+            algebraic_form=get(meta,"algebraic_form",nothing),require_apn=family=="APN")
     end
-    nothing
 end
 
 """
@@ -75,7 +66,7 @@ Checked BEFORE create_catalog() so a doomed rebuild never destroys anything.
 """
 function _preflight_required_sources()
     get(ENV, "BFA_ALLOW_PARTIAL", "") == "1" && return
-    config = TOML.parsefile(joinpath(@__DIR__, "sources.toml"))
+    config = TOML.parsefile(_SOURCES_TOML)
     missing_srcs = String[]
     for src in get(config, "source", [])
         get(src, "required", false) === true || continue
@@ -106,9 +97,9 @@ function _preflight_required_sources()
 end
 
 function _chain_external_imports()
-    config = TOML.parsefile(joinpath(@__DIR__, "sources.toml"))
+    config = TOML.parsefile(_SOURCES_TOML)
     for src in get(config, "source", [])
-        importer = joinpath(@__DIR__, src["importer"])
+        importer = joinpath(@__DIR__, src["converter"])
         isfile(importer) || error("missing registered importer: $importer")
         label    = get(src, "label", src["name"])
         required = get(src, "required", false) === true
@@ -122,7 +113,6 @@ function _chain_external_imports()
             finally
                 close(target)
             end
-            continue
         end
         # Sources without an upstream URL are local-only: only include their
         # script when the env var already points to a valid path.  This avoids
@@ -138,31 +128,21 @@ function _chain_external_imports()
             @warn "BFA: skipping $label (source unavailable; set $env_var to enable)"
             continue
         end
-        # Clear the no_autorun guard so main() fires when we include the script.
-        # A previous include in this chain may have set it as a side-effect
-        # (e.g. import_quadratic_apn_8bit.jl sets BFA_SBOXU_NO_AUTORUN=1 to
-        # guard its own nested include of import_sboxu_apn.jl).
-        no_autorun = get(src, "no_autorun", "")
-        saved_guard = isempty(no_autorun) ? nothing : pop!(ENV, no_autorun, nothing)
         try
             @info "Chaining $label import" importer
-            context = Module(gensym(:CatalogImport))
-            Core.eval(context, :(include(path) = Base.include($context, path)))
-            Base.include(context, importer)
+            convert_source(src["name"])
         catch err
             if required && get(ENV, "BFA_ALLOW_PARTIAL", "") != "1"
                 rethrow()
             end
             @warn "$label import failed; the catalog is INCOMPLETE" exception=(err, catch_backtrace())
-        finally
-            isempty(no_autorun) || (saved_guard === nothing ?
-                delete!(ENV, no_autorun) : setindex!(ENV, saved_guard, no_autorun))
         end
     end
 end
 
 function main()
     _preflight_required_sources()
+    ENV["BFA_CATALOG_PATH"] = CATALOG_FILE
     before = _catalog_counts(FINAL_CATALOG)
     before_corpora = _catalog_counts(FINAL_CATALOG;corpora=true)
 
@@ -243,4 +223,4 @@ function main()
     @info "Catalog rebuilt and verified" path=FINAL_CATALOG file_size_bytes=filesize(FINAL_CATALOG) families=length(after) functions=sum(values(after))
 end
 
-isinteractive() || main()
+abspath(PROGRAM_FILE)==(@__FILE__) && main()

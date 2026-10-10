@@ -9,6 +9,39 @@ include("../../src/import/check.jl")
 include("../../src/import/cache.jl")
 include("../../src/import/load_sources.jl")
 include("../../src/import/bibliography.jl")
+include("../../src/import/write.jl")
+
+@testset "shared function writer" begin
+    mktempdir() do dir
+        db=create_catalog(joinpath(dir,"writer.sqlite"))
+        try
+            metadata=(;family="fixture",canonical_name="Gold's example",source_repo="fixture",
+                contributor="fixture",added_date="fixture",notes="quoted ' metadata")
+            F=gold_apn(3)
+            insert_function!(db,F;metadata...)
+            row=find_function(db;canonical_name=metadata.canonical_name)
+            @test load_sbox(db,row.id)==F
+            @test row.is_apn==1 && row.is_quadratic==1
+            @test row.notes==metadata.notes
+            @test_throws SQLite.SQLiteException insert_function!(db,F;metadata...)
+            @test_throws ErrorException insert_function!(db,SBox{3}(zeros(Int,8));metadata...)
+            @test count_functions(db)==1
+        finally
+            close(db)
+        end
+    end
+end
+
+@testset "converters do not run on include" begin
+    before=get(ENV,"BFA_CATALOG_PATH",nothing)
+    for file in ("build_catalog","convert_apn_reps","convert_simonberg","convert_known_families",
+                 "convert_sporadic_known","convert_quadratic_apn_8bit","convert_sboxu_apn")
+        context=Module(gensym(:ConverterTest))
+        Core.eval(context,:(include(path)=Base.include($context,path)))
+        Base.include(context,joinpath(pkgdir(VBFCatalog),"src","import",file*".jl"))
+        @test get(ENV,"BFA_CATALOG_PATH",nothing)==before
+    end
+end
 
 @testset "bundled corpus checksums" begin
     db=load_catalog()

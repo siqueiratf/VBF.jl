@@ -35,7 +35,7 @@ different tiers never compare equal:
 
 # --- side store -------------------------------------------------------------
 # Like the σ index, this is regenerable and kept out of the committed catalog in
-# its own side store under data/catalog/ (gitignored). All bulk corpora are quadratic
+# its own side store under packages/VBFCatalog/data/ (gitignored). All bulk corpora are quadratic
 # (degree 2), so only non-quadratic APN functions rows are indexed here.
 
 const _CCZ_FP_INDEX_DDL =
@@ -46,7 +46,7 @@ const _CCZ_FP_INDEX_DDL =
 """
     ccz_fingerprint_index_path() -> String
 
-Path to the fingerprint side store `data/catalog/ccz_fingerprint_index.sqlite`
+Path to the fingerprint side store `packages/VBFCatalog/data/ccz_fingerprint_index.sqlite`
 (regenerable, not committed).
 """
 ccz_fingerprint_index_path() = joinpath(catalog_data_dir(), "ccz_fingerprint_index.sqlite")

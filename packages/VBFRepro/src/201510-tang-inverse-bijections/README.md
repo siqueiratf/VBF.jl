@@ -305,17 +305,17 @@ The suite should therefore pass as written; the findings above are about
 nonexistent) APN bijections in even dimension. Every function produced by
 Construction 1 has δ = 4, confirmed exhaustively for all 127 valid U at n = 6 and
 for `U_max`, `U_{m0}`, `U_{m1}` at n = 8 and n = 10.
-`packages/VBFCatalog/src/entries/apn_catalog/` requires δ = 2 and its loader rejects
+`packages/VBFCatalog/data/apn/` requires δ = 2 and its loader rejects
 non-APN entries, so none of these functions is eligible.
 
 **Catalog-gap records: none.** The only APN function *mentioned* in the paper is
 Dillon's n=6 APN permutation (ref. [3], `.tex` l.64), already covered by
 `dillon_apn_permutation` in `packages/VBF/src/constructions/sporadic_apn.jl`.
 
-Non-blocking maintainer note: `packages/VBFCatalog/src/entries/literature_sboxes.toml`
+Non-blocking maintainer note: `packages/VBFCatalog/data/literature_sboxes.toml`
 is the natural home for a representative δ=4 bijection from this family (e.g.
 n=8, `U = U_{m0}`, NL = 102, deg = 7), and `Tang_201510` already exists as a
-`bib_key` in `packages/VBFCatalog/src/entries/bibliography.bib:704`. A suggestion,
+`bib_key` in `packages/VBFCatalog/data/bibliography.bib:704`. A suggestion,
 not a gap — and any such change is subject to the catalog rebuild gate.
 
 ## Library-reuse note

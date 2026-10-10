@@ -124,7 +124,7 @@ Defects introduced in our implementation.
   `S2 ~ S2⁻¹` and `S3 ~ S3⁻¹` (both independently verified **true**); `{S4⁻¹, S5⁻¹}` (verified
   **true**); and the entire Khazad row `{P, P⁻¹, Q, Q⁻¹}, s = 4`.
 - **Root cause:** Khazad's P/Q S-boxes are absent from
-  `packages/VBFCatalog/src/entries/literature_sboxes.toml`, which currently holds only AES,
+  `packages/VBFCatalog/data/literature_sboxes.toml`, which currently holds only AES,
   PRESENT, GIFT, Midori, SKINNY, Piccolo, SERPENT S0–S7, TWINE and KLEIN.
 - **Resolution plan:**
   1. Add the four missing Serpent checks to `section5.jl`.

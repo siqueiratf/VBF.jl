@@ -22,7 +22,7 @@ transcribed constants plus toy-dimension smoke tests. Every substantive computat
 the paper — the Section 3 working hypothesis, Table 4.1's profile distribution, Definition
 4.3's `J₂`, and all six search counts — is transcribed and never computed, even though the
 required data (32,916 dimension-8 quadratic APN functions) is present in
-`packages/VBFCatalog/BFA_catalog.sqlite and data/catalog/`. This review also surfaced a genuine defect in the paper that
+`packages/VBFCatalog/data/catalog.sqlite and packages/VBFCatalog/data/`. This review also surfaced a genuine defect in the paper that
 only computation reveals, and an off-by-one in the estimator that the test tolerance hides.
 
 ---
@@ -35,7 +35,7 @@ only computation reveals, and an off-by-one in the estimator that the test toler
 - **The gap**: Definition 4.1 says `P_k(F)` is "the lexicographically greatest tuple
   `[BS(V₀),…,BS(V_k)]`" with `BS(V) = (b, K(V))`, but never says how two pairs are compared.
 - **Computed counter-evidence**: under the *standard* lexicographic order on the pairs, three
-  members of `packages/VBFCatalog/BFA_catalog.sqlite (dataset beierleleander2022_n8)` (indices **9172,
+  members of `packages/VBFCatalog/data/catalog.sqlite (dataset beierleleander2022_n8)` (indices **9172,
   9624, 10320**; all verified du=2, deg=2, Σα=510) have
   `P₆ = [(0,0),(1,1),(3,3),(7,7),(15,15),(30,46),(58,90) / (52,108) / (56,96)]`.
   `(30,46)` does **not** occur at level 5 in Table 4.1, which lists only `(28,40)` and
@@ -167,7 +167,7 @@ only computation reveals, and an off-by-one in the estimator that the test toler
 ### 7. `catalog_validation.jl` omits one local n=8 corpus without saying why
 
 - **Location**: `catalog_validation.jl:15-23` (`PRIOR_CORPUS_NAMES`, 7 entries).
-- **Symptom**: `packages/VBFCatalog/BFA_catalog.sqlite and data/catalog/` contains 8 n=8 quadratic corpora;
+- **Symptom**: `packages/VBFCatalog/data/catalog.sqlite and packages/VBFCatalog/data/` contains 8 n=8 quadratic corpora;
   `simonberg_gf4_n8` (196,863 members) is silently excluded.
 - **Root cause**: the list was hand-written.
 - **Resolution plan**: derive the list from `list_corpora(db)` filtered on
@@ -259,8 +259,8 @@ Per-function `[[apn_functions]]` entries are inapplicable at that scale.
   can be verified or ingested.
 - **Bulk-corpus gap (conditional)**: the intended home is a `bulk_corpora` row
   `beierle2025_n8`, and an importer for it **already exists** at
-  `packages/VBFCatalog/src/import/import_beierle2025.jl` (bib key `Beierle_202500` is present
-  at `packages/VBFCatalog/src/entries/bibliography.bib:1417`; `packages/VBFCatalog/.gitignore:7`
+  `packages/VBFCatalog/src/import/convert_beierle2025.jl` (bib key `Beierle_202500` is present
+  at `packages/VBFCatalog/data/bibliography.bib:1417`; `packages/VBFCatalog/.gitignore:7`
   already ignores `corpora/beierle2025_n8.sqlite`). That importer is currently **unrunnable
   for two independent reasons**, both established by execution on 2026-08-15: (1) its `KUZDIR`
   at line 13 resolves to `packages/VBFRepro/src/202606-kuznetsov-groebner-search`, which does not exist — the paper lives at

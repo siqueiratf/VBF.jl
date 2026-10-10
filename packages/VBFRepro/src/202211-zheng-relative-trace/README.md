@@ -269,7 +269,7 @@ repository's own Julia API: **zero disagreements**.
 ### Catalog-gap records (3 entries)
 
 ```
-target file : packages/VBFCatalog/src/entries/apn_catalog/n10_apn.toml
+target file : packages/VBFCatalog/data/apn/n10_apn.toml
 
 [[apn_functions]]
 name = "n10_Zheng2022_F15"

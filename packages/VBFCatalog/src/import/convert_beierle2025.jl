@@ -288,6 +288,6 @@ function main()
     return nothing
 end
 
-if !isinteractive() && get(ENV, "BFA_BEIERLE2025_NO_AUTORUN", "0") != "1"
+if abspath(PROGRAM_FILE)==(@__FILE__)
     main()
 end

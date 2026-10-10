@@ -126,7 +126,7 @@ corrupts `ctr`. **It does not**, and the claim is withdrawn.
 - **Symptom**: no test mentions `absolute_walsh_spectrum`, `linearity`, 16320, 48640 or
   12540.
 - **Root cause**: assumed to require the absent `inputs/apn_8bit.txt`. In fact
-  `packages/VBFCatalog/BFA_catalog.sqlite (dataset beierleleander2022_n8)` holds all 12,923 functions.
+  `packages/VBFCatalog/data/catalog.sqlite (dataset beierleleander2022_n8)` holds all 12,923 functions.
 - **Counter-evidence**: a full corpus scan in pure Python took **27.5 s** and found
   **exactly six** distinct extended Walsh spectra — exactly the paper's 𝒲₀…𝒲₅ — with
   multiplicities **𝒲₀ 9327, 𝒲₁ 3112, 𝒲₂ 308, 𝒲₃ 146, 𝒲₄ 26, 𝒲₅ 4**. The 𝒲₃ count 146
@@ -319,7 +319,7 @@ a different source (see reproduction issue 1).
 **What would be needed to run them**: either (a) manually place the BL21 release files under
 `packages/VBFRepro/src/202201-beierle-quadratic-instances/inputs/`, or (b) — the correct fix — repoint
 `dataset_validation.jl`, `proposition1.jl` and `catalog_validation.jl` at the *committed*
-corpus `packages/VBFCatalog/BFA_catalog.sqlite (dataset beierleleander2022_n8)` (12,923 members,
+corpus `packages/VBFCatalog/data/catalog.sqlite (dataset beierleleander2022_n8)` (12,923 members,
 `modulus = 285`, `encoding = quadratic-coeffs-v1`, `bib_key = Beierle_202201`), which was
 verified working in this review.
 
@@ -374,7 +374,7 @@ Do not apply without a Julia re-verification pass.
 
 ```
 # Record 1
-target file      : packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml
+target file      : packages/VBFCatalog/data/apn/n9_apn.toml
 name             : n9_BeierleLeander2022_perm1
 n                : 9
 m                : 9
@@ -393,7 +393,7 @@ lut              : <compute as gf_pow/gf_mul over GF(2^9) mod 529 with u = 28; v
 
 ```
 # Record 2
-target file      : packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml
+target file      : packages/VBFCatalog/data/apn/n9_apn.toml
 name             : n9_BeierleLeander2022_perm2
 n                : 9
 m                : 9
@@ -414,7 +414,7 @@ Equivalence evidence for both records — computed ortho-derivative differential
 - perm1: `{0:164199, 2:76734, 4:13524, 6:4312, 8:2205, 12:147, 16:294, 18:147, 20:49, 22:21}`
 - perm2: `{0:172557, 2:68355, 4:12201, 6:3871, 8:1638, 10:735, 12:1470, 14:49, 16:147, 18:441, 20:147, 42:21}`
 
-These differ from each other and from **all 18** n=9 APN rows in `BFA_catalog.sqlite`
+These differ from each other and from **all 18** n=9 APN rows in `data/catalog.sqlite`
 (`n9_Gold_x3/x5/x17`, `n9_Gold_i5/i7/i8`, `n9_Kasami_i8`, `n9_Budaghyan2009_eq7/eq8`,
 `n9_BCL2008_Tr_x9_x3`, `n9_EdelPott2009_x3_x10_x136`, `n9_Yu2020_f7_known` — all quadratic,
 all with different OD spectra; plus the non-quadratic `n9_Inverse_x510`,
@@ -426,7 +426,7 @@ A third candidate, a curated-catalog gap only (the class is already in a bulk co
 
 ```
 # Record 3 (optional; class is already in the beierleleander2022_n8 corpus at index 12658)
-target file      : packages/VBFCatalog/src/entries/apn_catalog/n8_apn.toml
+target file      : packages/VBFCatalog/data/apn/n8_apn.toml
 name             : n8_BeierleLeander2022_lin128
 n                : 8, m = 8, is_permutation = false
 modulus          : 285                       # x^8 + x^4 + x^3 + x^2 + 1

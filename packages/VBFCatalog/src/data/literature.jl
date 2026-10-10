@@ -1,7 +1,7 @@
 """
 Literature S-box catalog.
 
-Loads `src/entries/literature_sboxes.toml` and exposes its entries as
+Loads `packages/VBFCatalog/data/literature_sboxes.toml` and exposes its entries as
 `SBox` instances.
 
 # Functions
@@ -15,16 +15,14 @@ import TOML
 
 const _LITERATURE_CACHE = Ref{Union{Dict{String,Any},Nothing}}(nothing)
 
-_literature_path() = normpath(
-    joinpath(@__DIR__, "..", "entries", "literature_sboxes.toml"),
-)
+_literature_path() = joinpath(catalog_source_dir(), "literature_sboxes.toml")
 
 function _load_literature_raw()
     cache = _LITERATURE_CACHE[]
     cache === nothing || return cache
     path = _literature_path()
     isfile(path) || error(
-        "BFA: literature_sboxes.toml not found at $path — was the package distributed without src/entries/?",
+        "BFA: literature_sboxes.toml not found at $path",
     )
     data = TOML.parsefile(path)
     haskey(data, "sboxes") || error("BFA: $path has no [[sboxes]] entries")
