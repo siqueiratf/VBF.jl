@@ -259,7 +259,7 @@ inconclusive.** **← highest-severity finding in this review**
 
 **C2. `n6_Kasami_x48` duplicates `n6_Gold_x3` in the catalog.**
 
-- **Location:** `packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml`
+- **Location:** `packages/VBFCatalog/data/apn/n6_apn.toml`
 - **Symptom:** `x⁴⁸` is *linearly* equivalent to `x³` at n=6: `48 = 3·2⁴ mod 63`
   lies in the cyclotomic coset of 3 (`{3,6,12,24,48,33}`), and their OD mugshots
   coincide. The paper's Table 1 correctly lists a **single** Gold class for n=6.

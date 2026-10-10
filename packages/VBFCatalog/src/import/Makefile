@@ -5,13 +5,15 @@ CATALOG_ARGS ?= --max-n 11
 OUTDIR ?= $(ROOT)/data/apn/rebuilds/original-source
 threads ?= 16
 
-.PHONY: catalog check fetch stored raw compare index test
+.PHONY: catalog check fetch convert stored raw compare index test
 catalog:
 	$(JULIA) $(JFLAGS) $(CURDIR)/build_catalog.jl $(CATALOG_ARGS)
 check:
 	$(ROOT)/.githooks/catalog-check
 fetch:
-	$(JULIA) $(JFLAGS) $(CURDIR)/fetch.jl
+	$(JULIA) $(JFLAGS) $(CURDIR)/fetch.jl $(SOURCE)
+convert:
+	$(JULIA) $(JFLAGS) $(CURDIR)/convert.jl $(SOURCE) $(CONVERT_ARGS)
 stored raw compare:
 	$(JULIA) $(JFLAGS) -t $(threads) $(CURDIR)/reference/rebuild.jl $@ --outdir $(OUTDIR)
 index:

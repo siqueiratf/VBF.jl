@@ -2,17 +2,17 @@
 const _BFA_SOURCES_LOADED = true
 import TOML
 using VBFCatalog: catalog_data_dir
-const _SOURCES_TOML = joinpath(@__DIR__, "sources.toml")
+const _SOURCES_TOML = joinpath(VBFCatalog.catalog_source_dir(), "sources.toml")
 _bfa_source_config(name) = only(s for s in TOML.parsefile(_SOURCES_TOML)["source"] if s["name"] == name)
 _bfa_check_valid(root, path, kind) = kind == "file" ? isfile(joinpath(root,path)) : isdir(joinpath(root,path))
 function _bfa_source_root(src)
     override=get(ENV,get(src,"env_var",""),"")
-    isempty(override) ? joinpath(catalog_data_dir(),"sources",get(src,"cache_name",src["name"])) : override
+    isempty(override) ? joinpath(catalog_data_dir(),"raw",get(src,"cache_name",src["name"])) : override
 end
 
 """Use a local override or fetch and retain a pinned upstream checkout.
 
-Originals remain in data/catalog/sources. Large standalone downloads are
+Originals remain in packages/VBFCatalog/data/raw. Large standalone downloads are
 explicitly fetched with fetch.jl; importing the package never fetches data.
 """
 function with_source(f::Function, name::AbstractString)

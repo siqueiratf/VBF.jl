@@ -3,7 +3,7 @@ Bulk-corpus access. Large function families (hundreds of thousands to millions
 of members) are kept OUT of the `functions` table — which would bloat the
 committed catalog by gigabytes — and instead recorded as a single descriptor
 row in `bulk_corpora`, with compact members in the catalog's `corpus_members`
-table or the shared local `data/catalog/members.sqlite`. Each member is packed
+table or the shared local `packages/VBFCatalog/data/members.sqlite`. Each member is packed
 encoding (currently `quadratic-coeffs-v1`: the weight-≤2 univariate coefficients,
 `VBF.encode_quadratic`); its full LUT is reconstructed on demand via
 `VBF.decode_quadratic_lut`. Full 2ⁿ-byte LUTs are materialised lazily into a
@@ -17,10 +17,9 @@ import Scratch
 
 """Directory for downloaded bulk records and regenerable indexes.
 
-Override with `BFA_DATA_DIR`; defaults to the workspace's `data/catalog/`.
+Override with `BFA_DATA_DIR`; defaults to the workspace's `packages/VBFCatalog/data/`.
 """
-catalog_data_dir() = abspath(get(ENV, "BFA_DATA_DIR",
-    joinpath(@__DIR__, "../../../..", "data/catalog")))
+catalog_data_dir() = abspath(get(ENV, "BFA_DATA_DIR", catalog_source_dir()))
 
 """Path holding a corpus: the catalog itself or the local bulk database."""
 function corpus_store_path(db::SQLite.DB, name::AbstractString)

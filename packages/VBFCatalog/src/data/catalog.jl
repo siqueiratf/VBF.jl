@@ -46,8 +46,7 @@ const SCHEMA_DDL = read(joinpath(@__DIR__, "schema.sql"), String)
 """
     catalog_path() -> String
 
-Default location of the SQLite catalog (`BFA_catalog.sqlite` at the
-package root).
+Default location of the generated SQLite catalog (`packages/VBFCatalog/data/catalog.sqlite`).
 
 `ENV["BFA_CATALOG_PATH"]`, when set and non-empty, overrides it. The rebuild in
 `src/import/build_catalog.jl` uses that to assemble a new catalog at a temporary
@@ -58,8 +57,11 @@ normal use.
 function catalog_path()
     override = get(ENV, "BFA_CATALOG_PATH", "")
     isempty(override) || return normpath(override)
-    normpath(joinpath(@__DIR__, "..", "..", "BFA_catalog.sqlite"))
+    joinpath(catalog_source_dir(), "catalog.sqlite")
 end
+
+"""Shared declarative catalog resources in the VBF workspace."""
+catalog_source_dir() = joinpath(pkgdir(VBFCatalog), "data")
 
 """Return the actual main database filename, including for read-only URI handles."""
 function catalog_path(db::SQLite.DB)

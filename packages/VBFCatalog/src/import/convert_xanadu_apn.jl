@@ -186,7 +186,7 @@ function _cli_args()
     (max,)
 end
 
-if !isinteractive() && get(ENV, "BFA_XANADU_NO_AUTORUN", "0") != "1"
+if abspath(PROGRAM_FILE)==(@__FILE__)
     max, = _cli_args()
     main(; max_entries = max)
 end

@@ -1,4 +1,4 @@
-BFA_catalog.sqlite.building
+data/catalog.sqlite.building
 *_luts.sqlite
 !README.md
 !**/README.md

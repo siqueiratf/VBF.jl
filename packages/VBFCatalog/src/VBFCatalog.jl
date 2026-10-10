@@ -3,7 +3,7 @@
 
 The curated catalog and data layer for [`VBF`](https://github.com/). Provides:
 
-  - an on-disk SQLite catalog (`BFA_catalog.sqlite`) of literature S-boxes,
+  - an on-disk SQLite catalog (`data/catalog.sqlite`) of literature S-boxes,
     declarative APN functions, and imported quadratic-APN CCZ-class
     representatives — content-addressed by LUT SHA-256, with full provenance;
   - query helpers (`list_functions`, `find_function`, `load_sbox`, …);

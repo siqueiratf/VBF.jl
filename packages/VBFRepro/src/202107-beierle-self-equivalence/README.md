@@ -372,7 +372,7 @@ is commented out at `Makefile:44`.
 The paper claims **no new APN function**.
 
 - Dillon's permutation / n=6 class-5 solution: **present** — `n6_Kim` in
-  `packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml` and `dillon_apn_permutation()` in
+  `packages/VBFCatalog/data/apn/n6_apn.toml` and `dillon_apn_permutation()` in
   core; identical extended Walsh and differential spectra, and identical Γ-rank 1166
   (computed).
 - n=7 solutions `x⁵, x⁹, x⁶³, x⁷⁸, x⁸⁵, x⁸⁸`: **present** as `n7_Gold_x5`, `n7_Gold_x9`,

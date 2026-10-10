@@ -1,7 +1,7 @@
 """
 APN-function catalog loader.
 
-Reads every `src/entries/apn_catalog/n*_apn.toml` and exposes the
+Reads every `packages/VBFCatalog/data/apn/n*_apn.toml` and exposes the
 per-dimension lists. Mirrors [`literature.jl`](@ref) but for
 APN-specific entries.
 
@@ -15,8 +15,7 @@ import TOML
 
 const _APN_CACHE = Ref{Union{Dict{String,Any},Nothing}}(nothing)
 
-_apn_catalog_dir() =
-    normpath(joinpath(@__DIR__, "..", "entries", "apn_catalog"))
+_apn_catalog_dir() = joinpath(catalog_source_dir(), "apn")
 
 function _load_apn_raw()
     cache = _APN_CACHE[]

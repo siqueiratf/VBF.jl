@@ -227,7 +227,7 @@ Defects introduced in our implementation.
 
 - **Location:** `theorem6.jl:45-51`.
 - **Symptom:** the LUT produced is **byte-identical** to the catalog entry `n6_Kim`
-  (`packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml:36`) — confirmed equal on all 64
+  (`packages/VBFCatalog/data/apn/n6_apn.toml:36`) — confirmed equal on all 64
   entries. `VBF` already exports `kim_apn()`.
 - **Root cause:** the paper's polynomial form was implemented from scratch without checking for
   an existing equivalent.
@@ -285,11 +285,11 @@ Family-1 sweep (`make theorem1_full`) reports 150 528 / 150 528 tuples APN in 8.
 
 | Claimed-new family | n=6 representative | Status | Evidence |
 |---|---|---|---|
-| Family (1), Theorem 1 | k=3, s=1, b=2, c=4, r=0 | **present** as `reprs6_1` in `packages/VBFCatalog/BFA_catalog.sqlite` | OD-derivative DDT spectrum `((2,1008),(4,378),(8,63))` — exact match and unique among all 21 n=6 catalog entries; Γ-rank 1146 matches |
+| Family (1), Theorem 1 | k=3, s=1, b=2, c=4, r=0 | **present** as `reprs6_1` in `packages/VBFCatalog/data/catalog.sqlite` | OD-derivative DDT spectrum `((2,1008),(4,378),(8,63))` — exact match and unique among all 21 n=6 catalog entries; Γ-rank 1146 matches |
 | Family (2), v≠0, Theorem 3 | k=2, s=1, u=ω, v=ω²¹=59 | **present** as `n6_Kim` | `are_ccz_equivalent(F2_v, kim_apn()) == true`; Γ-rank 1166; OD spectrum `((2,1428),(4,168),(8,63))`. *Correction:* the byte-identity with `n6_Kim` holds for **Dillon's T2** `x³+θx²⁴+x¹⁰` under the Conway modulus (asserted in `dillon_T2`), **not** for `family2_lut(2,1,2,v)` under that modulus — measured: none of the four `v ∈ GF(4)` gives the Kim LUT, they are CCZ-equivalent to it |
 | Family (2), v=0 (BCFL binomial) | k=2, s=1, u=2, v=0 | **present** as `n6_Gold_x3` / `n6_BCP_k2_s1` | OD spectrum `((2,1764),(8,63))` = Gold; Γ-rank 1102 |
 
-**No catalog-gap records.** `packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml:39-44`
+**No catalog-gap records.** `packages/VBFCatalog/data/apn/n6_apn.toml:39-44`
 already documents this decision explicitly and correctly.
 
 ---

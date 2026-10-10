@@ -193,7 +193,7 @@ on the LUTs below.
 
 **Record 4 — `n6_EdelPott2009_nonquadratic`** (highest value: the catalog currently has no
 non-quadratic APN entry at any dimension from these papers)
-- target: `packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml`
+- target: `packages/VBFCatalog/data/apn/n6_apn.toml`
 - `n = 6`, `m = 6`, `is_permutation = false`, `bib_key = "Edel_200900"`
 - `algebraic_form`: Table 5 entry 2.11 =
   `(No. 2.3) + u^19( tr(u^11 x^3 + u^7 x^5 + u^38 x^7 + u^61 x^11 + u^23 x^13) + tr_{8/2}(u^54 x^9) + tr_{4/2}(u^42 x^21) )`,
@@ -218,7 +218,7 @@ non-quadratic APN entry at any dimension from these papers)
   62, 56, 59, 49, 26, 10, 15, 23, 1, 56, 18, 5, 21, 40, 4]`
 
 **Record 5 — `n7_EdelPott2009_no14_3`**
-- target: `packages/VBFCatalog/src/entries/apn_catalog/n7_apn.toml`
+- target: `packages/VBFCatalog/data/apn/n7_apn.toml`
 - `n = 7`, `m = 7`, `is_permutation = false`, `bib_key = "Edel_200900"`
 - `algebraic_form`: Table 7 entry 14.3 = `(No. 14.1) + u^27( tr(u^20 x^3 + u^94 x^5 + u^66 x^9) )`,
   where `No. 14.1 = x^3 + x^6 + x^34 + x^40 + x^72`; GF(2⁷) with `p(x) = x⁷+x+1` (=131), `u = x`.

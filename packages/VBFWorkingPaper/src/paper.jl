@@ -76,7 +76,7 @@ function stage_paper(;source=joinpath(document_root(),"overleaf"),
     metadata=Dict("schema_version"=>1,"overleaf_commit"=>revision,"julia_version"=>string(VERSION),
         "source_files"=>hashes,"implementation_files"=>sources,"environment"=>environment,
         "assessments_sha256"=>bytes2hex(open(sha256,assessments)),
-        "publication_metadata_sha256"=>bytes2hex(open(sha256,joinpath(pkgdir(VBFRepro),"src","publications.toml"))),
+        "publication_metadata_sha256"=>bytes2hex(open(sha256,VBFRepro.publications_path())),
         "table_sha256"=>bytes2hex(open(sha256,table)),"main"=>main,
         "curated_assessments"=>length(rows),"compile_requested"=>compile,"compiled"=>false)
     manifest=joinpath(output,"build.toml")

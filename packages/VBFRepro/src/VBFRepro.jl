@@ -2,7 +2,7 @@ module VBFRepro
 
 using Dates, SHA, TOML, UUIDs
 
-export paper_bib_key, repo_root, papers_root, discover_papers, paper_path, run_paper, test_paper, main
+export paper_bib_key, publications_path, repo_root, papers_root, discover_papers, paper_path, run_paper, test_paper, main
 
 """Root of the VBF workspace containing the reproducible execution environment."""
 repo_root() = normpath(joinpath(@__DIR__, "..", "..", ".."))
@@ -28,8 +28,10 @@ function paper_path(id::AbstractString; root=papers_root())
     return only(matches).path
 end
 
+"""Shared reproduction-to-citation declarations owned by VBFCatalog."""
+publications_path() = joinpath(repo_root(), "packages", "VBFCatalog", "data", "publications.toml")
 """Bibliography identity of a reproduction, or `nothing` for an unregistered slug."""
-paper_bib_key(id::AbstractString) = get(TOML.parsefile(joinpath(@__DIR__, "publications.toml")), String(id), nothing)
+paper_bib_key(id::AbstractString) = get(TOML.parsefile(publications_path()), String(id), nothing)
 
 function _write_metadata(path, metadata)
     temporary = path * ".tmp"
@@ -55,6 +57,16 @@ function _source_hashes(paper, project)
         end
     end
     push!(paths, joinpath(papers_root(), "paper.mk"))
+    for file in ("bibliography.bib", "publications.toml")
+        path=joinpath(project,"packages","VBFCatalog","data",file)
+        isfile(path) && push!(paths,path)
+    end
+    catalog_sources=joinpath(project,"packages","VBFCatalog","data")
+    if isdir(catalog_sources)
+        append!(paths,[joinpath(catalog_sources,f) for f in readdir(catalog_sources) if endswith(f,".toml") && f!="imports.toml"])
+        entries=joinpath(catalog_sources,"apn")
+        isdir(entries) && append!(paths,[joinpath(entries,f) for f in readdir(entries) if endswith(f,".toml")])
+    end
     for f in ("Project.toml", "Manifest.toml")
         path = joinpath(project, f)
         isfile(path) && push!(paths, path)
@@ -71,7 +83,7 @@ function _input_hashes(paper, project)
             append!(paths, joinpath.(dir, files))
         end
     end
-    catalog = joinpath(project, "packages", "VBFCatalog", "BFA_catalog.sqlite")
+    catalog = joinpath(project, "packages", "VBFCatalog", "data", "catalog.sqlite")
     isfile(catalog) && push!(paths, catalog)
     return Dict(relpath(path, project) => open(io -> bytes2hex(sha256(io)), path)
                 for path in sort!(unique(paths)))

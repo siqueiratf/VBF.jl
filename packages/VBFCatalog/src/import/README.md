@@ -1,9 +1,12 @@
 # Catalog ingestion
 
 Use the [package guide](../../README.md) for entry formats, storage and rebuilding.
-`Makefile` is a thin wrapper over the Julia scripts here. `sources.toml` is the
+`Makefile` is a thin wrapper over the Julia scripts here. `packages/VBFCatalog/data/sources.toml` is the
 source registry; fetching and importing use the same pins. Parser helpers are
 shared rather than duplicated between ingestion and reference rebuilding.
+`make fetch SOURCE=NAME` retains originals under `packages/VBFCatalog/data/raw/` and
+`make convert SOURCE=NAME` calls the registered `convert_X.jl`. Fixed LUTs and
+corpus metadata are declared in TOML, with one common function-row writer.
 
 A source-comparison snapshot is built in three sequential stages:
 

@@ -206,13 +206,13 @@ derivation.**
 
 | Claimed-new object | Status | Evidence |
 |--------------------|--------|----------|
-| Theorem 2 family at n=8 (Table IV row 12) | **present** (unnamed) | ortho-derivative DDT `{0:38415, 2:22104, 4:4536, 6:456, 8:24}` matches `reprs8_11` and `SimonBerg_GF4_n8_class_7` in `BFA_catalog.sqlite`, and `edelpott2009_n8` member 12 — exactly as the paper predicts, since it covers Edel–Pott 1.9. Not in `n8_apn.toml` as a *named* entry |
+| Theorem 2 family at n=8 (Table IV row 12) | **present** (unnamed) | ortho-derivative DDT `{0:38415, 2:22104, 4:4536, 6:456, 8:24}` matches `reprs8_11` and `SimonBerg_GF4_n8_class_7` in `data/catalog.sqlite`, and `edelpott2009_n8` member 12 — exactly as the paper predicts, since it covers Edel–Pott 1.9. Not in `n8_apn.toml` as a *named* entry |
 | Theorem 3 family at n=9 (Table V row 12) | **missing** | compared against all quadratic APN n=9 database entries (`n9_Gold_x3/x5/x17/i5/i7/i8`, `n9_Kasami_i8`, `n9_Budaghyan2009_eq7/eq8`, `n9_BCL2008_Tr_x9_x3`, `n9_EdelPott2009_x3_x10_x136`, `n9_Yu2020_f7_known`) — no ortho-derivative DDT match |
 
 ### Catalog-gap record (1 entry)
 
 ```
-target file : packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml
+target file : packages/VBFCatalog/data/apn/n9_apn.toml
 name        : n9_Li2022_thm3
 n = 9, m = 9, is_permutation = false
 algebraic_form : "(z^{2^{m+s}} + mu*z^{2^s} + z)^{2^m+1} + v*z^{2^m+1} over GF(2^9),

@@ -25,7 +25,7 @@ import DBInterface
 # The σ index is large (one row per catalogued function — millions) and fully
 # regenerable from the corpora + functions table, so — like the bulk-corpus LUT
 # stores — it is kept OUT of the committed main catalog in its own side store
-# under data/catalog/, never committed (see .gitignore). Build it with
+# under packages/VBFCatalog/data/, never committed (see .gitignore). Build it with
 # `build_sigma_index!`; the oracle (`classify_ccz`/`is_novel`) reads it.
 
 const _SIGMA_INDEX_DDL =
@@ -48,7 +48,7 @@ const _COVERAGE_ALL_N = -1
 """
     sigma_index_path() -> String
 
-Path to the σ-index side store `data/catalog/ccz_sigma_index.sqlite` (regenerable, not
+Path to the σ-index side store `packages/VBFCatalog/data/ccz_sigma_index.sqlite` (regenerable, not
 committed).
 """
 sigma_index_path() = joinpath(catalog_data_dir(), "ccz_sigma_index.sqlite")

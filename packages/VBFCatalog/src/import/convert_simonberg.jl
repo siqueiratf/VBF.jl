@@ -4,7 +4,8 @@ import SQLite
 import DBInterface
 import Dates
 
-include(joinpath(@__DIR__, "load_sources.jl"))
+include("load_sources.jl")
+include("write.jl")
 
 # --- parsing ----------------------------------------------------------------
 
@@ -31,37 +32,6 @@ function _existing_function_shas(db::SQLite.DB)
         d[String(r.lut_sha256)] = Int(r.id)
     end
     d
-end
-
-function _insert_ccz_rep_row!(db::SQLite.DB, s::SBox{N, T};
-                              canonical_name::AbstractString,
-                              source_repo::AbstractString,
-                              contributor::AbstractString,
-                              added_date::AbstractString,
-                              notes::AbstractString) where {N, T}
-    is_perm = is_permutation(s)
-    du = differential_uniformity(s)
-    lin = linearity(s)
-    algdeg = algebraic_degree(s)
-    bu = is_perm ? boomerang_uniformity(s) : nothing
-    blob_literal = "X'" * bytes2hex(VBFCatalog.canonical_lut_bytes(s)) * "'"
-    bu_literal = bu === nothing ? "NULL" : string(Int(bu))
-    sql = string(
-        "INSERT INTO functions (",
-        "family, n, m, lut_sha256, lut_blob, algebraic_form, ",
-        "algebraic_degree, differential_uniformity, linearity, boomerang_uniformity, ",
-        "is_apn, is_permutation, is_quadratic, canonical_name, bib_key, ",
-        "source_repo, contributor, added_date, notes) VALUES (",
-        VBFCatalog._sql_quote("CCZ-rep-GF4"), ", ", N, ", ", N, ", ",
-        VBFCatalog._sql_quote(lut_sha256_hex(s)), ", ", blob_literal, ", NULL, ",
-        algdeg, ", ", Int(du), ", ", Int(lin), ", ", bu_literal, ", ",
-        Int(du == 2), ", ", Int(is_perm), ", ", Int(algdeg ≤ 2), ", ",
-        VBFCatalog._sql_quote(canonical_name), ", NULL, ",
-        VBFCatalog._sql_quote(source_repo), ", ",
-        VBFCatalog._sql_quote(contributor), ", ",
-        VBFCatalog._sql_quote(added_date), ", ",
-        VBFCatalog._sql_quote(notes), ")")
-    SQLite.execute(db, sql)
 end
 
 # --- import -----------------------------------------------------------------
@@ -113,7 +83,7 @@ function import_one_class!(db::SQLite.DB, path::AbstractString, class::Int;
             ", notes = " * VBFCatalog._sql_quote(notes_str) *
             " WHERE id = $(row_id) AND family != " * VBFCatalog._sql_quote("CCZ-rep-GF4"))
     else
-        _insert_ccz_rep_row!(db, rep;
+        insert_function!(db, rep; family="CCZ-rep-GF4",
             canonical_name = "SimonBerg_GF4_n8_class_$(class)",
             source_repo = bfa_repo * "|" * source_tag,
             contributor = contributor, added_date = added_date,
@@ -181,7 +151,6 @@ function main()
     return nothing
 end
 
-# Auto-run when included by build_catalog.jl (non-interactive). The BFA_SIMONBERG_NO_AUTORUN guard lets tests `include` this file for its helpers without touching the catalog.
-if !isinteractive() && get(ENV, "BFA_SIMONBERG_NO_AUTORUN", "0") != "1"
+if abspath(PROGRAM_FILE)==(@__FILE__)
     main()
 end

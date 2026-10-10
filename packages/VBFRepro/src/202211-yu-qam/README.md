@@ -181,7 +181,7 @@ the 52 the repo's own tests sample).
 
 No individually-named new APN function is claimed; the paper's contribution is the
 5412-member set, which is **present** as the bulk corpus `yuperrin2022_qam_n8`
-(`packages/VBFCatalog/BFA_catalog.sqlite (dataset yuperrin2022_qam_n8)`, 5412 members, verified quadratic
+(`packages/VBFCatalog/data/catalog.sqlite (dataset yuperrin2022_qam_n8)`, 5412 members, verified quadratic
 APN, with a Walsh-spectrum distribution matching the paper).
 
 **No catalog gaps.**

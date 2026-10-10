@@ -274,7 +274,7 @@ Defects introduced in our implementation.
 > `"x¹⁵ (Kasami)"` is gone. Tests in `test/test_theorem3.jl`.
 >
 > **Step 3 not done — needs a separate go-ahead.** The catalog entry
-> `packages/VBFCatalog/src/entries/apn_catalog/n5_apn.toml` `n5_Kasami_x15` carries the same
+> `packages/VBFCatalog/data/apn/n5_apn.toml` `n5_Kasami_x15` carries the same
 > mislabel, and renaming it touches `packages/VBFRepro/src/200300-biryukov-equivalence` and requires a catalog
 > rebuild + gate run. Out of scope for a paper-local fix.
 
@@ -293,7 +293,7 @@ Defects introduced in our implementation.
   2. Replace raw `power_sbox` calls with `gold_apn(5,1)`, `gold_apn(5,2)`, `welch_apn(5)`,
      `kasami_apn(5,2)` (yields x¹³, linearly equivalent to x¹¹), `inverse_apn(5)`.
   3. **Cross-cutting catalog defect (separate go-ahead required — outside this paper dir):**
-     `packages/VBFCatalog/src/entries/apn_catalog/n5_apn.toml:24-33` has the same error. The entry
+     `packages/VBFCatalog/data/apn/n5_apn.toml:24-33` has the same error. The entry
      is named `n5_Kasami_x15` with description `"Kasami APN x^15 = x^(2^4 - 2^2 + 1)"`, but
      `2⁴ − 2² + 1 = 13`, not 15. The stored LUT *is* `x¹⁵` (verified byte-for-byte), i.e. the
      Inverse function. This propagates into `packages/VBFRepro/src/200300-biryukov-equivalence/section3.jl:41` and
@@ -413,7 +413,7 @@ that environment — which is why the Bk-1 unsoundness went unmeasured.)*
 
 | Claimed-new function | Status | Evidence |
 |---|---|---|
-| **Section 7 / Table 5 row 13** — "a new CCZ equivalence class that was previously unknown" (n=6, degree 3) | **present** | Matches `reprs6_13` in `packages/VBFCatalog/BFA_catalog.sqlite` on every computed invariant: Γ-rank **1300** (unique among all 21 n=6 entries), Δ-rank **152**, algebraic degree **3**, extended Walsh spectrum `((0;1008),(8;2688),(16;336))`. LUTs differ (different class representatives), so a LUT-level dedup would miss it — the equivalence rests on the invariant tuple. |
+| **Section 7 / Table 5 row 13** — "a new CCZ equivalence class that was previously unknown" (n=6, degree 3) | **present** | Matches `reprs6_13` in `packages/VBFCatalog/data/catalog.sqlite` on every computed invariant: Γ-rank **1300** (unique among all 21 n=6 entries), Δ-rank **152**, algebraic degree **3**, extended Walsh spectrum `((0;1008),(8;2688),(16;336))`. LUTs differ (different class representatives), so a LUT-level dedup would miss it — the equivalence rests on the invariant tuple. |
 | Table 5 rows 1–12, 14 | **present** | Γ-ranks map 1:1 onto catalog entries: 1102 → `n6_Gold_x3`/`reprs6_0`; 1146 → `reprs6_1`; 1158 → `reprs6_2`; 1166 → `n6_Kim`/`reprs6_3`; 1168 → `reprs6_5`; 1170 → `reprs6_{6,7,8,9}`; 1172 → `reprs6_{10,11}`; 1174 → `reprs6_12` |
 | Table 2 / Table 3 (n=4, n=5) | **present** | All CCZ-equivalent to `n4_Gold_x3` (single n=4 class) or to `n5_Gold_x3` / `n5_Gold_x5` / `n5_Kasami_x15` (the three n=5 classes). Note the catalog key `n5_Kasami_x15` is misnamed — that entry is the **Inverse** function, see Bk-7 step 3 |
 
@@ -428,7 +428,7 @@ new class):
 - either add `bib_key = "Brinkmann_200812"`, `algebraic_form`, and `source` to the existing
   `reprs6_13` row plus a `ccz_equivalent_to` cross-reference,
 - or add a named TOML entry in
-  `packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml` with
+  `packages/VBFCatalog/data/apn/n6_apn.toml` with
   `ccz_equivalent_to = "reprs6_13"`.
 
 The Table 5 row-13 LUT (re-verified APN, `differential_uniformity == 2`):

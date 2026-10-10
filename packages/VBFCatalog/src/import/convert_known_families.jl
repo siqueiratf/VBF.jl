@@ -33,10 +33,11 @@
 # into CCZ classes. Gold i and n-i, for instance, are the same class under two
 # names, and both names are worth having.
 #
-# Usage:  julia --project=packages/VBFCatalog/src/import src/import/import_known_families.jl [--max-n 12]
+# Usage:  julia --project=packages/VBFCatalog/src/import src/import/convert_known_families.jl [--max-n 12]
 
 using VBF
 using VBFCatalog
+include("write.jl")
 using SQLite
 using DBInterface
 using Dates
@@ -124,28 +125,7 @@ function _sha_exists(db::SQLite.DB, sha::AbstractString)
     false
 end
 
-function _insert!(db::SQLite.DB, s::SBox{N,T}, name, bib, notes, today) where {N,T}
-    is_perm = is_permutation(s)
-    du = differential_uniformity(s)
-    algdeg = algebraic_degree(s)
-    bu = is_perm ? boomerang_uniformity(s) : nothing
-    blob = "X'" * bytes2hex(VBFCatalog.canonical_lut_bytes(s)) * "'"
-    SQLite.execute(db, string(
-        "INSERT INTO functions (family, n, m, lut_sha256, lut_blob, algebraic_form, ",
-        "algebraic_degree, differential_uniformity, linearity, boomerang_uniformity, ",
-        "is_apn, is_permutation, is_quadratic, canonical_name, bib_key, ",
-        "source_repo, contributor, added_date, notes) VALUES (",
-        VBFCatalog._sql_quote("known-family"), ", ", N, ", ", N, ", ",
-        VBFCatalog._sql_quote(VBFCatalog.lut_sha256_hex(s)), ", ", blob, ", NULL, ",
-        algdeg, ", ", Int(du), ", ", Int(linearity(s)), ", ",
-        bu === nothing ? "NULL" : string(Int(bu)), ", ",
-        Int(du == 2), ", ", Int(is_perm), ", ", Int(algdeg ≤ 2), ", ",
-        VBFCatalog._sql_quote(name), ", ", VBFCatalog._sql_quote(bib), ", ",
-        VBFCatalog._sql_quote(SOURCE_REPO), ", ", VBFCatalog._sql_quote(CONTRIBUTOR), ", ",
-        VBFCatalog._sql_quote(today), ", ", VBFCatalog._sql_quote(notes), ")"))
-end
-
-function main(; max_n::Int = 12, min_n::Int = 4)
+function main(; max_n::Int = _parse_max_n(ARGS), min_n::Int = 4)
     db = SQLite.DB(VBFCatalog.catalog_path())
     today = string(Dates.today())
     total_new = 0
@@ -160,7 +140,8 @@ function main(; max_n::Int = 12, min_n::Int = 4)
                 if _sha_exists(db, VBFCatalog.lut_sha256_hex(s))
                     nold += 1
                 else
-                    _insert!(db, s, name, bib, notes, today)
+                    insert_function!(db, s; family="known-family", canonical_name=name, bib_key=bib, notes,
+                        source_repo=SOURCE_REPO, contributor=CONTRIBUTOR, added_date=today)
                     nnew += 1
                 end
             end
@@ -183,15 +164,4 @@ function _parse_max_n(args)
     m   # returned, not assigned to a captured local — avoids the soft-scope trap
 end
 
-# Auto-run when included by build_catalog.jl (non-interactive), and when run as
-# a script. The guard was `abspath(PROGRAM_FILE) == @__FILE__`, which is false
-# under `include`, so chaining this importer from build_catalog.jl did nothing.
-# BFA_KNOWN_FAMILIES_NO_AUTORUN=1 lets a test include the file for its helpers
-# without touching the catalog.
-#
-# NOTE: n >= 11 pulls taniguchi_apn_representatives(half), which sweeps
-# thousands of (m,a,b) candidates at half >= 6 and is slow (minutes). Run those
-# dimensions without a tight `timeout`, or cap with --max-n.
-if !isinteractive() && get(ENV, "BFA_KNOWN_FAMILIES_NO_AUTORUN", "0") != "1"
-    main(; max_n = _parse_max_n(ARGS))
-end
+abspath(PROGRAM_FILE)==(@__FILE__) && main()

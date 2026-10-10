@@ -163,7 +163,7 @@ Both files already flag these ("catalog-gap candidate" at `section2_1.jl:54` and
 ### Catalog-gap records
 
 **Record 1 — `n7_BudaghyanCarletLeander2009_x3_tr_x9`**
-- target: `packages/VBFCatalog/src/entries/apn_catalog/n7_apn.toml`
+- target: `packages/VBFCatalog/data/apn/n7_apn.toml`
 - `n = 7`, `m = 7`, `is_permutation = false`, `bib_key = "Budaghyan_200904"`
 - `algebraic_form = "x^3 + Tr(x^9) in GF(2^7), modulus x^7 + x + 1 (=131)"`
 - `source`: Corollary 1 / Corollary 4; reproduced by
@@ -181,7 +181,7 @@ Both files already flag these ("catalog-gap candidate" at `section2_1.jl:54` and
   matching Edel–Pott Table 8. No existing entry has Δ-rank 212.
 
 **Record 2 — `n8_BudaghyanCarletLeander2009_x9_tr_x3`**
-- target: `packages/VBFCatalog/src/entries/apn_catalog/n8_apn.toml`
+- target: `packages/VBFCatalog/data/apn/n8_apn.toml`
 - `n = 8`, `m = 8`, `is_permutation = false`, `bib_key = "Budaghyan_200904"`
 - `algebraic_form = "x^9 + Tr(x^3) in GF(2^8), modulus x^8 + x^4 + x^3 + x + 1 (=283)"`
 - `source`: §2.1 item (2); also Edel–Pott (2009) Table 9 entry 1.11; reproduced by

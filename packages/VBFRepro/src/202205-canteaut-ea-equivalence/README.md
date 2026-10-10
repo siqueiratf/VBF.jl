@@ -81,7 +81,7 @@ type limitation rather than a paper-local bug.
   and the previous revision of this README, which marked the issue `[RESOLVED — out-of-scope]`
   on the grounds that "the 21,102-function eight-bit APN corpus is not available in the repo".
 - **Symptom**: `SELECT name, member_count FROM bulk_corpora` on the tracked
-  `packages/VBFCatalog/BFA_catalog.sqlite` returns `yuwangli2014_qam_n8 = 8179` and
+  `packages/VBFCatalog/data/catalog.sqlite` returns `yuwangli2014_qam_n8 = 8179` and
   `beierleleander2022_n8 = 12923`. **8179 + 12923 = 21102**, the paper's number to the unit.
   Both side stores are tracked (`corpora/*.sqlite`, modulus 285, `quadratic-coeffs-v1`).
 - **Root cause**: the availability of the bulk corpora was not checked when the scope note

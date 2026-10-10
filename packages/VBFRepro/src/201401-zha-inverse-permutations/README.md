@@ -460,7 +460,7 @@ collapses to the plain inverse function `x⁻¹` (verified
 which is the classical APN inverse monomial and is already in the catalog.
 Theorem 5 explicitly requires `t₂ ∈ F_q^*`, so these are not instances of the
 paper's family. Nothing here qualifies for
-`packages/VBFCatalog/src/entries/apn_catalog/n<N>_apn.toml`.
+`packages/VBFCatalog/data/apn/n<N>_apn.toml`.
 
 - Per claimed-new APN function: **none exist** → no present / missing / not-new /
   unverifiable determinations to make.
@@ -468,7 +468,7 @@ paper's family. Nothing here qualifies for
 - `literature_sboxes.toml` is a cipher-S-box list (AES, PRESENT, SERPENT, …),
   not a construction-family catalog, so no entry is warranted there either.
 - The bibliography already carries the key:
-  `packages/VBFCatalog/src/entries/bibliography.bib:654` → `@article{Zha_201401}`.
+  `packages/VBFCatalog/data/bibliography.bib:654` → `@article{Zha_201401}`.
   Nothing in the reproduction references it; it should.
 
 ## Library-reuse note

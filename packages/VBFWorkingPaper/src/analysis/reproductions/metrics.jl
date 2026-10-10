@@ -446,7 +446,7 @@ end
 function write_provenance(ran::Vector{String}, wall::Float64)
     mkpath(OUT)
     paths=[@__FILE__,TAXONOMY,CATALOG_DB,SIGMA_DB,BFA4R,BENCHMARKS,
-        joinpath(pkgdir(VBFRepro),"src","publications.toml"),
+        VBFRepro.publications_path(),
         joinpath(ROOT,"Project.toml"),joinpath(ROOT,"Manifest.toml")]
     for package in (VBF,VBFCatalog,VBFRepro), (dir,_,files) in walkdir(joinpath(pkgdir(package),"src"))
         append!(paths,[joinpath(dir,f) for f in files if endswith(f,".jl")])

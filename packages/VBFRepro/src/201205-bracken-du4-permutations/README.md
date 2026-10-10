@@ -572,7 +572,7 @@ replaced by this machine's `@elapsed` numbers (≈55 min extrapolated, and 2000 
 0.46 s) and are retained only as an explicitly-attributed comparison.
 
 Bibliography and CI wiring are correct: `Bracken_201205` is at
-`packages/VBFCatalog/src/entries/bibliography.bib:596` and in `.github/workflows/ci.yml:38`.
+`packages/VBFCatalog/data/bibliography.bib:596` and in `.github/workflows/ci.yml:38`.
 
 ---
 
@@ -586,7 +586,7 @@ attributed to ref [8] (Budaghyan–Carlet–Leander 2008, `Budaghyan_200809`).
 |---|---|
 | Theorem 1.1/1.2 family, `t = 2` (diff-4 permutation, n = 30) | not APN → **out of catalog scope** |
 | Theorem 1.2 family, `t = 1` at n = 15 (k=5; s=1,4,7,13) — APN | **not-new / present in core**: verified identical to `α · bcp_apn(k,s)` — elementwise LUT equality asserted here for `(5,1)`, `(5,4)`, `(4,5)`, `(2,1)`. No `n15_apn.toml` exists (catalog covers n ∈ {4,…,12}), so no gap record is warranted |
-| Theorem 1.2 family, `t = 1` at n = 12 (k=4; s=5,11) — APN | **out of this paper's scope**: these are BCL/BCP binomials (core `bcp_apn(4,5)`, `bcp_apn(4,11)`; both pass the g₁≠g₂ guard, g₁=7, g₂=1) and are absent from `packages/VBFCatalog/src/entries/apn_catalog/n12_apn.toml` (which holds only the two `Calderini_202306` entries). The CCZ/EA comparison via `apn_ea_mugshot`/ortho-derivative tooling *is* runnable here — Julia 1.12.6 is installed; it was deliberately not run, because any resulting addition belongs to `Budaghyan_200809`, not to this paper, and would require the gated catalog rebuild |
+| Theorem 1.2 family, `t = 1` at n = 12 (k=4; s=5,11) — APN | **out of this paper's scope**: these are BCL/BCP binomials (core `bcp_apn(4,5)`, `bcp_apn(4,11)`; both pass the g₁≠g₂ guard, g₁=7, g₂=1) and are absent from `packages/VBFCatalog/data/apn/n12_apn.toml` (which holds only the two `Calderini_202306` entries). The CCZ/EA comparison via `apn_ea_mugshot`/ortho-derivative tooling *is* runnable here — Julia 1.12.6 is installed; it was deliberately not run, because any resulting addition belongs to `Budaghyan_200809`, not to this paper, and would require the gated catalog rebuild |
 | Problem 5.1 family (BBMM quadrinomial) | already reproduced under `packages/VBFRepro/src/201103-bracken-quadratic-apns`; verified APN at n=15 in sampling. Not claimed new here |
 
 **Catalog-gap records emitted: none.** No `.toml` should be edited on the basis of this paper.

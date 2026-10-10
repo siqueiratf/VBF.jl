@@ -5,10 +5,10 @@ using VBFCatalog, TOML, SHA, SQLite, DBInterface
 This checks catalog/source agreement. Mathematical properties are covered by
 package tests, using VBF's implementations.
 """
-function check_catalog(path=catalog_path(); entries=joinpath(@__DIR__,"..","entries"))
+function check_catalog(path=catalog_path(); entries=VBFCatalog.catalog_source_dir())
     errors=String[]
     declared=Dict("APN"=>Dict{String,Any}(), "Literature"=>Dict{String,Any}())
-    for file in sort(readdir(joinpath(entries,"apn_catalog");join=true))
+    for file in sort(readdir(joinpath(entries,"apn");join=true))
         endswith(file,".toml") || continue
         for entry in get(TOML.parsefile(file),"apn_functions",[])
             name=entry["name"]
@@ -27,6 +27,13 @@ function check_catalog(path=catalog_path(); entries=joinpath(@__DIR__,"..","entr
             get!(rows,String(row.family),Dict{String,Any}())[String(row.canonical_name)]=VBFCatalog._row_namedtuple(row)
         end
         bib=Set(String(row.bib_key) for row in DBInterface.execute(db,"SELECT bib_key FROM bibliography"))
+        for entry in TOML.parsefile(joinpath(entries,"sporadic.toml"))["functions"]
+            name=entry["canonical_name"]
+            row=get(get(rows,"known-sporadic",Dict{String,Any}()),name,nothing)
+            row===nothing && (push!(errors,"missing sporadic entry $name");continue)
+            bytes=canonical_lut_bytes(VBFCatalog.VBF.SBox{entry["n"]}(entry["lut"]))
+            bytes==row.lut_blob && row.bib_key==entry["bib_key"] || push!(errors,"$name: sporadic source disagrees")
+        end
         for (family,source) in declared
             have=get(rows,family,Dict{String,Any}())
             Set(keys(source))==Set(keys(have)) || push!(errors,"$family names disagree with entries")

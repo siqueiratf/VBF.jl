@@ -306,7 +306,7 @@ results should be re-confirmed under Julia before being relied on.
 
 ## Catalog status
 
-Checked against `packages/VBFCatalog/src/entries/apn_catalog/n6_apn.toml` (`n6_Gold_x3`,
+Checked against `packages/VBFCatalog/data/apn/n6_apn.toml` (`n6_Gold_x3`,
 `n6_Kasami_x48`, `n6_Kim`) and `n12_apn.toml` (`n12_CalderiniLiVilla2023_F1`,
 `n12_CalderiniLiVilla2023_F2`), by Δ-rank + Γ-rank + ortho-derivative differential and Walsh
 spectra — conclusive for CCZ on the quadratic-APN class by Yoshiara.
@@ -331,9 +331,9 @@ differ from Families 8 / 8W / 7 (spectra in Br11-1), which also differ pairwise 
 
 ### Catalog-gap records
 
-Common to all three: target `packages/VBFCatalog/src/entries/apn_catalog/n12_apn.toml`; `n = 12`,
+Common to all three: target `packages/VBFCatalog/data/apn/n12_apn.toml`; `n = 12`,
 `m = 12`, `is_permutation = false`, `algebraic_degree = 2`, `differential_uniformity = 2`,
-`bib_key = "Bracken_201103"` (already at `packages/VBFCatalog/src/entries/bibliography.bib:571`).
+`bib_key = "Bracken_201103"` (already at `packages/VBFCatalog/data/bibliography.bib:571`).
 Field `GF(2^12)`, modulus `x¹²+x⁶+x⁴+x+1 = 4179` (= `primitive_polynomial(12)`), `u = 2`
 (primitive, `ord(2) = 4095`), `k = 4`, `s = 5`, `u²⁷³ = 1971`, `u¹⁶ = 1328`, `u²⁹⁰ = 3747`.
 

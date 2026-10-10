@@ -400,7 +400,7 @@ unaffected (7 s): the testsets only use m ∈ {3, 5}.
 
 | Claimed-new object | Status | Evidence |
 |--------------------|--------|----------|
-| **F₁ over F₂⁹** (Thm 1 / Prop 4, m=3, i=1) | **missing** | the ortho-derivative spectrum `{0:164199,…,22:21}` differs from **all 12** quadratic n=9 entries in `BFA_catalog.sqlite` (Gold x3/x5/x17/i5/i7/i8, Kasami_i8, Budaghyan2009 eq7/eq8, BCL2008, EdelPott2009, Yu2020_f7) and from all 9 entries in `n9_apn.toml`. It is a CCZ-invariant for quadratic APN (CCZ ⇔ EA, Yoshiara 2012). Non-quadratic n=9 entries (Kasami x13/x241 degree 3/5, Welch–Niho x19 degree 3, Inverse x510 degree 8) are excluded by degree, as the paper argues (`.tex` 1209) |
+| **F₁ over F₂⁹** (Thm 1 / Prop 4, m=3, i=1) | **missing** | the ortho-derivative spectrum `{0:164199,…,22:21}` differs from **all 12** quadratic n=9 entries in `data/catalog.sqlite` (Gold x3/x5/x17/i5/i7/i8, Kasami_i8, Budaghyan2009 eq7/eq8, BCL2008, EdelPott2009, Yu2020_f7) and from all 9 entries in `n9_apn.toml`. It is a CCZ-invariant for quadratic APN (CCZ ⇔ EA, Yoshiara 2012). Non-quadratic n=9 entries (Kasami x13/x241 degree 3/5, Welch–Niho x19 degree 3, Inverse x510 degree 8) are excluded by degree, as the paper argues (`.tex` 1209) |
 | **F₂ over F₂⁹** (Thm 6 / Prop 8, m=3, i=1) | **missing** | same table; ortho-derivative spectrum `{0:172557,…,42:21}` distinct from every entry and from F₁ |
 | **n=6 instance** (m=2, i=1, both families) | **not-new** | ortho-derivative spectrum `{0:2205,2:1764,8:63}` = `n6_Gold_x3`; the paper says so itself (Remark 5) |
 | **n=12 instances** (Thm 1, i=1 and i=3) | **missing** from `n12_apn.toml` (which holds only `n12_CalderiniLiVilla2023_F1/F2`, both with different ortho-derivative spectra) — **but novelty is not established**: both coincide with BCL family F1–F2 (paper issue 8). Recommend adding them, if at all, labelled as F1–F2-equivalent representatives, not as new |
@@ -410,7 +410,7 @@ unaffected (7 s): the testsets only use m ∈ {3, 5}.
 ### Catalog-gap record 1
 
 ```
-target file : packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml
+target file : packages/VBFCatalog/data/apn/n9_apn.toml
 name              = "n9_LiKaleyski2024_F1"
 n                 = 9
 m                 = 9
@@ -435,7 +435,7 @@ modulus 11. First 16 values: `0, 1, 3, 4, 5, 6, 7, 2, 8, 72, 265, 335, 393, 459,
 ### Catalog-gap record 2
 
 ```
-target file : packages/VBFCatalog/src/entries/apn_catalog/n9_apn.toml
+target file : packages/VBFCatalog/data/apn/n9_apn.toml
 name              = "n9_LiKaleyski2024_F2"
 n                 = 9
 m                 = 9
