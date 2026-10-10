@@ -104,6 +104,69 @@ implementation-dependent computational evidence, and EA negatives need a
 theorem before they can be interpreted as CCZ negatives. Reference completeness
 and literature novelty are separate questions.
 
+## Corpus classification
+
+```sh
+make -C packages/VBFCatalog/src/import classify threads=30 \
+    CLASSIFY_ARGS='--n 8 --seconds 1 --nodes 1000000 --algorithm optimized'
+```
+
+Repeat the command to resume, increasing the per-pair `--seconds` or `--nodes`
+budget if necessary. `--pairs N` bounds newly attempted pairs in one invocation.
+The APIs are `deduplicate_signature_buckets!`, `classify_signature_buckets!`,
+and `classification_summary`. Both native algorithm profiles are available;
+budgets include solver work and exhausted budgets remain inconclusive.
+
+Preparation verifies source coverage, packed corpus digests and the exact index
+snapshot. Repeated-signature members are reconstructed with VBF, their APN
+signatures rechecked, and exact LUT duplicates collapsed with byte comparison.
+Every original source/member alias is retained. Singleton signatures already
+certify distinct LUTs and distinct classes against other signatures.
+
+The derived index stores `ccz_bucket_members` (aliases), `ccz_bucket_luts` (one
+verified LUT per content address), `ccz_bucket_results` (components and unresolved
+pairs), and `ccz_classification_meta` (input snapshot digest and coverage).
+Preparation checkpoints complete buckets; changed inputs require an explicit
+`rebuild=true`. Main-catalog pair evidence survives those cache rebuilds.
+Catalog rebuilding refreshes curated signature rows because numeric row IDs
+are not stable identities.
+
+Classification uses bounded native EA recovery on the verified quadratic APNs,
+where EA and CCZ equivalence coincide. Positive graph witnesses join components;
+exhaustive negatives separate them. Threads compute outcomes and one SQLite
+writer commits bounded batches. Saved positives are replayed when resuming;
+negatives are reused only for matching solver sources and Julia version.
+No equivalence is inferred merely from matching signatures.
+
+The last checkpoint is directly queryable in `ccz_sigma_index.sqlite`:
+
+```sql
+SELECT class_count_lower_bound, component_count_upper_bound,
+       exact_class_count, unresolved_component_pairs
+FROM ccz_classification_summary
+WHERE n = 8;
+```
+
+`exact_class_count` is NULL until every repeated bucket is prepared and all
+remaining components are separated. Counts describe the frozen indexed corpus,
+whose digest is exposed by the view, and depend on the recorded VBF computation.
+They do not classify every APN in dimension eight or certify literature coverage.
+While a bucket is running, committed pair checks may be newer than its derived
+summary; resuming reconstructs components from those checks.
+
+The completed n=8 run on 2026-10-10 covered 4,005,445 indexed records and
+3,808,491 signatures. Its 44 repeated buckets contained 196,998 records;
+byte-checked LUT deduplication retained 196,922 LUTs and 76 duplicate aliases.
+All 196,878 representative comparisons produced replayed EA witnesses, resolving
+each bucket to one class with no unresolved pairs. Thus this indexed quadratic
+corpus contains 3,808,491 CCZ classes. The input SHA-256 is
+`4b6a683e4a07a58e1a3ac7c5d7ea3475fd42bc0473b4288e2495277d861c6b07`;
+the VBF source SHA-256 is
+`0f1cbd789ef0fa8b7bd02845292946eecbc2f0319f0d9484faa448c40ea6d1ba`.
+The run used Julia 1.13.1, 30 threads, the optimized native algorithm, a
+one-second timeout and a 1,000,000-node limit per pair. Pair witnesses remain in
+the main catalog across rebuilds; the derived classification can be regenerated.
+
 ## Import and rebuild
 
 ```sh

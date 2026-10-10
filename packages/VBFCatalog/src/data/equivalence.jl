@@ -16,7 +16,7 @@ end
 
 """Exact solver outcome with a replayed positive witness; budget stops stay inconclusive."""
 function equivalence_evidence(F,G;timeout_seconds::Real=2,max_nodes::Int=100_000,
-    max_memory_bytes::Int=512*1024^2,relation::Symbol=:ea)
+    max_memory_bytes::Int=512*1024^2,relation::Symbol=:ea,algorithm::Symbol=:paper)
     relation in (:ea,:ccz) || throw(ArgumentError("relation must be EA or CCZ"))
     timeout_seconds>=0 && max_nodes>=0 && max_memory_bytes>=0 ||
         throw(ArgumentError("nonnegative equivalence budgets required"))
@@ -27,7 +27,7 @@ function equivalence_evidence(F,G;timeout_seconds::Real=2,max_nodes::Int=100_000
         verify_graph_witness(F,G,A;relation) || error("identity certificate failed")
         return Dict("status"=>"identical_lut","columns"=>Int.(A.linear.cols),"constant"=>0)
     end
-    result=partition_refinement_equivalence(F,G;relation,timeout_seconds,max_nodes,max_memory_bytes)
+    result=partition_refinement_equivalence(F,G;relation,timeout_seconds,max_nodes,max_memory_bytes,algorithm)
     if result isa Found
         A=first(result.functions)
         verify_graph_witness(F,G,A;relation) || error("solver certificate failed graph replay")
@@ -108,7 +108,8 @@ with an additional mathematical argument, e.g. both functions are quadratic APN.
 No LUTs are inserted into the curated functions table and no classes are merged.
 """
 function check_equivalence!(db::SQLite.DB,F::SBox,G::SBox;relation::Symbol=:ccz,
-    timeout_seconds::Real=30,max_nodes::Int=1_000_000,max_memory_bytes::Int=512*1024^2,reuse::Bool=true)
+    timeout_seconds::Real=30,max_nodes::Int=1_000_000,max_memory_bytes::Int=512*1024^2,reuse::Bool=true,
+    algorithm::Symbol=:paper)
     relation in (:ea,:ccz) || throw(ArgumentError("relation must be EA or CCZ"))
     timeout_seconds>=0 && max_nodes>=0 && max_memory_bytes>=0 ||
         throw(ArgumentError("nonnegative equivalence budgets required"))
@@ -123,11 +124,22 @@ function check_equivalence!(db::SQLite.DB,F::SBox,G::SBox;relation::Symbol=:ccz,
             end
         end
     end
-    proof=equivalence_evidence(left,right;relation,timeout_seconds,max_nodes,max_memory_bytes)
+    proof=equivalence_evidence(left,right;relation,timeout_seconds,max_nodes,max_memory_bytes,algorithm)
+    _store_equivalence_check!(db,left,right,proof;relation,timeout_seconds,max_nodes,max_memory_bytes,solver,algorithm)
+end
+
+"""Store a native outcome computed outside the SQLite writer thread."""
+function _store_equivalence_check!(db,F,G,proof;relation,timeout_seconds,max_nodes,max_memory_bytes,
+    solver=equivalence_solver_fingerprint(),algorithm::Symbol=:paper)
+    left,right,a,b=_equivalence_pair(F,G)
+    if haskey(proof,"columns")
+        A=F2AffineMap(F2LinearMap(UInt32.(proof["columns"])),UInt32(proof["constant"]))
+        verify_graph_witness(left,right,A;relation) || error("invalid equivalence witness")
+    end
     status=haskey(proof,"columns") ? "equivalent" :
         startswith(proof["status"],"exhaustive_") ? "inequivalent" : "inconclusive"
     params=Dict("timeout_seconds"=>Float64(timeout_seconds),"max_nodes"=>max_nodes,
-        "max_memory_bytes"=>max_memory_bytes,"algorithm"=>"paper","rng_seed"=>940,
+        "max_memory_bytes"=>max_memory_bytes,"algorithm"=>string(algorithm),"rng_seed"=>940,
         "solver"=>"VBF.partition_refinement_equivalence")
     serialize(x)=sprint(io->TOML.print(io,x;sorted=true))
     SQLite.execute(db,"INSERT INTO equivalence_checks(n,left_sha256,right_sha256,relation,status,solver_sha256,julia_version,created_utc,parameters,evidence) VALUES(?,?,?,?,?,?,?,?,?,?)",
