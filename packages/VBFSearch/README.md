@@ -147,8 +147,9 @@ publication reuses the immutable dataset and rejects changed results under the
 same name. Resume remains possible after registration. Publish a changed run
 snapshot under a fresh name; each increment retains its own immutable input.
 Registration means new relative to that frozen catalog, never proven
-literature-wide novelty. The catalog rebuild regenerates missing intermediate
-discovery TSVs from its bundled compact members.
+literature-wide novelty. Publication freezes timestamp-free coefficient gzip
+inputs under `VBFCatalog/src/data/luts/`; rebuilds consume these files and their
+checksum-bound declarations without reading a previous catalog or run database.
 The derived catalog class summary retains its frozen snapshot until explicitly
 rebuilt with the [catalog classification command](../VBFCatalog/README.md).
 

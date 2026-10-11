@@ -1,5 +1,5 @@
 """
-Bibliography loader for the workspace's shared `packages/VBFCatalog/data/bibliography.bib`.
+Bibliography loader for the workspace's shared `packages/VBFCatalog/src/data/bibliography.bib`.
 
 A minimal BibTeX parser that handles the subset BFA needs:
 
@@ -58,7 +58,7 @@ end
 """
     bibliography_path() -> String
 
-Default location of the shared `packages/VBFCatalog/data/bibliography.bib`.
+Default location of the shared `packages/VBFCatalog/src/data/bibliography.bib`.
 """
 bibliography_path() =
     joinpath(catalog_source_dir(), "bibliography.bib")

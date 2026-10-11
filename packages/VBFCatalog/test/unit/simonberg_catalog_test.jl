@@ -28,7 +28,7 @@ end
         names = Set(r.canonical_name for r in gf4)
         @test names == Set("SimonBerg_GF4_n8_class_$(k)" for k in 1:27)
         # provenance: each row carries both the BFA tag and the Simon-Berg tag
-        @test all(occursin("simonberg@", r.source_repo) && occursin("bfa@", r.source_repo) for r in gf4)
+        @test all(occursin("simonberg@", r.source_repo) && occursin("VBF", r.source_repo) for r in gf4)
         # the per-class member count is recorded in the notes
         @test all(occursin("members", r.notes) for r in gf4)
         # representatives are pairwise distinct functions

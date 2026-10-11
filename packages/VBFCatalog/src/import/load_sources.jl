@@ -20,9 +20,10 @@ function with_source(f::Function, name::AbstractString)
     root = _bfa_source_root(src)
     check_path = src["check_path"]; kind = get(src,"check_kind","dir")
     if _bfa_check_valid(root,check_path,kind)
-        if isempty(get(ENV,src["env_var"],"")) && haskey(src,"revision")
+        if haskey(src,"revision")
             readchomp(`git -C $root rev-parse HEAD`)==src["revision"] || error("cached source revision changed: $name")
-            success(`git -C $root diff --quiet $(src["revision"]) -- $check_path`) || error("cached source files changed: $name")
+            paths=haskey(src,"files") ? (kind=="file" ? src["files"] : joinpath.(check_path,src["files"])) : [check_path]
+            success(`git -C $root diff --quiet $(src["revision"]) -- $paths`) || error("cached source files changed: $name")
         end
         return f(root)
     end
@@ -39,16 +40,10 @@ function with_source(f::Function, name::AbstractString)
         end
         return f(root)
     end
-    get(src,"required",false) && get(ENV,"BFA_ALLOW_PARTIAL","") != "1" &&
-        error("required source $name unavailable; run fetch.jl or set $(src["env_var"])")
-    @warn "Source unavailable" name path=root
-    nothing
+    error("source $name unavailable; run fetch.jl or set $(src["env_var"])")
 end
 
-function source_short_sha(path)
-    try
-        readchomp(`git -C $path rev-parse --short HEAD`)
-    catch
-        "unknown"
-    end
-end
+source_revision(path) = readchomp(`git -C $path rev-parse HEAD`)
+
+"""Dataset declaration shared by converters and source/database checks."""
+corpus_entry(name) = only(e for e in TOML.parsefile(joinpath(VBFCatalog.catalog_source_dir(),"corpora.toml"))["corpus"] if e["name"]==name)

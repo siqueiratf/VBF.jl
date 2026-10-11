@@ -6,15 +6,16 @@ include("load_sources.jl")
 The converter streams or parses its own original format. All function-row
 insertion goes through write.jl; bulk coefficients use VBFCatalog's corpus API.
 """
-function convert_source(name)
+function convert_source(name;args=get(_bfa_source_config(name),"args",String[]))
     path=joinpath(@__DIR__,_bfa_source_config(name)["converter"])
     isfile(path) || error("missing converter: $path")
     context=Module(gensym(:CatalogConverter))
+    Core.eval(context,:(const ARGS = $args))
     Core.eval(context,:(include(path)=Base.include($context,path)))
     Base.include(context,path)
     Base.invokelatest(() -> getproperty(context,:main)())
 end
 if abspath(PROGRAM_FILE)==(@__FILE__)
     isempty(ARGS) && error("usage: convert.jl SOURCE [converter options]")
-    convert_source(first(ARGS))
+    convert_source(first(ARGS);args=ARGS[2:end])
 end

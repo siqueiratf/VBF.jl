@@ -39,15 +39,12 @@ lut_of(F) = Int.(F.lut)
 "Catalog CCZ class representatives of dimension n that are quadratic APN."
 function catalog_reps(n::Int)
     db = VBFCatalog.load_catalog()
-    q = "SELECT f.id, f.lut_blob FROM equivalence_classes e JOIN functions f " *
-        "ON f.id = e.canonical_id WHERE e.kind='CCZ' AND e.n=$n"
-    out = Tuple{String,Int,Vector{Int}}[]
-    for r in VBFCatalog.DBInterface.execute(db, q)
-        F = SBox{n}(collect(Vector{UInt8}(r.lut_blob)))
-        is_quadratic_apn(F) || continue
-        push!(out, ("catalog_ccz_n$n", Int(r.id), lut_of(F)))
+    try
+        [("catalog_ccz_n$n", rep.id, lut_of(rep.sbox)) for rep in
+            VBFCatalog.ccz_class_representatives(db; n)]
+    finally
+        close(db)
     end
-    out
 end
 
 # Share of the n = 8 functions per corpus (the remainder goes to beierle2025_n8);

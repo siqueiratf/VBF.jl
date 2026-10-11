@@ -17,13 +17,14 @@ signatures match a reference. Such a match alone does not establish equivalence.
 Generated data are ignored; previously tracked evidence and READMEs remain tracked.
 Original paths in historical manifests describe the experiment as it was run.
 The public `crosscheck_raw/raw_only_546.tsv` moved to the canonical catalog input
-`../luts/langevin_may2025_extra.tsv`; its byte-identical archive copy was removed.
+`../../src/data/luts/langevin_may2025_extra.tsv`; its byte-identical archive copy was removed.
 
 The recovered discoveries are registered as corpus `legacy20261009_n8` in the
 main catalog. Their complete validation run, input hashes, inventory and replay
 plan are under `../search/legacy20261009/`; the tracked `replay.toml` records the
-assessment and executable recipe. Compact catalog members regenerate their
-intermediate TSV when rebuilding from a clean checkout.
+assessment and executable recipe. The immutable normalized input lives in
+`../../src/data/luts/legacy20261009.coeffs.gz`; rebuilds do not need the old run.
+Coefficient records reconstruct LUTs through the VBF APIs.
 
 New searches belong under `../search/<experiment>/`. See
 [VBFSearch](../../../VBFSearch/README.md) for `bin/vbf discover`, which searches,

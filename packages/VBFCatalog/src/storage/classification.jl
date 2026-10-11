@@ -190,8 +190,15 @@ function _classification_state(db,idx,n,solver)
             proof["status"]=="exhaustive_$(row.relation)_inequivalent" && push!(negative,minmax(a,b))
         end
     end
-    for row in DBInterface.execute(db,"SELECT * FROM equivalence_checks WHERE n=? AND relation IN ('ea','ccz') ORDER BY id",(n,))
-        accept(NamedTuple(row))
+    store=_open_equivalence_checks(db)
+    if store!==nothing
+        try
+            for row in DBInterface.execute(store,"SELECT * FROM equivalence_checks WHERE n=? AND relation IN ('ea','ccz') ORDER BY id",(n,))
+                accept(NamedTuple(row))
+            end
+        finally
+            close(store)
+        end
     end
     (;luts,parent,root,negative,accept)
 end
@@ -240,7 +247,9 @@ function classify_signature_buckets!(db::SQLite.DB;n::Int=8,path=sigma_index_pat
     algorithm in (:paper,:optimized) || throw(ArgumentError("unknown native algorithm"))
     deduplicate_signature_buckets!(db;n,path)
     idx=_classification_index(path)
+    store=nothing
     try
+        store=_open_equivalence_checks(db;create=true)
         solver=equivalence_solver_fingerprint()
         state=_classification_state(db,idx,n,solver)
         groups=Dict{String,Vector{String}}()
@@ -278,10 +287,10 @@ function classify_signature_buckets!(db::SQLite.DB;n::Int=8,path=sigma_index_pat
                             end
                         end
                     end
-                    SQLite.transaction(db) do
+                    SQLite.transaction(store) do
                         for (i,(a,b)) in enumerate(pairs)
                             row=_store_equivalence_check!(db,state.luts[a],state.luts[b],proofs[i];relation=:ea,
-                                timeout_seconds,max_nodes,max_memory_bytes,solver,algorithm)
+                                timeout_seconds,max_nodes,max_memory_bytes,solver,algorithm,store)
                             state.accept(row;replay=false)
                             push!(attempted_pairs,minmax(a,b));attempted+=1
                         end
@@ -295,6 +304,7 @@ function classify_signature_buckets!(db::SQLite.DB;n::Int=8,path=sigma_index_pat
         _save_classification!(idx,n,state)
         (;classification_summary(;n,path)...,checks_this_session=attempted,solver_sha256=solver)
     finally
+        store===nothing || close(store)
         close(idx)
     end
 end

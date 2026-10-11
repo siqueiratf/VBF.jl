@@ -2,22 +2,22 @@
 
 The canonical function and dataset layer for VBF. VBF supplies the mathematics;
 VBFCatalog provides original-source ingestion and catalog queries. Shared source
-data and citations live in this package's `data/` directory.
+data and citations live in this package's `src/data/` directory.
 Searches and paper reproductions consume this package.
 
 Package code lives in `src/`, `test/` and optional `perf/`. The self-contained
-`data/` directory holds all catalog resources; other packages reference them.
+`src/data/` directory holds declarative catalog resources; other packages reference them.
 
 | Location | Purpose |
 |---|---|
-| `src/data/` | Runtime loaders, queries, corpus access and derived indexes |
-| `packages/VBFCatalog/data/apn/n*_apn.toml` | Curated APN definitions: LUTs or constructor parameters, with citations |
-| `packages/VBFCatalog/data/literature_sboxes.toml` | Curated literature S-box LUTs and metadata |
-| `packages/VBFCatalog/data/sporadic.toml` | Fixed literature functions formerly embedded in Julia |
-| `packages/VBFCatalog/data/corpora.toml` | Dataset files, readers, names and citations |
-| `packages/VBFCatalog/data/bibliography.bib` | Shared citations for VBF, catalog entries and reproductions |
-| `packages/VBFCatalog/data/publications.toml` | VBFRepro slug-to-citation-key mapping |
-| `packages/VBFCatalog/data/sources.toml` | Source locations, pins, checksums and converter names |
+| `src/storage/` | Runtime loaders, queries, corpus access and derived indexes |
+| `packages/VBFCatalog/src/data/apn/n*_apn.toml` | Curated APN definitions: LUTs or constructor parameters, with citations |
+| `packages/VBFCatalog/src/data/literature_sboxes.toml` | Curated literature S-box LUTs and metadata |
+| `packages/VBFCatalog/src/data/sporadic.toml` | Fixed literature functions formerly embedded in Julia |
+| `packages/VBFCatalog/src/data/corpora.toml` | Dataset files, readers, names and citations |
+| `packages/VBFCatalog/src/data/bibliography.bib` | Shared citations for VBF, catalog entries and reproductions |
+| `packages/VBFCatalog/src/data/publications.toml` | VBFRepro slug-to-citation-key mapping |
+| `packages/VBFCatalog/src/data/sources.toml` | Source locations, pins, checksums and converter names |
 | `src/import/` | Fetching, raw-format converters, one shared writer and rebuilding |
 | `src/import/reference/` | Checkpointed original-source signature rebuilds and comparison snapshots |
 | `test/` | Runtime, import, storage, corruption and checkpoint tests |
@@ -30,8 +30,8 @@ require a rebuild.
 
 ## Storage
 
-`packages/VBFCatalog/data/catalog.sqlite` is the single tracked catalog. It contains curated LUTs,
-citations, equivalence metadata, dataset descriptors and the compact members of
+`packages/VBFCatalog/src/data/catalog.sqlite` is the single tracked catalog. It contains curated LUTs,
+citations, build input digests, dataset descriptors and the compact members of
 small bundled corpora. Corpora share `corpus_members(corpus, idx, coeffs)`;
 there is no database per family. Member IDs remain local to each named dataset.
 
@@ -41,10 +41,9 @@ Keeping that extension out of git permits small checkouts. Dataset descriptors
 remain in the authoritative catalog. Coefficients reconstruct LUTs using VBF;
 they are not separate function definitions.
 
-`packages/VBFCatalog/data/ccz_sigma_index.sqlite` and the optional fingerprint index are
-regenerable lookup indexes. `packages/VBFCatalog/data/raw/` holds originals and
+`packages/VBFCatalog/data/ccz_sigma_index.sqlite` is a regenerable lookup index. `packages/VBFCatalog/data/raw/` holds originals and
 `imports.toml` holds local import receipts. Override this local directory with
-`BFA_DATA_DIR`; override the catalog file with `BFA_CATALOG_PATH`.
+`BFA_DATA_DIR`; override declarations with `BFA_SOURCE_DIR` and the catalog file with `BFA_CATALOG_PATH`.
 
 `store_sha256` binds the concatenated fixed-width encodings in increasing member
 order, rather than SQLite's page layout. Its count, encoding and width are in
@@ -59,13 +58,14 @@ in the catalog. New timings belong under `packages/VBF/perf/data/`.
 
 ## Stored equivalence checks
 
-`equivalence_checks` in the main catalog retains pair attempts, including checks
+`equivalence_checks` in local `data/equivalence_checks.sqlite` retains pair attempts, including checks
 between reconstructed corpus members. Each row binds the dimension and exact
 LUT hashes to `relation` (`ea` or `ccz`), `status` (`equivalent`, `inequivalent`,
 or `inconclusive`), UTC time, Julia version, VBF source digest, parameters and
 TOML evidence. Positive evidence contains an affine graph witness; negative
 evidence records complete native solver exhaustion. Budget stops remain
-inconclusive. Rebuilding the catalog preserves this history.
+inconclusive. Checks do not change the tracked catalog. Rebuilding it leaves local evidence intact.
+For an alternate catalog path, the evidence file is `<path>.checks.sqlite`.
 
 ```julia
 using VBF, VBFCatalog
@@ -127,9 +127,9 @@ The derived index stores `ccz_bucket_members` (aliases), `ccz_bucket_luts` (one
 verified LUT per content address), `ccz_bucket_results` (components and unresolved
 pairs), and `ccz_classification_meta` (input snapshot digest and coverage).
 Preparation checkpoints complete buckets; changed inputs require an explicit
-`rebuild=true`. Main-catalog pair evidence survives those cache rebuilds.
-Catalog rebuilding refreshes curated signature rows because numeric row IDs
-are not stable identities.
+`rebuild=true`. Local pair evidence survives those cache rebuilds.
+After changing curated functions, rebuild the signature index: numeric function
+row IDs are not stable identities.
 
 Classification uses bounded native EA recovery on the verified quadratic APNs,
 where EA and CCZ equivalence coincide. Positive graph witnesses join components;
@@ -165,7 +165,7 @@ the VBF source SHA-256 is
 `0f1cbd789ef0fa8b7bd02845292946eecbc2f0319f0d9484faa448c40ea6d1ba`.
 The run used Julia 1.13.1, 30 threads, the optimized native algorithm, a
 one-second timeout and a 1,000,000-node limit per pair. Pair witnesses remain in
-the main catalog across rebuilds; the derived classification can be regenerated.
+local `data/equivalence_checks.sqlite` across rebuilds; the derived classification can be regenerated.
 
 ## Import and rebuild
 
@@ -197,7 +197,7 @@ Local overrides such as `BFA_SBOXU_PATH`, `BFA_THESIS_PATH` and
 `BFA_BEIERLE2025_PATH` accept existing originals. Optional sources without a
 registered upstream still require their declared local override.
 
-The full build assembles a staging catalog, rejects lost function families or corpus members, and
+The full build assembles a staging catalog, checks declared function-family and corpus counts, and
 checks bundled data before installing it. Converters run in isolated modules
 and use VBF for mathematics. `write.jl` computes properties and inserts normalized
 rows once; SQLite handles uniqueness and relational constraints. These scripts
@@ -207,8 +207,32 @@ bytes, count, encoding, field modulus, dimensions and relevant source code.
 `BFA_REIMPORT=1` recomputes them.
 Run rebuilds with exclusive access to local bulk data and indexes.
 
-The constructor sweep defaults to `--max-n 11`; increasing it changes catalog
-contents. Run the catalog gate before committing any catalog change.
+The constructor sweep and all active sources are pinned in `src/data/sources.toml`.
+Missing required originals, changed revisions or checksums fail the build. Ambient
+optional downloads, an old catalog, proof history, git HEAD and the wall clock
+are not inputs. Source files and their byte digests are recorded in `source_inputs`.
+Metadata binds those digests and the Julia/SQLite versions and implementation.
+Rows are rewritten in a fixed order before atomic installation. With identical
+inputs, code and toolchain, `make ... reproducible` compares two complete builds
+byte for byte. `BFA_REIMPORT=1` disables the verified external-record cache.
+
+Bundled corpora pack 1,024 fixed-width coefficient records per SQLite row; public
+member IDs and ordered content digests are unchanged. Eight-bit quadratic records
+use 37 bytes, sufficient to reconstruct their LUTs. Sigma hashes are useful
+filters but cannot reconstruct functions or establish equivalence on a match,
+so they remain a derived index rather than the tracked dataset representation.
+
+VBFSearch publication freezes coefficients in `src/data/luts/<name>.coeffs.gz`
+using gzip without timestamps, and appends the checksum, count, ordered coefficient
+digest and run provenance to `corpora.toml`. Rebuilds consume that immutable input
+without reopening the run or recovering records from a previous database. Full
+search/checkpoint/proof evidence stays under local `data/search/`.
+
+Curated equivalence classes are also derived evidence: `make ... classes` writes
+`data/curated_classes.sqlite`. `ccz_class_representatives` checks its input and
+solver digests before returning EA-confirmed classes through dimension seven.
+Larger sigma buckets remain unconfirmed. Run the catalog gate before committing
+any catalog change.
 
 ## Reference and novelty scope
 
@@ -241,13 +265,11 @@ digest is `74ab08f0e92f7eb9e731249ea34a5a6aa50d0db532750124f83b6f1b6a41bf65`.
 This is an exact computational count for the covered quadratic corpus, with
 the same mathematical and implementation assumptions described above.
 
-`data/corpora.toml` declares immutable TSV inputs with `reader = "lut_tsv"`,
-their count and byte digest. `import_lut_corpus!` checks every quadratic APN and
-signature using VBF, then stores compact coefficients in the main catalog.
-VBFSearch's `publish` uses this same importer. Discovery TSVs are intermediate:
-the importer can regenerate them byte-for-byte from the tracked compact members
-if local search artifacts are unavailable. Original public supplement TSVs live
-in `data/luts/`. No parallel editable function catalog is introduced.
+`src/data/corpora.toml` binds immutable public TSV and normalized coefficient
+inputs to counts, checksums and provenance. `import_lut_corpus!` verifies their
+quadratic APN properties using VBF. VBFSearch publication freezes coefficient
+inputs under `src/data/luts/`; clean rebuilds require those inputs and do not
+consult a previous catalog or local run database.
 
 After appending and indexing corpora, explicitly regenerate classification:
 

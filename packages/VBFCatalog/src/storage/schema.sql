@@ -1,14 +1,14 @@
 -- VBFCatalog schema. Rebuild when SCHEMA_VERSION changes; no migrations.
 --
 -- Authoritative source-of-truth lives in this file; the same SQL is
--- embedded as a constant in src/data/catalog.jl so the schema travels
+-- embedded as a constant in src/storage/catalog.jl so the schema travels
 -- with the package.
 
 CREATE TABLE IF NOT EXISTS schema_meta (
     schema_version INTEGER NOT NULL,
-    built_at       TEXT NOT NULL,    -- ISO-8601 UTC of the build_catalog.jl run
+    inputs_sha256  TEXT NOT NULL,    -- digest of declarations and pinned originals
     bfa_version    TEXT NOT NULL,    -- BFA.jl package version when built
-    git_sha        TEXT NOT NULL     -- git commit of BFA.jl source tree
+    implementation_sha256 TEXT NOT NULL -- decoder and VBF source digest
 );
 
 CREATE TABLE IF NOT EXISTS bibliography (
@@ -19,6 +19,14 @@ CREATE TABLE IF NOT EXISTS bibliography (
     year         INTEGER NOT NULL,
     authors      TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS source_inputs (
+    source TEXT NOT NULL,
+    path TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    bytes INTEGER NOT NULL,
+    PRIMARY KEY(source,path)
+) WITHOUT ROWID;
 
 CREATE TABLE IF NOT EXISTS functions (
     id                       INTEGER PRIMARY KEY,
@@ -48,58 +56,6 @@ CREATE INDEX IF NOT EXISTS idx_functions_family_n ON functions(family, n);
 CREATE INDEX IF NOT EXISTS idx_functions_apn_n    ON functions(is_apn, n);
 CREATE INDEX IF NOT EXISTS idx_functions_bib_key  ON functions(bib_key);
 
-CREATE TABLE IF NOT EXISTS equivalence_classes (
-    id            INTEGER PRIMARY KEY,
-    kind          TEXT NOT NULL,                  -- "EA" | "CCZ" | "Linear" | "Affine"
-    n             INTEGER NOT NULL,
-    canonical_id  INTEGER NOT NULL REFERENCES functions(id),
-    discriminator TEXT,
-    UNIQUE(kind, n, canonical_id)
-);
-
-CREATE TABLE IF NOT EXISTS class_members (
-    class_id    INTEGER NOT NULL REFERENCES equivalence_classes(id),
-    function_id INTEGER NOT NULL REFERENCES functions(id),
-    strategy    TEXT NOT NULL,
-    PRIMARY KEY (class_id, function_id, strategy)
-);
-
--- Exact LUT identities also address bulk members, without promoting them into
--- curated entries. Repeated attempts retain their budgets and uncertainty.
-CREATE TABLE IF NOT EXISTS equivalence_checks (
-    id INTEGER PRIMARY KEY,
-    n INTEGER NOT NULL CHECK(n BETWEEN 1 AND 16),
-    left_sha256 TEXT NOT NULL CHECK(length(left_sha256) = 64),
-    right_sha256 TEXT NOT NULL CHECK(length(right_sha256) = 64),
-    relation TEXT NOT NULL CHECK(relation IN ('ea', 'ccz')),
-    status TEXT NOT NULL CHECK(status IN ('equivalent', 'inequivalent', 'inconclusive')),
-    solver_sha256 TEXT NOT NULL,
-    julia_version TEXT NOT NULL,
-    created_utc TEXT NOT NULL,
-    parameters TEXT NOT NULL,
-    evidence TEXT NOT NULL,
-    CHECK(left_sha256 <= right_sha256)
-);
-
-CREATE INDEX IF NOT EXISTS idx_equivalence_checks_pair
-    ON equivalence_checks(n, left_sha256, right_sha256, relation);
-
-CREATE TABLE IF NOT EXISTS reconciliation_disagreements (
-    id              INTEGER PRIMARY KEY,
-    n               INTEGER NOT NULL,
-    function_id     INTEGER REFERENCES functions(id),
-    lut_sha256      TEXT,                          -- content address of the LUT in question
-    present_in      TEXT NOT NULL,                 -- pipe-list of source repos
-    absent_from     TEXT NOT NULL,                 -- pipe-list of source repos
-    kind            TEXT NOT NULL,                 -- "only_in_some" | …
-    resolution      TEXT,
-    resolver        TEXT,
-    resolved_date   TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_recon_n_kind ON reconciliation_disagreements(n, kind);
-CREATE INDEX IF NOT EXISTS idx_recon_lut_sha ON reconciliation_disagreements(lut_sha256);
-
 -- Bulk corpora: large families of functions kept OUT of the `functions` table
 -- (which would bloat by gigabytes). One descriptor row per corpus; the members
 -- themselves live in a compact, content-addressed side store in the catalog or shared local bulk store
@@ -126,7 +82,8 @@ CREATE TABLE IF NOT EXISTS bulk_corpora (
     notes            TEXT
 );
 
--- Bundled records share the catalog; downloaded records use the identical table
+-- Bundled records are packed in fixed 1024-member chunks, indexed by first member.
+-- Downloaded records use one member per row in the identical table
 -- in packages/VBFCatalog/data/members.sqlite. store_sha256 hashes encodings in idx order.
 CREATE TABLE IF NOT EXISTS corpus_members (
     corpus TEXT NOT NULL,
@@ -140,4 +97,4 @@ CREATE TABLE IF NOT EXISTS corpus_members (
 -- and fully regenerable from the corpora + functions table, so — like the
 -- bulk-corpus LUT stores — it lives in its own side store under
 -- packages/VBFCatalog/data/ccz_sigma_index.sqlite (build with `build_sigma_index!`, query with
--- `classify_ccz`/`is_novel`; see src/data/sigma.jl).
+-- `classify_ccz`/`is_novel`; see src/storage/sigma.jl).

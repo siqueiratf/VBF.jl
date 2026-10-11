@@ -7,59 +7,9 @@ import Dates
 include("load_sources.jl")
 include("write.jl")
 
-# --- extraction -------------------------------------------------------------
-
-# Substring inside the parentheses opened at `text[open]=='('`, tracking nesting so polynomial sub-expressions like `g**16*(X**18 + X**33)` and bracketed LUTs are returned whole.
-function _balanced_paren_arg(text::AbstractString, open::Int)
-    depth = 0
-    i = open
-    n = lastindex(text)
-    start = 0
-    while i ≤ n
-        c = text[i]
-        if c == '('
-            depth += 1
-            depth == 1 && (start = nextind(text, i))
-        elseif c == ')'
-            depth -= 1
-            depth == 0 && return text[start:prevind(text, i)]
-        end
-        i = nextind(text, i)
-    end
-    error("unbalanced parenthesis starting at $open")
-end
-
-# Every argument of `wrapper(...)` in `text`, as raw strings.
-function _wrapper_args(text::AbstractString, wrapper::AbstractString)
-    args = String[]
-    pat = wrapper * "("
-    idx = firstindex(text)
-    while true
-        r = findnext(pat, text, idx)
-        r === nothing && break
-        open = last(r)                       # index of '('
-        arg = _balanced_paren_arg(text, open)
-        push!(args, String(strip(arg)))
-        idx = nextind(text, open)
-    end
-    args
-end
-
-# Every `[ integer, integer, ... ]` literal in `text` (the raw LUTs).
-function _int_list_luts(text::AbstractString)
-    luts = Vector{Int}[]
-    pat = r"\[((?:\s*(?:0[xX][0-9a-fA-F]+|\d+)\s*,?\s*)+)\]"
-    for m in eachmatch(pat, text)
-        body = strip(m.captures[1])
-        nums = [_parse_int_lit(s) for s in split(body, r"\s*,\s*"; keepempty = false)]
-        push!(luts, nums)
-    end
-    luts
-end
-
-_parse_int_lit(s::AbstractString) =
-    (t = strip(s); (startswith(t, "0x") || startswith(t, "0X")) ?
-        parse(Int, t[3:end]; base = 16) : parse(Int, t))
+include("readers.jl")
+using .SourceReaders: _wrapper_args
+const _int_list_luts=SourceReaders.parse_apn_lut_text
 
 _is_lut_arg(arg::AbstractString) = startswith(strip(arg), "[")
 _is_unparseable_poly(arg::AbstractString) = occursin("sum(", arg) || occursin(" for ", arg)
@@ -164,17 +114,12 @@ function import_reps!(db::SQLite.DB, entries::Vector{RepEntry}, source_tag::Abst
 end
 
 function _do_import(dir::AbstractString, sboxu_root::AbstractString)
-    sha = source_short_sha(sboxu_root)
+    sha = source_revision(sboxu_root)
     tag = "sboxu@" * sha
-    bfa_sha = try
-        readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`)
-    catch
-        "unknown"
-    end
-    bfa_repo = "bfa@" * bfa_sha
+    bfa_repo = "VBF"
     contributor = "BFA APN reps import (automated)"
-    added = string(Dates.now(Dates.UTC)) * "Z"
-    @info "sboxU APN-reps import" dir sha bfa_sha
+    added = ""
+    @info "sboxU APN-reps import" dir sha
 
     sources = [
         ("reprs6",      () -> _entries_from_get_sbox(joinpath(dir, "reprs6.py"), 6, "reprs6")),
@@ -186,12 +131,7 @@ function _do_import(dir::AbstractString, sboxu_root::AbstractString)
     db = load_catalog()
     try
         for (label, gen) in sources
-            entries = try
-                gen()
-            catch err
-                @warn "skipping reps source" label exception = err
-                continue
-            end
+            entries = gen()
             st = import_reps!(db, entries, tag, label;
                               bfa_repo = bfa_repo,
                               contributor = contributor, added_date = added)

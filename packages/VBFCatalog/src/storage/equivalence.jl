@@ -1,5 +1,25 @@
 import TOML
 
+"""Local proof history for this catalog, outside the deterministic build product."""
+function equivalence_checks_path(db::SQLite.DB)
+    path=catalog_path(db)
+    path==abspath(catalog_path()) ? joinpath(catalog_data_dir(),"equivalence_checks.sqlite") : path*".checks.sqlite"
+end
+
+"""Open the local evidence store, creating its schema only for an explicit write."""
+function _open_equivalence_checks(db::SQLite.DB;create=false)
+    path=equivalence_checks_path(db)
+    isfile(path) || create || return nothing
+    create && mkpath(dirname(path))
+    store=SQLite.DB(path)
+    if create
+        for stmt in _split_ddl(read(joinpath(@__DIR__,"evidence.sql"),String))
+            SQLite.execute(store,stmt)
+        end
+    end
+    store
+end
+
 """Check an affine graph map through VBF; EA also preserves the output subspace.
 
 Positive graph witnesses can be replayed through VBF. Exhaustive negatives
@@ -65,9 +85,15 @@ the caller's order. Bulk members and curated entries use the same LUT hashes.
 function list_equivalence_checks(db::SQLite.DB,F::SBox,G::SBox;relation::Symbol=:ccz)
     relation in (:ea,:ccz) || throw(ArgumentError("relation must be EA or CCZ"))
     _,_,a,b=_equivalence_pair(F,G)
-    [NamedTuple(r) for r in DBInterface.execute(db,
-        "SELECT * FROM equivalence_checks WHERE n=? AND left_sha256=? AND right_sha256=? AND relation=? ORDER BY id DESC",
-        (inputbits(F),a,b,string(relation)))]
+    store=_open_equivalence_checks(db)
+    store===nothing && return NamedTuple[]
+    try
+        [NamedTuple(r) for r in DBInterface.execute(store,
+            "SELECT * FROM equivalence_checks WHERE n=? AND left_sha256=? AND right_sha256=? AND relation=? ORDER BY id DESC",
+            (inputbits(F),a,b,string(relation)))]
+    finally
+        close(store)
+    end
 end
 
 """
@@ -130,7 +156,7 @@ end
 
 """Store a native outcome computed outside the SQLite writer thread."""
 function _store_equivalence_check!(db,F,G,proof;relation,timeout_seconds,max_nodes,max_memory_bytes,
-    solver=equivalence_solver_fingerprint(),algorithm::Symbol=:paper)
+    solver=equivalence_solver_fingerprint(),algorithm::Symbol=:paper,store=nothing)
     left,right,a,b=_equivalence_pair(F,G)
     if haskey(proof,"columns")
         A=F2AffineMap(F2LinearMap(UInt32.(proof["columns"])),UInt32(proof["constant"]))
@@ -142,8 +168,14 @@ function _store_equivalence_check!(db,F,G,proof;relation,timeout_seconds,max_nod
         "max_memory_bytes"=>max_memory_bytes,"algorithm"=>string(algorithm),"rng_seed"=>940,
         "solver"=>"VBF.partition_refinement_equivalence")
     serialize(x)=sprint(io->TOML.print(io,x;sorted=true))
-    SQLite.execute(db,"INSERT INTO equivalence_checks(n,left_sha256,right_sha256,relation,status,solver_sha256,julia_version,created_utc,parameters,evidence) VALUES(?,?,?,?,?,?,?,?,?,?)",
-        (inputbits(F),a,b,string(relation),status,solver,string(VERSION),_utc_now_iso(),serialize(params),serialize(proof)))
-    id=only(Int(r.id) for r in DBInterface.execute(db,"SELECT last_insert_rowid() id"))
-    only(NamedTuple(r) for r in DBInterface.execute(db,"SELECT * FROM equivalence_checks WHERE id=?",(id,)))
+    own=store===nothing
+    own && (store=_open_equivalence_checks(db;create=true))
+    try
+        SQLite.execute(store,"INSERT INTO equivalence_checks(n,left_sha256,right_sha256,relation,status,solver_sha256,julia_version,created_utc,parameters,evidence) VALUES(?,?,?,?,?,?,?,?,?,?)",
+            (inputbits(F),a,b,string(relation),status,solver,string(VERSION),_utc_now_iso(),serialize(params),serialize(proof)))
+        id=only(Int(r.id) for r in DBInterface.execute(store,"SELECT last_insert_rowid() id"))
+        only(NamedTuple(r) for r in DBInterface.execute(store,"SELECT * FROM equivalence_checks WHERE id=?",(id,)))
+    finally
+        own && close(store)
+    end
 end

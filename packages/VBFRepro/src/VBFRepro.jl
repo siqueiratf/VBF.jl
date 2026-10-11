@@ -29,7 +29,7 @@ function paper_path(id::AbstractString; root=papers_root())
 end
 
 """Shared reproduction-to-citation declarations owned by VBFCatalog."""
-publications_path() = joinpath(repo_root(), "packages", "VBFCatalog", "data", "publications.toml")
+publications_path() = joinpath(repo_root(), "packages", "VBFCatalog", "src", "data", "publications.toml")
 """Bibliography identity of a reproduction, or `nothing` for an unregistered slug."""
 paper_bib_key(id::AbstractString) = get(TOML.parsefile(publications_path()), String(id), nothing)
 
@@ -57,15 +57,12 @@ function _source_hashes(paper, project)
         end
     end
     push!(paths, joinpath(papers_root(), "paper.mk"))
-    for file in ("bibliography.bib", "publications.toml")
-        path=joinpath(project,"packages","VBFCatalog","data",file)
-        isfile(path) && push!(paths,path)
-    end
-    catalog_sources=joinpath(project,"packages","VBFCatalog","data")
-    if isdir(catalog_sources)
-        append!(paths,[joinpath(catalog_sources,f) for f in readdir(catalog_sources) if endswith(f,".toml") && f!="imports.toml"])
-        entries=joinpath(catalog_sources,"apn")
-        isdir(entries) && append!(paths,[joinpath(entries,f) for f in readdir(entries) if endswith(f,".toml")])
+    # Catalog declarations now live under src/ and are covered above.
+    resources=joinpath(project,"packages","VBFCatalog","src","data")
+    if isdir(resources)
+        for (dir,_,files) in walkdir(resources)
+            append!(paths,[joinpath(dir,file) for file in files if endswith(file,".bib") || endswith(file,".gz")])
+        end
     end
     for f in ("Project.toml", "Manifest.toml")
         path = joinpath(project, f)
@@ -83,7 +80,7 @@ function _input_hashes(paper, project)
             append!(paths, joinpath.(dir, files))
         end
     end
-    catalog = joinpath(project, "packages", "VBFCatalog", "data", "catalog.sqlite")
+    catalog = joinpath(project, "packages", "VBFCatalog", "src", "data", "catalog.sqlite")
     isfile(catalog) && push!(paths, catalog)
     return Dict(relpath(path, project) => open(io -> bytes2hex(sha256(io)), path)
                 for path in sort!(unique(paths)))

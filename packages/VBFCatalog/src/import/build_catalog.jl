@@ -1,262 +1,115 @@
-using VBF
-using VBFCatalog
-import SQLite
-import DBInterface
-import Dates
-import TOML
-
-# Assemble the new catalog beside the committed one and swap it in only after
-# it verifies. A rebuild that cannot reproduce the catalog then destroys
-# nothing. VBFCatalog.catalog_path() honours BFA_CATALOG_PATH, so every importer
-# that calls load_catalog() follows us to the staging file without changes.
-const FINAL_CATALOG = VBFCatalog.catalog_path()
-const CATALOG_FILE = FINAL_CATALOG * ".building"
-
-include(joinpath(@__DIR__, "load_sources.jl"))
-include(joinpath(@__DIR__, "cache.jl"))
+using VBF, VBFCatalog, SQLite, DBInterface, SHA, TOML
+include("load_sources.jl")
+include("cache.jl")
 include("bibliography.jl")
 include("write.jl")
-include(joinpath(@__DIR__, "check.jl"))
+include("check.jl")
 include("convert.jl")
 
-function _git_sha()
-    try
-        return readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`)
-    catch
-        return "unknown"
-    end
-end
+"""Build a deterministic catalog from declarations and checksum-bound originals.
 
-function _today_utc()
-    string(Dates.now(Dates.UTC)) * "Z"
-end
-
-"""Retain exact-LUT check history when replacing a generated catalog."""
-function preserve_equivalence_checks!(db, previous)
-    isfile(previous) || return 0
-    old=SQLite.DB(previous)
-    try
-        exists=only(Int(r.c) for r in DBInterface.execute(old,
-            "SELECT COUNT(*) c FROM sqlite_master WHERE type='table' AND name='equivalence_checks'"))
-        exists==0 && return 0
-        count=0
-        SQLite.transaction(db) do
-            for row in DBInterface.execute(old,"SELECT * FROM equivalence_checks ORDER BY id")
-                SQLite.execute(db,"INSERT INTO equivalence_checks VALUES(?,?,?,?,?,?,?,?,?,?,?)",Tuple(NamedTuple(row)))
-                count+=1
-            end
-        end
-        count
-    finally
-        close(old)
-    end
-end
-
-function insert_curated!(db, family, names, loader, metadata, contributor, source_repo)
-    today=_today_utc()
-    for name in names
-        meta=metadata(name)
-        insert_function!(db,loader(name); family,canonical_name=name,source_repo,
-            contributor,added_date=today,bib_key=meta["bib_key"],notes=meta["description"],
-            algebraic_form=get(meta,"algebraic_form",nothing),require_apn=family=="APN")
-    end
-end
-
+The previous catalog, local proof history, indexes and wall clock are never build
+inputs. A staging database is verified and canonically rewritten before install.
 """
-Per-family row counts of a catalog, or an empty Dict when it does not exist.
-"""
-function _catalog_counts(path::AbstractString; corpora=false)
-    counts = Dict{String,Int}()
-    isfile(path) || return counts
-    db = SQLite.DB(path)
-    try
-        query=corpora ? "SELECT name,member_count c FROM bulk_corpora" :
-            "SELECT family name, COUNT(*) c FROM functions GROUP BY family"
-        for r in DBInterface.execute(db,query)
-            counts[String(r.name)] = Int(r.c)
+function build_inputs(config)
+    records=VBFCatalog._declaration_inputs()
+    for source in config["source"]
+        get(source,"enabled",true) || continue
+        get(source,"builtin",false) && continue
+        root=with_source(identity,source["name"])
+        relative = haskey(source,"files") ?
+            (get(source,"check_kind","dir")=="file" ? source["files"] :
+                [joinpath(source["check_path"],file) for file in source["files"]]) : [source["check_path"]]
+        for relative_path in relative
+            path=joinpath(root,relative_path)
+            digest=bytes2hex(open(SHA.sha256,path))
+            haskey(source,"sha256") && digest!=source["sha256"] && error("original checksum changed: $(source["name"])")
+            push!(records,(source=source["name"],path=relative_path,sha256=digest,bytes=filesize(path)))
         end
+    end
+    sort!(records;by=row->(row.source,row.path))
+end
+
+function implementation_digest()
+    roots=[joinpath(pkgdir(VBF),"src"),joinpath(pkgdir(VBFCatalog),"src")]
+    paths=sort!([joinpath(dir,file) for root in roots for (dir,_,files) in walkdir(root)
+        for file in files if endswith(file,".jl") || endswith(file,".sql")])
+    digest=join([relpath(path,dirname(pkgdir(VBF)))*":"*bytes2hex(open(SHA.sha256,path)) for path in paths],"\n")
+    db=SQLite.DB()
+    try
+        engine=only(String(row.version) for row in DBInterface.execute(db,"SELECT sqlite_version() version"))
+        bytes2hex(SHA.sha256(string(VERSION,"\n",engine,"\n",digest)))
     finally
         close(db)
     end
-    counts
 end
 
-"""
-Refuse to start when a source the committed catalog depends on is unavailable.
-Checked BEFORE create_catalog() so a doomed rebuild never destroys anything.
-"""
-function _preflight_required_sources()
-    get(ENV, "BFA_ALLOW_PARTIAL", "") == "1" && return
-    config = TOML.parsefile(_SOURCES_TOML)
-    missing_srcs = String[]
-    for src in get(config, "source", [])
-        get(src, "required", false) === true || continue
-        get(src, "builtin", false) === true && continue      # no external data
-        haskey(src, "upstream") && continue                  # auto-clones
-        env_var = get(src, "env_var", "")
-        env_val = _bfa_source_root(src)
-        if isempty(env_val) ||
-           !_bfa_check_valid(env_val, src["check_path"], get(src, "check_kind", "dir"))
-            push!(missing_srcs,
-                  "  $(get(src, "label", src["name"])) — set $env_var to a checkout " *
-                  "containing '$(src["check_path"])'")
-        end
-    end
-    isempty(missing_srcs) && return
-    error("""
-    BFA: refusing to rebuild — $(length(missing_srcs)) required source(s) unavailable:
-
-    $(join(missing_srcs, "\n"))
-
-    The committed catalog contains rows only these sources can produce. A
-    rebuild without them would silently drop those rows and then fail the
-    catalog gate. Nothing has been modified.
-
-    Override (produces an incomplete catalog that fails the gate):
-        BFA_ALLOW_PARTIAL=1
-    """)
-end
-
-function _chain_external_imports()
-    config = TOML.parsefile(_SOURCES_TOML)
-    for src in get(config, "source", [])
-        importer = joinpath(@__DIR__, src["converter"])
-        isfile(importer) || error("missing registered importer: $importer")
-        label    = get(src, "label", src["name"])
-        required = get(src, "required", false) === true
-        env_var  = get(src, "env_var", "")
-        env_val  = _bfa_source_root(src)
-        if get(ENV, "BFA_REIMPORT", "0") != "1" && haskey(src, "reuse_corpus")
-            source_path = joinpath(env_val, src["check_path"])
-            target = load_catalog()
+function main(;output=catalog_path())
+    mkpath(catalog_data_dir())
+    lease=open(joinpath(catalog_data_dir(),".publish.lock"),"a+")
+    ccall(:flock,Cint,(Cint,Cint),fd(lease),6)==0 || (close(lease);error("another catalog build or publication is active"))
+    try
+    config=TOML.parsefile(_SOURCES_TOML)
+    inputs=build_inputs(config)
+    digest=VBFCatalog._inputs_digest(inputs)
+    implementation=implementation_digest()
+    final=abspath(output);staging=final*".building"
+    mkpath(dirname(final))
+    try
+        withenv("BFA_CATALOG_PATH"=>staging) do
+            db=create_catalog(staging;inputs_sha256=digest,implementation_sha256=implementation)
             try
-                cached_corpus!(target, FINAL_CATALOG, src["reuse_corpus"], source_path) && continue
+                SQLite.transaction(db) do
+                    for row in inputs
+                        SQLite.execute(db,"INSERT INTO source_inputs VALUES(?,?,?,?)",Tuple(row))
+                    end
+                    insert_bibliography!(db)
+                    for (family,names,loader,metadata) in (("Literature",literature_sbox_names(),load_literature_sbox,literature_sbox_metadata),
+                            ("APN",apn_catalog_names(),load_apn_function,apn_catalog_metadata))
+                        for name in names
+                            entry=metadata(name)
+                            insert_function!(db,loader(name);family,canonical_name=name,source_repo="VBF declarations",
+                                contributor="VBFCatalog source import",bib_key=entry["bib_key"],notes=entry["description"],
+                                algebraic_form=get(entry,"algebraic_form",nothing),require_apn=family=="APN")
+                        end
+                    end
+                end
             finally
-                close(target)
+                close(db)
             end
-        end
-        # Sources without an upstream URL are local-only: only include their
-        # script when the env var already points to a valid path.  This avoids
-        # loading optional heavy dependencies (e.g. Parquet2, JSON3) into
-        # projects that don't have them just because the importer script exists.
-        # Sources that declare an upstream can always be included because
-        # with_source() will auto-clone when the env var is unset.
-        # A builtin source constructs its functions from VBF and needs no
-        # external data, so it always runs.
-        if !get(src, "builtin", false) &&
-           !haskey(src, "upstream") &&
-           !_bfa_check_valid(env_val, src["check_path"], get(src, "check_kind", "dir"))
-            @warn "BFA: skipping $label (source unavailable; set $env_var to enable)"
-            continue
-        end
-        try
-            @info "Chaining $label import" importer
-            convert_source(src["name"])
-        catch err
-            if required && get(ENV, "BFA_ALLOW_PARTIAL", "") != "1"
-                rethrow()
+            for source in config["source"]
+                get(source,"enabled",true) || continue
+                reused=false
+                if get(ENV,"BFA_REIMPORT","0")!="1" && haskey(source,"reuse_corpus")
+                    db=load_catalog()
+                    try
+                        reused=cached_corpus!(db,source["reuse_corpus"],joinpath(_bfa_source_root(source),source["check_path"]);
+                            entry=corpus_entry(source["reuse_corpus"]))
+                    finally
+                        close(db)
+                    end
+                end
+                reused || convert_source(source["name"])
             end
-            @warn "$label import failed; the catalog is INCOMPLETE" exception=(err, catch_backtrace())
+            build_inputs(config)==inputs || error("build inputs changed during import")
+            implementation_digest()==implementation || error("build implementation changed during import")
+            finalize_catalog!(staging;refresh_inputs=false)
+            check_catalog(staging)
         end
+        mv(staging,final;force=true)
+        @info "Deterministic catalog built" path=final bytes=filesize(final) inputs_sha256=digest
+    finally
+        rm(staging;force=true)
+        rm(staging*".canonical";force=true)
+    end
+    nothing
+    finally
+        close(lease)
     end
 end
 
-function main()
-    _preflight_required_sources()
-    ENV["BFA_CATALOG_PATH"] = CATALOG_FILE
-    before = _catalog_counts(FINAL_CATALOG)
-    before_corpora = _catalog_counts(FINAL_CATALOG;corpora=true)
-
-    sha = _git_sha()
-    source_repo = "bfa@" * sha
-    @info "Building BFA catalog" staging=CATALOG_FILE final=FINAL_CATALOG source_repo
-    isfile(CATALOG_FILE) && rm(CATALOG_FILE)
-    db = create_catalog(CATALOG_FILE;
-                         bfa_version = "0.1.0-DEV",
-                         git_sha = sha)
-    insert_bibliography!(db)
-    insert_curated!(db, "Literature", literature_sbox_names(), load_literature_sbox, literature_sbox_metadata, "VBF literature import", source_repo)
-    insert_curated!(db, "APN", apn_catalog_names(), load_apn_function, apn_catalog_metadata, "VBF APN catalog import", source_repo)
-    n_funcs = 0
-    for r in DBInterface.execute(db, "SELECT COUNT(*) AS c FROM functions")
-        n_funcs = r.c
-    end
-    @info "Catalog populated (BFA-only step)" functions=n_funcs file_size_bytes=filesize(CATALOG_FILE)
-    close(db)
-    withenv("BFA_PREVIOUS_CATALOG"=>FINAL_CATALOG) do
-        _chain_external_imports()
-    end
-
-    # --- verify before replacing the committed catalog ----------------------
-    # Compare PER FAMILY, never on the total. Importers deduplicate by LUT hash,
-    # so when a source goes missing the next importer absorbs the functions it
-    # would have claimed: dropping simonberg takes CCZ-rep-GF4 27 -> 0 and pushes
-    # known-family 69 -> 89, for a total only 7 short. A total-only check would
-    # call that healthy. A family that vanishes is the signal.
-    after = _catalog_counts(CATALOG_FILE)
-    after_corpora = _catalog_counts(CATALOG_FILE;corpora=true)
-    lost = String[]
-    for (kind,previous,current) in (("family",before,after),("corpus",before_corpora,after_corpora))
-        for (name,n) in sort(collect(previous);by=first)
-            got=get(current,name,0)
-            got<n && push!(lost,"  $kind $name: $n -> $got (lost $(n-got))")
-        end
-    end
-    if !isempty(lost) && get(ENV, "BFA_ALLOW_PARTIAL", "") == "1"
-        # The override lets a partial build finish, but it must still never
-        # replace the committed catalog: that is the data loss it is overriding.
-        @warn """
-        BFA: PARTIAL catalog built. It was NOT installed.
-
-        $(join(lost, "\n"))
-
-        staging file : $CATALOG_FILE
-        committed    : $FINAL_CATALOG  (unchanged)
-
-        Inspect the staging file, then delete it. Do not commit it: it fails the
-        catalog gate.
-        """
-        return
-    end
-    if !isempty(lost)
-        rm(CATALOG_FILE; force = true)
-        error("""
-        BFA: rebuild produced a SMALLER catalog than the committed one:
-
-        $(join(lost, "\n"))
-
-        The committed catalog at
-            $FINAL_CATALOG
-        is UNCHANGED; the staging file has been deleted. A rebuild that drops
-        rows is a source problem, not a result: some importer did not run, or
-        ran against a source that no longer contains what it did before.
-
-        Override (keeps the smaller catalog; it will fail the gate):
-            BFA_ALLOW_PARTIAL=1
-        """)
-    end
-
-    gained = ["  $f: $(get(before, f, 0)) -> $n" for (f, n) in sort(collect(after); by = first)
-              if n > get(before, f, 0)]
-    isempty(gained) || @info "Families that grew\n" * join(gained, "\n")
-
-    db=load_catalog(CATALOG_FILE)
-    try
-        retained=preserve_equivalence_checks!(db,FINAL_CATALOG)
-        @info "Retained equivalence check history" checks=retained
-    finally
-        close(db)
-    end
-    check_catalog(CATALOG_FILE)
-    mv(CATALOG_FILE, FINAL_CATALOG; force = true)
-    delete!(ENV, "BFA_CATALOG_PATH")
-    db=load_catalog(FINAL_CATALOG)
-    try
-        refresh_curated_sigma_index!(db)
-    finally
-        close(db)
-    end
-    @info "Catalog rebuilt and verified" path=FINAL_CATALOG file_size_bytes=filesize(FINAL_CATALOG) families=length(after) functions=sum(values(after))
+if abspath(PROGRAM_FILE)==(@__FILE__)
+    args=copy(ARGS)
+    isempty(args) ? main() : length(args)==2 && first(args)=="--output" ? main(;output=args[2]) :
+        error("usage: build_catalog.jl [--output PATH]")
 end
-
-abspath(PROGRAM_FILE)==(@__FILE__) && main()

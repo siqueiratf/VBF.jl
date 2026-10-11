@@ -1,7 +1,7 @@
 @testitem "catalog_queries" begin
 using VBFCatalog
 using VBF
-using Test
+using Test, TOML
 
 @testset "list_functions / count_functions: filters" begin
     db = load_catalog()
@@ -34,6 +34,11 @@ using Test
     spor_n8     = count(r -> r.n == 8, spor)
     spor_n4     = count(r -> r.n == 4, spor)
     spor_perm   = count(r -> r.is_permutation == 1, spor)
+
+    expected=TOML.parsefile(joinpath(catalog_source_dir(),"sources.toml"))["build"]["functions"]
+    for (family,count) in expected
+        @test count_functions(db;family)==count
+    end
 
     # No filter: Literature + declarative APN + sboxU reps + GF(4) CCZ reps
     #            + known-family/known-sporadic representatives

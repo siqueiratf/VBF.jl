@@ -2,12 +2,12 @@
 
 All LUTs are rechecked with VBF against the current catalog. Equal signatures
 are retained in the run and require equivalence checks; they are not promoted
-as new classes. Registered corpora retain their immutable input file and run
-evidence inside the catalog. This operation never asserts literature novelty.
+as new classes. Registered corpora retain immutable coefficient inputs under src/data/luts
+and provenance linked to local run evidence. This operation never asserts literature novelty.
 """
 function publish(directory;name)
     occursin(r"^[a-z][a-z0-9_-]*$",name) || error("use a lowercase corpus slug")
-    dir=abspath(directory);data=VBFCatalog.catalog_data_dir()
+    dir=abspath(directory);data=VBFCatalog.catalog_data_dir();sources=VBFCatalog.catalog_source_dir()
     startswith(dir,data*"/") || error("publish needs a catalog-local run; use discover or validate under $data/search")
     isfile(joinpath(dir,"run.sqlite")) || error("missing search run")
     lockpath=joinpath(data,".publish.lock")
@@ -21,14 +21,14 @@ function publish(directory;name)
         SQLite.execute(db,"BEGIN")
         rows=[NamedTuple(r) for r in DBInterface.execute(db,"SELECT lut_id,lut_hex FROM candidates ORDER BY lut_id")]
         snapshot_sha=bytes2hex(sha256(join([r.lut_id*":"*r.lut_hex for r in rows],'\n')))
-        declarations=joinpath(data,"corpora.toml")
+        declarations=joinpath(sources,"corpora.toml")
         inventory=TOML.parsefile(declarations)
         entries=inventory["corpus"]
         prior=findfirst(e->e["name"]==name,entries)
         if prior!==nothing
             entry=entries[prior]
             get(entry,"run_snapshot_sha256",nothing)==snapshot_sha || error("corpus name already belongs to different results; publish the increment under a new name")
-            filehash(joinpath(data,entry["file"]))==entry["sha256"] || error("registered input changed")
+            filehash(joinpath(sources,entry["file"]))==entry["sha256"] || error("registered input changed")
         else
             reference=open_reference(data;supplement_path="")
             accepted=Tuple{String,String}[];seen=Set{String}();matching=0
@@ -50,14 +50,13 @@ function publish(directory;name)
                 return Dict("accepted_classes"=>0,"matching_luts"=>matching,"literature_novelty"=>"unresolved")
             end
             sort!(accepted)
-            path=joinpath(dir,name*".tsv")
-            open(path*".partial","w") do io
-                println(io,"sigma_hash\tcoeffs")
-                for pair in accepted;println(io,join(pair,'\t'));end
-            end
-            mv(path*".partial",path;force=true)
-            entry=Dict{String,Any}("name"=>name,"reader"=>"lut_tsv","family"=>"discovery",
-                "file"=>relpath(path,data),"count"=>length(accepted),"sha256"=>filehash(path),
+            path=joinpath(sources,"luts",name*".coeffs.gz")
+            encodings=[hex2bytes(pair[2]) for pair in accepted]
+            VBFCatalog.write_corpus_input(path,encodings)
+            packed=SHA.SHA2_256_CTX();foreach(bytes->SHA.update!(packed,bytes),encodings)
+            entry=Dict{String,Any}("name"=>name,"reader"=>"quadratic_coeffs","family"=>"discovery",
+                "source"=>"quadratic_apn_8bit","separating"=>true,"packed_sha256"=>bytes2hex(SHA.digest!(packed)),
+                "file"=>relpath(path,sources),"count"=>length(accepted),"sha256"=>filehash(path),
                 "run_snapshot_sha256"=>snapshot_sha,"source_repo"=>"VBFSearch:"*relpath(dir,data),
                 "notes"=>"Verified quadratic APNs with pairwise distinct signatures absent from frozen catalog "*reference.metadata["sha256"]*"; literature-wide novelty unresolved.")
             atomic_toml(joinpath(dir,name*".promotion.toml"),Dict("corpus"=>entry,
@@ -79,6 +78,7 @@ function publish(directory;name)
         finally
             close(cat)
         end
+        VBFCatalog.finalize_catalog!(VBFCatalog.catalog_path())
         cat=VBFCatalog.load_catalog()
         try
             idx=SQLite.DB(VBFCatalog.sigma_index_path())

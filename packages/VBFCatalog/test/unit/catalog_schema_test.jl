@@ -68,7 +68,7 @@ end
 @testset "create_catalog: schema initialises and is loadable" begin
     mktempdir() do tmp
         path = joinpath(tmp, "test.sqlite")
-        db = create_catalog(path; bfa_version = "0.1.0-test", git_sha = "deadbeef")
+        db = create_catalog(path; bfa_version = "0.1.0-test", inputs_sha256 = "inputs", implementation_sha256 = "code")
 
         # SQLite.jl's Row reads via a shared cursor: collect() invalidates the rows because the cursor moves past the last row. Iterate eagerly inside the loop body.
         names = String[]
@@ -79,16 +79,17 @@ end
         @test "schema_meta" in names
         @test "bibliography" in names
         @test "functions" in names
-        @test "equivalence_classes" in names
-        @test "class_members" in names
-        @test "equivalence_checks" in names
-        @test "reconciliation_disagreements" in names
+        @test "source_inputs" in names
+        @test "class_members" ∉ names
+        @test "equivalence_checks" ∉ names
+        @test "reconciliation_disagreements" ∉ names
 
         # schema_meta populated (first() is cursor-safe; collect() is not).
         meta = first(DBInterface.execute(db, "SELECT * FROM schema_meta LIMIT 1"))
         @test meta.schema_version == SCHEMA_VERSION
         @test meta.bfa_version == "0.1.0-test"
-        @test meta.git_sha == "deadbeef"
+        @test meta.inputs_sha256 == "inputs"
+        @test meta.implementation_sha256 == "code"
 
         close(db)
 

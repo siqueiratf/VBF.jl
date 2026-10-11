@@ -1,9 +1,10 @@
 @testitem "equivalence_checks" begin
-using Test, VBF, VBFCatalog, SQLite, DBInterface, TOML
+using Test, VBF, VBFCatalog, SQLite, DBInterface, TOML, SHA
 
 mktempdir() do dir
     path=joinpath(dir,"checks.sqlite")
     db=create_catalog(path)
+    original=bytes2hex(open(SHA.sha256,path))
     F=gold_apn(3)
     G=SBox{3}([F(x) ⊻ 1 for x in 0:7])
     H=SBox{3}(zeros(Int,8))
@@ -37,7 +38,8 @@ mktempdir() do dir
         @test negative.status=="inequivalent"
         @test !verify_equivalence_check(negative,F,H)
         @test check_equivalence!(db,H,F;max_nodes=0).id==negative.id
-        SQLite.execute(db,"UPDATE equivalence_checks SET solver_sha256='stale' WHERE id=?",(negative.id,))
+        evidence=SQLite.DB(equivalence_checks_path(db))
+        SQLite.execute(evidence,"UPDATE equivalence_checks SET solver_sha256='stale' WHERE id=?",(negative.id,))
         retry=check_equivalence!(db,F,H;max_nodes=0)
         @test retry.id!=negative.id && retry.status=="inconclusive"
         fresh=check_equivalence!(db,F,G;reuse=false,timeout_seconds=10)
@@ -46,24 +48,22 @@ mktempdir() do dir
         @test_throws ArgumentError check_equivalence!(db,F,G;max_nodes=-1)
         @test_throws ArgumentError check_equivalence!(db,F,G;relation=:linear)
         @test_throws ArgumentError check_equivalence!(db,F,gold_apn(4))
-        @test_throws SQLite.SQLiteException SQLite.execute(db,
+        @test_throws SQLite.SQLiteException SQLite.execute(evidence,
             "UPDATE equivalence_checks SET status='timeout_means_false' WHERE id=?",(positive.id,))
+        close(evidence)
+        @test bytes2hex(open(SHA.sha256,path))==original
         close(db)
         db=load_catalog(path)
         @test verify_equivalence_check(only(filter(r->r.id==positive.id,list_equivalence_checks(db,F,G))),F,G)
-        @test only(Int(r.c) for r in DBInterface.execute(db,
-            "SELECT COUNT(*) c FROM equivalence_checks WHERE relation='ccz' AND status='inconclusive'"))==2
-
-        # Exercise the actual include-safe build entry point's history copy.
-        context=Module(gensym(:EquivalenceBuild))
-        Core.eval(context,:(include(path)=Base.include($context,path)))
-        Base.include(context,joinpath(pkgdir(VBFCatalog),"src","import","build_catalog.jl"))
-        target=create_catalog(joinpath(dir,"rebuilt.sqlite"))
+        checks=list_equivalence_checks(db,F,G)
+        close(db)
+        db=create_catalog(path)
+        @test list_equivalence_checks(db,F,G)==checks
+        @test verify_equivalence_check(first(checks),F,G)
+        target=create_catalog(joinpath(dir,"independent.sqlite"))
         try
-            @test Base.invokelatest(getfield(context,:preserve_equivalence_checks!),target,path)==7
-            @test list_equivalence_checks(target,F,G)==list_equivalence_checks(db,F,G)
-            @test verify_equivalence_check(first(list_equivalence_checks(target,F,G)),F,G)
-            @test Base.invokelatest(getfield(context,:preserve_equivalence_checks!),target,joinpath(dir,"missing.sqlite"))==0
+            @test isempty(list_equivalence_checks(target,F,G))
+            @test !isfile(equivalence_checks_path(target))
         finally
             close(target)
         end

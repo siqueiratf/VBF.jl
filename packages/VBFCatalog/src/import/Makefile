@@ -1,13 +1,15 @@
 JULIA ?= julia
 ROOT := $(abspath $(CURDIR)/../../../..)
 JFLAGS ?= --startup-file=no --project=$(CURDIR)
-CATALOG_ARGS ?= --max-n 11
+CATALOG_ARGS ?=
 OUTDIR ?= $(ROOT)/packages/VBFCatalog/data/research/rebuilds/original-source
 threads ?= 16
 
-.PHONY: catalog check fetch convert stored raw compare index classify test
+.PHONY: catalog check reproducible fetch convert stored raw compare index classes classify test
 catalog:
-	$(JULIA) $(JFLAGS) $(CURDIR)/build_catalog.jl $(CATALOG_ARGS)
+	$(JULIA) $(JFLAGS) -t $(threads) $(CURDIR)/build_catalog.jl $(CATALOG_ARGS)
+reproducible:
+	$(JULIA) $(JFLAGS) -t $(threads) $(CURDIR)/check_reproducibility.jl
 check:
 	$(ROOT)/.githooks/catalog-check
 fetch:
@@ -18,6 +20,8 @@ stored raw compare:
 	$(JULIA) $(JFLAGS) -t $(threads) $(CURDIR)/reference/rebuild.jl $@ --outdir $(OUTDIR)
 index:
 	$(JULIA) $(JFLAGS) -t $(threads) $(CURDIR)/build_sigma_index.jl
+classes:
+	$(JULIA) $(JFLAGS) -t $(threads) $(CURDIR)/build_sigma_index.jl --classes-only
 classify:
 	$(JULIA) $(JFLAGS) -t $(threads) $(CURDIR)/classify_corpus.jl $(CLASSIFY_ARGS)
 test:

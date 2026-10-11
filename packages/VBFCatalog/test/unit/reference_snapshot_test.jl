@@ -115,7 +115,7 @@ end
                 write(file,"sigma_hash\tlut_hex\n$(sigma_hash(G))\t$(bytes2hex(G.lut))\n")
                 entry=Dict("file"=>"extra.tsv","sha256"=>bytes2hex(open(sha256,file)),"count"=>1,
                     "name"=>"extra","source_repo"=>"fixture","notes"=>"fixture")
-                import_lut_corpus!(db,entry)
+                import_lut_corpus!(db,entry;data=dir)
                 @test_throws ErrorException open_catalog_reference()
                 build_sigma_index!(db;rebuild=false,corpora=["extra"],include_functions=false)
                 current=open_catalog_reference()
@@ -131,7 +131,7 @@ end
                 each_candidate(r->push!(records,r),IOBuffer(read(file,String)))
                 @test only(records).hash==sigma_hash(G)
                 entry["sha256"]=repeat("0",64)
-                @test_throws ErrorException import_lut_corpus!(db,entry)
+                @test_throws ErrorException import_lut_corpus!(db,entry;data=dir)
                 SQLite.execute(db,"UPDATE functions SET lut_sha256='wrong'")
                 @test_throws ErrorException open_catalog_reference(;sources=before["sources"])
             finally

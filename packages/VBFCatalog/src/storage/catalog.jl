@@ -1,5 +1,5 @@
 """
-SQLite catalog of every cryptographic function known to VBF.
+SQLite catalog of curated cryptographic functions and datasets.
 
 # Schema philosophy
 The catalog is **content-addressed by `lut_sha256`** and **provenance-tagged**:
@@ -7,7 +7,7 @@ every row carries `(family, n, lut_blob, bib_key, source_repo, contributor,
 added_date)` so any computed statistic can be traced back to its
 primary specification.
 
-The schema DDL lives in `src/data/schema.sql` (authoritative) and is
+The schema DDL lives in `src/storage/schema.sql` (authoritative) and is
 embedded as `SCHEMA_DDL` (a constant string) so the package can rebuild
 a catalog from scratch without reading a separate file. Schema version
 changes require an incremented `schema_version` and a fresh rebuild.
@@ -34,19 +34,19 @@ import Dates
 The schema version this code understands. `load_catalog` refuses
 catalogs whose `schema_meta.schema_version` differs.
 """
-const SCHEMA_VERSION = 8
+const SCHEMA_VERSION = 9
 
 """
     SCHEMA_DDL :: String
 
-Authoritative DDL from `src/data/schema.sql`.
+Authoritative DDL from `src/storage/schema.sql`.
 """
 const SCHEMA_DDL = read(joinpath(@__DIR__, "schema.sql"), String)
 
 """
     catalog_path() -> String
 
-Default location of the generated SQLite catalog (`packages/VBFCatalog/data/catalog.sqlite`).
+Default location of the generated SQLite catalog (`packages/VBFCatalog/src/data/catalog.sqlite`).
 
 `ENV["BFA_CATALOG_PATH"]`, when set and non-empty, overrides it. The rebuild in
 `src/import/build_catalog.jl` uses that to assemble a new catalog at a temporary
@@ -61,7 +61,7 @@ function catalog_path()
 end
 
 """Shared declarative catalog resources in the VBF workspace."""
-catalog_source_dir() = joinpath(pkgdir(VBFCatalog), "data")
+catalog_source_dir() = abspath(get(ENV,"BFA_SOURCE_DIR",joinpath(pkgdir(VBFCatalog), "src", "data")))
 
 """Return the actual main database filename, including for read-only URI handles."""
 function catalog_path(db::SQLite.DB)
@@ -122,17 +122,18 @@ lut_sha256_hex(s::SBox) = bytes2hex(SHA.sha256(canonical_lut_bytes(s)))
 # --- create / load / verify -------------------------------------------------
 
 """
-    create_catalog(path::AbstractString; bfa_version, git_sha)
+    create_catalog(path::AbstractString; bfa_version, inputs_sha256, implementation_sha256)
 
 Initialise a fresh SQLite catalog at `path` with the embedded
 [`SCHEMA_DDL`](@ref). The single `schema_meta` row is populated with
-`SCHEMA_VERSION`, the current UTC time, and the caller-supplied
-`bfa_version` / `git_sha` strings. Overwrites any existing file.
+`SCHEMA_VERSION` and the caller-supplied input and implementation digests.
+Overwrites any existing file.
 """
 function create_catalog(
     path::AbstractString;
     bfa_version::AbstractString = "0.1.0-DEV",
-    git_sha::AbstractString = "unknown",
+    inputs_sha256::AbstractString = "unknown",
+    implementation_sha256::AbstractString = "unknown",
 )
     isfile(path) && rm(path)
     db = SQLite.DB(path)
@@ -145,14 +146,14 @@ function create_catalog(
     SQLite.execute(
         db,
         string(
-            "INSERT INTO schema_meta (schema_version, built_at, bfa_version, git_sha) VALUES (",
+            "INSERT INTO schema_meta (schema_version, inputs_sha256, bfa_version, implementation_sha256) VALUES (",
             Int(SCHEMA_VERSION),
             ", ",
-            _sql_quote(_utc_now_iso()),
+            _sql_quote(String(inputs_sha256)),
             ", ",
             _sql_quote(String(bfa_version)),
             ", ",
-            _sql_quote(String(git_sha)),
+            _sql_quote(String(implementation_sha256)),
             ")",
         ),
     )
@@ -236,3 +237,70 @@ function _split_ddl(ddl::AbstractString)
 end
 
 _utc_now_iso() = string(Dates.now(Dates.UTC)) * "Z"
+
+"""Actual declaration and immutable dataset bytes, independent of the local cache."""
+function _declaration_inputs()
+    records=NamedTuple[]
+    for (dir,_,files) in walkdir(catalog_source_dir()), file in sort(files)
+        any(ext->endswith(file,ext),(".toml",".bib",".tsv",".gz")) || continue
+        path=joinpath(dir,file)
+        push!(records,(source="declarations",path=relpath(path,catalog_source_dir()),
+            sha256=bytes2hex(open(SHA.sha256,path)),bytes=filesize(path)))
+    end
+    sort!(records;by=row->(row.source,row.path))
+end
+
+_inputs_digest(records) = bytes2hex(SHA.sha256(join([string(row.source,':',row.path,':',row.sha256,':',row.bytes)
+    for row in sort(records;by=row->(row.source,row.path))],"\n")))
+
+"""Rewrite the catalog in a fixed table/key order and bind current declared inputs.
+
+Runtime publication uses the same canonical writer as a clean source rebuild.
+Proof history and local indexes are outside this file. Close catalog handles and
+hold the publication lease before replacing it.
+"""
+function finalize_catalog!(path;refresh_inputs=true)
+    input=load_catalog(path);output=path*".canonical"
+    meta=only(NamedTuple(row) for row in DBInterface.execute(input,"SELECT * FROM schema_meta"))
+    records=refresh_inputs ? vcat(_declaration_inputs(),[NamedTuple(row) for row in DBInterface.execute(input,"SELECT * FROM source_inputs WHERE source!='declarations'")]) : NamedTuple[]
+    digest=refresh_inputs ? _inputs_digest(records) : meta.inputs_sha256
+    target=create_catalog(output;bfa_version=meta.bfa_version,inputs_sha256=digest,
+        implementation_sha256=meta.implementation_sha256)
+    complete=false
+    try
+        tables=[String(row.name) for row in DBInterface.execute(input,
+            "SELECT name FROM sqlite_master WHERE type='table' AND name!='schema_meta' ORDER BY name")]
+        SQLite.transaction(target) do
+            for table in tables
+                if refresh_inputs && table=="source_inputs"
+                    for record in sort(records;by=row->(row.source,row.path))
+                        SQLite.execute(target,"INSERT INTO source_inputs VALUES(?,?,?,?)",Tuple(record))
+                    end
+                    continue
+                end
+                fields=[NamedTuple(row) for row in DBInterface.execute(input,"PRAGMA table_info($table)")]
+                keys=sort(filter(field->field.pk>0,fields);by=field->field.pk)
+                order=join([field.name for field in (isempty(keys) ? fields : keys)],",")
+                statement=DBInterface.prepare(target,"INSERT INTO $table VALUES("*join(fill("?",length(fields)),",")*")")
+                try
+                    # Dataset identity is its name. Assign descriptor IDs by name so
+                    # publication and a clean rebuild produce the same physical rows.
+                    table=="bulk_corpora" && (order="name")
+                    for (id,row) in enumerate(DBInterface.execute(input,"SELECT * FROM $table ORDER BY $order"))
+                        values=NamedTuple(row)
+                        table=="bulk_corpora" && (values=merge(values,(;id)))
+                        DBInterface.execute(statement,Tuple(values))
+                    end
+                finally
+                    DBInterface.close!(statement)
+                end
+            end
+        end
+        complete=true
+    finally
+        close(target);close(input)
+        complete || rm(output;force=true)
+    end
+    mv(output,path;force=true)
+    nothing
+end

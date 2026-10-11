@@ -393,45 +393,29 @@ is_novel(F::SBox; index::Union{Nothing,SQLite.DB} = nothing,
          catalog::Union{Nothing,SQLite.DB} = nothing) =
     classify_ccz(F; index = index, catalog = catalog)[1] === :new
 
-# --- equivalence_classes population (functions-table reps) ------------------
+# Curated classes are derived evidence, outside the tracked catalog.
+const _CURATED_CLASSES_DDL = (
+    "CREATE TABLE IF NOT EXISTS equivalence_classes(id INTEGER PRIMARY KEY,kind TEXT NOT NULL,n INTEGER NOT NULL,canonical_id INTEGER NOT NULL,discriminator TEXT)",
+    "CREATE TABLE IF NOT EXISTS class_members(class_id INTEGER NOT NULL,function_id INTEGER NOT NULL,strategy TEXT NOT NULL,PRIMARY KEY(class_id,function_id,strategy))",
+    "CREATE TABLE IF NOT EXISTS curated_class_meta(inputs_sha256 TEXT NOT NULL,solver_sha256 TEXT NOT NULL)")
 
-"""
-    populate_ccz_equivalence_classes!(db) -> Int
+function _curated_inputs_digest(db)
+    bytes2hex(SHA.sha256(join([string(row.id,':',row.n,':',row.lut_sha256) for row in
+        DBInterface.execute(db,"SELECT id,n,lut_sha256 FROM functions WHERE is_apn=1 AND is_quadratic=1 ORDER BY id")],"\n")))
+end
 
-Record the CCZ classes of the `is_quadratic` APN `functions` rows into
-`equivalence_classes` (kind `"CCZ"`, `canonical_id` = lowest member id) with all
-members in `class_members` (strategy `"ortho-derivative-sigma-confirmed"`).
-Returns the number of classes written.
+"""Path to regenerable curated class evidence."""
+curated_classes_path() = joinpath(catalog_data_dir(),"curated_classes.sqlite")
 
-σ is used to **bucket**, not to decide. A σ collision does not imply
-CCZ-equivalence — Gold `x³`/`x⁵` over `F₂⁵` and `x³`/`x⁹` over `F₂⁷` each share a
-σ while being CCZ-inequivalent — so a σ bucket may need splitting. The complete
-decision for quadratic APN is `VBF.ea_mappings_from_ortho_derivative` (non-empty
-iff EA-equivalent; EA = CCZ here by Yoshiara), but *confirming* an equivalent
-n=8 pair with it costs ~5 minutes, and the catalog has dozens of such pairs.
+"""Populate derived curated classes: EA-confirm n <= 7; label larger sigma buckets unconfirmed."""
+function populate_ccz_equivalence_classes!(db::SQLite.DB;path=curated_classes_path())
+    mkpath(dirname(path))
+    idx=SQLite.DB(path)
+    try
+        for sql in _CURATED_CLASSES_DDL
+            SQLite.execute(idx,sql)
+        end
 
-The known σ-collisions of CCZ-**inequivalent** functions are the Gold-exponent
-pairs at **odd** n, where the EA test is cheap; at n=8 those pairs have distinct
-σ, and σ is the complete invariant the literature uses to enumerate n=8
-quadratic APN. So this function **EA-confirms buckets at n ≤ 7** (splitting the
-real collisions) and **σ-groups n ≥ 8** directly, recording the two provenances
-in `class_members.strategy`:
-
-  * `"ortho-derivative-sigma-confirmed"` — EA-confirmed (n ≤ 7).
-  * `"ortho-derivative-sigma"` — σ-grouped, not yet EA-confirmed (n ≥ 8). A
-    native confirmation tool can upgrade these; the label keeps the provenance
-    honest meanwhile.
-
-Buckets of size 1 need no work: σ-mismatch against everything else is already a
-certificate. Grouping on σ alone at *all* n (as an earlier version did) silently
-merged the odd-n Gold pairs into single classes.
-"""
-function populate_ccz_equivalence_classes!(db::SQLite.DB)
-    SQLite.execute(db, "DELETE FROM class_members WHERE strategy IN (" *
-        _sql_quote(_SIGMA_STRATEGY) * ", " * _sql_quote(_SIGMA_STRATEGY_CONFIRMED) * ")")
-    SQLite.execute(db, "DELETE FROM equivalence_classes WHERE kind = 'CCZ'")
-
-    # 1) bucket by (n, σ) — a necessary condition, cheap
     buckets = Dict{Tuple{Int,String},Vector{Int}}()
     sboxes = Dict{Int,Any}()
     for r in DBInterface.execute(
@@ -442,58 +426,18 @@ function populate_ccz_equivalence_classes!(db::SQLite.DB)
         push!(get!(buckets, (n, sigma_hash(s)), Int[]), id)
     end
 
-    # 2) split each multi-member bucket into true CCZ classes.
-    #    The EA decision dominates the cost: finding the maps for an *equivalent*
-    #    n=8 pair takes ~4 minutes. Classifying a bucket sequentially (compare each
-    #    member against the running class reps) serialises those calls on one
-    #    thread, so a single big n=8 bucket becomes a ~40-min long pole no matter
-    #    how the buckets are scheduled across cores.
-    #
-    #    Instead, flatten EVERY within-bucket pair (i<j) across ALL buckets into
-    #    one pool of independent comparisons and run them together. EA-equivalence
-    #    is transitive within a σ-bucket, so the true partition is the connected
-    #    components of the "equivalent" graph (union-find) — which the full set of
-    #    pairwise answers determines exactly. A heavy bucket's pairs now interleave
-    #    with every other bucket's, so no bucket serialises; wall-time is bounded by
-    #    (total_pairs / cores) × per-comparison, not by the largest bucket. Singletons
-    #    need no comparison (σ-mismatch against everything else already certifies the
-    #    class). DB writes stay on this thread — SQLite is not reentrant here.
-    #    Round-based rep comparison, minimal calls, maximally parallel. In each
-    #    round every still-unassigned member of every bucket is compared against
-    #    its bucket's current representative — these are all INDEPENDENT, so they
-    #    flatten across buckets into one pool run in parallel. Members equivalent
-    #    to the rep join its class; the rest go to the next round under a new rep.
-    #    A single-class bucket resolves in ONE round of (k-1) comparisons; only a
-    #    genuinely splitting bucket (the Gold pairs) needs a second round. This
-    #    does the *minimum* number of the ~4-min n=8 EA calls (k-1, not the
-    #    k(k-1)/2 of all-pairs) and runs them all at once. Singletons need no call
-    #    (σ-mismatch against everything else already certifies the class). DB
-    #    writes stay on this thread — SQLite is not reentrant here.
-    # Cost split by dimension. The EA decision is fast to REFUTE (~1 s) but slow
-    # to CONFIRM an equivalent pair (~5 min at n=8, and Γ-rank is guarded above
-    # n=7). The only known σ-collisions of CCZ-INEQUIVALENT functions are the
-    # Gold-exponent pairs at odd n (x³/x⁵ at n=5, x³/x⁹ at n=7) — where the EA
-    # test is cheap. At n=8 those same Gold pairs have DISTINCT σ, and σ is the
-    # complete invariant the literature uses to enumerate n=8 quadratic APN
-    # (Beierle–Leander). So: EA-confirm the cheap small buckets (n ≤ CONFIRM_MAX,
-    # catching the real splits), and σ-group the rest, recorded under the
-    # *unconfirmed* strategy label so the provenance is honest and the C
-    # confirmation tool can upgrade them later.
     CONFIRM_MAX = 7
-    bkeys = collect(keys(buckets))
+    bkeys = sort!(collect(keys(buckets)))
     confirm_idx = [bi for (bi, (n, _)) in enumerate(bkeys) if n <= CONFIRM_MAX]
     sigmagroup_idx = [bi for (bi, (n, _)) in enumerate(bkeys) if n > CONFIRM_MAX]
     classes_of = [Vector{Vector{Int}}() for _ in bkeys]   # finalized classes per bucket
     strat_of = fill(_SIGMA_STRATEGY_CONFIRMED, length(bkeys))
-    # σ-group the large-dimension buckets outright (one class each), unconfirmed label
     for bi in sigmagroup_idx
         classes_of[bi] = [sort(buckets[bkeys[bi]])]
         strat_of[bi] = _SIGMA_STRATEGY
     end
-    # EA-confirm only the small buckets
     pending = [bi in confirm_idx ? sort(buckets[bkeys[bi]]) : Int[] for bi in eachindex(bkeys)]
     while any(!isempty, pending)
-        # finalize singletons; collect (bucket, member) comparison jobs vs pending[bi][1]
         jobs = Tuple{Int,Int}[]
         for bi in eachindex(pending)
             p = pending[bi]
@@ -506,11 +450,6 @@ function populate_ccz_equivalence_classes!(db::SQLite.DB)
         isempty(jobs) && break
         reps = [pending[bi][1] for (bi, _) in jobs]          # snapshot reps before any mutation
         res = Vector{Bool}(undef, length(jobs))
-        # Confirming an *equivalent* n=8 pair via ea_mappings is ~5 min and
-        # allocates heavily, so running too many at once GC-thrashes (an 80-min
-        # blow-up at 16-wide). Byte-identical LUTs are equivalent for free — take
-        # that shortcut first — and cap the residual ea_mappings concurrency so
-        # each runs at native speed.
         sem = Base.Semaphore(max(1, min(Threads.nthreads(), 6)))
         let tasks = map(eachindex(jobs)) do t
                 m = jobs[t][2]; rep = reps[t]
@@ -540,21 +479,53 @@ function populate_ccz_equivalence_classes!(db::SQLite.DB)
     splits = classes_of
 
     nclasses = 0
+    SQLite.transaction(idx) do
+    SQLite.execute(idx, "DELETE FROM class_members WHERE strategy IN (" *
+        _sql_quote(_SIGMA_STRATEGY) * ", " * _sql_quote(_SIGMA_STRATEGY_CONFIRMED) * ")")
+    SQLite.execute(idx, "DELETE FROM equivalence_classes WHERE kind = 'CCZ'")
+
     for (bi, (n, h)) in enumerate(bkeys)
         for cls in splits[bi]
             canon = cls[1]
-            SQLite.execute(db, string(
+            SQLite.execute(idx, string(
                 "INSERT INTO equivalence_classes (kind, n, canonical_id, discriminator) VALUES (",
                 "'CCZ', ", n, ", ", canon, ", ", _sql_quote(h), ")"))
             cid = 0
-            for rr in DBInterface.execute(db, "SELECT last_insert_rowid() id"); cid = Int(rr.id); end
+            for rr in DBInterface.execute(idx, "SELECT last_insert_rowid() id"); cid = Int(rr.id); end
             for fid in cls
-                SQLite.execute(db, string(
+                SQLite.execute(idx, string(
                     "INSERT INTO class_members (class_id, function_id, strategy) VALUES (",
                     cid, ", ", fid, ", ", _sql_quote(strat_of[bi]), ")"))
             end
             nclasses += 1
         end
     end
+    SQLite.execute(idx,"DELETE FROM curated_class_meta")
+    SQLite.execute(idx,"INSERT INTO curated_class_meta VALUES(?,?)",(_curated_inputs_digest(db),equivalence_solver_fingerprint()))
+    end
     nclasses
+    finally
+        close(idx)
+    end
+end
+
+"""Read confirmed curated class representatives, refusing absent or stale evidence."""
+function ccz_class_representatives(db::SQLite.DB;n::Integer,path=curated_classes_path())
+    isfile(path) || error("missing class evidence; run make -C packages/VBFCatalog/src/import classes")
+    idx=SQLite.DB("file:"*abspath(path)*"?mode=ro")
+    try
+        exists=only(Int(row.c) for row in DBInterface.execute(idx,"SELECT COUNT(*) c FROM sqlite_master WHERE name='curated_class_meta'"))
+        exists==1 || error("missing class evidence; run the catalog classes command")
+        rows=[NamedTuple(row) for row in DBInterface.execute(idx,"SELECT * FROM curated_class_meta")]
+        length(rows)==1 || error("incomplete class evidence")
+        meta=only(rows)
+        meta.inputs_sha256==_curated_inputs_digest(db) && meta.solver_sha256==equivalence_solver_fingerprint() || error("stale class evidence; rebuild catalog classes")
+        ids=[Int(row.canonical_id) for row in DBInterface.execute(idx,
+            "SELECT e.canonical_id FROM equivalence_classes e WHERE e.n=? AND NOT EXISTS(SELECT 1 FROM class_members m WHERE m.class_id=e.id AND m.strategy!=?) ORDER BY e.canonical_id",
+            (n,_SIGMA_STRATEGY_CONFIRMED))]
+        n>7 && any(row->true,DBInterface.execute(db,"SELECT 1 FROM functions WHERE n=? AND is_apn=1 AND is_quadratic=1 LIMIT 1",(n,))) && error("large-dimension signature buckets are not confirmed classes")
+        [(id=id,sbox=load_sbox(db,id)) for id in ids]
+    finally
+        close(idx)
+    end
 end
