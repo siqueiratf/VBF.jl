@@ -270,7 +270,7 @@ function build()
     %   packages/VBFRepro/src/<id>/input/*.tex     (the publication, PDF-converted)
     %   packages/VBFRepro/src/<id>/README.md       (the reproduction review)
     %   packages/VBFCatalog/src/data/bibliography.bib
-    %   packages/VBFCatalog/src/data/catalog.sqlite  (bulk_corpora, functions)
+    %   .cache/vbfcatalog/catalog.sqlite  (bulk_corpora, functions)
     % Regenerate with:  julia --project=. packages/VBFWorkingPaper/src/analysis/reproductions/grades.jl
     """
 

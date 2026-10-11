@@ -29,7 +29,7 @@ If **any** file under these paths is in the commit — staged, modified, or
 untracked:
 
 ```
-packages/VBFCatalog/src/     packages/VBFCatalog/src/data/catalog.sqlite
+packages/VBFCatalog/src/     packages/VBFCatalog/Project.toml
 ```
 
 then, before staging anything, run:
@@ -38,21 +38,15 @@ then, before staging anything, run:
 make -C packages/VBFCatalog/src/import check
 ```
 
-This must end in `catalog-check: OK`. It verifies that `packages/VBFCatalog/src/data/` and the
-committed `data/catalog.sqlite` still agree and then runs the catalog test items.
+This must end in `catalog-check: OK`. It verifies tracked declarations against
+an ignored generated database, checks its implementation/toolchain digests and
+runs the catalog tests.
 
-- **Non-zero exit → do NOT commit.** Report the script's output verbatim and
-  stop. The usual cause is a `packages/VBFCatalog/src/data/` edit whose catalog rebuild was
-  forgotten: the DB is a tracked build product, and the catalog tests
-  reconstruct their expected counts from the TOMLs and compare them against it.
-  The fix is `make -C packages/VBFCatalog/src/import catalog` plus
-  `git add packages/VBFCatalog/src/data/catalog.sqlite`, and that is the fixer's job,
-  not yours.
-- **Never** set `VBF_SKIP_CATALOG_CHECK` or `VBF_SKIP_CATALOG_TESTS` to get past
-  it. If Julia is missing so the test items cannot run, halt and report that —
-  do not commit a catalog change you could not verify.
-- A catalog change and its rebuilt `data/catalog.sqlite` belong in the **same
-  commit**. Never split them: every commit in between fails CI.
+- **Non-zero exit → do NOT commit.** Report the failure. The fixer must rebuild
+  with `make -C packages/VBFCatalog/src/import catalog` and pass the gate.
+- Never set skip variables or bypass hooks to commit an unverified change.
+- Commit source inputs and code together. Generated SQLite stays ignored; CI
+  rebuilds it and supplies a catalog artifact to consumer jobs.
 
 ## Commit strategy: one fix = one commit
 

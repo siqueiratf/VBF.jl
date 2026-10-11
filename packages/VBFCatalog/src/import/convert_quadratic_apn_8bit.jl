@@ -12,13 +12,13 @@ function family_luts(entry,root)
     reader=="literal8" ? filter(l->length(l)==256,luts) : luts
 end
 
-"""Normalize quadratic corpora declared in data/corpora.toml, using VBF mathematics."""
+"""Normalize quadratic corpora declared in data/sources.toml, using VBF mathematics."""
 function main(;names=nothing)
     with_source("quadratic_apn_8bit") do root
         n=8; modulus=conway_polynomial(n); powtab=monomial_power_table(n,modulus)
         db=load_catalog()
         try
-            for entry in TOML.parsefile(joinpath(VBFCatalog.catalog_source_dir(),"corpora.toml"))["corpus"]
+            for entry in TOML.parsefile(joinpath(VBFCatalog.catalog_source_dir(),"sources.toml"))["corpus"]
                 names===nothing || entry["name"] in names || continue
                 entry["source"]=="quadratic_apn_8bit" || continue
                 if entry["reader"] in ("lut_tsv","quadratic_coeffs")

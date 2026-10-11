@@ -1,7 +1,6 @@
-using VBF, VBFCatalog, SQLite, DBInterface
+using VBF, VBFCatalog
 include("load_sources.jl")
 include("readers.jl")
-include("cache.jl")
 
 """Normalize the pinned Beierle et al. (2025) decimal LUT dataset with VBF.
 
@@ -45,15 +44,9 @@ function main()
         encodings=stream_members(path)
         entry=corpus_entry("beierle2025_n8")
         length(encodings)==entry["count"] || error("published corpus count mismatch")
-        db=load_catalog()
-        try
-            store=build_corpus_store!(entry["name"],encodings;external=true)
-            VBFCatalog._register_declared_corpus!(db,entry,store;
-                source_repo="zenodo:16752428#sha256="*_bfa_source_config("beierle2025")["sha256"])
-            record_import!(db,entry["name"],path)
-        finally
-            close(db)
-        end
+        store=build_corpus_store!(entry["name"],encodings;external=true)
+        store.sha256==entry["packed_sha256"] || error("published coefficient digest mismatch")
+        @info "Installed external members" name=entry["name"] count=store.count path=store.path
     end
 end
 

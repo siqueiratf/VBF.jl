@@ -1,6 +1,6 @@
 using VBF
 # Implements the hyperplane-neighbour graph experiments (HYPERPLANE.md, Sections 5 and 6)
-# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census/theory)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFSearch/data/research/archive/census/theory)
 # Source: HYPERPLANE.md; Taniguchi, Polujan, Pott, Arshad (2025), Theorem 3.5
 #
 # Math:

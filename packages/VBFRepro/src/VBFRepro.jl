@@ -28,8 +28,8 @@ function paper_path(id::AbstractString; root=papers_root())
     return only(matches).path
 end
 
-"""Shared reproduction-to-citation declarations owned by VBFCatalog."""
-publications_path() = joinpath(repo_root(), "packages", "VBFCatalog", "src", "data", "publications.toml")
+"""Reproduction-to-citation declarations kept with the paper runner."""
+publications_path() = joinpath(@__DIR__, "publications.toml")
 """Bibliography identity of a reproduction, or `nothing` for an unregistered slug."""
 paper_bib_key(id::AbstractString) = get(TOML.parsefile(publications_path()), String(id), nothing)
 
@@ -80,7 +80,7 @@ function _input_hashes(paper, project)
             append!(paths, joinpath.(dir, files))
         end
     end
-    catalog = joinpath(project, "packages", "VBFCatalog", "src", "data", "catalog.sqlite")
+    catalog = get(ENV,"BFA_CATALOG_PATH",joinpath(get(ENV,"BFA_DATA_DIR",joinpath(project,".cache","vbfcatalog")),"catalog.sqlite"))
     isfile(catalog) && push!(paths, catalog)
     return Dict(relpath(path, project) => open(io -> bytes2hex(sha256(io)), path)
                 for path in sort!(unique(paths)))

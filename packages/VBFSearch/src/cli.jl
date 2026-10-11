@@ -50,7 +50,7 @@ Defaults: method v5, duration 8h, one worker. Optional search settings:
   --slice 60s --evaluations 10000 --ea-representatives 0 --orbit-duration 30s
 
 Reference defaults to VBFCatalog's own signature index. Discover writes under
-packages/VBFCatalog/data/search/SLUG. Published corpora remain reference-scoped;
+packages/VBFSearch/data/search/SLUG. Published corpora remain reference-scoped;
 matching signatures are not promoted as new classes.
 VBF_APN_REFERENCE and VBF_APN_SUPPLEMENT can override these paths.
 Corpus absence is scoped evidence; literature-wide novelty remains unresolved.
@@ -127,13 +127,12 @@ function main(args=ARGS)
         isempty(pos) && haskey(cfg,"name") || error("discover needs --name SLUG")
         name=pop!(cfg,"name")
         occursin(r"^[a-z][a-z0-9_-]*$",name) || error("use a lowercase corpus slug")
-        get!(cfg,"output",joinpath(VBFSearch.VBFCatalog.catalog_data_dir(),"search",name))
+        get!(cfg,"output",joinpath(VBFSearch.search_data_dir(),"search",name))
         forwarded=String[]
         for (k,v) in cfg;append!(forwarded,["--"*k,v]);end
         for path in repeated["input"];append!(forwarded,["--input",path]);end
         for corpus in repeated["corpus"];append!(forwarded,["--corpus",corpus]);end
         config=search_configuration("search",forwarded)
-        startswith(abspath(config.output),VBFSearch.VBFCatalog.catalog_data_dir()*"/") || error("discover output must be inside the catalog data directory")
         launch(config)
         println(VBFSearch.publish(config.output;name))
     elseif command=="publish"

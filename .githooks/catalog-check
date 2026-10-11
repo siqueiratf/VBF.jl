@@ -17,11 +17,11 @@ esac
 ROOT="$(git rev-parse --show-toplevel)" || exit 2
 cd "$ROOT" || exit 2
 
-DB="packages/VBFCatalog/src/data/catalog.sqlite"
+DB="${BFA_CATALOG_PATH:-${BFA_DATA_DIR:-.cache/vbfcatalog}/catalog.sqlite}"
 
 # Paths whose change can desync the catalog. Keep in sync with the CI job and
 # with the rule in AGENTS.md.
-WATCHED=("packages/VBFCatalog/src/")
+WATCHED=("packages/VBFCatalog/src/" "packages/VBFCatalog/Project.toml")
 
 # One source of truth for the watched set: the CI job, the pre-commit hook and
 # .githooks/claude-commit-guard all read it from here rather than restating it.
@@ -84,7 +84,7 @@ fi
 
 # Every test item whose expectations depend on catalog contents. Adding a
 # catalog-reading test item? Add it here.
-TESTS="${VBF_CATALOG_TESTS:-catalog_content|catalog_queries|catalog_schema|apn_catalog|apn_reps_catalog|literature_sboxes|simonberg_catalog|corpus|sigma_coverage|apn_monomial_form|reference_snapshot|reference_snapshot_catalog|signature_summary|catalog_import|catalog_storage|equivalence_checks|corpus_classification|catalog_reproducibility|curated_classes}"
+TESTS="${VBF_CATALOG_TESTS:-catalog_content|catalog_queries|catalog_schema|apn_catalog|apn_reps_catalog|literature_sboxes|simonberg_catalog|corpus|sigma_coverage|apn_monomial_form|signature_summary|catalog_storage|catalog_reproducibility}"
 
 if [[ "${VBF_SKIP_CATALOG_TESTS:-}" == "1" ]]; then
     red "catalog-check: test items SKIPPED via VBF_SKIP_CATALOG_TESTS=1."

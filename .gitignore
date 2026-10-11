@@ -60,20 +60,17 @@ CLAUDE.md
 !.claude/settings.json
 
 # Downloaded catalog originals, import receipts and derived stores.
-packages/VBFCatalog/data/**
+/.cache/**
 
 # Rebuild inputs and the deterministic catalog live with the package source.
 packages/VBFCatalog/src/data/*.sqlite*
-!packages/VBFCatalog/src/data/catalog.sqlite
 !packages/VBFCatalog/src/data/luts/*.gz
 
 # Package-owned generated evidence; preserve directory traversal for READMEs.
-!packages/VBFCatalog/data/research/
-!packages/VBFCatalog/data/research/**/
-!packages/VBFCatalog/data/search/
-!packages/VBFCatalog/data/search/**/
-!packages/VBFCatalog/data/search/*/parents.tsv
-!packages/VBFCatalog/data/search/*/replay.toml
+packages/VBFSearch/data/**
+!packages/VBFSearch/data/**/
+!packages/VBFSearch/data/search/*/parents.tsv
+!packages/VBFSearch/data/search/*/replay.toml
 packages/VBFRepro/src/results/**
 !packages/VBFRepro/src/results/**/
 packages/VBFWorkingPaper/doc/generated/**

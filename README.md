@@ -34,8 +34,8 @@ Run from the repository root:
 ```sh
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 bin/vbf discover --name experiment01 --duration 8h --threads 30
-bin/vbf status packages/VBFCatalog/data/search/experiment01
-bin/vbf resume packages/VBFCatalog/data/search/experiment01 --duration 8h --threads 30
+bin/vbf status packages/VBFSearch/data/search/experiment01
+bin/vbf resume packages/VBFSearch/data/search/experiment01 --duration 8h --threads 30
 ```
 
 The default construction is checkpointed V5 extension of quadratic eight-bit
@@ -44,7 +44,7 @@ parent plan. Discoveries are not automatically promoted to parents in that run.
 Corpus absence is scoped evidence, not a literature-wide novelty guarantee.
 Use `--corpus legacy20261009_n8 --parents 1000` to continue from the recovered
 discovery corpus; `--seed` makes selection repeatable. The
-[historical replay recipe](packages/VBFCatalog/data/search/legacy20261009/replay.toml)
+[historical replay recipe](packages/VBFSearch/data/search/legacy20261009/replay.toml)
 supplies the exact recovered 11,405-parent construction plan.
 `discover` registers one verified representative per separating signature in
 VBFCatalog. For repeated stop/resume cycles before registration, use `search`,
@@ -55,5 +55,5 @@ source set. All package evidence has an owner; there is no root `data/` tree.
 validation, equivalence checks and publication exports. `bin/vbf help` lists
 all commands. Run `make -C docs serve` to use the
 [evidence inspector](docs/src/inspector.md) alongside the API documentation
-and browse saved experiments. Historical data is preserved under `packages/VBFCatalog/data/research/archive/`;
+and browse saved experiments. Historical data is preserved under `packages/VBFSearch/data/research/archive/`;
 the [Search guide](packages/VBFSearch/README.md) documents checkpointing and mathematical guarantees.

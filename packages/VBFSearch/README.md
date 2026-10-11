@@ -16,10 +16,10 @@ Instantiate the root Julia >=1.12 project and prepare
 [VBFCatalog and its signature index](../VBFCatalog/README.md), then run:
 
 ```sh
-bin/vbf search --output packages/VBFCatalog/data/search/experiment01 --duration 8h --threads 30
-bin/vbf status packages/VBFCatalog/data/search/experiment01
-bin/vbf stop packages/VBFCatalog/data/search/experiment01
-bin/vbf resume packages/VBFCatalog/data/search/experiment01 --duration 8h --threads 30
+bin/vbf search --output packages/VBFSearch/data/search/experiment01 --duration 8h --threads 30
+bin/vbf status packages/VBFSearch/data/search/experiment01
+bin/vbf stop packages/VBFSearch/data/search/experiment01
+bin/vbf resume packages/VBFSearch/data/search/experiment01 --duration 8h --threads 30
 ```
 
 The default method is V5 Fourier extension; `--method switching` selects switching.
@@ -57,13 +57,13 @@ persists quotient bases and every nonzero combination; `--slice 60s --evaluation
 ## Validation and mathematical scope
 
 ```sh
-bin/vbf validate --input candidates.tsv --output packages/VBFCatalog/data/search/import01
-bin/vbf audit packages/VBFCatalog/data/search/experiment01
-bin/vbf classify packages/VBFCatalog/data/search/experiment01 --duration 30s --nodes 1000000
+bin/vbf validate --input candidates.tsv --output packages/VBFSearch/data/search/import01
+bin/vbf audit packages/VBFSearch/data/search/experiment01
+bin/vbf classify packages/VBFSearch/data/search/experiment01 --duration 30s --nodes 1000000
 bin/vbf compare --candidate HEX --target HEX --relation ccz \
   --duration 60s --nodes 1000000 --output comparison.toml
 bin/vbf verify comparison.toml
-bin/vbf report packages/VBFCatalog/data/search/experiment01
+bin/vbf report packages/VBFSearch/data/search/experiment01
 ```
 
 Candidate properties use VBF's differential spectrum, algebraic degree,
@@ -108,12 +108,12 @@ and LaTeX counts. Figures are downstream WorkingPaper output:
 
 ```sh
 julia --project=packages/VBFWorkingPaper \
-  packages/VBFWorkingPaper/src/search_figures.jl packages/VBFCatalog/data/search/experiment01
+  packages/VBFWorkingPaper/src/search_figures.jl packages/VBFSearch/data/search/experiment01
 ```
 
 ```julia
 using VBF, VBFSearch
-config = SearchConfig(output="packages/VBFCatalog/data/search/run01", method=:v5,
+config = SearchConfig(output="packages/VBFSearch/data/search/run01", method=:v5,
                       duration=8*3600, workers=30)
 search(config) # start Julia with --threads=30
 resume(config.output; duration=8*3600, workers=30)
@@ -130,11 +130,11 @@ snapshot = report_snapshot(config.output)
 bin/vbf discover --name b52-next --corpus legacy20261009_n8 --parents 1000 \
     --method v5 --target-b6 52 --bent max \
     --duration 8h --threads 30 --chunk-size 32768
-# Or register the current snapshot of a stopped, catalog-local run.
-bin/vbf publish packages/VBFCatalog/data/search/experiment01 --name experiment01_n8
+# Or register the current snapshot of a stopped, stopped run.
+bin/vbf publish packages/VBFSearch/data/search/experiment01 --name experiment01_n8
 # Repeat the recovered 11,405-parent plan, using the current catalog baseline.
 bin/vbf discover --name b52-replay --method v5 --target-b6 52 --bent max \
-    --input packages/VBFCatalog/data/search/legacy20261009/parents.tsv \
+    --input packages/VBFSearch/data/search/legacy20261009/parents.tsv \
     --parents 11405 --seed 82026 --duration 8h --threads 30 --chunk-size 32768
 ```
 
@@ -167,7 +167,7 @@ The historical 110,868-signature union accounts for most of these; later runs ad
 141. The public reference first gained the 546 missing May 2025 signatures and
 the Galissant slide LUT that had previously lived in a separate supplement.
 The full inputs and validation evidence remain under
-`packages/VBFCatalog/data/search/legacy20261009/validated/`.
+`packages/VBFSearch/data/search/legacy20261009/validated/`.
 
 The old search recursively promoted discoveries and pruned by histogram keys.
 The recovered plan fixes its 11,405 completed parents and uses the tested VBF
@@ -185,3 +185,16 @@ cover checkpointing, resume, configuration, classification, evidence and exports
 the full internet corpus is not required. Two include adapters under
 `src/verification/` serve existing catalog rebuild callers; they delegate all
 mathematics to VBF and can disappear when those callers move to catalog APIs.
+
+## Reference evidence and corpus classification
+
+`src/reference/` owns digest-bound reference snapshots, equivalence checks and
+signature-bucket classification. These workflows use catalog records and VBF
+solvers; they do not write curated function definitions. The
+[tool commands](tools/README.md) build or resume the derived evidence.
+
+`open_reference` checks coverage and freezes a run's comparison scope.
+`reference_metadata`, `reference_contains_signature` and
+`reference_exact_lut_match` expose its documented data. Curated class APIs and
+stored pair-check APIs now belong to VBFSearch. Their files live under `data/`,
+which can be overridden with `VBF_SEARCH_DATA_DIR`.

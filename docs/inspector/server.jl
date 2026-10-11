@@ -1,6 +1,6 @@
 # Implements a local web page that classifies one (8,8)-function against the known
 # quadratic APN CCZ classes and the census list of 553 new classes.
-# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFSearch/data/research/archive/census)
 #
 # Pseudocode:
 #   1. At start: open the sigma index (read only), open the catalog, read the census list.
@@ -30,7 +30,7 @@ const properties = candidate_properties
 
 const WEB_DIR = @__DIR__
 const REPO_ROOT = normpath(joinpath(WEB_DIR,"../.."))
-const STUDY_DIR = joinpath(REPO_ROOT,"packages/VBFCatalog/data/research/archive/census")
+const STUDY_DIR = joinpath(REPO_ROOT,"packages/VBFSearch/data/research/archive/census")
 const CENSUS_TSV = joinpath(STUDY_DIR, "new_classes_553.tsv")
 const PUBLIC_TSV = joinpath(VBFCatalog.catalog_source_dir(),"luts","langevin_may2025_extra.tsv")
 # Other lists of classes that are absent from the index:
@@ -59,7 +59,7 @@ mutable struct State
     rows::Int                                 # rows in the index (n = 8)
     dblock::ReentrantLock                     # SQLite connections are not thread safe
     others::Dict{String,NamedTuple}           # sigma hash -> entry of OTHER_LISTS
-    reference::VBFCatalog.AuditedAPNReference
+    reference::VBFSearch.AuditedAPNReference
 end
 
 """Read the lists of OTHER_LISTS. A header line (first field `sigma_hash` or `sigma`) is skipped;
@@ -389,7 +389,7 @@ function run_ea!(j::EAJob, F, G;relation=:ea,timeout_seconds=30,max_nodes=1_000_
         proof=VBFSearch.compare(F.lut,G.lut;relation,timeout_seconds,max_nodes)
         proof["created_utc"]=string(Dates.now(Dates.UTC))
         proof["algorithm_sha256"]=proof["source_sha256"]
-        dir=joinpath(REPO_ROOT,"packages/VBFCatalog/data/research/runs/web")
+        dir=joinpath(REPO_ROOT,"packages/VBFSearch/data/research/runs/web")
         mkpath(dir)
         open(io->TOML.print(io,proof;sorted=true),joinpath(dir,"comparison_$(time_ns()).toml"),"w")
         if !isempty(RUN_DIRECTORY[])

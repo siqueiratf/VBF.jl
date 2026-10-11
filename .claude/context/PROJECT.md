@@ -15,7 +15,7 @@ packages/VBFCatalog/   data layer: SQLite catalog, bibliography, importers
                         (depends on VBF; VBF must NOT depend on VBFCatalog)
 packages/VBFSearch/    reproducible APN search and candidate evidence
 docs/inspector/        HTTP evidence viewer consuming all three packages
-packages/VBFCatalog/data/research/             reference snapshots, runs, rebuilds and historical data
+packages/VBFSearch/data/research/             reference snapshots, runs, rebuilds and historical data
 packages/VBFRepro/      reproduction runner and standalone publication claims
 packages/VBFWorkingPaper/ manuscript studies, analysis and Overleaf source under doc/
 packages/*/perf/        optional per-package performance workloads
@@ -122,14 +122,14 @@ style/docs). Never skip hooks. Never amend published commits.
 
 `BFA_SBOXU_PATH`, `BFA_THESIS_PATH`, `BFA_BEIERLE2025_PATH` —
 override original-source cache paths for `src/import/` scripts. `BFA_DATA_DIR`
-selects local bulk/index/proof storage under `packages/VBFCatalog/data/`. `BFA_SOURCE_DIR` selects declarations under `src/data/`. Curated entries and small
-compact corpora share `packages/VBFCatalog/src/data/catalog.sqlite`; old measurements live in `packages/VBF/perf/data/`.
+selects catalog cache storage under `.cache/vbfcatalog/`; proof histories belong to VBFSearch. `BFA_SOURCE_DIR` selects declarations under `src/data/`. Generated curated entries and small
+compact corpora share `.cache/vbfcatalog/catalog.sqlite`; old measurements live in `packages/VBF/perf/data/`.
 
 ## Reproducible APN command
 
-APN experiment data lives in `packages/VBFCatalog/data/research/runs/<experiment>/`; inspector pair
-certificates use `packages/VBFCatalog/data/research/runs/web/`. The retired root `search/` tree is removed.
-Its historical class-orbit artifacts live in `packages/VBFCatalog/data/research/archive/class-orbit/`,
+APN experiment data lives in `packages/VBFSearch/data/research/runs/<experiment>/`; inspector pair
+certificates use `packages/VBFSearch/data/research/runs/web/`. The retired root `search/` tree is removed.
+Its historical class-orbit artifacts live in `packages/VBFSearch/data/research/archive/class-orbit/`,
 with the old code preserved in Git history and a local ignored source snapshot.
 
 `bin/vbf` runs the `VBFSearch` package CLI: search/resume/status/stop, validate/audit,
@@ -140,20 +140,22 @@ checkpoints are unsupported. See `packages/VBFSearch/README.md` for the supporte
 
 The root `census/` tree is removed. Pure coefficient-tree, restriction and profile
 math lives in VBF (`QuadraticAPNTree`, `QuadraticRestrictions`, `QuadraticProfiles`).
-Original-source rebuild tools are `packages/VBFCatalog/src/import/reference/`;
+Original-source rebuild tools are `packages/VBFSearch/tools/reference/`;
 literature coverage and study consumers are under `packages/VBFWorkingPaper/src/`.
-Historical data is `packages/VBFCatalog/data/research/archive/census/`; new rebuilds use `packages/VBFCatalog/data/research/rebuilds/`.
+Historical data is `packages/VBFSearch/data/research/archive/census/`; new rebuilds use `packages/VBFSearch/data/research/rebuilds/`.
 See `packages/VBFSearch/README.md` for checkpointing and mathematical guarantees.
 
-The root `data/` is removed. APN archives live in `packages/VBFCatalog/data/research/`,
-new runs in `packages/VBFCatalog/data/search/`, performance evidence in
+The root `data/` is removed. APN archives live in `packages/VBFSearch/data/research/`,
+new runs in `packages/VBFSearch/data/search/`, performance evidence in
 `packages/VBF/perf/data/`, reproductions in `packages/VBFRepro/src/results/`, and
 working-paper exports in `packages/VBFWorkingPaper/doc/generated/`.
 The `legacy20261009_n8` corpus stores 111,009 verified separating signatures
 (110,868 historical plus 141 later), after importing 547 missing public signatures.
 Literature-wide novelty remains unresolved. `bin/vbf discover --name SLUG --corpus
 legacy20261009_n8 --parents 1000 ...` selects deterministic catalog parents and
-registers new separating signatures via the shared immutable TSV importer.
-The tracked `packages/VBFCatalog/data/search/legacy20261009/replay.toml` and
+registers new separating signatures via the shared immutable corpus importer.
+The tracked `packages/VBFSearch/data/search/legacy20261009/replay.toml` and
 `parents.tsv` reproduce the recovered 11,405-parent plan; a bounded pilot matched
 all 25 original child signatures. The full plan has not been replayed.
+
+Catalog sources are tracked; SQLite is generated and ignored. `src/data/sources.toml` owns both source pins and corpus declarations; curated APNs share `src/data/apn.toml`. External large corpus installation is explicit and is not required to build catalog descriptors. VBFRepro owns `src/publications.toml`. VBFSearch owns classification, reference snapshots and pair evidence under `src/reference/` and `data/`.

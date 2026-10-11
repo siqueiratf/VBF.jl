@@ -3,7 +3,7 @@
 using VBF, VBFCatalog, TOML
 import VBFCatalog: SQLite
 include(joinpath(@__DIR__, "helpers.jl"))
-include(joinpath(@__DIR__, "..", "..", "..", "VBFSearch", "src", "verification", "ea_witness.jl"))
+using VBFSearch.DiscoveryEvidence: GraphWitnesses
 const DB_EDELPOTT = "edelpott2009_n8"
 const EXACT_PAIRS = ((:class_a, 18), (:class_b, 5), (:class_c, 3), (:class_d, 4))
 const EXACT_WITNESSES = joinpath(@__DIR__, "test", "fixtures", "edel_pott_ea_witnesses.toml")

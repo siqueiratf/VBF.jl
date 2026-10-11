@@ -1,6 +1,6 @@
 using VBF
 # Implements small-n validation of the estimators against exact masses
-# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFSearch/data/research/archive/census)
 #
 # Math:
 #   For n = 6, 7 the mass M(n) = T(n,n)/|GL(n,2)|^2 = sum 1/|Stab| is known exactly from the

@@ -143,7 +143,7 @@ function archived_n8_proposal_evidence(F,reference_dir::AbstractString)
     try
         r=VBFSearch.open_reference(reference_dir;supplement_path="")
         evidence=VBFSearch.classify(F.lut,r)
-        Dict{String,Any}("status"=>"available","reference"=>VBFCatalog.reference_metadata(r),
+        Dict{String,Any}("status"=>"available","reference"=>VBFSearch.reference_metadata(r),
             "candidate_sha256_uint16_le"=>proposal_lut_sha(F),
             "n8_properties"=>evidence,"literature_novelty_verified"=>false)
     catch error
@@ -184,7 +184,7 @@ All claims name their finite references. Literature completeness is never assert
 """
 function review_catalog_proposals(;timeout_seconds::Real=2,max_nodes::Int=100_000,io::IO=stdout,
         gold_max_evaluations::Int=typemax(Int),gold_timeout_seconds::Real=Inf,
-        n8_reference_dir::AbstractString=get(ENV,"VBF_F063_N8_REFERENCE",joinpath(PROPOSAL_ROOT,"packages/VBFCatalog/data/research/archive/census/results/signature_rebuild")))
+        n8_reference_dir::AbstractString=get(ENV,"VBF_F063_N8_REFERENCE",joinpath(PROPOSAL_ROOT,"packages/VBFSearch/data/research/archive/census/results/signature_rebuild")))
     timeout_seconds>=0 && max_nodes>=0 || throw(ArgumentError("nonnegative equivalence budgets required"))
     catalog_path=joinpath(pkgdir(VBFCatalog),"BFA_catalog.sqlite")
     catalog_digest=bytes2hex(SHA.sha256(read(catalog_path)))

@@ -1,6 +1,9 @@
 """Auditable eight-bit APN properties, corpus comparisons and affine graph certificates."""
 module DiscoveryEvidence
 using VBF, VBFCatalog, SHA, TOML, Dates
+using ..VBFSearch: equivalence_evidence, equivalence_solver_fingerprint, AuditedAPNReference,
+    open_apn_reference, close_apn_reference, reference_metadata,
+    reference_contains_signature, reference_exact_lut_match
 include("verification/ea_witness.jl")
 using .GraphWitnesses
 using ..APNPowerEvidence
@@ -41,7 +44,7 @@ function properties(lut; detailed=false)
     result
 end
 
-const Reference = VBFCatalog.AuditedAPNReference
+const Reference = AuditedAPNReference
 
 """Cover every eight-bit Gold exponent (gcd(k,8)=1), check each representative with VBF."""
 function gold_coverage()
@@ -62,33 +65,33 @@ function open_reference(dir; supplement_path=get(ENV,"VBF_APN_SUPPLEMENT",""),so
         p["apn"] && p["quadratic"] || error("invalid public supplement")
         p["sigma_hash"]
     end
-    r=VBFCatalog.open_apn_reference(dir;supplement_path,supplement_signature=checker,
+    r=open_apn_reference(dir;supplement_path,supplement_signature=checker,
         required_signatures=[p["sigma_hash"] for p in gold],sources)
     r.metadata["gold_coverage"]=gold
     r
 end
 
-close_reference(r) = VBFCatalog.close_apn_reference(r)
+close_reference(r) = close_apn_reference(r)
 
 """A sigma match is a filter; an absent sigma separates only the documented quadratic corpus."""
 function classify(lut,r::Reference; detailed=false)
     p = properties(lut;detailed)
-    p["reference"] = VBFCatalog.reference_metadata(r)
+    p["reference"] = reference_metadata(r)
     if !p["apn"]
         p["evidence_level"] = "not_apn"
     elseif !p["quadratic"]
         p["evidence_level"] = "apn_verified_reference_comparison_unavailable"
     else
         hash = p["sigma_hash"]
-        hit = VBFCatalog.reference_contains_signature(r,hash)
+        hit = reference_contains_signature(r,hash)
         p["evidence_level"] = hit ? "invariant_match_unresolved_equivalence" : "inequivalent_to_documented_quadratic_corpus"
         p["reference_signature_match"] = hit
         p["equivalence"] = "unresolved"
-        gold_match=any(row->row["sigma_hash"]==hash,VBFCatalog.reference_metadata(r)["gold_coverage"])
+        gold_match=any(row->row["sigma_hash"]==hash,reference_metadata(r)["gold_coverage"])
         p["apn_power_function_comparison"]=gold_match ? "unresolved_gold_invariant_match" : "inequivalent_to_all_apn_power_functions"
         p["power_function_justification"]=Dict("theorem"=>"Yoshiara 2016, Theorem 2; quadratic APN CCZ-equivalent to a power APN implies EA-equivalent to a Gold function",
             "doi"=>"10.1007/s10801-016-0680-z","gold_k"=>[1,3,5,7],"gold_invariant_match"=>gold_match)
-        if VBFCatalog.reference_exact_lut_match(r,hash,lut)
+        if reference_exact_lut_match(r,hash,lut)
             p["evidence_level"] = "exact_public_lut_match"
             p["equivalence"] = "identical_public_function"
         end
@@ -98,7 +101,7 @@ end
 
 # Exhaustive negative outcomes are implementation-dependent; cache them only
 # against the exact mathematical solver sources, while positive maps are checked through VBF's graph API.
-solver_fingerprint() = VBFCatalog.equivalence_solver_fingerprint()
+solver_fingerprint() = equivalence_solver_fingerprint()
 
 """Return a checked positive map, a separating invariant, exhaustive negative, or inconclusive budget."""
 function compare(f,g;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000)

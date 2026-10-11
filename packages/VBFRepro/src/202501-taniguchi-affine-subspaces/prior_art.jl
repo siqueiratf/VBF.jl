@@ -2,7 +2,7 @@
 # Replay an explicit EA graph map with a VBF graph-map replay.
 using VBF, VBFCatalog, TOML
 include(joinpath(@__DIR__, "helpers.jl"))
-include(joinpath(@__DIR__, "..", "..", "..", "VBFSearch", "src", "verification", "ea_witness.jl"))
+using VBFSearch.DiscoveryEvidence: GraphWitnesses
 
 function prior_art_witness(; recover::Bool = false, timeout_seconds::Real = 60, max_nodes::Int = 10^6)
     n = 8; m = PAPER_MODULUS_8; alpha = 2

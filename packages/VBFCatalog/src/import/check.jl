@@ -8,13 +8,10 @@ package tests, using VBF's implementations.
 function check_catalog(path=catalog_path(); entries=VBFCatalog.catalog_source_dir())
     errors=String[]
     declared=Dict("APN"=>Dict{String,Any}(), "Literature"=>Dict{String,Any}())
-    for file in sort(readdir(joinpath(entries,"apn");join=true))
-        endswith(file,".toml") || continue
-        for entry in get(TOML.parsefile(file),"apn_functions",[])
-            name=entry["name"]
-            haskey(declared["APN"],name) && push!(errors,"duplicate APN name $name")
-            declared["APN"][name]=entry
-        end
+    for entry in TOML.parsefile(joinpath(entries,"apn.toml"))["apn_functions"]
+        name=entry["name"]
+        haskey(declared["APN"],name) && push!(errors,"duplicate APN name $name")
+        declared["APN"][name]=entry
     end
     for entry in TOML.parsefile(joinpath(entries,"literature_sboxes.toml"))["sboxes"]
         haskey(declared["Literature"],entry["name"]) && push!(errors,"duplicate literature name $(entry["name"])")
@@ -25,6 +22,7 @@ function check_catalog(path=catalog_path(); entries=VBFCatalog.catalog_source_di
         inputs=[NamedTuple(row) for row in DBInterface.execute(db,"SELECT * FROM source_inputs ORDER BY source,path")]
         meta=only(NamedTuple(row) for row in DBInterface.execute(db,"SELECT * FROM schema_meta"))
         VBFCatalog._inputs_digest(inputs)==meta.inputs_sha256 || push!(errors,"build input manifest digest disagrees")
+        VBFCatalog._implementation_digest()==meta.implementation_sha256 || push!(errors,"catalog implementation or toolchain changed since build")
         declarations=filter(row->row.source=="declarations",inputs)
         declarations==VBFCatalog._declaration_inputs() || push!(errors,"catalog declarations changed since build")
         rows=Dict{String,Dict{String,Any}}()
@@ -73,7 +71,7 @@ function check_catalog(path=catalog_path(); entries=VBFCatalog.catalog_source_di
         length(declared["APN"])+length(importer)==scalar("SELECT COUNT(*) c FROM functions WHERE is_apn=1") || push!(errors,"APN count mismatch")
         length(declared["Literature"])==scalar("SELECT COUNT(*) c FROM functions WHERE is_apn=0") || push!(errors,"non-APN count mismatch")
         count(e->get(e,"is_permutation",false),all_entries)+count(r->r.is_permutation==1,importer)==scalar("SELECT COUNT(*) c FROM functions WHERE is_permutation=1") || push!(errors,"permutation count mismatch")
-        corpora=TOML.parsefile(joinpath(entries,"corpora.toml"))["corpus"]
+        corpora=TOML.parsefile(joinpath(entries,"sources.toml"))["corpus"]
         Set(entry["name"] for entry in corpora)==Set(list_corpora(db)) || push!(errors,"declared corpus inventory disagrees")
         for entry in corpora
             info=corpus_info(db,entry["name"])

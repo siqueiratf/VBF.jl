@@ -3,7 +3,7 @@
 
 The curated catalog and data layer for [`VBF`](https://github.com/). Provides:
 
-  - an on-disk SQLite catalog (`src/data/catalog.sqlite`) of literature S-boxes,
+  - a generated SQLite catalog (`.cache/vbfcatalog/catalog.sqlite`) of literature S-boxes,
     declarative APN functions, and imported quadratic-APN CCZ-class
     representatives — content-addressed by LUT SHA-256, with full provenance;
   - query helpers (`list_functions`, `find_function`, `load_sbox`, …);
@@ -18,20 +18,47 @@ module VBFCatalog
 
 using VBF
 
-# Data layer; each file imports the storage deps it needs.
-include("storage/literature.jl")
-include("storage/catalog.jl")
-include("storage/queries.jl")
-include("storage/apn_catalog.jl")
-include("storage/bibliography.jl")
-include("storage/corpus.jl")
-include("storage/records.jl")
-include("storage/equivalence.jl")
-include("storage/sigma.jl")
-include("storage/summary.jl")
-include("storage/classification.jl")
-include("storage/reference.jl")
+include("catalog.jl")
+include("sources.jl")
+include("bibliography.jl")
+include("build.jl")
+include("corpus.jl")
+include("records.jl")
+include("sigma.jl")
 
-include("exports.jl")
+# Public catalog/data API; anything not exported is internal.
+
+# literature S-boxes
+export load_literature_sbox, literature_sbox_names, literature_sbox_metadata
+
+# catalog open / build / content addressing
+export catalog_path, catalog_source_dir, is_catalog_built, load_catalog, create_catalog
+export canonical_lut_bytes, lut_sha256_hex, SCHEMA_VERSION
+export finalize_catalog!
+
+# queries
+export list_functions, count_functions, find_function, load_sbox
+
+# declarative APN catalog
+export apn_catalog_names, apn_catalog_metadata, load_apn_function
+
+# bibliography
+export BibEntry, load_bibliography, parse_bibtex, bibliography_path
+
+# bulk corpora
+export list_corpora, corpus_info, corpus_length, corpus_function
+export corpus_coefficients, corpus_store_path, materialize_corpus_luts
+export build_corpus_store!, register_corpus!
+export catalog_data_dir, with_corpus_rows, corpus_digest
+
+# σ-signature CCZ classification + novelty oracle
+export sigma_key, sigma_hash, build_sigma_index!, classify_ccz, is_novel
+export sigma_index_path
+export refresh_curated_sigma_index!
+
+export signature_summary, signature_count
+export candidate_lut, each_candidate
+export import_lut_corpus!
+export write_corpus_input
 
 end # module VBFCatalog

@@ -1,11 +1,11 @@
 using Test,VBF,TOML,SHA
-using VBFSearch, VBFCatalog
+using VBFSearch, VBFCatalog, SQLite, DBInterface
 using VBFSearch: properties, lut_id, each_candidate, validated_study, Fourier, DiscoveryStore, DiscoveryInputs, DiscoveryEvidence
 using VBFSearch.DiscoveryStore
 
 @testset "Catalog publication preserves frozen reference scope" begin
     mktempdir() do dir
-        withenv("BFA_DATA_DIR"=>dir,"BFA_SOURCE_DIR"=>joinpath(dir,"sources"),"BFA_CATALOG_PATH"=>joinpath(dir,"catalog.sqlite")) do
+        withenv("BFA_DATA_DIR"=>dir,"VBF_SEARCH_DATA_DIR"=>dir,"BFA_SOURCE_DIR"=>joinpath(dir,"sources"),"BFA_CATALOG_PATH"=>joinpath(dir,"catalog.sqlite")) do
             db=VBFCatalog.create_catalog(VBFCatalog.catalog_path())
             try
                 for F in (gold_apn(8),gold_apn(8,3))
@@ -14,10 +14,10 @@ using VBFSearch.DiscoveryStore
                 end
                 VBFCatalog.build_sigma_index!(db;corpora=[])
                 before=VBFSearch.open_reference(dir)
-                metadata=VBFCatalog.reference_metadata(before)
+                metadata=VBFSearch.reference_metadata(before)
                 VBFSearch.close_reference(before)
                 mkpath(VBFCatalog.catalog_source_dir())
-                open(io->TOML.print(io,Dict("corpus"=>[])),joinpath(VBFCatalog.catalog_source_dir(),"corpora.toml"),"w")
+                open(io->TOML.print(io,Dict("corpus"=>[])),joinpath(VBFCatalog.catalog_source_dir(),"sources.toml"),"w")
                 run=joinpath(dir,"search","fixture")
                 store=open_store(run,Dict("test"=>"publication"))
                 new=first(r.sbox for r in taniguchi_apn_representatives(4) if r.new)
@@ -36,11 +36,11 @@ using VBFSearch.DiscoveryStore
                 @test read(VBFCatalog.catalog_path())==catalog_bytes
                 @test again["reused"] && again["accepted_classes"]==1
                 frozen=VBFSearch.open_reference(dir;sources=metadata["sources"])
-                @test VBFCatalog.reference_metadata(frozen)["sha256"]==metadata["sha256"]
-                @test !VBFCatalog.reference_contains_signature(frozen,sigma_hash(new))
+                @test VBFSearch.reference_metadata(frozen)["sha256"]==metadata["sha256"]
+                @test !VBFSearch.reference_contains_signature(frozen,sigma_hash(new))
                 VBFSearch.close_reference(frozen)
                 current=VBFSearch.open_reference(dir)
-                @test VBFCatalog.reference_contains_signature(current,sigma_hash(new))
+                @test VBFSearch.reference_contains_signature(current,sigma_hash(new))
                 VBFSearch.close_reference(current)
                 @test_throws ErrorException publish(run;name="../escape")
                 store=open_store(run,Dict("test"=>"publication");resume=true)
@@ -60,7 +60,7 @@ using VBFSearch.DiscoveryStore
                         VBFCatalog.SQLite.execute(fresh,"INSERT INTO functions(family,n,m,lut_sha256,lut_blob,is_apn,is_permutation,is_quadratic,source_repo,contributor,added_date) VALUES('fixture',8,8,?,?,1,0,1,'fixture','fixture','fixture')",
                             (VBFCatalog.lut_sha256_hex(F),VBFCatalog.canonical_lut_bytes(F)))
                     end
-                    entries=TOML.parsefile(joinpath(VBFCatalog.catalog_source_dir(),"corpora.toml"))["corpus"]
+                    entries=TOML.parsefile(joinpath(VBFCatalog.catalog_source_dir(),"sources.toml"))["corpus"]
                     for entry in reverse(entries)
                         VBFCatalog.import_lut_corpus!(fresh,entry)
                     end
@@ -325,4 +325,13 @@ end
             DiscoveryStore.close_store(store)
         end
     end
+end
+
+for file in sort(readdir(joinpath(@__DIR__,"reference");join=true))
+    endswith(file,"_test.jl") && include(file)
+end
+
+@testset "Original-source reference rebuild" begin
+    script=joinpath(@__DIR__,"reference","rebuild.jl")
+    @test success(`$(Base.julia_cmd()) --startup-file=no --compiled-modules=existing --project=$(dirname(@__DIR__)) $script`)
 end

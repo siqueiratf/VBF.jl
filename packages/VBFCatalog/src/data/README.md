@@ -1,14 +1,21 @@
 # Catalog inputs
 
-This directory owns curated APN definitions (`apn/`), literature and sporadic
-LUTs, bibliography and publication identities, source pins (`sources.toml`),
-dataset declarations (`corpora.toml`) and immutable normalized inputs (`luts/`).
-`catalog.sqlite` is their deterministic generated queryable form.
+Only source inputs live here:
 
-Eight-bit quadratic inputs can be frozen as 37-byte VBF coefficient records in
-gzip streams without timestamps. Declarations bind transport checksums, ordered
-record digests, counts and provenance. Search runs themselves remain local.
+- `sources.toml`: pinned originals, adapter names, corpus counts, checksums and provenance.
+- `apn.toml`: curated APN LUTs or power-function definitions with citations.
+- `literature_sboxes.toml` and `sporadic.toml`: fixed literature definitions.
+- `bibliography.bib`: shared citations.
+- `luts/`: immutable public TSVs and normalized VBFSearch coefficient inputs.
 
-See the [package guide](../../README.md) for rebuilding and checking. Raw
-originals, large downloaded records, signatures, proofs and research evidence
-live under package-level `data/` and are excluded from the tracked catalog.
+An APN entry is a `[[apn_functions]]` block with a unique `name`, `n`, `m`,
+`description`, `bib_key`, `source`, `is_permutation`, and either `lut` or
+`monomial_exponent` (optionally `modulus`). VBF reconstructs and verifies it.
+
+Eight-bit quadratic corpora can use gzip streams of 37-byte VBF coefficients,
+without gzip timestamps. The manifest binds file SHA-256, ordered coefficient
+digest, count and provenance. These bytes reconstruct functions without the
+original run database. Search checkpoints and witnesses remain in VBFSearch.
+
+Generated databases and downloaded originals live in `.cache/vbfcatalog/` outside
+this package. See the [package guide](../../README.md) to rebuild and check.

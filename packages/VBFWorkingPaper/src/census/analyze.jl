@@ -1,5 +1,5 @@
 # Implements the census analysis: mass, sigma-index coverage, N estimates and new sigma
-# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFSearch/data/research/archive/census)
 #
 # Math:
 #   Sample t has weight W_t = exp(lw_t) (0 for -Inf rows); E[W] = T(8,8).

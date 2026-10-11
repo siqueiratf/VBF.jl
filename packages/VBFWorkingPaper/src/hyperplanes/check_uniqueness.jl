@@ -1,5 +1,5 @@
 # Implements the hyperplane-restriction experiment for the e ∈ {0, 2^(n-1)} conjecture
-# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census/theory)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFSearch/data/research/archive/census/theory)
 # Source: Beierle et al. (2025, v2), Theorem 4.1 and Lemma 4.5; UNIQUENESS.md
 #
 # Math:
@@ -26,7 +26,7 @@
 
 
 using VBF
-using VBFCatalog
+using VBFCatalog, VBFSearch
 using Random
 using Printf
 using Base.Threads
@@ -41,7 +41,7 @@ function catalog_reps(n::Int)
     db = VBFCatalog.load_catalog()
     try
         [("catalog_ccz_n$n", rep.id, lut_of(rep.sbox)) for rep in
-            VBFCatalog.ccz_class_representatives(db; n)]
+            VBFSearch.ccz_class_representatives(db; n)]
     finally
         close(db)
     end

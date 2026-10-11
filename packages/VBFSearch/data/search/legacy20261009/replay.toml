@@ -1,0 +1,67 @@
+schema = "vbfsearch-archive-recovery-v1"
+assessment_utc = "2026-10-10"
+records_verified = 114062
+exact_luts = 111835
+pre_registration_public_signatures = 3809038
+registered_separating_signatures = 111009
+earlier_union_signatures = 110868
+later_additional_signatures = 141
+missing_public_signatures_imported = 547
+registered_corpus = "legacy20261009_n8"
+literature_novelty = "unresolved"
+full_plan_replayed = false
+
+[parents]
+file = "parents.tsv"
+sha256 = "caddd7f737cc0637dc89701c55539d536985cff6179c4d910b98ac53fee8c73a"
+count = 11405
+encoding = "boolean-quadratic-coefficients-28bytes"
+selection = "Unique completed historical parent hashes, in completion-ledger order; LUTs recovered from initial seeds and discovered functions."
+legacy_ledger = "../../research/archive/census/search_b52/results/desk1/done.tsv"
+
+[search]
+method = "v5"
+target_b6 = 52
+bent = "max"
+seed = 82026
+chunk_size = 32768
+histogram_pruning = false
+recursive_queue = false
+scope = "Finite V5 extension spaces of the recovered parent list. Neither all eight-bit APNs nor all CCZ classes."
+command = "bin/vbf discover --name b52-replay --input packages/VBFSearch/data/search/legacy20261009/parents.tsv --parents 11405 --method v5 --target-b6 52 --bent max --seed 82026 --chunk-size 32768 --duration 8h --threads 30"
+resume = "bin/vbf resume packages/VBFSearch/data/search/b52-replay --duration 8h --threads 30"
+publish_increment = "bin/vbf publish packages/VBFSearch/data/search/b52-replay --name b52-replay-epoch2"
+
+[pilot]
+parents = 1
+seconds = 30.4466
+units_completed = 3
+exact_luts = 27
+distinct_signatures = 26
+historical_child_signatures = 25
+matching_historical_child_signatures = 25
+missing_historical_child_signatures = 0
+plan_exhausted = true
+note = "Before archive registration, eight signatures including the parent were absent from the public baseline. Those signatures are now catalogued. Full 11,405-parent replay has not been run."
+
+[retention]
+apn_evidence = "../../research/"
+performance_evidence = "packages/VBF/perf/data/"
+reproduction_evidence = "packages/VBFRepro/src/results/"
+working_paper_evidence = "packages/VBFWorkingPaper/doc/generated/"
+confirmed_redundant_bytes_removed_at_least = 12098938984
+kept = "Unique candidates, configs, dirty source snapshots, checkpoint states, sampling results, original-source provenance, reports and publication evidence."
+removed = "Superseded reference SQLite files after signature inclusion; byte-identical original downloads and test candidate inputs after candidate recovery."
+
+[catalog_classification]
+records = 4117001
+signatures = 3920047
+exact_ccz_classes = 3920047
+shared_signature_buckets = 44
+unresolved_component_pairs = 0
+retained_positive_witnesses = 196878
+new_solver_attempts = 0
+input_sha256 = "74ab08f0e92f7eb9e731249ea34a5a6aa50d0db532750124f83b6f1b6a41bf65"
+solver_sha256 = "0f1cbd789ef0fa8b7bd02845292946eecbc2f0319f0d9484faa448c40ea6d1ba"
+scope = "Indexed quadratic (8,8)-APN corpus only; complete shared-bucket separation through VBF evidence replay."
+all_eight_bit_apn_classes = false

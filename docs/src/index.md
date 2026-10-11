@@ -13,10 +13,10 @@ The source lives at [github.com/zambonin/VBF.jl](https://github.com/zambonin/VBF
 - **VBF** — the algorithms (pure; its only dependency is `Random`):
   representations, F2 linear algebra, spectra, EA/CCZ invariants, the equivalence
   predicates, and the construction/search routines.
-- **VBFCatalog** — the data layer (uses VBF): the curated SQLite catalog,
-  multi-source reconciliation, the bibliography, data importers, and bulk corpora.
+- **VBFCatalog** — the data layer (uses VBF): tracked source declarations, generated SQLite queries,
+  the bibliography, data importers, and bulk corpora.
 - **VBFSearch** — reproducible discovery, checkpointing, candidate validation,
-  scoped reference comparisons and publication reports.
+  scoped reference comparisons, classification, proof history and publication reports.
 - **VBFRepro** — isolated paper execution, provenance and cross-paper analysis.
 
 See [reproductions and performance](reproductions.md) for paper execution and

@@ -16,17 +16,17 @@ Primary sources:
 - `packages/VBF/`: core Julia algorithms for vectorial Boolean functions:
   representations, GF(2) linear algebra, spectra, invariants, equivalence, and
   constructions. This package must not depend on `VBFCatalog`.
-- `packages/VBFCatalog/`: declarations and generated catalog in `src/data/`,
-  runtime storage APIs in `src/storage/`; local originals, proof history and
-  derived indexes in package-level `data/`. Catalog/data layer for APN functions, S-boxes,
-  bibliography, importers, and SQLite-backed corpora. It depends on `VBF`.
+- `packages/VBFCatalog/`: source inputs in `src/data/`, adapters in `src/import/`,
+  runtime data/query APIs in `src/`. Generated catalog, originals and materialized
+  members live in the ignored workspace `.cache/vbfcatalog/`. Depends on `VBF`.
 - `packages/VBFSearch/`: reproducible search application consuming VBF and VBFCatalog;
-  owns experiment state, checkpoints and evidence, never curated catalog writes.
-- `packages/VBFCatalog/src/import/reference/`: original-source rebuild tools;
-  run in the import environment and write to `packages/VBFCatalog/data/research/rebuilds/`.
+  owns experiment state, checkpoints, references, classification and evidence.
+  Explicit publication freezes inputs and provenance through catalog APIs.
+- `packages/VBFSearch/tools/reference/`: original-source rebuild tools;
+  run in the root environment and write to `packages/VBFSearch/data/research/rebuilds/`.
 - `packages/VBFWorkingPaper/src/{census,hyperplanes,literature}/`: research studies consuming package APIs.
 - `docs/inspector/`: HTTP evidence viewer; own Julia environment.
-- `packages/VBFCatalog/data/research/`: reference snapshots, runs, rebuilds and historical artifacts. The
+- `packages/VBFSearch/data/research/`: reference snapshots, runs, rebuilds and historical artifacts. The
   root `search/` and `census/` trees are retired; see `packages/VBFSearch/README.md`.
 - `packages/VBFCatalog/src/import/`: importer/build scripts with their own
   environment. Do not include these from package tests or a casual REPL.
@@ -63,14 +63,15 @@ Primary sources:
   become a parallel curated catalog.
 - Keep generated results, local overrides, credentials, and copyrighted paper
   inputs out of git.
-- **Catalog changes are gated.** `packages/VBFCatalog/src/data/catalog.sqlite` is a
-  tracked build product of `packages/VBFCatalog/src/data/`, and the catalog test items rebuild their
-  expected counts from its declarations and compare them against that DB — so editing
-  one without the other fails CI. After touching anything under
-  `packages/VBFCatalog/src/` (including declarations and bibliography),
+- **Catalog changes are gated.** Track source inputs, never generated SQLite.
+  `.cache/vbfcatalog/catalog.sqlite` is rebuilt from `VBFCatalog/src/data/`;
+  CI builds it from pinned originals and shares it as an artifact. The gate
+  checks declarations, implementation/toolchain digests and package tests.
+  After touching anything under
+  `packages/VBFCatalog/src/` (including declarations and bibliography) or its Project.toml,
   rebuild (`make -C packages/VBFCatalog/src/import catalog`) and run
   `make -C packages/VBFCatalog/src/import check` until it prints
-  `catalog-check: OK` — before committing, in the same commit. Enable the hook
+  `catalog-check: OK` before committing. Commit inputs and code; keep SQLite ignored. Enable the hook
   that enforces this once per clone: `git config core.hooksPath .githooks`.
   **Never commit a catalog change with `--no-verify`/`-n`.** That flag skips the
   gate outright, and the gate is the only thing standing between a half-updated
