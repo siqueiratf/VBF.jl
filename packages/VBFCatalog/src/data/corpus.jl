@@ -143,12 +143,12 @@ end
 Reconstruct member `i` (1-based) of corpus `name` as an `SBox`, decoding its
 compact encoding to a LUT over the corpus' `GF(2ⁿ)` field.
 """
-function corpus_function(db::SQLite.DB, name::AbstractString, i::Integer)
+function corpus_function(db::SQLite.DB, name::AbstractString, i::Integer;powtab=nothing)
     info = corpus_info(db, name)
     info === nothing && error("unknown corpus '$name'")
     n = Int(info.n)
     mod = Int(info.modulus)
-    lut = decode_quadratic_lut(corpus_coefficients(db, name, i), n, mod)
+    lut = decode_quadratic_lut(corpus_coefficients(db, name, i), n, mod;powtab)
     SBox{n}(lut)
 end
 

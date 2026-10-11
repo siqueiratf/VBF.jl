@@ -9,7 +9,7 @@ packages depends on it. Importing the package starts no experiment.
 - `src/analysis/performance/`: manuscript-specific fits and selected-run reports.
 - `doc/`: document templates and configuration; `doc/overleaf/` is the pinned
   Overleaf Git submodule.
-- `data/working-paper/` at workspace root: ignored derived tables, figures,
+- `packages/VBFWorkingPaper/doc/generated/` at workspace root: ignored derived tables, figures,
   staged paper builds and archived generated manuscript files.
 
 Shared measurement/profile readers live in `VBF/perf/analysis/`. Mathematical
@@ -72,7 +72,7 @@ make -C packages/VBFWorkingPaper export
 make -C packages/VBFWorkingPaper plots
 ```
 
-These call the shared perf reader. Its output defaults to `data/perf/analysis/`;
+These call the shared perf reader. Its output defaults to `packages/VBF/perf/data/analysis/`;
 `performance_output=DIR` selects another derived snapshot. Modern BenchmarkTools
 trials and explicitly supplied historical SQLite repetitions retain distinct
 protocols. `crossings` analyzes archived CSVs; `manuscript input=/path/to/legacy.sqlite`
@@ -89,5 +89,5 @@ For publication figures from a search snapshot:
 
 ```sh
 make -C packages/VBFWorkingPaper search-figures \
-  run="$PWD/data/apn/runs/experiment01" figure_output="$PWD/data/working-paper/search-figures"
+  run="$PWD/packages/VBFCatalog/data/research/runs/experiment01" figure_output="$PWD/packages/VBFWorkingPaper/doc/generated/search-figures"
 ```

@@ -6,7 +6,7 @@ invariants and run bounded EA or CCZ comparisons. The page uses the same
 
 ## Launch the interactive documentation
 
-From a checkout with the [reference data prepared](https://github.com/zambonin/VBF.jl/blob/main/data/apn/README.md),
+From a checkout with the [reference data prepared](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFCatalog/data/research/README.md),
 run this command from the repository root:
 
 ```sh

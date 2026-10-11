@@ -54,8 +54,8 @@ one reconstructed SBox. Different datasets retain separate names and provenance
 within the shared table, even when they overlap.
 
 Old benchmark measurements were preserved locally in
-`data/perf/archive/catalog-benchmarks.sqlite`; measurements are no longer stored
-in the catalog. New timings belong under `data/perf/`.
+`packages/VBF/perf/data/archive/catalog-benchmarks.sqlite`; measurements are no longer stored
+in the catalog. New timings belong under `packages/VBF/perf/data/`.
 
 ## Stored equivalence checks
 
@@ -211,6 +211,55 @@ The constructor sweep defaults to `--max-n 11`; increasing it changes catalog
 contents. Run the catalog gate before committing any catalog change.
 
 ## Reference and novelty scope
+
+VBFSearch now uses `open_catalog_reference()` directly. It checks index coverage,
+source member digests and curated LUT identities, then freezes the source set in
+each run. Adding a corpus leaves that run's comparison scope unchanged; changing
+one of its covered sources refuses resume. A regenerated index with identical
+logical records has the same digest.
+
+The former root `data/` directory was inspected and removed. Unique APN research
+evidence lives in `data/research/`, and current searches in `data/search/`.
+Other packages own their performance, reproduction and manuscript results.
+Over 12 GB of byte-identical downloads, superseded reference databases and
+duplicate test inputs were removed after checking reference inclusion and
+recovering candidates. Unique source snapshots and matching-signature LUTs were
+retained.
+
+The recovered archive contained 114,062 verified records and 111,835 distinct
+LUTs. Before registration, 111,009 signatures were absent from the expanded
+public reference (3,809,038 signatures): the earlier 110,868 plus 141 from later
+runs. Missing public inputs contributed 546 Langevin signatures and one public
+Galissant slide example. These are separate provenance-labelled corpora; they
+are not discoveries. The recovered discovery corpus is `legacy20261009_n8`.
+
+The expanded snapshot covers 4,117,001 indexed records and **3,920,047 CCZ
+classes**. Its 44 shared buckets remain completely resolved: 76 exact duplicate
+aliases, 196,922 distinct shared-bucket LUTs, and 196,878 retained positive
+witnesses. Replaying this evidence required zero new solver attempts. The input
+digest is `74ab08f0e92f7eb9e731249ea34a5a6aa50d0db532750124f83b6f1b6a41bf65`.
+This is an exact computational count for the covered quadratic corpus, with
+the same mathematical and implementation assumptions described above.
+
+`data/corpora.toml` declares immutable TSV inputs with `reader = "lut_tsv"`,
+their count and byte digest. `import_lut_corpus!` checks every quadratic APN and
+signature using VBF, then stores compact coefficients in the main catalog.
+VBFSearch's `publish` uses this same importer. Discovery TSVs are intermediate:
+the importer can regenerate them byte-for-byte from the tracked compact members
+if local search artifacts are unavailable. Original public supplement TSVs live
+in `data/luts/`. No parallel editable function catalog is introduced.
+
+After appending and indexing corpora, explicitly regenerate classification:
+
+```sh
+make -C packages/VBFCatalog/src/import classify threads=30 \
+    CLASSIFY_ARGS='--n 8 --rebuild true --pairs 0'
+```
+
+This replays stored positive witnesses while rebinding the classification to
+the expanded input. If unresolved buckets remain, run the usual budgeted
+classification command. The archive assessment and bounded replay result are in
+[the replay recipe](data/search/legacy20261009/replay.toml).
 
 The [reference rebuild commands](src/import/README.md) produce digest-bound
 comparison snapshots using VBF. Partial runs cannot certify full source coverage.

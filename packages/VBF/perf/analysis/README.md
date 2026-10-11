@@ -8,7 +8,7 @@ snapshot in one transaction, with CSV/Arrow exports and optional plots.
 ```julia
 include("packages/VBF/perf/analysis/BenchAnalysis.jl")
 using .BenchAnalysis, DataFrames
-trials = load_benchmarks("data/perf/VBF/chosen-run")
+trials = load_benchmarks("packages/VBF/perf/data/VBF/chosen-run")
 summary = runtime_statistics(trials)
 # Historical repetition protocol is explicit:
 legacy = load_benchmarks("/absolute/path/to/historical.sqlite")

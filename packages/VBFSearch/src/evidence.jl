@@ -55,7 +55,7 @@ function gold_coverage()
 end
 
 """Require a source-rebuilt reference; freeze its scope and digests, never fall back to an old index."""
-function open_reference(dir; supplement_path=get(ENV,"VBF_APN_SUPPLEMENT",joinpath(@__DIR__,"../../../data/apn/supplement.tsv")))
+function open_reference(dir; supplement_path=get(ENV,"VBF_APN_SUPPLEMENT",""),sources=nothing)
     gold=gold_coverage()
     checker=function(f)
         p=properties(f)
@@ -63,7 +63,7 @@ function open_reference(dir; supplement_path=get(ENV,"VBF_APN_SUPPLEMENT",joinpa
         p["sigma_hash"]
     end
     r=VBFCatalog.open_apn_reference(dir;supplement_path,supplement_signature=checker,
-        required_signatures=[p["sigma_hash"] for p in gold])
+        required_signatures=[p["sigma_hash"] for p in gold],sources)
     r.metadata["gold_coverage"]=gold
     r
 end

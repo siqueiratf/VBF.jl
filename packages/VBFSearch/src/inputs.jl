@@ -3,22 +3,13 @@ module DiscoveryInputs
 using SHA,TOML,VBF,VBFCatalog,Random,SQLite,DBInterface
 using ..DiscoveryEvidence
 const ROOT=normpath(joinpath(@__DIR__,"../../.."))
-const DEFAULT_REFERENCE=joinpath(ROOT,"data/apn/reference")
-const DEFAULT_SUPPLEMENT=joinpath(ROOT,"data/apn/supplement.tsv")
+const DEFAULT_REFERENCE=VBFCatalog.catalog_data_dir()
+const DEFAULT_SUPPLEMENT=""
 export ROOT, DEFAULT_REFERENCE, DEFAULT_SUPPLEMENT, candidate_lut, catalog_seeds,
        load_study, each_candidate, validated_study, source_fingerprint, implementation_fingerprint
 
-"""Decode a 256-byte LUT, 28-byte Boolean quadratic ANF, or catalog encoding."""
-function candidate_lut(encoded)
-    bytes=hex2bytes(encoded)
-    length(bytes)==256 && return bytes
-    length(bytes)==37 && return UInt8.(decode_quadratic_lut(bytes,8,conway_polynomial(8)))
-    length(bytes)==28 || error("expected 28/37 coefficient bytes or 256 LUT bytes")
-    UInt8.(VBF.QuadraticAPNTree.lut(VBF.QuadraticAPNTree.decode_coeffs(encoded,8),8))
-end
-
 """Materialize catalog seeds with exact LUT identity and VBF verification."""
-function catalog_seeds(path)
+function catalog_seeds(path;corpora=String[],parents=1000,seed=82026)
     catalogpath=VBFCatalog.catalog_path()
     db=SQLite.DB("file:"*abspath(catalogpath)*"?mode=ro")
     seen=Set{String}();count=0
@@ -27,14 +18,31 @@ function catalog_seeds(path)
         foreach(_->nothing,DBInterface.execute(db,"BEGIN"))
         open(path,"w") do io
             println(io,"sigma_hash\tlut_hex\tcatalog_id\tcatalog_sha256")
-            for row in VBFCatalog.list_functions(db;n=8,is_apn=true)
-                row.algebraic_degree==2 || continue
-                F=VBFCatalog.load_sbox(db,row.id)
-                id=lut_id(F.lut);id in seen && continue
+            function save(F,origin)
+                id=lut_id(F.lut);id in seen && return
                 p=properties(F.lut)
-                p["apn"] && p["quadratic"] || error("invalid catalog seed $(row.id)")
-                println(io,join((p["sigma_hash"],p["lut_hex"],row.id,digest),'\t'))
+                p["apn"] && p["quadratic"] || error("invalid catalog seed $origin")
+                println(io,join((p["sigma_hash"],p["lut_hex"],origin,digest),'\t'))
                 push!(seen,id);count+=1
+            end
+            if isempty(corpora)
+                for row in VBFCatalog.list_functions(db;n=8,is_apn=true)
+                    row.algebraic_degree==2 || continue
+                    save(VBFCatalog.load_sbox(db,row.id),"functions:"*string(row.id))
+                end
+            else
+                rng=Xoshiro(seed)
+                tables=Dict{Int,Vector{Vector{Int}}}()
+                for name in corpora
+                    info=VBFCatalog.corpus_info(db,name)
+                    info!==nothing && info.n==info.m==8 && info.degree==2 || error("expected a quadratic (8,8)-APN corpus: $name")
+                    k=min(info.member_count,cld(parents,length(corpora)))
+                    selected=sort!(randperm(rng,info.member_count)[1:k])
+                    tab=get!(()->monomial_power_table(8,info.modulus),tables,info.modulus)
+                    for member in selected
+                        save(VBFCatalog.corpus_function(db,name,member;powtab=tab),name*":"*string(member))
+                    end
+                end
             end
         end
         filehash(catalogpath)==digest || error("catalog changed during seed extraction")
@@ -66,34 +74,16 @@ function load_study(paths,per_source,rng)
     seen,seeds
 end
 
-function each_candidate(f,path)
-    payloadcol,statuscol=2,nothing
-    names=String[]
-    for (number,line) in enumerate(eachline(path))
-        isempty(strip(line)) && continue
-        cols=split(line,'\t')
-        if number==1 && cols[1] in ("sigma","sigma_hash")
-            names=String.(cols)
-            payloadcol=something(findfirst(c->c in ("coeffs","lut_hex","lut"),cols))
-            statuscol=findfirst(==("status"),cols)
-            continue
-        end
-        col=length(cols)>=3 && length(cols[3])==512 ? 3 : payloadcol
-        f((hash=String(cols[1]),payload=String(cols[col]),
-            status=statuscol===nothing ? "unlabelled" : String(cols[statuscol]),line=number,
-            fields=isempty(names) ? Dict("original_row"=>String(line)) : Dict(k=>String(v) for (k,v) in zip(names,cols))))
-    end
-end
-
 source_fingerprint(paths)=Dict(string(i)*":"*basename(p)=>filehash(p) for (i,p) in enumerate(paths))
 
 """Validate each supplied LUT and signature using VBF, binding the result to its file digest."""
 function validated_study(paths)
     known=Set{String}();proofs=Dict{String,Any}[]
+    powtab=monomial_power_table(8,conway_polynomial(8))
     for path in paths
         digest=filehash(path);records=0
         each_candidate(path) do row
-            p=properties(candidate_lut(row.payload))
+            p=properties(candidate_lut(row.payload;powtab))
             p["apn"] && p["quadratic"] || error("invalid quadratic-APN study input $path:$(row.line)")
             p["sigma_hash"]==row.hash || error("stored signature mismatch $path:$(row.line)")
             push!(known,row.hash);records+=1

@@ -1,7 +1,7 @@
 # Reproduction analysis tables
 
 `metrics.jl` reads current package inputs and writes CSVs to
-`data/working-paper/reproductions/`. `PROVENANCE.md` records the input paths,
+`packages/VBFWorkingPaper/doc/generated/reproductions/`. `PROVENANCE.md` records the input paths,
 execution configuration and files written in the run. Set
 `VBF_WORKING_PAPER_OUTPUT` (or Make's `output`) to select another destination.
 Each generated CSV has an adjacent `.csv.toml` with its digest, execution

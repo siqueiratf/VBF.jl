@@ -183,7 +183,9 @@ function main()
     end
     @info "Catalog populated (BFA-only step)" functions=n_funcs file_size_bytes=filesize(CATALOG_FILE)
     close(db)
-    _chain_external_imports()
+    withenv("BFA_PREVIOUS_CATALOG"=>FINAL_CATALOG) do
+        _chain_external_imports()
+    end
 
     # --- verify before replacing the committed catalog ----------------------
     # Compare PER FAMILY, never on the total. Importers deduplicate by LUT hash,

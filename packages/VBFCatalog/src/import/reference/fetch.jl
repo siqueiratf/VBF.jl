@@ -9,7 +9,7 @@ sizes and SHA-256 digests are recorded in sources/provenance.toml.
 """
 const FETCH_USAGE = nothing
 using SHA, TOML, Dates
-const FETCH_DEFAULT = normpath(joinpath(@__DIR__, "../../../../../data/apn/rebuilds/original-source"))
+const FETCH_DEFAULT = normpath(joinpath(@__DIR__, "../../../../../packages/VBFCatalog/data/research/rebuilds/original-source"))
 include("../fetch.jl")
 const PINNED_REPOS = [(src["cache_name"],src["upstream"],src["revision"],src["name"]) for src in TOML.parsefile(_SOURCES_TOML)["source"] if src["name"] in ("apn_reps","simonberg")]
 

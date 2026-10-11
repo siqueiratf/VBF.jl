@@ -16,7 +16,7 @@ using VBF, VBFCatalog, SHA, TOML, Dates, Printf
 const SQL = VBFCatalog.SQLite
 const DBI = VBFCatalog.DBInterface
 const REPO = normpath(joinpath(@__DIR__, "../../../../.."))
-const DEFAULT_OUTPUT = joinpath(REPO, "data/apn/rebuilds/original-source")
+const DEFAULT_OUTPUT = joinpath(REPO, "packages/VBFCatalog/data/research/rebuilds/original-source")
 include("../readers.jl")
 using .SourceReaders: parse_apn_lut_file, edelpott_luts
 include("raw_readers.jl")

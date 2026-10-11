@@ -1,11 +1,11 @@
 #!/usr/bin/env julia
 #=
-Render the manuscript figures and LaTeX tables from `data/working-paper/reproductions/*.csv`.
+Render the manuscript figures and LaTeX tables from `packages/VBFWorkingPaper/doc/generated/reproductions/*.csv`.
 
 Run from the repository root:
   julia --startup-file=no --project=packages/VBFWorkingPaper packages/VBFWorkingPaper/src/analysis/reproductions/figures.jl OUTPUT [INPUT]
 
-OUTPUT is the directory the thesis reads; INPUT defaults to `data/working-paper/reproductions`.
+OUTPUT is the directory the thesis reads; INPUT defaults to `packages/VBFWorkingPaper/doc/generated/reproductions`.
 This script reads the CSVs that `packages/VBFWorkingPaper/src/analysis/reproductions/metrics.jl` produced and writes only
 into OUTPUT. It reads saved measurements and opens no database. Figures retain the units
 and evidence levels recorded in those input tables.
@@ -182,7 +182,7 @@ end
 function main(args)
     isempty(args) && error("Usage: figures.jl OUTPUT [INPUT]")
     out = abspath(args[1]); mkpath(out)
-    input = length(args) >= 2 ? abspath(args[2]) : joinpath(@__DIR__, "..", "..", "..", "..", "..", "data", "repro", "analysis", "reproductions")
+    input = length(args) >= 2 ? abspath(args[2]) : joinpath(@__DIR__, "..", "..", "..", "..", "..", "packages","VBFRepro","src","results", "analysis", "reproductions")
     papers = read_metric(input, "papers")
     inv = read_metric(input, "invariant_power")
     sig = read_metric(input, "corpus_sigma")

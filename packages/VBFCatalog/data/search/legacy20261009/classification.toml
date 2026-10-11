@@ -1,0 +1,17 @@
+class_count_lower_bound = 3920047
+component_count_upper_bound = 3920047
+duplicate_records_removed = 76
+exact_class_count = 3920047
+input_sha256 = "74ab08f0e92f7eb9e731249ea34a5a6aa50d0db532750124f83b6f1b6a41bf65"
+literature_novelty = "unresolved"
+n = 8
+prepared_buckets = 44
+records = 4117001
+scope = "indexed quadratic (8,8)-APNs only"
+shared_components = 44
+shared_distinct_luts = 196922
+shared_records = 196998
+signatures = 3920047
+singletons = 3920003
+solver_sha256 = "0f1cbd789ef0fa8b7bd02845292946eecbc2f0319f0d9484faa448c40ea6d1ba"
+unresolved_component_pairs = 0

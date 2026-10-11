@@ -28,6 +28,7 @@ WATCHED=(
     "packages/VBFCatalog/data/literature_sboxes.toml"
     "packages/VBFCatalog/data/sporadic.toml"
     "packages/VBFCatalog/data/corpora.toml"
+    "packages/VBFCatalog/data/luts/"
     "packages/VBFCatalog/data/sources.toml"
     "packages/VBFCatalog/data/bibliography.bib"
 )
@@ -93,7 +94,7 @@ fi
 
 # Every test item whose expectations depend on catalog contents. Adding a
 # catalog-reading test item? Add it here.
-TESTS="${VBF_CATALOG_TESTS:-catalog_content|catalog_queries|catalog_schema|apn_catalog|apn_reps_catalog|literature_sboxes|simonberg_catalog|corpus|sigma_coverage|apn_monomial_form|reference_snapshot|fingerprint_lookup|signature_summary|catalog_import|catalog_storage|equivalence_checks|corpus_classification}"
+TESTS="${VBF_CATALOG_TESTS:-catalog_content|catalog_queries|catalog_schema|apn_catalog|apn_reps_catalog|literature_sboxes|simonberg_catalog|corpus|sigma_coverage|apn_monomial_form|reference_snapshot|reference_snapshot_catalog|fingerprint_lookup|signature_summary|catalog_import|catalog_storage|equivalence_checks|corpus_classification}"
 
 if [[ "${VBF_SKIP_CATALOG_TESTS:-}" == "1" ]]; then
     red "catalog-check: test items SKIPPED via VBF_SKIP_CATALOG_TESTS=1."

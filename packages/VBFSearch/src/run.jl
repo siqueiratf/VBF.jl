@@ -18,7 +18,7 @@ function search(config::SearchConfig)
     if !resume
         mkpath(frozen)
         if isempty(original)
-            catalog_seeds(joinpath(frozen,"1_catalog.tsv"))
+            catalog_seeds(joinpath(frozen,"1_catalog.tsv");corpora=config.corpora,parents=config.parents,seed=config.seed)
         end
         for (i,p) in enumerate(original)
             isfile(p) || error("missing input $p")
@@ -26,13 +26,14 @@ function search(config::SearchConfig)
         end
     end
     paths=sort!([joinpath(frozen,f) for f in readdir(frozen)];by=p->parse(Int,first(split(basename(p),'_'))))
-    reference=open_reference(config.reference;supplement_path=config.supplement)
+    frozen_sources=resume ? get(TOML.parsefile(joinpath(dir,"manifest.toml"))["identity"]["reference"],"sources",nothing) : nothing
+    reference=open_reference(config.reference;supplement_path=config.supplement,sources=frozen_sources)
     store=nothing
     try
     known,validation=validated_study(paths)
-    semantic=Dict(k=>cfg[k] for k in ("method","limit","seed","target-b6","v5-bent","orbit-seconds","ea-representatives"))
+    semantic=Dict(k=>cfg[k] for k in ("method","limit","seed","target-b6","v5-bent","orbit-seconds","ea-representatives","corpus"))
     identity=Dict("configuration"=>semantic,"inputs"=>source_fingerprint(paths),"code"=>code_identity(),
-        "reference"=>Dict(k=>VBFCatalog.reference_metadata(reference)[k] for k in ("sha256","manifest_sha256","supplement_sha256","signatures")),
+        "reference"=>Dict(k=>v for (k,v) in VBFCatalog.reference_metadata(reference) if k in ("sha256","manifest_sha256","supplement_sha256","signatures","sources")),
         "reference_locations"=>Dict("baseline"=>config.reference,"supplement"=>config.supplement),
         "julia"=>string(VERSION))
     store=open_store(dir,identity;resume)
@@ -70,7 +71,7 @@ function search(config::SearchConfig)
             _,seeds=load_study(paths,max(1,cld(config.parents,length(paths))),Xoshiro(config.seed))
             gold=gold_apn(8).lut
             gp=properties(gold)
-            pushfirst!(seeds,(gp["sigma_hash"],bytes2hex(gold)))
+            isempty(original) && isempty(config.corpora) && pushfirst!(seeds,(gp["sigma_hash"],bytes2hex(gold)))
             unique!(seeds);resize!(seeds,min(length(seeds),config.parents))
             for (hash,payload) in seeds
                 kind=config.method===:v5 ? "prepare_v5" : "switching"
@@ -100,7 +101,7 @@ function search(config::SearchConfig)
         println("Discovery session $session: $workers workers; $wall seconds; method $(cfg["method"]); $dir")
         flush(stdout)
         Threads.@threads :dynamic for worker in 1:workers
-            localref=open_reference(config.reference;supplement_path=config.supplement)
+            localref=open_reference(config.reference;supplement_path=config.supplement,sources=get(reference.metadata,"sources",nothing))
             try
                 geometry=config.method===:v5 ? Fourier.geometry(8) : nothing
                 work=config.method===:v5 ? Fourier.V5Work(23) : nothing

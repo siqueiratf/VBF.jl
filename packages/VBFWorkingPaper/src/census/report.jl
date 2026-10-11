@@ -1,6 +1,6 @@
 using VBF
 # Implements the aggregate census report (results/report.toml)
-# Study: census of quadratic APN functions on F_2^8 (data/apn/archive/census)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census)
 #
 # Pseudocode:
 #   1. Exact tree sizes T(n,m) for small (n,m) by DFS; T(3,m) also by the closed form

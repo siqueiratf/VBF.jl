@@ -29,7 +29,7 @@ full inventory and measures a small equivalence primitive, avoiding expensive
 reports in CI. Loading some existing reports emits repeated-docstring warnings
 because their standalone files include shared helpers again.
 
-Results are saved under `data/perf/VBFRepro/<run>/`. Source manifests hash the
+Results are saved under `packages/VBF/perf/data/VBFRepro/<run>/`. Source manifests hash the
 paper implementations, package sources, resolved environment and the selected
 papers' stored inputs, including original input files when locally present.
 Input files are hashed, never copied into benchmark output. Profiling records

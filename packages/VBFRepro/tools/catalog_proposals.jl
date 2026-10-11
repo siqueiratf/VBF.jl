@@ -184,7 +184,7 @@ All claims name their finite references. Literature completeness is never assert
 """
 function review_catalog_proposals(;timeout_seconds::Real=2,max_nodes::Int=100_000,io::IO=stdout,
         gold_max_evaluations::Int=typemax(Int),gold_timeout_seconds::Real=Inf,
-        n8_reference_dir::AbstractString=get(ENV,"VBF_F063_N8_REFERENCE",joinpath(PROPOSAL_ROOT,"data/apn/archive/census/results/signature_rebuild")))
+        n8_reference_dir::AbstractString=get(ENV,"VBF_F063_N8_REFERENCE",joinpath(PROPOSAL_ROOT,"packages/VBFCatalog/data/research/archive/census/results/signature_rebuild")))
     timeout_seconds>=0 && max_nodes>=0 || throw(ArgumentError("nonnegative equivalence budgets required"))
     catalog_path=joinpath(pkgdir(VBFCatalog),"BFA_catalog.sqlite")
     catalog_digest=bytes2hex(SHA.sha256(read(catalog_path)))
@@ -291,7 +291,7 @@ end
 
 if abspath(PROGRAM_FILE)==@__FILE__
     length(ARGS)<=3 || error("usage: review_catalog_proposals.jl [output.toml] [timeout_per_pair=2] [max_nodes=100000]")
-    output=isempty(ARGS) ? joinpath(PROPOSAL_ROOT,"data","repro","validation","catalog_proposals.toml") : abspath(ARGS[1])
+    output=isempty(ARGS) ? joinpath(PROPOSAL_ROOT,"packages","VBFRepro","src","results","validation","catalog_proposals.toml") : abspath(ARGS[1])
     report=review_catalog_proposals(timeout_seconds=length(ARGS)>=2 ? parse(Float64,ARGS[2]) : 2,
         max_nodes=length(ARGS)>=3 ? parse(Int,ARGS[3]) : 100_000)
     mkpath(dirname(output))

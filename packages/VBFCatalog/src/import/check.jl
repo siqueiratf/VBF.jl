@@ -65,6 +65,17 @@ function check_catalog(path=catalog_path(); entries=VBFCatalog.catalog_source_di
         length(declared["APN"])+length(importer)==scalar("SELECT COUNT(*) c FROM functions WHERE is_apn=1") || push!(errors,"APN count mismatch")
         length(declared["Literature"])==scalar("SELECT COUNT(*) c FROM functions WHERE is_apn=0") || push!(errors,"non-APN count mismatch")
         count(e->get(e,"is_permutation",false),all_entries)+count(r->r.is_permutation==1,importer)==scalar("SELECT COUNT(*) c FROM functions WHERE is_permutation=1") || push!(errors,"permutation count mismatch")
+        for entry in TOML.parsefile(joinpath(entries,"corpora.toml"))["corpus"]
+            entry["reader"]=="lut_tsv" || continue
+            info=corpus_info(db,entry["name"])
+            info!==nothing && info.member_count==entry["count"] || push!(errors,"$(entry["name"]): declared corpus missing or count changed")
+            input=joinpath(entries,entry["file"])
+            if isfile(input)
+                open(io->bytes2hex(SHA.sha256(io)),input)==entry["sha256"] || push!(errors,"$(entry["name"]): source TSV digest changed")
+            elseif !haskey(entry,"run_snapshot_sha256")
+                push!(errors,"$(entry["name"]): public LUT input missing")
+            end
+        end
         for name in list_corpora(db)
             info=corpus_info(db,name)
             info.store_file=="catalog" || continue

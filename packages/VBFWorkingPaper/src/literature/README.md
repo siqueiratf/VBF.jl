@@ -8,7 +8,7 @@ unavailable constructions. It does not assert literature completeness.
 ```sh
 julia --project=packages/VBFWorkingPaper \
   packages/VBFWorkingPaper/src/literature/family_coverage.jl \
-  data/working-paper/literature/survey01 data/apn/reference
+  packages/VBFWorkingPaper/doc/generated/literature/survey01 packages/VBFCatalog/data/research/reference
 ```
 
 Provide the ledger's pinned source PDFs under the archived literature input path;

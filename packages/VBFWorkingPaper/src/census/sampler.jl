@@ -1,6 +1,6 @@
 using VBF
 # Implements the threaded Knuth sampler with an exact last extension step
-# Study: census of quadratic APN functions on F_2^8 (data/apn/archive/census)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census)
 # Source: Beierle et al. (2025, v2), Theorem 4.1 and Lemma 4.5
 #
 # Math:

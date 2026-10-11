@@ -7,7 +7,7 @@
 #   julia --project=. packages/VBFWorkingPaper/src/analysis/reproductions/metrics.jl --sample=1024 --budget-seconds=300
 #   julia --project=. packages/VBFWorkingPaper/src/analysis/reproductions/metrics.jl --list          # print the sections
 #
-# The script reads the repository and writes only into data/working-paper/reproductions/. It
+# The script reads the repository and writes only into packages/VBFWorkingPaper/doc/generated/reproductions/. It
 # changes no database, it touches no file under packages/ or papers/, and it
 # runs no git command.
 #
@@ -18,7 +18,7 @@
 # THE OUTPUT FORMAT. Every CSV holds data only: one header line of column names,
 # then one line for each row. There is no comment line, so pandas, R or a
 # spreadsheet reads it with no filter. The provenance of every file goes into
-# data/working-paper/reproductions/PROVENANCE.md instead.
+# packages/VBFWorkingPaper/doc/generated/reproductions/PROVENANCE.md instead.
 #
 # THE SECTIONS.
 #   papers      current paper inventory and catalog contributions
@@ -36,11 +36,11 @@ const SQLite = VBFCatalog.SQLite
 
 const HERE     = @__DIR__
 const ROOT     = VBFRepro.repo_root()
-const OUT      = get(ENV, "VBF_WORKING_PAPER_OUTPUT", joinpath(ROOT, "data/working-paper/reproductions"))
+const OUT      = get(ENV, "VBF_WORKING_PAPER_OUTPUT", joinpath(ROOT, "packages/VBFWorkingPaper/doc/generated/reproductions"))
 const TAXONOMY = joinpath(HERE, "taxonomy.toml")
 
 const BFA4R        = get(ENV, "VBF_WORKING_PAPER_GRADES", joinpath(OUT, "bfa4r_grades.csv"))
-const BENCHMARKS   = get(ENV, "VBF_WORKING_PAPER_LEGACY_BENCHMARKS", joinpath(ROOT, "data/perf/archive/generated/benchmarks.csv"))
+const BENCHMARKS   = get(ENV, "VBF_WORKING_PAPER_LEGACY_BENCHMARKS", joinpath(ROOT, "packages/VBF/perf/data/archive/generated/benchmarks.csv"))
 const CATALOG_DB = catalog_path()
 const SIGMA_DB = sigma_index_path()
 
@@ -240,7 +240,7 @@ end
 #
 # The only section that computes. It applies each invariant to each population
 # and reports what the invariant separates, next to what it costs. The cost
-# comes from data/perf/archive/generated/benchmarks.csv, so the two datasets agree.
+# comes from packages/VBF/perf/data/archive/generated/benchmarks.csv, so the two datasets agree.
 
 "Read the measured cost of one benchmark case at the nearest n at or below `n`."
 function bench_cost(case::AbstractString, n::Int)
@@ -473,7 +473,7 @@ function write_provenance(ran::Vector{String}, wall::Float64)
         open(io->TOML.print(io,metadata;sorted=true),path*".toml","w")
     end
     open(joinpath(OUT, "PROVENANCE.md"), "w") do io
-        println(io, "# Provenance of `data/working-paper/reproductions/`\n")
+        println(io, "# Provenance of `packages/VBFWorkingPaper/doc/generated/reproductions/`\n")
         println(io, "Do not edit these files. Rebuild them with `make -C packages/VBFWorkingPaper all`.")
         println(io, "`packages/VBFWorkingPaper/src/analysis/reproductions/METRICS.md` says what each table is for.\n")
         println(io, "| Field | Value |")

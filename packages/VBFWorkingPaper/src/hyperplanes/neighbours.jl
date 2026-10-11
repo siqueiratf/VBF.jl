@@ -1,6 +1,6 @@
 using VBF
 # Implements the hyperplane-neighbour graph experiments (HYPERPLANE.md, Sections 5 and 6)
-# Study: census of quadratic APN functions on F_2^8 (data/apn/archive/census/theory)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census/theory)
 # Source: HYPERPLANE.md; Taniguchi, Polujan, Pott, Arshad (2025), Theorem 3.5
 #
 # Math:
@@ -92,7 +92,7 @@ function graph_small(n::Int; io::IO = stdout)
     println(io, "  classes with a non-symmetric neighbour list: ", asym)
     println(io, "  degree histogram: ", hist(deg))
     println(io, "  connected components: ", ncomp)
-    path = joinpath(@__DIR__, "../../../../data/working-paper/hyperplanes/graph_n$(n).tsv")
+    path = joinpath(@__DIR__, "../../../../packages/VBFWorkingPaper/doc/generated/hyperplanes/graph_n$(n).tsv")
     mkpath(dirname(path))
     open(path, "w") do f
         println(f, "class_id\tdegree\tneighbours\te_over_2^(n-1)_histogram")
@@ -108,7 +108,7 @@ end
 
 "|Aut| (ortho-derivative method) of the catalog classes of dimension n -> results/aut_n<n>.tsv."
 function aut_small(n::Int; io::IO = stdout)
-    path = joinpath(@__DIR__, "../../../../data/working-paper/hyperplanes/aut_n$(n).tsv")
+    path = joinpath(@__DIR__, "../../../../packages/VBFWorkingPaper/doc/generated/hyperplanes/aut_n$(n).tsv")
     mkpath(dirname(path))
     open(path, "w") do f
         println(f, "class_id\taut")
@@ -127,7 +127,7 @@ function isolated8(; k::Int = 20, seed::Int = 3, extra = [3049449], io::IO = std
     db = VBFCatalog.load_catalog()
     cnt = VBFCatalog.corpus_length(db, "beierle2025_n8")
     ids = vcat(rand(rng, 1:cnt, k), extra)
-    path = joinpath(@__DIR__, "../../../../data/working-paper/hyperplanes/isolated_n8.tsv")
+    path = joinpath(@__DIR__, "../../../../packages/VBFWorkingPaper/doc/generated/hyperplanes/isolated_n8.tsv")
     mkpath(dirname(path))
     res = Vector{Any}(undef, length(ids))
     Threads.@threads :dynamic for t in eachindex(ids)

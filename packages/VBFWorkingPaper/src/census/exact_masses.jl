@@ -1,6 +1,6 @@
 using VBF
 # Implements exact masses sum_{classes} 1/|Stab| for small n from the catalog
-# Study: census of quadratic APN functions on F_2^8 (data/apn/archive/census)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census)
 #
 # Math:
 #   GL(n,2) x GL(n,2) acts on pure quadratic APN (n,n)-functions F -> A o F o B.  By the

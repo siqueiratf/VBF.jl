@@ -1,6 +1,6 @@
 using VBF
 # Implements small diagnostics: sigma-index spot check and properties of sampled functions
-# Study: census of quadratic APN functions on F_2^8 (data/apn/archive/census)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census)
 #
 # Math:
 #   spot_check: the coverage estimator trusts the ccz_sigma_index side store.  Recompute

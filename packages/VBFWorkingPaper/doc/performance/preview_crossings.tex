@@ -4,7 +4,7 @@
 %  This file exists so that `crossings.tex` can be compiled and read on
 %  screen. It is NOT part of the deliverable and you must NOT paste it into a
 %  manuscript. The deliverable is `packages/VBFWorkingPaper/doc/performance/crossings.tex` plus the files that
-%  `make -C packages/VBFWorkingPaper crossings` writes into `data/working-paper/performance/crossings/`. This driver only
+%  `make -C packages/VBFWorkingPaper crossings` writes into `packages/VBFWorkingPaper/doc/generated/performance/crossings/`. This driver only
 %  supplies a document class and the packages that the fragment needs.
 %
 %  Build (Tectonic; there is no system TeX on the development machine):
@@ -31,10 +31,10 @@
 \pgfplotsset{compat=1.17}
 
 % The generated files, relative to the directory of the compilation.
-\providecommand{\bmxgen}{data/working-paper/performance/crossings/}
+\providecommand{\bmxgen}{packages/VBFWorkingPaper/doc/generated/performance/crossings/}
 
-\input{data/perf/archive/generated/benchmarks_meta.tex}
-\input{data/working-paper/performance/crossings/crossings_facts.tex}
+\input{packages/VBF/perf/data/archive/generated/benchmarks_meta.tex}
+\input{packages/VBFWorkingPaper/doc/generated/performance/crossings/crossings_facts.tex}
 
 \title{Proofing harness for \texttt{packages/VBFWorkingPaper/doc/performance/crossings.tex}}
 \author{}

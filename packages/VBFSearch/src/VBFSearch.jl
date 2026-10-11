@@ -22,13 +22,14 @@ include("audit.jl")
 include("classify.jl")
 include("status.jl")
 include("operations.jl")
+include("catalog.jl")
 include("report.jl")
 include("cli.jl")
 
 export equivalence_evidence, verify_graph_witness, SearchConfig, search, resume, status, stop!, audit, validate, report,
        report_snapshot, candidate_properties, compare, classify, classify_snapshot, open_reference,
        close_reference, verify_comparison, verify_ccz_witness, verify_ea_witness,
-       verify_certificate, main
+       verify_certificate, publish, main
 
 function __init__()
     # Compute at process initialization, never bake a source identity into a cache.

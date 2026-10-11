@@ -36,7 +36,7 @@ function profile_main(reg,package,args=ARGS)
     finally;m.teardown(p);end
     seconds=time()-start
     data,lidict=Profile.retrieve()
-    out===nothing && (out=joinpath(PerfSupport.ROOT,"data","perf",package,"profiles",
+    out===nothing && (out=joinpath(PerfSupport.ROOT,"packages","VBF","perf","data",package,"profiles",
         Dates.format(now(UTC),"yyyymmddTHHMMSS")*"_"*string(getpid())))
     ispath(out) && error("profile output already exists: $out")
     mkpath(out)

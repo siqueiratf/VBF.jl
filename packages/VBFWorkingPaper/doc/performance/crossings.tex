@@ -2,7 +2,7 @@
 % packages/VBFWorkingPaper/doc/performance/crossings.tex — the benchmark crossings, ready to paste into a paper.
 %
 % This file is NOT generated. Edit it. It reads the six files that
-% packages/VBFWorkingPaper/src/analysis/performance/crossings.jl writes into data/working-paper/performance/crossings/, and it draws the two
+% packages/VBFWorkingPaper/src/analysis/performance/crossings.jl writes into packages/VBFWorkingPaper/doc/generated/performance/crossings/, and it draws the two
 % figures that the raw data supports.
 %
 % Regenerate the data with:  make -C packages/VBFWorkingPaper crossings
@@ -16,16 +16,16 @@
 %
 % PATH. Set \bmxgen if the generated files are not beside the document.
 %
-%   \providecommand{\bmxgen}{data/working-paper/performance/crossings/}
+%   \providecommand{\bmxgen}{packages/VBFWorkingPaper/doc/generated/performance/crossings/}
 %
 % The document must also \input the two fact files, so the prose can quote a
 % single figure and keep it in step with the tables.
 %
-%   \input{data/perf/archive/generated/benchmarks_meta.tex}
-%   \input{data/working-paper/performance/crossings/crossings_facts.tex}
+%   \input{packages/VBF/perf/data/archive/generated/benchmarks_meta.tex}
+%   \input{packages/VBFWorkingPaper/doc/generated/performance/crossings/crossings_facts.tex}
 % ---------------------------------------------------------------------------
 
-\providecommand{\bmxgen}{data/working-paper/performance/crossings/}
+\providecommand{\bmxgen}{packages/VBFWorkingPaper/doc/generated/performance/crossings/}
 
 % Keep one series of a shared data file. pgfplots drops every row whose
 % `caseid` (or `groupid`) is not the one that the plot asks for.

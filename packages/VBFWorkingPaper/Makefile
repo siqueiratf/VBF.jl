@@ -2,12 +2,12 @@ JULIA ?= julia
 HERE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(HERE)../..)
 RUN := $(JULIA) --startup-file=no --project=$(HERE)
-output ?= $(ROOT)/data/working-paper/reproductions
-figure_output ?= $(ROOT)/data/working-paper/figures
-performance_output ?= $(ROOT)/data/perf/analysis
-paper_output ?= $(ROOT)/data/working-paper/paper
-input ?= $(ROOT)/data/perf
-profiles ?= $(ROOT)/data/perf
+output ?= $(ROOT)/packages/VBFWorkingPaper/doc/generated/reproductions
+figure_output ?= $(ROOT)/packages/VBFWorkingPaper/doc/generated/figures
+performance_output ?= $(ROOT)/packages/VBF/perf/data/analysis
+paper_output ?= $(ROOT)/packages/VBFWorkingPaper/doc/generated/paper
+input ?= $(ROOT)/packages/VBF/perf/data
+profiles ?= $(ROOT)/packages/VBF/perf/data
 sample ?= 128
 seed ?= 20260901
 budget ?= 15
@@ -46,7 +46,7 @@ stage:
 manuscript:
 	$(RUN) $(HERE)src/analysis/performance/manuscript.jl "$(figure_output)" "$(manuscript_config)" "$(input)"
 crossings:
-	$(RUN) $(HERE)src/analysis/performance/crossings.jl --csv="$(ROOT)/data/perf/archive/generated/benchmarks.csv" --meta="$(ROOT)/data/perf/archive/generated/benchmarks_meta.tex" --out="$(ROOT)/data/working-paper/performance/crossings"
+	$(RUN) $(HERE)src/analysis/performance/crossings.jl --csv="$(ROOT)/packages/VBF/perf/data/archive/generated/benchmarks.csv" --meta="$(ROOT)/packages/VBF/perf/data/archive/generated/benchmarks_meta.tex" --out="$(ROOT)/packages/VBFWorkingPaper/doc/generated/performance/crossings"
 help:
 	@echo 'Working paper: instantiate; grades; fast; invariants; figures; stage; paper; test'
 	@echo 'Parameters: output=DIR figure_output=DIR paper_output=FRESH_DIR sample=128 seed=20260901 budget=15'

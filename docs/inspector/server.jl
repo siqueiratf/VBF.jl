@@ -1,6 +1,6 @@
 # Implements a local web page that classifies one (8,8)-function against the known
 # quadratic APN CCZ classes and the census list of 553 new classes.
-# Study: census of quadratic APN functions on F_2^8 (data/apn/archive/census)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census)
 #
 # Pseudocode:
 #   1. At start: open the sigma index (read only), open the catalog, read the census list.
@@ -30,8 +30,9 @@ const properties = candidate_properties
 
 const WEB_DIR = @__DIR__
 const REPO_ROOT = normpath(joinpath(WEB_DIR,"../.."))
-const STUDY_DIR = joinpath(REPO_ROOT,"data/apn/archive/census")
+const STUDY_DIR = joinpath(REPO_ROOT,"packages/VBFCatalog/data/research/archive/census")
 const CENSUS_TSV = joinpath(STUDY_DIR, "new_classes_553.tsv")
+const PUBLIC_TSV = joinpath(VBFCatalog.catalog_source_dir(),"luts","langevin_may2025_extra.tsv")
 # Other lists of classes that are absent from the index:
 # (file, label, novelty, data column, data kind). `:new` = found in this study;
 # `:public` = in a public raw file of the authors, but not in the index.
@@ -39,7 +40,7 @@ const OTHER_LISTS = [
     ("new_classes_extra.tsv", "theory experiment (extra class)", :new, 2, :coeffs),
     ("search_b52/new_classes_trial_773.tsv", "B6 = 52 search, trial run", :new, 5, :coeffs),
     ("theory/hyperplane_scan/new_classes_hyperplane.tsv", "hyperplane scan", :new, 2, :coeffs),
-    ("crosscheck_raw/raw_only_546.tsv", "authors' raw file of May 2025 (langevin.univ-tln.fr)", :public, 3, :lut),
+    (PUBLIC_TSV, "authors' raw file of May 2025 (langevin.univ-tln.fr)", :public, 3, :lut),
     # Read after raw_only_546.tsv: its 61 raw546_public rows keep the public verdict.
     ("search_b52/framework_20261009_new.tsv.gz", "B6 = 52 search, Framework run 2026-10-09", :new, 5, :coeffs),
 ]
@@ -49,10 +50,6 @@ list_lines(path) = endswith(path, ".gz") ? eachline(`gzip -dc $path`) : eachline
 const N = 8
 const NPAIRS = N * (N - 1) ÷ 2
 const DEFAULT_MODULUS = 0x11B
-# Distinct sigma values over all indexed n = 8 sources (reports/verification/REPORT.md,
-# equal to Beierle et al. 2025, Theorem 5.1).
-const KNOWN_CLASSES = 3_808_491
-
 # --- state -----------------------------------------------------------------------------
 
 mutable struct State
@@ -116,7 +113,7 @@ function init!()
     for r in DBInterface.execute(idx, "SELECT COUNT(*) c FROM ccz_sigma_index WHERE n = $N")
         rows = Int(r.c)
     end
-    reference=VBFSearch.open_reference(get(ENV,"VBF_APN_REFERENCE",joinpath(REPO_ROOT,"data/apn/reference")))
+    reference=VBFSearch.open_reference(get(ENV,"VBF_APN_REFERENCE",VBFCatalog.catalog_data_dir()))
     st = State(idx, cat, read_census(), rows, ReentrantLock(), read_others(),reference)
     # A coverage gap makes classify_ccz throw. Fail at start, not at the first request.
     classify_ccz(SBox{N}(gf_monomial_lut(N, 3; modulus = DEFAULT_MODULUS));
@@ -392,7 +389,7 @@ function run_ea!(j::EAJob, F, G;relation=:ea,timeout_seconds=30,max_nodes=1_000_
         proof=VBFSearch.compare(F.lut,G.lut;relation,timeout_seconds,max_nodes)
         proof["created_utc"]=string(Dates.now(Dates.UTC))
         proof["algorithm_sha256"]=proof["source_sha256"]
-        dir=joinpath(REPO_ROOT,"data/apn/runs/web")
+        dir=joinpath(REPO_ROOT,"packages/VBFCatalog/data/research/runs/web")
         mkpath(dir)
         open(io->TOML.print(io,proof;sorted=true),joinpath(dir,"comparison_$(time_ns()).toml"),"w")
         if !isempty(RUN_DIRECTORY[])

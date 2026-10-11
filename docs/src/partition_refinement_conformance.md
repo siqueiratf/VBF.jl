@@ -267,7 +267,7 @@ the audit branch's diff against the solver contains only census files.
 The original mixed heads are preserved locally as
 `backup/native-partition-equivalence-mixed-20261009` (`380b8a3`) and
 `backup/apn-literature-audit-mixed-20261009` (`ecb0739`). Commit IDs below and
-the measured revision IDs in `data/perf/archive/bench/README.md` identify the original history.
+the measured revision IDs in `packages/VBF/perf/data/archive/bench/README.md` identify the original history.
 Some replayed commits have new IDs, but their patches and the final VBF source
 tree are unchanged; the recorded benchmark source fingerprints remain valid.
 This separation adds only this documentation note after replaying the solver

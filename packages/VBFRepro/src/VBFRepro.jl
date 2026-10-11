@@ -132,7 +132,7 @@ end
 
 Execute one paper's existing Make target in a separate process and its own working
 directory. Record the exact arguments, parameter overrides, Julia environment,
-source hashes, stdout/stderr and exit status under `data/repro/runs/` by default.
+source hashes, stdout/stderr and exit status under `packages/VBFRepro/src/results/runs/` by default.
 No paper scripts are imported into the caller. Existing paper-local result files
 remain controlled by the target's `save_results` parameter. A wall timeout stops
 the process group on Unix; it does not certify that a partial result is complete.
@@ -165,7 +165,7 @@ function run_paper(id::AbstractString; target::AbstractString="report", paramete
     project = abspath(project)
     isfile(joinpath(project, "Project.toml")) || throw(ArgumentError("missing execution Project.toml"))
     run_id = Dates.format(now(UTC), "yyyymmddTHHMMSS") * "-" * string(uuid4())
-    directory = output === nothing ? joinpath(repo_root(), "data", "repro", "runs", id, run_id) : abspath(output)
+    directory = output === nothing ? joinpath(repo_root(), "packages","VBFRepro","src","results", "runs", id, run_id) : abspath(output)
     _claim_output(directory)
     arguments = [string(make), "--no-print-directory", "-C", paper, string(target),
                  "JULIA=$(julia)", "ROOT=$(project)"]
