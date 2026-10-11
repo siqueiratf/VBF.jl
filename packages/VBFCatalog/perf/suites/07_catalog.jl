@@ -11,9 +11,8 @@
 #
 # THIS SUITE IS READ-ONLY.
 # It calls no builder and no writer. It never calls `create_catalog`,
-# `build_sigma_index!`, `build_ccz_fingerprint_index!`, `build_corpus_store!`,
-# `register_corpus!`, `populate_ccz_equivalence_classes!`, `merge_source_repo!`
-# or `record_disagreement!`. A write to `packages/VBFCatalog/` breaks the CI
+# `build_sigma_index!`, `build_corpus_store!`,
+# `register_corpus!` or `populate_ccz_equivalence_classes!`. A write to `packages/VBFCatalog/` breaks the CI
 # count gate that AGENTS.md describes.
 #
 # Three points for the reader of the table:
@@ -40,10 +39,6 @@ function register!(reg)
     idxref = Ref{Any}(nothing)
     open_index() =
         (idxref[] === nothing && (idxref[] = VBFCatalog._open_sigma_index()); idxref[])
-
-    fingerprint_ref = Ref{Any}(nothing)
-    open_fingerprint() = (fingerprint_ref[] === nothing &&
-        (fingerprint_ref[] = VBFCatalog._open_ccz_fingerprint_index()); fingerprint_ref[])
 
     # Corpora. Keep the large one for single-member reads only. An expansion of
     # all 3775599 members would take hours and fill the disk.
@@ -214,35 +209,6 @@ function register!(reg)
                note  = "novelty verdict for one function")
 
     end
-
-    # ── the CCZ fingerprint for non-quadratic APN ───────────────────────────
-
-    # The fingerprint index is a regenerable side store. A build is a write, so
-    # this suite must not create it. Register the case only when it is present.
-    if isfile(ccz_fingerprint_index_path())
-        benchmark!(reg; group = G, name = "classify_ccz_fingerprint", n = 8, cost = 1,
-               setup = () -> (gold_apn(8, 1), open_fingerprint()),
-               call  = p -> classify_ccz_fingerprint(p[1]; index = p[2]),
-               input_files=[ccz_fingerprint_index_path()],
-               note  = "fingerprint query on the index")
-    end
-
-    # ── reconciliation views ────────────────────────────────────────────────
-
-    benchmark!(reg; group = G, name = "reconciliation_summary", n = 0, cost = 1,
-           setup = () -> open_db(),
-           call  = db -> reconciliation_summary(db),
-           note  = "tally of the disagreements")
-
-    benchmark!(reg; group = G, name = "functions_by_source", n = 0, cost = 1,
-           setup = () -> open_db(),
-           call  = db -> functions_by_source(db),
-           note  = "rows per upstream source")
-
-    benchmark!(reg; group = G, name = "cross_source_matches", n = 0, cost = 1,
-           setup = () -> open_db(),
-           call  = db -> cross_source_matches(db),
-           note  = "rows that two sources share")
 
     return reg
 end

@@ -1,21 +1,25 @@
 # Catalog ingestion
 
 Use the [package guide](../../README.md) for entry formats, storage and rebuilding.
-`Makefile` is a thin wrapper over the Julia scripts here. `packages/VBFCatalog/data/sources.toml` is the
+`Makefile` is a thin wrapper over the Julia scripts here. `packages/VBFCatalog/src/data/sources.toml` is the
 source registry; fetching and importing use the same pins. Parser helpers are
 shared rather than duplicated between ingestion and reference rebuilding.
 `make fetch SOURCE=NAME` retains originals under `packages/VBFCatalog/data/raw/` and
 `make convert SOURCE=NAME` calls the registered `convert_X.jl`. Fixed LUTs and
 corpus metadata are declared in TOML, with one common function-row writer.
 
-Search discoveries use `reader = "lut_tsv"` entries in `data/corpora.toml`.
-`import_lut_corpus!` verifies the TSV's byte digest, count, APN property, degree
-and separating signatures with VBF and writes compact members into the same
-catalog. `bin/vbf discover --name SLUG ...` invokes this importer after its
-checkpointed search; `bin/vbf publish RUN --name SLUG` registers a stopped run.
-Public TSV inputs live in `data/luts/`. Missing discovery TSV intermediates can
-be regenerated exactly from the previously committed compact corpus on rebuild.
-Original run evidence remains local under `data/search/`.
+Search discoveries freeze deterministic `quadratic_coeffs` gzip inputs in
+`src/data/luts/` and declarations in `src/data/corpora.toml`. The common
+`import_lut_corpus!` reader checks checksums, count, APN property, degree and
+separating signatures using VBF, then packs members into the catalog. Original
+run evidence remains local under `data/search/`.
+
+`make catalog` builds from the pinned registry and declarations without reading
+an old catalog. It verifies a staging database, rewrites rows in a fixed order
+and replaces the tracked file atomically. Missing or changed inputs fail.
+`make reproducible` builds twice and compares their SHA-256 digests. Reproduction
+requires the same input bytes, Julia/SQLite versions and implementation. Local
+external-member receipts are verified before reuse; `BFA_REIMPORT=1` forces import.
 
 A source-comparison snapshot is built in three sequential stages:
 

@@ -19,7 +19,7 @@ import Scratch
 
 Override with `BFA_DATA_DIR`; defaults to the workspace's `packages/VBFCatalog/data/`.
 """
-catalog_data_dir() = abspath(get(ENV, "BFA_DATA_DIR", catalog_source_dir()))
+catalog_data_dir() = abspath(get(ENV, "BFA_DATA_DIR", joinpath(pkgdir(VBFCatalog), "data")))
 
 """Path holding a corpus: the catalog itself or the local bulk database."""
 function corpus_store_path(db::SQLite.DB, name::AbstractString)
@@ -27,6 +27,18 @@ function corpus_store_path(db::SQLite.DB, name::AbstractString)
     info === nothing && throw(ArgumentError("unknown corpus '$name'"))
     info.store_file in ("catalog","members.sqlite") || error("unsupported corpus store: $(info.store_file)")
     info.store_file == "catalog" ? catalog_path(db) : joinpath(catalog_data_dir(), info.store_file)
+end
+
+"""Register verified packed members against a checksum-bound dataset declaration."""
+function _register_declared_corpus!(db,entry,store;source_repo=get(entry,"source_repo",get(entry,"source","immutable input")))
+    store.count==entry["count"] || error("$(entry["name"]): source member count mismatch")
+    get(entry,"packed_sha256",store.sha256)==store.sha256 || error("$(entry["name"]): packed digest mismatch")
+    register_corpus!(db;name=entry["name"],n=8,m=8,degree=2,modulus=conway_polynomial(8),
+        encoding="quadratic-coeffs-v1",member_count=store.count,bytes_per_member=store.bytes_per_member,
+        store_file=store.store_file,store_sha256=store.sha256,family=get(entry,"family","quadratic-apn-8bit"),
+        bib_key=get(entry,"bib_key",nothing),source_repo,contributor="VBFCatalog source import",
+        added_date="",notes=entry["notes"])
+    nothing
 end
 function corpus_store_path(name::AbstractString)
     db = load_catalog()
@@ -43,17 +55,30 @@ end
 this API never creates an empty input database.
 """
 function with_corpus_rows(f::Function, db::SQLite.DB, name::AbstractString; after::Integer=0)
+    after>=0 || throw(ArgumentError("member offset must be nonnegative"))
+    info=corpus_info(db,name)
+    info===nothing && error("unknown corpus '$name'")
     path = corpus_store_path(db, name)
     isfile(path) || error("corpus '$name': store not found at $path")
     store = path == catalog_path(db) ? db : SQLite.DB("file:" * abspath(path) * "?mode=ro")
     rows = DBInterface.execute(store,
-        "SELECT idx, coeffs FROM corpus_members WHERE corpus=? AND idx>? ORDER BY idx", (name, after))
+        "SELECT idx,coeffs FROM corpus_members WHERE corpus=? AND idx>=COALESCE(" *
+        "(SELECT MAX(idx) FROM corpus_members WHERE corpus=? AND idx<=?),1) ORDER BY idx",
+        (name,name,after))
     try
-        f(rows)
+        f(Iterators.flatten(_corpus_chunk(row,Int(info.bytes_per_member),after) for row in rows))
     finally
         DBInterface.close!(rows)
         store === db || close(store)
     end
+end
+
+"""Expand a packed chunk while keeping copied bytes valid beyond the SQLite cursor."""
+function _corpus_chunk(row,width,after)
+    bytes=Vector{UInt8}(row.coeffs);start=Int(row.idx)
+    width>0 && length(bytes)%width==0 || error("invalid packed corpus chunk")
+    ((idx=start+i,coeffs=@view(bytes[i*width+1:(i+1)*width]))
+        for i in max(0,after-start+1):(length(bytes)÷width-1))
 end
 
 """SHA-256 of concatenated packed members in increasing idx order.
@@ -168,6 +193,7 @@ function build_corpus_store!(name::AbstractString, encodings; external::Bool=fal
     external && mkpath(dirname(path))
     store = external ? SQLite.DB(path) : db
     ctx = SHA.SHA2_256_CTX(); count = 0; bytes_per_member = 0
+    chunk=UInt8[];chunk_start=1
     try
         SQLite.execute(store, "CREATE TABLE IF NOT EXISTS corpus_members (corpus TEXT NOT NULL, idx INTEGER NOT NULL CHECK(idx>0), coeffs BLOB NOT NULL, PRIMARY KEY(corpus,idx)) WITHOUT ROWID")
         SQLite.transaction(store) do
@@ -179,8 +205,17 @@ function build_corpus_store!(name::AbstractString, encodings; external::Bool=fal
                     count == 1 && (bytes_per_member = length(enc))
                     length(enc) == bytes_per_member && bytes_per_member > 0 || error("inconsistent corpus encoding size")
                     SHA.update!(ctx, enc)
-                    DBInterface.execute(statement, (name, count, enc))
+                    if external
+                        DBInterface.execute(statement, (name, count, enc))
+                    else
+                        append!(chunk,enc)
+                        if count-chunk_start+1==1024
+                            DBInterface.execute(statement,(name,chunk_start,chunk))
+                            empty!(chunk);chunk_start=count+1
+                        end
+                    end
                 end
+                isempty(chunk) || DBInterface.execute(statement,(name,chunk_start,chunk))
             finally
                 DBInterface.close!(statement)
             end
@@ -260,7 +295,7 @@ function register_corpus!(
             ", ",
             _sql_quote(String(contributor)),
             ", ",
-            _sql_quote(String(added_date)),
+            _sql_quote(""),
             ", ",
             _sql_quote(String(notes)),
             ")",

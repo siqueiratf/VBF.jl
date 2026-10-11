@@ -127,7 +127,7 @@ end
 
 function main(; max_n::Int = _parse_max_n(ARGS), min_n::Int = 4)
     db = SQLite.DB(VBFCatalog.catalog_path())
-    today = string(Dates.today())
+    today = ""
     total_new = 0
     println("dimension | candidates | already present | INSERTED")
     println("----------+------------+-----------------+---------")

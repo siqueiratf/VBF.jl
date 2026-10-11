@@ -1,3 +1,5 @@
+isdefined(@__MODULE__,:SourceReaders) || include("../readers.jl")
+
 """
 Stream public quadratic APN records in decimal-LUT, gzip, tar or colex-mask format.
 Only decodes original bytes; malformed/truncated records retain explicit flags.
@@ -5,6 +7,7 @@ This tools module does not verify APN or classify equivalence.
 """
 module RawAPNReaders
 using VBF
+import ..SourceReaders
 # Quadratic monomials x_i x_j (i < j) in colex order: (0,1),(0,2),(1,2),(0,3),...
 const COLEX = [(i, j) for j in 0:7 for i in 0:j-1]
 
@@ -23,22 +26,7 @@ end
 
 # Parses all decimal integers of a line into lut. Returns the number of integers found
 # (-1 if one exceeds 255). Only the first 256 are stored.
-function parse_ints!(lut::Vector{UInt8}, s::AbstractString)
-    occursin(r"-\s*\d",s) && return -1
-    n = 0; cur = 0; indig = false; bad = false
-    @inbounds for c in codeunits(s)
-        if 0x30 <= c <= 0x39
-            cur = 10cur + (c - 0x30); indig = true
-            cur > 255 && (bad = true; cur = 0)
-        elseif indig
-            n += 1; n <= 256 && (lut[n] = UInt8(cur)); cur = 0; indig = false
-        end
-    end
-    if indig
-        n += 1; n <= 256 && (lut[n] = UInt8(cur))
-    end
-    bad ? -1 : n
-end
+const parse_ints! = SourceReaders.parse_decimal_lut!
 
 # --------------------------------------------------------------------------------------
 # Record stream: batches of (id, lut, parse_ok)

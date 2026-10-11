@@ -22,6 +22,11 @@ function check_catalog(path=catalog_path(); entries=VBFCatalog.catalog_source_di
     end
     db=load_catalog(path)
     try
+        inputs=[NamedTuple(row) for row in DBInterface.execute(db,"SELECT * FROM source_inputs ORDER BY source,path")]
+        meta=only(NamedTuple(row) for row in DBInterface.execute(db,"SELECT * FROM schema_meta"))
+        VBFCatalog._inputs_digest(inputs)==meta.inputs_sha256 || push!(errors,"build input manifest digest disagrees")
+        declarations=filter(row->row.source=="declarations",inputs)
+        declarations==VBFCatalog._declaration_inputs() || push!(errors,"catalog declarations changed since build")
         rows=Dict{String,Dict{String,Any}}()
         for row in DBInterface.execute(db,"SELECT * FROM functions")
             get!(rows,String(row.family),Dict{String,Any}())[String(row.canonical_name)]=VBFCatalog._row_namedtuple(row)
@@ -51,6 +56,9 @@ function check_catalog(path=catalog_path(); entries=VBFCatalog.catalog_source_di
                 end
             end
         end
+        expected=TOML.parsefile(joinpath(entries,"sources.toml"))["build"]["functions"]
+        actual=Dict(String(row.family)=>Int(row.c) for row in DBInterface.execute(db,"SELECT family,COUNT(*) c FROM functions GROUP BY family"))
+        actual==expected || push!(errors,"declared function family counts disagree: expected $expected; got $actual")
         test_source=read(joinpath(@__DIR__,"..","..","test","unit","catalog_queries_test.jl"),String)
         for family in keys(rows)
             occursin('"'*family*'"',test_source) || push!(errors,"family $family is absent from catalog_queries_test totals")
@@ -65,15 +73,19 @@ function check_catalog(path=catalog_path(); entries=VBFCatalog.catalog_source_di
         length(declared["APN"])+length(importer)==scalar("SELECT COUNT(*) c FROM functions WHERE is_apn=1") || push!(errors,"APN count mismatch")
         length(declared["Literature"])==scalar("SELECT COUNT(*) c FROM functions WHERE is_apn=0") || push!(errors,"non-APN count mismatch")
         count(e->get(e,"is_permutation",false),all_entries)+count(r->r.is_permutation==1,importer)==scalar("SELECT COUNT(*) c FROM functions WHERE is_permutation=1") || push!(errors,"permutation count mismatch")
-        for entry in TOML.parsefile(joinpath(entries,"corpora.toml"))["corpus"]
-            entry["reader"]=="lut_tsv" || continue
+        corpora=TOML.parsefile(joinpath(entries,"corpora.toml"))["corpus"]
+        Set(entry["name"] for entry in corpora)==Set(list_corpora(db)) || push!(errors,"declared corpus inventory disagrees")
+        for entry in corpora
             info=corpus_info(db,entry["name"])
             info!==nothing && info.member_count==entry["count"] || push!(errors,"$(entry["name"]): declared corpus missing or count changed")
+            info===nothing && continue
+            get(entry,"packed_sha256",info.store_sha256)==info.store_sha256 || push!(errors,"$(entry["name"]): declared packed digest changed")
+            entry["reader"] in ("lut_tsv","quadratic_coeffs") || continue
             input=joinpath(entries,entry["file"])
             if isfile(input)
                 open(io->bytes2hex(SHA.sha256(io)),input)==entry["sha256"] || push!(errors,"$(entry["name"]): source TSV digest changed")
-            elseif !haskey(entry,"run_snapshot_sha256")
-                push!(errors,"$(entry["name"]): public LUT input missing")
+            else
+                push!(errors,"$(entry["name"]): immutable corpus input missing")
             end
         end
         for name in list_corpora(db)

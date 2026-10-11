@@ -16,7 +16,9 @@ Primary sources:
 - `packages/VBF/`: core Julia algorithms for vectorial Boolean functions:
   representations, GF(2) linear algebra, spectra, invariants, equivalence, and
   constructions. This package must not depend on `VBFCatalog`.
-- `packages/VBFCatalog/`: catalog/data layer for APN functions, S-boxes,
+- `packages/VBFCatalog/`: declarations and generated catalog in `src/data/`,
+  runtime storage APIs in `src/storage/`; local originals, proof history and
+  derived indexes in package-level `data/`. Catalog/data layer for APN functions, S-boxes,
   bibliography, importers, and SQLite-backed corpora. It depends on `VBF`.
 - `packages/VBFSearch/`: reproducible search application consuming VBF and VBFCatalog;
   owns experiment state, checkpoints and evidence, never curated catalog writes.
@@ -61,11 +63,11 @@ Primary sources:
   become a parallel curated catalog.
 - Keep generated results, local overrides, credentials, and copyrighted paper
   inputs out of git.
-- **Catalog changes are gated.** `packages/VBFCatalog/data/catalog.sqlite` is a
-  tracked build product of `packages/VBFCatalog/data/`, and the catalog test items rebuild their
+- **Catalog changes are gated.** `packages/VBFCatalog/src/data/catalog.sqlite` is a
+  tracked build product of `packages/VBFCatalog/src/data/`, and the catalog test items rebuild their
   expected counts from its declarations and compare them against that DB — so editing
   one without the other fails CI. After touching anything under
-  `packages/VBFCatalog/src/`, tracked `packages/VBFCatalog/data/` inputs or `packages/VBFCatalog/data/bibliography.bib`,
+  `packages/VBFCatalog/src/` (including declarations and bibliography),
   rebuild (`make -C packages/VBFCatalog/src/import catalog`) and run
   `make -C packages/VBFCatalog/src/import check` until it prints
   `catalog-check: OK` — before committing, in the same commit. Enable the hook

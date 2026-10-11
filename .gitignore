@@ -61,14 +61,11 @@ CLAUDE.md
 
 # Downloaded catalog originals, import receipts and derived stores.
 packages/VBFCatalog/data/**
-!packages/VBFCatalog/data/apn/
-!packages/VBFCatalog/data/apn/**
-!packages/VBFCatalog/data/*.toml
-!packages/VBFCatalog/data/*.bib
-!packages/VBFCatalog/data/luts/
-!packages/VBFCatalog/data/luts/**
-packages/VBFCatalog/data/imports.toml
-!packages/VBFCatalog/data/catalog.sqlite
+
+# Rebuild inputs and the deterministic catalog live with the package source.
+packages/VBFCatalog/src/data/*.sqlite*
+!packages/VBFCatalog/src/data/catalog.sqlite
+!packages/VBFCatalog/src/data/luts/*.gz
 
 # Package-owned generated evidence; preserve directory traversal for READMEs.
 !packages/VBFCatalog/data/research/

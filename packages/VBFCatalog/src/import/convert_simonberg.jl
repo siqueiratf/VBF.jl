@@ -96,19 +96,14 @@ end
 
 function main()
     with_source("simonberg") do dir
-    sha = source_short_sha(dir)
+    sha = source_revision(dir)
     tag = "simonberg@" * sha
-    bfa_sha = try
-        readchomp(`git -C $(pkgdir(VBF)) rev-parse --short HEAD`)
-    catch
-        "unknown"
-    end
-    bfa_repo = "bfa@" * bfa_sha
+    bfa_repo = "VBF"
     contributor = "BFA Simon-Berg import (automated)"
-    added = string(Dates.now(Dates.UTC)) * "Z"
+    added = ""
     n = 8
     modulus = conway_polynomial(n)
-    @info "Simon-Berg thesis import" dir sha bfa_sha
+    @info "Simon-Berg thesis import" dir sha
 
     powtab = monomial_power_table(n, modulus)
     db = load_catalog()
@@ -118,7 +113,7 @@ function main()
         total_members = total_inserted = 0
         for class in 1:27
             path = joinpath(dir, "rep$(class).txt")
-            isfile(path) || (@warn "skipping (missing)" path; continue)
+            isfile(path) || error("missing class source: $path")
             st, encodings = import_one_class!(db, path, class;
                 source_tag = tag, bfa_repo = bfa_repo,
                 contributor = contributor, added_date = added,
@@ -132,16 +127,7 @@ function main()
         # bulk-corpus side store: all members as quadratic-coeffs-v1 encodings
         corpus = "simonberg_gf4_n8"
         store = build_corpus_store!(corpus, all_encodings)
-        register_corpus!(db;
-            name = corpus, n = n, m = n, member_count = store.count, degree = 2,
-            modulus = modulus, encoding = "quadratic-coeffs-v1",
-            bytes_per_member = store.bytes_per_member,
-            store_file = store.store_file, store_sha256 = store.sha256,
-            family = "CCZ-rep-GF4", bib_key = nothing,
-            source_repo = bfa_repo * "|" * tag, contributor = contributor,
-            added_date = added,
-            notes = "Simon Berg thesis: all CCZ classes of GF(2²)-coefficient quadratic " *
-                    "APN over GF(2⁸); 27 class representatives are first-class CCZ-rep-GF4 rows")
+        VBFCatalog._register_declared_corpus!(db,corpus_entry(corpus),store;source_repo=tag)
         println("[simonberg] TOTAL members=$(total_members) rep_rows_inserted=$(total_inserted) ",
                 "corpus=$(corpus) stored=$(store.count) bytes/member=$(store.bytes_per_member)")
     finally

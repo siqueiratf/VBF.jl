@@ -131,5 +131,5 @@ Run the review first; act on it only after the user chooses to.
   thread after the agent returns — not by the reviewer agent.
 - Keep this skill in sync with the agents: if the reviewer agent's name, the
   `apn-catalog-updater` name, the `packages/VBFRepro/src/<ID>/input/` layout, or the catalog path
-  `packages/VBFCatalog/data/apn/n<N>_apn.toml` changes, update the
+  `packages/VBFCatalog/src/data/apn/n<N>_apn.toml` changes, update the
   relevant steps here.

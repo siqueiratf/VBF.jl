@@ -1,24 +1,39 @@
+[build]
+max_n = 11
+
+[build.functions]
+"APN" = 35
+"APN-rep" = 529
+"CCZ-rep-GF4" = 27
+"Literature" = 18
+"known-family" = 69
+"known-sporadic" = 4
+
 [[source]]
 cache_name = "sboxU"
 check_kind = "dir"
 check_path = "sboxU/scripts/apnDB"
 converter = "convert_apn_reps.jl"
 env_var = "BFA_SBOXU_PATH"
+files = ["reprs6.py", "reprs7.py", "reprs8.py", "eightBitAPN.py"]
 label = "APN reps"
 name = "apn_reps"
 required = true
 revision = "7066b825c979ceefa901e7be3b2afcc63f587bcf"
 upstream = "https://github.com/lpp-crypto/sboxU.git"
+
 [[source]]
 cache_name = "sboxU"
 check_kind = "dir"
 check_path = "sboxU/scripts/apnDB"
 converter = "convert_quadratic_apn_8bit.jl"
 env_var = "BFA_SBOXU_PATH"
+files = ["eightBitAPN.py", "firstQAM.py", "BeierleLeander.py", "apn_8bit_BLP22.py", "secondQAM.py"]
 label = "quadratic APN 8-bit corpora"
 name = "quadratic_apn_8bit"
 revision = "7066b825c979ceefa901e7be3b2afcc63f587bcf"
 upstream = "https://github.com/lpp-crypto/sboxU.git"
+
 [[source]]
 cache_name = "beierle2025"
 check_kind = "file"
@@ -32,54 +47,38 @@ published_bytes = 3395265744
 published_md5 = "dd6ae0655ba8a299a3d668cfc6cf10bf"
 required = true
 reuse_corpus = "beierle2025_n8"
-[[source]]
-cache_name = "sboxU"
-check_kind = "dir"
-check_path = "sboxU/scripts/apnDB"
-converter = "convert_sboxu_apn.jl"
-env_var = "BFA_SBOXU_PATH"
-label = "sboxU reconciliation"
-name = "sboxu_reconcile"
-revision = "7066b825c979ceefa901e7be3b2afcc63f587bcf"
-upstream = "https://github.com/lpp-crypto/sboxU.git"
+sha256 = "580b7143af95e24995845266e765f29d59d7a507116fc86889f51d5d1a7461f8"
+
 [[source]]
 cache_name = "thesis"
 check_kind = "file"
 check_path = "rep1.txt"
 converter = "convert_simonberg.jl"
 env_var = "BFA_THESIS_PATH"
+files = ["rep1.txt", "rep2.txt", "rep3.txt", "rep4.txt", "rep5.txt", "rep6.txt", "rep7.txt", "rep8.txt", "rep9.txt", "rep10.txt", "rep11.txt", "rep12.txt", "rep13.txt", "rep14.txt", "rep15.txt", "rep16.txt", "rep17.txt", "rep18.txt", "rep19.txt", "rep20.txt", "rep21.txt", "rep22.txt", "rep23.txt", "rep24.txt", "rep25.txt", "rep26.txt", "rep27.txt"]
 label = "Simon-Berg thesis"
 name = "simonberg"
 required = true
 revision = "c13952d2458cb692171816b483f4e8ac0c62455a"
 upstream = "https://github.com/Simon-Berg/thesis.git"
-[[source]]
-check_kind = "file"
-check_path = "list_of_APN_functions_for_different_n"
-converter = "convert_xanadu_apn.jl"
-env_var = "BFA_XANADU_PATH"
-label = "Xanadu APN"
-name = "xanadu"
-[[source]]
-check_kind = "dir"
-check_path = "database/apn"
-converter = "convert_apn_repository.jl"
-env_var = "BFA_APN_REPO_PATH"
-label = "APN-Repository"
-name = "apn_repo"
+
 [[source]]
 check_kind = "file"
 check_path = "apn_all.json"
 converter = "convert_kuznetsov2026.jl"
+enabled = false
 env_var = "BFA_KUZNETSOV2026_PATH"
 label = "Kuznetsov 2026 original JSON dataset"
 name = "kuznetsov2026"
+
 [[source]]
+args = ["--max-n", "11"]
 builtin = true
 converter = "convert_known_families.jl"
 label = "known APN families (constructed)"
 name = "known_families"
 required = true
+
 [[source]]
 builtin = true
 converter = "convert_sporadic_known.jl"

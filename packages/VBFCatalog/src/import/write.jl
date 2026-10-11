@@ -6,7 +6,7 @@ Converters supply source metadata; this is the only function-row insertion path.
 SQLite enforces uniqueness and foreign keys. Invalid claimed APNs are rejected.
 """
 function insert_function!(db, F; family, canonical_name, source_repo, contributor,
-                          added_date, notes, bib_key=nothing, algebraic_form=nothing,
+                          notes, added_date="", bib_key=nothing, algebraic_form=nothing,
                           require_apn=true)
     n=inputbits(F)
     du=Int(differential_uniformity(F)); degree=algebraic_degree(F)
@@ -17,6 +17,15 @@ function insert_function!(db, F; family, canonical_name, source_repo, contributo
         (family,n,n,lut_sha256_hex(F),canonical_lut_bytes(F),algebraic_form,degree,du,
          Int(linearity(F)),perm ? Int(boomerang_uniformity(F)) : nothing,
          Int(du==2),Int(perm),Int(degree<=2),canonical_name,bib_key,source_repo,
-         contributor,added_date,notes))
+         contributor,"",notes))
+    nothing
+end
+
+"""Merge exact-LUT source tags in a stable order."""
+function merge_source_repo!(db, function_id, added_source)
+    current=only(String(row.source_repo) for row in DBInterface.execute(db,
+        "SELECT source_repo FROM functions WHERE id=?",(function_id,)))
+    tags=sort!(unique(vcat(split(current,'|'),[String(added_source)])))
+    SQLite.execute(db,"UPDATE functions SET source_repo=? WHERE id=?",(join(tags,'|'),function_id))
     nothing
 end

@@ -61,7 +61,7 @@ For these papers, the verdict must distinguish between these levels:
 
 ## APN catalog completeness (read-only — flag, do not write)
 The library ships a declarative APN catalog under
-`packages/VBFCatalog/data/apn/n<N>_apn.toml` (one `[[apn_functions]]`
+`packages/VBFCatalog/src/data/apn/n<N>_apn.toml` (one `[[apn_functions]]`
 block per entry: `name`, `n`, `m`, `lut` or `monomial_exponent`+`modulus`,
 `bib_key`, `algebraic_form`, …). Loaded via `apn_catalog_names`,
 `apn_catalog_metadata`, `load_apn_function`.
@@ -87,7 +87,7 @@ Do **not** edit any TOML file. For each **missing** function, emit a
 - `n`, `m`, `is_permutation`;
 - `lut` (or `monomial_exponent` + `modulus`) as it would appear in TOML;
 - `algebraic_form`, `bib_key`, `source`;
-- target file `packages/VBFCatalog/data/apn/n<N>_apn.toml`;
+- target file `packages/VBFCatalog/src/data/apn/n<N>_apn.toml`;
 - the equivalence evidence proving no existing entry matches.
 
 If catalog comparison is computationally infeasible at the paper's dimension,

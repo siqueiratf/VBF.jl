@@ -1,6 +1,6 @@
 ---
 name: apn-catalog-updater
-description: Adds new APN functions to the VBFCatalog declarative catalog. Consumes Catalog-gap records produced by the paper-reproduction-reviewer (or an equivalent spec: name, n, m, LUT or monomial exponent, bib_key, source, equivalence evidence). Re-verifies each function is APN and CCZ/EA-inequivalent to every existing catalog entry BEFORE writing, then appends a well-formed [[apn_functions]] block to packages/VBFCatalog/data/apn/n<N>_apn.toml. Refuses to write functions that are not APN, are already present, or come without novelty evidence. Explicit follow-up step — invoke only after a review has flagged catalog gaps.
+description: Adds new APN functions to the VBFCatalog declarative catalog. Consumes Catalog-gap records produced by the paper-reproduction-reviewer (or an equivalent spec: name, n, m, LUT or monomial exponent, bib_key, source, equivalence evidence). Re-verifies each function is APN and CCZ/EA-inequivalent to every existing catalog entry BEFORE writing, then appends a well-formed [[apn_functions]] block to packages/VBFCatalog/src/data/apn/n<N>_apn.toml. Refuses to write functions that are not APN, are already present, or come without novelty evidence. Explicit follow-up step — invoke only after a review has flagged catalog gaps.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: opus
 ---
@@ -22,7 +22,7 @@ If a record is missing the function definition, `n`, or a `bib_key`/`source`,
 **refuse it** and report what's missing — do not invent values.
 
 ## Catalog layout (ground truth)
-- Entries live in `packages/VBFCatalog/data/apn/n<N>_apn.toml`, each a
+- Entries live in `packages/VBFCatalog/src/data/apn/n<N>_apn.toml`, each a
   `[[apn_functions]]` block. Read an existing entry first and mirror its field
   order and style exactly.
 - Names are unique **across all dimensions** — the loader errors on duplicates.
@@ -59,7 +59,7 @@ Only after all four checks pass:
 
 ## Post-write: rebuild the catalog and run the gate (MANDATORY)
 
-A TOML edit alone is half a change. `packages/VBFCatalog/data/catalog.sqlite` is
+A TOML edit alone is half a change. `packages/VBFCatalog/src/data/catalog.sqlite` is
 committed, and the catalog test items reconstruct their expected counts from the
 TOMLs and compare them against that DB — so a TOML-only change breaks
 `catalog_queries_test` and `catalog_content_test` in CI with a bare count

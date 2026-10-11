@@ -18,7 +18,7 @@ using VBF
 #     for F in reps with is_quadratic_apn(F): a = |Aut(F)|; mass += 2^n // a; hist[a] += 1
 #     print classes, exact rational mass, float mass, histogram of |Aut|
 # VBF API used: SBox, is_quadratic_apn, automorphisms_from_ortho_derivative
-# VBFCatalog API used: load_catalog, DBInterface (equivalence_classes, functions tables)
+# VBFCatalog API used: load_catalog, ccz_class_representatives
 
 isdefined(@__MODULE__, :encode_coeffs) || include(joinpath(@__DIR__, "helpers.jl"))
 
@@ -33,31 +33,32 @@ catalog for `n in nmin:nmax`. Cost grows fast with `n` (n = 7 takes minutes).
 function exact_masses(nmin::Int, nmax::Int; io::IO = stdout)
     db = VBFCatalog.load_catalog()
     out = Dict{Int,Any}()
-    for n in nmin:nmax
-        q = "SELECT f.id, f.lut_blob FROM equivalence_classes e JOIN functions f " *
-            "ON f.id = e.canonical_id WHERE e.kind='CCZ' AND e.n=$n"
-        reps = [(Int(r.id), Vector{UInt8}(r.lut_blob)) for r in VBFCatalog.DBInterface.execute(db, q)]
-        mass = big(0) // big(1)
-        hist = Dict{Int,Int}()
-        t = @elapsed for (_, blob) in reps
-            lut = n <= 8 ? blob : reinterpret(UInt16, blob)
-            F = SBox{n}(collect(lut))
-            is_quadratic_apn(F) || continue          # skip non-quadratic representatives
-            a = length(automorphisms_from_ortho_derivative(F))
-            hist[a] = get(hist, a, 0) + 1
-            mass += big(2)^n // a
+    try
+        for n in nmin:nmax
+            reps = VBFCatalog.ccz_class_representatives(db; n)
+            mass = big(0) // big(1)
+            hist = Dict{Int,Int}()
+            t = @elapsed for rep in reps
+                F = rep.sbox
+                is_quadratic_apn(F) || continue          # skip non-quadratic representatives
+                a = length(automorphisms_from_ortho_derivative(F))
+                hist[a] = get(hist, a, 0) + 1
+                mass += big(2)^n // a
+            end
+            classes = sum(values(hist); init = 0)
+            r = (classes = classes, mass = mass, mass_float = Float64(mass),
+                 aut_hist = sort(collect(hist)), seconds = t)
+            out[n] = r
+            @printf(io, "n=%d quadratic APN classes=%d  sum 2^n/|Aut| = %s = %.6f  [%.1fs]\n",
+                    n, classes, string(mass), Float64(mass), t)
+            println(io, "    |Aut| histogram: ", string(r.aut_hist))
+            if haskey(EXACT_MASS, (n, n))
+                println(io, "    stored EXACT_MASS[(", n, ",", n, ")] matches: ", mass == EXACT_MASS[(n, n)])
+            end
+            flush(io)
         end
-        classes = sum(values(hist); init = 0)
-        r = (classes = classes, mass = mass, mass_float = Float64(mass),
-             aut_hist = sort(collect(hist)), seconds = t)
-        out[n] = r
-        @printf(io, "n=%d quadratic APN classes=%d  sum 2^n/|Aut| = %s = %.6f  [%.1fs]\n",
-                n, classes, string(mass), Float64(mass), t)
-        println(io, "    |Aut| histogram: ", string(r.aut_hist))
-        if haskey(EXACT_MASS, (n, n))
-            println(io, "    stored EXACT_MASS[(", n, ",", n, ")] matches: ", mass == EXACT_MASS[(n, n)])
-        end
-        flush(io)
+        out
+    finally
+        close(db)
     end
-    out
 end

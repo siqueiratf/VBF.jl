@@ -120,10 +120,10 @@ style/docs). Never skip hooks. Never amend published commits.
 
 ## Environment variables for catalog importers
 
-`BFA_SBOXU_PATH`, `BFA_XANADU_PATH`, `BFA_APN_REPO_PATH`, `BFA_THESIS_PATH` —
+`BFA_SBOXU_PATH`, `BFA_THESIS_PATH`, `BFA_BEIERLE2025_PATH` —
 override original-source cache paths for `src/import/` scripts. `BFA_DATA_DIR`
-selects local bulk/index storage under `packages/VBFCatalog/data/`. Curated entries and small
-compact corpora share `packages/VBFCatalog/data/catalog.sqlite`; old measurements live in `packages/VBF/perf/data/`.
+selects local bulk/index/proof storage under `packages/VBFCatalog/data/`. `BFA_SOURCE_DIR` selects declarations under `src/data/`. Curated entries and small
+compact corpora share `packages/VBFCatalog/src/data/catalog.sqlite`; old measurements live in `packages/VBF/perf/data/`.
 
 ## Reproducible APN command
 

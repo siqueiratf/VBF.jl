@@ -6,15 +6,10 @@ export load_literature_sbox, literature_sbox_names, literature_sbox_metadata
 # catalog open / build / content addressing
 export catalog_path, catalog_source_dir, is_catalog_built, load_catalog, create_catalog
 export canonical_lut_bytes, lut_sha256_hex, SCHEMA_VERSION
+export finalize_catalog!
 
 # queries
 export list_functions, count_functions, find_function, load_sbox
-
-# reconciliation
-export list_reconciliation_disagreements, count_reconciliation_disagreements
-export reconciliation_summary, record_disagreement!, merge_source_repo!
-export KNOWN_SOURCES, reconciliation_by_source, functions_by_source
-export cross_source_matches, multi_source_functions
 
 # declarative APN catalog
 export apn_catalog_names, apn_catalog_metadata, load_apn_function
@@ -30,9 +25,8 @@ export catalog_data_dir, with_corpus_rows, corpus_digest
 
 # σ-signature CCZ classification + novelty oracle
 export sigma_key, sigma_hash, build_sigma_index!, classify_ccz, is_novel
-export ccz_fingerprint_key, ccz_fingerprint_hash, build_ccz_fingerprint_index!
-export ccz_fingerprint_index_path, classify_ccz_fingerprint, is_novel_fingerprint
 export populate_ccz_equivalence_classes!, sigma_index_path
+export ccz_class_representatives, curated_classes_path
 export refresh_curated_sigma_index!
 
 export AuditedAPNReference, open_apn_reference, close_apn_reference
@@ -42,6 +36,8 @@ export signature_summary, signature_count
 
 export equivalence_evidence, verify_graph_witness, equivalence_solver_fingerprint
 export check_equivalence!, list_equivalence_checks, verify_equivalence_check
+export equivalence_checks_path
 export deduplicate_signature_buckets!, classify_signature_buckets!, classification_summary
 export candidate_lut, each_candidate, open_catalog_reference
 export import_lut_corpus!
+export write_corpus_input

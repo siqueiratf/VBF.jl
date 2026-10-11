@@ -1,7 +1,8 @@
 # VBF.jl
 
 Julia >= 1.12 workspace for vectorial Boolean functions. `packages/VBF` contains
-mathematical algorithms; `packages/VBFCatalog` provides the catalog and corpora;
+mathematical algorithms; `packages/VBFCatalog` provides the catalog and corpora
+from pinned heterogeneous inputs under `src/data/`;
 `packages/VBFSearch` manages reproducible discovery experiments;
 `packages/VBFRepro` runs paper reproductions. `packages/VBFWorkingPaper` owns the working paper and comparative studies.
 The core package never depends on the catalog. See [project context](.claude/context/PROJECT.md)

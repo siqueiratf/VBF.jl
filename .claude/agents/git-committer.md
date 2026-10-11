@@ -29,7 +29,7 @@ If **any** file under these paths is in the commit — staged, modified, or
 untracked:
 
 ```
-packages/VBFCatalog/src/     packages/VBFCatalog/data/catalog.sqlite
+packages/VBFCatalog/src/     packages/VBFCatalog/src/data/catalog.sqlite
 ```
 
 then, before staging anything, run:
@@ -38,15 +38,15 @@ then, before staging anything, run:
 make -C packages/VBFCatalog/src/import check
 ```
 
-This must end in `catalog-check: OK`. It verifies that `packages/VBFCatalog/data/` and the
+This must end in `catalog-check: OK`. It verifies that `packages/VBFCatalog/src/data/` and the
 committed `data/catalog.sqlite` still agree and then runs the catalog test items.
 
 - **Non-zero exit → do NOT commit.** Report the script's output verbatim and
-  stop. The usual cause is a `packages/VBFCatalog/data/` edit whose catalog rebuild was
+  stop. The usual cause is a `packages/VBFCatalog/src/data/` edit whose catalog rebuild was
   forgotten: the DB is a tracked build product, and the catalog tests
   reconstruct their expected counts from the TOMLs and compare them against it.
   The fix is `make -C packages/VBFCatalog/src/import catalog` plus
-  `git add packages/VBFCatalog/data/catalog.sqlite`, and that is the fixer's job,
+  `git add packages/VBFCatalog/src/data/catalog.sqlite`, and that is the fixer's job,
   not yours.
 - **Never** set `VBF_SKIP_CATALOG_CHECK` or `VBF_SKIP_CATALOG_TESTS` to get past
   it. If Julia is missing so the test items cannot run, halt and report that —

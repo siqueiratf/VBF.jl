@@ -10,7 +10,7 @@ function main()
             find_function(db;lut_sha256=lut_sha256_hex(F))===nothing || continue
             insert_function!(db,F;family="known-sporadic",canonical_name=entry["canonical_name"],
                 bib_key=entry["bib_key"],notes=entry["notes"],source_repo=entry["source_repo"],
-                contributor=entry["contributor"],added_date=string(today()))
+                contributor=entry["contributor"],added_date="")
         end
     finally
         close(db)

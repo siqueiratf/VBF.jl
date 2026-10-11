@@ -5,7 +5,7 @@ using VBFSearch.DiscoveryStore
 
 @testset "Catalog publication preserves frozen reference scope" begin
     mktempdir() do dir
-        withenv("BFA_DATA_DIR"=>dir,"BFA_CATALOG_PATH"=>joinpath(dir,"catalog.sqlite")) do
+        withenv("BFA_DATA_DIR"=>dir,"BFA_SOURCE_DIR"=>joinpath(dir,"sources"),"BFA_CATALOG_PATH"=>joinpath(dir,"catalog.sqlite")) do
             db=VBFCatalog.create_catalog(VBFCatalog.catalog_path())
             try
                 for F in (gold_apn(8),gold_apn(8,3))
@@ -16,7 +16,8 @@ using VBFSearch.DiscoveryStore
                 before=VBFSearch.open_reference(dir)
                 metadata=VBFCatalog.reference_metadata(before)
                 VBFSearch.close_reference(before)
-                open(io->TOML.print(io,Dict("corpus"=>[])),joinpath(dir,"corpora.toml"),"w")
+                mkpath(VBFCatalog.catalog_source_dir())
+                open(io->TOML.print(io,Dict("corpus"=>[])),joinpath(VBFCatalog.catalog_source_dir(),"corpora.toml"),"w")
                 run=joinpath(dir,"search","fixture")
                 store=open_store(run,Dict("test"=>"publication"))
                 new=first(r.sbox for r in taniguchi_apn_representatives(4) if r.new)
@@ -28,8 +29,11 @@ using VBFSearch.DiscoveryStore
                 result=publish(run;name="fixture")
                 @test result["accepted_classes"]==1 && !result["reused"]
                 @test result["literature_novelty"]=="unresolved"
+                close(db);db=VBFCatalog.load_catalog()
                 @test VBFCatalog.corpus_length(db,"fixture")==1
+                catalog_bytes=read(VBFCatalog.catalog_path())
                 again=publish(run;name="fixture")
+                @test read(VBFCatalog.catalog_path())==catalog_bytes
                 @test again["reused"] && again["accepted_classes"]==1
                 frozen=VBFSearch.open_reference(dir;sources=metadata["sources"])
                 @test VBFCatalog.reference_metadata(frozen)["sha256"]==metadata["sha256"]
@@ -46,7 +50,25 @@ using VBFSearch.DiscoveryStore
                 @test_throws ErrorException publish(run;name="fixture")
                 increment=publish(run;name="fixture_more")
                 @test increment["accepted_classes"]==1
+                close(db);db=VBFCatalog.load_catalog()
                 @test VBFCatalog.corpus_length(db,"fixture")==VBFCatalog.corpus_length(db,"fixture_more")==1
+                # Reconstruct publication from immutable declarations without the run DB.
+                rebuilt=joinpath(dir,"rebuild.sqlite")
+                fresh=VBFCatalog.create_catalog(rebuilt)
+                try
+                    for F in (gold_apn(8),gold_apn(8,3))
+                        VBFCatalog.SQLite.execute(fresh,"INSERT INTO functions(family,n,m,lut_sha256,lut_blob,is_apn,is_permutation,is_quadratic,source_repo,contributor,added_date) VALUES('fixture',8,8,?,?,1,0,1,'fixture','fixture','fixture')",
+                            (VBFCatalog.lut_sha256_hex(F),VBFCatalog.canonical_lut_bytes(F)))
+                    end
+                    entries=TOML.parsefile(joinpath(VBFCatalog.catalog_source_dir(),"corpora.toml"))["corpus"]
+                    for entry in reverse(entries)
+                        VBFCatalog.import_lut_corpus!(fresh,entry)
+                    end
+                finally
+                    close(fresh)
+                end
+                VBFCatalog.finalize_catalog!(rebuilt)
+                @test read(rebuilt)==read(VBFCatalog.catalog_path())
                 seeds=joinpath(dir,"seeds.tsv")
                 @test DiscoveryInputs.catalog_seeds(seeds;corpora=["fixture"],parents=1)==1
                 selected=[];each_candidate(r->push!(selected,r),seeds)

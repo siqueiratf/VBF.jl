@@ -269,8 +269,8 @@ function build()
     % Produced by packages/VBFWorkingPaper/src/analysis/reproductions/grades.jl from:
     %   packages/VBFRepro/src/<id>/input/*.tex     (the publication, PDF-converted)
     %   packages/VBFRepro/src/<id>/README.md       (the reproduction review)
-    %   packages/VBFCatalog/data/bibliography.bib
-    %   packages/VBFCatalog/data/catalog.sqlite  (bulk_corpora, functions)
+    %   packages/VBFCatalog/src/data/bibliography.bib
+    %   packages/VBFCatalog/src/data/catalog.sqlite  (bulk_corpora, functions)
     % Regenerate with:  julia --project=. packages/VBFWorkingPaper/src/analysis/reproductions/grades.jl
     """
 
