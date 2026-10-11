@@ -41,7 +41,7 @@ instantiate the workspace on every invocation. Paper-specific dependencies such
 as Nemo and AlgebraicSolving remain in that execution environment, outside the
 lightweight runner's dependencies.
 
-`run_paper` writes a fresh run directory under `data/repro/runs/<paper>/<run-id>/`.
+`run_paper` writes a fresh run directory under `packages/VBFRepro/src/results/runs/<paper>/<run-id>/`.
 Use `output="/absolute/empty/directory"` to choose a different location. `run.toml`
 records arguments, parameters, explicit environment overrides, source hashes,
 timestamps, elapsed time and status; `output.log` contains stdout and stderr.
@@ -69,7 +69,7 @@ Runs using private inputs still need those files for replay.
 Original ignored inputs and historical result files remain beside the migrated
 paper, byte-for-byte, under `src/<slug>/`. Existing paper targets retain
 their explicit `save_results` controls and paper-local `results/` output; the
-execution log and configuration are consistently stored under `data/repro/`.
+execution log and configuration are consistently stored under `packages/VBFRepro/src/results/`.
 The runner does not rewrite historical evidence or add checkpoint guarantees to
 paper algorithms that lack them. Cross-paper studies and publication presentation belong to VBFWorkingPaper.
 Reproductions never import that package.

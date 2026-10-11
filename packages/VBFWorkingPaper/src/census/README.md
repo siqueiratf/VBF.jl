@@ -11,7 +11,7 @@ Run in the WorkingPaper environment, with explicit seed, stream count and limits
 ```sh
 julia --project=packages/VBFWorkingPaper -t 4 -e '
 include("packages/VBFWorkingPaper/src/census/sampler.jl")
-run_sampling(outdir="data/working-paper/census/sample01",first_seed=1,nchunks=1,
+run_sampling(outdir="packages/VBFWorkingPaper/doc/generated/census/sample01",first_seed=1,nchunks=1,
              samples=1000,n=6,m=6,threads=4,streams=4)'
 ```
 

@@ -43,7 +43,11 @@ scope/provenance check, not an independent recomputation of database contents.
 Close with [`close_apn_reference`](@ref), preferably inside `try` / `finally`.
 """
 function open_apn_reference(dir; supplement_path::AbstractString="",
-        supplement_signature=_reference_supplement_signature, required_signatures=String[])
+        supplement_signature=_reference_supplement_signature, required_signatures=String[],sources=nothing)
+    if isfile(joinpath(dir,"ccz_sigma_index.sqlite"))
+        isempty(supplement_path) || error("import public supplements into the catalog before using its reference")
+        return open_catalog_reference(dir;required_signatures,sources)
+    end
     manifest_path = joinpath(dir, "comparison.toml")
     isfile(manifest_path) || error("missing source-rebuilt APN reference: $dir")
     manifest_bytes = read(manifest_path)
@@ -100,6 +104,47 @@ function open_apn_reference(dir; supplement_path::AbstractString="",
         statement === nothing || DBInterface.close!(statement)
         SQLite.close(db)
         rethrow()
+    end
+end
+
+"""Open the catalog's verified signature index without creating a second corpus.
+
+Bind exact index rows to corpus bytes and curated LUTs. `sources` freezes the
+reference used by a run: appending another corpus does not change that run's
+scope, whereas modifying a covered source changes its digest and refuses resume.
+This is computational evidence against the indexed quadratic corpus, not an
+assertion that every published construction is present.
+"""
+function open_catalog_reference(dir=catalog_data_dir();required_signatures=String[],sources=nothing)
+    path=joinpath(dir,"ccz_sigma_index.sqlite")
+    isfile(path) || error("missing catalog signature index; run the catalog index command")
+    catpath=dir==catalog_data_dir() ? catalog_path() : joinpath(dir,"catalog.sqlite")
+    isfile(catpath) || error("missing catalog at $catpath")
+    db=SQLite.DB("file:"*abspath(path)*"?mode=ro")
+    cat=SQLite.DB("file:"*abspath(catpath)*"?mode=ro")
+    statement=nothing
+    try
+        SQLite.execute(db,"BEGIN")
+        input=_classification_inputs(cat,db,8;sources)
+        selected=sources===nothing ? [String(r.source) for r in DBInterface.execute(db,"SELECT DISTINCT source FROM ccz_sigma_index WHERE n=8 ORDER BY source")] : sort!(unique(String.(sources)))
+        filter=join(_sql_quote.(selected),',')
+        statement=DBInterface.prepare(db,"SELECT 1 FROM ccz_sigma_index WHERE n=8 AND sigma_hash=? AND source IN ($filter) LIMIT 1")
+        required=sort!(unique(String.(required_signatures)))
+        for hash in required
+            isempty(collect(DBInterface.execute(statement,(hash,)))) && error("catalog omits required signature: $hash")
+        end
+        metadata=Dict{String,Any}("path"=>abspath(path),"sha256"=>input.input_sha256,
+            "manifest_sha256"=>input.input_sha256,"signatures"=>input.signatures,
+            "records"=>input.records,"sources"=>selected,"supplement_sha256"=>"none",
+            "supplement_path"=>"none","scope"=>"catalog-indexed quadratic (8,8)-APNs; frozen source set",
+            "required_signatures"=>required,"literature_complete"=>false)
+        AuditedAPNReference(db,statement,metadata,Dict{String,Vector{Vector{UInt8}}}(),false)
+    catch
+        statement===nothing || DBInterface.close!(statement)
+        close(db)
+        rethrow()
+    finally
+        close(cat)
     end
 end
 

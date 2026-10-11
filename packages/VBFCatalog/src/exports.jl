@@ -43,3 +43,5 @@ export signature_summary, signature_count
 export equivalence_evidence, verify_graph_witness, equivalence_solver_fingerprint
 export check_equivalence!, list_equivalence_checks, verify_equivalence_check
 export deduplicate_signature_buckets!, classify_signature_buckets!, classification_summary
+export candidate_lut, each_candidate, open_catalog_reference
+export import_lut_corpus!

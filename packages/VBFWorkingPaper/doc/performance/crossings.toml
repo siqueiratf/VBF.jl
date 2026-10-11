@@ -21,8 +21,8 @@
 
 [meta]
 schema_version = 1
-source_csv     = "data/perf/archive/generated/benchmarks.csv"
-source_meta    = "data/perf/archive/generated/benchmarks_meta.tex"
+source_csv     = "packages/VBF/perf/data/archive/generated/benchmarks.csv"
+source_meta    = "packages/VBF/perf/data/archive/generated/benchmarks_meta.tex"
 note           = "Edit this file, then run `make -C packages/VBFWorkingPaper crossings`."
 
 # ── the fit ──────────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ max_residual_bits = 0.5
 overhead_floor_seconds = 1.0e-6
 
 # The two ceilings that the reachability columns use. The first is one hour of
-# one core. The second is the memory caution that data/perf/archive/bench/README.md states for
+# one core. The second is the memory caution that packages/VBF/perf/data/archive/bench/README.md states for
 # level 3.
 time_ceiling_seconds = 3600.0
 memory_ceiling_bytes = 4294967296     # 4 GiB
@@ -97,7 +97,7 @@ catalog         = "bit_width"
 "spectra/walsh_transform"     = "vector_len"
 # The anomaly framework uses arbitrary-precision arithmetic. Its cost follows
 # the precision and the value range, not the width of the S-box. The comment at
-# the head of data/perf/archive/bench/suites/03_spectra.jl states this.
+# the head of packages/VBF/perf/data/archive/bench/suites/03_spectra.jl states this.
 "spectra/ddt_coeff_probability" = "fixed"
 "spectra/expected_boomerang_uniformity_distribution" = "fixed"
 "spectra/expected_differential_uniformity_distribution" = "fixed"
@@ -123,28 +123,28 @@ case = "spectra/ddt"
 predicted_slope = 2.0
 kind   = "exact"
 basis  = "the table holds 2^{2n} cells and every cell is written once"
-source = "data/perf/archive/bench/suites/03_spectra.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/03_spectra.jl"
 
 [[growth]]
 case = "spectra/lat"
 predicted_slope = 2.0
 kind   = "lower_bound"
 basis  = "2^n fast Walsh-Hadamard transforms, each of n*2^n butterflies"
-source = "data/perf/archive/bench/suites/03_spectra.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/03_spectra.jl"
 
 [[growth]]
 case = "invariants/ortho_derivative"
 predicted_slope = 2.0
 kind   = "exact"
 basis  = "2^n derivative directions, each scanned over 2^n inputs"
-source = "data/perf/archive/bench/suites/04_invariants.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/04_invariants.jl"
 
 [[growth]]
 case = "invariants/sigma_multiplicities"
 predicted_slope = 2.0
 kind   = "lower_bound"
 basis  = "the Walsh spectrum of 2^{2n} cells, then a fourth power moment"
-source = "data/perf/archive/bench/suites/04_invariants.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/04_invariants.jl"
 
 [[growth]]
 case = "invariants/gamma_rank"
@@ -158,77 +158,77 @@ case = "linalg/extract_linear_subspaces"
 predicted_slope = 1.0
 kind   = "exact"
 basis  = "pairs drawn from a span of 2^{n/2} elements: 2^n pairs"
-source = "data/perf/archive/bench/suites/02_linalg.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/02_linalg.jl"
 
 [[growth]]
 case = "linalg/gauss_jordan"
 predicted_slope = 2.0
 kind   = "exact"
 basis  = "n rows against n pivots, one machine word to a row"
-source = "data/perf/archive/bench/suites/02_linalg.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/02_linalg.jl"
 
 [[growth]]
 case = "representations/anf"
 predicted_slope = 1.0
 kind   = "lower_bound"
 basis  = "the Mobius transform runs n*2^n butterflies"
-source = "data/perf/archive/bench/suites/01_representations.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/01_representations.jl"
 
 [[growth]]
 case = "representations/mobius"
 predicted_slope = 1.0
 kind   = "lower_bound"
 basis  = "the Mobius transform runs n*2^n butterflies"
-source = "data/perf/archive/bench/suites/01_representations.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/01_representations.jl"
 
 [[growth]]
 case = "representations/is_permutation"
 predicted_slope = 1.0
 kind   = "exact"
 basis  = "one pass over 2^n table entries"
-source = "data/perf/archive/bench/suites/01_representations.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/01_representations.jl"
 
 [[growth]]
 case = "representations/compositional_inverse"
 predicted_slope = 1.0
 kind   = "exact"
 basis  = "one pass over 2^n table entries"
-source = "data/perf/archive/bench/suites/01_representations.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/01_representations.jl"
 
 [[growth]]
 case = "representations/sbox_construct"
 predicted_slope = 1.0
 kind   = "exact"
 basis  = "a copy of 2^n words"
-source = "data/perf/archive/bench/suites/01_representations.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/01_representations.jl"
 
 [[growth]]
 case = "representations/gf_monomial_lut"
 predicted_slope = 1.0
 kind   = "lower_bound"
 basis  = "2^n table entries, each one field multiplication chain"
-source = "data/perf/archive/bench/suites/01_representations.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/01_representations.jl"
 
 [[growth]]
 case = "representations/gf_mul_sweep"
 predicted_slope = 0.0
 kind   = "lower_bound"
 basis  = "4096 products; the count is fixed and only the modulus follows n"
-source = "data/perf/archive/bench/suites/01_representations.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/01_representations.jl"
 
 [[growth]]
 case = "representations/gf_inv_sweep"
 predicted_slope = 0.0
 kind   = "lower_bound"
 basis  = "1024 inverses; the count is fixed but one inverse costs O(n^2) bit steps"
-source = "data/perf/archive/bench/suites/01_representations.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/01_representations.jl"
 
 [[growth]]
 case = "constructions/gold_apn"
 predicted_slope = 1.0
 kind   = "exact"
 basis  = "2^n table entries, each one cube in the field"
-source = "data/perf/archive/bench/suites/06_constructions.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/06_constructions.jl"
 caveat = "the sweep crosses the UInt8 to UInt16 storage boundary between n = 8 and n = 9"
 
 [[growth]]
@@ -236,7 +236,7 @@ case = "constructions/kasami_apn"
 predicted_slope = 1.0
 kind   = "lower_bound"
 basis  = "2^n table entries, each one exponentiation to 2^{2k}-2^k+1"
-source = "data/perf/archive/bench/suites/06_constructions.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/06_constructions.jl"
 caveat = "the sweep crosses the UInt8 to UInt16 storage boundary between n = 8 and n = 9"
 
 [[growth]]
@@ -244,7 +244,7 @@ case = "constructions/inverse_apn"
 predicted_slope = 1.0
 kind   = "lower_bound"
 basis  = "2^n table entries, each one exponentiation to 2^n-2, which costs O(n) products"
-source = "data/perf/archive/bench/suites/06_constructions.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/06_constructions.jl"
 caveat = "the sweep crosses the UInt8 to UInt16 storage boundary between n = 8 and n = 9"
 
 [[growth]]
@@ -252,7 +252,7 @@ case = "constructions/niho_apn"
 predicted_slope = 1.0
 kind   = "lower_bound"
 basis  = "2^n table entries, each one exponentiation with an n-bit exponent"
-source = "data/perf/archive/bench/suites/06_constructions.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/06_constructions.jl"
 caveat = "the sweep crosses the UInt8 to UInt16 storage boundary between n = 8 and n = 9"
 
 [[growth]]
@@ -260,7 +260,7 @@ case = "constructions/welch_apn"
 predicted_slope = 1.0
 kind   = "lower_bound"
 basis  = "2^n table entries, each one exponentiation to 2^t+3"
-source = "data/perf/archive/bench/suites/06_constructions.jl"
+source = "packages/VBF/perf/data/archive/bench/suites/06_constructions.jl"
 caveat = "the sweep crosses the UInt8 to UInt16 storage boundary between n = 8 and n = 9"
 
 # ── crossing 1: series that the script must NOT fit ──────────────────────────
@@ -285,7 +285,7 @@ balanced_band = 1.5
 
 # ── crossing 2: the polarity pairs ───────────────────────────────────────────
 #
-# Every decision procedure in data/perf/archive/bench/suites/05_equivalence.jl registers a
+# Every decision procedure in packages/VBF/perf/data/archive/bench/suites/05_equivalence.jl registers a
 # positive case and a negative case, because the two answers take different
 # code paths. This section pairs them. The script reads the time and the
 # allocation of each side and reports the ratio.
@@ -359,7 +359,7 @@ collect the mappings that it finds."""
 case = "invariants/gamma_rank"
 n = 8
 measured_seconds = 166.8
-source = "data/perf/archive/bench/calibration.toml [design_rank_gamma] n8_seconds"
+source = "packages/VBF/perf/data/archive/bench/calibration.toml [design_rank_gamma] n8_seconds"
 note = """
 The suite stops at n = 7, because packages/VBF/src/invariants/design_ranks.jl \
 refuses n > 7. The calibration file measured n = 8 with the same bit-packed \
@@ -384,6 +384,6 @@ mark_fraction_of_machine = 0.02
 # resident set, because the collector frees the early pieces. Two figures for
 # peak resident memory exist in this repository and both come from another
 # instrument: 0.95 GB for the Gamma-rank at n = 8, in
-# data/perf/archive/bench/calibration.toml, and about 1.7 GB for one call of
-# equivalence/partition_automorphisms at n = 6, in data/perf/archive/bench/README.md.
+# packages/VBF/perf/data/archive/bench/calibration.toml, and about 1.7 GB for one call of
+# equivalence/partition_automorphisms at n = 6, in packages/VBF/perf/data/archive/bench/README.md.
 peak_rss_is_measured_elsewhere = true

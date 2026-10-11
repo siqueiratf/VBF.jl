@@ -8,6 +8,15 @@ shared rather than duplicated between ingestion and reference rebuilding.
 `make convert SOURCE=NAME` calls the registered `convert_X.jl`. Fixed LUTs and
 corpus metadata are declared in TOML, with one common function-row writer.
 
+Search discoveries use `reader = "lut_tsv"` entries in `data/corpora.toml`.
+`import_lut_corpus!` verifies the TSV's byte digest, count, APN property, degree
+and separating signatures with VBF and writes compact members into the same
+catalog. `bin/vbf discover --name SLUG ...` invokes this importer after its
+checkpointed search; `bin/vbf publish RUN --name SLUG` registers a stopped run.
+Public TSV inputs live in `data/luts/`. Missing discovery TSV intermediates can
+be regenerated exactly from the previously committed compact corpus on rebuild.
+Original run evidence remains local under `data/search/`.
+
 A source-comparison snapshot is built in three sequential stages:
 
 ```sh
@@ -30,6 +39,10 @@ resume. Changed identities are rejected: choose a new output directory.
 For a bounded smoke run, invoke `reference/rebuild.jl stored --outdir DIR --limit N`;
 its coverage remains incomplete. These commands do not compare search candidates;
 use VBFSearch for candidate validation and equivalence checks.
+
+VBFSearch normally reads the catalog index directly using
+`open_catalog_reference()`, freezing its verified source set and logical digest.
+It does not require an additional reference snapshot or supplemental TSV.
 
 `make index` rebuilds the runtime signature index. On a fresh clone without the
 large bulk store, skipped datasets remain explicit coverage gaps and affected

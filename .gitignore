@@ -65,8 +65,24 @@ packages/VBFCatalog/data/**
 !packages/VBFCatalog/data/apn/**
 !packages/VBFCatalog/data/*.toml
 !packages/VBFCatalog/data/*.bib
+!packages/VBFCatalog/data/luts/
+!packages/VBFCatalog/data/luts/**
 packages/VBFCatalog/data/imports.toml
 !packages/VBFCatalog/data/catalog.sqlite
+
+# Package-owned generated evidence; preserve directory traversal for READMEs.
+!packages/VBFCatalog/data/research/
+!packages/VBFCatalog/data/research/**/
+!packages/VBFCatalog/data/search/
+!packages/VBFCatalog/data/search/**/
+!packages/VBFCatalog/data/search/*/parents.tsv
+!packages/VBFCatalog/data/search/*/replay.toml
+packages/VBFRepro/src/results/**
+!packages/VBFRepro/src/results/**/
+packages/VBFWorkingPaper/doc/generated/**
+!packages/VBFWorkingPaper/doc/generated/**/
+packages/VBF/perf/data/**
+!packages/VBF/perf/data/**/
 
 # READMEs are always tracked — including the per-paper review summaries under
 # packages/VBFRepro/src/<Paper_ID>/README.md. Git resolves a path by the LAST matching

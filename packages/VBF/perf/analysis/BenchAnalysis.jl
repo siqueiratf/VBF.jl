@@ -9,8 +9,8 @@ using .ProfileAttribution
 export load_benchmarks, load_profile_summaries, load_profile_components, runtime_statistics,
        derive_metrics, join_profiles, consolidate, load_dataset, export_tables
 
-const RAW_DATABASE = get(ENV, "VBF_PERF_INPUT", joinpath(normpath(joinpath(@__DIR__, "..", "..", "..", "..")), "data/perf"))
-const ANALYSIS_DATABASE = joinpath(normpath(joinpath(@__DIR__, "..", "..", "..", "..")), "data/perf/analysis/analysis.sqlite")
+const RAW_DATABASE = get(ENV, "VBF_PERF_INPUT", joinpath(normpath(joinpath(@__DIR__, "..", "..", "..", "..")), "packages/VBF/perf/data"))
+const ANALYSIS_DATABASE = joinpath(normpath(joinpath(@__DIR__, "..", "..", "..", "..")), "packages/VBF/perf/data/analysis/analysis.sqlite")
 const PROFILE_KEYS = [:measurement_protocol, :package, :paper_id, :algorithm, :approach, :mode, :n,
     :workload_parameters_json, :reference_scope_json, :source_tree_sha256, :julia_version, :cpu,
     :julia_threads, :seed]

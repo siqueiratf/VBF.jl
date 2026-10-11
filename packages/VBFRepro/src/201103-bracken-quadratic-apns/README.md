@@ -24,7 +24,7 @@ bin/vbfrepro run Bracken_201103 --target parameter_sweep --param k=5 \
 # Repeat with s=4,7,13.
 ```
 
-Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 43 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `data/repro/runs/Bracken_201103/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. The paper tests pin the source representatives’ APN properties, degrees and exact little-endian encoding hashes. These regressions do not establish novelty against the reference corpus.
+Current audit application (2026-10-10, Julia 1.13.1): `make test` and `make report` ran successfully. The suite now passes 43 assertions (including newly added regressions where applicable). VBFRepro retained source/input hashes and logs under `packages/VBFRepro/src/results/runs/Bracken_201103/` for the recorded runs. The older “no Julia” review below is historical and is superseded by these executions. The paper tests pin the source representatives’ APN properties, degrees and exact little-endian encoding hashes. These regressions do not establish novelty against the reference corpus.
 
 
 - **Citation:** C. Bracken, E. Byrne, N. Markin, G. McGuire, "A few more quadratic APN

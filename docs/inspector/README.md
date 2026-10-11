@@ -1,7 +1,7 @@
 # APN8 evidence inspector
 
 The frontend validates exact eight-bit functions, compares their signatures
-with the source-rebuilt quadratic reference, and runs bounded EA/CCZ
+with the verified quadratic catalog reference, and runs bounded EA/CCZ
 pair comparisons. It shares the [discovery evidence layer](../../packages/VBFSearch/README.md).
 It does not label a signature hit “KNOWN” or corpus absence “literature-new”.
 
@@ -25,10 +25,10 @@ make -C docs serve-inspector \
 
 Open `http://127.0.0.1:8088/`. The server uses one default thread for queued
 comparisons and one interactive thread for HTTP (`--threads=1,1`). It needs the
-catalog and old sigma index to retrieve named reference functions, plus
-`data/apn/reference/{comparison.toml,fresh_union.sqlite}` and
-`data/apn/supplement.tsv` (see [reference setup](../../data/apn/README.md)). The old index supplies record pointers; the
-fresh, digest-checked reference controls corpus-absence conclusions. Missing
+catalog and signature index to retrieve named reference functions, using
+VBFCatalog's own signature index and corpus stores (see the
+[catalog guide](../../packages/VBFCatalog/README.md)). The index supplies record pointers; the
+digest-checked catalog reference controls corpus-absence conclusions. Missing
 or changed provenance stops initialization rather than silently using an old
 baseline. Package/environment setup is local to `docs/inspector/`.
 The shared browser interface lives in `docs/src/assets/apn-inspector.html`;
@@ -59,7 +59,7 @@ the same server provides `/api/` for the embedded inspector.
 5. With `--run PATH`, select **Load candidates**, optionally filtering for
    additional signatures, then **Load** a stored exact LUT. An imported
    historical bundle normally has no “additional” flag; leave that filter off.
-   Every bounded pair check is saved as TOML under `data/apn/runs/web/`
+   Every bounded pair check is saved as TOML under `packages/VBFCatalog/data/research/runs/web/`
    and, when a run is selected, appended transactionally to its `comparisons`
    table. The inspector can coexist with an enumeration writer because these
    append-only comparisons do not change search cursors.
@@ -111,7 +111,7 @@ missing. The interface exposes existing evidence; it does not fill those gaps wi
 novelty label. `bin/vbf report` exports CSV/LaTeX tables and JSON snapshots. WorkingPaper's
 `src/search_figures.jl` produces SVG/PDF figures from those snapshots.
 
-Historical candidate lists are read from `data/apn/archive/census/`; pair certificates
-are written to `data/apn/runs/web/`. The prepared reference is required; see
-[reference preparation](../../data/apn/README.md). The app imports `VBFSearch`
+Historical candidate lists are read from `packages/VBFCatalog/data/research/archive/census/`; pair certificates
+are written to `packages/VBFCatalog/data/research/runs/web/`. A complete catalog index is required; see
+[catalog preparation](../../packages/VBFCatalog/README.md). The app imports `VBFSearch`
 and uses the promoted VBF coefficient representation.

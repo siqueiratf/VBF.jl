@@ -35,10 +35,20 @@ const _CLASSIFICATION_SUMMARY_SQL="""
     """
 
 """Bind an index snapshot to its exact rows and current catalog representations."""
-function _classification_inputs(db,idx,n)
-    _assert_sigma_coverage(idx,n;db)
+function _classification_inputs(db,idx,n;sources=nothing)
+    sources===nothing && _assert_sigma_coverage(idx,n;db)
+    filter="n=?"*(sources===nothing ? "" : " AND source IN ("*join(fill("?",length(sources)),',')*")")
+    args=sources===nothing ? (n,) : (n,sources...)
+    if sources!==nothing
+        actual=Set(String(r.source) for r in DBInterface.execute(idx,"SELECT DISTINCT source FROM ccz_sigma_index WHERE $filter",args))
+        actual==Set(sources) || error("frozen catalog sources are missing")
+        for source in sources
+            coverage=[Int(r.indexed) for r in DBInterface.execute(idx,"SELECT indexed FROM sigma_coverage WHERE source=? AND n IN (?,-1)",(source,n))]
+            coverage==[1] || error("incomplete frozen source coverage: $source")
+        end
+    end
     ctx=SHA.SHA2_256_CTX()
-    for row in DBInterface.execute(idx,"SELECT source,COUNT(*) c,COUNT(DISTINCT member_idx) d,MIN(member_idx) lo,MAX(member_idx) hi FROM ccz_sigma_index WHERE n=? GROUP BY source",(n,))
+    for row in DBInterface.execute(idx,"SELECT source,COUNT(*) c,COUNT(DISTINCT member_idx) d,MIN(member_idx) lo,MAX(member_idx) hi FROM ccz_sigma_index WHERE $filter GROUP BY source",args)
         source=String(row.source)
         if source=="functions"
             actual=Set(Int(r.id) for r in DBInterface.execute(db,"SELECT id FROM functions WHERE n=? AND is_apn=1 AND is_quadratic=1",(n,)))
@@ -58,11 +68,11 @@ function _classification_inputs(db,idx,n)
         lut_sha256_hex(F)==row.lut_sha256 || error("curated LUT hash mismatch")
         SHA.update!(ctx,codeunits(string(row.id,':',row.lut_sha256,'\n')))
     end
-    for row in DBInterface.execute(idx,"SELECT source,member_idx,sigma_hash FROM ccz_sigma_index WHERE n=? ORDER BY source,member_idx,sigma_hash",(n,))
+    for row in DBInterface.execute(idx,"SELECT source,member_idx,sigma_hash FROM ccz_sigma_index WHERE $filter ORDER BY source,member_idx,sigma_hash",args)
         SHA.update!(ctx,codeunits(string(row.source,':',row.member_idx,':',row.sigma_hash,'\n')))
     end
     summary=only(NamedTuple(r) for r in DBInterface.execute(idx,
-        "SELECT COUNT(*) signatures,SUM(k) records,SUM(k=1) singletons FROM (SELECT COUNT(*) k FROM ccz_sigma_index WHERE n=? GROUP BY sigma_hash)",(n,)))
+        "SELECT COUNT(*) signatures,SUM(k) records,SUM(k=1) singletons FROM (SELECT COUNT(*) k FROM ccz_sigma_index WHERE $filter GROUP BY sigma_hash)",args))
     (;input_sha256=bytes2hex(SHA.digest!(ctx)),summary...)
 end
 

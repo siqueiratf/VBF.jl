@@ -23,8 +23,16 @@ function validate(inputs;output,reference=get(ENV,"VBF_APN_REFERENCE",DEFAULT_RE
         supplement=get(ENV,"VBF_APN_SUPPLEMENT",DEFAULT_SUPPLEMENT),limit=0)
     isempty(inputs) && error("at least one input TSV is required")
     limit>=0 || error("limit must be nonnegative")
-    paths=abspath.(inputs)
+    original=abspath.(inputs)
+    !isdir(output) || isempty(readdir(output)) || error("validation needs an empty output directory")
+    frozen=joinpath(output,"inputs");mkpath(frozen)
+    paths=String[]
+    for (i,path) in enumerate(original)
+        target=joinpath(frozen,string(i)*"_"*basename(path))
+        cp(path,target);push!(paths,abspath(target))
+    end
     ref=open_reference(reference;supplement_path=supplement)
+    powtab=monomial_power_table(8,conway_polynomial(8))
     store=nothing
     total=0
     try
@@ -36,7 +44,7 @@ function validate(inputs;output,reference=get(ENV,"VBF_APN_REFERENCE",DEFAULT_RE
             transaction(store) do
                 each_candidate(path) do row
                     limit>0 && total>=limit && return
-                    p=classify(candidate_lut(row.payload),ref)
+                    p=classify(candidate_lut(row.payload;powtab),ref)
                     p["apn"] && p["quadratic"] || error("invalid quadratic APN at $path:$(row.line)")
                     p["sigma_hash"]==row.hash || error("signature mismatch at $path:$(row.line)")
                     p["origin"]=Dict("file_sha256"=>digest,"file"=>path,"line"=>row.line,

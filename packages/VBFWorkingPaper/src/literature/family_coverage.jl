@@ -5,7 +5,7 @@ Run from the root project: julia --compiled-modules=no --startup-file=no --proje
 This does not classify equal signatures or change the reference database.
 """
 module FamilyCoverage
-using VBF, SHA, TOML, Dates
+using VBF, VBFCatalog, SHA, TOML, Dates
 using VBFSearch: DiscoveryEvidence
 using .DiscoveryEvidence
 const ROOT = normpath(joinpath(@__DIR__, "../../../.."))
@@ -113,12 +113,12 @@ function source_hashes()
 end
 
 """Write completed-domain evidence. Partial output never receives a completed report."""
-function check_families(outdir,baseline=joinpath(ROOT,"data/apn/archive/census/results/signature_rebuild"))
+function check_families(outdir,baseline=VBFCatalog.catalog_data_dir())
     mkpath(outdir)
     any(isfile(joinpath(outdir,p)) for p in ("report.toml","parameters.tsv","luts.tsv")) && error("use a new output directory")
     hashes=source_hashes()
     ledger=TOML.parsefile(joinpath(@__DIR__, "family_coverage.toml"))
-    downloads=joinpath(ROOT,"data/apn/archive/census/results/literature_family_coverage")
+    downloads=joinpath(ROOT,"packages/VBFCatalog/data/research/archive/census/results/literature_family_coverage")
     for (path,expected) in ledger["downloaded_source_sha256"]
         filehash(joinpath(downloads,path))==expected || error("downloaded paper differs: $path")
     end

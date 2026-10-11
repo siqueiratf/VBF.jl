@@ -7,11 +7,11 @@ function audit_run(dir;baseline=get(ENV,"VBF_APN_REFERENCE",DEFAULT_REFERENCE),l
     reference=nothing
     checked=0;units_checked=0
     try
-        reference=open_reference(baseline;supplement_path=supplement)
         DiscoveryStore.execute!(db,"BEGIN")
         only(rows("PRAGMA integrity_check"))["integrity_check"]=="ok" || error("database integrity failure")
         identity=TOML.parse(only(rows("SELECT value FROM metadata WHERE key='run'"))["value"])["identity"]
         expected=identity["reference"]
+        reference=open_reference(baseline;supplement_path=supplement,sources=get(expected,"sources",nothing))
         all(k->expected[k]==VBFCatalog.reference_metadata(reference)[k],("sha256","manifest_sha256","supplement_sha256","signatures")) || error("reference changed since this experiment")
         archive=joinpath(dir,"source")
         if isdir(archive)

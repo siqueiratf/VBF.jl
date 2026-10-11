@@ -1,6 +1,6 @@
 using VBF
 # Implements admissible selections versus realizable restrictions pi|_H (HYPERPLANE.md, Sec. 3)
-# Study: census of quadratic APN functions on F_2^8 (data/apn/archive/census/theory)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census/theory)
 # Source: HYPERPLANE.md; UNIQUENESS.md (Phi, ker Phi, pi|_H); Beierle et al. (2025, v2) Thm 4.1
 #
 # Math:
@@ -40,7 +40,7 @@ Writes hyperplane_theory/results/admissible.tsv.
 function admissible_report(; ns = 4:8, n7_per_class::Int = 3, n8_sample::Int = 100,
                            cap::Int = 2_000_000, seed::Int = 1, io::IO = stdout)
     rng = Xoshiro(seed)
-    out = joinpath(@__DIR__, "../../../../data/working-paper/hyperplanes/admissible.tsv")
+    out = joinpath(@__DIR__, "../../../../packages/VBFWorkingPaper/doc/generated/hyperplanes/admissible.tsv")
     mkpath(dirname(out))
     db = VBFCatalog.load_catalog()
     rows = String[]
@@ -52,7 +52,7 @@ function admissible_report(; ns = 4:8, n7_per_class::Int = 3, n8_sample::Int = 1
                 append!(pairs, [(src, id, lut, u) for u in us])
             end
         else
-            tsv = readlines(joinpath(@__DIR__, "../../../../data/apn/archive/census/theory/results/uniq_n8.tsv"))[2:end]
+            tsv = readlines(joinpath(@__DIR__, "../../../../packages/VBFCatalog/data/research/archive/census/theory/results/uniq_n8.tsv"))[2:end]
             recs = [split(l, '\t') for l in tsv]
             big_e = [r for r in recs if parse(Int, r[4]) > 128]
             small = [r for r in recs if parse(Int, r[4]) == 128]
@@ -101,7 +101,7 @@ end
 "Knuth estimates of the admissible count for the n = 7 and n = 8 pairs of admissible.tsv."
 function admissible_estimates(; probes::Int = 2000, seed::Int = 2, io::IO = stdout)
     rng = Xoshiro(seed)
-    recs = [split(l, '\t') for l in readlines(joinpath(@__DIR__, "../../../../data/apn/archive/census/theory/hyperplane_theory/results/admissible.tsv"))[2:end]]
+    recs = [split(l, '\t') for l in readlines(joinpath(@__DIR__, "../../../../packages/VBFCatalog/data/research/archive/census/theory/hyperplane_theory/results/admissible.tsv"))[2:end]]
     db = VBFCatalog.load_catalog()
     reps7 = Dict(id => lut for (_, id, lut) in catalog_reps(7))
     for n in (7, 8)

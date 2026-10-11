@@ -36,7 +36,7 @@ an input of the generated table. Missing/ambiguous anchors fail closed. Inputs,
 table, package sources, environment and Overleaf revision are digest-bound.
 """
 function stage_paper(;source=joinpath(document_root(),"overleaf"),
-        output=joinpath(workspace_root(),"data","working-paper","paper"),
+        output=joinpath(workspace_root(),"packages","VBFWorkingPaper","doc","generated","paper"),
         assessments=joinpath(@__DIR__,"analysis","reproductions","curated_bfa4r.csv"),
         main="main.tex",compile=false)
     source=realpath(source);output=abspath(output)

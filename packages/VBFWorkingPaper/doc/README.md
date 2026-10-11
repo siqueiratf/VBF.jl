@@ -5,7 +5,7 @@
 latexmk. See the [package guide](../README.md) for commands and provenance.
 
 `performance/` preserves the older thesis's report selections and LaTeX templates.
-Generated files belong under the workspace's `data/working-paper/`, not here.
+Generated files belong under the workspace's `packages/VBFWorkingPaper/doc/generated/`, not here.
 
 The curated audit currently contains 40 assessments. The Overleaf prose says 44;
 the author must reconcile this scope before publication. Staging replaces the

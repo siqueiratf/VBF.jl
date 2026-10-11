@@ -21,10 +21,10 @@ Primary sources:
 - `packages/VBFSearch/`: reproducible search application consuming VBF and VBFCatalog;
   owns experiment state, checkpoints and evidence, never curated catalog writes.
 - `packages/VBFCatalog/src/import/reference/`: original-source rebuild tools;
-  run in the import environment and write to `data/apn/rebuilds/`.
+  run in the import environment and write to `packages/VBFCatalog/data/research/rebuilds/`.
 - `packages/VBFWorkingPaper/src/{census,hyperplanes,literature}/`: research studies consuming package APIs.
 - `docs/inspector/`: HTTP evidence viewer; own Julia environment.
-- `data/apn/`: reference snapshots, runs, rebuilds and historical artifacts. The
+- `packages/VBFCatalog/data/research/`: reference snapshots, runs, rebuilds and historical artifacts. The
   root `search/` and `census/` trees are retired; see `packages/VBFSearch/README.md`.
 - `packages/VBFCatalog/src/import/`: importer/build scripts with their own
   environment. Do not include these from package tests or a casual REPL.
@@ -36,7 +36,7 @@ Primary sources:
   Write consumers in Julia and reuse VBF mathematics; do not add separate verification implementations.
 - `packages/<package>/perf/`: optional BenchmarkTools workloads and profiling.
   Separate development environments; never dependencies of package runtime code.
-  Measurements live under `data/perf/`, separate from the curated catalog.
+  Measurements live under `packages/VBF/perf/data/`, separate from the curated catalog.
 - `packages/VBFRepro/`: reproduction runner and standalone paper claims.
   Heavy paper dependencies load only in subprocesses.
 - `packages/VBFWorkingPaper/`: manuscript studies consuming the other packages;

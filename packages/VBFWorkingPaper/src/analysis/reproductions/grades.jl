@@ -38,7 +38,7 @@ using VBFRepro, VBFCatalog, TOML
 const ROOT = VBFRepro.repo_root()
 const PAPERS = VBFRepro.papers_root()
 const BIB = VBFCatalog.bibliography_path()
-const OUT = get(ENV, "VBF_WORKING_PAPER_OUTPUT", joinpath(ROOT, "data/working-paper/reproductions"))
+const OUT = get(ENV, "VBF_WORKING_PAPER_OUTPUT", joinpath(ROOT, "packages/VBFWorkingPaper/doc/generated/reproductions"))
 const REPORT_ONLY = "--report" in ARGS
 
 const TAXONOMY = TOML.parsefile(joinpath(@__DIR__, "taxonomy.toml"))["papers"]

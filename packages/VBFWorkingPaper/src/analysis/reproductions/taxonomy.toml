@@ -291,7 +291,7 @@ note = "the curated functions table of the catalog, not a published corpus"
 # `call` names the function of packages/VBF or packages/VBFCatalog that the
 # script applies. `max_n` refuses a dimension above the guard of the source.
 # `parity` restricts the invariant to even or odd n when the invariant needs it.
-# `bench_case` names the row of data/perf/archive/generated/benchmarks.csv that gives the
+# `bench_case` names the row of packages/VBF/perf/data/archive/generated/benchmarks.csv that gives the
 # cost, so the cost column comes from the benchmark suite and not from a second
 # measurement.
 

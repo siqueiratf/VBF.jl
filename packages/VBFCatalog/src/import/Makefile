@@ -2,7 +2,7 @@ JULIA ?= julia
 ROOT := $(abspath $(CURDIR)/../../../..)
 JFLAGS ?= --startup-file=no --project=$(CURDIR)
 CATALOG_ARGS ?= --max-n 11
-OUTDIR ?= $(ROOT)/data/apn/rebuilds/original-source
+OUTDIR ?= $(ROOT)/packages/VBFCatalog/data/research/rebuilds/original-source
 threads ?= 16
 
 .PHONY: catalog check fetch convert stored raw compare index classify test

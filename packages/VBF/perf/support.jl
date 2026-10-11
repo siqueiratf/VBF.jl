@@ -102,7 +102,7 @@ function run_suite(reg, package; out=nothing, seconds=1.0, samples=nothing,
     samples===nothing || samples>0 || throw(ArgumentError("samples must be positive"))
     keys=selected_keys(reg;level,group,workload,n,paper,mode)
     isempty(keys) && throw(ArgumentError("no workloads match filters"))
-    out===nothing && (out=joinpath(ROOT,"data","perf",package,Dates.format(now(UTC),"yyyymmddTHHMMSS")*"_"*string(getpid())))
+    out===nothing && (out=joinpath(ROOT,"packages","VBF","perf","data",package,Dates.format(now(UTC),"yyyymmddTHHMMSS")*"_"*string(getpid())))
     ispath(out) && throw(ArgumentError("output path already exists: $out"))
     mkpath(out)
     config=Dict{String,Any}("seconds"=>seconds,"samples"=>samples===nothing ? "per-workload defaults" : samples,"evals"=>1,

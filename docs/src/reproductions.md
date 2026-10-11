@@ -19,7 +19,7 @@ bin/vbfrepro run 202211-yu-qam --target qam_correspondence --timeout-seconds 900
 Each paper lives under `packages/VBFRepro/src/<id>/` and retains its
 standalone claim scripts and Make targets. Direct `make -C <paper> test` uses
 the same shared environment. The recorded runner stores parameters, source and
-input hashes, timestamps, status and stdout/stderr under `data/repro/runs/`.
+input hashes, timestamps, status and stdout/stderr under `packages/VBFRepro/src/results/runs/`.
 On Unix, a timeout stops the process group, including its Julia subprocess.
 A passing target establishes what its assertions check; a stopped computation
 does not establish exhaustion or a negative mathematical result.
@@ -43,7 +43,7 @@ julia --project=packages/VBF/perf packages/VBF/perf/run.jl \
 
 The analogous `VBFCatalog`, `VBFSearch` and `VBFRepro` folders cover catalog,
 discovery and paper workloads respectively. Results, configurations and source
-identities go under `data/perf/`. Measurement leaves the curated catalog unchanged.
+identities go under `packages/VBF/perf/data/`. Measurement leaves the curated catalog unchanged.
 Profiling is a separate diagnostic execution; its samples are not benchmark
 timing repetitions.
 
@@ -60,8 +60,8 @@ make -C packages/VBFWorkingPaper consolidate
 make -C packages/VBFWorkingPaper export
 ```
 
-Study outputs default to `data/working-paper/`; shared perf summaries use
-`data/perf/analysis/`. Historical custom-timer measurements
+Study outputs default to `packages/VBFWorkingPaper/doc/generated/`; shared perf summaries use
+`packages/VBF/perf/data/analysis/`. Historical custom-timer measurements
 retain their original protocol and provenance; the analysis keeps them separate
 from BenchmarkTools trials. Publication-specific configurations and templates
 live under `packages/VBFWorkingPaper/doc/`.

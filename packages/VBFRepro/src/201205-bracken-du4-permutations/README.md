@@ -41,7 +41,7 @@ bin/vbfrepro run Bracken_201205 --target orbit_certificate \
   --param save_results=true --timeout-seconds 180
 ```
 
-The runner records execution/source/input metadata under `data/repro/runs/`.
+The runner records execution/source/input metadata under `packages/VBFRepro/src/results/runs/`.
 The printed paper-local `results/orbit-.../` directory contains
 `coefficients.csv` (one row per normalized coefficient, three exact ranks), and
 `certificate.toml` (coverage, coset parameters, budgets, source hashes, CSV hash).
@@ -53,7 +53,7 @@ neither an infinite parameter family nor CCZ novelty. Walsh **support inclusion*
 for nonzero output masks is certified using polar ranks; full signed-frequency
 histograms are not computed. This current scope supersedes historical sampled
 or brute-force-only descriptions below. Run manifests retain source/input hashes
-and execution logs under `data/repro/runs/Bracken_201205/`.
+and execution logs under `packages/VBFRepro/src/results/runs/Bracken_201205/`.
 
 ### Why 49,981 cases cover the complete instance
 

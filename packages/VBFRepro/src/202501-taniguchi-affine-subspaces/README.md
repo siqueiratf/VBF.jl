@@ -30,7 +30,7 @@ e0, normalization `L(e0)=0`, explored interval, next index, and exhaustion statu
 The full n=6 domain of **2^30 parameters** was exhausted independently under
 moduli **91 and 97**, yielding **35,648** valid mappings in each representation
 (e0=8 and e0=2 respectively). Recorded commands, source/input hashes and logs
-are under `data/repro/runs/Taniguchi_202501/`; each manifest identifies the exact
+are under `packages/VBFRepro/src/results/runs/Taniguchi_202501/`; each manifest identifies the exact
 parameters and completion status. The publication says approximately 40,000, rather than supplying an
 exact count. This computation counts normalized mappings, not EA or CCZ classes.
 Independent set-based criterion and direct full-DDT checks agree with the table

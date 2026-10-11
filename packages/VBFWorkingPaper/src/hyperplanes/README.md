@@ -3,8 +3,8 @@
 These bounded consumers sample catalog functions, enumerate hyperplanes, compare
 admissible radical selections and inspect neighbour signatures. Restriction,
 extension and admissible-count mathematics lives in VBF.QuadraticRestrictions
-and VBF.QuadraticAPNTree. Optional historical inputs remain under data/apn/archive;
-generated outputs go under data/working-paper/hyperplanes.
+and VBF.QuadraticAPNTree. Optional historical inputs remain under packages/VBFCatalog/data/research/archive;
+generated outputs go under packages/VBFWorkingPaper/doc/generated/hyperplanes.
 
 ```sh
 julia --project=packages/VBFWorkingPaper -e '

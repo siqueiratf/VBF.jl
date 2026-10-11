@@ -1,8 +1,9 @@
 """
-    SearchConfig(; output, method=:v5, inputs=[], duration=28800, workers=1, ...)
+    SearchConfig(; output, method=:v5, inputs=[], corpora=[], duration=28800, workers=1, ...)
 
 Immutable experiment configuration. `parents`, `seed`, `target_b6`, `bent`,
 `ea_representatives`, and `orbit_duration` define the frozen construction plan.
+`corpora` selects catalog bulk sources; it is exclusive with explicit `inputs`.
 Duration, worker count, slice budget and chunk size may change on resume.
 `workers` requires Julia to start with at least that many threads.
 """
@@ -10,6 +11,7 @@ struct SearchConfig
     output::String
     method::Symbol
     inputs::Vector{String}
+    corpora::Vector{String}
     reference::String
     supplement::String
     duration::Float64
@@ -24,8 +26,8 @@ struct SearchConfig
     ea_representatives::Int
     orbit_duration::Float64
     resume::Bool
-    function SearchConfig(; output, method=:v5, inputs=String[],
-            reference=get(ENV,"VBF_APN_REFERENCE",DEFAULT_REFERENCE),
+    function SearchConfig(; output, method=:v5, inputs=String[],corpora=String[],
+            reference=get(ENV,"VBF_APN_REFERENCE",VBFCatalog.catalog_data_dir()),
             supplement=get(ENV,"VBF_APN_SUPPLEMENT",DEFAULT_SUPPLEMENT),
             duration=28800.0, workers=1, slice=60.0, evaluations=10000,
             parents=1000, seed=82026, chunk_size=128, target_b6=52, bent="max",
@@ -41,7 +43,9 @@ struct SearchConfig
             all(x->x!==nothing && 0<=x<=31,counts) || throw(ArgumentError("bent must be max or counts in 0:31"))
         end
         isempty(output) && throw(ArgumentError("output directory is required"))
-        new(abspath(output),Symbol(method),abspath.(inputs),abspath(reference),
+        isempty(inputs) || isempty(corpora) || throw(ArgumentError("select corpus seeds or explicit inputs"))
+        all(!isempty,corpora) || throw(ArgumentError("empty corpus name"))
+        new(abspath(output),Symbol(method),abspath.(inputs),unique(String.(corpora)),abspath(reference),
             isempty(supplement) ? "" : abspath(supplement),Float64(duration),Int(workers),
             Float64(slice),Int(evaluations),Int(parents),Int(seed),Int(chunk_size),
             Int(target_b6),String(bent),Int(ea_representatives),Float64(orbit_duration),Bool(resume))
@@ -50,7 +54,7 @@ end
 
 # TOML is the boundary representation; construction validates it once.
 config_dict(c::SearchConfig)=Dict(
-    "outdir"=>c.output,"method"=>string(c.method),"input"=>copy(c.inputs),
+    "outdir"=>c.output,"method"=>string(c.method),"input"=>copy(c.inputs),"corpus"=>copy(c.corpora),
     "baseline"=>c.reference,"supplement"=>c.supplement,
     "wall-seconds"=>string(c.duration),"workers"=>string(c.workers),
     "seconds"=>string(c.slice),"evaluations"=>string(c.evaluations),
@@ -60,7 +64,7 @@ config_dict(c::SearchConfig)=Dict(
     "orbit-seconds"=>string(c.orbit_duration),"resume"=>string(c.resume))
 
 function config_from_dict(d)
-    SearchConfig(output=d["outdir"],method=Symbol(d["method"]),inputs=get(d,"input",String[]),
+    SearchConfig(output=d["outdir"],method=Symbol(d["method"]),inputs=get(d,"input",String[]),corpora=get(d,"corpus",String[]),
         reference=d["baseline"],supplement=d["supplement"],
         duration=parse(Float64,d["wall-seconds"]),workers=parse(Int,d["workers"]),
         slice=parse(Float64,d["seconds"]),evaluations=parse(Int,d["evaluations"]),

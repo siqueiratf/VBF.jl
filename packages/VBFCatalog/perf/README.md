@@ -14,7 +14,7 @@ julia --project=packages/VBFCatalog/perf packages/VBFCatalog/perf/test.jl
 The [shared measurement protocol](../../VBF/perf/README.md) fixes `evals=1`,
 resets payloads/RNG per sample, validates separately, and writes BenchmarkTools
 JSON, scalar timings, source/configuration/hardware metadata and environment
-copies under `data/perf/VBFCatalog/<run>/`. `make -C packages/VBFCatalog/perf help`
+copies under `packages/VBF/perf/data/VBFCatalog/<run>/`. `make -C packages/VBFCatalog/perf help`
 provides the same commands. Optional indexes and corpus stores must already
 exist; unavailable workloads are omitted from `--list`. No importer or builder
 runs here. SQLite handles for warm query cases are opened once outside timing;

@@ -3,7 +3,7 @@ module CLI
 using TOML
 import ..VBFSearch
 const ROOT=VBFSearch.ROOT
-const COMMANDS=("search","resume","status","stop","audit","report","validate","compare","classify","verify")
+const COMMANDS=("search","discover","publish","resume","status","stop","audit","report","validate","compare","classify","verify")
 const SEARCH_FLAGS=Dict("threads"=>"workers","parents"=>"limit","duration"=>"wall-seconds",
     "method"=>"method","seed"=>"seed","reference"=>"baseline","supplement"=>"supplement",
     "slice"=>"seconds","evaluations"=>"evaluations","chunk-size"=>"chunk-x",
@@ -25,7 +25,9 @@ function help(io=stdout)
 Usage: bin/vbf COMMAND [OPTIONS]
 
   search   --output DIR [--method v5|switching] [--duration 8h] [--threads 30]
-           [--parents 1000] [--input CANDIDATES.tsv ...] [--reference DIR]
+           [--parents 1000] [--input CANDIDATES.tsv ... | --corpus NAME ...] [--reference DIR]
+  discover --name SLUG [search options]  (search, then register new catalog classes)
+  publish  DIR --name SLUG              (register verified separating signatures)
   resume   DIR [--duration 8h] [--threads 30]
   status   DIR
   stop     DIR
@@ -38,7 +40,8 @@ Usage: bin/vbf COMMAND [OPTIONS]
   verify   CERTIFICATE.toml
 
 Search is currently restricted to quadratic (8,8)-APNs. Catalog seeds are the
-default; --input selects explicit seeds and excludes their signatures from
+default; --corpus samples named bulk corpora deterministically with --seed.
+--input selects explicit seeds and excludes their signatures from
 additional-discovery counts. Searches freeze a finite parent plan, checkpoint
 automatically and do not promote discoveries to parents within the same run.
 
@@ -46,7 +49,9 @@ Defaults: method v5, duration 8h, one worker. Optional search settings:
   --seed INTEGER --target-b6 52 --bent max --chunk-size 128
   --slice 60s --evaluations 10000 --ea-representatives 0 --orbit-duration 30s
 
-Reference defaults to data/apn/reference and data/apn/supplement.tsv.
+Reference defaults to VBFCatalog's own signature index. Discover writes under
+packages/VBFCatalog/data/search/SLUG. Published corpora remain reference-scoped;
+matching signatures are not promoted as new classes.
 VBF_APN_REFERENCE and VBF_APN_SUPPLEMENT can override these paths.
 Corpus absence is scoped evidence; literature-wide novelty remains unresolved.
 """)
@@ -76,9 +81,9 @@ end
 
 """Parse CLI options into the same typed configuration used by Julia callers."""
 function search_configuration(command,args)
-    allowed=command=="search" ? [collect(keys(SEARCH_FLAGS));"output";"input"] :
+    allowed=command=="search" ? [collect(keys(SEARCH_FLAGS));"output";"input";"corpus"] :
         ["duration","threads","slice","evaluations","chunk-size"]
-    cfg,repeated,pos=options(args,allowed;multiple=command=="search" ? ["input"] : String[])
+    cfg,repeated,pos=options(args,allowed;multiple=command=="search" ? ["input","corpus"] : String[])
     runtime=Dict("duration"=>duration(get(cfg,"duration","8h")),"threads"=>get(cfg,"threads","1"))
     if command=="search"
         isempty(pos) && haskey(cfg,"output") || error("search needs --output DIR")
@@ -86,6 +91,7 @@ function search_configuration(command,args)
         isdir(dir) && !isempty(readdir(dir)) && error("output directory is not empty")
         d=VBFSearch.config_dict(VBFSearch.SearchConfig(output=dir))
         d["input"]=abspath.(repeated["input"])
+        d["corpus"]=repeated["corpus"]
         all(isfile,d["input"]) || error("missing input file")
     else
         length(pos)==1 || error("resume needs RUN_DIRECTORY")
@@ -116,7 +122,25 @@ function main(args=ARGS)
     end
     command=first(args);rest=args[2:end]
     command in COMMANDS || error("unknown command $command; see bin/vbf help")
-    if command in ("search","resume")
+    if command=="discover"
+        cfg,repeated,pos=options(rest,[collect(keys(SEARCH_FLAGS));"name";"input";"corpus";"output"];multiple=["input","corpus"])
+        isempty(pos) && haskey(cfg,"name") || error("discover needs --name SLUG")
+        name=pop!(cfg,"name")
+        occursin(r"^[a-z][a-z0-9_-]*$",name) || error("use a lowercase corpus slug")
+        get!(cfg,"output",joinpath(VBFSearch.VBFCatalog.catalog_data_dir(),"search",name))
+        forwarded=String[]
+        for (k,v) in cfg;append!(forwarded,["--"*k,v]);end
+        for path in repeated["input"];append!(forwarded,["--input",path]);end
+        for corpus in repeated["corpus"];append!(forwarded,["--corpus",corpus]);end
+        config=search_configuration("search",forwarded)
+        startswith(abspath(config.output),VBFSearch.VBFCatalog.catalog_data_dir()*"/") || error("discover output must be inside the catalog data directory")
+        launch(config)
+        println(VBFSearch.publish(config.output;name))
+    elseif command=="publish"
+        cfg,_,pos=options(rest,["name"])
+        length(pos)==1 && haskey(cfg,"name") || error("publish needs RUN_DIRECTORY --name SLUG")
+        println(VBFSearch.publish(only(pos);name=cfg["name"]))
+    elseif command in ("search","resume")
         launch(search_configuration(command,rest))
     elseif command in ("status","stop","verify")
         length(rest)==1 || error("$command needs one path")
