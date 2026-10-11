@@ -84,8 +84,8 @@ function source_manifest(package; config=Dict(), paper_ids=String[], input_files
             "cpu_threads"=>Sys.CPU_THREADS,"total_memory_bytes"=>Sys.total_memory(),
             "os"=>string(Sys.KERNEL),"benchmarktools_version"=>string(pkgversion(BenchmarkTools))))
     if package != "VBF"
-        resources=get(ENV,"BFA_SOURCE_DIR",joinpath(ROOT,"packages","VBFCatalog","src","data"))
-        catalog=get(ENV,"BFA_CATALOG_PATH",joinpath(resources,"catalog.sqlite"))
+        data=get(ENV,"BFA_DATA_DIR",joinpath(ROOT,".cache","vbfcatalog"))
+        catalog=get(ENV,"BFA_CATALOG_PATH",joinpath(data,"catalog.sqlite"))
         isfile(catalog) && (manifest["inputs"]=Dict("catalog_path"=>abspath(catalog),
             "catalog_sha256"=>bytes2hex(open(sha256,catalog))))
     end

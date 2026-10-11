@@ -1,6 +1,6 @@
 @isdefined(_BFA_SOURCES_LOADED) && return
 const _BFA_SOURCES_LOADED = true
-import TOML
+import TOML, SHA
 using VBFCatalog: catalog_data_dir
 const _SOURCES_TOML = joinpath(VBFCatalog.catalog_source_dir(), "sources.toml")
 _bfa_source_config(name) = only(s for s in TOML.parsefile(_SOURCES_TOML)["source"] if s["name"] == name)
@@ -12,7 +12,7 @@ end
 
 """Use a local override or fetch and retain a pinned upstream checkout.
 
-Originals remain in packages/VBFCatalog/data/raw. Large standalone downloads are
+Originals remain in .cache/vbfcatalog/raw. Large standalone downloads are
 explicitly fetched with fetch.jl; importing the package never fetches data.
 """
 function with_source(f::Function, name::AbstractString)
@@ -20,6 +20,9 @@ function with_source(f::Function, name::AbstractString)
     root = _bfa_source_root(src)
     check_path = src["check_path"]; kind = get(src,"check_kind","dir")
     if _bfa_check_valid(root,check_path,kind)
+        if haskey(src,"sha256")
+            bytes2hex(open(SHA.sha256,joinpath(root,check_path)))==src["sha256"] || error("source checksum changed: $name")
+        end
         if haskey(src,"revision")
             readchomp(`git -C $root rev-parse HEAD`)==src["revision"] || error("cached source revision changed: $name")
             paths=haskey(src,"files") ? (kind=="file" ? src["files"] : joinpath.(check_path,src["files"])) : [check_path]
@@ -46,4 +49,4 @@ end
 source_revision(path) = readchomp(`git -C $path rev-parse HEAD`)
 
 """Dataset declaration shared by converters and source/database checks."""
-corpus_entry(name) = only(e for e in TOML.parsefile(joinpath(VBFCatalog.catalog_source_dir(),"corpora.toml"))["corpus"] if e["name"]==name)
+corpus_entry(name) = only(e for e in TOML.parsefile(joinpath(VBFCatalog.catalog_source_dir(),"sources.toml"))["corpus"] if e["name"]==name)

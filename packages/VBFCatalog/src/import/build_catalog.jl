@@ -1,6 +1,5 @@
 using VBF, VBFCatalog, SQLite, DBInterface, SHA, TOML
 include("load_sources.jl")
-include("cache.jl")
 include("bibliography.jl")
 include("write.jl")
 include("check.jl")
@@ -15,6 +14,7 @@ function build_inputs(config)
     records=VBFCatalog._declaration_inputs()
     for source in config["source"]
         get(source,"enabled",true) || continue
+        get(source,"external",false) && continue
         get(source,"builtin",false) && continue
         root=with_source(identity,source["name"])
         relative = haskey(source,"files") ?
@@ -30,20 +30,6 @@ function build_inputs(config)
     sort!(records;by=row->(row.source,row.path))
 end
 
-function implementation_digest()
-    roots=[joinpath(pkgdir(VBF),"src"),joinpath(pkgdir(VBFCatalog),"src")]
-    paths=sort!([joinpath(dir,file) for root in roots for (dir,_,files) in walkdir(root)
-        for file in files if endswith(file,".jl") || endswith(file,".sql")])
-    digest=join([relpath(path,dirname(pkgdir(VBF)))*":"*bytes2hex(open(SHA.sha256,path)) for path in paths],"\n")
-    db=SQLite.DB()
-    try
-        engine=only(String(row.version) for row in DBInterface.execute(db,"SELECT sqlite_version() version"))
-        bytes2hex(SHA.sha256(string(VERSION,"\n",engine,"\n",digest)))
-    finally
-        close(db)
-    end
-end
-
 function main(;output=catalog_path())
     mkpath(catalog_data_dir())
     lease=open(joinpath(catalog_data_dir(),".publish.lock"),"a+")
@@ -52,7 +38,7 @@ function main(;output=catalog_path())
     config=TOML.parsefile(_SOURCES_TOML)
     inputs=build_inputs(config)
     digest=VBFCatalog._inputs_digest(inputs)
-    implementation=implementation_digest()
+    implementation=VBFCatalog._implementation_digest()
     final=abspath(output);staging=final*".building"
     mkpath(dirname(final))
     try
@@ -79,20 +65,24 @@ function main(;output=catalog_path())
             end
             for source in config["source"]
                 get(source,"enabled",true) || continue
-                reused=false
-                if get(ENV,"BFA_REIMPORT","0")!="1" && haskey(source,"reuse_corpus")
+                if get(source,"external",false)
                     db=load_catalog()
                     try
-                        reused=cached_corpus!(db,source["reuse_corpus"],joinpath(_bfa_source_root(source),source["check_path"]);
-                            entry=corpus_entry(source["reuse_corpus"]))
+                        for entry in config["corpus"]
+                            entry["source"]==source["name"] || continue
+                            store=(count=entry["count"],bytes_per_member=37,
+                                store_file="members.sqlite",sha256=entry["packed_sha256"])
+                            VBFCatalog._register_declared_corpus!(db,entry,store)
+                        end
                     finally
                         close(db)
                     end
+                else
+                    convert_source(source["name"])
                 end
-                reused || convert_source(source["name"])
             end
             build_inputs(config)==inputs || error("build inputs changed during import")
-            implementation_digest()==implementation || error("build implementation changed during import")
+            VBFCatalog._implementation_digest()==implementation || error("build implementation changed during import")
             finalize_catalog!(staging;refresh_inputs=false)
             check_catalog(staging)
         end

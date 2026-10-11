@@ -7,7 +7,14 @@ Experiment completion and reference absence always have an explicit finite scope
 module VBFSearch
 using VBF, VBFCatalog, SHA, TOML, Dates, Random, SQLite, DBInterface, CSV, JSON3
 
+"""Local run and research evidence, overridable with VBF_SEARCH_DATA_DIR."""
+search_data_dir() = abspath(get(ENV,"VBF_SEARCH_DATA_DIR",joinpath(pkgdir(VBFSearch),"data")))
+
 include("power.jl")
+include("reference/equivalence.jl")
+include("reference/classes.jl")
+include("reference/classification.jl")
+include("reference/snapshot.jl")
 include("evidence.jl")
 include("store.jl")
 include("inputs.jl")
@@ -26,7 +33,13 @@ include("catalog.jl")
 include("report.jl")
 include("cli.jl")
 
-export equivalence_evidence, verify_graph_witness, SearchConfig, search, resume, status, stop!, audit, validate, report,
+export AuditedAPNReference, open_apn_reference, close_apn_reference, open_catalog_reference,
+       reference_metadata, reference_contains_signature, reference_exact_lut_match,
+       equivalence_solver_fingerprint, check_equivalence!, list_equivalence_checks,
+       verify_equivalence_check, equivalence_checks_path,
+       deduplicate_signature_buckets!, classify_signature_buckets!, classification_summary,
+       populate_ccz_equivalence_classes!, ccz_class_representatives, curated_classes_path,
+       search_data_dir, equivalence_evidence, verify_graph_witness, SearchConfig, search, resume, status, stop!, audit, validate, report,
        report_snapshot, candidate_properties, compare, classify, classify_snapshot, open_reference,
        close_reference, verify_comparison, verify_ccz_witness, verify_ea_witness,
        verify_certificate, publish, main

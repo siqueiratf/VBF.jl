@@ -1,5 +1,5 @@
 # Implements shared constants, TSV input/output and report helpers
-# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFSearch/data/research/archive/census)
 #
 # Pseudocode:
 #   1. Store study constants (known-class counts, exact masses for small n).

@@ -8,9 +8,9 @@ and provenance linked to local run evidence. This operation never asserts litera
 function publish(directory;name)
     occursin(r"^[a-z][a-z0-9_-]*$",name) || error("use a lowercase corpus slug")
     dir=abspath(directory);data=VBFCatalog.catalog_data_dir();sources=VBFCatalog.catalog_source_dir()
-    startswith(dir,data*"/") || error("publish needs a catalog-local run; use discover or validate under $data/search")
     isfile(joinpath(dir,"run.sqlite")) || error("missing search run")
     lockpath=joinpath(data,".publish.lock")
+    mkpath(data)
     publish_lease=open(lockpath,"a+")
     ccall(:flock,Cint,(Cint,Cint),fd(publish_lease),6)==0 || (close(publish_lease);error("another catalog publication is active"))
     db=nothing;reference=nothing;writer_lease=nothing
@@ -21,7 +21,7 @@ function publish(directory;name)
         SQLite.execute(db,"BEGIN")
         rows=[NamedTuple(r) for r in DBInterface.execute(db,"SELECT lut_id,lut_hex FROM candidates ORDER BY lut_id")]
         snapshot_sha=bytes2hex(sha256(join([r.lut_id*":"*r.lut_hex for r in rows],'\n')))
-        declarations=joinpath(sources,"corpora.toml")
+        declarations=joinpath(sources,"sources.toml")
         inventory=TOML.parsefile(declarations)
         entries=inventory["corpus"]
         prior=findfirst(e->e["name"]==name,entries)
@@ -38,7 +38,7 @@ function publish(directory;name)
                 p["lut_sha256"]==row.lut_id || error("candidate LUT identity changed")
                 p["apn"] && p["quadratic"] || continue
                 hash=p["sigma_hash"]
-                if VBFCatalog.reference_contains_signature(reference,hash)
+                if reference_contains_signature(reference,hash)
                     matching+=1;continue
                 end
                 hash in seen && continue
@@ -57,11 +57,11 @@ function publish(directory;name)
             entry=Dict{String,Any}("name"=>name,"reader"=>"quadratic_coeffs","family"=>"discovery",
                 "source"=>"quadratic_apn_8bit","separating"=>true,"packed_sha256"=>bytes2hex(SHA.digest!(packed)),
                 "file"=>relpath(path,sources),"count"=>length(accepted),"sha256"=>filehash(path),
-                "run_snapshot_sha256"=>snapshot_sha,"source_repo"=>"VBFSearch:"*relpath(dir,data),
+                "run_snapshot_sha256"=>snapshot_sha,"source_repo"=>"VBFSearch:"*relpath(dir,search_data_dir()),
                 "notes"=>"Verified quadratic APNs with pairwise distinct signatures absent from frozen catalog "*reference.metadata["sha256"]*"; literature-wide novelty unresolved.")
             atomic_toml(joinpath(dir,name*".promotion.toml"),Dict("corpus"=>entry,
-                "reference"=>VBFCatalog.reference_metadata(reference),"matching_luts"=>matching,
-                "snapshot_luts"=>length(rows),"solver_source_sha256"=>VBFCatalog.equivalence_solver_fingerprint(),
+                "reference"=>reference_metadata(reference),"matching_luts"=>matching,
+                "snapshot_luts"=>length(rows),"solver_source_sha256"=>equivalence_solver_fingerprint(),
                 "generated_utc"=>string(Dates.now(Dates.UTC))))
             push!(entries,entry)
             atomic_toml(declarations,inventory)

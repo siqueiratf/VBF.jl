@@ -1,5 +1,5 @@
 # Saved proposal witnesses are checked through VBF's graph APIs.
-include(joinpath(@__DIR__, "..", "..", "..", "VBFSearch", "src", "verification", "ea_witness.jl"))
+using VBFSearch.DiscoveryEvidence: GraphWitnesses
 using .GraphWitnesses: verify_proposal_witnesses
 
 if abspath(PROGRAM_FILE)==@__FILE__

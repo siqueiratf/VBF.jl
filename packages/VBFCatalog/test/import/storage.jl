@@ -1,6 +1,5 @@
 using Test, VBF, VBFCatalog, SHA, TOML, SQLite, DBInterface
 include("../../src/import/check.jl")
-include("../../src/import/cache.jl")
 include("../../src/import/load_sources.jl")
 include("../../src/import/bibliography.jl")
 include("../../src/import/write.jl")
@@ -60,7 +59,7 @@ end
     end
 end
 
-@testset "corpus isolation, rollback, cache and source agreement" begin
+@testset "corpus isolation, rollback and source agreement" begin
     mktempdir() do dir
         old_catalog=get(ENV,"BFA_CATALOG_PATH",nothing)
         old_data=get(ENV,"BFA_DATA_DIR",nothing)
@@ -111,29 +110,7 @@ end
             @test only(Int(r.c) for r in DBInterface.execute(luts,"SELECT COUNT(*) c FROM members"))==2
             @test all(Vector{UInt8}(r.lut)==canonical_lut_bytes(F) for r in DBInterface.execute(luts,"SELECT lut FROM members"))
             close(luts)
-            source=joinpath(dir,"original.txt"); write(source,"fixture\n")
-            record_import!(db,"large",source)
             close(db)
-            target=create_catalog(joinpath(dir,"target.sqlite"))
-            try
-                previous=load_catalog()
-                SQLite.execute(previous,"UPDATE schema_meta SET schema_version=?",(SCHEMA_VERSION-1,))
-                close(previous)
-                @test cached_corpus!(target,"large",source)
-                @test corpus_length(target,"large")==3
-                previous=SQLite.DB(catalog_path())
-                SQLite.execute(previous,"UPDATE schema_meta SET schema_version=?",(SCHEMA_VERSION,))
-                close(previous)
-                write(source,"changed\n")
-                @test_throws ErrorException cached_corpus!(target,"large",source)
-                write(source,"fixture\n")
-                bulk=SQLite.DB(joinpath(dir,"members.sqlite"))
-                DBInterface.execute(bulk,"UPDATE corpus_members SET coeffs=? WHERE corpus='large' AND idx=1",(zeros(UInt8,length(enc)),))
-                close(bulk)
-                @test_throws ErrorException cached_corpus!(target,"large",source)
-            finally
-                close(target)
-            end
         finally
             old_catalog===nothing ? delete!(ENV,"BFA_CATALOG_PATH") : (ENV["BFA_CATALOG_PATH"]=old_catalog)
             old_data===nothing ? delete!(ENV,"BFA_DATA_DIR") : (ENV["BFA_DATA_DIR"]=old_data)

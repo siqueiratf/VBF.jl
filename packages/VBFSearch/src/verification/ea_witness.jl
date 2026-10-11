@@ -1,7 +1,7 @@
 """Decode saved graph maps and check them with VBF's affine-map and graph APIs."""
 module GraphWitnesses
 using VBF, SHA, TOML
-using VBFCatalog: verify_graph_witness
+using ...VBFSearch: verify_graph_witness
 export verify_graph_witness, verify_ea_witness, verify_ccz_witness, verify_proposal_witnesses, verify_witness_report
 
 function verify_ccz_witness(f,g,cols,constant; relation=:ccz)

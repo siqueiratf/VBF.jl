@@ -12,7 +12,7 @@ function audit_run(dir;baseline=get(ENV,"VBF_APN_REFERENCE",DEFAULT_REFERENCE),l
         identity=TOML.parse(only(rows("SELECT value FROM metadata WHERE key='run'"))["value"])["identity"]
         expected=identity["reference"]
         reference=open_reference(baseline;supplement_path=supplement,sources=get(expected,"sources",nothing))
-        all(k->expected[k]==VBFCatalog.reference_metadata(reference)[k],("sha256","manifest_sha256","supplement_sha256","signatures")) || error("reference changed since this experiment")
+        all(k->expected[k]==reference_metadata(reference)[k],("sha256","manifest_sha256","supplement_sha256","signatures")) || error("reference changed since this experiment")
         archive=joinpath(dir,"source")
         if isdir(archive)
             for (path,digest) in identity["code"]
@@ -99,7 +99,7 @@ function audit_run(dir;baseline=get(ENV,"VBF_APN_REFERENCE",DEFAULT_REFERENCE),l
             "kernel_completeness"=>"trusted search algorithm; stored basis and coverage ledger checked, not a separate nullspace computation",
             "v5_coverage"=>"contiguous coset ledger; extension filters need algorithm replay",
             "literature_novelty"=>"unresolved","generated_utc"=>string(Dates.now(Dates.UTC)),
-            "reference_sha256"=>VBFCatalog.reference_metadata(reference)["sha256"])
+            "reference_sha256"=>reference_metadata(reference)["sha256"])
         atomic_toml(joinpath(dir,"audit.toml"),result);println(result);result
     finally
         DiscoveryStore.SQL.intransaction(db) && DiscoveryStore.execute!(db,"ROLLBACK")

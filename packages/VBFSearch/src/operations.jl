@@ -37,7 +37,7 @@ function validate(inputs;output,reference=get(ENV,"VBF_APN_REFERENCE",DEFAULT_RE
     total=0
     try
         identity=Dict("method"=>"validation_import","inputs"=>source_fingerprint(paths),
-            "reference"=>VBFCatalog.reference_metadata(ref),"code"=>implementation_fingerprint(),"limit"=>limit)
+            "reference"=>reference_metadata(ref),"code"=>implementation_fingerprint(),"limit"=>limit)
         store=open_store(output,identity)
         for path in paths
             digest=filehash(path)

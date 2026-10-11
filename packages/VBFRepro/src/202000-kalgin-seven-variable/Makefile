@@ -15,7 +15,7 @@ full_search  ?= false
 # bulk corpus is n=8, so that slice answers them exactly as the full index does,
 # in seconds rather than hours. A file target, not .PHONY — an existing full
 # index is left untouched.
-SIGMA_INDEX := $(ROOT)/packages/VBFCatalog/data/ccz_sigma_index.sqlite
+SIGMA_INDEX := $(if $(BFA_DATA_DIR),$(BFA_DATA_DIR),$(ROOT)/.cache/vbfcatalog)/ccz_sigma_index.sqlite
 
 $(SIGMA_INDEX):
 	$(JULIA) $(JULIA_PROJECT) -e 'using VBFCatalog; \

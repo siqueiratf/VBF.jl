@@ -33,7 +33,7 @@ function search(config::SearchConfig)
     known,validation=validated_study(paths)
     semantic=Dict(k=>cfg[k] for k in ("method","limit","seed","target-b6","v5-bent","orbit-seconds","ea-representatives","corpus"))
     identity=Dict("configuration"=>semantic,"inputs"=>source_fingerprint(paths),"code"=>code_identity(),
-        "reference"=>Dict(k=>v for (k,v) in VBFCatalog.reference_metadata(reference) if k in ("sha256","manifest_sha256","supplement_sha256","signatures","sources")),
+        "reference"=>Dict(k=>v for (k,v) in reference_metadata(reference) if k in ("sha256","manifest_sha256","supplement_sha256","signatures","sources")),
         "reference_locations"=>Dict("baseline"=>config.reference,"supplement"=>config.supplement),
         "julia"=>string(VERSION))
     store=open_store(dir,identity;resume)
@@ -97,7 +97,7 @@ function search(config::SearchConfig)
             "platform"=>Sys.MACHINE,"word_size"=>Sys.WORD_SIZE,"pid"=>getpid(),
             "compiled_modules"=>Int(Base.JLOptions().use_compiled_modules),
             "optimization_level"=>Int(Base.JLOptions().opt_level),
-            "gc_threads"=>Threads.ngcthreads(),"julia_threads"=>Threads.nthreads(),"reference"=>VBFCatalog.reference_metadata(reference)))
+            "gc_threads"=>Threads.ngcthreads(),"julia_threads"=>Threads.nthreads(),"reference"=>reference_metadata(reference)))
         println("Discovery session $session: $workers workers; $wall seconds; method $(cfg["method"]); $dir")
         flush(stdout)
         Threads.@threads :dynamic for worker in 1:workers

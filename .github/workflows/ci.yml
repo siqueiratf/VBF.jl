@@ -22,6 +22,7 @@ jobs:
   paper-tests:
     name: Paper • ${{ matrix.paper }}
     runs-on: ubuntu-latest
+    needs: catalog-check
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -81,6 +82,12 @@ jobs:
       - name: Cache Julia depot
         uses: julia-actions/cache@v2
 
+      - name: Download rebuilt catalog
+        uses: actions/download-artifact@v4
+        with:
+          name: catalog
+          path: .cache/vbfcatalog
+
       - name: Run paper tests
         run: |
           julia --startup-file=no --project=. -e 'using Pkg; Pkg.instantiate()'
@@ -89,6 +96,7 @@ jobs:
   perf-smoke:
     name: Performance tooling • ${{ matrix.package }}
     runs-on: ubuntu-latest
+    needs: catalog-check
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -105,6 +113,11 @@ jobs:
           version: '1.12'
       - name: Cache Julia depot
         uses: julia-actions/cache@v2
+      - name: Download rebuilt catalog
+        uses: actions/download-artifact@v4
+        with:
+          name: catalog
+          path: .cache/vbfcatalog
       - name: Instantiate performance environment
         run: julia --startup-file=no --project=packages/${{ matrix.package }}/perf -e 'using Pkg; Pkg.instantiate()'
       - name: Check performance tooling
@@ -112,9 +125,9 @@ jobs:
 
   catalog-check:
     # Same Julia source/database agreement check as the local hook.
-    name: Catalog sync
+    name: Catalog rebuild
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     steps:
       - name: Check out source
         uses: actions/checkout@v5
@@ -125,10 +138,19 @@ jobs:
           version: '1.12'
       - name: Cache Julia depot
         uses: julia-actions/cache@v2
-      - name: Instantiate catalog environment
-        run: julia --startup-file=no --project=packages/VBFCatalog -e 'using Pkg; Pkg.instantiate()'
-      - name: Check entries against the committed catalog
+      - name: Instantiate import environment
+        run: julia --startup-file=no --project=packages/VBFCatalog/src/import -e 'using Pkg; Pkg.instantiate(); Pkg.activate("packages/VBFCatalog"); Pkg.instantiate()'
+      - name: Rebuild catalog from tracked declarations and pinned originals
+        run: make -C packages/VBFCatalog/src/import catalog threads=2
+      - name: Check declarations against the rebuilt catalog
         run: .githooks/catalog-check --structure-only
+      - name: Share generated catalog with consumer jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog
+          path: .cache/vbfcatalog/catalog.sqlite
+          include-hidden-files: true
+          if-no-files-found: error
 
   test:
     name: Test • ${{ matrix.package }} • Julia ${{ matrix.julia }} • ${{ matrix.os }}
@@ -157,6 +179,12 @@ jobs:
         uses: julia-actions/julia-buildpkg@v1
         with:
           project: packages/${{ matrix.package }}
+
+      - name: Download rebuilt catalog
+        uses: actions/download-artifact@v4
+        with:
+          name: catalog
+          path: .cache/vbfcatalog
 
       - name: Run tests
         uses: julia-actions/julia-runtest@v1

@@ -1,6 +1,6 @@
 using VBF
 # Implements exact masses sum_{classes} 1/|Stab| for small n from the catalog
-# Study: census of quadratic APN functions on F_2^8 (packages/VBFCatalog/data/research/archive/census)
+# Study: census of quadratic APN functions on F_2^8 (packages/VBFSearch/data/research/archive/census)
 #
 # Math:
 #   GL(n,2) x GL(n,2) acts on pure quadratic APN (n,n)-functions F -> A o F o B.  By the
@@ -22,7 +22,7 @@ using VBF
 
 isdefined(@__MODULE__, :encode_coeffs) || include(joinpath(@__DIR__, "helpers.jl"))
 
-using VBFCatalog
+using VBFCatalog, VBFSearch
 
 """
     exact_masses(nmin, nmax; io = stdout) -> Dict{Int,NamedTuple}
@@ -35,7 +35,7 @@ function exact_masses(nmin::Int, nmax::Int; io::IO = stdout)
     out = Dict{Int,Any}()
     try
         for n in nmin:nmax
-            reps = VBFCatalog.ccz_class_representatives(db; n)
+            reps = VBFSearch.ccz_class_representatives(db; n)
             mass = big(0) // big(1)
             hist = Dict{Int,Int}()
             t = @elapsed for rep in reps

@@ -59,7 +59,7 @@ the same server provides `/api/` for the embedded inspector.
 5. With `--run PATH`, select **Load candidates**, optionally filtering for
    additional signatures, then **Load** a stored exact LUT. An imported
    historical bundle normally has no “additional” flag; leave that filter off.
-   Every bounded pair check is saved as TOML under `packages/VBFCatalog/data/research/runs/web/`
+   Every bounded pair check is saved as TOML under `packages/VBFSearch/data/research/runs/web/`
    and, when a run is selected, appended transactionally to its `comparisons`
    table. The inspector can coexist with an enumeration writer because these
    append-only comparisons do not change search cursors.
@@ -111,7 +111,7 @@ missing. The interface exposes existing evidence; it does not fill those gaps wi
 novelty label. `bin/vbf report` exports CSV/LaTeX tables and JSON snapshots. WorkingPaper's
 `src/search_figures.jl` produces SVG/PDF figures from those snapshots.
 
-Historical candidate lists are read from `packages/VBFCatalog/data/research/archive/census/`; pair certificates
-are written to `packages/VBFCatalog/data/research/runs/web/`. A complete catalog index is required; see
+Historical candidate lists are read from `packages/VBFSearch/data/research/archive/census/`; pair certificates
+are written to `packages/VBFSearch/data/research/runs/web/`. A complete catalog index is required; see
 [catalog preparation](../../packages/VBFCatalog/README.md). The app imports `VBFSearch`
 and uses the promoted VBF coefficient representation.
