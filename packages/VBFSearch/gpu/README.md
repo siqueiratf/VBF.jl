@@ -216,3 +216,22 @@ branch and generalized here. The math is Yu–Wang–Li / Ichanska / Yu–Perrin
 Yu (QAM method) for the searchers, and Canteaut–Couvreur–Perrin (ortho-derivative
 linear equivalence) for `ccz_confirm`; see the header comments in each file for
 exact citations.
+
+## The Kuznetsov census scripts (`census/`)
+
+The `census/` folder holds the original pipeline that this toolkit grew out of.
+It reuses the BBL2021 tuples from
+`packages/VBFRepro/src/202107-beierle-self-equivalence/tuples/`.
+
+| file | job |
+|---|---|
+| `va_generic.jl` | build the subspace V_A for any `(n, class)` |
+| `survey.jl` | print the `dim(V_A)` feasibility map for all classes (`make survey`) |
+| `generate_rows.jl` | write `basis_n<n>_c<class>_rows.bin` for `apn_search` (`make basis n=8 class=22`) |
+| `gateway.jl` | JSON gateway for an external search driver |
+| `fetch_catalog.sh` | download the known dimension-8 catalogs into `catalogs/` (`make catalog [full=1]`) |
+| `pack_catalog.jl` | pack a text catalog into the compact `.anf` format (`make pack in=<txt>`) |
+
+Run `make census-test` to test `va_generic.jl`. The repository tracks no
+Python files, so the Python reader `load_anf.py` and the SageMath check
+`verify_edelpott.py` are only in the tag `archive/gpgpu`.
