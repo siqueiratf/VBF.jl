@@ -5,7 +5,18 @@ mathematical algorithms; `packages/VBFCatalog` provides the catalog and corpora
 from pinned heterogeneous inputs under `src/data/`;
 `packages/VBFSearch` manages reproducible discovery experiments;
 `packages/VBFRepro` runs paper reproductions. `packages/VBFPaper` owns the working paper and comparative studies.
-The core package never depends on the catalog. See [project context](.claude/context/PROJECT.md)
+The core package never depends on the catalog.
+
+| Package | Contents |
+|---|---|
+| `packages/VBF` | core algorithms: representations, GF(2) linear algebra, spectra, invariants, equivalence, constructions |
+| `packages/VBFCatalog` | the catalog of known APN functions, S-boxes and corpora |
+| `packages/VBFRepro` | the reproductions of published papers, as the authors describe them |
+| `packages/VBFSearch` | our own searches and optimizations, including the GPU toolkit in `gpu/` |
+| `packages/VBFPaper` | the manuscript, its studies and the benchmark evidence in `bench/` |
+
+The repository has one branch, `main`. Build the documentation locally with
+`make -C docs build`; nothing publishes it to GitHub Pages. See [project context](.claude/context/PROJECT.md)
 and the [API documentation sources](docs/src).
 
 ## Paper reproductions and performance

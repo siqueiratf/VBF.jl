@@ -22,6 +22,10 @@ Primary sources:
 - `packages/VBFSearch/`: reproducible search application consuming VBF and VBFCatalog;
   owns experiment state, checkpoints, references, classification and evidence.
   Explicit publication freezes inputs and provenance through catalog APIs.
+- `packages/VBFSearch/gpu/`: standalone C/C++/HIP kernels for GPU quadratic-APN
+  search (`apn_search`, `qam_dfs`, `ccz_confirm`) and the Kuznetsov census
+  scripts in `census/`. Our own search extensions go in VBFSearch; the
+  authors' original algorithms stay in VBFRepro.
 - `packages/VBFSearch/tools/reference/`: original-source rebuild tools;
   run in the root environment and write to `packages/VBFSearch/data/research/rebuilds/`.
 - `packages/VBFPaper/src/{census,hyperplanes,literature}/`: research studies consuming package APIs.
@@ -43,12 +47,21 @@ Primary sources:
   Heavy paper dependencies load only in subprocesses.
 - `packages/VBFPaper/`: manuscript studies consuming the other packages;
   document source and Overleaf submodule live under `doc/`.
-- `packages/VBFPaper/bench/analysis/`: optional shared measurement/profile readers.
+- `packages/VBFPaper/bench/`: shared benchmark evidence for the manuscript:
+  `analysis/` (measurement/profile readers), `data/` (recorded measurements of
+  every package) and `historical/` (old notes and calibration).
 - `docs/`: Documenter.jl API-reference site generated from source docstrings.
 - `.claude/`: Claude source material: project context, original skills, and
   original agent markdown.
 - `.agents/skills/`: Codex repo skills copied from the important Claude skills.
 - `.codex/`: project-scoped Codex config and custom Codex agents.
+
+## Branches And Docs
+
+- `main` is the only long-lived branch. Do work on short-lived branches and
+  merge them back into `main`; do not keep parallel research branches.
+- There is no `gh-pages` branch. Build the docs locally with
+  `make -C docs build` (or `make -C docs serve`); never add `deploydocs`.
 
 ## Core Rules
 

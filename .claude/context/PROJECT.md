@@ -13,16 +13,17 @@ packages/VBF/          core algorithms  (representations, spectra, invariants,
                         equivalence, constructions — no catalog dependency)
 packages/VBFCatalog/   data layer: SQLite catalog, bibliography, importers
                         (depends on VBF; VBF must NOT depend on VBFCatalog)
-packages/VBFSearch/    reproducible APN search and candidate evidence
-docs/inspector/        HTTP evidence viewer consuming all three packages
-packages/VBFSearch/data/research/             reference snapshots, runs, rebuilds and historical data
-packages/VBFRepro/      reproduction runner and standalone publication claims
-packages/VBFPaper/ manuscript studies, analysis and Overleaf source under doc/
-packages/*/perf/        optional per-package performance workloads
-packages/VBFPaper/bench/data/             performance measurements and provenance
-docs/                  Documenter.jl API-reference site
+packages/VBFRepro/     reproduction runner and standalone publication claims
+                        (the authors' algorithms, as published)
+packages/VBFSearch/    our reproducible APN searches, optimizations and evidence
+packages/VBFSearch/gpu/          standalone GPU kernels and the Kuznetsov census
+packages/VBFSearch/data/research/ reference snapshots, runs, rebuilds, history
+packages/VBFPaper/     manuscript studies, analysis and Overleaf source under doc/
+packages/VBFPaper/bench/         shared benchmark readers, measurements, history
+packages/*/perf/       optional per-package performance workloads
+docs/                  Documenter.jl API-reference site (built locally only)
+docs/inspector/        HTTP evidence viewer consuming the packages
 ```
-
 Key layout rules:
 - One concept per file, grouped by concept directory under `packages/VBF/src/`.
 - `VBF` must never import `VBFCatalog`.
@@ -115,7 +116,7 @@ with `bin/vbfrepro test <slug>`. Bibliography identifiers remain in VBFCatalog.
 
 ## Git / commit conventions
 
-Branch: `main`. Recent commit style: `<type>: <description>` (feat/fix/refactor/
+Branch: `main` is the only long-lived branch; there is no `gh-pages` (build docs with `make -C docs build`). Recent commit style: `<type>: <description>` (feat/fix/refactor/
 style/docs). Never skip hooks. Never amend published commits.
 
 ## Environment variables for catalog importers
