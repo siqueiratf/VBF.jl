@@ -3,7 +3,6 @@ name: Docs
 on:
   push:
     branches: [main]
-    tags: ['*']
   pull_request:
   workflow_dispatch:
 
@@ -11,10 +10,9 @@ concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
-# Documenter deploys to the gh-pages branch using the built-in GITHUB_TOKEN, which needs write access to repository contents.
+# This workflow only builds the docs to catch broken doctests and cross-references. Nothing deploys them: build them locally with `make -C docs build`.
 permissions:
-  contents: write
-  statuses: write
+  contents: read
 
 # See the note in ci.yml: force JS actions onto Node 24 ahead of the GitHub default switch, until every action we use ships a Node 24 release.
 env:
@@ -22,7 +20,7 @@ env:
 
 jobs:
   docs:
-    name: Build & deploy docs
+    name: Build docs
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -40,8 +38,7 @@ jobs:
       - name: Instantiate docs environment
         run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'
 
-      - name: Build and deploy
+      - name: Build
         run: julia --project=docs docs/make.jl
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JULIA_DEBUG: Documenter

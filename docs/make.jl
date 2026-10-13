@@ -97,16 +97,9 @@ makedocs(
     ],
     format = Documenter.HTML(;
         prettyurls = get(ENV, "CI", "false") == "true",
-        canonical = "https://zambonin.github.io/VBF.jl",
         edit_link = "main",
         inventory_version = "0.1.0-DEV",
     ),
 )
 
-if get(ENV, "DOCS_DEPLOY", "true") == "true"
-    deploydocs(
-        repo = "github.com/zambonin/VBF.jl.git",
-        devbranch = "main",
-        push_preview = false,
-    )
-end
+# The docs are built locally only (`make -C docs build` or `make -C docs serve`); nothing deploys them to a hosted site.

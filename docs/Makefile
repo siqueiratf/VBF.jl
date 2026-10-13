@@ -14,7 +14,7 @@ inspector-instantiate:
 	JULIA_NUM_PRECOMPILE_TASKS=2 $(JULIA) --project="$(INSPECTOR)" -e 'using Pkg; Pkg.instantiate()'
 
 build: instantiate
-	DOCS_DEPLOY=false $(JULIA) --project="$(DOCS)" "$(DOCS)make.jl"
+	$(JULIA) --project="$(DOCS)" "$(DOCS)make.jl"
 
 serve: build
 	$(MAKE) -C "$(DOCS)" serve-built port="$(port)" host="$(host)" run="$(run)"
