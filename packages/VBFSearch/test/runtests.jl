@@ -333,5 +333,7 @@ end
 
 @testset "Original-source reference rebuild" begin
     script=joinpath(@__DIR__,"reference","rebuild.jl")
-    @test success(`$(Base.julia_cmd()) --startup-file=no --compiled-modules=existing --project=$(dirname(@__DIR__)) $script`)
+    # Pkg.test sets JULIA_LOAD_PATH to its sandbox without @stdlib; the child must resolve stdlibs such as Printf.
+    cmd = `$(Base.julia_cmd()) --startup-file=no --compiled-modules=existing --project=$(dirname(@__DIR__)) $script`
+    @test success(addenv(cmd, "JULIA_LOAD_PATH" => "@:@stdlib"))
 end
