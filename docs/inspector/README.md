@@ -108,7 +108,7 @@ recording proven components and unresolved pairs. Complete canonical
 classification beyond that finite candidate set, complete literature coverage, an
 independent negative-search certificate and proof-assistant formalization remain
 missing. The interface exposes existing evidence; it does not fill those gaps with a
-novelty label. `bin/vbf report` exports CSV/LaTeX tables and JSON snapshots. WorkingPaper's
+novelty label. `bin/vbf report` exports CSV/LaTeX tables and JSON snapshots. VBFPaper's
 `src/search_figures.jl` produces SVG/PDF figures from those snapshots.
 
 Historical candidate lists are read from `packages/VBFSearch/data/research/archive/census/`; pair certificates

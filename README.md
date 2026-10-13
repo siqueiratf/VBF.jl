@@ -4,7 +4,7 @@ Julia >= 1.12 workspace for vectorial Boolean functions. `packages/VBF` contains
 mathematical algorithms; `packages/VBFCatalog` provides the catalog and corpora
 from pinned heterogeneous inputs under `src/data/`;
 `packages/VBFSearch` manages reproducible discovery experiments;
-`packages/VBFRepro` runs paper reproductions. `packages/VBFWorkingPaper` owns the working paper and comparative studies.
+`packages/VBFRepro` runs paper reproductions. `packages/VBFPaper` owns the working paper and comparative studies.
 The core package never depends on the catalog. See [project context](.claude/context/PROJECT.md)
 and the [API documentation sources](docs/src).
 
@@ -21,7 +21,7 @@ bin/vbfrepro test Yu_202211d --timeout-seconds 300
 ```
 
 Cross-paper metrics and performance analysis share
-[VBFWorkingPaper](packages/VBFWorkingPaper/README.md).
+[VBFPaper](packages/VBFPaper/README.md).
 Each package owns optional BenchmarkTools workloads in its `perf/` folder.
 Performance environments are separate from runtime dependencies, and measurements
 are stored under `packages/VBF/perf/data/`; benchmark execution leaves the catalog unchanged.

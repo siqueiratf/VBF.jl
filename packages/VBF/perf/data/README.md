@@ -36,4 +36,4 @@ separate package and discovery validation evidence.
 
 The byte-identical retired exporter is preserved in Git at
 `a07b06d:data/perf/archive/source/export.jl`. Its duplicate was removed from this
-evidence directory; current exporters belong to VBFWorkingPaper.
+evidence directory; current exporters belong to VBFPaper.

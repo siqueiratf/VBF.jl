@@ -17,7 +17,7 @@ packages/VBFSearch/    reproducible APN search and candidate evidence
 docs/inspector/        HTTP evidence viewer consuming all three packages
 packages/VBFSearch/data/research/             reference snapshots, runs, rebuilds and historical data
 packages/VBFRepro/      reproduction runner and standalone publication claims
-packages/VBFWorkingPaper/ manuscript studies, analysis and Overleaf source under doc/
+packages/VBFPaper/ manuscript studies, analysis and Overleaf source under doc/
 packages/*/perf/        optional per-package performance workloads
 packages/VBF/perf/data/             performance measurements and provenance
 docs/                  Documenter.jl API-reference site
@@ -33,8 +33,8 @@ Key layout rules:
   core math that belongs in `packages/VBF`.
 - Reproduction folders use flat `YYYYMM-author-subject` slugs, e.g.
   `src/202508-beierle-millions/`; `00` retains an unspecified month.
-  Working-paper studies live in `packages/VBFWorkingPaper/`. Reproductions
-  never depend on WorkingPaper. Shared evidence belongs to VBFSearch, catalog
+  Working-paper studies live in `packages/VBFPaper/`. Reproductions
+  never depend on VBFPaper. Shared evidence belongs to VBFSearch, catalog
   queries to VBFCatalog, and saved timing readers to VBF/perf/analysis.
   Consumers are Julia and reuse VBF's tested algorithms for verification and invariants.
 
@@ -141,14 +141,14 @@ checkpoints are unsupported. See `packages/VBFSearch/README.md` for the supporte
 The root `census/` tree is removed. Pure coefficient-tree, restriction and profile
 math lives in VBF (`QuadraticAPNTree`, `QuadraticRestrictions`, `QuadraticProfiles`).
 Original-source rebuild tools are `packages/VBFSearch/tools/reference/`;
-literature coverage and study consumers are under `packages/VBFWorkingPaper/src/`.
+literature coverage and study consumers are under `packages/VBFPaper/src/`.
 Historical data is `packages/VBFSearch/data/research/archive/census/`; new rebuilds use `packages/VBFSearch/data/research/rebuilds/`.
 See `packages/VBFSearch/README.md` for checkpointing and mathematical guarantees.
 
 The root `data/` is removed. APN archives live in `packages/VBFSearch/data/research/`,
 new runs in `packages/VBFSearch/data/search/`, performance evidence in
 `packages/VBF/perf/data/`, reproductions in `packages/VBFRepro/src/results/`, and
-working-paper exports in `packages/VBFWorkingPaper/doc/generated/`.
+working-paper exports in `packages/VBFPaper/doc/generated/`.
 The `legacy20261009_n8` corpus stores 111,009 verified separating signatures
 (110,868 historical plus 141 later), after importing 547 missing public signatures.
 Literature-wide novelty remains unresolved. `bin/vbf discover --name SLUG --corpus

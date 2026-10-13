@@ -31,4 +31,4 @@ New searches belong under `../search/<experiment>/`. See
 validates and registers one representative per new separating signature.
 Performance evidence moved to `packages/VBF/perf/data/`, paper-reproduction
 results to `packages/VBFRepro/src/results/`, and working-paper evidence to
-`packages/VBFWorkingPaper/doc/generated/`.
+`packages/VBFPaper/doc/generated/`.

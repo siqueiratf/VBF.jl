@@ -76,8 +76,8 @@ packages/VBFSearch/data/**
 !packages/VBFSearch/data/search/*/replay.toml
 packages/VBFRepro/src/results/**
 !packages/VBFRepro/src/results/**/
-packages/VBFWorkingPaper/doc/generated/**
-!packages/VBFWorkingPaper/doc/generated/**/
+packages/VBFPaper/doc/generated/**
+!packages/VBFPaper/doc/generated/**/
 packages/VBF/perf/data/**
 !packages/VBF/perf/data/**/
 

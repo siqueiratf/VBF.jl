@@ -24,7 +24,7 @@ Primary sources:
   Explicit publication freezes inputs and provenance through catalog APIs.
 - `packages/VBFSearch/tools/reference/`: original-source rebuild tools;
   run in the root environment and write to `packages/VBFSearch/data/research/rebuilds/`.
-- `packages/VBFWorkingPaper/src/{census,hyperplanes,literature}/`: research studies consuming package APIs.
+- `packages/VBFPaper/src/{census,hyperplanes,literature}/`: research studies consuming package APIs.
 - `docs/inspector/`: HTTP evidence viewer; own Julia environment.
 - `packages/VBFSearch/data/research/`: reference snapshots, runs, rebuilds and historical artifacts. The
   root `search/` and `census/` trees are retired; see `packages/VBFSearch/README.md`.
@@ -34,14 +34,14 @@ Primary sources:
   theorem, lemma, algorithm, table, or experiment per file, and make each file
   runnable on its own.
   Use flat `YYYYMM-author-subject/` folders, e.g. `202508-beierle-millions/`.
-  Reproductions must never depend on VBFWorkingPaper.
+  Reproductions must never depend on VBFPaper.
   Write consumers in Julia and reuse VBF mathematics; do not add separate verification implementations.
 - `packages/<package>/perf/`: optional BenchmarkTools workloads and profiling.
   Separate development environments; never dependencies of package runtime code.
   Measurements live under `packages/VBF/perf/data/`, separate from the curated catalog.
 - `packages/VBFRepro/`: reproduction runner and standalone paper claims.
   Heavy paper dependencies load only in subprocesses.
-- `packages/VBFWorkingPaper/`: manuscript studies consuming the other packages;
+- `packages/VBFPaper/`: manuscript studies consuming the other packages;
   document source and Overleaf submodule live under `doc/`.
 - `packages/VBF/perf/analysis/`: optional shared measurement/profile readers.
 - `docs/`: Documenter.jl API-reference site generated from source docstrings.

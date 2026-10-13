@@ -1,0 +1,54 @@
+% ===========================================================================
+%  preview_crossings.tex — PROOFING HARNESS ONLY.
+%
+%  This file exists so that `crossings.tex` can be compiled and read on
+%  screen. It is NOT part of the deliverable and you must NOT paste it into a
+%  manuscript. The deliverable is `packages/VBFPaper/doc/performance/crossings.tex` plus the files that
+%  `make -C packages/VBFPaper crossings` writes into `packages/VBFPaper/doc/generated/performance/crossings/`. This driver only
+%  supplies a document class and the packages that the fragment needs.
+%
+%  Build (Tectonic; there is no system TeX on the development machine):
+%
+%    JULIA_PROJECT=<texenv> julia -e 'using Tectonic; tectonic() do bin
+%      run(`$bin -X compile packages/VBFPaper/doc/performance/preview_crossings.tex --outdir <builddir>`) end'
+%
+%  Tectonic's pgfplots is old: compat=1.17 is the maximum that it accepts.
+%
+%  Run it from the top of the repository, so that the relative path in
+%  \bmxgen below resolves.
+% ===========================================================================
+\documentclass[10pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=20mm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+
+% The generated files, relative to the directory of the compilation.
+\providecommand{\bmxgen}{packages/VBFPaper/doc/generated/performance/crossings/}
+
+\input{packages/VBF/perf/data/archive/generated/benchmarks_meta.tex}
+\input{packages/VBFPaper/doc/generated/performance/crossings/crossings_facts.tex}
+
+\title{Proofing harness for \texttt{packages/VBFPaper/doc/performance/crossings.tex}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent
+This document exists only to render the fragment. Everything below the rule is
+\verb|packages/VBFPaper/doc/performance/crossings.tex| exactly as delivered.
+
+\hrule\vspace{1em}
+
+\input{packages/VBFPaper/doc/performance/crossings.tex}
+
+\end{document}

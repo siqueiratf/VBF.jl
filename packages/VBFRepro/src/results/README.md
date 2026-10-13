@@ -22,4 +22,4 @@ agreement; Git alone does not preserve ignored local files.
 
 The byte-identical retired analysis runner is preserved in Git at
 `a07b06d:data/repro/archive/analysis/main.jl`. Its duplicate was removed from this
-evidence directory; current analysis belongs to VBFWorkingPaper.
+evidence directory; current analysis belongs to VBFPaper.

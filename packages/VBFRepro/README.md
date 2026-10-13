@@ -8,7 +8,7 @@ Each paper keeps one claim per runnable Julia file and its own Make targets.
 Reproductions live directly under `src/YYYYMM-author-subject/`, for example
 `src/202508-beierle-millions/`. The CLI uses that directory slug; bibliography
 keys remain the original publication identifiers in VBFCatalog. `00` preserves
-an unspecified month. Cross-paper studies and manuscript analysis belong to VBFWorkingPaper.
+an unspecified month. Cross-paper studies and manuscript analysis belong to VBFPaper.
 Shared validation evidence belongs to VBFSearch.
 
 From the repository root:
@@ -71,13 +71,13 @@ paper, byte-for-byte, under `src/<slug>/`. Existing paper targets retain
 their explicit `save_results` controls and paper-local `results/` output; the
 execution log and configuration are consistently stored under `packages/VBFRepro/src/results/`.
 The runner does not rewrite historical evidence or add checkpoint guarantees to
-paper algorithms that lack them. Cross-paper studies and publication presentation belong to VBFWorkingPaper.
+paper algorithms that lack them. Cross-paper studies and publication presentation belong to VBFPaper.
 Reproductions never import that package.
 The Beierle self-equivalence reproduction retains its four frozen tuple-class
 fixtures for standalone tests and benchmark setup. These record matrices and
 search witnesses; known function references continue to come from VBFCatalog.
 
-The [working paper](../VBFWorkingPaper/README.md) consumes reproduction results.
+The [working paper](../VBFPaper/README.md) consumes reproduction results.
 The finite proposal checks live in `tools/catalog_proposals.jl` and use VBFSearch evidence. API timing workloads live in
 each package's `perf/` environment, including [perf/](perf/) here.
 
