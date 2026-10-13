@@ -49,22 +49,22 @@ timing repetitions.
 
 ## Analyze saved evidence
 
-VBFWorkingPaper owns manuscript studies and consumes reproduction results.
+VBFPaper owns manuscript studies and consumes reproduction results.
 Shared measurement/profile readers live in `packages/VBF/perf/analysis/`:
 
 ```sh
-make -C packages/VBFWorkingPaper instantiate
-make -C packages/VBFWorkingPaper grades
-make -C packages/VBFWorkingPaper fast
-make -C packages/VBFWorkingPaper consolidate
-make -C packages/VBFWorkingPaper export
+make -C packages/VBFPaper instantiate
+make -C packages/VBFPaper grades
+make -C packages/VBFPaper fast
+make -C packages/VBFPaper consolidate
+make -C packages/VBFPaper export
 ```
 
-Study outputs default to `packages/VBFWorkingPaper/doc/generated/`; shared perf summaries use
+Study outputs default to `packages/VBFPaper/doc/generated/`; shared perf summaries use
 `packages/VBF/perf/data/analysis/`. Historical custom-timer measurements
 retain their original protocol and provenance; the analysis keeps them separate
 from BenchmarkTools trials. Publication-specific configurations and templates
-live under `packages/VBFWorkingPaper/doc/`.
+live under `packages/VBFPaper/doc/`.
 
-See the [analysis guide](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFWorkingPaper/README.md)
+See the [analysis guide](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFPaper/README.md)
 for the input/output options and documented statistical limits.

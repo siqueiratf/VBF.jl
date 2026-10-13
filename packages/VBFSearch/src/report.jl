@@ -34,7 +34,7 @@ function write_evidence_table(path,rows,fields;delim=',')
 end
 
 """Export a consistent experiment snapshot, candidate tables and reusable seeds in Julia.
-Publication plots consume this output from VBFWorkingPaper.
+Publication plots consume this output from VBFPaper.
 """
 function report(directory;output=joinpath(directory,"publication"))
     evidence=report_snapshot(directory);mkpath(output)

@@ -6,7 +6,7 @@ snapshot exports. The CLI, Julia API and documentation inspector use the same
 implementation. Mathematical checks use VBF; there is no second verification
 engine and no Python dependency.
 
-Research studies live in [VBFWorkingPaper](../VBFWorkingPaper/README.md): census
+Research studies live in [VBFPaper](../VBFPaper/README.md): census
 sampling, hyperplane experiments, finite literature domains and publication
 figures. Original-source corpus preparation remains in VBFCatalog.
 
@@ -104,11 +104,11 @@ platform, times, PID and Git state. Restore public data and installed dependenci
 separately. Start searches in fresh Julia processes from stable source files.
 
 Reports write JSON snapshots, candidate and relationship CSVs, reusable seed TSVs
-and LaTeX counts. Figures are downstream WorkingPaper output:
+and LaTeX counts. Figures are downstream VBFPaper output:
 
 ```sh
-julia --project=packages/VBFWorkingPaper \
-  packages/VBFWorkingPaper/src/search_figures.jl packages/VBFSearch/data/search/experiment01
+julia --project=packages/VBFPaper \
+  packages/VBFPaper/src/search_figures.jl packages/VBFSearch/data/search/experiment01
 ```
 
 ```julia

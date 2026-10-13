@@ -162,7 +162,7 @@ jobs:
       matrix:
         julia: ['1.12']
         os: [ubuntu-latest]
-        package: [VBF, VBFCatalog, VBFSearch, VBFRepro, VBFWorkingPaper]
+        package: [VBF, VBFCatalog, VBFSearch, VBFRepro, VBFPaper]
     steps:
       - name: Check out source
         uses: actions/checkout@v5
@@ -195,7 +195,7 @@ jobs:
           RETESTITEMS_NWORKERS: '2'
 
       - name: Check shared perf and proposal consumers
-        if: matrix.package == 'VBFWorkingPaper'
+        if: matrix.package == 'VBFPaper'
         run: |
-          julia --startup-file=no --project=packages/VBFWorkingPaper packages/VBF/perf/analysis/test.jl
-          julia --startup-file=no --project=packages/VBFWorkingPaper packages/VBFRepro/test/proposals/test_catalog_proposals.jl
+          julia --startup-file=no --project=packages/VBFPaper packages/VBF/perf/analysis/test.jl
+          julia --startup-file=no --project=packages/VBFPaper packages/VBFRepro/test/proposals/test_catalog_proposals.jl

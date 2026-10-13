@@ -1,6 +1,6 @@
 # Performance evidence analysis
 
-Use this optional environment (`julia --project=packages/VBF/perf/analysis`), or VBFWorkingPaper. `BenchAnalysis.jl` reads
+Use this optional environment (`julia --project=packages/VBF/perf/analysis`), or VBFPaper. `BenchAnalysis.jl` reads
 BenchmarkTools trial artifacts or explicitly supplied historical SQLite rows;
 it never changes the source database. `consolidate` creates a separate SQLite
 snapshot in one transaction, with CSV/Arrow exports and optional plots.
@@ -49,6 +49,6 @@ hashes, measurement-file hashes, and protocol. Keep the resolved local manifest
 with published outputs; the environment's generated manifest is ignored by git.
 
 `crossings.jl` analyzes preserved historical summary CSVs against predictions
-under `packages/VBFWorkingPaper/doc/performance/`. Manuscript scripts live in VBFWorkingPaper. `manuscript.jl` produces the legacy selected-run
+under `packages/VBFPaper/doc/performance/`. Manuscript scripts live in VBFPaper. `manuscript.jl` produces the legacy selected-run
 SQLite report, whose corpus projections assume the measured Gold-input cost
 for every corpus member. Those projections are not full-corpus measurements.

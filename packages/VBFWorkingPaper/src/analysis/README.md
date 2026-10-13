@@ -1,6 +1,0 @@
-# Working-paper studies
-
-Use the package-level [guide and Makefile](../../README.md). Reproduction metrics,
-publication grading and manuscript experiments belong to VBFWorkingPaper.
-Shared perf readers live in [VBF/perf/analysis](../../../VBF/perf/analysis/README.md);
-reference data and validation implementations belong to the other workspace packages.
