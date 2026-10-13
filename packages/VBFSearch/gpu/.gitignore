@@ -8,3 +8,5 @@ ortho_sigma_n*
 fast_checker
 ccz_confirm
 *.bin
+# Downloaded by census/fetch_catalog.sh.
+catalogs/

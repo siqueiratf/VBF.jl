@@ -22,7 +22,7 @@ JULIA    ?= julia
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(MAKEFILE_DIR)/../../..)
 
-.PHONY: all searchers tools validate_dfs qam_plans clean help
+.PHONY: all searchers tools validate_dfs qam_plans clean help survey basis census-test catalog pack
 default: help
 
 # ── search kernels ──────────────────────────────────────────────────────────
@@ -72,12 +72,33 @@ validate_dfs: qam_dfs_cpu qam_plans
 	@echo '-- fast prune byte-identity (expect 0 mismatches) --'
 	./qam_dfs_cpu plan_h8_bench.bin --verify
 
+# ── Kuznetsov (2026) self-equivalence census (census/) ───────────────────────
+# Reuses the BBL2021 tuples from VBFRepro; apn_search consumes the basis files.
+n     ?= 8
+class ?= 22
+
+survey:                                # dim(V_A) feasibility map over all classes
+	$(JULIA) --project=$(ROOT) $(MAKEFILE_DIR)census/survey.jl
+
+basis:                                 # writes basis_n<n>_c<class>_rows.bin here
+	cd $(MAKEFILE_DIR) && $(JULIA) --project=$(ROOT) $(MAKEFILE_DIR)census/generate_rows.jl $(n) $(class)
+
+census-test:
+	$(JULIA) --project=$(ROOT) $(MAKEFILE_DIR)census/test/runtests.jl
+
+catalog:                               # known dim-8 catalogs into catalogs/; full=1 adds the 2025 set
+	cd $(MAKEFILE_DIR) && ./census/fetch_catalog.sh $(if $(filter 1,$(full)),--full,)
+
+pack:                                  # usage: make pack in=catalogs/apn8_blp2025.txt [out=...anf]
+	cd $(MAKEFILE_DIR) && $(JULIA) --project=$(ROOT) $(MAKEFILE_DIR)census/pack_catalog.jl $(in) $(out)
+
 clean:
 	rm -f apn_search_n* qam_dfs_cpu qam_dfs_gpu qam_frontier ortho_sigma ortho_sigma_n* fast_checker ccz_confirm *.bin
 
 help:
 	@echo 'VBFSearch/gpu — GPU quadratic-APN search toolkit (codebase-agnostic)'
 	@echo 'Targets: all  searchers  tools  qam_plans  validate_dfs  clean'
+	@echo 'Census : survey  basis n=$(n) class=$(class)  census-test  catalog [full=1]  pack in=<txt>'
 	@echo 'Params : GPU_ARCH=$(GPU_ARCH)  HIPCC=$(HIPCC)  CXX=$(CXX)  JULIA=$(JULIA)'
 	@echo 'Per-dim: apn_search_n{8..12}  ortho_sigma_n{5..12}'
 	@echo 'See README.md for the level-plan format and the calibration/validated results.'
