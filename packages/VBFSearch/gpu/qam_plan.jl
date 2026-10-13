@@ -4,7 +4,7 @@
 #   * diagonal  : the Yu-Li-Ichanska-Kaleyski (2025) F2-coefficient QAM model.
 #     Free variables are diagonal offsets d=1..floor(n/2); each fills a whole
 #     diagonal by squaring (v, v^2, v^4, ...). The prune is the leading-principal
-#     "is_proper_sub(H, d+1, n)" of papers/Yu_202512/algorithm2.jl, which fires
+#     "is_proper_sub(H, d+1, n)" of packages/VBFRepro/src/202512-yu-dimension-ten/algorithm2.jl, which fires
 #     at every level (each level completes one leading principal block). Used to
 #     VALIDATE qam_dfs exhaustively at n=5,6,7 against generate_apn_f2.
 #   * h8        : the Yu & Perrin (2022) Conjecture-2 model. The upper-left 6x6
@@ -21,7 +21,7 @@
 
 # NOTE: this is the one codebase-COUPLED file in the toolkit — the reference
 # plan generator. It needs VBF and the paper reductions (Yu_202211d's Prop-3
-# EA-coset partitioning, Yu_202512's is_proper_sub). Everything else in gpgpu/
+# EA-coset partitioning, Yu_202512's is_proper_sub). Everything else in gpu/
 # is agnostic and consumes the plan binary this emits. Any generator writing the
 # format documented above works; this one just mirrors the papers exactly. Run
 # it from anywhere — paths are resolved relative to the repo root below.
@@ -30,9 +30,9 @@ import TOML
 using VBF
 
 const THIS_DIR  = @__DIR__
-const REPO_ROOT = normpath(joinpath(THIS_DIR, ".."))   # gpgpu/ -> repo root
-const YU2211    = joinpath(REPO_ROOT, "papers", "Yu_202211d")
-const YU2512    = joinpath(REPO_ROOT, "papers", "Yu_202512")
+const REPO_ROOT = normpath(joinpath(THIS_DIR, "..", "..", ".."))   # packages/VBFSearch/gpu/ -> repo root
+const YU2211    = joinpath(REPO_ROOT, "packages", "VBFRepro", "src", "202211-yu-qam")
+const YU2512    = joinpath(REPO_ROOT, "packages", "VBFRepro", "src", "202512-yu-dimension-ten")
 
 # ── plan writer ──────────────────────────────────────────────────────────────
 # red = (type, basis::Vector{(r,c)} 0-based, t::(r,c)); type 0 none / 1 coset-reps / 2 invol-half
@@ -220,5 +220,8 @@ if abspath(PROGRAM_FILE) == @__FILE__
     if what == "h8" || what == "all"
         r = h8_plan()
         println("wrote $(r.path)  |A|=$(r.nA)  |B|=$(r.nB)")
+    end
+    if what == "bench" || what == "all"
+        println("wrote $(h8_bench_plan())")
     end
 end
