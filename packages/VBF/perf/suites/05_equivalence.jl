@@ -18,7 +18,7 @@
 #     the costs differ by orders of magnitude. The `note` says which answer the
 #     case measures.
 #
-# The dimensions come from packages/VBF/perf/historical/calibration.toml. That file records 3.0 s for
+# The dimensions come from packages/VBFPaper/bench/historical/calibration.toml. That file records 3.0 s for
 # the exact n = 7 EA decision and 395 s for the n = 8 decision, so n = 7 is the
 # largest dimension for the ortho-derivative search here. Three searches were
 # measured and then dropped because one call needs more than 300 s:

@@ -19,7 +19,7 @@ Each persistence sample creates a fresh SQLite store in a temporary directory,
 checks the resulting seed record and closes/removes the store afterward. No
 existing experiment, checkpoint or reference corpus is modified.
 
-Results go to `packages/VBF/perf/data/VBFSearch/<run>/` with native BenchmarkTools trials,
+Results go to `packages/VBFPaper/bench/data/VBFSearch/<run>/` with native BenchmarkTools trials,
 scalar timings, source/configuration/hardware metadata and environment copies.
 `make -C packages/VBFSearch/perf help` lists equivalent Make commands. These
 microbenchmarks exercise application behavior; they do not replace a long

@@ -19,7 +19,7 @@ packages/VBFSearch/data/research/             reference snapshots, runs, rebuild
 packages/VBFRepro/      reproduction runner and standalone publication claims
 packages/VBFPaper/ manuscript studies, analysis and Overleaf source under doc/
 packages/*/perf/        optional per-package performance workloads
-packages/VBF/perf/data/             performance measurements and provenance
+packages/VBFPaper/bench/data/             performance measurements and provenance
 docs/                  Documenter.jl API-reference site
 ```
 
@@ -35,7 +35,7 @@ Key layout rules:
   `src/202508-beierle-millions/`; `00` retains an unspecified month.
   Working-paper studies live in `packages/VBFPaper/`. Reproductions
   never depend on VBFPaper. Shared evidence belongs to VBFSearch, catalog
-  queries to VBFCatalog, and saved timing readers to VBF/perf/analysis.
+  queries to VBFCatalog, and saved timing readers to VBFPaper/bench/analysis.
   Consumers are Julia and reuse VBF's tested algorithms for verification and invariants.
 
 ## Running tests
@@ -123,7 +123,7 @@ style/docs). Never skip hooks. Never amend published commits.
 `BFA_SBOXU_PATH`, `BFA_THESIS_PATH`, `BFA_BEIERLE2025_PATH` —
 override original-source cache paths for `src/import/` scripts. `BFA_DATA_DIR`
 selects catalog cache storage under `.cache/vbfcatalog/`; proof histories belong to VBFSearch. `BFA_SOURCE_DIR` selects declarations under `src/data/`. Generated curated entries and small
-compact corpora share `.cache/vbfcatalog/catalog.sqlite`; old measurements live in `packages/VBF/perf/data/`.
+compact corpora share `.cache/vbfcatalog/catalog.sqlite`; old measurements live in `packages/VBFPaper/bench/data/`.
 
 ## Reproducible APN command
 
@@ -147,7 +147,7 @@ See `packages/VBFSearch/README.md` for checkpointing and mathematical guarantees
 
 The root `data/` is removed. APN archives live in `packages/VBFSearch/data/research/`,
 new runs in `packages/VBFSearch/data/search/`, performance evidence in
-`packages/VBF/perf/data/`, reproductions in `packages/VBFRepro/src/results/`, and
+`packages/VBFPaper/bench/data/`, reproductions in `packages/VBFRepro/src/results/`, and
 working-paper exports in `packages/VBFPaper/doc/generated/`.
 The `legacy20261009_n8` corpus stores 111,009 verified separating signatures
 (110,868 historical plus 141 later), after importing 547 missing public signatures.

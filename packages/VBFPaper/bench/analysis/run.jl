@@ -12,7 +12,7 @@ derived = joinpath(output, "analysis.sqlite")
 dataset = get(options, "dataset", "all")
 
 if action == "consolidate"
-    tables = consolidate(raw; output=derived, profiles=get(options, "profiles", joinpath(normpath(joinpath(@__DIR__, "..", "..", "..", "..")), "packages/VBF/perf/data")))
+    tables = consolidate(raw; output=derived, profiles=get(options, "profiles", joinpath(normpath(joinpath(@__DIR__, "..", "..", "..", "..")), "packages/VBFPaper/bench/data")))
     for name in sort(collect(keys(tables)))
         println(name, ": ", nrow(tables[name]), " rows")
     end

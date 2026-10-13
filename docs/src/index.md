@@ -107,7 +107,7 @@ In the explicit optimized profile, quadratic target graphs get automatic
 translation symmetry reduction at the root. The older `:heggebakk`, `:ortho_derivative` and CCZ
 `:canteaut_perrin` strategies remain available explicitly. Native refinement
 decides and recovers one map; it does not replace the APIs enumerating all EA
-maps or entire CCZ classes. See [the reproducible comparison](https://github.com/zambonin/VBF.jl/blob/main/packages/VBF/perf/data/archive/bench/README.md#native-partition-refinement-comparison)
+maps or entire CCZ classes. See [the reproducible comparison](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFPaper/bench/data/archive/bench/README.md#native-partition-refinement-comparison)
 for the C++ benchmark and its scope.
 
 ### Automorphism groups and stabilizer pruning

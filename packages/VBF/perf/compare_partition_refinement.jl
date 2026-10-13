@@ -39,7 +39,7 @@ end
 
 function save_diagnostic(trials,label,args,config,summary)
     options=filter(a->startswith(a,"--out="),args)
-    out=isempty(options) ? joinpath(PerfSupport.ROOT,"packages","VBF","perf","data","VBF",
+    out=isempty(options) ? joinpath(PerfSupport.ROOT,"packages","VBFPaper","bench","data","VBF",
         label*"_"*Dates.format(now(UTC),"yyyymmddTHHMMSS")*"_"*string(getpid())) : only(options)[7:end]
     ispath(out) && error("diagnostic output already exists: $out")
     mkpath(out)

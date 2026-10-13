@@ -3,11 +3,11 @@
 # packages/VBFPaper/src/analysis/performance/crossings.jl — cross the benchmark axes and write the article artifacts.
 #
 #   julia --project=. packages/VBFPaper/src/analysis/performance/crossings.jl
-#   julia --project=. packages/VBFPaper/src/analysis/performance/crossings.jl --csv=packages/VBF/perf/data/archive/generated/benchmarks.csv
+#   julia --project=. packages/VBFPaper/src/analysis/performance/crossings.jl --csv=packages/VBFPaper/bench/data/archive/generated/benchmarks.csv
 #
 # The benchmark suite measures. This script draws the conclusions. It reads
-# packages/VBF/perf/data/archive/generated/benchmarks.csv, packages/VBF/perf/data/archive/generated/benchmarks_meta.tex and
-# packages/VBFPaper/doc/performance/crossings.toml, and it writes nothing outside packages/VBF/perf/data/archive/generated/. It runs
+# packages/VBFPaper/bench/data/archive/generated/benchmarks.csv, packages/VBFPaper/bench/data/archive/generated/benchmarks_meta.tex and
+# packages/VBFPaper/doc/performance/crossings.toml, and it writes nothing outside packages/VBFPaper/bench/data/archive/generated/. It runs
 # no benchmark, it touches no package and it runs no git command.
 #
 # It builds three crossings.
@@ -36,9 +36,9 @@ packages/VBFPaper/src/analysis/performance/crossings.jl — cross the benchmark 
 
 usage: julia --project=. packages/VBFPaper/src/analysis/performance/crossings.jl [options]
 
-  --csv=PATH    the measurements   (default packages/VBF/perf/data/archive/generated/benchmarks.csv)
+  --csv=PATH    the measurements   (default packages/VBFPaper/bench/data/archive/generated/benchmarks.csv)
   --spec=PATH   the predictions    (default packages/VBFPaper/doc/performance/crossings.toml)
-  --meta=PATH   the machine        (default packages/VBF/perf/data/archive/generated/benchmarks_meta.tex)
+  --meta=PATH   the machine        (default packages/VBFPaper/bench/data/archive/generated/benchmarks_meta.tex)
   --out=DIR     the output         (default packages/VBFPaper/doc/generated/performance/crossings)
   -h, --help    print this text
 
@@ -46,9 +46,9 @@ The script measures nothing. Supply a historical summary CSV with --csv=PATH.
 """
 
 function parse_args(argv)
-    csv  = joinpath(ROOT, "packages/VBF/perf/data/archive/generated/benchmarks.csv")
+    csv  = joinpath(ROOT, "packages/VBFPaper/bench/data/archive/generated/benchmarks.csv")
     spec = joinpath(ROOT, "packages/VBFPaper/doc/performance/crossings.toml")
-    meta = joinpath(ROOT, "packages/VBF/perf/data/archive/generated/benchmarks_meta.tex")
+    meta = joinpath(ROOT, "packages/VBFPaper/bench/data/archive/generated/benchmarks_meta.tex")
     out  = joinpath(ROOT, "packages/VBFPaper/doc/generated/performance/crossings")
     for a in argv
         if (m = match(r"^--csv=(.+)$", a))  !== nothing; csv  = m.captures[1]
@@ -85,7 +85,7 @@ key(r::Row) = r.group * "/" * r.case
 """
     read_rows(path) -> Vector{Row}
 
-Read the tidy dataset that packages/VBF/perf/data/archive/source/export.jl wrote. The last field is a quoted
+Read the tidy dataset that packages/VBFPaper/bench/data/archive/source/export.jl wrote. The last field is a quoted
 note that can hold a comma, so the split keeps it whole.
 """
 function read_rows(path::AbstractString)
@@ -111,7 +111,7 @@ end
 """
     read_meta(path) -> Dict{String,String}
 
-Read the machine description that packages/VBF/perf/data/archive/source/export.jl wrote. A timing without a
+Read the machine description that packages/VBFPaper/bench/data/archive/source/export.jl wrote. A timing without a
 machine is not a result, so every artifact here repeats it.
 """
 function read_meta(path::AbstractString)
@@ -444,7 +444,7 @@ end
 
 # ── LaTeX helpers ───────────────────────────────────────────────────────────
 #
-# These repeat packages/VBF/perf/data/archive/source/export.jl, so a command that this script writes matches the
+# These repeat packages/VBFPaper/bench/data/archive/source/export.jl, so a command that this script writes matches the
 # style of a command that the suite writes.
 
 const TEX_SPECIAL = Dict('\\' => "\\textbackslash{}", '{' => "\\{", '}' => "\\}",

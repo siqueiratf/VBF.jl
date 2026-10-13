@@ -9,7 +9,7 @@ sequentially, excluding loading and persistence. They are not full-corpus timing
 =#
 ENV["GKSwstype"] = "100"
 using VBF
-include(joinpath(pkgdir(VBF), "perf", "analysis", "BenchAnalysis.jl"))
+include(joinpath(@__DIR__, "..", "..", "..", "bench", "analysis", "BenchAnalysis.jl"))
 using .BenchAnalysis, DataFrames, CSV, TOML, Statistics, Printf, SHA, Dates, VBFRepro
 using Plots
 
@@ -91,7 +91,7 @@ function main(args)
             "corpus" => config["corpus"], "corpus_store_sha256" => chosen.store_sha256,
             "script_sha256" => bytes2hex(sha256(read(@__FILE__))),
             "config_sha256" => bytes2hex(sha256(read(config_path))),
-            "analysis_sha256" => bytes2hex(sha256(read(joinpath(@__DIR__, "BenchAnalysis.jl")))),
+            "analysis_sha256" => bytes2hex(sha256(read(joinpath(@__DIR__, "..", "..", "..", "bench", "analysis", "BenchAnalysis.jl")))),
             "manifest_sha256" => bytes2hex(sha256(read(joinpath(@__DIR__, "..", "Manifest.toml")))),
             "snapshot_rows" => sum(inventory.repetitions),
             "snapshot_max_id" => only(BenchAnalysis.query(db,"SELECT MAX(id) id FROM benchmark").id),

@@ -29,6 +29,6 @@ Coefficient records reconstruct LUTs through the VBF APIs.
 New searches belong under `../search/<experiment>/`. See
 [VBFSearch](../../../VBFSearch/README.md) for `bin/vbf discover`, which searches,
 validates and registers one representative per new separating signature.
-Performance evidence moved to `packages/VBF/perf/data/`, paper-reproduction
+Performance evidence moved to `packages/VBFPaper/bench/data/`, paper-reproduction
 results to `packages/VBFRepro/src/results/`, and working-paper evidence to
 `packages/VBFPaper/doc/generated/`.

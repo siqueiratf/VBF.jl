@@ -197,5 +197,5 @@ jobs:
       - name: Check shared perf and proposal consumers
         if: matrix.package == 'VBFPaper'
         run: |
-          julia --startup-file=no --project=packages/VBFPaper packages/VBF/perf/analysis/test.jl
+          julia --startup-file=no --project=packages/VBFPaper packages/VBFPaper/bench/analysis/test.jl
           julia --startup-file=no --project=packages/VBFPaper packages/VBFRepro/test/proposals/test_catalog_proposals.jl

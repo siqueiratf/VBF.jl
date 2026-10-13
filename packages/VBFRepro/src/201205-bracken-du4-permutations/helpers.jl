@@ -14,7 +14,7 @@
 #
 # TIMINGS.  Every runtime quoted in this folder was measured with `@elapsed` on
 # THIS machine (AMD Ryzen 5 5600G, 12 threads, Julia 1.12.6, single-threaded);
-# see `packages/VBF/perf/historical/calibration.toml` for the machine profile.  Figures taken from the
+# see `packages/VBFPaper/bench/historical/calibration.toml` for the machine profile.  Figures taken from the
 # paper or from another machine are labelled as such at the point of use.
 
 using VBF

@@ -78,8 +78,8 @@ packages/VBFRepro/src/results/**
 !packages/VBFRepro/src/results/**/
 packages/VBFPaper/doc/generated/**
 !packages/VBFPaper/doc/generated/**/
-packages/VBF/perf/data/**
-!packages/VBF/perf/data/**/
+packages/VBFPaper/bench/data/**
+!packages/VBFPaper/bench/data/**/
 
 # READMEs are always tracked — including the per-paper review summaries under
 # packages/VBFRepro/src/<Paper_ID>/README.md. Git resolves a path by the LAST matching
