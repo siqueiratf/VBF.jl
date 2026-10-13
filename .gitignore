@@ -67,6 +67,9 @@ packages/VBFCatalog/src/data/*.sqlite*
 !packages/VBFCatalog/src/data/luts/*.gz
 
 # Package-owned generated evidence; preserve directory traversal for READMEs.
+# Search hit lists can be larger than 1 GB (selfequiv_class22.hits is 1.27 GB);
+# they stay on the local disk only and never enter git or Git LFS.
+*.hits
 packages/VBFSearch/data/**
 !packages/VBFSearch/data/**/
 !packages/VBFSearch/data/search/*/parents.tsv
