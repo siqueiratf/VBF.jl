@@ -74,6 +74,11 @@ packages/VBFSearch/data/**
 !packages/VBFSearch/data/**/
 !packages/VBFSearch/data/search/*/parents.tsv
 !packages/VBFSearch/data/search/*/replay.toml
+# The vault keeps the raw search output as compressed parts (see its README);
+# the restored code of the old searches is tracked byte-exact.
+!packages/VBFSearch/data/research/vault/**
+packages/VBFSearch/data/research/vault/restored/
+!packages/VBFSearch/data/research/archive/*/code/**
 packages/VBFRepro/src/results/**
 !packages/VBFRepro/src/results/**/
 packages/VBFPaper/doc/generated/**

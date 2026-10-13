@@ -11,6 +11,9 @@
 /archive/census/results/signature_rebuild/sources/
 /archive/census/results/literature_20261009/github/
 /archive/census/results/literature_family_coverage/downloads/
+# The restored search code is tracked byte-exact (see README.md).
+!/archive/census/code/**
+!/archive/class-orbit/code/**
 /rebuilds/**
 !/rebuilds/**/
 !README.md
