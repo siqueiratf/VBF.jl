@@ -7,6 +7,11 @@ VBFCatalog's signature index directly, with source coverage and byte digests.
 
 - `archive/census/`: historical discovery, sampling and mathematical studies.
 - `archive/class-orbit/`: class-orbit centers, configurations and results.
+- `archive/class-orbit/code/` and `archive/census/code/`: the original search code
+  (commit `277eca9`), restored byte-exact so that the checkpoints can continue.
+- `vault/`: the raw search output that was only on a local disk — the `.hits`
+  logs, the B6 = 52 runs, the hyperplane scan and the Beierle 2025 class count —
+  as compressed parts with SHA-256 manifests. See [vault](vault/README.md).
 - `runs/`: historical VBFSearch runs and inspector certificates.
 - `reference/comparison.toml` and `rebuilds/`: retained original-source comparison
   receipts. Their redundant SQLite databases and duplicate downloads were removed

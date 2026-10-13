@@ -22,4 +22,7 @@ remain inspectable, but relocation alone does not make an old checkpoint resumab
 under changed code: the source and input identity checks still apply.
 
 Start fresh experiments with [`bin/vbf`](../../../../../VBFSearch/README.md).
-No experiment code is maintained in this data archive.
+The original experiment code (`sweep.jl`, `phase*.jl`, `apn_subspace.jl`) is in
+[`code/`](code/), byte-identical to commit `277eca9`. Nobody maintains it. The
+`.hits` logs are in the [vault](../../vault/README.md); run
+`make -C packages/VBFSearch/data/research/vault restore-hits` to put them back in `state/`.
