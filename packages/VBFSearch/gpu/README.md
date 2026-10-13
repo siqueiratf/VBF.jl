@@ -1,4 +1,4 @@
-# gpgpu — GPU-accelerated quadratic-APN search
+# VBFSearch/gpu — GPU-accelerated quadratic-APN search
 
 A small, **codebase-agnostic** toolkit for hunting quadratic APN functions by
 GPU. The C/C++ kernels depend on nothing but a compiler and (for the GPU paths)

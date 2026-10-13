@@ -29,7 +29,7 @@
 //     H_8: 13 entry levels over columns 7,8).
 //   * FILL_DIAG  levels set a whole diagonal offset d by squaring v,v^2,v^4,...
 //     (Yu-Li-Ichanska-Kaleyski F2-coefficient model; validates against
-//     papers/Yu_202512/algorithm2.jl exhaustively at n=5,6,7).
+//     packages/VBFRepro/src/202512-yu-dimension-ten/algorithm2.jl exhaustively at n=5,6,7).
 // Each level names the leading submatrix size to re-check for properness; the
 // last level checks the full n x n for the QAM (rank == n-1) condition.
 //

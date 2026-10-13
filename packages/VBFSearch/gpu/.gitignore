@@ -1,0 +1,10 @@
+# Build products of the Makefile.
+apn_search_n*
+qam_dfs_cpu
+qam_dfs_gpu
+qam_frontier
+ortho_sigma
+ortho_sigma_n*
+fast_checker
+ccz_confirm
+*.bin
