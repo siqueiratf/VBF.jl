@@ -12,7 +12,7 @@ packages depends on it. Importing the package starts no experiment.
 - `packages/VBFPaper/doc/generated/` at workspace root: ignored derived tables, figures,
   staged paper builds and archived generated manuscript files.
 
-Shared measurement/profile readers live in `VBF/perf/analysis/`. Mathematical
+Shared measurement/profile readers live in `VBFPaper/bench/analysis/`. Mathematical
 algorithms live in VBF, stored signature summaries in VBFCatalog, and generic
 Gold-power/equivalence evidence and VBF-backed graph witness checks in VBFSearch.
 Finite construction-proposal checks remain in VBFRepro's `tools/` and `test/proposals/`.
@@ -72,7 +72,7 @@ make -C packages/VBFPaper export
 make -C packages/VBFPaper plots
 ```
 
-These call the shared perf reader. Its output defaults to `packages/VBF/perf/data/analysis/`;
+These call the shared perf reader. Its output defaults to `packages/VBFPaper/bench/data/analysis/`;
 `performance_output=DIR` selects another derived snapshot. Modern BenchmarkTools
 trials and explicitly supplied historical SQLite repetitions retain distinct
 protocols. `crossings` analyzes archived CSVs; `manuscript input=/path/to/legacy.sqlite`

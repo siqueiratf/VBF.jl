@@ -24,7 +24,7 @@ Cross-paper metrics and performance analysis share
 [VBFPaper](packages/VBFPaper/README.md).
 Each package owns optional BenchmarkTools workloads in its `perf/` folder.
 Performance environments are separate from runtime dependencies, and measurements
-are stored under `packages/VBF/perf/data/`; benchmark execution leaves the catalog unchanged.
+are stored under `packages/VBFPaper/bench/data/`; benchmark execution leaves the catalog unchanged.
 
 ## Reproducible APN searches
 

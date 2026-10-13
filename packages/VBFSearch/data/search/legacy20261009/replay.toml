@@ -46,7 +46,7 @@ note = "Before archive registration, eight signatures including the parent were 
 
 [retention]
 apn_evidence = "../../research/"
-performance_evidence = "packages/VBF/perf/data/"
+performance_evidence = "packages/VBFPaper/bench/data/"
 reproduction_evidence = "packages/VBFRepro/src/results/"
 working_paper_evidence = "packages/VBFPaper/doc/generated/"
 confirmed_redundant_bytes_removed_at_least = 12098938984

@@ -43,14 +43,14 @@ julia --project=packages/VBF/perf packages/VBF/perf/run.jl \
 
 The analogous `VBFCatalog`, `VBFSearch` and `VBFRepro` folders cover catalog,
 discovery and paper workloads respectively. Results, configurations and source
-identities go under `packages/VBF/perf/data/`. Measurement leaves the curated catalog unchanged.
+identities go under `packages/VBFPaper/bench/data/`. Measurement leaves the curated catalog unchanged.
 Profiling is a separate diagnostic execution; its samples are not benchmark
 timing repetitions.
 
 ## Analyze saved evidence
 
 VBFPaper owns manuscript studies and consumes reproduction results.
-Shared measurement/profile readers live in `packages/VBF/perf/analysis/`:
+Shared measurement/profile readers live in `packages/VBFPaper/bench/analysis/`:
 
 ```sh
 make -C packages/VBFPaper instantiate
@@ -61,7 +61,7 @@ make -C packages/VBFPaper export
 ```
 
 Study outputs default to `packages/VBFPaper/doc/generated/`; shared perf summaries use
-`packages/VBF/perf/data/analysis/`. Historical custom-timer measurements
+`packages/VBFPaper/bench/data/analysis/`. Historical custom-timer measurements
 retain their original protocol and provenance; the analysis keeps them separate
 from BenchmarkTools trials. Publication-specific configurations and templates
 live under `packages/VBFPaper/doc/`.

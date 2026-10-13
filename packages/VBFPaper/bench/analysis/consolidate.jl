@@ -4,7 +4,7 @@ All output tables are replaced in one SQLite transaction. The raw benchmark read
 is one snapshot; provenance records the row count and IDs of that snapshot.
 """
 function consolidate(raw=RAW_DATABASE; output=ANALYSIS_DATABASE,
-                     profiles=joinpath(normpath(joinpath(@__DIR__, "..", "..", "..", "..")), "packages/VBF/perf/data"))
+                     profiles=joinpath(normpath(joinpath(@__DIR__, "..", "..", "..", "..")), "packages/VBFPaper/bench/data"))
     abspath(raw) == abspath(output) && error("Analysis output must differ from raw database")
     ispath(output) && realpath(raw) == realpath(output) && error("Output aliases raw database")
     df = load_benchmarks(raw)

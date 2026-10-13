@@ -53,7 +53,7 @@ caps. An explicit `--samples` overrides every case cap. The output records the
 effective limit and the actual number of samples. One-sample historical probes
 are useful diagnostics but provide no estimate of sampling variability.
 
-Each run creates a fresh directory under `packages/VBF/perf/data/VBF/<UTC-time>_<pid>/`:
+Each run creates a fresh directory under `packages/VBFPaper/bench/data/VBF/<UTC-time>_<pid>/`:
 
 - `benchmarktools.json`: standard BenchmarkTools trial/group serialization;
 - `timings.tsv`: one scalar summary per completed workload, in nanoseconds;
@@ -78,7 +78,7 @@ julia --project=packages/VBF/perf packages/VBF/perf/refinement_optimizations.jl 
 ```
 
 Profiling saves `profile_raw.jls` and a source/configuration manifest under
-`packages/VBF/perf/data/<package>/profiles/`. Julia's stdlib profiler samples a separate
+`packages/VBFPaper/bench/data/<package>/profiles/`. Julia's stdlib profiler samples a separate
 execution; its duration is metadata, never a benchmark statistic. Attribution
 and figure tooling live in
 [shared perf analysis](analysis/README.md).
@@ -106,6 +106,6 @@ original archived measurements, machine context and caveats, retained verbatim.
 [historical/calibration.toml](historical/calibration.toml) preserves the original
 calibration. Their old command paths identify historical procedures; current
 commands are above. Original retired tooling and all locally present artifacts
-were copied byte-for-byte to `packages/VBF/perf/data/archive/bench/`, with a SHA-256 inventory.
+were copied byte-for-byte to `packages/VBFPaper/bench/data/archive/bench/`, with a SHA-256 inventory.
 They are retained for audit, not used by the current runner. See
-[data/perf](../../../packages/VBF/perf/data/README.md) for storage and migration details.
+[data/perf](../../../packages/VBFPaper/bench/data/README.md) for storage and migration details.

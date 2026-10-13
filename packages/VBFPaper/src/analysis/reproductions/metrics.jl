@@ -40,7 +40,7 @@ const OUT      = get(ENV, "VBF_PAPER_OUTPUT", joinpath(ROOT, "packages/VBFPaper/
 const TAXONOMY = joinpath(HERE, "taxonomy.toml")
 
 const BFA4R        = get(ENV, "VBF_PAPER_GRADES", joinpath(OUT, "bfa4r_grades.csv"))
-const BENCHMARKS   = get(ENV, "VBF_PAPER_LEGACY_BENCHMARKS", joinpath(ROOT, "packages/VBF/perf/data/archive/generated/benchmarks.csv"))
+const BENCHMARKS   = get(ENV, "VBF_PAPER_LEGACY_BENCHMARKS", joinpath(ROOT, "packages/VBFPaper/bench/data/archive/generated/benchmarks.csv"))
 const CATALOG_DB = catalog_path()
 const SIGMA_DB = sigma_index_path()
 
@@ -240,7 +240,7 @@ end
 #
 # The only section that computes. It applies each invariant to each population
 # and reports what the invariant separates, next to what it costs. The cost
-# comes from packages/VBF/perf/data/archive/generated/benchmarks.csv, so the two datasets agree.
+# comes from packages/VBFPaper/bench/data/archive/generated/benchmarks.csv, so the two datasets agree.
 
 "Read the measured cost of one benchmark case at the nearest n at or below `n`."
 function bench_cost(case::AbstractString, n::Int)

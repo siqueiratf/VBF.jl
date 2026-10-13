@@ -29,7 +29,7 @@ full inventory and measures a small equivalence primitive, avoiding expensive
 reports in CI. Loading some existing reports emits repeated-docstring warnings
 because their standalone files include shared helpers again.
 
-Results are saved under `packages/VBF/perf/data/VBFRepro/<run>/`. Source manifests hash the
+Results are saved under `packages/VBFPaper/bench/data/VBFRepro/<run>/`. Source manifests hash the
 paper implementations, package sources, resolved environment and the selected
 papers' stored inputs, including original input files when locally present.
 Input files are hashed, never copied into benchmark output. Profiling records
@@ -37,6 +37,6 @@ the same selected paper/input identity. The catalog hash is also recorded.
 Collect evidence only after finishing source edits and with unchanged inputs.
 
 Performance analysis, profiling attribution and manuscript export live in
-[shared perf analysis](../../VBF/perf/analysis/README.md). That reader supports
+[shared perf analysis](../../VBFPaper/bench/analysis/README.md). That reader supports
 both historical timing artifacts and the new `timings.tsv`/manifest format and
 keeps their different measurement protocols distinct.

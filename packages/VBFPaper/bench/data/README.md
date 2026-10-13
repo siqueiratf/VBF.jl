@@ -24,7 +24,7 @@ their runners. These archives are ignored local audit material; README files
 are tracked. No git history was rewritten.
 
 Published historical measurement notes and calibration are also retained as
-tracked files under `packages/VBF/perf/historical/`. Their commands describe the
+tracked files under `packages/VBFPaper/bench/historical/`. Their commands describe the
 old experiments and should be read with their hardware and limitations. Follow
 the current package perf READMEs for runnable commands.
 
