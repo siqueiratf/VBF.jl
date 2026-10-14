@@ -186,10 +186,18 @@ jobs:
           name: catalog
           path: .cache/vbfcatalog
 
+      - name: Instantiate import environment
+        # catalog_storage and catalog_reproducibility run child processes in this environment.
+        if: matrix.package == 'VBFCatalog'
+        run: julia --startup-file=no --project=packages/VBFCatalog/src/import -e 'using Pkg; Pkg.instantiate()'
+
       - name: Run tests
         uses: julia-actions/julia-runtest@v1
         with:
           project: packages/${{ matrix.package }}
+          # Coverage makes the equivalence searches about 17 times slower (110 s instead of 6.4 s for one
+          # n=7 automorphism group), so they hit their fixed time limits. Nothing uploads the coverage.
+          coverage: false
         env:
           # Hosted runners are small; cap the worker count so the few heavy items (n=6 CCZ enumeration, affine equivalence) don't contend.
           RETESTITEMS_NWORKERS: '2'
