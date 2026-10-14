@@ -56,8 +56,9 @@ function section4_5_report(; limit::Int=16, full_search::Bool=false,
     try
         for name in corpora
             info = corpus_info(db, name)
-            path = VBFCatalog.corpus_store_path(name)
-            if info === nothing || !isfile(path)
+            # corpus_store_path throws for an unknown corpus, so check info first.
+            path = info === nothing ? nothing : VBFCatalog.corpus_store_path(name)
+            if path === nothing || !isfile(path)
                 push!(missing, name)
                 continue
             end
