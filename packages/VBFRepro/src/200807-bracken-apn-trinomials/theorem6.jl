@@ -71,11 +71,12 @@ end
     paper_code_matrix(F) -> BitMatrix
 
 The paper's `Ĥ_f` (Section 5): the `(2n+1) × 2ⁿ` binary matrix whose columns are
-`(1, x, f(x))ᵀ`. This is exactly VBF's `ccz_matrix`, which packs the graph point
-as `(x ≪ n) | f(x)` and lays its bits out LSB-first — so the `x`- and `f(x)`-blocks
-occupy the opposite row ranges to the paper's display. Row order is irrelevant to
-Theorem 6: it changes neither `Ĉ_f = Null(Ĥ_f)` nor the column-permutation
-relation the theorem is about.
+`(1, x, f(x))ᵀ`. This is exactly VBF's `ccz_matrix`: row 1 is the constant row,
+rows `2..n+1` hold the `x` bits and rows `n+2..2n+1` the `f(x)` bits, LSB-first,
+as in the paper's display. This differs from the `FunctionGraph` packing
+`(x ≪ n) | f(x)`, so `theorem6_forward_certificate` maps the packed bits to these
+rows. Row order is irrelevant to Theorem 6: it changes neither
+`Ĉ_f = Null(Ĥ_f)` nor the column-permutation relation the theorem is about.
 """
 paper_code_matrix(F::SBox) = ccz_matrix(F)
 
@@ -164,14 +165,17 @@ function theorem6_forward_certificate(F::SBox{N,T}, G::SBox{N,T}) where {N,T}
     end
     γ === nothing && return nothing
 
-    # X = [[1, 0], [γ, M]] in the row layout of `paper_code_matrix`: row i+1 and
-    # column j+1 both index bit i (resp. j) of the packed 2n-bit graph point.
+    # X = [[1, 0], [γ, M]] in the row layout of `paper_code_matrix`. `L` and `γ`
+    # act on the packed point `(x ≪ n) | f(x)`, whose bit i < n is f-bit i and
+    # whose bit i ≥ n is x-bit i-n. `ccz_matrix` puts x-bit k in row k+2 and f-bit
+    # i in row n+i+2, so packed bit i goes to code row `row(i)`.
+    row(i) = (i < N ? N + i : i - N) + 2
     X = zeros(Int, 2N + 1, 2N + 1)
     X[1, 1] = 1
     for i = 0:(2N - 1)
-        X[i+2, 1] = Int((γ >> i) & 1)
+        X[row(i), 1] = Int((γ >> i) & 1)
         for j = 0:(2N - 1)
-            X[i+2, j+2] = Int((L.cols[j+1] >> i) & 1)
+            X[row(i), row(j)] = Int((L.cols[j+1] >> i) & 1)
         end
     end
     (X, γ)
