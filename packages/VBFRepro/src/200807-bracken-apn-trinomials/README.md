@@ -197,9 +197,10 @@ Defects introduced in our implementation.
      a necessary condition for Theorem 6.
 - **Resolution:** steps 1 and 2 as written; step 3 was **wrong on the T1/T2 half** and was
   implemented in the corrected form.
-  - Step 1: `paper_code_matrix(F) = ccz_matrix(F)` (documenting that core packs the graph as
-    `(x ≪ n) | f(x)`, so the `x`/`f(x)` row blocks are swapped relative to the paper — an
-    irrelevant relabelling for both `Null` and column permutation), plus `code_dimension(F)`,
+  - Step 1: `paper_code_matrix(F) = ccz_matrix(F)` (core now uses the paper's row order:
+    the `x` bits, then the `f(x)` bits. This differs from the `FunctionGraph` packing
+    `(x ≪ n) | f(x)` of the certificate, so `theorem6_forward_certificate` maps the packed
+    bits to the code rows. Row order changes neither `Null` nor column permutation), plus `code_dimension(F)`,
     which confirms `Ĥ_f` is 13×64 of rank 13 and `dim Ĉ_f = 51` for all six n=6 functions.
   - Step 2: `theorem6_forward_certificate(F, G)` takes the linear part `M` from
     `ea_mappings_from_ortho_derivative` (complete on quadratic APN), recovers the translation
