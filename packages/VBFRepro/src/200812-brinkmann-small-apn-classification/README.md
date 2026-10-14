@@ -51,7 +51,9 @@ Defects introduced in our implementation.
 > `are_ccz_equivalent(x⁷, x¹¹)` is deliberately **not** used — for two non-quadratic
 > permutations that call runs the Canteaut–Perrin enumeration on a Heggebakk backend and
 > its `false` can be unsound. `theorem5.jl` now prints the class map and, per pair, which
-> route decided it: **19/21 by the EA oracle, 2/21 by CCZ separation, 0 undecided**.
+> route decided it. It was **19/21 by the EA oracle, 2/21 by CCZ separation, 0 undecided**.
+> Since the native EA refinement in VBF (commit `ab7e75a`), the EA oracle decides all
+> **21/21** directly, and the CCZ separation independently agrees on (x⁷, x¹¹) and (f6(1), f6(2)).
 > `theorem3.jl` switched its n=5 pairwise test to `are_affine_equivalent`, which is the
 > relation Theorem 3 is actually stated in and is exact for permutations — all 10 pairs
 > decided. Same change in `test/test_theorem3.jl` and `test/test_theorem5.jl`.
@@ -371,7 +373,7 @@ Defects introduced in our implementation.
 | **Theorem 3**, n=4 (no APN permutation) | `theorem3.jl` `theorem3_n4_report` | Proved: `!is_ccz_equivalent_to_permutation` on both reps + Theorem 6's single CCZ class |
 | **Theorem 3**, n=5 (5 affine classes + inverse relations) | `theorem3.jl` `theorem3_n5_report` | All 10 pairs decided by `are_affine_equivalent`; all three inverse relations hold |
 | **Theorem 5**, n=4 (2 EA classes; F1 ≅ x³; F2 ≅ BCP eq. (5)) | `theorem5.jl` `theorem5_n4_report` | Decided by the complete non-permutation EA enumeration |
-| **Theorem 5**, n=5 (≥7 EA classes) | `theorem5.jl` `theorem5_n5_report` | All 21 pairs decided: 19 by the EA oracle, 2 by CCZ separation |
+| **Theorem 5**, n=5 (≥7 EA classes) | `theorem5.jl` `theorem5_n5_report` | All 21 pairs decided by the EA oracle; CCZ separation independently confirms (x⁷, x¹¹) and (f6(1), f6(2)) |
 | **Theorem 6**, n=4 (single CCZ class) | `theorem6.jl` | Consistent |
 | **Theorem 6**, n=5 (3 CCZ classes) | `theorem6.jl`, `helpers.jl` `n5_ccz_reps` | Γ-rank separates x¹⁵ (496) from the rest (330); x³ vs x⁵ is the exact ortho-derivative test (both quadratic APN) |
 | **Table 4**, n=1, 2, 3 (4, 192, 688 128) | `algorithm1.jl`, `section6.jl` | Computed two independent ways (Algorithm-1 backtrack and brute force) |
