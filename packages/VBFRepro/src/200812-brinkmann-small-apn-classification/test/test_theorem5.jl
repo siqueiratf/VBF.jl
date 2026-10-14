@@ -28,8 +28,8 @@
     @test ea_verdict(F1, F5)[1] === false
 
     # n=5: every one of the 21 pairs among the 7 EA representatives is decided,
-    # and all 21 come out inequivalent. Two pairs — (x⁷,x¹¹) and (f6(1),f6(2)) —
-    # cap the EA search and are settled by CCZ separation instead.
+    # and all 21 come out inequivalent. Since the native EA refinement in VBF,
+    # the EA oracle decides all 21 directly; CCZ separation stays as a fallback.
     fns = n5_all_seven()
     classes = [n5_ccz_class(F) for F in fns]
     @test all(c !== nothing for c in classes)
@@ -39,12 +39,13 @@
         @test v === false          # decided, and inequivalent
         startswith(why, "CCZ") && (n_ccz += 1)
     end
-    @test n_ccz == 2
+    @test n_ccz == 0
 
-    # The two pairs the raw EA oracle cannot settle, spelled out.
-    @test are_ea_equivalent(fns[3], fns[4]; on_inconclusive = :missing) === missing
-    @test are_ea_equivalent(fns[6], fns[7]; on_inconclusive = :missing) === missing
-    # ... and they lie in different CCZ classes, which is what decides them.
+    # The two pairs that the old capped EA search could not settle, (x⁷,x¹¹) and
+    # (f6(1),f6(2)): the EA oracle now decides them ...
+    @test are_ea_equivalent(fns[3], fns[4]; on_inconclusive = :missing) === false
+    @test are_ea_equivalent(fns[6], fns[7]; on_inconclusive = :missing) === false
+    # ... and the CCZ separation independently agrees.
     @test classes[3] != classes[4]
     @test classes[6] != classes[7]
 
