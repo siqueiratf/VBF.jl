@@ -29,6 +29,7 @@ function search(config::SearchConfig)
     frozen_sources=resume ? get(TOML.parsefile(joinpath(dir,"manifest.toml"))["identity"]["reference"],"sources",nothing) : nothing
     reference=open_reference(config.reference;supplement_path=config.supplement,sources=frozen_sources)
     store=nothing
+    reporter=nothing
     try
     known,validation=validated_study(paths)
     semantic=Dict(k=>cfg[k] for k in ("method","limit","seed","target-b6","v5-bent","orbit-seconds","ea-representatives","corpus"))
@@ -100,6 +101,8 @@ function search(config::SearchConfig)
             "gc_threads"=>Threads.ngcthreads(),"julia_threads"=>Threads.nthreads(),"reference"=>reference_metadata(reference)))
         println("Discovery session $session: $workers workers; $wall seconds; method $(cfg["method"]); $dir")
         flush(stdout)
+        reporter=open_progress_reporter(dir,session,started)
+        report_progress!(reporter;force=true)
         Threads.@threads :dynamic for worker in 1:workers
             localref=open_reference(config.reference;supplement_path=config.supplement,sources=get(reference.metadata,"sources",nothing))
             try
@@ -117,9 +120,7 @@ function search(config::SearchConfig)
                     end
                     try
                         process_unit!(store,unit,config;reference=localref,geometry,work,known,remaining,stop_wanted)
-                        lock(store.guard) do
-                            atomic_toml(joinpath(dir,"progress.toml"),merge(snapshot(store),Dict("session"=>session,"elapsed_seconds"=>(time_ns()-started)*1e-9)))
-                        end
+                        report_progress!(reporter)
                     catch err
                         message=sprint(showerror,err,catch_backtrace())
                         finish!(store,unit,Dict("error"=>message))
@@ -131,6 +132,7 @@ function search(config::SearchConfig)
                 close_reference(localref)
             end
         end
+        report_progress!(reporter;force=true)
         summary=merge(snapshot(store),Dict("session"=>session,"elapsed_seconds"=>(time_ns()-started)*1e-9,
             "stop"=>!isempty(errors) ? "error" : stopped[] ? "external" : remaining()==0 ? "time" : "plan_exhausted","errors"=>errors))
         DiscoveryStore.transaction(store) do
@@ -143,7 +145,11 @@ function search(config::SearchConfig)
         summary
     finally
         try
-            store===nothing || close_store(store)
+            try
+                reporter===nothing || close_progress_reporter(reporter)
+            finally
+                store===nothing || close_store(store)
+            end
         finally
             close_reference(reference)
         end

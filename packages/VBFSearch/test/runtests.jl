@@ -3,6 +3,8 @@ using VBFSearch, VBFCatalog, SQLite, DBInterface
 using VBFSearch: properties, lut_id, each_candidate, validated_study, Fourier, DiscoveryStore, DiscoveryInputs, DiscoveryEvidence
 using VBFSearch.DiscoveryStore
 
+include("progress.jl")
+
 @testset "Catalog publication preserves frozen reference scope" begin
     mktempdir() do dir
         withenv("BFA_DATA_DIR"=>dir,"VBF_SEARCH_DATA_DIR"=>dir,"BFA_SOURCE_DIR"=>joinpath(dir,"sources"),"BFA_CATALOG_PATH"=>joinpath(dir,"catalog.sqlite")) do
