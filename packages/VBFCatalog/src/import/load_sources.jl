@@ -4,6 +4,9 @@ import TOML, SHA
 using VBFCatalog: catalog_data_dir
 const _SOURCES_TOML = joinpath(VBFCatalog.catalog_source_dir(), "sources.toml")
 _bfa_source_config(name) = only(s for s in TOML.parsefile(_SOURCES_TOML)["source"] if s["name"] == name)
+# Source checkouts are separate repositories: a git hook exports GIT_DIR and
+# GIT_INDEX_FILE, which would point these commands at the repository under test.
+_bfa_git(cmd) = setenv(cmd, Dict(k => v for (k, v) in ENV if !startswith(k, "GIT_")))
 _bfa_check_valid(root, path, kind) = kind == "file" ? isfile(joinpath(root,path)) : isdir(joinpath(root,path))
 function _bfa_source_root(src)
     override=get(ENV,get(src,"env_var",""),"")
@@ -24,9 +27,9 @@ function with_source(f::Function, name::AbstractString)
             bytes2hex(open(SHA.sha256,joinpath(root,check_path)))==src["sha256"] || error("source checksum changed: $name")
         end
         if haskey(src,"revision")
-            readchomp(`git -C $root rev-parse HEAD`)==src["revision"] || error("cached source revision changed: $name")
+            readchomp(_bfa_git(`git -C $root rev-parse HEAD`))==src["revision"] || error("cached source revision changed: $name")
             paths=haskey(src,"files") ? (kind=="file" ? src["files"] : joinpath.(check_path,src["files"])) : [check_path]
-            success(`git -C $root diff --quiet $(src["revision"]) -- $paths`) || error("cached source files changed: $name")
+            success(_bfa_git(`git -C $root diff --quiet $(src["revision"]) -- $paths`)) || error("cached source files changed: $name")
         end
         return f(root)
     end
@@ -36,8 +39,8 @@ function with_source(f::Function, name::AbstractString)
         mkpath(dirname(root))
         mktempdir(dirname(root)) do tmp
             checkout = joinpath(tmp,"checkout")
-            run(`git clone --quiet $(src["upstream"]) $checkout`)
-            run(`git -C $checkout checkout --quiet --detach $(src["revision"])`)
+            run(_bfa_git(`git clone --quiet $(src["upstream"]) $checkout`))
+            run(_bfa_git(`git -C $checkout checkout --quiet --detach $(src["revision"])`))
             _bfa_check_valid(checkout,check_path,kind) || error("upstream source missing $check_path")
             mv(checkout,root)
         end
@@ -46,7 +49,7 @@ function with_source(f::Function, name::AbstractString)
     error("source $name unavailable; run fetch.jl or set $(src["env_var"])")
 end
 
-source_revision(path) = readchomp(`git -C $path rev-parse HEAD`)
+source_revision(path) = readchomp(_bfa_git(`git -C $path rev-parse HEAD`))
 
 """Dataset declaration shared by converters and source/database checks."""
 corpus_entry(name) = only(e for e in TOML.parsefile(joinpath(VBFCatalog.catalog_source_dir(),"sources.toml"))["corpus"] if e["name"]==name)

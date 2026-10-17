@@ -5,10 +5,13 @@ mktempdir() do dir
     sources=joinpath(dir,"sources");localdata=joinpath(dir,"local");raw=joinpath(dir,"original")
     mkpath(sources);mkpath(raw)
     write(joinpath(raw,"README"),"Pinned fixture original\n")
-    run(`git -C $raw init -q`)
-    run(`git -C $raw add README`)
-    run(`git -C $raw -c user.name=Fixture -c user.email=fixture@example.invalid commit -q -m fixture`)
-    revision=readchomp(`git -C $raw rev-parse HEAD`)
+    # A git hook exports GIT_DIR and GIT_INDEX_FILE; drop them so the fixture
+    # commits to its own repository, not to the repository under test.
+    fixturegit(cmd)=setenv(cmd,Dict(k=>v for (k,v) in ENV if !startswith(k,"GIT_")))
+    run(fixturegit(`git -C $raw init -q`))
+    run(fixturegit(`git -C $raw add README`))
+    run(fixturegit(`git -C $raw -c user.name=Fixture -c user.email=fixture@example.invalid commit -q -m fixture`))
+    revision=readchomp(fixturegit(`git -C $raw rev-parse HEAD`))
     dump(path,value)=open(io->TOML.print(io,value;sorted=true),path,"w")
     F=gold_apn(3)
     dump(joinpath(sources,"apn.toml"),Dict("apn_functions"=>[

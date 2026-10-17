@@ -4,7 +4,7 @@
 "CCZ-rep-GF4" = 27
 "Literature" = 18
 "known-family" = 69
-"known-sporadic" = 4
+"known-sporadic" = 21
 
 [[source]]
 cache_name = "sboxU"
