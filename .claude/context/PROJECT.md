@@ -89,6 +89,12 @@ do not maintain a second inventory here. Bulk corpus records remain distinct
 from the curated functions table. Use `list_corpora` and `corpus_info` to inspect
 their current member counts and provenance.
 
+The default catalog is the published reference. Keep unpublished discoveries
+(including the historical `legacy20261009_n8` corpus) in separate VBFSearch
+experiment databases. Dataset scopes and the local registry are documented in
+`packages/VBFSearch/DATASETS.md`. Direct published-root outputs and recursive
+campaign results are different scopes; compare each explicitly.
+
 Data-build importers live under `packages/VBFCatalog/src/import/` and run in
 their own environment — never `include` them from a REPL or test.
 
