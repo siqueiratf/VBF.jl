@@ -61,6 +61,9 @@ end
     @test Q.solve_ones(UInt32[3, 5, 6], 3) === nothing
     @test_throws ArgumentError Q.solve_ones(UInt32[], 32)
     @test_throws ArgumentError Q.solve_ones(UInt32[8], 3)
+    @test_throws ArgumentError Q.solve_ones(UInt32[0,8],3)
+    @test Q.solve_ones(UInt32[1,UInt32(1)<<30],31)==
+        (UInt32(1)|(UInt32(1)<<30),UInt32[UInt32(1)<<i for i in 1:29])
     rows = UInt32[]; pivots = Int[]; kernel = UInt32[]
     for D in 1:5, _ in 1:40
         Z = rand(rng, UInt32(0):UInt32((1 << D)-1), rand(rng, 0:50))
@@ -78,6 +81,47 @@ end
                                 for mask in 0:(1 << length(K))-1]
             @test sort!(enumerated) == expected
             @test length(unique(enumerated)) == length(enumerated)
+        end
+    end
+end
+
+@testitem "incremental affine solver preserves canonical solutions" begin
+    using VBF, Test, Random
+    Q=VBF.QuadraticExtensions
+    function control(Z,D)
+        aug=UInt32(1)<<D
+        rows=UInt32[c|aug for c in Z]
+        D==0 && return isempty(Z) ? (UInt32(0),UInt32[]) : nothing
+        rank=gauss_jordan!(rows;nbits=D)
+        any(==(aug),rows[rank+1:end]) && return nothing
+        resize!(rows,rank)
+        pivots=trailing_zeros.(rows)
+        particular=foldl(⊻,(UInt32(1)<<p for (r,p) in zip(rows,pivots) if !iszero(r&aug));init=UInt32(0))
+        kernel=UInt32[]
+        for free in 0:D-1
+            free in pivots && continue
+            vector=UInt32(1)<<free
+            for (r,p) in zip(rows,pivots)
+                !iszero(r&(UInt32(1)<<free)) && (vector|=UInt32(1)<<p)
+            end
+            push!(kernel,vector)
+        end
+        particular,kernel
+    end
+    rows=UInt32[];pivots=Int[];kernel=UInt32[]
+    for D in 0:3, subset in 0:(1<<(1<<D))-1
+        Z=UInt32[c for c in 0:(1<<D)-1 if !iszero(subset&(1<<c))]
+        @test Q.solve_ones(Z,D,rows,pivots,kernel)==control(Z,D)
+    end
+    rng=MersenneTwister(0xaff1)
+    for D in (4,8,16,23,31), n in (0,1,3,16,32,80,256), _ in 1:20
+        mask=(UInt32(1)<<D)-UInt32(1)
+        Z=rand(rng,UInt32,n).&mask
+        @test Q.solve_ones(Z,D,rows,pivots,kernel)==control(Z,D)
+        chosen=rand(rng,UInt32)&mask
+        if !iszero(chosen)
+            consistent=filter(c->isodd(count_ones(c&chosen)),Z)
+            @test Q.solve_ones(consistent,D,rows,pivots,kernel)==control(consistent,D)
         end
     end
 end
