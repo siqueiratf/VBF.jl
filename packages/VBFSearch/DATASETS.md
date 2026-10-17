@@ -32,8 +32,19 @@ separation; matching signatures alone do not merge classes. CCZ/EA agreement for
 quadratic APNs supplies the interpretation of these comparisons.
 
 The reproducible consumers live under `tools/datasets/`: `freeze.jl`,
-`prepare_comparisons.jl`, `verify_comparisons.jl`, and `restrict_reference.jl`.
+`prepare_comparisons.jl`, `verify_comparisons.jl`, `restrict_reference.jl`,
+and `compact.jl`.
 Run expensive verification under an explicit Julia thread limit. The reference
 restriction tool only reuses repeated-bucket classification when every removed
 record was a singleton; it refuses a restriction that would alter shared-bucket
 evidence. Pin the original catalog before changing its source set.
+
+## Shared copies
+
+Git tracks both class datasets in a compact, lossless form: the vault archive
+`data/research/vault/apn-datasets-20261017.tar.zst.part*` (63 MB). Run
+`make -C packages/VBFSearch/data/research/vault restore-datasets` to rebuild
+both `classes.sqlite` files. The restore checks the logical SHA-256 of every
+table; see `data/research/vault/README.md`. The comparison witnesses, the
+campaign ledger and the pinned reference are not in git: the tools above
+calculate the witnesses again, and a catalog build gives the reference again.
