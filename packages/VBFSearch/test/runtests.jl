@@ -9,6 +9,7 @@ include("closure_cursor_validation.jl")
 include("closure_ledger.jl")
 include("closure_reporting.jl")
 include("closure_work.jl")
+include("closure_controller.jl")
 include("closure_upgrade.jl")
 include("dataset_scopes.jl")
 

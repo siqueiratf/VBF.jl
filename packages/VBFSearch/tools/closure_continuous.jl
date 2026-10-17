@@ -3,6 +3,9 @@
 The checkpoint is opened once with its ordinary identity and coverage checks.
 Construction jobs from the selected roots execute in ordered concurrent waves;
 all admission remains serial and uses the archived witness-verifying API.
+Two waves overlap: the coordinator applies wave k while wave k+1 computes.
+Wave k+1 is selected from the state after wave k-1, without the running jobs
+of wave k, so the schedule stays deterministic for a fixed concurrency.
 Timing measures remaining work, including classification, rather than a replay.
 The store stays open until cooperative STOP, with no default time limit.
 """
@@ -48,7 +51,7 @@ function run(config)
     Int(get(config,"window_size",100))>0 || error("invalid window size")
     ispath(out) && error("evidence directory must be new")
     mkpath(out)
-    helper=abspath(config["seed_progress_helper"])
+    helper=abspath(get(config,"seed_progress_helper",joinpath(@__DIR__,"closure_seed_progress.jl")))
     reporter=Base.include(@__MODULE__,helper)
     seed_summary(db)=Base.invokelatest(reporter,db)
     for (source,name) in ((@__FILE__,"controller.jl"),(joinpath(@__DIR__,"closure_baseline.jl"),"baseline-controller.jl"),(helper,"seed-progress-helper.jl"))
@@ -173,8 +176,8 @@ function run(config)
         tmp=joinpath(out,"progress.json.tmp");write(tmp,FP.JSON3.write(payload));mv(tmp,joinpath(out,"progress.json");force=true)
         println(FP.JSON3.write(Dict("event"=>"batch_progress","batch"=>batch)));flush(stdout);last_report=time()
     end
-    function compute_wave(jobs;equivalence=false)
-        items=Any[];empty!(tasks)
+    function spawn_wave(jobs;equivalence=false)
+        items=Any[];wave_tasks=Task[]
         for (i,job) in enumerate(jobs)
             FP._closure_exec(s.db,"UPDATE jobs SET status='running',last_session=?,error='' WHERE id=?",(s.session,job["id"]))
             if !equivalence
@@ -184,11 +187,12 @@ function run(config)
             packet=equivalence ? FP._closure_equivalence_packet(s,job) : FP._closure_work_packet(s,job)
             push!(items,(job,packet))
         end
-        # Do not enter SQLite while compute tasks may be waiting for Julia GC.
+        # The previous wave is applied while these tasks run. The worst time to a
+        # GC safepoint stayed below 10 ms with SQLite applies during computation.
         for (i,(job,packet)) in enumerate(items)
             context=contexts[i]
             level=min(get(ea_attempts,Int(job["id"]),0),2)
-            push!(tasks,Threads.@spawn begin
+            push!(wave_tasks,Threads.@spawn begin
                 began=time_ns()
                 value=if equivalence
                     FP._closure_equivalence_compute(packet;seconds=min(300.0,Float64(get(config,"equivalence_seconds",30.0))*4^level),nodes=min(1_000_000,Int(get(config,"equivalence_nodes",100_000))*4^level))
@@ -198,9 +202,14 @@ function run(config)
                 (value,Float64(time_ns()-began)/1e9)
             end)
         end
-        while !all(istaskdone,tasks);sleep(.05);end
-        for (i,(job,packet)) in enumerate(items)
-            value,compute_seconds=fetch(tasks[i]);apply_started=time_ns()
+        append!(tasks,wave_tasks)
+        (jobs=jobs,equivalence=equivalence,items=items,tasks=wave_tasks)
+    end
+    wait_wave(wave)=(while !all(istaskdone,wave.tasks);sleep(.05);end)
+    function finish_wave(wave)
+        equivalence=wave.equivalence
+        for (i,(job,packet)) in enumerate(wave.items)
+            value,compute_seconds=fetch(wave.tasks[i]);apply_started=time_ns()
             if equivalence
                 outcome=FP._closure_equivalence_apply!(s,job,packet,value)
                 if outcome==:unresolved
@@ -227,7 +236,17 @@ function run(config)
             open(joinpath(out,"packet-metrics.jsonl"),"a") do io;println(io,FP.JSON3.write(metric));end
             processed+=1
         end
-        empty!(tasks)
+        filter!(task->!(task in wave.tasks),tasks)
+    end
+    function select_wave()
+        retries=join([id for (id,when) in deferred if when<=time()],",")
+        isempty(retries) && (retries="0")
+        ea=FP._closure_rows(s.db,"SELECT * FROM jobs WHERE kind='deduplicate' AND status IN ('pending','paused') AND (last_session!=? OR id IN ($retries)) ORDER BY id LIMIT ?",(s.session,concurrency))
+        isempty(ea) || return (ea[1:min(concurrency,length(ea))],true)
+        jobs=construction()
+        any(j->j["status"] in ("failed","blocked"),jobs) && error("parent coverage requires recovery")
+        pending=filter(j->j["status"] in ("pending","paused"),jobs)
+        isempty(pending) ? nothing : (pending[1:min(concurrency,length(pending))],false)
     end
     try
         println("Opening the archived checkpoint once for continuous seed expansion");flush(stdout)
@@ -256,35 +275,43 @@ function run(config)
             isfile(stop_path) && read(stop_path)==prior_stop && rm(stop_path)
         end
         publish!(;force=true)
-        while !stopped()
-            retries=join([id for (id,when) in deferred if when<=time()],",")
-            isempty(retries) && (retries="0")
-            ea=FP._closure_rows(s.db,"SELECT * FROM jobs WHERE kind='deduplicate' AND status IN ('pending','paused') AND (last_session!=? OR id IN ($retries)) ORDER BY id LIMIT ?",(s.session,concurrency))
-            if !isempty(ea)
-                compute_wave(ea[1:min(concurrency,length(ea))];equivalence=true);publish!();continue
+        inflight=nothing
+        while true
+            spawned=nothing
+            inflight===nothing || wait_wave(inflight)
+            if !stopped()
+                selected=select_wave()
+                selected===nothing || (spawned=spawn_wave(selected[1];equivalence=selected[2]))
             end
-            jobs=construction();record_completed!(jobs);publish!()
-            if all(j->j["status"]=="done",jobs)
-                if window_active
-                    publish!(;force=true)
-                    base=TOML.parsefile(joinpath(directory,"progress.toml"))
-                    before_jobs=deepcopy(jobs);before_paths=Dict(kind=>paths(kind) for kind in ("v5","switching"));before_kernels=kernels()
-                    windows_completed+=1;window_active=false
-                    if windows_completed>=Int(get(config,"max_windows",typemax(Int)))
-                        state="paused_window_limit";break
-                    end
-                end
-                publish!(;force=true);base=TOML.parsefile(joinpath(directory,"progress.toml"))
-                if !select_window!()
-                    state="waiting_frontier";publish!(;force=true)
-                    sleep(5);continue
-                end
-                state="running";window_active=true;continue
+            if inflight!==nothing
+                finish_wave(inflight)
+                record_completed!(construction());publish!()
             end
-            any(j->j["status"] in ("failed","blocked"),jobs) && error("parent coverage requires recovery")
-            pending=filter(j->j["status"] in ("pending","paused"),jobs)
-            isempty(pending) && error("no runnable parent work")
-            compute_wave(pending[1:min(concurrency,length(pending))])
+            inflight=spawned
+            inflight===nothing || continue
+            stopped() && break
+            selected=select_wave()
+            if selected!==nothing
+                inflight=spawn_wave(selected[1];equivalence=selected[2]);continue
+            end
+            # Nothing runs and nothing is runnable: the current window is complete.
+            jobs=construction();record_completed!(jobs)
+            all(j->j["status"]=="done",jobs) || error("parent coverage requires recovery")
+            if window_active
+                publish!(;force=true)
+                base=TOML.parsefile(joinpath(directory,"progress.toml"))
+                before_jobs=deepcopy(jobs);before_paths=Dict(kind=>paths(kind) for kind in ("v5","switching"));before_kernels=kernels()
+                windows_completed+=1;window_active=false
+                if windows_completed>=Int(get(config,"max_windows",typemax(Int)))
+                    state="paused_window_limit";break
+                end
+            end
+            publish!(;force=true);base=TOML.parsefile(joinpath(directory,"progress.toml"))
+            if !select_window!()
+                state="waiting_frontier";publish!(;force=true)
+                sleep(5);continue
+            end
+            state="running";window_active=true
         end
         stopped() && (state=external() ? "paused_external" : "paused_budget")
     catch
