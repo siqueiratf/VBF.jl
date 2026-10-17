@@ -28,7 +28,7 @@ function run(config)
     state="failed";s=nothing;tasks=Task[];processed=0;evaluated=0;last_report=0.0
     before_jobs=Any[];before_paths=0;before_seed=nothing;baseline=nothing;contexts=Dict{Int,Any}()
     stop_path=joinpath(directory,"STOP");prior_stop=isfile(stop_path) ? read(stop_path) : nothing
-    external()=isfile(stop_path) || isfile(joinpath(out,"STOP"))
+    external=FP._closure_stop_poller(stop_path,joinpath(out,"STOP"))
     stopped()=external() || time()>=deadline
     construction()=FP._closure_rows(s.db,"SELECT * FROM jobs WHERE parent_id=? AND kind IN ('prepare_v5','v5','switching') ORDER BY id",(parent,))
     count_status(rows,kinds,status)=count(j->j["kind"] in kinds && j["status"]==status,rows)
