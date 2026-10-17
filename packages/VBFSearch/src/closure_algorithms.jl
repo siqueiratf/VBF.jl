@@ -474,7 +474,7 @@ function closure_run!(directory;duration_seconds=60.0,max_evaluations=1000,max_j
     s=_closure_open(directory);started=time_ns();processed=0;evaluated=0;reason="paused_budget"
     elapsed()=Float64(time_ns()-started)/1e9
     remaining()=max(0.0,duration_seconds-elapsed())
-    external()=isfile(joinpath(s.directory,"STOP"))
+    external=_closure_stop_poller(joinpath(s.directory,"STOP"))
     stopped()=external() || remaining()<=0
     G=nothing;work=nothing
     try

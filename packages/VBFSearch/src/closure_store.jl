@@ -106,6 +106,24 @@ function _closure_record_candidate!(s, job, p, cursor, witness)
     child
 end
 
+"""Poll STOP files at most once in `interval_ns`; a seen request stays set.
+
+Search callbacks run millions of times. A filesystem check on each call made one
+complete switching job about 17 times slower. This is the throttled poll of the
+discovery search driver.
+"""
+function _closure_stop_poller(paths...;interval_ns=250_000_000)
+    seen=Threads.Atomic{Bool}(false);last=Threads.Atomic{UInt64}(0)
+    function()
+        seen[] && return true
+        now=time_ns();previous=last[]
+        if now>=previous && now-previous>=interval_ns && Threads.atomic_cas!(last,previous,now)==previous
+            any(isfile,paths) && (seen[]=true)
+        end
+        seen[]
+    end
+end
+
 function _closure_open(directory)
     dir=abspath(directory);isfile(joinpath(dir,"closure.sqlite")) || error("closure frontier is not initialized")
     lease=_closure_lease(dir)

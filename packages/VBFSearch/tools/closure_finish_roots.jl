@@ -36,7 +36,7 @@ function run(config)
     before_jobs=Any[];before_paths=0;last_report=0.0;timings=Dict{Int,Dict{String,Any}}()
     stop_path=joinpath(directory,"STOP");prior_stop=isfile(stop_path) ? read(stop_path) : nothing
     contexts=[FP.ClosureWorkContext() for _ in 1:concurrency]
-    external()=isfile(stop_path) || isfile(joinpath(out,"STOP"))
+    external=FP._closure_stop_poller(stop_path,joinpath(out,"STOP"))
     stopped()=external() || time()>=deadline
     construction()=FP._closure_rows(s.db,"SELECT * FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') ORDER BY parent_id,id")
     paths()=FP._closure_count(s.db,"SELECT COUNT(*) n FROM paths WHERE job_id IN (SELECT id FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching'))")
