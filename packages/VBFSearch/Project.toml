@@ -3,10 +3,11 @@ uuid = "dd0bf59e-0517-4d11-a31d-bfc185ba0bb1"
 version = "0.1.0-DEV"
 
 [deps]
+CodecZstd = "6b39b394-51ab-5f42-8807-6242bab2b4c2"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 DBInterface = "a10d1c49-ce27-4219-8d33-6db1a4562965"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 SQLite = "0aa819cd-b072-5ff4-a722-6bc24af294d9"
@@ -15,11 +16,12 @@ VBF = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
 VBFCatalog = "806e9246-bd0c-40c6-b7ea-7b2eabc2fba0"
 
 [compat]
+CodecZstd = "0.8"
 CSV = "0.10, 1"
-JSON3 = "1"
-julia = "1.12"
 DBInterface = "2"
+JSON3 = "1"
 SQLite = "1"
+julia = "1.12"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
