@@ -352,6 +352,9 @@ The wall-clock budget covers input validation, constraint construction, kernel
 extraction and candidate enumeration. Checks occur between individual
 constraints and kernel operations; one APN test or linear-algebra primitive
 cannot be interrupted. Zero budgets return before validating the input.
+The time and `stop_requested` checks run at every validation and candidate
+step, but only once in 1024 constraint and kernel steps; neighbour and
+evaluation budgets are checked at every step.
 `StopPoint.resume_key` identifies the stopped stage, direction and position;
 it is a diagnostic frontier, not a serialized resumable linear system.
 The observer has the same events and contract as `switching_neighbors`.
@@ -405,12 +408,17 @@ function switching_neighbors_bounded(
             "start_combination" => string(start_combination),
         ),
     )
+    inner_steps = Ref(0)
     function check(stage, direction, position)
-        reason = if stop_requested !== nothing && stop_requested()
+        # A complete search makes millions of constraint and kernel steps. Poll
+        # the clock and the external stop request only once in 1024 of them.
+        poll = stage === :validation || stage === :candidate || stage === :candidate_done ||
+            (inner_steps[] += 1) & 1023 == 0
+        reason = if poll && stop_requested !== nothing && stop_requested()
             :external
         elseif length(found) >= max_neighbors
             :solutions
-        elseif elapsed() >= timeout_seconds
+        elseif poll && elapsed() >= timeout_seconds
             :time
         elseif (stage === :validation || stage === :candidate) &&
                evaluations[] >= max_evaluations
