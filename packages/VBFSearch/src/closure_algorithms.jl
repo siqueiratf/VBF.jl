@@ -155,7 +155,9 @@ function _closure_compute_v5(packet,F,context,stop_requested)
         # selected five-space has no eligible six-space extensions.
         push!(chunks,Dict("proof"=>copy(proof),"records"=>Dict{String,Any}[],"processed_cosets"=>0))
     end
-    Dict{String,Any}("chunks"=>chunks,"records"=>records,"proof"=>proof,"processed_cosets"=>result.nX_used,
+    # Encode the coverage ledger in the worker; the single writer only checks and stores it.
+    ledger=isempty(chunks) ? nothing : _closure_ledger_row(Int(packet["job_id"]),chunks)
+    Dict{String,Any}("chunks"=>chunks,"records"=>records,"proof"=>proof,"processed_cosets"=>result.nX_used,"ledger"=>ledger,
         "commit_chunk"=>!isempty(chunks),"blocked"=>result.capped,"apn_luts_checked"=>length(checked),
         "done"=>result.next_x>result.nX && !result.capped,"evaluations"=>result.ncand+length(records))
 end
@@ -348,7 +350,7 @@ function _closure_apply!(s,job,result)
             if haskey(proof,"distinct_candidate_spaces")
                 proof["distinct_candidate_spaces"]==length(unique(r["properties"]["lut_sha256"] for r in flat_records)) || error("extension distinct output count mismatch")
             end
-            _closure_insert_chunks!(s,current["id"],chunks)
+            _closure_insert_chunks!(s,current["id"],chunks;encoded=get(work,"ledger",nothing))
             _closure_exec(s.db,"UPDATE jobs SET direction=? WHERE id=?",(cursor,current["id"]))
             done=cursor>proof["total_x"] && !capped
             work["done"]==done && work["blocked"]==capped || error("extension completion flag mismatch")
