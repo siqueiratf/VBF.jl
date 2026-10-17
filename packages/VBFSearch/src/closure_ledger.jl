@@ -71,14 +71,27 @@ function _closure_foreach_chunk(f,db;job_id=nothing)
     nothing
 end
 
-"""Persist an already validated work packet as one atomic coverage interval."""
-function _closure_insert_chunks!(s,job_id,chunks)
-    isempty(chunks) && return
+"""Encode one packet's coverage rows exactly as the ledger stores them."""
+function _closure_ledger_row(job_id,chunks)
     rows=[Dict{String,Any}("job_id"=>job_id,"first_x"=>c["proof"]["first_x"],
         "next_x"=>c["proof"]["next_x"],"total_x"=>c["proof"]["total_x"],
         "capped"=>Int(c["proof"]["capped"]),"evidence"=>_closure_coset_evidence_text(c["proof"])) for c in chunks]
     firstrow=first(rows);lastrow=last(rows)
-    evidence=length(rows)==1 ? firstrow["evidence"] : _closure_pack_chunks(rows)
-    _closure_exec(s.db,"INSERT INTO chunks VALUES(?,?,?,?,?,?)",(job_id,firstrow["first_x"],
-        lastrow["next_x"],firstrow["total_x"],maximum(r["capped"] for r in rows),evidence))
+    (job_id=job_id,first_x=firstrow["first_x"],next_x=lastrow["next_x"],total_x=firstrow["total_x"],
+        capped=maximum(r["capped"] for r in rows),evidence=length(rows)==1 ? firstrow["evidence"] : _closure_pack_chunks(rows))
+end
+
+"""Persist an already validated work packet as one atomic coverage interval.
+
+`encoded` is the row of _closure_ledger_row from an in-process worker, so the
+serial writer does not encode it again. The coordinator checks its envelope
+against the validated cosets. A result that crossed a process boundary (for
+example as JSON) has no such row, and the coordinator then encodes it here."""
+function _closure_insert_chunks!(s,job_id,chunks;encoded=nothing)
+    isempty(chunks) && return
+    row=encoded isa NamedTuple ? encoded : _closure_ledger_row(job_id,chunks)
+    row.job_id==job_id && row.first_x==first(chunks)["proof"]["first_x"] && row.next_x==last(chunks)["proof"]["next_x"] &&
+        row.total_x==first(chunks)["proof"]["total_x"] && row.capped==maximum(Int(c["proof"]["capped"]) for c in chunks) ||
+        error("encoded coverage envelope differs from the validated cosets")
+    _closure_exec(s.db,"INSERT INTO chunks VALUES(?,?,?,?,?,?)",(job_id,row.first_x,row.next_x,row.total_x,row.capped,row.evidence))
 end

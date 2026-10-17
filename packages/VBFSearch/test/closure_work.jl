@@ -369,3 +369,51 @@ end
         end
     end
 end
+
+function ledger_fixture(directory)
+    mkpath(directory)
+    F=SBox{8}(hex2bytes(WORK_PACKET_ROOT));p=WorkVS.properties(F.lut)
+    rootfile=joinpath(directory,"ledger-root.tsv");write(rootfile,p["lut_hex"]*"\n")
+    digest=WorkVS.DiscoveryEvidence.filehash(rootfile)
+    identity=Dict{String,Any}("schema"=>WorkVS.CLOSURE_SCHEMA,"campaign"=>rootfile,"campaign_sha256"=>digest,
+        "roots_sha256"=>digest,"initial_roots"=>1,"qualification_complete"=>true,"inputs"=>Dict(rootfile=>digest),
+        "implementation"=>WorkVS.implementation_fingerprint(),"julia"=>string(VERSION),
+        "scientific"=>Dict("n"=>8,"m"=>8,"target_b6"=>52,"max_kernel"=>23,"extension_cosets"=>8))
+    rows=[(lut_sha256=p["lut_sha256"],lut_hex=p["lut_hex"],sigma_hash=p["sigma_hash"],catalog_id="ledger-fixture:1")]
+    run=joinpath(directory,"run");WorkVS._closure_initialize(run,identity,rows)
+    s=WorkVS._closure_open(run)
+    prepare=only(WorkVS._closure_rows(s.db,"SELECT * FROM jobs WHERE kind='prepare_v5'"))
+    WorkVS._closure_apply!(s,prepare,WorkVS._closure_compute(WorkVS._closure_work_packet(s,prepare);seconds=60))
+    s,first(WorkVS._closure_rows(s.db,"SELECT * FROM jobs WHERE kind='v5' ORDER BY id"))
+end
+
+@testset "Workers encode the coverage ledger exactly as the coordinator would" begin
+    mktempdir() do directory
+        s,job=ledger_fixture(joinpath(directory,"in-process"))
+        t,wire_job=ledger_fixture(joinpath(directory,"wire"))
+        try
+            batch=WorkVS._closure_compute(WorkVS._closure_work_packet(s,job);seconds=60)
+            ledger=batch["work"]["ledger"]
+            @test ledger isa NamedTuple && ledger.job_id==job["id"] && ledger.evidence isa Vector{UInt8}
+            @test ledger==WorkVS._closure_ledger_row(job["id"],batch["work"]["chunks"])
+            # A wrong envelope is refused before any coverage row is written.
+            for field in (:job_id,:first_x,:next_x,:total_x,:capped)
+                bad=deepcopy(batch);bad["work"]["ledger"]=merge(ledger,NamedTuple{(field,)}((getfield(ledger,field)+1,)))
+                @test_throws ErrorException WorkVS._closure_apply!(s,job,bad)
+            end
+            @test WorkVS._closure_count(s.db,"SELECT COUNT(*) n FROM chunks")==0
+            @test WorkVS._closure_apply!(s,job,batch)==batch["work"]["evaluations"]
+            # After JSON transport the row is a Dict, so the coordinator encodes it.
+            wire_batch=WorkVS._closure_compute(WorkVS._closure_work_packet(t,wire_job);seconds=60)
+            wire=WorkVS.JSON3.read(WorkVS.JSON3.write(wire_batch),Dict{String,Any})
+            @test !(wire["work"]["ledger"] isa NamedTuple)
+            @test WorkVS._closure_apply!(t,wire_job,wire)==batch["work"]["evaluations"]
+            stored(store)=[Tuple(r) for r in WorkVS.DBInterface.execute(store.db,"SELECT * FROM chunks ORDER BY job_id,first_x")]
+            @test stored(s)==stored(t)
+            @test only(stored(s))[6]==ledger.evidence
+        finally
+            WorkVS._closure_close(s);WorkVS._closure_close(t)
+        end
+    end
+end
+
