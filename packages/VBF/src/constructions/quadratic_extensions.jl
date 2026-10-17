@@ -573,6 +573,9 @@ function coset_bent_counts!(buf::Vector{Int32}, G::Geometry, V::AbstractVector{U
     y = UInt32(0); c = 0
     @inbounds buf[1] = Int32(betap[1])
     @inbounds for i in 1:(1 << D)-1
+        # Large quotients run millions of allocation-free iterations. Let other
+        # search tasks collect without waiting for the complete rank table.
+        (i & 4095) == 0 && GC.safepoint()
         j = trailing_zeros(i)
         y ⊻= yb[j+1]; c ⊻= 1 << j
         buf[c+1] = Int32(betap[(form_rank(G, y) >> 1)+1])

@@ -9,6 +9,85 @@
     expected = reduce(vcat, grouped; init = typeof(F)[])
     @test !isempty(expected)
 
+    @testset "equation scratch never aliases retained pivots or removed solutions" begin
+        system=VBF._sn_system(8);other=VBF._sn_system(8)
+        scratch=system.equation_row
+        @test scratch !== other.equation_row
+        VBF._sn_add_equation!(system,(0,1))
+        first_pivot=only(system.pivot_rows)
+        @test first_pivot !== scratch
+        @test first_pivot==BitVector([true,true,false,false,false,false,false,false])
+        VBF._sn_add_equation!(system,(1,2))
+        @test system.pivot_cols==[1,2]
+        @test system.pivot_rows[2]==BitVector([false,true,true,false,false,false,false,false])
+        retained=copy.(system.pivot_rows)
+        for positions in ((0,2),(0,1),(2,2,5,5),())
+            # The first equation is the sum of the two stored equations; the
+            # others are duplicate or identically zero, including cancellations.
+            VBF._sn_add_equation!(system,positions)
+            @test system.pivot_rows==retained
+            @test system.pivot_cols==[1,2]
+            @test system.equation_row===scratch
+        end
+        VBF._sn_remove_solution!(system,(0,3,7))
+        removed=copy(only(system.removed))
+        @test only(system.removed)!==scratch
+        fill!(scratch,true)
+        VBF._sn_add_equation!(system,())
+        @test !any(scratch)
+        @test system.pivot_rows==retained
+        @test only(system.removed)==removed
+        VBF._sn_add_equation!(system,(3,4))
+        @test system.pivot_cols==[1,2,4]
+        @test system.pivot_rows[1]===first_pivot
+        @test system.pivot_rows[1:2]==retained
+        @test all(row->row!==scratch,system.pivot_rows)
+        @test all(i==j || system.pivot_rows[i]!==system.pivot_rows[j]
+            for i in eachindex(system.pivot_rows), j in eachindex(system.pivot_rows))
+        VBF._sn_add_equation!(other,(7,))
+        @test system.pivot_rows[1:2]==retained
+        @test only(system.removed)==removed
+    end
+
+    @testset "specialized constraint callbacks preserve order, stops and nested searches" begin
+        q=length(F.lut)
+        reference=[VBF._sn_system(q) for _ in 1:q-1]
+        trace=Any[]
+        VBF._sn_constraints!(reference,F.lut,(stage,direction,position)->push!(trace,(stage,direction,position)))
+        nested=Ref(false);nested_trace=Any[]
+        systems=[VBF._sn_system(q) for _ in 1:q-1]
+        callback=function(stage,direction,position)
+            push!(nested_trace,(stage,direction,position))
+            if !nested[] && position isa Tuple
+                nested[]=true
+                inner=switching_neighbors_bounded(gold_apn(3);timeout_seconds=Inf)
+                @test inner isa Exhausted
+            end
+        end
+        VBF._sn_constraints!(systems,F.lut,callback)
+        @test nested[]
+        @test nested_trace==trace
+        @test [s.pivot_cols for s in systems]==[s.pivot_cols for s in reference]
+        @test [s.pivot_rows for s in systems]==[s.pivot_rows for s in reference]
+        @test [VBF._sn_kernel(s) for s in systems]==[VBF._sn_kernel(s) for s in reference]
+        sentinel=ErrorException("constraint callback stop")
+        prefix=Any[];partial=[VBF._sn_system(q) for _ in 1:q-1]
+        stopped=try
+            VBF._sn_constraints!(partial,F.lut,(stage,direction,position)->begin
+                push!(prefix,(stage,direction,position))
+                length(prefix)==17 && throw(sentinel)
+            end)
+            nothing
+        catch err
+            err
+        end
+        @test stopped===sentinel
+        @test prefix==trace[1:17]
+        # The callback interrupts before adding the current flat; completed
+        # pivot rows remain disjoint from scratch even at this early frontier.
+        @test all(row!==s.equation_row for s in partial for row in s.pivot_rows)
+    end
+
     @testset "persisted candidate cursor resumes exactly once" begin
         direction, combination = Ref(1), Ref(big(1))
         visits = Tuple{Int,BigInt}[]
@@ -283,9 +362,9 @@
                 push!(outer_events, event)
                 if !nested[]
                     nested[] = true
-                    inner = switching_neighbors_bounded(F; timeout_seconds = 0)
+                    inner = switching_neighbors_bounded(F; timeout_seconds = Inf, max_evaluations = 1)
                     @test inner isa BudgetHit
-                    @test nodes_visited(inner) == 0
+                    @test nodes_visited(inner) == 1
                 end
             end,
         )
