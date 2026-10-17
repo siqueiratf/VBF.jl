@@ -3,7 +3,26 @@ using Test,SHA,TOML,VBF,VBFSearch
 include(joinpath(@__DIR__,"..","tools","datasets","freeze.jl"))
 include(joinpath(@__DIR__,"..","tools","datasets","verify_comparisons.jl"))
 include(joinpath(@__DIR__,"..","tools","datasets","prepare_comparisons.jl"))
+include(joinpath(@__DIR__,"..","tools","datasets","compact.jl"))
 const SQL=VBFSearch.SQLite;const DBI=VBFSearch.DBInterface
+function compact_fixture(path;sigma=nothing)
+ db=SQL.DB(path)
+ SQL.execute(db,"CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL) WITHOUT ROWID")
+ SQL.execute(db,"CREATE TABLE classes(class_id INTEGER PRIMARY KEY,sigma_hash TEXT NOT NULL,lut_sha256 TEXT NOT NULL,lut BLOB NOT NULL,source TEXT NOT NULL,source_member_idx INTEGER NOT NULL,source_run TEXT NOT NULL)")
+ SQL.execute(db,"CREATE TABLE source_artifacts(name TEXT PRIMARY KEY,sha256 TEXT NOT NULL,bytes BLOB NOT NULL) WITHOUT ROWID")
+ SQL.execute(db,"CREATE TABLE links(class_id INTEGER NOT NULL REFERENCES classes(class_id),n INTEGER NOT NULL,PRIMARY KEY(class_id,n)) WITHOUT ROWID")
+ DBI.execute(db,"INSERT INTO metadata VALUES(?,?)",("note","tab\there\nline\\end"))
+ G=UInt8.(gold_apn(8).lut)
+ # Constant and linear parts survive the 37-byte record, not only the quadratic part.
+ for (id,f) in ((3,G),(7,G .⊻ 0x05),(11,G .⊻ UInt8.(0:255)))
+  s=something(sigma,VBF.sigma_hash(SBox{8}(f)))
+  DBI.execute(db,"INSERT INTO classes VALUES(?,?,?,?,?,?,?)",(id,s,bytes2hex(SHA.sha256(f)),f,"fixture",id,"run-$id"))
+  DBI.execute(db,"INSERT INTO links VALUES(?,?)",(id,2id))
+ end
+ DBI.execute(db,"INSERT INTO source_artifacts VALUES(?,?,?)",("raw.bin",bytes2hex(SHA.sha256(UInt8[0,9,10,13])),UInt8[0,9,10,13]))
+ close(db)
+end
+rows(path,t)=(db=SQL.DB("file:$path?mode=ro");try [Tuple(r) for r in DBI.execute(db,"SELECT * FROM $t ORDER BY 1,2")] finally close(db) end)
 @testset "Direct-root freeze excludes recursive outputs and retains both constructions" begin
  mktempdir() do dir
   run=joinpath(dir,"run");mkpath(run);write(joinpath(run,"identity.toml"),"fixture = true\n")
@@ -31,6 +50,30 @@ const SQL=VBFSearch.SQLite;const DBI=VBFSearch.DBInterface
   close(frozen)
   db=SQL.DB(joinpath(run,"closure.sqlite"));pending=UInt8.(mod.(collect(0:255).+4,256));sha=bytes2hex(SHA.sha256(pending));DBI.execute(db,"INSERT INTO candidates VALUES(?,?,NULL,1,2)",(sha,bytes2hex(pending)));DBI.execute(db,"INSERT INTO paths VALUES(5,1,?,'v5')",(sha,));close(db)
   @test_throws ErrorException APNDatasetFreeze.roots(run,joinpath(dir,"pending.sqlite"))
+ end
+end
+@testset "Compact export restores every table and rejects changed data" begin
+ mktempdir() do dir
+  source=joinpath(dir,"frozen.sqlite");compact_fixture(source)
+  tsv=joinpath(dir,"representatives.tsv")
+  db=SQL.DB("file:$source?mode=ro");open(io->APNDatasetCompact.representatives(db,io),tsv,"w");close(db)
+  out=joinpath(dir,"compact");manifest=APNDatasetCompact.export_dataset(source,out;representatives_tsv=tsv)
+  @test Set(keys(manifest["tables"]))==Set(["metadata","classes","source_artifacts","links"])
+  @test filesize(joinpath(out,"classes.q37"))==3*37
+  @test !occursin("lut_sha256",readline(joinpath(out,"classes.tsv")))
+  restored=joinpath(dir,"restored","frozen.sqlite");mkpath(dirname(restored))
+  result=APNDatasetCompact.restore_dataset(out,restored)
+  @test result["tables"]["classes"]==3
+  for t in ("metadata","classes","source_artifacts","links")
+   @test rows(restored,t)==rows(source,t)
+  end
+  @test read(joinpath(dirname(restored),"representatives.tsv"))==read(tsv)
+  @test_throws ErrorException APNDatasetCompact.export_dataset(source,out)
+  # One changed coefficient yields another quadratic LUT, so the table digest fails.
+  bad=joinpath(dir,"bad");cp(out,bad);bytes=read(joinpath(bad,"classes.q37"));bytes[40]⊻=0x01;write(joinpath(bad,"classes.q37"),bytes)
+  @test_throws Exception APNDatasetCompact.restore_dataset(bad,joinpath(dir,"bad.sqlite"))
+  wrong=joinpath(dir,"wrong.sqlite");compact_fixture(wrong;sigma="0"^64)
+  @test_throws Exception APNDatasetCompact.export_dataset(wrong,joinpath(dir,"wrong"))
  end
 end
 @testset "Cached positives require complete invertible EA graph replay" begin
