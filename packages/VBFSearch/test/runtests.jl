@@ -10,6 +10,7 @@ include("closure_ledger.jl")
 include("closure_reporting.jl")
 include("closure_work.jl")
 include("closure_upgrade.jl")
+include("dataset_scopes.jl")
 
 @testset "Catalog publication preserves frozen reference scope" begin
     mktempdir() do dir
