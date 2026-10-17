@@ -5,7 +5,8 @@ const SQL=SQLite
 const DBI=DBInterface
 export Store, open_store, close_store, claim!, finish!, checkpoint!, register!,
        add_unit!, query, metadata, snapshot, atomic_toml, texttoml, parse_toml,
-       transaction, seed!, commit_chunk!
+       transaction, seed!, commit_chunk!, open_progress_reporter,
+       report_progress!, close_progress_reporter
 
 texttoml(x) = sprint(io->TOML.print(io,x;sorted=true))
 parse_toml(x) = TOML.parse(String(x))
@@ -62,8 +63,12 @@ function open_store(dir,identity;resume=false)
             "CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)",
             "CREATE TABLE IF NOT EXISTS candidates(lut_id TEXT PRIMARY KEY,lut_hex TEXT NOT NULL UNIQUE,sigma TEXT,evidence TEXT NOT NULL,reference_absent INTEGER NOT NULL,additional INTEGER NOT NULL)",
             "CREATE INDEX IF NOT EXISTS candidate_sigma ON candidates(sigma)",
+            "CREATE INDEX IF NOT EXISTS candidate_absent_sigma ON candidates(sigma) WHERE reference_absent=1",
+            "CREATE INDEX IF NOT EXISTS candidate_additional_sigma ON candidates(sigma) WHERE additional=1",
             "CREATE TABLE IF NOT EXISTS seeds(id INTEGER PRIMARY KEY,lut_id TEXT NOT NULL UNIQUE,lut_hex TEXT NOT NULL,sigma TEXT NOT NULL)",
             "CREATE TABLE IF NOT EXISTS units(id INTEGER PRIMARY KEY,seed_id INTEGER NOT NULL,kind TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',direction INTEGER NOT NULL DEFAULT 1,combination TEXT NOT NULL DEFAULT '1',result TEXT NOT NULL DEFAULT '',UNIQUE(seed_id,kind,payload))",
+            "CREATE INDEX IF NOT EXISTS unit_status ON units(status)",
+            "CREATE INDEX IF NOT EXISTS runnable_units ON units(id) WHERE status IN ('pending','paused')",
             "CREATE TABLE IF NOT EXISTS kernels(unit_id INTEGER NOT NULL,direction INTEGER NOT NULL,dimension INTEGER NOT NULL,evidence TEXT NOT NULL,PRIMARY KEY(unit_id,direction))",
             "CREATE TABLE IF NOT EXISTS evaluations(unit_id INTEGER NOT NULL,direction INTEGER NOT NULL,combination TEXT NOT NULL,lut_id TEXT NOT NULL,apn INTEGER NOT NULL,PRIMARY KEY(unit_id,direction,combination))",
             "CREATE TABLE IF NOT EXISTS chunks(unit_id INTEGER NOT NULL,first_x INTEGER NOT NULL,next_x INTEGER NOT NULL,total_x INTEGER NOT NULL,capped INTEGER NOT NULL,evidence TEXT NOT NULL,PRIMARY KEY(unit_id,first_x))",
@@ -96,6 +101,51 @@ function open_store(dir,identity;resume=false)
 end
 
 close_store(s)=(execute!(s.db,"PRAGMA wal_checkpoint(TRUNCATE)");SQL.close(s.db);close(s.lease))
+
+struct ProgressReporter
+    db::SQL.DB
+    guard::ReentrantLock
+    last_report::Threads.Atomic{UInt64}
+    interval_ns::UInt64
+    directory::String
+    session::Int
+    started::UInt64
+end
+
+"""Read committed progress independently of the search writer, at a bounded frequency."""
+function open_progress_reporter(directory,session,started;interval_seconds=10.0)
+    isfinite(interval_seconds) && interval_seconds>=0 || throw(ArgumentError("invalid progress interval"))
+    db=SQL.DB("file:"*joinpath(abspath(directory),"run.sqlite")*"?mode=ro")
+    ProgressReporter(db,ReentrantLock(),Threads.Atomic{UInt64}(0),
+        round(UInt64,interval_seconds*1e9),abspath(directory),Int(session),UInt64(started))
+end
+
+"""Publish one consistent snapshot; competing workers skip rather than wait for reporting."""
+function report_progress!(reporter::ProgressReporter;force=false)
+    now=time_ns()
+    !force && now-reporter.last_report[]<reporter.interval_ns && return false
+    trylock(reporter.guard) || return false
+    try
+        now=time_ns()
+        !force && now-reporter.last_report[]<reporter.interval_ns && return false
+        execute!(reporter.db,"BEGIN")
+        progress=try
+            snapshot(reporter.db)
+        finally
+            execute!(reporter.db,"ROLLBACK")
+        end
+        progress["session"]=reporter.session
+        progress["elapsed_seconds"]=(now-reporter.started)*1e-9
+        atomic_toml(joinpath(reporter.directory,"progress.toml"),progress)
+        reporter.last_report[]=time_ns()
+        true
+    finally
+        unlock(reporter.guard)
+    end
+end
+
+"""Close the independent progress reader after all search workers have joined."""
+close_progress_reporter(reporter::ProgressReporter)=SQL.close(reporter.db)
 
 function register_unlocked!(s,p)
     id=p["lut_sha256"]
