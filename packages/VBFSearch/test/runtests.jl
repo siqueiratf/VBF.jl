@@ -4,6 +4,12 @@ using VBFSearch: properties, lut_id, each_candidate, validated_study, Fourier, D
 using VBFSearch.DiscoveryStore
 
 include("progress.jl")
+include("closure.jl")
+include("closure_cursor_validation.jl")
+include("closure_ledger.jl")
+include("closure_reporting.jl")
+include("closure_work.jl")
+include("closure_upgrade.jl")
 
 @testset "Catalog publication preserves frozen reference scope" begin
     mktempdir() do dir

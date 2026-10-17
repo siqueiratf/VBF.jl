@@ -5,7 +5,7 @@ The current drivers search restricted constructions of quadratic (8,8)-APNs.
 Experiment completion and reference absence always have an explicit finite scope.
 """
 module VBFSearch
-using VBF, VBFCatalog, SHA, TOML, Dates, Random, SQLite, DBInterface, CSV, JSON3
+using VBF, VBFCatalog, SHA, TOML, Dates, Random, SQLite, DBInterface, CSV, JSON3, CodecZstd
 
 """Local run and research evidence, overridable with VBF_SEARCH_DATA_DIR."""
 search_data_dir() = abspath(get(ENV,"VBF_SEARCH_DATA_DIR",joinpath(pkgdir(VBFSearch),"data")))
@@ -31,6 +31,12 @@ include("status.jl")
 include("operations.jl")
 include("catalog.jl")
 include("report.jl")
+include("closure_store.jl")
+include("closure_ledger.jl")
+include("closure.jl")
+include("closure_upgrade.jl")
+include("closure_algorithms.jl")
+include("closure_equivalence.jl")
 include("cli.jl")
 
 export AuditedAPNReference, open_apn_reference, close_apn_reference, open_catalog_reference,
@@ -42,7 +48,8 @@ export AuditedAPNReference, open_apn_reference, close_apn_reference, open_catalo
        search_data_dir, equivalence_evidence, verify_graph_witness, SearchConfig, search, resume, status, stop!, audit, validate, report,
        report_snapshot, candidate_properties, compare, classify, classify_snapshot, open_reference,
        close_reference, verify_comparison, verify_ccz_witness, verify_ea_witness,
-       verify_certificate, publish, main
+       verify_certificate, publish, main, closure_init, closure_run!, closure_snapshot, closure_progress, closure_stop!,
+       closure_upgrade
 
 function __init__()
     # Compute at process initialization, never bake a source identity into a cache.

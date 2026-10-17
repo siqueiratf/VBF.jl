@@ -3,7 +3,7 @@ module CLI
 using TOML
 import ..VBFSearch
 const ROOT=VBFSearch.ROOT
-const COMMANDS=("search","discover","publish","resume","status","stop","audit","report","validate","compare","classify","verify")
+const COMMANDS=("search","discover","publish","resume","status","stop","audit","report","validate","compare","classify","verify","closure")
 const SEARCH_FLAGS=Dict("threads"=>"workers","parents"=>"limit","duration"=>"wall-seconds",
     "method"=>"method","seed"=>"seed","reference"=>"baseline","supplement"=>"supplement",
     "slice"=>"seconds","evaluations"=>"evaluations","chunk-size"=>"chunk-x",
@@ -38,12 +38,25 @@ Usage: bin/vbf COMMAND [OPTIONS]
            [--duration 30s] [--nodes 1000000]
   classify DIR [--duration 30s] [--nodes 1000000] [--pairs 100]
   verify   CERTIFICATE.toml
+  closure  init CAMPAIGN.toml --output DIR
+           [--root-first 1] [--root-last 0] [--root-order forward|reverse]
+           [--extension-cosets 1] [--switching-directions 1]
+  closure  upgrade SOURCE --output DIR [--switching-directions 32]
+  closure  run|resume DIR [--duration 60s] [--evaluations 1000] [--jobs 16]
+           [--parents 0] [--equivalence-duration 2s] [--equivalence-nodes 100000]
+  closure  status|stop DIR
 
 Search is currently restricted to quadratic (8,8)-APNs. Catalog seeds are the
 default; --corpus samples named bulk corpora deterministically with --seed.
 --input selects explicit seeds and excludes their signatures from
 additional-discovery counts. Searches freeze a finite parent plan, checkpoint
 automatically and do not promote discoveries to parents within the same run.
+The separate closure controller recursively promotes verified quadratic EA
+classes and interleaves complete switching with exact target-52 extensions.
+The run/resume adapter uses one worker.
+An extension coset is indivisible and can overrun a budget.
+Closure root intervals are inclusive one-based rows of the fully audited file;
+root-last 0 includes its final row. Descendants have no partition/profile filter.
 
 Defaults: method v5, duration 8h, one worker. Optional search settings:
   --seed INTEGER --target-b6 52 --bent max --chunk-size 128
@@ -55,6 +68,39 @@ matching signatures are not promoted as new classes.
 VBF_APN_REFERENCE and VBF_APN_SUPPLEMENT can override these paths.
 Corpus absence is scoped evidence; literature-wide novelty remains unresolved.
 """)
+end
+
+function closure_command(args)
+    isempty(args) && error("closure needs init, upgrade, run, resume, status or stop")
+    action=first(args);rest=args[2:end]
+    if action=="init"
+        cfg,_,pos=options(rest,["output","root-first","root-last","root-order","extension-cosets","switching-directions"])
+        length(pos)==1 && haskey(cfg,"output") || error("closure init needs CAMPAIGN.toml --output DIR")
+        println(VBFSearch.closure_init(only(pos);output=cfg["output"],
+            root_first=parse(Int,get(cfg,"root-first","1")),root_last=parse(Int,get(cfg,"root-last","0")),
+            root_order=Symbol(get(cfg,"root-order","forward")),
+            extension_cosets=parse(Int,get(cfg,"extension-cosets","1")),
+            switching_directions=parse(Int,get(cfg,"switching-directions","1"))))
+    elseif action=="upgrade"
+        cfg,_,pos=options(rest,["output","switching-directions"])
+        length(pos)==1 && haskey(cfg,"output") || error("closure upgrade needs SOURCE --output DIR")
+        println(VBFSearch.closure_upgrade(only(pos);output=cfg["output"],
+            switching_directions=parse(Int,get(cfg,"switching-directions","32"))))
+    elseif action in ("run","resume")
+        cfg,_,pos=options(rest,["duration","evaluations","jobs","parents","equivalence-duration","equivalence-nodes"])
+        length(pos)==1 || error("closure $action needs RUN_DIRECTORY")
+        println(VBFSearch.closure_run!(only(pos);
+            duration_seconds=parse(Float64,duration(get(cfg,"duration","60s"))),
+            max_evaluations=parse(Int,get(cfg,"evaluations","1000")),max_jobs=parse(Int,get(cfg,"jobs","16")),
+            max_parents=parse(Int,get(cfg,"parents","0")),
+            equivalence_seconds=parse(Float64,duration(get(cfg,"equivalence-duration","2s"))),
+            equivalence_nodes=parse(Int,get(cfg,"equivalence-nodes","100000"))))
+    elseif action in ("status","stop")
+        length(rest)==1 || error("closure $action needs RUN_DIRECTORY")
+        action=="status" ? println(VBFSearch.closure_snapshot(only(rest))) : VBFSearch.closure_stop!(only(rest))
+    else
+        error("unknown closure action $action")
+    end
 end
 
 """Parse options with explicit arity, rejecting unknown or repeated singleton flags."""
@@ -122,7 +168,9 @@ function main(args=ARGS)
     end
     command=first(args);rest=args[2:end]
     command in COMMANDS || error("unknown command $command; see bin/vbf help")
-    if command=="discover"
+    if command=="closure"
+        closure_command(rest)
+    elseif command=="discover"
         cfg,repeated,pos=options(rest,[collect(keys(SEARCH_FLAGS));"name";"input";"corpus";"output"];multiple=["input","corpus"])
         isempty(pos) && haskey(cfg,"name") || error("discover needs --name SLUG")
         name=pop!(cfg,"name")
