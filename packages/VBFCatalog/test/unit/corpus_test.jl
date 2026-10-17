@@ -3,6 +3,13 @@ using VBF
 using VBFCatalog
 using Test
 
+@testset "unpublished search discoveries are separate from the reference" begin
+    db=load_catalog()
+    @test corpus_info(db,"legacy20261009_n8")===nothing
+    @test all(corpus_info(db,name).family!="discovery" for name in list_corpora(db))
+    close(db)
+end
+
 @testset "bulk_corpora descriptor" begin
     db = load_catalog()
     if "simonberg_gf4_n8" in list_corpora(db)
