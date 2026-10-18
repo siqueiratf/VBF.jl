@@ -8,7 +8,8 @@ Run from the repository root:
 
 The controller owns closure.sqlite and progress.toml. This server only reads
 VBFSearch.closure_progress, verifies the pinned initial-root file, and serves the
-approved figures. A completed parent has exhausted both construction methods.
+approved figures. With --structure JSON it also serves that precomputed report
+at /structure. A completed parent has exhausted both construction methods.
 """
 module APNClosureMonitor
 
@@ -18,6 +19,8 @@ import VBFSearch
 const PAGE = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-monitor.html")
 const GRAPH_PAGE = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-graph.html")
 const GRAPH_SCRIPT = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-graph.js")
+const STRUCTURE_PAGE = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-structure.html")
+const STRUCTURE_SCRIPT = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-structure.js")
 const CONTENT_TYPES = Dict(
     ".html" => "text/html; charset=utf-8", ".svg" => "image/svg+xml",
     ".png" => "image/png", ".pdf" => "application/pdf",
@@ -31,6 +34,7 @@ mutable struct Monitor
     upstream::String
     comparison::String
     graph::String
+    structure::String
     read_run::Function
     guard::ReentrantLock
     root_stamp::Any
@@ -70,11 +74,12 @@ end
 
 function Monitor(campaign; run=joinpath(campaign, "run"),
                  figures=joinpath(campaign, "diagrams", "gallery"), read_run=controller_snapshot, upstream="",comparison="",
-                 graph=joinpath(run,"graph"))
+                 graph=joinpath(run,"graph"),structure="")
     campaign = abspath(campaign)
     isfile(joinpath(campaign, "campaign.toml")) || error("missing campaign.toml")
     reader = isempty(upstream) ? read_run : _ -> upstream_snapshot(upstream)
-    Monitor(campaign, abspath(run), abspath(figures), upstream, comparison, abspath(graph), reader, ReentrantLock(), nothing,
+    Monitor(campaign, abspath(run), abspath(figures), upstream, comparison, abspath(graph),
+            isempty(structure) ? "" : abspath(structure), reader, ReentrantLock(), nothing,
             Dict{String,Any}(), 0.0, Dict{String,Any}(), Tuple{Float64,Int,Int}[], Tuple{Float64,Int,Float64}[])
 end
 
@@ -384,6 +389,15 @@ function handle(monitor, request)
                 response(503,Dict("state"=>"preparing","error"=>"The first graph snapshot is being prepared."))
         end
         startswith(path,"/graph-data/") && return graph_response(monitor,path[length("/graph-data/")+1:end])
+        path in ("/structure","/structure/","/structure.html") && return HTTP.Response(200,
+            ["Content-Type"=>"text/html; charset=utf-8","Cache-Control"=>"no-cache"],read(STRUCTURE_PAGE))
+        path == "/structure.js" && return HTTP.Response(200,
+            ["Content-Type"=>"application/javascript; charset=utf-8","Cache-Control"=>"no-cache"],read(STRUCTURE_SCRIPT))
+        if path == "/api/structure"
+            isempty(monitor.structure) && return response(404,Dict("error"=>"No structure report is configured; start the monitor with --structure PATH."))
+            isfile(monitor.structure) || return response(404,Dict("error"=>"The configured structure report is missing."))
+            return HTTP.Response(200,["Content-Type"=>"application/json; charset=utf-8","Cache-Control"=>"no-cache"],read(monitor.structure))
+        end
         path == "/diagram.svg" && return figure_response(monitor, "slide_pipeline.svg")
         path == "/figures" && return HTTP.Response(302, ["Location" => "/figures/"])
         startswith(path, "/figures/") && return figure_response(monitor, path[length("/figures/")+1:end])
@@ -396,16 +410,17 @@ end
 
 function main(args=ARGS)
     options = Dict("--host" => "127.0.0.1", "--port" => "8766")
-    iseven(length(args)) || error("expected --campaign PATH [--run PATH] [--host HOST] [--port PORT]")
+    iseven(length(args)) || error("expected --campaign PATH [--run PATH] [--structure JSON] [--host HOST] [--port PORT]")
     for i in 1:2:length(args)
-        args[i] in ("--campaign", "--run", "--host", "--port", "--figures", "--upstream", "--comparison") || error("unknown option: $(args[i])")
+        args[i] in ("--campaign", "--run", "--host", "--port", "--figures", "--upstream", "--comparison", "--structure") || error("unknown option: $(args[i])")
         options[args[i]] = args[i+1]
     end
     haskey(options, "--campaign") || error("--campaign PATH is required")
     campaign = abspath(options["--campaign"])
     monitor = Monitor(campaign; run=get(options, "--run", joinpath(campaign,"run")),
         figures=get(options, "--figures", joinpath(campaign,"diagrams","gallery")),
-        upstream=get(options, "--upstream", ""),comparison=get(options,"--comparison",""))
+        upstream=get(options, "--upstream", ""),comparison=get(options,"--comparison",""),
+        structure=get(options,"--structure",""))
     snapshot(monitor; force=true)
     @info "Read-only APN closure monitor" host=options["--host"] port=options["--port"] campaign run=monitor.run
     HTTP.serve(request -> handle(monitor, request), options["--host"], parse(Int, options["--port"]))
