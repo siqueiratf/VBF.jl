@@ -81,13 +81,28 @@ Use it to see the dashboard, not as a research result.
 
 ```sh
 julia --project=. packages/VBFSearch/tools/closure_demo.jl packages/VBFSearch/data/search/demo-closure
-bin/vbf closure run packages/VBFSearch/data/search/demo-closure/run --duration 10m --jobs 4
 ```
 
-The second command searches for 10 minutes. To continue later, use
-`bin/vbf closure resume DIR/run` with the same options. Use
-`bin/vbf closure status DIR/run` to see the progress and
-`bin/vbf closure stop DIR/run` to stop a run from a second terminal.
+Start the search with the threaded controller `tools/closure_continuous.jl`.
+It reads a TOML file. `evidence` must be a new directory for each start.
+`concurrency` is the number of worker threads.
+The commands below use bash syntax. In fish, write `set D $PWD/...` in place of `D=$PWD/...`.
+
+```sh
+D=$PWD/packages/VBFSearch/data/search/demo-closure
+printf 'run = "%s/run"\nevidence = "%s/evidence-1"\nconcurrency = 10\nduration_seconds = 28800\n' $D $D > $D/continuous.toml
+julia --startup-file=no --threads=10,1 --project=packages/VBFSearch packages/VBFSearch/tools/closure_continuous.jl $D/continuous.toml
+```
+
+This search continues for 8 h (28800 s). To stop it before that time, write a
+`STOP` file: `touch $D/run/STOP`. To continue later, change `evidence` to a new
+directory and start the controller again.
+
+The CLI `bin/vbf closure run|resume DIR/run` uses one worker. Its `--jobs`
+option is a limit on the number of jobs, not a number of threads, and
+`--evaluations` has a default of 1000. With the defaults, the CLI stops after a
+few jobs with the state `paused_budget`. Use `bin/vbf closure status DIR/run`
+to see the progress of either controller.
 
 ### Open the dashboard
 
