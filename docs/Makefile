@@ -1,6 +1,9 @@
 JULIA ?= julia
 DOCS := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 INSPECTOR := $(DOCS)inspector/
+ROOT := $(abspath $(DOCS)..)
+# make -C docs runs in docs/; resolve a relative path from the repository root.
+resolve = $(if $(filter /%,$(1)),$(1),$(ROOT)/$(1))
 port ?= 8088
 host ?= 127.0.0.1
 run ?=
@@ -21,13 +24,13 @@ serve: build
 	$(MAKE) -C "$(DOCS)" serve-built port="$(port)" host="$(host)" run="$(run)"
 
 serve-built: inspector-instantiate
-	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)server.jl" --docs "$(DOCS)build" --port $(port) --host $(host) $(if $(run),--run "$(abspath $(run))",)
+	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)server.jl" --docs "$(DOCS)build" --port $(port) --host $(host) $(if $(run),--run "$(call resolve,$(run))",)
 
 serve-inspector: inspector-instantiate
-	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)server.jl" --port $(port) --host $(host) $(if $(run),--run "$(abspath $(run))",)
+	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)server.jl" --port $(port) --host $(host) $(if $(run),--run "$(call resolve,$(run))",)
 
 serve-search: inspector-instantiate
-	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)closure_monitor.jl" --campaign "$(abspath $(campaign))" --port $(port) --host $(host) $(if $(run),--run "$(abspath $(run))",)
+	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)closure_monitor.jl" --campaign "$(call resolve,$(campaign))" --port $(port) --host $(host) $(if $(run),--run "$(call resolve,$(run))",)
 
 test: inspector-instantiate
 	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)test/runtests.jl"

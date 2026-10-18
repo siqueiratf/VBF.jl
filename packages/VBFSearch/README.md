@@ -54,6 +54,80 @@ persists quotient bases and every nonzero combination; `--slice 60s --evaluation
 10000` sets slice budgets. Optional bounded CCZ-class exploration uses
 `--ea-representatives N --orbit-duration 30s`; its partial coverage is recorded.
 
+## Closure campaign and its dashboard
+
+The closure campaign starts from published roots. It makes new quadratic APN
+classes with V5 extensions and switching, and then expands each new class again.
+A campaign directory holds `campaign.toml` and the audited root files. Its `run/`
+folder holds `closure.sqlite` and `progress.toml`. Git does not track campaign
+directories. The real campaign (24,294 published roots) is only on the computer
+that ran it.
+
+Run all commands from the repository root. Before the first run, do these steps
+one time:
+
+```sh
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
+make -C packages/VBFCatalog/src/import catalog
+make -C docs inspector-instantiate
+```
+
+### Make a demo campaign
+
+`tools/closure_demo.jl` writes a small campaign from published catalog functions.
+It takes the first ROOTS functions (default 3) of a corpus with P6 bminK b6 = 52
+and different sigma hashes. The demo has no audit of the full published pool.
+Use it to see the dashboard, not as a research result.
+
+```sh
+julia --project=. packages/VBFSearch/tools/closure_demo.jl packages/VBFSearch/data/search/demo-closure
+bin/vbf closure run packages/VBFSearch/data/search/demo-closure/run --duration 10m --jobs 4
+```
+
+The second command searches for 10 minutes. To continue later, use
+`bin/vbf closure resume DIR/run` with the same options. Use
+`bin/vbf closure status DIR/run` to see the progress and
+`bin/vbf closure stop DIR/run` to stop a run from a second terminal.
+
+### Open the dashboard
+
+Start the server in a second terminal. The search can continue at the same time,
+because the server only reads the run.
+
+```sh
+make -C docs serve-search campaign=packages/VBFSearch/data/search/demo-closure port=8766
+```
+
+Then open these pages in a browser:
+
+| Page | URL | Data |
+|---|---|---|
+| Live progress | `http://127.0.0.1:8766/` | `run/progress.toml` and `run/closure.sqlite` |
+| Class graph | `http://127.0.0.1:8766/graph` | `run/graph/`, written by `closure_graph.jl` |
+| Structure report | `http://127.0.0.1:8766/structure` | The JSON file given with `--structure` |
+
+The class graph shows "preparing" until a graph snapshot exists. Write one
+snapshot with this command:
+
+```sh
+julia --threads=1,1 --project=docs/inspector docs/inspector/closure_graph.jl --run packages/VBFSearch/data/search/demo-closure/run --once
+```
+
+Remove `--once` to keep the graph current. The builder then writes a new
+snapshot after 500 more completed parents and 600 s; change these values with
+`--every-seeds` and `--min-seconds`.
+
+The structure report needs a report JSON. Give its path with
+`julia --threads=1,1 --project=docs/inspector docs/inspector/closure_monitor.jl --campaign DIR --port 8766 --structure FILE`.
+The page reads the keys `bent`, `du`, `automorphisms`, `yield` and others.
+`VBFPaper/src/analysis/closure_structure.jl` writes a different `structure.json`,
+and no tool in this repository writes the keys of the page now.
+
+To watch a campaign on another computer, start the monitor there with
+`host=0.0.0.0`. On the local computer, start `closure_monitor.jl` with
+`--upstream http://HOST:8766/api/progress`. The local `--campaign` directory
+must hold the same `campaign.toml` and root files.
+
 ## Validation and mathematical scope
 
 ```sh
