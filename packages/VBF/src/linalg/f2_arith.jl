@@ -83,6 +83,32 @@ function gauss_jordan!(
 end
 
 """
+    rref_from_echelon!(rows::Vector{T}) where {T<:Unsigned}
+
+Reduce an independent row-echelon basis in place. Rows must be nonzero and
+ordered by strictly increasing least-significant pivot bit. Back substitution
+eliminates each pivot only from preceding rows, without searching for pivots
+or visiting non-pivot columns. Returns the rank, equal to `length(rows)`.
+"""
+function rref_from_echelon!(rows::Vector{T}) where {T<:Unsigned}
+    previous=-1
+    for row in rows
+        iszero(row) && throw(ArgumentError("echelon basis contains a zero row"))
+        pivot=trailing_zeros(row)
+        pivot>previous || throw(ArgumentError("echelon pivots are not strictly increasing"))
+        previous=pivot
+    end
+    @inbounds for i in length(rows):-1:1
+        row=rows[i]
+        bit=one(T)<<trailing_zeros(row)
+        for j in 1:i-1
+            !iszero(rows[j]&bit) && (rows[j]⊻=row)
+        end
+    end
+    length(rows)
+end
+
+"""
     rank_f2(rows::AbstractVector{<:Unsigned}; nbits = 8*sizeof(eltype(rows))) -> Int
 
 F₂ rank of a matrix given as a vector of row-bitmasks. Non-destructive.

@@ -66,6 +66,11 @@ if [[ "$MODE" == "staged" ]]; then
     fi
 fi
 
+# A hook inherits the repository's git environment (GIT_DIR, GIT_INDEX_FILE,
+# ...). Test items create their own fixture repositories, so clear it before
+# Julia starts: a fixture `git commit` must never write to this repository.
+unset $(git rev-parse --local-env-vars)
+
 # --- Phase 1: declarative/catalog agreement ---------------------------------
 if ! command -v julia >/dev/null 2>&1; then
     red "catalog-check: FAILED — Julia is required."

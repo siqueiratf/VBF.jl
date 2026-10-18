@@ -67,7 +67,7 @@ export Geometry, geometry, form_rank, form_rank_slow, coeffs_from_hex, hex_from_
        subspaces_of_comp, best_hyperplane_bent, bent_fourier, flat_fourier, BETA8,
        coset_bent_counts!, bent_mask, gauss_binom, V5Work, v5_extensions, function_of, max_bent_dim
 
-using ..VBF: SBox, linear_basis, rank_f2, gauss_jordan!, walsh_hadamard!
+using ..VBF: SBox, linear_basis, rank_f2, gauss_jordan!, rref_from_echelon!, walsh_hadamard!
 using SHA
 
 "Fingerprint a histogram; equality is not an equivalence certificate."
@@ -378,8 +378,9 @@ Solve {c . v = 1 : c in Z} over F_2^D, with `0 <= D <= 31`. Returns
 (particular solution with free variables zero, kernel basis in increasing free-bit
 order), or nothing when inconsistent. Scratch buffers are overwritten.
 
-Use VBF's elimination on rows augmented by one RHS bit: unlike `solve_f2`,
-the number of constraints is not bounded by the bit width of the RHS scalar.
+Reduce constraints incrementally, rejecting a contradictory row immediately,
+then use VBF's elimination on at most `D` independent augmented rows. Unlike
+`solve_f2`, the number of constraints is not bounded by the RHS scalar width.
 """
 function solve_ones(Z::Vector{UInt32}, D::Int, rows::Vector{UInt32} = UInt32[],
                     piv::Vector{Int} = Int[], K::Vector{UInt32} = UInt32[])
@@ -387,11 +388,26 @@ function solve_ones(Z::Vector{UInt32}, D::Int, rows::Vector{UInt32} = UInt32[],
     aug = UInt32(1) << D                      # right-hand side bit
     all(c -> c < aug, Z) || throw(ArgumentError("constraint exceeds the affine dimension"))
     empty!(rows); empty!(piv); empty!(K)
-    append!(rows, (c | aug for c in Z))
     # At dimension zero every present equation is 0 = 1.
     D == 0 && return isempty(Z) ? (UInt32(0), K) : nothing
-    rank = gauss_jordan!(rows; nbits = D)
-    any(==(aug), @view(rows[rank+1:end])) && return nothing
+    resize!(rows,D)
+    fill!(rows,UInt32(0))
+    mask=aug-UInt32(1)
+    @inbounds for c in Z
+        row=c|aug
+        while !iszero(row&mask)
+            p=trailing_zeros(row&mask)+1
+            basis=rows[p]
+            if iszero(basis)
+                rows[p]=row
+                break
+            end
+            row⊻=basis
+        end
+        row==aug && return nothing
+    end
+    filter!(!iszero,rows)
+    rank = rref_from_echelon!(rows)
     resize!(rows, rank)
     append!(piv, (trailing_zeros(r) for r in rows))
     v0 = UInt32(0)                             # free variables 0
@@ -573,6 +589,9 @@ function coset_bent_counts!(buf::Vector{Int32}, G::Geometry, V::AbstractVector{U
     y = UInt32(0); c = 0
     @inbounds buf[1] = Int32(betap[1])
     @inbounds for i in 1:(1 << D)-1
+        # Large quotients run millions of allocation-free iterations. Let other
+        # search tasks collect without waiting for the complete rank table.
+        (i & 4095) == 0 && GC.safepoint()
         j = trailing_zeros(i)
         y ⊻= yb[j+1]; c ⊻= 1 << j
         buf[c+1] = Int32(betap[(form_rank(G, y) >> 1)+1])
@@ -608,11 +627,20 @@ All APN S = V5 + <x, t, v> such that U = V5 + <x> has `need` bent elements in th
 x + V5 (so b(U) = b(V5) + need). Returns `(; Ss, nX, nX_used, du_reject, ncand, nT,
 key, capped)`: `Ss` the set of S (RREF keys), `key` a V5-class key (histograms of the
 coset bent counts and of g5).
+
+Optional `coset_observer(event)` runs after each complete eligible coset, including
+a differential-uniformity rejection. Its event contains `index`, `next_x`,
+`total_x`, the lifted `representative`, per-coset `Ss`, `du_reject`, `ncand`, `nT`
+and `capped`. Each per-coset set is independent: the same output space in two
+cosets appears in both events, while the returned aggregate `Ss` remains unique.
+An interrupted or unstarted coset produces no event. A capped event explicitly
+does not establish exhaustive coverage of its completions.
 """
 function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work::V5Work;
                        beta::Vector{Int}, du_filter::Bool = true, max_kernel::Int = 12,
                        max_x::Int = typemax(Int), should_skip::Function = k -> false,
-                       start_x::Int = 1, should_stop::Function = () -> false)
+                       start_x::Int = 1, should_stop::Function = () -> false,
+                       coset_observer = nothing)
     max_x >= 0 && start_x >= 1 || error("invalid coset cursor or chunk size")
     r = coset_bent_counts!(work.cnt, G, V5, beta)
     R, Qmask, D = r.R, r.Qmask, r.D
@@ -675,6 +703,8 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
     for (xi, x) in enumerate(X)
         should_stop() && break
         nX_used += 1
+        first_ncand = ncand; coset_capped = false
+        coset_Ss = coset_observer === nothing ? nothing : Set{Vector{UInt32}}()
         nWU = (g0 + Int(g5[x+1])) ÷ 2
         empty!(Cx)
         du_filter && fill!(pts, 0)
@@ -684,14 +714,26 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
             push!(Cx, c)
             if du_filter                         # Lemma 4.6 for U = V5 + <x>
                 for p in G.flatpts[fi]
-                    pts[p+1] += 1; pts[p+1] > 3 && (bad = true)
+                    pts[p+1] += 1
+                    if pts[p+1]>3
+                        bad=true
+                        break
+                    end
                 end
+                bad && break
             end
         end
-        bad && (du_rej += 1; continue)
+        if bad
+            du_rej += 1
+            coset_observer === nothing || coset_observer((;
+                index=start_x+xi-1, next_x=start_x+xi, total_x=nX,
+                representative=lifted[xi], Ss=coset_Ss,
+                du_reject=1, ncand=0, nT=0, capped=false))
+            continue
+        end
         empty!(Tseen)
-        @inbounds for i in eachindex(L)
-            3 * Lv[i] <= -nWU || break
+        last_candidate=searchsortedlast(Lv,fld(-nWU,3))
+        @inbounds for i in 1:last_candidate
             t = L[i]; tx = t ⊻ x
             (t == x) && continue
             a = Lv[i]
@@ -709,7 +751,7 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
             sol = solve_ones(Z, D, srows, spiv, sK)
             sol === nothing && continue
             v0, K = sol
-            length(K) > max_kernel && (capped = true; continue)
+            length(K) > max_kernel && (capped = true; coset_capped = true; continue)
             for m in 0:(1 << length(K))-1
                 v = v0
                 for (j, k) in enumerate(K)
@@ -721,9 +763,14 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
                 S = rref(vcat(R, lifted[xi], lift(t, Qmask), lift(v, Qmask)))[1]
                 length(S) == G.n || error("dimension of S")
                 push!(Ss, S)
+                coset_Ss === nothing || push!(coset_Ss, S)
             end
         end
         nT += length(Tseen)
+        coset_observer === nothing || coset_observer((;
+            index=start_x+xi-1, next_x=start_x+xi, total_x=nX,
+            representative=lifted[xi], Ss=coset_Ss,
+            du_reject=0, ncand=ncand-first_ncand, nT=length(Tseen), capped=coset_capped))
     end
     (; Ss, nX, nX_used, next_x=start_x+nX_used, du_reject = du_rej, ncand, nT, key, capped, skipped = false)
 end

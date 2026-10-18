@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>APN construction graph</title>
+  <style>
+    :root { color-scheme:light dark; font-family:system-ui,sans-serif; --bg:#f4f5f2; --panel:#fff; --ink:#242c2b; --muted:#59665f; --border:#d7dfd9; --link:#225f4d; --seed:#a45c00; --found:#247698; }
+    @media(prefers-color-scheme:dark) { :root { --bg:#111917; --panel:#1c2722; --ink:#e5ebe6; --muted:#b7c6bd; --border:#3b4b41; --link:#9ed8b8; --seed:#ffc36a; --found:#69b9cc; } }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--ink); }
+    header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:16px 22px; border-bottom:1px solid var(--border); }
+    h1 { font-size:24px; margin:2px 0 5px; letter-spacing:-.03em; } h2 { font-size:17px; margin:0 0 12px; }
+    p { margin:4px 0; line-height:1.5; } a { color:var(--link); text-underline-offset:3px; }
+    .small { font-size:12px; color:var(--muted); } .toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; padding:12px 22px; font-size:13px; border-bottom:1px solid var(--border); }
+    label { display:inline-flex; align-items:center; gap:5px; } button,input,select { font:inherit; accent-color:var(--link); }
+    button { color:var(--ink); background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:7px 10px; cursor:pointer; } button:hover { border-color:var(--link); }
+    button:focus-visible,a:focus-visible,input:focus-visible { outline:2px solid var(--link); outline-offset:3px; }
+    input[type=number] { width:98px; padding:7px; color:var(--ink); background:var(--panel); border:1px solid var(--border); border-radius:5px; }
+    input[type=range] { width:85px; } #layout { display:grid; grid-template-columns:minmax(0,1fr) 300px; min-height:calc(100dvh - 160px); }
+    #viewport { position:relative; min-height:600px; height:calc(100dvh - 160px); overflow:hidden; } canvas { width:100%; height:100%; display:block; cursor:grab; touch-action:none; } canvas.dragging { cursor:grabbing; }
+    #message { position:absolute; top:16px; left:18px; right:18px; padding:10px 13px; background:var(--panel); border:1px solid var(--border); border-radius:6px; pointer-events:none; }
+    #hint { position:absolute; bottom:12px; left:14px; padding:5px 8px; background:var(--panel); border-radius:5px; pointer-events:none; }
+    aside { padding:18px; border-left:1px solid var(--border); overflow:auto; max-height:calc(100dvh - 160px); background:var(--panel); }
+    .legend { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px; font-size:12px; }
+    .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; background:var(--found); } .dot.seed { background:var(--seed); }
+    .line { display:inline-block; width:25px; border-top:2px solid var(--ink); vertical-align:middle; margin-right:5px; } .line.dashed { border-top-style:dashed; }
+    #node-info { overflow-wrap:anywhere; } #node-info p { font-size:13px; margin:8px 0; } code { font-size:11px; }
+    #neighbors { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; } #neighbors button { font-size:12px; padding:5px 7px; }
+    details { margin-top:22px; font-size:12px; color:var(--muted); line-height:1.55; } summary { cursor:pointer; }
+    [hidden] { display:none !important; }
+    @media(max-width:800px) { #layout { grid-template-columns:1fr; } #viewport { height:65dvh; min-height:400px; } aside { border-left:0; border-top:1px solid var(--border); max-height:none; } header,.toolbar { padding:12px 14px; } }
+  </style>
+</head>
+<body>
+  <header><div><a href="/">← Search dashboard</a><h1>APN construction graph</h1><p id="summary" class="small">Loading cached graph…</p></div><div><button id="new-snapshot" hidden>Load newer snapshot</button><p id="snapshot" class="small"></p></div></header>
+  <div class="toolbar" aria-label="Graph controls">
+    <button id="fit">Fit graph</button><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button>
+    <label><input id="v5" type="checkbox" checked><span class="line"></span>V5</label>
+    <label><input id="switching" type="checkbox" checked><span class="line dashed"></span>Neighbours</label>
+    <label>Edges <input id="opacity" type="range" min="0" max="100" value="12" aria-label="Edge opacity"></label>
+    <label><input id="local" type="checkbox">Selected neighbourhood only</label>
+    <label>Class # <input id="find-id" type="number" min="1" aria-label="Find class by ID"></label><button id="find">Find</button>
+  </div>
+  <div id="layout"><div id="viewport"><canvas id="graph" aria-label="Interactive APN class graph. Drag to pan, scroll to zoom, click a class to inspect it."></canvas><div id="message" role="status">Loading cached positions and construction edges…</div><div id="hint" class="small">Drag to pan · scroll or +/− to zoom · click a node</div></div>
+    <aside><div class="legend"><span><i class="dot seed"></i>Published seeds</span><span><i class="dot"></i>Discovered classes</span></div>
+      <h2 id="node-title">Explore the graph</h2><div id="node-info"><p class="small">Click a class, or enter its ID, to inspect its recorded relations.</p></div>
+      <button id="fit-neighbors" hidden>Fit this neighbourhood</button><div id="neighbors"></div>
+      <details><summary>About this graph</summary><p>Each node is an admitted quadratic APN CCZ class. Solid directed edges record V5 constructions; dashed directed edges record switching neighbours. Arrowheads appear on the selected neighbourhood. Repeated witnesses share an edge; same-class returns are listed in the node details.</p><p>These are observed relations. Missing edges and separated components can change as the search progresses. Positions are a deterministic projection of graph distances, with components packed separately; visual proximity is not an equivalence claim.</p><p id="refresh-policy"></p><p id="compute-cost"></p></details>
+    </aside>
+  </div>
+  <script src="/graph.js" defer></script>
+</body>
+</html>

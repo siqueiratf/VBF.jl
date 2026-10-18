@@ -44,6 +44,9 @@ function walsh_hadamard!(v::Vector{<:Signed}; threaded::Bool = false)
     end
     block = 1
     while block < n_pow
+        # A large serial transform can otherwise delay collection requested by
+        # independent tasks. Keep the SIMD butterflies allocation-free.
+        n_pow >= (1 << 16) && GC.safepoint()
         step = 2 * block
         @inbounds for start = 0:step:(n_pow-1)
             @simd for i = 1:block
