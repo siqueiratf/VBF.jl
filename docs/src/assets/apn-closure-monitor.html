@@ -51,7 +51,9 @@
     .metric { border: 1px solid var(--border); border-radius: 10px; padding: 15px 16px; background: var(--surface); min-width: 0; }
     .label { font-size: 13px; color: var(--muted); }
     .value { display: block; font-size: clamp(25px, 2.5vw, 34px); font-weight: 650; letter-spacing: -.025em; margin: 4px 0; font-variant-numeric: tabular-nums; }
-    .detail { font-size: 12px; color: var(--detail); }
+    .detail { display: block; font-size: 12px; color: var(--detail); line-height: 1.45; }
+    .result-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 14px; }
+    .result-value { display: block; font-size: 22px; font-weight: 650; margin: 3px 0; font-variant-numeric: tabular-nums; }
     .primary { border-color: var(--primary-border); background: var(--primary-background); }
     .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin: 18px 0; overflow: hidden; }
     .focus { padding: 18px 20px; }
@@ -75,7 +77,7 @@
     details p { margin-top: 10px; }
     .offline .value { color: var(--detail); }
     [hidden] { display: none !important; }
-    @media (max-width: 850px) { .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 850px) { .metrics, .result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 600px) {
       main { padding: 20px 12px 28px; }
       .page-header { grid-template-columns: 1fr; gap: 12px; }
@@ -101,9 +103,9 @@
     <p id="notice" class="notice" role="status" hidden></p>
     <section class="metrics" aria-label="Search progress">
       <div class="metric primary"><span class="label">Published seeds completed</span><span class="value" id="seeds-completed">…</span><span class="detail" id="seed-total"></span></div>
-      <div class="metric"><span class="label" id="discovery-label">Classes absent from catalog</span><span class="value" id="promoted">…</span><span class="detail" id="ea-status">Waiting for catalog comparison</span><span class="detail" id="catalog-check-status"></span></div>
-      <div class="metric"><span class="label" id="timing-label">Median seed time</span><span class="value" id="seed-median">…</span><span class="detail" id="timing-detail"></span></div>
-      <div class="metric"><span class="label" id="rate-label">Completion rate</span><span class="value" id="seed-rate">…</span><span class="detail" id="rate-detail">last 5 minutes</span></div>
+      <div class="metric"><span class="label">Recursive parents completed</span><span class="value" id="recursive-completed">…</span><span class="detail" id="recursive-admitted"></span><span class="detail" id="recursive-waiting"></span></div>
+      <div class="metric"><span class="label">Admitted classes</span><span class="value" id="admitted">…</span><span class="detail" id="admitted-rate"></span><span class="detail" id="catalog-status" hidden></span></div>
+      <div class="metric"><span class="label">Parents completed per minute</span><span class="value" id="seed-rate">…</span><span class="detail" id="rate-detail"></span><span class="detail" id="timing-detail"></span></div>
     </section>
     <section class="panel focus" aria-label="Current seed">
       <h2 id="focus-title">Next seed to finish</h2>
@@ -113,15 +115,26 @@
         <div><div class="stage" id="focus-switching"></div><progress id="focus-switching-progress" max="255" value="0" aria-label="Completed switching directions"></progress></div>
       </div>
     </section>
+    <section class="panel focus" id="result-panel" aria-label="Direct published-seed result" hidden>
+      <h2 id="result-title">Previous campaign</h2>
+      <p id="result-source" class="small focus-source"></p>
+      <div class="result-grid">
+        <div><span class="label">Direct output classes</span><span class="result-value" id="result-direct">…</span><span class="detail" id="result-direct-detail"></span></div>
+        <div><span class="label">Outside the published reference</span><span class="result-value" id="result-absent">…</span><span class="detail" id="result-absent-detail"></span></div>
+        <div><span class="label">Also in the earlier dataset</span><span class="result-value" id="result-earlier">…</span><span class="detail" id="result-earlier-detail"></span></div>
+        <div><span class="label">Outside both</span><span class="result-value" id="result-both">…</span><span class="detail" id="result-both-detail"></span></div>
+      </div>
+    </section>
     <section class="panel" aria-label="Search pipeline figure">
       <div class="panel-heading"><h2>The search pipeline</h2><a class="small" href="/diagram.svg" target="_blank" rel="noopener">Open full size</a></div>
       <div id="diagram" class="diagram-wrap"><p class="small diagram-placeholder">Loading selectable figure…</p></div>
     </section>
     <details class="panel"><summary>About the numbers</summary>
-      <p>A seed completes when its own V5 extensions and switching neighbours are exhausted. Its descendants can remain queued.</p>
-      <p id="catalog-explanation">The catalog count combines this campaign and the earlier 190,454-class dataset, deduplicated against a pinned catalog snapshot. Confirmed absence proves CCZ separation from the represented catalog; literature-wide novelty remains unresolved. LUTs awaiting EA admission are excluded.</p>
-      <p id="catalog-progress" class="small"></p>
-      <p id="timing-explanation">Timing uses the latest 100 timed completions for the current phase, from first dispatch through expansion and classification. Startup is excluded, saved work is retained, and parallel parents overlap. Throughput covers the last five minutes of active search.</p>
+      <p>A parent completes when its own V5 extensions and switching neighbours are exhausted and every output is admitted or matched to an admitted class. Its descendants can remain queued. The published seeds come first; then the recursive parents follow in admission order, without a profile filter.</p>
+      <p>Admitted classes are the published seeds plus every new quadratic EA class that the search found. A signature match alone never merges two classes; a match needs a replayed EA witness.</p>
+      <p id="catalog-explanation" hidden>A catalog count appears only when an audit covers the current admitted classes. Confirmed absence proves CCZ separation from the represented catalog; literature-wide novelty remains unresolved.</p>
+      <p id="result-explanation" hidden>The result panel counts the direct outputs of the published seeds. The published reference holds published corpora and named functions only. The earlier 111,009 + 79,445 discoveries are a separate dataset.</p>
+      <p>Timing uses the latest 100 timed completions of the current phase, from first dispatch through expansion and classification. Parallel parents overlap. The rate covers the last five minutes of active search.</p>
       <p>This page refreshes committed progress every five seconds.</p>
     </details>
   </main>
@@ -140,7 +153,7 @@
       const seeds = run.seed_progress || {};
       const phase = run.continuous_search?.window_origin;
       const recursive = phase === 'discovered';
-      const labels = {running:'Running', initializing:'Preparing', ready:'Ready', not_started:'Ready', paused_external:'Stopped', stopped:'Stopped', paused_budget:'Paused', failed:'Needs attention', interrupted:'Interrupted', waiting_frontier:'Waiting for work', exhausted:'Complete', complete:'Complete'};
+      const labels = {running:'Running', initializing:'Preparing', ready:'Ready', not_started:'Ready', paused_external:'Stopped', stopped:'Stopped', paused_budget:'Paused', paused_window_limit:'Paused', failed:'Needs attention', interrupted:'Interrupted', waiting_frontier:'Waiting for work', exhausted:'Complete', complete:'Complete'};
       const status = run.running && run.state !== 'waiting_frontier' ? 'running' : run.state;
       text('state', labels[status] || 'Paused');
       $('state').className = 'pill' + (status === 'running' ? ' running' : ['failed','interrupted','error'].includes(status) ? ' error' : '');
@@ -154,48 +167,42 @@
       text('cpu-usage', cores == null ? '' : 'CPU ' + number(cores, 1) + ' / ' + number(cpu.compute_threads) + ' logical CPUs');
       text('seeds-completed', number(seeds.completed));
       text('seed-total', 'of ' + number(seeds.total ?? run.initial_roots));
+      const recursion = data.recursive || {};
+      text('recursive-completed', number(recursion.completed));
+      text('recursive-admitted', 'of ' + number(recursion.admitted) + ' admitted');
+      text('recursive-waiting', seeds.completed < seeds.total && !recursion.completed ? 'Starts after the published seeds' : number(recursion.waiting) + ' waiting');
+      text('admitted', number(run.total_parents));
+      const growth = data.rates?.promoted_per_minute;
+      text('admitted-rate', growth == null ? number(run.unresolved_equivalence) + ' LUTs awaiting admission' : '+' + number(growth, 1) + ' per minute · ' + number(run.unresolved_equivalence) + ' awaiting admission');
       const catalog = data.catalog_comparison || {};
       const catalogCurrent = ['complete', 'verifying', 'snapshot'].includes(catalog.status);
-      text('discovery-label', catalog.status === 'snapshot' ? 'Catalog-absent · last audit' : catalog.status === 'verifying' ? 'Confirmed absent from catalog (≥)' : 'Classes absent from catalog');
-      text('promoted', catalogCurrent ? number(catalog.confirmed_absent_classes) : '—');
-      text('ea-status', catalogCurrent ? number(catalog.current_confirmed_absent_classes) + ' current · ' + number(catalog.earlier_only_confirmed_absent_classes) + ' earlier-only' : catalog.status === 'outdated' ? 'Catalog audit needs refreshing' : 'Catalog comparison unavailable');
-      text('catalog-check-status', catalogCurrent ? catalog.verification_error ? 'Catalog check needs attention' : catalog.status === 'snapshot' ? number(catalog.unaudited_classes) + ' newer classes await comparison' : catalog.status === 'complete' ? 'Catalog comparison verified' : 'Catalog check ' + number(100 * (catalog.verified_catalog_pairs || 0) / Math.max(1, catalog.total_catalog_pairs || 1), 1) + '% · Hypatia' : '');
-      text('catalog-progress', catalogCurrent ? 'Pinned catalog: ' + number(catalog.catalog_quadratic_classes) + ' quadratic classes. Audited campaign snapshot: ' + number(catalog.audited_current_classes ?? catalog.current_classes) + ' classes. ' + (catalog.complete ? 'All overlap comparisons verified.' : number(catalog.remaining_pairs) + ' overlap comparisons awaiting verification.') + ' Current campaign: ' + number(run.total_parents) + ' admitted classes; ' + number(run.unresolved_equivalence) + ' LUTs awaiting admission.' : '');
+      $('catalog-status').hidden = !catalogCurrent; $('catalog-explanation').hidden = !catalogCurrent;
+      text('catalog-status', catalogCurrent ? number(catalog.confirmed_absent_classes) + ' absent from the catalog' + (catalog.status === 'complete' ? '' : ' (≥, audit in progress)') : '');
       const timing = run.seed_statistics || {};
       const sample = (recursive ? timing.recursive : timing.published) || {};
-      text('timing-label', recursive ? 'Median parent time' : 'Median seed time');
-      text('seed-median', seconds(sample.median_seconds));
-      text('timing-detail', sample.samples ? 'Mean ' + seconds(sample.mean_seconds) + ' · P95 ' + seconds(sample.p95_seconds) : 'Waiting for timed completions');
-      text('seed-rate', timing.seeds_per_minute_recent == null ? '—' : number(timing.seeds_per_minute_recent, 1) + ' / min');
-      text('rate-detail', 'last 5 min' + (timing.completed_this_session == null ? '' : ' · ' + number(timing.completed_this_session) + ' finished this session'));
-      text('rate-label', 'Completion rate');
-      $('timing-explanation').hidden = false;
-      const direct = data.published_root_comparison || {};
-      const directReport = ['complete', 'verifying'].includes(direct.status);
-      if (directReport) {
-        text('scope-description', 'Completed direct V5 and switching expansions of ' + number(direct.published_seed_count) + ' published seeds with b₆ = 52.');
-        text('state', direct.status === 'complete' ? 'Published phase complete' : 'Verifying comparisons');
-        $('state').className = 'pill';
-        text('discovery-label', direct.status === 'complete' ? 'Outside literature catalog' : 'Confirmed outside catalog (≥)');
-        text('promoted', number(direct.literature_absent_classes));
-        text('ea-status', 'vs ' + number(direct.literature_reference_classes) + ' published quadratic classes');
-        text('catalog-check-status', direct.status === 'complete' ? 'CCZ comparison verified' : number(direct.literature_verified_matches) + ' / ' + number(direct.literature_matching_pairs) + ' matches verified');
-        text('timing-label', 'Recovered earlier classes');
-        text('seed-median', number(direct.historical_verified_overlap));
-        text('timing-detail', 'of ' + number(direct.historical_total_classes) + ' historical classes' + (direct.status === 'complete' ? ' · ' + number(100 * direct.historical_verified_overlap / direct.historical_total_classes, 1) + '%' : ' · verifying'));
-        text('rate-label', 'Direct output classes');
-        text('seed-rate', number(direct.direct_output_classes));
-        text('rate-detail', 'includes the ' + number(direct.published_seed_count) + ' initial seeds');
-        text('catalog-explanation', 'The literature catalog contains published reference data. The earlier 111,009 + 79,445 discoveries live in a separate historical database. This report counts direct outputs of the original published seeds; recursive discoveries remain in the archived campaign.');
-        text('catalog-progress', direct.status === 'complete' ? number(direct.absent_from_literature_and_historical) + ' classes are outside both the literature reference and the earlier dataset.' : 'Positive matches require replayed EA witnesses. A signature match alone never merges classes.');
-        $('timing-explanation').hidden = true;
-        const graphLink = document.querySelector('a.graph-link');
-        graphLink.textContent = 'Archived campaign graph ↗';
-        graphLink.title = 'Includes recursive discoveries; separate from this direct-root report.';
+      text('seed-rate', timing.seeds_per_minute_recent == null ? '—' : number(timing.seeds_per_minute_recent, 1));
+      text('rate-detail', (run.running ? 'last 5 minutes' : 'last 5 minutes before the stop') + (timing.completed_this_session == null ? '' : ' · ' + number(timing.completed_this_session) + ' this session'));
+      text('timing-detail', sample.samples ? 'Median ' + (recursive ? 'parent ' : 'seed ') + seconds(sample.median_seconds) + ' · P95 ' + seconds(sample.p95_seconds) : 'Waiting for timed completions');
+      const bound = data.published_root_comparison || {};
+      const result = ['complete', 'verifying'].includes(bound.status) ? bound : data.previous_campaign?.status === 'previous' ? data.previous_campaign : null;
+      $('result-panel').hidden = !result; $('result-explanation').hidden = !result;
+      if (result) {
+        const previous = result.status === 'previous';
+        text('result-title', previous ? 'Previous campaign' : 'Published-seed result');
+        text('result-source', (previous ? 'Run ' + result.run + ', completed ' + new Date(result.completed_utc).toLocaleDateString() + '. ' : '')
+          + 'Direct V5 and switching outputs of the ' + number(result.published_seed_count) + ' published seeds'
+          + (result.status === 'verifying' ? '; comparisons are still being verified.' : '; every match has a replayed EA witness.'));
+        text('result-direct', number(result.direct_output_classes));
+        text('result-direct-detail', 'including the ' + number(result.published_seed_count) + ' seeds');
+        text('result-absent', number(result.literature_absent_classes));
+        text('result-absent-detail', 'CCZ-inequivalent to all ' + number(result.literature_reference_classes) + ' published quadratic classes');
+        text('result-earlier', number(result.historical_verified_overlap));
+        text('result-earlier-detail', 'of the ' + number(result.historical_total_classes) + ' earlier classes');
+        text('result-both', number(result.absent_from_literature_and_historical));
+        text('result-both-detail', 'not published and not in the earlier dataset');
       }
       const focus = seeds.focus;
       $('focus-stages').hidden = !focus;
-      document.querySelector('section.focus').hidden = directReport;
       text('focus-title', focus ? 'Next seed · #' + number(focus.root_index) : recursive ? 'Recursive parents · ' + number(run.continuous_search.first_parent) + '–' + number(run.continuous_search.last_parent) : seeds.total > 0 && seeds.completed === seeds.total ? 'Published seeds complete' : 'Next seed to finish');
       text('focus-source', focus?.source || (recursive ? 'Expanding admitted quadratic classes in admission order.' : !run.attached ? 'Waiting for the search to start.' : 'Waiting for the next expansion.'));
       text('focus-v5', focus ? 'V5 · ' + number(focus.five_spaces_completed) + ' / ' + (focus.five_spaces_total >= 0 ? number(focus.five_spaces_total) : '…') + ' five-spaces' : '');

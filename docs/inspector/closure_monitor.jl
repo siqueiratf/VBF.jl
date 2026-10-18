@@ -38,6 +38,7 @@ mutable struct Monitor
     sampled_at::Float64
     snapshot::Dict{String,Any}
     samples::Vector{Tuple{Float64,Int,Int}}
+    cpu_samples::Vector{Tuple{Float64,Int,Float64}}
 end
 
 function controller_snapshot(directory)
@@ -74,7 +75,7 @@ function Monitor(campaign; run=joinpath(campaign, "run"),
     isfile(joinpath(campaign, "campaign.toml")) || error("missing campaign.toml")
     reader = isempty(upstream) ? read_run : _ -> upstream_snapshot(upstream)
     Monitor(campaign, abspath(run), abspath(figures), upstream, comparison, abspath(graph), reader, ReentrantLock(), nothing,
-            Dict{String,Any}(), 0.0, Dict{String,Any}(), Tuple{Float64,Int,Int}[])
+            Dict{String,Any}(), 0.0, Dict{String,Any}(), Tuple{Float64,Int,Int}[], Tuple{Float64,Int,Float64}[])
 end
 
 """Expose confirmed discovery scopes; hide comparisons that no longer match the run."""
@@ -166,6 +167,59 @@ function published_root_summary(execution,path)
         get(saved,"literature_verified_matches",-1)==matches &&
         recovered==saved["historical_candidate_overlap"] && get(saved,"unresolved_pairs",-1)==0
     merge(saved,Dict("status"=>complete ? "complete" : "verifying"))
+end
+
+"""Recursive parents: admitted classes beyond the published seeds, and how many are expanded.
+
+Each admitted parent receives its construction jobs at admission, so a parent
+counts as complete only after both construction methods are exhausted.
+"""
+function recursive_summary(execution)
+    seeds=Int(get(get(execution,"seed_progress",Dict{String,Any}()),"completed",0))
+    admitted=Int(execution["promoted_parents"])
+    completed=Int(execution["completed_parents"])-seeds
+    0<=completed<=admitted || error("recursive parent counts are inconsistent")
+    Dict{String,Any}("admitted"=>admitted,"completed"=>completed,"waiting"=>admitted-completed)
+end
+
+"""Show a complete direct-root report of an earlier run as history, never as live counts."""
+function previous_campaign_summary(execution,path)
+    unavailable=Dict{String,Any}("status"=>"unavailable")
+    isfile(path) || return unavailable
+    saved=JSON3.read(read(path,String),Dict{String,Any})
+    get(saved,"schema","")=="vbfsearch-published-root-comparison-v1" &&
+        get(saved,"complete",false) && get(saved,"all_positive_witnesses_replayed",false) &&
+        get(saved,"unresolved_pairs",-1)==0 || return unavailable
+    get(saved,"campaign_run","")==get(execution,"directory",nothing) && return unavailable
+    fields=("published_seed_count","direct_output_classes","literature_reference_classes","literature_absent_classes",
+        "historical_total_classes","historical_verified_overlap","absent_from_literature_and_historical","completed_utc")
+    merge(Dict{String,Any}(k=>saved[k] for k in fields),Dict{String,Any}("status"=>"previous","run"=>basename(saved["campaign_run"])))
+end
+
+"""User and system CPU seconds of a local process, or nothing when it has ended."""
+function process_cpu_seconds(pid)
+    stat=try read("/proc/$pid/stat",String) catch; return nothing end
+    fields=split(stat[findlast(')',stat)+2:end])
+    (parse(Int,fields[12])+parse(Int,fields[13]))/100
+end
+
+"""Mean CPU cores of the controller over about 30 s, sampled when the controller writes none."""
+function sample_process_metrics!(monitor,execution,now_seconds)
+    haskey(execution,"process_metrics") && return
+    sessions=get(execution,"sessions",Any[])
+    pid=get(execution,"running",false) && !isempty(sessions) ? get(first(sessions),"pid",nothing) : nothing
+    if !(pid isa Integer) || !occursin("julia",try read("/proc/$pid/cmdline",String) catch; "" end)
+        empty!(monitor.cpu_samples);return
+    end
+    cpu=process_cpu_seconds(pid);cpu===nothing && return
+    !isempty(monitor.cpu_samples) && last(monitor.cpu_samples)[2]!=pid && empty!(monitor.cpu_samples)
+    push!(monitor.cpu_samples,(now_seconds,Int(pid),cpu))
+    filter!(sample->now_seconds-sample[1]<=35,monitor.cpu_samples)
+    oldest=first(monitor.cpu_samples);elapsed=now_seconds-oldest[1]
+    elapsed>=5 || return
+    execution["process_metrics"]=Dict{String,Any}("schema"=>"vbfsearch-process-metrics-v1","pid"=>pid,
+        "utc"=>string(Dates.now(Dates.UTC))*"Z","mean_cpu_cores"=>Dict("30"=>(cpu-oldest[3])/elapsed),
+        "compute_threads"=>Sys.CPU_THREADS,"source"=>"monitor sampling of /proc")
 end
 
 """Check the initial EA-class count against the completed, digest-bound seed audit."""
@@ -260,6 +314,7 @@ function snapshot(monitor; force=false, now_seconds=time())
             "promoted_per_minute" => elapsed >= 20 ? 60 * (promoted-first_sample[2])/elapsed : nothing,
             "completed_per_minute" => elapsed >= 20 ? 60 * (completed-first_sample[3])/elapsed : nothing,
         )
+        execution["attached"] && sample_process_metrics!(monitor, execution, now_seconds)
         monitor.snapshot = Dict{String,Any}(
             "schema" => "vbfsearch-closure-monitor-v1",
             "checked_utc" => string(Dates.now(Dates.UTC)) * "Z",
@@ -268,6 +323,8 @@ function snapshot(monitor; force=false, now_seconds=time())
             "discoveries" => discovery_summary(execution,monitor.comparison),
             "catalog_comparison" => catalog_summary(execution,joinpath(monitor.campaign,"current-catalog-comparison.json")),
             "published_root_comparison" => published_root_summary(execution,joinpath(monitor.campaign,"current-published-root-comparison.json")),
+            "previous_campaign" => previous_campaign_summary(execution,joinpath(monitor.campaign,"current-published-root-comparison.json")),
+            "recursive" => recursive_summary(execution),
             "remaining_parents" => execution["total_parents"] - completed,
             "completion_fraction" => completed / max(1, execution["total_parents"]),
         )
