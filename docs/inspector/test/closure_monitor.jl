@@ -32,6 +32,29 @@ using .APNClosureMonitor
     end
 end
 
+@testset "Recursive parents and earlier campaigns stay separate from live seed counts" begin
+    run=Dict{String,Any}("promoted_parents"=>5,"completed_parents"=>4,"seed_progress"=>Dict("completed"=>3))
+    @test APNClosureMonitor.recursive_summary(run)==Dict("admitted"=>5,"completed"=>1,"waiting"=>4)
+    @test_throws ErrorException APNClosureMonitor.recursive_summary(merge(run,Dict("completed_parents"=>2)))
+    @test_throws ErrorException APNClosureMonitor.recursive_summary(merge(run,Dict("completed_parents"=>9)))
+    mktempdir() do dir
+        path=joinpath(dir,"direct.json")
+        execution=Dict{String,Any}("directory"=>joinpath(dir,"new-run"))
+        @test APNClosureMonitor.previous_campaign_summary(execution,path)["status"]=="unavailable"
+        saved=Dict{String,Any}("schema"=>"vbfsearch-published-root-comparison-v1","campaign_run"=>joinpath(dir,"old-run"),
+            "complete"=>true,"all_positive_witnesses_replayed"=>true,"unresolved_pairs"=>0,"published_seed_count"=>2,
+            "direct_output_classes"=>5,"literature_reference_classes"=>9,"literature_absent_classes"=>2,
+            "historical_total_classes"=>4,"historical_verified_overlap"=>1,"absent_from_literature_and_historical"=>1,
+            "completed_utc"=>"2026-10-17T03:20:21Z")
+        write(path,JSON3.write(saved))
+        previous=APNClosureMonitor.previous_campaign_summary(execution,path)
+        @test previous["status"]=="previous" && previous["run"]=="old-run" && previous["literature_absent_classes"]==2
+        @test APNClosureMonitor.previous_campaign_summary(Dict{String,Any}("directory"=>saved["campaign_run"]),path)["status"]=="unavailable"
+        write(path,JSON3.write(merge(saved,Dict("complete"=>false))))
+        @test APNClosureMonitor.previous_campaign_summary(execution,path)["status"]=="unavailable"
+    end
+end
+
 @testset "Catalog counts retain their scope and reject stale audits" begin
     mktempdir() do directory
         path=joinpath(directory,"catalog.json")
@@ -236,6 +259,7 @@ end
         @test first["execution"]["attached"]
         @test first["remaining_parents"] == 2
         @test first["completion_fraction"] == 1/3
+        @test first["recursive"] == Dict("admitted"=>1,"completed"=>1,"waiting"=>0)
         @test first["execution"]["promoted_parents"] != first["execution"]["exact_luts"]
         @test first["rates"]["promoted_per_minute"] === nothing
         APNClosureMonitor.snapshot(monitor; now_seconds=101)
@@ -248,5 +272,26 @@ end
         current[]["roots_sha256"] = "wrong-campaign-roots"
         @test_throws ErrorException APNClosureMonitor.snapshot(monitor; force=true)
         @test read(joinpath(monitor.run,"closure.sqlite"),String) == "reader fixture"
+    end
+end
+
+@testset "Local controller CPU use is sampled when the controller writes no metrics" begin
+    @test APNClosureMonitor.process_cpu_seconds(getpid())>0
+    @test APNClosureMonitor.process_cpu_seconds(typemax(Int32)) === nothing
+    mktempdir() do directory
+        fixture(directory)
+        monitor=APNClosureMonitor.Monitor(directory;read_run=path->Dict{String,Any}())
+        running=Dict{String,Any}("running"=>true,"sessions"=>[Dict("pid"=>getpid())])
+        APNClosureMonitor.sample_process_metrics!(monitor,running,100.0)
+        @test !haskey(running,"process_metrics")
+        sum(abs2,rand(10^6))
+        APNClosureMonitor.sample_process_metrics!(monitor,running,106.0)
+        @test running["process_metrics"]["pid"]==getpid() && running["process_metrics"]["mean_cpu_cores"]["30"]>=0
+        stopped=Dict{String,Any}("running"=>false,"sessions"=>[Dict("pid"=>getpid())])
+        APNClosureMonitor.sample_process_metrics!(monitor,stopped,107.0)
+        @test !haskey(stopped,"process_metrics") && isempty(monitor.cpu_samples)
+        written=Dict{String,Any}("running"=>true,"sessions"=>[Dict("pid"=>getpid())],"process_metrics"=>Dict("source"=>"controller"))
+        APNClosureMonitor.sample_process_metrics!(monitor,written,108.0)
+        @test written["process_metrics"]["source"]=="controller"
     end
 end
