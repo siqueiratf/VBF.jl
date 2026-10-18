@@ -295,3 +295,22 @@ end
         @test written["process_metrics"]["source"]=="controller"
     end
 end
+
+@testset "The structure report page serves only its configured JSON" begin
+    mktempdir() do directory
+        fixture(directory)
+        call(monitor,path)=APNClosureMonitor.handle(monitor,HTTP.Request("GET",path))
+        bare=APNClosureMonitor.Monitor(directory;read_run=path->Dict{String,Any}())
+        @test call(bare,"/structure").status==200 && occursin("/structure.js",String(call(bare,"/structure").body))
+        @test call(bare,"/structure.js").status==200
+        @test call(bare,"/api/structure").status==404
+        @test occursin("Structure report",String(call(bare,"/").body))
+        report=joinpath(directory,"structure.json")
+        monitor=APNClosureMonitor.Monitor(directory;read_run=path->Dict{String,Any}(),structure=report)
+        @test call(monitor,"/api/structure").status==404
+        write(report,"{\"schema\":\"vbf-closure-structure-v1\"}")
+        reply=call(monitor,"/api/structure")
+        @test reply.status==200 && String(reply.body)==read(report,String)
+        @test HTTP.header(reply,"Content-Type")=="application/json; charset=utf-8"
+    end
+end
