@@ -30,9 +30,10 @@ mutable struct _SNSystem
     pivot_rows::Vector{BitVector}
     pivot_cols::Vector{Int}
     removed::Vector{BitVector}
+    equation_row::BitVector
 end
 
-_sn_system(nvars::Int) = _SNSystem(nvars, BitVector[], Int[], BitVector[])
+_sn_system(nvars::Int) = _SNSystem(nvars, BitVector[], Int[], BitVector[], falses(nvars))
 
 # 0-based variable positions to a BitVector row, XOR-toggling so repeats cancel.
 function _sn_rowof(nvars::Int, positions)
@@ -44,13 +45,19 @@ function _sn_rowof(nvars::Int, positions)
 end
 
 function _sn_add_equation!(S::_SNSystem, positions)
-    row = _sn_rowof(S.nvars, positions)
+    # Dependent equations dominate the complete flat enumeration. Reuse one
+    # private row per system and retain an independent copy only for a pivot.
+    row = S.equation_row
+    fill!(row, false)
+    @inbounds for p in positions
+        row[p+1] = !row[p+1]
+    end
     @inbounds for t in eachindex(S.pivot_rows)
         row[S.pivot_cols[t]] && (row .⊻= S.pivot_rows[t])
     end
     lead = findfirst(row)
     if lead !== nothing
-        push!(S.pivot_rows, row)
+        push!(S.pivot_rows, copy(row))
         push!(S.pivot_cols, lead)
     end
     return nothing
@@ -60,12 +67,14 @@ _sn_remove_solution!(S::_SNSystem, positions) =
     push!(S.removed, _sn_rowof(S.nvars, positions))
 
 # RREF a set of BitVector rows in place; return parallel pivot columns.
+# Explicit callback type parameters prevent Julia's Function-forwarding widening,
+# which can cause boxing of callback/position values in the per-flat constraint loop.
 _sn_check(::Nothing, stage, direction, position) = nothing
-_sn_check(check, stage, direction, position) = check(stage, direction, position)
+@inline _sn_check(check::C, stage, direction, position::P) where {C,P} = check(stage, direction, position)
 _sn_diagnostic(::Nothing, event, value) = nothing
 _sn_diagnostic(diagnostics, event, value) = diagnostics(event, value)
 
-function _sn_rref!(rows::Vector{BitVector}, check = nothing, direction = 0)
+function _sn_rref!(rows::Vector{BitVector}, check::C = nothing, direction = 0) where {C}
     cols = Int[]
     keep = BitVector[]
     for (position, r) in enumerate(rows)
@@ -94,7 +103,7 @@ function _sn_rref!(rows::Vector{BitVector}, check = nothing, direction = 0)
 end
 
 # Kernel basis of the system, with the removed solutions quotiented out.
-function _sn_kernel(S::_SNSystem, check = nothing, direction = 0)
+function _sn_kernel(S::_SNSystem, check::C = nothing, direction = 0) where {C}
     _sn_check(check, :kernel, direction, 0)
     prows, pcols = _sn_rref!(S.pivot_rows, check, direction)
     pivot_set = Set(pcols)
@@ -165,13 +174,13 @@ function _sn_apn_coset(
     F::SBox{N,T},
     uu::T,
     basis::Vector{BitVector},
-    observer = nothing,
-    check = nothing,
-    verified = nothing,
-    diagnostics = nothing,
+    observer::O = nothing,
+    check::C = nothing,
+    verified::V = nothing,
+    diagnostics::D = nothing,
     start_combination::Integer = 1,
-    checkpoint = nothing,
-) where {N,T}
+    checkpoint::P = nothing,
+) where {N,T,O,C,V,D,P}
     n_size = 1 << N
     result = SBox{N,T}[]
     seen = Set{Vector{T}}()
@@ -239,10 +248,10 @@ function switching_neighbors(F::SBox{N,T}; observer = nothing) where {N,T}
 end
 
 function _sn_neighbors(
-    F::SBox{N,T}, observer = nothing, check = nothing, verified = nothing,
-    diagnostics = nothing,
-    start_direction::Int = 1, start_combination::Integer = 1, checkpoint = nothing,
-) where {N,T}
+    F::SBox{N,T}, observer::O = nothing, check::C = nothing, verified::V = nothing,
+    diagnostics::D = nothing,
+    start_direction::Int = 1, start_combination::Integer = 1, checkpoint::P = nothing,
+) where {N,T,O,C,V,D,P}
     _sn_check(check, :validation, 0, 0)
     differential_uniformity(F) ≤ 2 ||
         throw(ArgumentError("switching_neighbors: F must be APN"))
@@ -295,7 +304,7 @@ end
 # second-smallest direction b, and smallest point x. These are precisely the
 # first occurrences in the former (a,x1,x2) loop, so pivot insertion order and
 # the resulting kernel/quotient representatives remain unchanged.
-function _sn_constraints!(systems, flut, check = nothing)
+function _sn_constraints!(systems, flut, check::C = nothing) where {C}
     n_size = length(flut)
     @inbounds for a in 1:(n_size-1)
         _sn_check(check, :constraints, a, 0)
@@ -343,6 +352,9 @@ The wall-clock budget covers input validation, constraint construction, kernel
 extraction and candidate enumeration. Checks occur between individual
 constraints and kernel operations; one APN test or linear-algebra primitive
 cannot be interrupted. Zero budgets return before validating the input.
+The time and `stop_requested` checks run at every validation and candidate
+step, but only once in 1024 constraint and kernel steps; neighbour and
+evaluation budgets are checked at every step.
 `StopPoint.resume_key` identifies the stopped stage, direction and position;
 it is a diagnostic frontier, not a serialized resumable linear system.
 The observer has the same events and contract as `switching_neighbors`.
@@ -396,12 +408,17 @@ function switching_neighbors_bounded(
             "start_combination" => string(start_combination),
         ),
     )
+    inner_steps = Ref(0)
     function check(stage, direction, position)
-        reason = if stop_requested !== nothing && stop_requested()
+        # A complete search makes millions of constraint and kernel steps. Poll
+        # the clock and the external stop request only once in 1024 of them.
+        poll = stage === :validation || stage === :candidate || stage === :candidate_done ||
+            (inner_steps[] += 1) & 1023 == 0
+        reason = if poll && stop_requested !== nothing && stop_requested()
             :external
         elseif length(found) >= max_neighbors
             :solutions
-        elseif elapsed() >= timeout_seconds
+        elseif poll && elapsed() >= timeout_seconds
             :time
         elseif (stage === :validation || stage === :candidate) &&
                evaluations[] >= max_evaluations

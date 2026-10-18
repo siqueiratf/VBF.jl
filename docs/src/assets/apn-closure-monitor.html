@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>APN search · live progress</title>
+  <style>
+    :root {
+      color-scheme: light dark; font-family: system-ui, sans-serif;
+      --background: #f4f5f2; --surface: #fff; --ink: #242c2b; --muted: #59665f;
+      --subtle: #66736b; --detail: #758077; --border: #dde2de; --link: #225f4d;
+      --pill-background: #eaf1e9; --pill-ink: #315c3e; --pill-border: #d3ded5;
+      --running-background: #def2e6; --running-ink: #165434;
+      --warning-background: #fff0e1; --warning-ink: #8c4d16; --warning-border: #efd7b9;
+      --notice-background: #fff3e9; --notice-border: #b77a39;
+      --primary-background: #edf5ed; --primary-border: #82a38c; --accent: #47765b;
+      --diagram-ink: #202020; --diagram-heading: #f0f0f0; --diagram-note: #fafafa; --diagram-border: #c4c4c4;
+      color: var(--ink); background: var(--background);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #151a18; --surface: #1e2521; --ink: #e5ebe6; --muted: #bbc6be;
+        --subtle: #a8b7ad; --detail: #a0b0a5; --border: #3b4940; --link: #9ed8b8;
+        --pill-background: #2a382e; --pill-ink: #c0dac7; --pill-border: #4c6554;
+        --running-background: #234733; --running-ink: #b9efce;
+        --warning-background: #463321; --warning-ink: #ffd09d; --warning-border: #785d3b;
+        --notice-background: #332a20; --notice-border: #cf9c5c;
+        --primary-background: #25392b; --primary-border: #60866c; --accent: #8bc9a0;
+        --diagram-ink: #dfe8e1; --diagram-heading: #2d3931; --diagram-note: #242e27; --diagram-border: #637267;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 1560px; margin: auto; padding: 28px 24px 36px; }
+    h1 { margin: 0 0 6px; font-size: clamp(27px, 3vw, 38px); letter-spacing: -.035em; }
+    h2 { margin: 0; font-size: 18px; }
+    p { margin: 0; color: var(--muted); line-height: 1.5; }
+    a { color: var(--link); text-underline-offset: 3px; }
+    a:focus-visible, summary:focus-visible { outline: 3px solid var(--link); outline-offset: 4px; }
+    .page-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 16px 28px; margin-bottom: 24px; }
+    .status { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 14px; max-width: 450px; padding-top: 4px; }
+    .graph-link { display: inline-flex; align-items: center; border: 1px solid var(--pill-border); border-radius: 7px; padding: 6px 11px; text-decoration: none; font-size: 14px; font-weight: 600; }
+    .graph-link:hover { background: var(--pill-background); }
+    #checked { flex-basis: 100%; text-align: right; }
+    .pill { border: 1px solid var(--pill-border); border-radius: 99px; padding: 5px 12px; background: var(--pill-background); color: var(--pill-ink); font-size: 14px; font-weight: 600; }
+    .pill.running { background: var(--running-background); color: var(--running-ink); }
+    .pill.error { background: var(--warning-background); color: var(--warning-ink); border-color: var(--warning-border); }
+    .small { color: var(--subtle); font-size: 13px; }
+    .notice { border-left: 3px solid var(--notice-border); padding: 10px 14px; margin-bottom: 18px; background: var(--notice-background); font-size: 14px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .metric { border: 1px solid var(--border); border-radius: 10px; padding: 15px 16px; background: var(--surface); min-width: 0; }
+    .label { font-size: 13px; color: var(--muted); }
+    .value { display: block; font-size: clamp(25px, 2.5vw, 34px); font-weight: 650; letter-spacing: -.025em; margin: 4px 0; font-variant-numeric: tabular-nums; }
+    .detail { display: block; font-size: 12px; color: var(--detail); line-height: 1.45; }
+    .result-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 14px; }
+    .result-value { display: block; font-size: 22px; font-weight: 650; margin: 3px 0; font-variant-numeric: tabular-nums; }
+    .primary { border-color: var(--primary-border); background: var(--primary-background); }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin: 18px 0; overflow: hidden; }
+    .focus { padding: 18px 20px; }
+    .focus-source { margin-top: 5px; overflow-wrap: anywhere; }
+    .focus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; }
+    .stage { font-size: 14px; margin-bottom: 7px; }
+    progress { display: block; width: 100%; height: 9px; accent-color: var(--accent); margin-bottom: 7px; }
+    .panel-heading { padding: 17px 20px 10px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .diagram-wrap { overflow-x: auto; }
+    .diagram { display: block; width: 100%; min-width: 760px; height: auto; padding: 0 4px; }
+    .diagram text { fill: var(--diagram-ink); cursor: text; -webkit-user-select: text; user-select: text; }
+    .diagram [fill="white"] { fill: var(--surface); }
+    .diagram [fill="#f0f0f0"] { fill: var(--diagram-heading); }
+    .diagram [fill="#fafafa"] { fill: var(--diagram-note); }
+    .diagram [fill="#202020"] { fill: var(--diagram-ink); }
+    .diagram [stroke="#202020"] { stroke: var(--diagram-ink); }
+    .diagram [stroke="#c4c4c4"] { stroke: var(--diagram-border); }
+    .diagram-placeholder { padding: 20px; }
+    details { padding: 16px 20px; font-size: 14px; }
+    summary { cursor: pointer; color: var(--muted); }
+    details p { margin-top: 10px; }
+    .offline .value { color: var(--detail); }
+    [hidden] { display: none !important; }
+    @media (max-width: 850px) { .metrics, .result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 600px) {
+      main { padding: 20px 12px 28px; }
+      .page-header { grid-template-columns: 1fr; gap: 12px; }
+      .status { justify-content: flex-start; max-width: none; padding-top: 0; }
+      #checked { flex-basis: auto; text-align: left; }
+      .metrics { gap: 8px; }
+      .metric { padding: 12px; }
+      .focus-grid { grid-template-columns: 1fr; gap: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="page-header">
+      <div><h1>APN search</h1><p id="scope-description">Published seeds with b<sub>6</sub> = 52, followed by recursive expansion.</p></div>
+      <div class="status" aria-live="polite">
+        <a class="graph-link" href="/graph">Explore graph ↗</a>
+        <a class="graph-link" href="/structure">Structure report ↗</a>
+        <span id="state" class="pill">Connecting…</span>
+        <span id="cpu-usage" class="small" title="30-second average for the search process, including GC and coordination" hidden></span>
+        <span id="checked" class="small"></span>
+      </div>
+    </header>
+    <p id="notice" class="notice" role="status" hidden></p>
+    <section class="metrics" aria-label="Search progress">
+      <div class="metric primary"><span class="label">Published seeds completed</span><span class="value" id="seeds-completed">…</span><span class="detail" id="seed-total"></span></div>
+      <div class="metric"><span class="label">Recursive parents completed</span><span class="value" id="recursive-completed">…</span><span class="detail" id="recursive-admitted"></span><span class="detail" id="recursive-waiting"></span></div>
+      <div class="metric"><span class="label">Admitted classes</span><span class="value" id="admitted">…</span><span class="detail" id="admitted-rate"></span><span class="detail" id="catalog-status" hidden></span></div>
+      <div class="metric"><span class="label">Parents completed per minute</span><span class="value" id="seed-rate">…</span><span class="detail" id="rate-detail"></span><span class="detail" id="timing-detail"></span></div>
+    </section>
+    <section class="panel focus" aria-label="Current seed">
+      <h2 id="focus-title">Next seed to finish</h2>
+      <p id="focus-source" class="small focus-source"></p>
+      <div class="focus-grid" id="focus-stages">
+        <div><div class="stage" id="focus-v5"></div><progress id="focus-v5-progress" max="1" value="0" aria-label="Completed five-spaces"></progress><p class="small" id="focus-cosets"></p></div>
+        <div><div class="stage" id="focus-switching"></div><progress id="focus-switching-progress" max="255" value="0" aria-label="Completed switching directions"></progress></div>
+      </div>
+    </section>
+    <section class="panel focus" id="result-panel" aria-label="Direct published-seed result" hidden>
+      <h2 id="result-title">Previous campaign</h2>
+      <p id="result-source" class="small focus-source"></p>
+      <div class="result-grid">
+        <div><span class="label">Direct output classes</span><span class="result-value" id="result-direct">…</span><span class="detail" id="result-direct-detail"></span></div>
+        <div><span class="label">Outside the published reference</span><span class="result-value" id="result-absent">…</span><span class="detail" id="result-absent-detail"></span></div>
+        <div><span class="label">Also in the earlier dataset</span><span class="result-value" id="result-earlier">…</span><span class="detail" id="result-earlier-detail"></span></div>
+        <div><span class="label">Outside both</span><span class="result-value" id="result-both">…</span><span class="detail" id="result-both-detail"></span></div>
+      </div>
+    </section>
+    <section class="panel" aria-label="Search pipeline figure">
+      <div class="panel-heading"><h2>The search pipeline</h2><a class="small" href="/diagram.svg" target="_blank" rel="noopener">Open full size</a></div>
+      <div id="diagram" class="diagram-wrap"><p class="small diagram-placeholder">Loading selectable figure…</p></div>
+    </section>
+    <details class="panel"><summary>About the numbers</summary>
+      <p>A parent completes when its own V5 extensions and switching neighbours are exhausted and every output is admitted or matched to an admitted class. Its descendants can remain queued. The published seeds come first; then the recursive parents follow in admission order, without a profile filter.</p>
+      <p>Admitted classes are the published seeds plus every new quadratic EA class that the search found. A signature match alone never merges two classes; a match needs a replayed EA witness.</p>
+      <p id="catalog-explanation" hidden>A catalog count appears only when an audit covers the current admitted classes. Confirmed absence proves CCZ separation from the represented catalog; literature-wide novelty remains unresolved.</p>
+      <p id="result-explanation" hidden>The result panel counts the direct outputs of the published seeds. The published reference holds published corpora and named functions only. The earlier 111,009 + 79,445 discoveries are a separate dataset.</p>
+      <p>Timing uses the latest 100 timed completions of the current phase, from first dispatch through expansion and classification. Parallel parents overlap. The rate covers the last five minutes of active search.</p>
+      <p>This page refreshes committed progress every five seconds.</p>
+    </details>
+  </main>
+  <script>
+    const $ = id => document.getElementById(id);
+    const number = (value, digits = 0) => value == null || !Number.isFinite(Number(value)) ? '—' : Number(value).toLocaleString(undefined, {maximumFractionDigits: digits});
+    const text = (id, value) => { $(id).textContent = value; };
+    const seconds = value => {
+      if (value == null || !Number.isFinite(Number(value))) return '—';
+      if (Number(value) < 60) return number(value, 1) + ' s';
+      const rounded = Math.round(Number(value));
+      return Math.floor(rounded / 60) + 'm ' + rounded % 60 + 's';
+    };
+    function render(data) {
+      const run = data.execution || {};
+      const seeds = run.seed_progress || {};
+      const phase = run.continuous_search?.window_origin;
+      const recursive = phase === 'discovered';
+      const labels = {running:'Running', initializing:'Preparing', ready:'Ready', not_started:'Ready', paused_external:'Stopped', stopped:'Stopped', paused_budget:'Paused', paused_window_limit:'Paused', failed:'Needs attention', interrupted:'Interrupted', waiting_frontier:'Waiting for work', exhausted:'Complete', complete:'Complete'};
+      const status = run.running && run.state !== 'waiting_frontier' ? 'running' : run.state;
+      text('state', labels[status] || 'Paused');
+      $('state').className = 'pill' + (status === 'running' ? ' running' : ['failed','interrupted','error'].includes(status) ? ' error' : '');
+      document.body.classList.remove('offline');
+      const checked = data.checked_utc ? new Date(data.checked_utc) : null;
+      text('checked', checked && !Number.isNaN(checked.getTime()) ? 'Updated ' + checked.toLocaleTimeString() : '');
+      const cpu = run.process_metrics;
+      const cores = cpu?.mean_cpu_cores?.['30'];
+      const fresh = cpu?.utc && (Date.now() - Date.parse(cpu.utc)) / 1000 <= 15;
+      $('cpu-usage').hidden = !run.running || !fresh || cores == null;
+      text('cpu-usage', cores == null ? '' : 'CPU ' + number(cores, 1) + ' / ' + number(cpu.compute_threads) + ' logical CPUs');
+      text('seeds-completed', number(seeds.completed));
+      text('seed-total', 'of ' + number(seeds.total ?? run.initial_roots));
+      const recursion = data.recursive || {};
+      text('recursive-completed', number(recursion.completed));
+      text('recursive-admitted', 'of ' + number(recursion.admitted) + ' admitted');
+      text('recursive-waiting', seeds.completed < seeds.total && !recursion.completed ? 'Starts after the published seeds' : number(recursion.waiting) + ' waiting');
+      text('admitted', number(run.total_parents));
+      const growth = data.rates?.promoted_per_minute;
+      text('admitted-rate', growth == null ? number(run.unresolved_equivalence) + ' LUTs awaiting admission' : '+' + number(growth, 1) + ' per minute · ' + number(run.unresolved_equivalence) + ' awaiting admission');
+      const catalog = data.catalog_comparison || {};
+      const catalogCurrent = ['complete', 'verifying', 'snapshot'].includes(catalog.status);
+      $('catalog-status').hidden = !catalogCurrent; $('catalog-explanation').hidden = !catalogCurrent;
+      text('catalog-status', catalogCurrent ? number(catalog.confirmed_absent_classes) + ' absent from the catalog' + (catalog.status === 'complete' ? '' : ' (≥, audit in progress)') : '');
+      const timing = run.seed_statistics || {};
+      const sample = (recursive ? timing.recursive : timing.published) || {};
+      text('seed-rate', timing.seeds_per_minute_recent == null ? '—' : number(timing.seeds_per_minute_recent, 1));
+      text('rate-detail', (run.running ? 'last 5 minutes' : 'last 5 minutes before the stop') + (timing.completed_this_session == null ? '' : ' · ' + number(timing.completed_this_session) + ' this session'));
+      text('timing-detail', sample.samples ? 'Median ' + (recursive ? 'parent ' : 'seed ') + seconds(sample.median_seconds) + ' · P95 ' + seconds(sample.p95_seconds) : 'Waiting for timed completions');
+      const bound = data.published_root_comparison || {};
+      const result = ['complete', 'verifying'].includes(bound.status) ? bound : data.previous_campaign?.status === 'previous' ? data.previous_campaign : null;
+      $('result-panel').hidden = !result; $('result-explanation').hidden = !result;
+      if (result) {
+        const previous = result.status === 'previous';
+        text('result-title', previous ? 'Previous campaign' : 'Published-seed result');
+        text('result-source', (previous ? 'Run ' + result.run + ', completed ' + new Date(result.completed_utc).toLocaleDateString() + '. ' : '')
+          + 'Direct V5 and switching outputs of the ' + number(result.published_seed_count) + ' published seeds'
+          + (result.status === 'verifying' ? '; comparisons are still being verified.' : '; every match has a replayed EA witness.'));
+        text('result-direct', number(result.direct_output_classes));
+        text('result-direct-detail', 'including the ' + number(result.published_seed_count) + ' seeds');
+        text('result-absent', number(result.literature_absent_classes));
+        text('result-absent-detail', 'CCZ-inequivalent to all ' + number(result.literature_reference_classes) + ' published quadratic classes');
+        text('result-earlier', number(result.historical_verified_overlap));
+        text('result-earlier-detail', 'of the ' + number(result.historical_total_classes) + ' earlier classes');
+        text('result-both', number(result.absent_from_literature_and_historical));
+        text('result-both-detail', 'not published and not in the earlier dataset');
+      }
+      const focus = seeds.focus;
+      $('focus-stages').hidden = !focus;
+      text('focus-title', focus ? 'Next seed · #' + number(focus.root_index) : recursive ? 'Recursive parents · ' + number(run.continuous_search.first_parent) + '–' + number(run.continuous_search.last_parent) : seeds.total > 0 && seeds.completed === seeds.total ? 'Published seeds complete' : 'Next seed to finish');
+      text('focus-source', focus?.source || (recursive ? 'Expanding admitted quadratic classes in admission order.' : !run.attached ? 'Waiting for the search to start.' : 'Waiting for the next expansion.'));
+      text('focus-v5', focus ? 'V5 · ' + number(focus.five_spaces_completed) + ' / ' + (focus.five_spaces_total >= 0 ? number(focus.five_spaces_total) : '…') + ' five-spaces' : '');
+      $('focus-v5-progress').max = Math.max(1, focus?.five_spaces_total ?? 1);
+      $('focus-v5-progress').value = focus?.five_spaces_completed ?? 0;
+      text('focus-cosets', focus ? !focus.prepared ? 'Finding maximizing five-spaces.' : number(focus.cosets_checked) + ' cosets checked' + (focus.cosets_total >= 0 ? ' / ' + number(focus.cosets_total) : '') : '');
+      text('focus-switching', focus ? 'Switching · ' + number(focus.switching_directions_checked) + ' / ' + number(focus.switching_directions_total) + ' directions' + (focus.switching_complete ? ' · complete' : '') : '');
+      $('focus-switching-progress').max = focus?.switching_directions_total ?? 255;
+      $('focus-switching-progress').value = focus?.switching_directions_checked ?? 0;
+      const notice = run.state === 'failed' ? 'The search reported an error. Saved results are retained.'
+        : run.blocked_parents > 0 ? number(run.blocked_parents) + ' parents need attention before their expansion can finish.'
+        : run.running && run.heartbeat_age_seconds > 60 ? 'Showing the last committed checkpoint (' + number(run.heartbeat_age_seconds) + ' seconds old).'
+        : !run.attached ? 'Waiting for the search controller.' : '';
+      text('notice', notice); $('notice').hidden = !notice;
+    }
+    async function loadDiagram() {
+      try {
+        const response = await fetch('/diagram.svg', {cache:'no-store', signal:AbortSignal.timeout(15000)});
+        if (!response.ok) throw new Error('Figure read failed');
+        const parsed = new DOMParser().parseFromString(await response.text(), 'image/svg+xml');
+        const svg = parsed.documentElement;
+        if (svg.localName !== 'svg' || parsed.querySelector('parsererror')) throw new Error('Invalid figure');
+        svg.classList.add('diagram');
+        svg.removeAttribute('width'); svg.removeAttribute('height');
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', 'Horizontal APN search pipeline with extension and switching branches, a quadratic promotion loop and a mathematical legend. Select text to copy; paper references are links.');
+        for (const link of svg.querySelectorAll('a')) {
+          link.setAttribute('target', '_blank'); link.setAttribute('rel', 'noopener');
+        }
+        $('diagram').replaceChildren(document.importNode(svg, true));
+      } catch (error) {
+        $('diagram').querySelector('p').textContent = 'The figure could not load. Use “Open full size” to view it.';
+      }
+    }
+    async function poll() {
+      try {
+        const response = await fetch('/api/progress', {cache:'no-store', signal:AbortSignal.timeout(15000)});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Progress read failed');
+        render(data);
+      } catch (error) {
+        document.body.classList.add('offline');
+        text('state', 'Progress unavailable'); $('state').className = 'pill error';
+        text('notice', error.message + '. Retrying automatically; displayed counts are from the last successful update.');
+        $('notice').hidden = false;
+      } finally { setTimeout(poll, 5000); }
+    }
+    loadDiagram();
+    poll();
+  </script>
+</body>
+</html>

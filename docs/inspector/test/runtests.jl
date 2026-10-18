@@ -112,21 +112,21 @@ const CENSUS = [split(l, '\t') for l in eachline(APN8Web.CENSUS_TSV)]
         st, j = classify(String(c))
         @test st == 200
         @test j.format == "coefficients"
-        @test j.status == "reference_match"
+        @test j.status == "study_match"
         @test j.sigma == h
-        @test any(m.source=="legacy20261009_n8" for m in j.matches)
+        @test !j.reference_signature_match
         # The same function as a newline-separated LUT.
         st2, j2 = classify(join(APN8Web.coeffs_to_lut(String(c)), "\n"))
-        @test j2.format == "lut" && j2.status == "reference_match" && j2.sigma == h
+        @test j2.format == "lut" && j2.status == "study_match" && j2.sigma == h
     end
 
     @testset "other lists: extra class, search trial, raw-only" begin
         st, j = classify("60586b23865a010415cf78320eb7700de3f03212e2d82ccc969a6142")
-        @test st == 200 && j.status == "reference_match"
-        @test any(m.source=="legacy20261009_n8" for m in j.matches)
+        @test st == 200 && j.status == "study_match"
+        @test !j.reference_signature_match
         t = split(collect(eachline(joinpath(APN8Web.STUDY_DIR, "search_b52", "new_classes_trial_773.tsv")))[2], '\t')
         st, j = classify(String(t[5]))
-        @test j.status == "reference_match" && j.sigma == t[1]
+        @test j.status == "study_match" && j.sigma == t[1]
         r = split(collect(eachline(APN8Web.PUBLIC_TSV))[2], '\t')
         lut = [parse(Int, r[3][2k - 1:2k]; base = 16) for k in 1:256]
         st, j = classify(lutstr(lut))
@@ -137,8 +137,8 @@ const CENSUS = [split(l, '\t') for l in eachline(APN8Web.CENSUS_TSV)]
             eachline(`gzip -dc $(joinpath(APN8Web.STUDY_DIR, "search_b52", "framework_20261009_new.tsv.gz"))`)))
         t = split(fw, '\t')
         st, j = classify(String(t[5]))
-        @test j.status == "reference_match" && j.sigma == t[1]
-        @test j.reference_signature_match
+        @test j.status == "study_match" && j.sigma == t[1]
+        @test !j.reference_signature_match
     end
 
     @testset "Gold x^3 is known" begin

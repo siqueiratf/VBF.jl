@@ -5,7 +5,7 @@ function source_fingerprint_impl(repo_root)
         for (d,dirs,files) in walkdir(dir)
             filter!(name->!(name in ("results","test")),dirs)
             occursin("/results",d) && continue
-            append!(paths,[joinpath(d,f) for f in files if endswith(f,".jl") && !occursin("/test",d)])
+            append!(paths,[joinpath(d,f) for f in files if (endswith(f,".jl") || endswith(f,".sql")) && !occursin("/test",d)])
         end
     end
     Dict(relpath(p,repo_root)=>bytes2hex(open(SHA.sha256,p)) for p in sort!(unique(paths)) if isfile(p))
