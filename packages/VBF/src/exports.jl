@@ -129,6 +129,13 @@ export to_markdown, to_latex, table_to_markdown, table_to_latex
 export print_banner, print_section, print_check, print_kv, status_str
 
 export QuadraticExtensions
+export transform_quadratic_form, transform_quadratic_space,
+       verify_quadratic_space_transporter, quadratic_space_rank_signature,
+       quadratic_space_transporter
+export quadratic_space_fingerprint
+export QuadraticExtensionOrbitPlan, quadratic_space_stabilizers,
+       quadratic_extension_orbits, quadratic_extension_orbit_witness,
+       transport_quadratic_extension_orbit, v5_extensions_by_symmetry
 export QuadraticAPNTree, QuadraticRestrictions, QuadraticProfiles
 
 # Mathematical invariant keys (catalog indexes are in VBFCatalog).
