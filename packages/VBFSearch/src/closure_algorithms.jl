@@ -40,14 +40,18 @@ end
 
 A task may migrate between Julia threads. Its slot context remains private and
 can be reused for subsequent packets; simultaneous use is rejected explicitly.
+The optional `rank_table` is read-only and may be shared across contexts. Build
+it explicitly before a long campaign; a context does not allocate one itself.
 """
 mutable struct ClosureWorkContext
     geometry::Any
     work::Any
     guard::ReentrantLock
+    rank_table::Any
 end
-ClosureWorkContext()=ClosureWorkContext(nothing,nothing,ReentrantLock())
-ClosureWorkContext(geometry,work)=ClosureWorkContext(geometry,work,ReentrantLock())
+ClosureWorkContext(;rank_table=nothing)=ClosureWorkContext(nothing,nothing,ReentrantLock(),rank_table)
+ClosureWorkContext(geometry,work)=ClosureWorkContext(geometry,work,ReentrantLock(),nothing)
+ClosureWorkContext(geometry,work,guard::ReentrantLock)=ClosureWorkContext(geometry,work,guard,nothing)
 
 const CLOSURE_WORK_SCHEMA="vbfsearch-closure-work-v1"
 const CLOSURE_RESULT_SCHEMA="vbfsearch-closure-result-v1"
@@ -108,10 +112,13 @@ function _closure_compute_prepare(packet,F,context)
         "proof"=>Dict("max_b5"=>best,"five_spaces"=>length(canonical),"all_maximizers"=>true))
 end
 
+include("closure_coset_proofs.jl")
+
 function _closure_compute_v5(packet,F,context,stop_requested)
     G=_closure_context_geometry!(context);work=_closure_context_work!(context)
     payload=packet["payload"];first_x=Int(packet["direction"])
-    chunks=Dict{String,Any}[];records=Dict{String,Any}[]
+    chunks=_ClosureCosetChunk[];records=Dict{String,Any}[]
+    forms=convert(NTuple{5,Int},Tuple(Int.(payload["forms"])))
     checked=Dict{Tuple,Dict{String,Any}}()
     function observe(event)
         local_records=Dict{String,Any}[]
@@ -128,23 +135,21 @@ function _closure_compute_v5(packet,F,context,stop_requested)
                 "output_forms"=>Int.(S),"target_b6"=>52)
             push!(local_records,Dict("properties"=>p,"cursor"=>string(event.index),"witness"=>witness))
         end
-        proof=Dict{String,Any}("first_x"=>event.index,"next_x"=>event.next_x,"total_x"=>event.total_x,
-            "capped"=>event.capped,"candidate_spaces"=>length(local_records),"linear_system_candidates"=>event.ncand,
-            "du_reject"=>event.du_reject,"completion_spaces"=>event.nT,"heuristic_pruning"=>false,
-            "V5_forms"=>payload["forms"],"coset_order"=>"increasing nonzero quotient integer with exact bent count",
-            "coset_representative"=>Int(event.representative))
-        push!(chunks,Dict("proof"=>proof,"records"=>local_records,"processed_cosets"=>1))
+        coset_proof=_ClosureCosetProof(forms,event.index,event.next_x,event.total_x,
+            length(local_records),event.ncand,event.du_reject,event.nT,Int(event.representative),event.capped)
+        push!(chunks,_ClosureCosetChunk(coset_proof,isempty(local_records) ? nothing : local_records))
         append!(records,local_records)
     end
     result=Fourier.v5_extensions(G,UInt32.(payload["forms"]),Int(payload["need"]),work;
         beta=Fourier.BETA8,max_kernel=23,max_x=Int(get(packet,"extension_cosets",1)),start_x=first_x,
-        should_stop=stop_requested,coset_observer=observe)
+        should_stop=stop_requested,coset_observer=observe,du7_filter=:bitsets,rank_table=context.rank_table)
     result.skipped && error("unexpected heuristic skip")
     length(chunks)==result.nX_used || error("extension callback lost a complete coset")
     proof=Dict{String,Any}("first_x"=>first_x,"next_x"=>result.next_x,"total_x"=>result.nX,
         "capped"=>result.capped,"candidate_spaces"=>length(records),"linear_system_candidates"=>result.ncand,
         "du_reject"=>result.du_reject,"completion_spaces"=>result.nT,"heuristic_pruning"=>false,
         "V5_forms"=>payload["forms"],"coset_order"=>"increasing nonzero quotient integer with exact bent count")
+    output_chunks=chunks
     if result.nX_used==1
         # Preserve the historical one-coset proof exactly.
         proof=copy(only(chunks)["proof"])
@@ -153,12 +158,12 @@ function _closure_compute_v5(packet,F,context,stop_requested)
     elseif result.nX==0
         # The existing cursor ledger uses one empty exhaustion marker when the
         # selected five-space has no eligible six-space extensions.
-        push!(chunks,Dict("proof"=>copy(proof),"records"=>Dict{String,Any}[],"processed_cosets"=>0))
+        output_chunks=[Dict("proof"=>copy(proof),"records"=>Dict{String,Any}[],"processed_cosets"=>0)]
     end
     # Encode the coverage ledger in the worker; the single writer only checks and stores it.
-    ledger=isempty(chunks) ? nothing : _closure_ledger_row(Int(packet["job_id"]),chunks)
-    Dict{String,Any}("chunks"=>chunks,"records"=>records,"proof"=>proof,"processed_cosets"=>result.nX_used,"ledger"=>ledger,
-        "commit_chunk"=>!isempty(chunks),"blocked"=>result.capped,"apn_luts_checked"=>length(checked),
+    ledger=isempty(output_chunks) ? nothing : _closure_ledger_row(Int(packet["job_id"]),output_chunks)
+    Dict{String,Any}("chunks"=>output_chunks,"records"=>records,"proof"=>proof,"processed_cosets"=>result.nX_used,"ledger"=>ledger,
+        "commit_chunk"=>!isempty(output_chunks),"blocked"=>result.capped,"apn_luts_checked"=>length(checked),
         "done"=>result.next_x>result.nX && !result.capped,"evaluations"=>result.ncand+length(records))
 end
 
@@ -192,7 +197,7 @@ function _closure_compute_switching(packet,F;seconds,evaluations,stop_requested)
     end
     result=switching_neighbors_bounded(F;max_evaluations=min(evaluations,256),timeout_seconds=seconds,
         start_direction=Int(packet["direction"]),start_combination=parse(BigInt,packet["combination"]),checkpoint,
-        stop_requested=()->directions_done[]>=direction_limit || stop_requested())
+        stop_requested=()->directions_done[]>=direction_limit || stop_requested(),quadratic_certificate=true)
     proof=Dict("evaluations"=>nodes_visited(result),"next_direction"=>next_direction[],
         "next_combination"=>next_combination[],"stop"=>result isa Exhausted ? "none" : string(result.where_it_stopped.reason))
     Dict{String,Any}("events"=>events,"proof"=>proof,"evaluations"=>nodes_visited(result),
@@ -251,31 +256,91 @@ end
 const _CLOSURE_COSET_INTEGER_FIELDS=("candidate_spaces","completion_spaces","coset_representative",
     "du_reject","first_x","linear_system_candidates","next_x","total_x")
 
-"""Encode the fixed complete-coset proof exactly as the generic sorted TOML writer.
-
-The common schema contains only native integers, Booleans, five integer forms
-and one fixed ASCII string. Unknown fields, types and variants retain the generic
-encoder, including empty exhaustion markers. This changes no evidence bytes or
-validation and keeps encoding on the sole writer.
-"""
-function _closure_coset_evidence_text(proof)
-    fallback()=_closure_text(proof)
-    proof isa AbstractDict && length(proof)==12 || return fallback()
-    all(key->get(proof,key,nothing) isa Int,_CLOSURE_COSET_INTEGER_FIELDS) || return fallback()
-    get(proof,"capped",nothing) isa Bool && get(proof,"heuristic_pruning",nothing)===false || return fallback()
+"""Return forms only when the exact historical fast-format schema applies."""
+function _closure_common_coset_forms(proof)
+    proof isa AbstractDict && length(proof)==12 || return nothing
+    all(key->get(proof,key,nothing) isa Int,_CLOSURE_COSET_INTEGER_FIELDS) || return nothing
+    get(proof,"capped",nothing) isa Bool && get(proof,"heuristic_pruning",nothing)===false || return nothing
     order=get(proof,"coset_order",nothing)
-    order isa String && order=="increasing nonzero quotient integer with exact bent count" || return fallback()
+    order isa String && order=="increasing nonzero quotient integer with exact bent count" || return nothing
     forms=get(proof,"V5_forms",nothing)
-    forms isa Vector && length(forms)==5 && all(x->x isa Int,forms) || return fallback()
-    sprint(;sizehint=512) do io
-        print(io,"V5_forms = [",forms[1]::Int,", ",forms[2]::Int,", ",forms[3]::Int,", ",forms[4]::Int,", ",forms[5]::Int,
-            "]\ncandidate_spaces = ",proof["candidate_spaces"]::Int,"\ncapped = ",proof["capped"]::Bool,
-            "\ncompletion_spaces = ",proof["completion_spaces"]::Int,
-            "\ncoset_order = \"increasing nonzero quotient integer with exact bent count\"\ncoset_representative = ",proof["coset_representative"]::Int,
-            "\ndu_reject = ",proof["du_reject"]::Int,"\nfirst_x = ",proof["first_x"]::Int,
-            "\nheuristic_pruning = false\nlinear_system_candidates = ",proof["linear_system_candidates"]::Int,
-            "\nnext_x = ",proof["next_x"]::Int,"\ntotal_x = ",proof["total_x"]::Int,'\n')
+    forms isa Vector && length(forms)==5 && all(x->x isa Int,forms) || return nothing
+    forms
+end
+
+"""Print the fixed canonical TOML schema from already typed native fields."""
+function _closure_print_coset_evidence(io,forms,candidates::Int,capped::Bool,completions::Int,
+        representative::Int,du_reject::Int,first_x::Int,systems::Int,next_x::Int,total_x::Int)
+    print(io,"V5_forms = [",forms[1]::Int,", ",forms[2]::Int,", ",forms[3]::Int,", ",forms[4]::Int,", ",forms[5]::Int,
+        "]\ncandidate_spaces = ",candidates,"\ncapped = ",capped,
+        "\ncompletion_spaces = ",completions,
+        "\ncoset_order = \"increasing nonzero quotient integer with exact bent count\"\ncoset_representative = ",representative,
+        "\ndu_reject = ",du_reject,"\nfirst_x = ",first_x,
+        "\nheuristic_pruning = false\nlinear_system_candidates = ",systems,
+        "\nnext_x = ",next_x,"\ntotal_x = ",total_x,'\n')
+    nothing
+end
+
+"""Append exact proof bytes, bounding generic fallback text before copying it."""
+function _closure_write_coset_evidence(io,proof,limit::Int=typemax(Int))
+    forms=_closure_common_coset_forms(proof)
+    if forms===nothing
+        evidence=_closure_text(proof)
+        sizeof(evidence)<=limit-position(io) || error("compact ledger block exceeds size limit")
+        write(io,evidence)
+    else
+        _closure_print_coset_evidence(io,forms,proof["candidate_spaces"]::Int,proof["capped"]::Bool,
+            proof["completion_spaces"]::Int,proof["coset_representative"]::Int,proof["du_reject"]::Int,
+            proof["first_x"]::Int,proof["linear_system_candidates"]::Int,proof["next_x"]::Int,proof["total_x"]::Int)
+        position(io)<=limit || error("compact ledger block exceeds size limit")
     end
+    nothing
+end
+
+"""The immutable worker schema needs no dictionary lookups or copied forms."""
+function _closure_write_coset_evidence(io,p::_ClosureCosetProof,limit::Int=typemax(Int))
+    _closure_print_coset_evidence(io,p.forms,p.candidate_spaces,p.capped,p.completion_spaces,
+        p.coset_representative,p.du_reject,p.first_x,p.linear_system_candidates,p.next_x,p.total_x)
+    position(io)<=limit || error("compact ledger block exceeds size limit")
+    nothing
+end
+
+"""Return byte-identical sorted TOML, including generic and empty-schema fallbacks."""
+_closure_coset_evidence_text(proof)=sprint(io->_closure_write_coset_evidence(io,proof);sizehint=512)
+
+"""Validate and apply each complete coset within the coordinator transaction.
+
+This function barrier specializes on the actual chunk representation. Native
+worker views retain scalar inference; transported dictionary chunks use the
+same checks and construction-path writes.
+"""
+function _closure_apply_v5_cosets!(s,current,expected,proof,chunks,first_x,flat_records)
+    cursor=first_x;count_cosets=0;count_candidates=0;count_du=0;count_completions=0;capped=false
+    for chunk in chunks
+        cp=chunk["proof"];step=Int(chunk["processed_cosets"])
+        cp["first_x"]==cursor && cp["next_x"]==cursor+step && cp["total_x"]==proof["total_x"] || error("noncontiguous extension coset ledger")
+        cp["V5_forms"]==expected["payload"]["forms"] && cp["heuristic_pruning"]===false || error("extension coset scientific scope mismatch")
+        step==1 || (step==0 && cp["total_x"]==0 && cursor==1 && isempty(chunk["records"])) || error("invalid extension coset coverage step")
+        0<=cp["du_reject"]<=step && cp["linear_system_candidates"]>=0 && cp["completion_spaces"]>=0 || error("invalid extension coset counters")
+        length(chunk["records"])==cp["candidate_spaces"] || error("extension coset lost candidate records")
+        if step==1
+            1<=cursor<=cp["total_x"] && 0<cp["coset_representative"]<(1<<28) || error("invalid eligible extension coset")
+        end
+        for record in chunk["records"]
+            p=record["properties"];_closure_check_result_properties(p)
+            p["apn"] && p["quadratic"] || error("worker returned an invalid APN completion")
+            record["cursor"]==string(cursor) || error("extension record cursor mismatch")
+            witness=record["witness"]
+            witness["eligible_coset_index"]==cursor && witness["coset_representative"]==cp["coset_representative"] &&
+                witness["V5_forms"]==cp["V5_forms"] && witness["need"]==expected["payload"]["need"] &&
+                witness["target_b6"]==expected["target_b6"] && length(witness["output_forms"])==8 || error("extension construction witness mismatch")
+            _closure_record_candidate!(s,current,p,record["cursor"],witness)
+        end
+        append!(flat_records,chunk["records"])
+        cursor+=step;count_cosets+=step;count_candidates+=cp["linear_system_candidates"]
+        count_du+=cp["du_reject"];count_completions+=cp["completion_spaces"];capped|=cp["capped"]
+    end
+    (cursor,count_cosets,count_candidates,count_du,count_completions,capped)
 end
 
 """Apply one result on the sole coordinator, bound to the current persisted cursor.
@@ -318,31 +383,8 @@ function _closure_apply!(s,job,result)
             work["commit_chunk"]==!isempty(chunks) || error("extension commit flag disagrees with coset ledger")
             length(chunks)==processed ||
                 (processed==0 && proof["total_x"]==0 && length(chunks)==1) || error("extension result lost per-coset coverage")
-            cursor=first_x;count_cosets=0;count_candidates=0;count_du=0;count_completions=0;capped=false
-            for chunk in chunks
-                cp=chunk["proof"];step=Int(chunk["processed_cosets"])
-                cp["first_x"]==cursor && cp["next_x"]==cursor+step && cp["total_x"]==proof["total_x"] || error("noncontiguous extension coset ledger")
-                cp["V5_forms"]==expected["payload"]["forms"] && cp["heuristic_pruning"]===false || error("extension coset scientific scope mismatch")
-                step==1 || (step==0 && cp["total_x"]==0 && cursor==1 && isempty(chunk["records"])) || error("invalid extension coset coverage step")
-                0<=cp["du_reject"]<=step && cp["linear_system_candidates"]>=0 && cp["completion_spaces"]>=0 || error("invalid extension coset counters")
-                length(chunk["records"])==cp["candidate_spaces"] || error("extension coset lost candidate records")
-                if step==1
-                    1<=cursor<=cp["total_x"] && 0<cp["coset_representative"]<(1<<28) || error("invalid eligible extension coset")
-                end
-                for record in chunk["records"]
-                    p=record["properties"];_closure_check_result_properties(p)
-                    p["apn"] && p["quadratic"] || error("worker returned an invalid APN completion")
-                    record["cursor"]==string(cursor) || error("extension record cursor mismatch")
-                    witness=record["witness"]
-                    witness["eligible_coset_index"]==cursor && witness["coset_representative"]==cp["coset_representative"] &&
-                        witness["V5_forms"]==cp["V5_forms"] && witness["need"]==expected["payload"]["need"] &&
-                        witness["target_b6"]==expected["target_b6"] && length(witness["output_forms"])==8 || error("extension construction witness mismatch")
-                    _closure_record_candidate!(s,current,p,record["cursor"],witness)
-                end
-                append!(flat_records,chunk["records"])
-                cursor+=step;count_cosets+=step;count_candidates+=cp["linear_system_candidates"]
-                count_du+=cp["du_reject"];count_completions+=cp["completion_spaces"];capped|=cp["capped"]
-            end
+            cursor,count_cosets,count_candidates,count_du,count_completions,capped =
+                _closure_apply_v5_cosets!(s,current,expected,proof,chunks,first_x,flat_records)
             cursor==proof["next_x"] && count_cosets==processed && flat_records==work["records"] || error("extension aggregate lost coset paths")
             length(flat_records)==proof["candidate_spaces"] && count_candidates==proof["linear_system_candidates"] &&
                 count_du==proof["du_reject"] && count_completions==proof["completion_spaces"] && capped==proof["capped"] || error("extension aggregate counters disagree with cosets")

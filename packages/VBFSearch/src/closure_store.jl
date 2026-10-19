@@ -51,6 +51,7 @@ function _closure_create_schema(db)
         "CREATE TABLE candidates(id TEXT PRIMARY KEY,lut_hex TEXT NOT NULL UNIQUE,sigma TEXT,apn INTEGER NOT NULL,degree INTEGER NOT NULL,properties TEXT NOT NULL,class_id INTEGER,state TEXT NOT NULL)",
         "CREATE INDEX candidates_sigma ON candidates(sigma)",
         "CREATE INDEX candidates_counters ON candidates(apn,degree,sigma,class_id)",
+        "CREATE INDEX candidates_state ON candidates(state)",
         "CREATE TABLE parents(id INTEGER PRIMARY KEY,candidate_id TEXT NOT NULL UNIQUE REFERENCES candidates(id),sigma TEXT NOT NULL,origin TEXT NOT NULL,source TEXT NOT NULL,admitted_utc TEXT NOT NULL,last_dispatch INTEGER NOT NULL DEFAULT 0)",
         "CREATE INDEX parents_sigma ON parents(sigma)",
         "CREATE INDEX parents_origin ON parents(origin)",
@@ -156,6 +157,10 @@ function _closure_open(directory)
             _closure_exec(db,"UPDATE sessions SET state='interrupted',finished=? WHERE finished=''",(_closure_now(),))
         end
         _closure_validate_cursors(s)
+        # This optional covering index changes no scientific rows or identity.
+        # Add it under the exclusive lease only after all normal identity,
+        # input/archive and committed-coverage guards have succeeded.
+        _closure_exec(db,"CREATE INDEX IF NOT EXISTS candidates_state ON candidates(state)")
         s
     catch
         close(db);close(lease);rethrow()

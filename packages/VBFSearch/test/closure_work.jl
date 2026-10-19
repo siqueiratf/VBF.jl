@@ -1,6 +1,53 @@
 using Test,VBF,VBFSearch,TOML
 isdefined(@__MODULE__,:closure_fixture) || include("closure.jl")
 const WorkVS=VBFSearch
+@testset "Immutable coset views preserve dictionary and transport contracts" begin
+    p=WorkVS._ClosureCosetProof((1,3,7,15,31),4,5,10,0,23,2,7,101,false)
+    expected=Dict{String,Any}("first_x"=>4,"next_x"=>5,"total_x"=>10,"capped"=>false,
+        "candidate_spaces"=>0,"linear_system_candidates"=>23,"du_reject"=>2,
+        "completion_spaces"=>7,"coset_representative"=>101,"heuristic_pruning"=>false,
+        "V5_forms"=>[1,3,7,15,31],"coset_order"=>WorkVS._CLOSURE_COSET_ORDER)
+    @test p==expected
+    @test Dict(p)==expected
+    @test length(p)==12
+    @test haskey(p,"first_x") && !haskey(p,:first_x) && !haskey(p,"unknown")
+    @test haskey(p,SubString("first_x")) && p[SubString("first_x")]==4
+    @test get(p,"unknown",:missing)===:missing
+    @test_throws KeyError p["unknown"]
+    @test_throws KeyError p[:first_x]
+    forms=p["V5_forms"];forms[1]=999
+    @test p["V5_forms"]==[1,3,7,15,31]
+    editable=copy(p);editable["first_x"]=999;editable["V5_forms"][1]=999
+    @test p==expected
+    @test WorkVS._closure_coset_evidence_text(p)==WorkVS._closure_text(expected)
+    chunk=WorkVS._ClosureCosetChunk(p,nothing)
+    legacy=Dict{String,Any}("proof"=>expected,"records"=>Dict{String,Any}[],"processed_cosets"=>1)
+    @test chunk==legacy
+    @test collect(chunk["records"])==Dict{String,Any}[]
+    @test_throws BoundsError chunk["records"][1]
+    @test_throws MethodError push!(chunk["records"],Dict{String,Any}())
+    @test WorkVS.JSON3.read(WorkVS.JSON3.write(chunk),Dict{String,Any})==legacy
+    editable_chunk=copy(chunk);push!(editable_chunk["records"],Dict("example"=>1))
+    @test isempty(chunk["records"])
+    @test chunk==legacy
+    record=Dict{String,Any}("properties"=>Dict("example"=>1))
+    populated=WorkVS._ClosureCosetChunk(p,[record])
+    @test populated["records"]==[record]
+    @test WorkVS.JSON3.read(WorkVS.JSON3.write(populated),Dict{String,Any})==copy(populated)
+end
+
+@testset "Worker contexts share only an explicit read-only rank table" begin
+    Q=VBF.QuadraticExtensions;table=Q.PolarRankTable(Q.geometry(4))
+    first_context=WorkVS.ClosureWorkContext(;rank_table=table)
+    second_context=WorkVS.ClosureWorkContext(;rank_table=table)
+    @test first_context.rank_table===second_context.rank_table===table
+    @test first_context.guard!==second_context.guard
+    @test first_context.work===nothing && second_context.work===nothing
+    @test WorkVS.ClosureWorkContext().rank_table===nothing
+    geometry=Q.geometry(4);work=Q.V5Work(5,4);guard=ReentrantLock()
+    @test WorkVS.ClosureWorkContext(geometry,work).rank_table===nothing
+    @test WorkVS.ClosureWorkContext(geometry,work,guard).guard===guard
+end
 const WORK_PACKET_ROOT="00000001000204070004080d10161c1b00081019202a343f404c5855707e6c63002080a1e8ca6c4f5276daffaa8c260195bd052c5d77c9e287ab1f325f71c3ec00801697ed6fff7cb93da72244c25ed9e36be56c2ea42ca71a961499c749cd42a8083e9fad0f3f9c43e7dd7856f0cc6bde7658f1fb5179d275d9fb5640eeca650050e0b10d5fe9ba3b6fd3862670ca9d520aa2fb7f258bd02975d18c144ae8b7b9c9d9a85c2e384bd0a4b8cd2553493e7e060e77bbc1cfb4572b2f5282fcfe812bfbdd0ccb1939eaa97d5782598fa3749a427ca55a80b8635884b66b885662bd3aca4cbd32c040b3ea1e9461f204887f1ee6788136cc54af8e72e01db648dc23"
 
 @testset "Complete-coset encoding preserves canonical TOML and generic fallbacks" begin
@@ -339,7 +386,10 @@ end
                 push!(serial,only(WorkVS._closure_compute(one;context,seconds=60)["work"]["chunks"]))
             end
             @test batch["work"]["chunks"]==serial
-            corrupt=deepcopy(batch);corrupt["work"]["chunks"][2]["proof"]["first_x"]=99
+            # The native worker envelope is read-only; transport remains the
+            # legacy mutable dictionary schema, including corruption checks.
+            corrupt=WorkVS.JSON3.read(WorkVS.JSON3.write(batch),Dict{String,Any})
+            corrupt["work"]["chunks"][2]["proof"]["first_x"]=99
             @test_throws ErrorException WorkVS._closure_apply!(s,job,corrupt)
             @test WorkVS._closure_count(s.db,"SELECT COUNT(*) n FROM chunks")==0
             @test WorkVS._closure_apply!(s,job,batch)==batch["work"]["evaluations"]

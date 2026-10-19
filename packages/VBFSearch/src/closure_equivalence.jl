@@ -9,11 +9,23 @@ const CLOSURE_EQUIVALENCE_SCHEMA="vbfsearch-closure-equivalence-v1"
 function _closure_equivalence_packet(s,job)
     id=TOML.parse(job["payload"])["candidate_id"]
     candidate=only(_closure_rows(s.db,"SELECT id,lut_hex,sigma FROM candidates WHERE id=?",(id,)))
-    targets=Dict{String,Any}[]
+    targets=Dict{String,Any}[];current_solver=nothing
     for target in _closure_rows(s.db,"SELECT p.id,c.id candidate_id,c.lut_hex FROM parents p JOIN candidates c ON c.id=p.candidate_id WHERE p.sigma=? ORDER BY p.id",(candidate["sigma"],))
-        saved=_closure_rows(s.db,"SELECT status FROM comparisons WHERE candidate_id=? AND target_parent=? ORDER BY id DESC LIMIT 1",(id,target["id"]))
+        saved=_closure_rows(s.db,"SELECT status,evidence FROM comparisons WHERE candidate_id=? AND target_parent=? ORDER BY id DESC LIMIT 1",(id,target["id"]))
+        saved_exhaustive=false
+        if !isempty(saved) && only(saved)["status"]=="inequivalent_by_exhaustive_solver"
+            proof=TOML.tryparse(only(saved)["evidence"])
+            saved_solver=proof isa AbstractDict ? get(proof,"solver_implementation_sha256",nothing) : nothing
+            if saved_solver isa String && get(proof,"status",nothing)=="inequivalent_by_exhaustive_solver"
+                # An upgrade can retain records produced by another solver.
+                # Hash current sources only once, and only for reusable-looking
+                # negatives; malformed or unbound evidence is checked afresh.
+                current_solver===nothing && (current_solver=DiscoveryEvidence.solver_fingerprint())
+                saved_exhaustive=saved_solver==current_solver
+            end
+        end
         push!(targets,Dict{String,Any}("parent_id"=>Int(target["id"]),"candidate_id"=>target["candidate_id"],
-            "lut_hex"=>target["lut_hex"],"saved_exhaustive"=>!isempty(saved) && only(saved)["status"]=="inequivalent_by_exhaustive_solver"))
+            "lut_hex"=>target["lut_hex"],"saved_exhaustive"=>saved_exhaustive))
     end
     packet=Dict{String,Any}("schema"=>CLOSURE_EQUIVALENCE_SCHEMA,"job_id"=>Int(job["id"]),
         "job_key"=>job["job_key"],"candidate_id"=>id,"lut_hex"=>candidate["lut_hex"],
@@ -26,17 +38,21 @@ function _closure_equivalence_compute(packet;seconds,nodes)
     packet["schema"]==CLOSURE_EQUIVALENCE_SCHEMA || error("unsupported equivalence packet")
     packet["packet_sha256"]==_closure_packet_digest(packet) || error("equivalence packet digest differs")
     started=time_ns();nodes_left=nodes
-    p=properties(hex2bytes(packet["lut_hex"]))
+    candidate_lut=hex2bytes(packet["lut_hex"])
+    p=properties(candidate_lut)
     p["lut_sha256"]==packet["candidate_id"] && p["apn"] && p["quadratic"] && p["sigma_hash"]==packet["sigma"] || error("invalid pending quadratic candidate")
     comparisons=Dict{String,Any}[];complete=true
     for target in packet["targets"]
-        DiscoveryEvidence.lut_id(hex2bytes(target["lut_hex"]))==target["candidate_id"] || error("equivalence target digest differs")
+        target_lut=hex2bytes(target["lut_hex"])
+        DiscoveryEvidence.lut_id(target_lut)==target["candidate_id"] || error("equivalence target digest differs")
         target["saved_exhaustive"] && continue
         remaining=max(0.0,seconds-Float64(time_ns()-started)/1e9)
         if remaining<=0 || nodes_left<=0
             complete=false;break
         end
-        proof=compare(hex2bytes(packet["lut_hex"]),hex2bytes(target["lut_hex"]);relation=:ea,timeout_seconds=remaining,max_nodes=nodes_left)
+        target_properties=properties(target_lut)
+        proof=DiscoveryEvidence._compare_verified_properties(candidate_lut,target_lut,p,target_properties;
+            relation=:ea,timeout_seconds=remaining,max_nodes=nodes_left)
         nodes_left=max(0,nodes_left-Int(get(proof,"nodes",0)))
         push!(comparisons,Dict{String,Any}("target_parent"=>target["parent_id"],"proof"=>proof))
         proof["status"]=="equivalent_with_verified_witness" && break

@@ -23,7 +23,12 @@ function _closure_pack_chunks(rows)
         evidence=row["evidence"];evidence isa String || error("ledger evidence must be text")
         bytes=codeunits(evidence);write(io,htol(UInt32(length(bytes))));write(io,bytes)
     end
-    raw=take!(io);length(raw)<=_CLOSURE_LEDGER_LIMIT || error("compact ledger block exceeds size limit")
+    _closure_encode_chunk_bytes(take!(io))
+end
+
+"""Apply the unchanged digest, header and compression to a logical row stream."""
+function _closure_encode_chunk_bytes(raw::Vector{UInt8})
+    length(raw)<=_CLOSURE_LEDGER_LIMIT || error("compact ledger block exceeds size limit")
     vcat(_CLOSURE_LEDGER_MAGIC,reinterpret(UInt8,[htol(UInt64(length(raw)))]),SHA.sha256(raw),
         transcode(CodecZstd.ZstdCompressor,raw))
 end
@@ -73,12 +78,39 @@ end
 
 """Encode one packet's coverage rows exactly as the ledger stores them."""
 function _closure_ledger_row(job_id,chunks)
-    rows=[Dict{String,Any}("job_id"=>job_id,"first_x"=>c["proof"]["first_x"],
-        "next_x"=>c["proof"]["next_x"],"total_x"=>c["proof"]["total_x"],
-        "capped"=>Int(c["proof"]["capped"]),"evidence"=>_closure_coset_evidence_text(c["proof"])) for c in chunks]
-    firstrow=first(rows);lastrow=last(rows)
-    (job_id=job_id,first_x=firstrow["first_x"],next_x=lastrow["next_x"],total_x=firstrow["total_x"],
-        capped=maximum(r["capped"] for r in rows),evidence=length(rows)==1 ? firstrow["evidence"] : _closure_pack_chunks(rows))
+    n=length(chunks)
+    1<=n<=65536 || error("invalid compact ledger block length")
+    firstproof=first(chunks)["proof"];lastproof=last(chunks)["proof"]
+    first_evidence=_closure_coset_evidence_text(firstproof)
+    if n==1
+        return (job_id=job_id,first_x=firstproof["first_x"],next_x=lastproof["next_x"],
+            total_x=firstproof["total_x"],capped=Int(firstproof["capped"]),evidence=first_evidence)
+    end
+    # Proof lengths vary slightly with integer widths. Reserve near the final
+    # size without retaining a second array of Dict rows solely for encoding.
+    estimate=4+n*max(512,44+sizeof(first_evidence)+64)
+    io=IOBuffer(;sizehint=min(_CLOSURE_LEDGER_LIMIT,estimate))
+    write(io,htol(UInt32(n)));capped=0
+    for (i,chunk) in enumerate(chunks)
+        proof=chunk["proof"];cap=Int(proof["capped"]);capped=max(capped,cap)
+        position(io)+44<=_CLOSURE_LEDGER_LIMIT || error("compact ledger block exceeds size limit")
+        for value in (job_id,proof["first_x"],proof["next_x"],proof["total_x"],cap)
+            value isa Integer && value>=0 || error("invalid compact ledger integer")
+            write(io,htol(UInt64(value)))
+        end
+        length_position=position(io);write(io,UInt32(0));text_position=position(io)
+        if i==1
+            sizeof(first_evidence)<=_CLOSURE_LEDGER_LIMIT-text_position || error("compact ledger block exceeds size limit")
+            write(io,first_evidence)
+        else
+            _closure_write_coset_evidence(io,proof,_CLOSURE_LEDGER_LIMIT)
+        end
+        next_position=position(io)
+        # Patching a fixed-width length preserves the previous raw byte stream.
+        seek(io,length_position);write(io,htol(UInt32(next_position-text_position)));seek(io,next_position)
+    end
+    (job_id=job_id,first_x=firstproof["first_x"],next_x=lastproof["next_x"],total_x=firstproof["total_x"],
+        capped,evidence=_closure_encode_chunk_bytes(take!(io)))
 end
 
 """Persist an already validated work packet as one atomic coverage interval.

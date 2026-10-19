@@ -22,6 +22,8 @@ using .DiscoveryEvidence, .DiscoveryStore, .DiscoveryInputs
 const Fourier = VBF.QuadraticExtensions
 const BOOT_IMPLEMENTATION = Ref{Dict{String,String}}()
 
+include("v5_reuse.jl")
+
 include("config.jl")
 include("drivers.jl")
 include("run.jl")
@@ -49,7 +51,7 @@ export AuditedAPNReference, open_apn_reference, close_apn_reference, open_catalo
        report_snapshot, candidate_properties, compare, classify, classify_snapshot, open_reference,
        close_reference, verify_comparison, verify_ccz_witness, verify_ea_witness,
        verify_certificate, publish, main, closure_init, closure_run!, closure_snapshot, closure_progress, closure_stop!,
-       closure_upgrade
+       closure_upgrade, V5CompletionCache, cached_v5_extensions!
 
 function __init__()
     # Compute at process initialization, never bake a source identity into a cache.
