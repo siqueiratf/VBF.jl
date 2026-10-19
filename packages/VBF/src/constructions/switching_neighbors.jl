@@ -231,7 +231,8 @@ function _sn_apn_coset(
 end
 
 """
-    switching_neighbors(F::SBox{N,T}) -> Vector{Vector{SBox{N,T}}}
+    switching_neighbors(F::SBox{N,T}; quadratic_certificate=false)
+        -> Vector{Vector{SBox{N,T}}}
 
 For an APN function `F`, the switching neighbours grouped by field
 element: entry `u` (for `u = 1 … 2ⁿ-1`) is the vector of APN functions
@@ -242,15 +243,22 @@ Throws `ArgumentError` if `F` is not APN. See the module docstring for the
 deterministic-vs-sampled difference.
 Optional `observer(event, value)` reports `:candidate`, `:final_test`, and
 `:apn`; only `:apn` carries the verified SBox, which must not be mutated.
+With `quadratic_certificate=true`, an exact certificate may establish that
+all Boolean switching spaces contain only trivial solutions. It then returns
+the same empty groups without constructing the full Boolean systems.
+Inconclusive certificates retain the ordinary algorithm.
 """
-function switching_neighbors(F::SBox{N,T}; observer = nothing) where {N,T}
-    _sn_neighbors(F, observer)
+function switching_neighbors(F::SBox{N,T}; observer = nothing,
+    quadratic_certificate::Bool = false) where {N,T}
+    _sn_neighbors(F, observer, nothing, nothing, nothing, 1, 1, nothing,
+        quadratic_certificate)
 end
 
 function _sn_neighbors(
     F::SBox{N,T}, observer::O = nothing, check::C = nothing, verified::V = nothing,
     diagnostics::D = nothing,
     start_direction::Int = 1, start_combination::Integer = 1, checkpoint::P = nothing,
+    quadratic_certificate::Bool = false,
 ) where {N,T,O,C,V,D,P}
     _sn_check(check, :validation, 0, 0)
     differential_uniformity(F) ≤ 2 ||
@@ -258,6 +266,24 @@ function _sn_neighbors(
     _sn_check(check, :constraints, 0, 0)
     n_size = 1 << N
     flut = F.lut
+
+    if quadratic_certificate && _sn_quadratic_empty_certificate(F, check)
+        result = [SBox{N,T}[] for _ in 1:(n_size-1)]
+        for uu in start_direction:(n_size-1)
+            # There are no candidate or elimination steps to trigger the usual
+            # throttled polls. Poll each certified direction before its events.
+            _sn_check(check, :validation, uu, :quadratic_certificate)
+            basis = BitVector[]
+            _sn_diagnostic(diagnostics, :kernel,
+                (; direction=uu, raw_dimension=2N, quotient_dimension=0,
+                    trivial_dimension=2N))
+            checkpoint === nothing || checkpoint(:kernel,
+                (; direction=uu, raw_dimension=2N, quotient_dimension=0, basis))
+            result[uu] = _sn_apn_coset(F, T(uu), basis, observer, check, verified,
+                diagnostics, uu == start_direction ? start_combination : 1, checkpoint)
+        end
+        return result
+    end
 
     # One constraint system per nonzero field element u (1-based: systems[u]).
     systems = [_sn_system(n_size) for _ = 1:(n_size-1)]
@@ -336,7 +362,7 @@ end
 """
     switching_neighbors_bounded(F::SBox; max_evaluations=10^4,
         timeout_seconds=60, max_neighbors=typemax(Int), observer=nothing,
-        diagnostics=nothing)
+        diagnostics=nothing, quadratic_certificate=false)
         -> Exhausted | BudgetHit
 
 Enumerate the same complete-system switching neighbours as
@@ -373,6 +399,11 @@ direction, full constraint-kernel dimension, quotient dimension and removed
 trivial dimension; `:direction_complete` with per-direction candidate and APN
 counts; and `:stop` with the budget frontier and total counts. Diagnostics do
 not alter the observer's event sequence and must not mutate returned values.
+With `quadratic_certificate=true`, a sufficient quadratic certificate may prove
+that every full Boolean switching kernel contains only trivial solutions. The
+ordinary empty-kernel and direction-complete events, dimensions and cursors
+are preserved. The certificate checks the same time and stop budgets; an
+inconclusive certificate falls back to the complete Boolean algorithm.
 """
 function switching_neighbors_bounded(
     F::SBox{N,T};
@@ -385,6 +416,7 @@ function switching_neighbors_bounded(
     start_combination::Integer = 1,
     checkpoint = nothing,
     stop_requested = nothing,
+    quadratic_certificate::Bool = false,
 ) where {N,T}
     max_evaluations >= 0 || throw(ArgumentError("max_evaluations must be nonnegative"))
     max_neighbors >= 0 || throw(ArgumentError("max_neighbors must be nonnegative"))
@@ -441,7 +473,8 @@ function switching_neighbors_bounded(
     end
     try
         _sn_neighbors(F, observer, check, G -> push!(found, G), diagnostics,
-            Int(start_direction), start_combination, checkpoint)
+            Int(start_direction), start_combination, checkpoint,
+            quadratic_certificate)
     catch err
         err isa _SNStopped || rethrow()
         _sn_diagnostic(diagnostics, :stop,

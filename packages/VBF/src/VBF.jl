@@ -119,6 +119,13 @@ include("constructions/quadratic_apn_graph.jl")
 include("constructions/ea_class_orbits.jl")
 include("constructions/quadratic_apn_search.jl")
 include("constructions/quadratic_extensions.jl")
+include("constructions/quadratic_switching_empty.jl")
+
+include("constructions/quadratic_space_equivalence.jl")
+
+include("constructions/quadratic_space_fingerprint.jl")
+
+include("constructions/quadratic_extension_symmetry.jl")
 include("constructions/quadratic_apn_tree.jl")
 include("constructions/quadratic_restrictions.jl")
 include("invariants/quadratic_profiles.jl")

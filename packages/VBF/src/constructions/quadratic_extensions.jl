@@ -65,7 +65,8 @@ export Geometry, geometry, form_rank, form_rank_slow, coeffs_from_hex, hex_from_
        coord_forms, forms_to_coeffs, lut_from_coeffs, comp_forms, rref, span_dim,
        extensions, extensions_bruteforce, ExtWork, s_key, lift, fwht!, each_rref,
        subspaces_of_comp, best_hyperplane_bent, bent_fourier, flat_fourier, BETA8,
-       coset_bent_counts!, bent_mask, gauss_binom, V5Work, v5_extensions, function_of, max_bent_dim
+       coset_bent_counts!, bent_mask, gauss_binom, V5Work, v5_extensions, function_of, max_bent_dim,
+       PolarRankTable, PackedPolarRankTable
 
 using ..VBF: SBox, linear_basis, rank_f2, gauss_jordan!, rref_from_echelon!, walsh_hadamard!
 using SHA
@@ -169,6 +170,8 @@ function form_rank_slow(G::Geometry, v::UInt32)
     end
     rk
 end
+
+include("quadratic_rank_table.jl")
 
 # --- coefficients, forms, LUT -------------------------------------------------------
 
@@ -394,18 +397,28 @@ function solve_ones(Z::Vector{UInt32}, D::Int, rows::Vector{UInt32} = UInt32[],
     fill!(rows,UInt32(0))
     mask=aug-UInt32(1)
     @inbounds for c in Z
-        row=c|aug
-        while !iszero(row&mask)
-            p=trailing_zeros(row&mask)+1
-            basis=rows[p]
-            if iszero(basis)
-                rows[p]=row
-                break
-            end
-            row⊻=basis
-        end
-        row==aug && return nothing
+        _solve_ones_insert!(rows,c,aug,mask) || return nothing
     end
+    _solve_ones_finish!(rows,piv,K,D)
+end
+
+"""Insert an augmented equation, returning false on an exact contradiction."""
+@inline function _solve_ones_insert!(rows,c,aug,mask)
+    row=c|aug
+    @inbounds while !iszero(row&mask)
+        p=trailing_zeros(row&mask)+1
+        basis=rows[p]
+        if iszero(basis)
+            rows[p]=row
+            return true
+        end
+        row⊻=basis
+    end
+    row!=aug
+end
+
+"""Recover the canonical particular solution and free-bit-ordered kernel."""
+function _solve_ones_finish!(rows,piv,K,D)
     filter!(!iszero,rows)
     rank = rref_from_echelon!(rows)
     resize!(rows, rank)
@@ -425,6 +438,25 @@ function solve_ones(Z::Vector{UInt32}, D::Int, rows::Vector{UInt32} = UInt32[],
         push!(K, k)
     end
     v0, K
+end
+
+"""Solve nonempty c⋅v=1 constraints with c⋅t=0 from an internal quotient list.
+
+The quotient coordinates are already valid. Selection and elimination share
+one scan, so an inconsistent prefix avoids gathering the remaining constraints.
+Empty selected systems retain the V5 algorithm's degenerate-system rejection.
+"""
+function _solve_ones_annihilating(C,t,D,rows,piv,K)
+    0<=D<=31 || throw(ArgumentError("affine dimension must be between 0 and 31"))
+    aug=UInt32(1)<<D;mask=aug-UInt32(1)
+    empty!(piv);empty!(K);resize!(rows,D);fill!(rows,UInt32(0));found=false
+    @inbounds for c in C
+        par(c&t) && continue
+        found=true
+        _solve_ones_insert!(rows,c,aug,mask) || return nothing
+    end
+    found || return nothing
+    _solve_ones_finish!(rows,piv,K,D)
 end
 
 """
@@ -569,7 +601,9 @@ After the call, buf[tau+1] = scale * (number of bent forms in lift(tau) + V) for
 tau in F_2^D, with scale = 2^D / gcd(beta).
 """
 function coset_bent_counts!(buf::Vector{Int32}, G::Geometry, V::AbstractVector{UInt32},
-                            beta::Vector{Int})
+                            beta::Vector{Int}; rank_table::Union{Nothing,_PolarRankLookup}=nothing)
+    rank_table===nothing || rank_table.n==G.n ||
+        throw(ArgumentError("polar rank table has the wrong input dimension"))
     R, piv = rref(V)
     D = G.N - length(R)
     _, Qmask = pivots_masks(R, piv, G.N)
@@ -594,7 +628,8 @@ function coset_bent_counts!(buf::Vector{Int32}, G::Geometry, V::AbstractVector{U
         (i & 4095) == 0 && GC.safepoint()
         j = trailing_zeros(i)
         y ⊻= yb[j+1]; c ⊻= 1 << j
-        buf[c+1] = Int32(betap[(form_rank(G, y) >> 1)+1])
+        rk=rank_table===nothing ? form_rank(G,y) : _polar_rank(rank_table,y)
+        buf[c+1] = Int32(betap[(rk >> 1)+1])
     end
     fwht!(buf)
     (; R, Qmask, D, scale)
@@ -620,6 +655,9 @@ mutable struct V5Work
 end
 V5Work(D5::Int, n::Int = 8) = V5Work(zeros(Int32, 1 << D5), zeros(Int16, 1 << D5), zeros(Int, 1 << n))
 
+include("quadratic_extension_du7.jl")
+include("quadratic_extension_histograms.jl")
+
 """
     v5_extensions(G, V5, need, work; beta, du_filter=true, max_kernel=12, max_x=typemax(Int))
 
@@ -635,27 +673,57 @@ and `capped`. Each per-coset set is independent: the same output space in two
 cosets appears in both events, while the returned aggregate `Ss` remains unique.
 An interrupted or unstarted coset produces no event. A capped event explicitly
 does not establish exhaustive coverage of its completions.
+
+The opt-in `selected_coset_indices` vector executes only those original
+eligible-coset indices. It cannot be combined with a cursor or `max_x` limit.
+Selected results have `selected_scope=true`, `selected_coset_indices`, and
+`next_x=nothing`: enumerating this subset alone never certifies all cosets.
+Observers retain original logical indices. See `VBF.v5_extensions_by_symmetry`
+for verified orbit planning and reconstruction of the omitted outputs.
+
+`du7_filter=:bitsets` (or `:auto`) applies a necessary differential-uniformity
+test to each intermediate seven-space before reading partner Walsh values.
+`:triangles` uses verified odd three-flat contradictions instead. Both preserve
+completion sets, caps and coset cursors. Bitset mode counts surviving candidates
+in `ncand`; triangle mode retains the original candidate count. The default
+`:none` retains the original work counters. Pruning is
+disabled when `du_filter=false`. `rank_table` optionally shares a precomputed
+[`PolarRankTable`](@ref) or [`PackedPolarRankTable`](@ref) during Fourier bent-count preparation.
 """
 function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work::V5Work;
                        beta::Vector{Int}, du_filter::Bool = true, max_kernel::Int = 12,
                        max_x::Int = typemax(Int), should_skip::Function = k -> false,
                        start_x::Int = 1, should_stop::Function = () -> false,
-                       coset_observer = nothing)
+                       coset_observer = nothing, selected_coset_indices = nothing,
+                       du7_filter::Symbol=:none, rank_table::Union{Nothing,_PolarRankLookup}=nothing)
     max_x >= 0 && start_x >= 1 || error("invalid coset cursor or chunk size")
-    r = coset_bent_counts!(work.cnt, G, V5, beta)
+    du7_filter in (:none,:auto,:bitsets,:triangles) || throw(ArgumentError("unknown DU7 filter"))
+    use_du7=du_filter && du7_filter!==:none
+    selected_scope = selected_coset_indices !== nothing
+    selected_scope && (start_x != 1 || max_x != typemax(Int)) &&
+        throw(ArgumentError("selected cosets cannot be combined with cursor or max_x"))
+    r = coset_bent_counts!(work.cnt, G, V5, beta;rank_table)
     R, Qmask, D = r.R, r.Qmask, r.D
     cnt = work.cnt
-    hc = Dict{Int32,Int}()
-    X = UInt32[]
-    @inbounds for t in 2:length(cnt)
-        v = cnt[t]
-        hc[v] = get(hc, v, 0) + 1
-        v == need * r.scale && push!(X, UInt32(t - 1))
-    end
+    hc,X = _v5_bent_histogram(cnt,r.scale,need,length(R))
     nX = length(X)
     start_x <= nX+1 || error("coset cursor exceeds extension space")
     stop_x = max_x > nX ? nX : min(nX,start_x+max_x-1)
-    X = X[start_x:stop_x]
+    indices = if selected_scope
+        selected_coset_indices isa AbstractVector{<:Integer} ||
+            throw(ArgumentError("selected coset indices must be an integer vector"))
+        all(i -> 1 <= i <= nX, selected_coset_indices) ||
+            throw(ArgumentError("selected coset index exceeds eligible domain"))
+        chosen = Int.(selected_coset_indices)
+        issorted(chosen) && length(unique(chosen)) == length(chosen) ||
+            throw(ArgumentError("selected coset indices must be increasing and distinct"))
+        chosen
+    else
+        collect(start_x:stop_x)
+    end
+    finish = result -> selected_scope ? merge(result, (;
+        selected_scope=true, selected_coset_indices=copy(indices), next_x=nothing)) : result
+    X = X[indices]
     # flats of V5^perp and g5
     C = UInt32[]; Cidx = Int[]
     @inbounds for (fi, w) in enumerate(G.flats)
@@ -671,13 +739,12 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
     @inbounds for c in C; g5[c+1] = Int16(1); end
     fwht!(g5)
     g0 = Int(g5[1])
-    hg = Dict{Int16,Int}()
-    @inbounds for v in g5; hg[v] = get(hg, v, 0) + 1; end
+    hg = _v5_flat_histogram(g5)
     key = hist_key(Dict(vcat([(Int(k), v) for (k, v) in hc], [(100_000_000 + Int(k), v) for (k, v) in hg])))
     Ss = Set{Vector{UInt32}}()
     should_skip(key) &&
-        return (; Ss, nX, nX_used = 0, next_x=start_x, du_reject = 0, ncand = 0, nT = 0, key, capped = false, skipped = true)
-    isempty(X) && return (; Ss, nX, nX_used = 0, next_x=start_x, du_reject = 0, ncand = 0, nT = 0, key, capped = false, skipped = false)
+        return finish((; Ss, nX, nX_used = 0, next_x=start_x, du_reject = 0, ncand = 0, nT = 0, key, capped = false, skipped = true))
+    isempty(X) && return finish((; Ss, nX, nX_used = 0, next_x=start_x, du_reject = 0, ncand = 0, nT = 0, key, capped = false, skipped = false))
     # sorted list of t with small g5 (enough for the largest threshold)
     nWmin = minimum((g0 + Int(g5[x+1])) ÷ 2 for x in X)
     L = UInt32[]
@@ -694,9 +761,18 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
     @inbounds for t in 0:(1 << D)-1
         g5[t+1] <= thb && (bm[(t >> 6)+1] |= UInt64(1) << (t & 63))
     end
+    du7_plan=use_du7 && du7_filter!==:triangles ? _du7_prepare(C,Cidx,G,L) : nothing
+    du7_bits=du7_plan===nothing ? nothing : _DU7Bits(du7_plan)
+    # Keep both candidate branches on one iterator type: mixed iteration states
+    # otherwise box millions of indices in the filtered inner loop.
+    unfiltered_bad=du7_bits===nothing ? zeros(UInt64,cld(length(L),64)) : UInt64[]
+    use_triangles=use_du7 && du7_plan===nothing
+    triangle_pairs=NTuple{2,UInt32}[]
+    triangle_first=use_triangles ? zeros(UInt32,1<<G.n) : UInt32[]
+    triangle_second=use_triangles ? zeros(UInt32,1<<G.n) : UInt32[]
     lifted = [lift(x, Qmask) for x in X]
     du_rej = 0; ncand = 0; nT = 0; capped = false
-    Z = UInt32[]; pts = work.pts
+    pts = work.pts
     Cx = UInt32[]; Tseen = Set{NTuple{3,UInt32}}()
     srows = UInt32[]; spiv = Int[]; sK = UInt32[]
     nX_used = 0
@@ -707,6 +783,7 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
         coset_Ss = coset_observer === nothing ? nothing : Set{Vector{UInt32}}()
         nWU = (g0 + Int(g5[x+1])) ÷ 2
         empty!(Cx)
+        empty!(triangle_pairs)
         du_filter && fill!(pts, 0)
         bad = false
         @inbounds for (c, fi) in zip(C, Cidx)
@@ -715,6 +792,13 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
             if du_filter                         # Lemma 4.6 for U = V5 + <x>
                 for p in G.flatpts[fi]
                     pts[p+1] += 1
+                    if use_triangles
+                        degree=pts[p+1]
+                        degree==1 && (triangle_first[p+1]=c)
+                        degree==2 && (triangle_second[p+1]=c)
+                        degree==3 && triangle_first[p+1]⊻triangle_second[p+1]==c &&
+                            push!(triangle_pairs,(triangle_first[p+1],triangle_second[p+1]))
+                    end
                     if pts[p+1]>3
                         bad=true
                         break
@@ -726,14 +810,16 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
         if bad
             du_rej += 1
             coset_observer === nothing || coset_observer((;
-                index=start_x+xi-1, next_x=start_x+xi, total_x=nX,
+                index=indices[xi], next_x=selected_scope ? nothing : indices[xi]+1, total_x=nX,
                 representative=lifted[xi], Ss=coset_Ss,
                 du_reject=1, ncand=0, nT=0, capped=false))
             continue
         end
         empty!(Tseen)
         last_candidate=searchsortedlast(Lv,fld(-nWU,3))
-        @inbounds for i in 1:last_candidate
+        candidate_indices=du7_bits===nothing ? _DU7ValidIndices(unfiltered_bad,last_candidate) :
+            _du7_valid_indices!(du7_bits,_du7_state(du7_plan,x),last_candidate)
+        @inbounds for i in candidate_indices
             t = L[i]; tx = t ⊻ x
             (t == x) && continue
             a = Lv[i]
@@ -743,12 +829,8 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
             (b < a || (b == a && tx < t)) && 3 * b <= -nWU && continue
             3 * (a + b) <= -2nWU || continue
             ncand += 1
-            empty!(Z)
-            for c in Cx
-                par(c & t) || push!(Z, c)
-            end
-            isempty(Z) && continue              # degenerate; cannot happen for APN-like U
-            sol = solve_ones(Z, D, srows, spiv, sK)
+            use_triangles && _du7_triangle_reject(triangle_pairs,t) && continue
+            sol = _solve_ones_annihilating(Cx, t, D, srows, spiv, sK)
             sol === nothing && continue
             v0, K = sol
             length(K) > max_kernel && (capped = true; coset_capped = true; continue)
@@ -768,11 +850,11 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
         end
         nT += length(Tseen)
         coset_observer === nothing || coset_observer((;
-            index=start_x+xi-1, next_x=start_x+xi, total_x=nX,
+            index=indices[xi], next_x=selected_scope ? nothing : indices[xi]+1, total_x=nX,
             representative=lifted[xi], Ss=coset_Ss,
             du_reject=0, ncand=ncand-first_ncand, nT=length(Tseen), capped=coset_capped))
     end
-    (; Ss, nX, nX_used, next_x=start_x+nX_used, du_reject = du_rej, ncand, nT, key, capped, skipped = false)
+    finish((; Ss, nX, nX_used, next_x=start_x+nX_used, du_reject = du_rej, ncand, nT, key, capped, skipped = false))
 end
 
 """Construct a square quadratic SBox from a basis of alternating coordinate forms."""
