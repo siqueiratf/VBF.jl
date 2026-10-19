@@ -28,7 +28,7 @@ function fmtShare(v) {
 }
 const sum = (rows, f) => rows.reduce((s, r) => s + f(r), 0);
 function tally(rows, key) { const m = new Map(); for (const r of rows) m.set(key(r), (m.get(key(r)) || 0) + r.classes); return m; }
-const visibleGroups = () => DRAW_ORDER.filter(k => state.visible.has(k)).map(k => groups[k]);
+const visibleGroups = () => DRAW_ORDER.filter(k => state.visible.has(k) && groups[k]?.total > 0).map(k => groups[k]);
 const val = (series, n) => state.mode === 'share' ? n / series.total : n;
 const fmtVal = v => state.mode === 'share' ? fmtShare(v) : fmtInt(v);
 
@@ -154,7 +154,14 @@ function drawStats() {
   const degrees = [...new Set(data.degree.map(r => r.degree))];
   const eq = data.family_equivalence || [];
   const autosNew = (data.automorphisms || []).filter(a => a.sample.startsWith('new'));
-  const items = [
+  const items = data.live ? [
+    [fmtInt(data.coverage.classes_analyzed) + ' / ' + fmtInt(data.coverage.total_classes), 'current campaign classes analyzed'],
+    ['≥ ' + fmtInt(data.catalog_comparison?.confirmed_absent_classes ?? newTotal), 'confirmed outside the published catalog'],
+    [data.identity_holds ? 'All analyzed classes' : 'Fails', 'satisfy bent = 170 + 4·c₄ + 20·c₂'],
+    [degrees.length === 1 ? `Degree ${degrees[0]}` : degrees.join(', '), 'ortho-derivative degree among analyzed classes'],
+    [fmtInt(data.coverage.remaining), 'classes awaiting structural measurements'],
+    ['Every minute', 'automatic report refresh; exact-LUT measurement cache'],
+  ] : [
     [fmtInt(newTotal), 'new classes, none in the published reference'],
     [fmtInt(famHits), 'new classes with the nonbent counts of a family instance'],
     [data.identity_holds ? 'All classes' : 'Fails', 'satisfy bent = 170 + 4·c₄ + 20·c₂'],
@@ -171,7 +178,7 @@ function drawBent() {
   const above = k => sum(data.bent.filter(r => r.group === k && r.bent > 170), r => r.classes) / groups[k].total;
   const newAbove = sum(data.bent.filter(r => (r.group === 'new' || r.group === 'earlier') && r.bent > 170), r => r.classes) / (groups.new.total + groups.earlier.total);
   groupedBars('p-bent', {
-    title: `${fmtShare(newAbove)} of new classes exceed 170 bent components; known outputs ${fmtShare(above('known'))}`,
+    title: `${fmtShare(newAbove)} of new classes exceed 170 bent components; catalog signature matches ${fmtShare(above('known'))}`,
     subtitle: 'Bent components of the 255 nonzero components; bent = 170 + 4·c₄ + 20·c₂',
     categories: cats, series: visibleGroups(), count: (g, c) => idx.get(`${g}|${c}`) || 0, label: 'bent components:',
     detail: c => { const p = profile.get(c); return `<br>rank 6: ${p.c6} · rank 4: ${p.c4} · rank 2: ${p.c2}`; },
@@ -198,7 +205,7 @@ function drawSignature() {
   const twos = [...rows.map(r => r.two), ...refs.map(r => r.two)], threes = [...rows.map(r => r.three), ...refs.map(r => r.three)];
   const x0 = Math.min(...twos) - 6, x1 = Math.max(...twos) + 6, y1 = Math.max(...threes) + 3;
   const minNew = Math.min(...rows.filter(r => r.group === 'new' || r.group === 'earlier').map(r => r.three));
-  const svg = reset('p-signature', H, `Every new class has ${minNew} or more 3-dim nonbent subspaces; none has the counts of a family instance`,
+  const svg = reset('p-signature', H, data.live ? 'Nonbent signatures of analyzed campaign classes' : `Every new class has ${minNew} or more 3-dim nonbent subspaces; none has the counts of a family instance`,
     'One dot per (2-dim, 3-dim) count pair; dot size grows with the number of classes. ◆ family instance · □ other named reference', W);
   const fx = v => L + (v - x0) / (x1 - x0) * (R - L), fy = v => base - v / y1 * (base - top);
   for (const t of niceTicks(y1, 6)) { if (t > y1) continue; el('line', { x1: L, x2: R, y1: fy(t), y2: fy(t), class: 'grid' }, svg); text(svg, L - 6, fy(t) + 4, t, { class: 'tick', 'text-anchor': 'end' }); }
@@ -235,7 +242,7 @@ function drawThree() {
   for (const r of fam) { if (!byThree.has(r.three)) byThree.set(r.three, []); byThree.get(r.three).push(r); }
   const famValues = [...byThree.keys()].sort((a, b) => a - b);
   const W = chartWidth('p-three'), H = 300, L = 62, R = W - 8, top = 40, base = H - 50, svg = reset('p-three', H,
-    `The new classes sit right of the known outputs; family instances have ${famValues.join(' or ')}`,
+    data.live ? '3-dimensional nonbent subspaces of analyzed classes' : `The new classes sit right of the known outputs; family instances have ${famValues.join(' or ')}`,
     `${state.mode === 'share' ? 'Share of each group' : 'Classes'} by the number of 3-dimensional nonbent subspaces, in bins of 5`, W);
   const values = []; for (const s of series) for (let b = 0; b <= maxBin; b += step) values.push(val(s, bins.get(`${s.key}|${b}`) || 0));
   const scale = valueScale(values, top, base), fx = v => L + v / (maxBin + step) * (R - L);
@@ -356,7 +363,9 @@ function drawLiterature() {
 
 function draw() {
   tips.clear(); tooltip.hidden = true;
-  drawBent(); drawDU(); drawSignature(); drawThree(); drawAutos(); drawYield(); drawCorpora(); drawProducers(); drawMethods(); drawLiterature();
+  drawBent(); drawDU(); drawSignature(); drawThree();
+  for (const id of ['p-autos', 'p-yield', 'p-corpora', 'p-producers', 'p-methods', 'p-literature']) $(id).hidden = !!data.live;
+  if (!data.live) { drawAutos(); drawYield(); drawCorpora(); drawProducers(); drawMethods(); drawLiterature(); }
 }
 
 let resizeTimer = 0, drawnWidth = 0;
@@ -366,26 +375,44 @@ addEventListener('resize', () => {
 });
 
 function controls() {
-  const box = $('group-toggles');
-  for (const g of data.groups) {
+  const box = $('group-toggles'); box.textContent = '';
+  for (const g of data.groups.filter(g => g.classes > 0)) {
     const label = document.createElement('label');
-    label.innerHTML = `<input type="checkbox" value="${esc(g.key)}" checked><span class="chip" style="background:${COLORS[g.key]}"></span>${esc(g.name)} <span class="small">${fmtInt(g.classes)}</span>`;
+    label.innerHTML = `<input type="checkbox" value="${esc(g.key)}" ${state.visible.has(g.key) ? 'checked' : ''}><span class="chip" style="background:${COLORS[g.key]}"></span>${esc(g.name)} <span class="small">${fmtInt(g.classes)}</span>`;
     label.querySelector('input').addEventListener('change', e => { e.target.checked ? state.visible.add(g.key) : state.visible.delete(g.key); draw(); });
     box.appendChild(label);
   }
-  for (const input of document.querySelectorAll('input[name=mode]')) input.addEventListener('change', e => { state.mode = e.target.value; draw(); });
-  $('log').addEventListener('change', e => { state.log = e.target.checked; draw(); });
+
 }
 
-fetch('/api/structure', { cache: 'no-cache' }).then(async reply => {
-  const body = await reply.json();
-  if (!reply.ok) throw new Error(body.error || reply.statusText);
-  if (body.schema !== 'vbf-closure-structure-v1') throw new Error('unsupported report schema');
-  data = body;
-  for (const g of data.groups) groups[g.key] = { key: g.key, name: g.name, total: g.classes, color: COLORS[g.key] };
-  const total = sum(data.groups, g => g.classes);
-  $('summary').textContent = `${fmtInt(total)} classes from ${fmtInt(data.children.seeds)} published seeds · ${data.run} · freeze ${data.freeze}`;
-  $('provenance').textContent = `Report generated ${data.generated_utc} from the freeze ${data.freeze} and the reference ${data.reference}.`;
-  $('message').hidden = true;
-  controls(); drawStats(); drawnWidth = innerWidth; draw();
-}).catch(error => { $('message').textContent = `The structure report is unavailable: ${error.message}`; });
+for (const input of document.querySelectorAll('input[name=mode]')) input.addEventListener('change', e => { state.mode = e.target.value; if(data) draw(); });
+$('log').addEventListener('change', e => { state.log = e.target.checked; if(data) draw(); });
+let refreshInFlight = false;
+async function loadReport() {
+  if (refreshInFlight) return;
+  refreshInFlight = true;
+  try {
+    const reply = await fetch('/api/structure', { cache: 'no-store', signal: AbortSignal.timeout(20000) });
+    const body = await reply.json();
+    if (!reply.ok) throw new Error(body.error || reply.statusText);
+    if (body.schema !== 'vbf-closure-structure-v1') throw new Error('unsupported report schema');
+    if (data?.generated_utc === body.generated_utc) return;
+    data = body;
+    for (const key of DRAW_ORDER) groups[key] = {key, name:key, total:0, color:COLORS[key]};
+    for (const g of data.groups) groups[g.key] = {key:g.key, name:g.name, total:g.classes, color:COLORS[g.key]};
+    const total = sum(data.groups, g => g.classes);
+    $('summary').textContent = data.live
+      ? `${fmtInt(total)} of ${fmtInt(data.coverage.total_classes)} admitted classes analyzed · updated ${new Date(data.generated_utc).toLocaleString()} · refreshes every minute`
+      : `${fmtInt(total)} classes from ${fmtInt(data.children.seeds)} published seeds · ${data.run} · freeze ${data.freeze}`;
+    $('report-title').textContent = data.live ? 'Structure of the recursive campaign' : 'Structure of the published-root expansion';
+    if (data.live) $('report-scope').textContent = 'This report follows the current recursive campaign. Measurements are reused only for identical LUTs, and new classes are analyzed incrementally with VBF. Coverage is shown above. Catalog signature matches remain unclassified here; only absent signatures certify separation from the published reference.';
+    $('provenance').textContent = `Report generated ${data.generated_utc}; run ${data.run}; reference ${data.reference}.`;
+    $('message').hidden = true;
+    controls(); drawStats(); drawnWidth = innerWidth; draw();
+  } catch (error) {
+    $('message').hidden = false;
+    $('message').textContent = data ? `Showing the last complete report; refresh pending: ${error.message}` : `Preparing the live structure report: ${error.message}. This page retries automatically.`;
+  } finally { refreshInFlight = false; }
+}
+loadReport();
+setInterval(loadReport, 60000);

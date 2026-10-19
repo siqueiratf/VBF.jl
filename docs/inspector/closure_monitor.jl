@@ -146,6 +146,23 @@ function catalog_summary(execution,path)
         "audited_current_classes"=>Int(saved["current_classes"]),"unaudited_classes"=>newer))
 end
 
+"""Expose the current campaign's signature-separation lower bound from its worker."""
+function live_catalog_summary(execution,path)
+    unavailable=Dict{String,Any}("status"=>"unavailable","confirmed_absent_classes"=>nothing)
+    isfile(path) || return unavailable
+    saved=JSON3.read(read(path,String),Dict{String,Any})
+    get(saved,"schema","")=="vbfsearch-live-catalog-comparison-v1" || return unavailable
+    get(saved,"current_run","")==get(execution,"directory",nothing) &&
+        get(saved,"initial_roots",-1)==execution["initial_roots"] &&
+        get(saved,"catalog_snapshot_validated",false) || return merge(unavailable,Dict("status"=>"outdated"))
+    checked=Int(saved["classes_checked"]);absent=Int(saved["confirmed_absent_classes"])
+    0<=absent<=checked<=execution["total_parents"] &&
+        absent+saved["matching_signature_classes"]==checked && saved["parent_cutoff"]==checked ||
+        error("inconsistent live catalog comparison")
+    merge(saved,Dict("status"=>"snapshot","audited_current_classes"=>checked,
+        "unaudited_classes"=>execution["total_parents"]-checked))
+end
+
 """Expose the direct published-root result separately from recursive campaign totals."""
 function published_root_summary(execution,path)
     unavailable=Dict{String,Any}("status"=>"unavailable")
@@ -326,7 +343,9 @@ function snapshot(monitor; force=false, now_seconds=time())
             "campaign" => basename(monitor.campaign), "roots" => roots,
             "execution" => execution, "rates" => rates,
             "discoveries" => discovery_summary(execution,monitor.comparison),
-            "catalog_comparison" => catalog_summary(execution,joinpath(monitor.campaign,"current-catalog-comparison.json")),
+            "catalog_comparison" => isfile(joinpath(monitor.run,"reports","catalog.json")) ?
+                live_catalog_summary(execution,joinpath(monitor.run,"reports","catalog.json")) :
+                catalog_summary(execution,joinpath(monitor.campaign,"current-catalog-comparison.json")),
             "published_root_comparison" => published_root_summary(execution,joinpath(monitor.campaign,"current-published-root-comparison.json")),
             "previous_campaign" => previous_campaign_summary(execution,joinpath(monitor.campaign,"current-published-root-comparison.json")),
             "recursive" => recursive_summary(execution),

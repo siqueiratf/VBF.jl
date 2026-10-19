@@ -35,3 +35,4 @@ test: inspector-instantiate
 test-search: inspector-instantiate
 	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)test/closure_monitor.jl"
 	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)test/closure_graph.jl"
+	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)test/live_structure.jl"
