@@ -1,6 +1,24 @@
 using Test,VBF,VBFSearch
+isdefined(@__MODULE__,:ClosureRefillTests) || include(joinpath(@__DIR__,"closure_refill.jl"))
 isdefined(@__MODULE__,:ContinuousSeedSearch) || include(joinpath(@__DIR__,"..","tools","closure_continuous.jl"))
 const ControllerVS=VBFSearch
+
+@testset "Controller slots share explicit rank lookup and private scratch" begin
+    Q=VBF.QuadraticExtensions
+    prepared=ContinuousSeedSearch.worker_contexts(3;geometry=Q.geometry(4))
+    @test prepared.rank_table_bytes==16 && prepared.rank_table_encoding=="two-bit"
+    @test all(c->c.rank_table===prepared.contexts[1].rank_table,prepared.contexts)
+    @test length(unique(c.guard for c in prepared.contexts))==3
+    @test all(c->c.work===nothing && c.geometry===nothing,prepared.contexts)
+    byte=ContinuousSeedSearch.worker_contexts(2;packed_rank_table=false,geometry=Q.geometry(4))
+    @test byte.rank_table_bytes==64 && byte.rank_table_encoding=="byte"
+    @test all(c->c.rank_table isa Q.PolarRankTable,byte.contexts)
+    plain=ContinuousSeedSearch.worker_contexts(2;precompute_rank_table=false,geometry=Q.geometry(4))
+    @test plain.rank_table_bytes==0 && all(c->c.rank_table===nothing,plain.contexts)
+    @test_throws ArgumentError ContinuousSeedSearch.worker_contexts(0;geometry=Q.geometry(4))
+    @test_throws ArgumentError ContinuousSeedSearch.worker_contexts(1;precompute_rank_table="false",geometry=Q.geometry(4))
+    @test_throws ArgumentError ContinuousSeedSearch.worker_contexts(1;packed_rank_table="true",geometry=Q.geometry(4))
+end
 # Recursive parent 24389 of the 2026-10-17 campaign: one maximizing five-space,
 # so a complete window takes seconds and still has every kind of wave.
 const CONTROLLER_ROOT="00000079003b96d40083a55feb53d819009efe19a005c814cfd294f084a2491600094b3be0d23d7679f3976472c30ac220b7957b60cc4396968286eb3d12bbed002d13470c1a89e6802e36e167f247ab10a3fd37bc34c7365f6f175e1813c6b404205c01e8f72640fd5a00defa669174348e925178f948b0023b0141a5a7304b00598aaa04661803409a6fccaf4e168e08cf7cc2ac504ecb87c3566bc8b78f890252c3eae68db1a33be85ff534dcc6572ae415a26e9bc74bdc91467273057f700175989509460630c136fd7322ee883d19f37eedb16040e8167fd4c45507012a077ad5d1efa9ab94be40c94ebd785ce03fdc138977afcd6c4929c0d9eab1f5d7"
@@ -46,7 +64,7 @@ function controller_science(run)
     end
 end
 
-@testset "Pipelined controller waves give schedule-independent evidence" begin
+@testset "Refilled controller slots preserve scientific evidence and bounded restart storage" begin
     mktempdir() do directory
         one,run1=controller_window(joinpath(directory,"one"),1)
         three,run3=controller_window(joinpath(directory,"three"),3)
@@ -59,11 +77,30 @@ end
         @test length(a.kernels)==255 && a.kernels==b.kernels
         @test length(a.partition)>1 && a.partition==b.partition
         @test length(readlines(joinpath(directory,"three","evidence","seed-timings.jsonl")))==1
-        # A deadline ends the session after the wave in flight; no job stays running.
-        stopped,run2=controller_window(joinpath(directory,"deadline"),3;duration=1.0)
+        @test one["baseline"]["policy"]==three["baseline"]["policy"]=="summary"
+        @test one["baseline"]["bytes"]<65536
+        @test !isfile(joinpath(directory,"one","evidence","classification-before.sqlite"))
+        @test isfile(joinpath(directory,"one","evidence","closure_refill.jl"))
+        @test isfile(joinpath(directory,"one","evidence","closure_baseline.jl"))
+        summary=ControllerVS.TOML.parsefile(one["baseline"]["path"])
+        @test summary["watermarks"]["parents_max_rowid"]==1
+        @test occursin("not a rollback backup",summary["scope"])
+        s=ControllerVS._closure_open(run1)
+        try
+            blocked=joinpath(directory,"full-baseline-preflight");mkpath(blocked)
+            @test_throws ErrorException ContinuousSeedSearch.continuous_baseline!(s,blocked;
+                policy="full",full_reserve_bytes=typemax(Int))
+            @test !isfile(joinpath(blocked,"classification-before.sqlite"))
+        finally
+            ControllerVS._closure_close(s)
+        end
+        # An already expired deadline stops before dispatch, independent of how
+        # quickly this small fixture runs on the current machine.
+        stopped,run2=controller_window(joinpath(directory,"deadline"),3;duration=0.0)
         @test stopped["state"]=="paused_budget"
+        @test stopped["processed_packets"]==0
         c=controller_science(run2)
         @test c.running==0
-        @test length(c.paths)<length(a.paths)
+        @test isempty(c.paths)
     end
 end

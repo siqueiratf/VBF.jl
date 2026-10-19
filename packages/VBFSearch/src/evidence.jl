@@ -107,6 +107,24 @@ solver_fingerprint() = equivalence_solver_fingerprint()
 function compare(f,g;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000)
     relation in (:ea,:ccz) || error("relation must be ea or ccz")
     pf,pg = properties(f),properties(g)
+    _compare_verified_properties(f,g,pf,pg;relation,timeout_seconds,max_nodes)
+end
+
+"""Reuse freshly computed properties inside the trusted worker boundary.
+
+This private helper is never fed transported property claims: its callers first
+run `properties` on each LUT. Exact byte identities are checked here so a fresh
+property record cannot accidentally be paired with another candidate or target.
+Public `compare` always performs both property calculations itself. Solver
+fingerprints, bounded native search and full positive-witness replay are shared
+with that public path.
+"""
+function _compare_verified_properties(f,g,pf,pg;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000)
+    relation in (:ea,:ccz) || error("relation must be ea or ccz")
+    for (lut,p) in ((f,pf),(g,pg))
+        bytes=UInt8.(lut)
+        lut_id(bytes)==p["lut_sha256"] && bytes2hex(bytes)==p["lut_hex"] || error("comparison properties belong to another LUT")
+    end
     result = Dict{String,Any}("relation"=>string(relation),"candidate_lut_hex"=>pf["lut_hex"],
         "target_lut_hex"=>pg["lut_hex"],"candidate_sha256"=>pf["lut_sha256"],
         "target_sha256"=>pg["lut_sha256"],"julia_version"=>string(VERSION),

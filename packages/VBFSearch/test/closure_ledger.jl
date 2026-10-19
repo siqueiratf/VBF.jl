@@ -54,6 +54,55 @@ end
     end
 end
 
+@testset "Streaming worker ledger is byte-identical to generic row packing" begin
+    function proof_chunks(n)
+        [Dict("proof"=>Dict{String,Any}("V5_forms"=>[134658561,34016355,17372590,10987437,4393092],
+            "candidate_spaces"=>i%3,"capped"=>i==n,"completion_spaces"=>i%7,
+            "coset_order"=>"increasing nonzero quotient integer with exact bent count",
+            "coset_representative"=>27i,"du_reject"=>Int(i%5==0),"first_x"=>i,
+            "heuristic_pruning"=>false,"linear_system_candidates"=>101i,
+            "next_x"=>i+1,"total_x"=>n)) for i in 1:n]
+    end
+    for n in (1,2,64,4096),future in (false,true)
+        chunks=proof_chunks(n)
+        if future
+            chunks[end]["proof"]["future_field"]="αβ\nexact \"quoted\" evidence"
+        end
+        expected=[Dict{String,Any}("job_id"=>17,"first_x"=>c["proof"]["first_x"],
+            "next_x"=>c["proof"]["next_x"],"total_x"=>c["proof"]["total_x"],
+            "capped"=>Int(c["proof"]["capped"]),"evidence"=>VS._closure_coset_evidence_text(c["proof"])) for c in chunks]
+        packed=VS._closure_ledger_row(17,chunks)
+        @test packed.evidence==(n==1 ? first(expected)["evidence"] : VS._closure_pack_chunks(expected))
+        @test packed.job_id==17 && packed.first_x==1 && packed.next_x==n+1 && packed.total_x==n && packed.capped==1
+        envelope=Dict{String,Any}(String(k)=>v for (k,v) in pairs(packed))
+        @test VS._closure_unpack_chunks(envelope)==expected
+    end
+    empty=Dict("proof"=>Dict{String,Any}("first_x"=>1,"next_x"=>1,"total_x"=>0,"capped"=>false))
+    @test VS._closure_ledger_row(17,[empty]).evidence==VS._closure_text(empty["proof"])
+    @test_throws Exception VS._closure_ledger_row(17,[])
+    @test_throws Exception VS._closure_ledger_row(17,fill(empty,65537))
+    bad=proof_chunks(2);bad[end]["proof"]["first_x"]=-1
+    @test_throws Exception VS._closure_ledger_row(17,bad)
+    @test_throws Exception VS._closure_ledger_row(-1,proof_chunks(2))
+end
+
+@testset "Direct proof encoding preserves canonical text and bounded fallback writes" begin
+    native=VS._ClosureCosetProof((1,2,3,4,5),7,8,16,1,9,0,3,23,false)
+    ordinary=copy(native);future=copy(native);future["future_field"]="αβ\nquoted \"proof\""
+    empty=Dict{String,Any}("first_x"=>1,"next_x"=>1,"total_x"=>0,"capped"=>false)
+    for proof in (native,ordinary,future,empty)
+        expected=VS._closure_text(proof)
+        @test VS._closure_coset_evidence_text(proof)==expected
+        io=IOBuffer();write(io,"α")
+        VS._closure_write_coset_evidence(io,proof,sizeof("α")+sizeof(expected))
+        @test String(take!(io))=="α"*expected
+        @test_throws ErrorException VS._closure_write_coset_evidence(IOBuffer(),proof,0)
+    end
+    io=IOBuffer()
+    @test_throws ErrorException VS._closure_write_coset_evidence(io,future,0)
+    @test position(io)==0
+end
+
 if haskey(ENV,"VBF_CLOSURE_COMPACT_HELPER")
     @testset "Native migration and Julia decoder preserve the same logical stream" begin
         mktempdir() do directory
