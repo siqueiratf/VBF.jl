@@ -1,0 +1,17 @@
+{
+  "scope": "Opt-in tests only; original archived benchmark evidence unchanged.",
+  "fixtures": [
+    {
+      "file": "v5-pre-du7.jl",
+      "source": "packages/VBFSearch/data/research/analyses/v6-frontier-incidence-20261018/implementation-baseline/quadratic_extensions.jl",
+      "sha256": "b90eaee972f215f465b0ab590c5e28295a841baedcafa66b1ea7cd24a66cc3a1",
+      "purpose": "Pre-DU7 V5 source for triangle/mask/bitset and rank-table historical transformations."
+    },
+    {
+      "file": "v5-pre-stable-dense.jl",
+      "source": "packages/VBFSearch/data/research/analyses/v5-native-hotspots-20261019/baseline/quadratic_extensions.jl",
+      "sha256": "0dc0e38da76a5d322227784917a3f792d25938115310121edbe9ba04b3fcc5e2",
+      "purpose": "Intermediate native DU7 source before concrete iterator and dense histogram transformations."
+    }
+  ]
+}
