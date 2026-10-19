@@ -2,6 +2,27 @@ using Test, TOML, SHA, HTTP, JSON3
 include(joinpath(@__DIR__, "..", "closure_monitor.jl"))
 using .APNClosureMonitor
 
+@testset "Live catalog count is bound to its campaign and separated signatures" begin
+    mktempdir() do dir
+        path=joinpath(dir,"catalog.json")
+        execution=Dict{String,Any}("directory"=>dir,"initial_roots"=>2,"total_parents"=>8)
+        saved=Dict{String,Any}("schema"=>"vbfsearch-live-catalog-comparison-v1","current_run"=>dir,
+            "initial_roots"=>2,"classes_checked"=>7,"parent_cutoff"=>7,"confirmed_absent_classes"=>3,
+            "matching_signature_classes"=>4,"catalog_snapshot_validated"=>true,"lower_bound"=>true)
+        @test APNClosureMonitor.live_catalog_summary(execution,path)["status"]=="unavailable"
+        write(path,JSON3.write(saved))
+        result=APNClosureMonitor.live_catalog_summary(execution,path)
+        @test result["confirmed_absent_classes"]==3 && result["unaudited_classes"]==1
+        @test result["lower_bound"] && result["matching_signature_classes"]==4
+        for change in (Dict("current_run"=>"other"),Dict("initial_roots"=>3),Dict("catalog_snapshot_validated"=>false))
+            write(path,JSON3.write(merge(saved,change)))
+            @test APNClosureMonitor.live_catalog_summary(execution,path)["status"]=="outdated"
+        end
+        write(path,JSON3.write(merge(saved,Dict("confirmed_absent_classes"=>4))))
+        @test_throws ErrorException APNClosureMonitor.live_catalog_summary(execution,path)
+    end
+end
+
 @testset "Direct published-root comparisons preserve reference and expansion scopes" begin
     mktempdir() do dir
         path=joinpath(dir,"direct.json")
