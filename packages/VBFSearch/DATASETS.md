@@ -18,6 +18,7 @@ Paths beginning with `data/` below are relative to `packages/VBFSearch/`;
 | Published-root result | `data/research/freezes/published-roots-b52-20261017/classes.sqlite` | Classes observed directly in complete V5 and switching expansions of the 24,294 published roots. Includes the initial seeds. |
 | Comparison evidence | `data/research/freezes/published-roots-b52-20261017/comparisons.sqlite` | Literature and historical membership evidence for the published-root result. This contains relationships and witnesses, not a reference corpus. |
 | Recursive campaign archive | Path recorded in the registry | The full stopped campaign ledger, including recursive work. This is a different scope from the direct published-root result. |
+| Current recursive checkpoint | `data/search/literature-b52-closure-20261014/run-validation-20261018T232756Z/closure.sqlite` | The later recursive campaign, stopped on 19 October 2026. Its published-reference comparisons are under `reports/`; it remains separate from both class freezes above. |
 
 The published-root result's `roots`, `methods`, and `derivations` tables preserve
 which original parent and construction produced each class. A derivation records
@@ -38,6 +39,11 @@ Run expensive verification under an explicit Julia thread limit. The reference
 restriction tool only reuses repeated-bucket classification when every removed
 record was a singleton; it refuses a restriction that would alter shared-bucket
 evidence. Pin the original catalog before changing its source set.
+
+Historical checkpoints can be stored as verified `.sqlite.zst` archives. Their
+adjacent manifests record the original byte hash and restore command; restore
+the SQLite file before opening one. Current storage locations and controller
+restart policies are described in [STORAGE.md](STORAGE.md).
 
 ## Shared copies
 
