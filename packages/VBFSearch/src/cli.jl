@@ -42,6 +42,8 @@ Usage: bin/vbf COMMAND [OPTIONS]
            [--root-first 1] [--root-last 0] [--root-order forward|reverse]
            [--extension-cosets 1] [--switching-directions 1]
   closure  upgrade SOURCE --output DIR [--switching-directions 32]
+  closure  reduce SOURCE --output DIR --helper EXECUTABLE [--threads 8]
+           [--reserve-gib 12] [--max-gib 55]
   closure  run|resume DIR [--duration 60s] [--evaluations 1000] [--jobs 16]
            [--parents 0] [--equivalence-duration 2s] [--equivalence-nodes 100000]
   closure  status|stop DIR
@@ -81,6 +83,12 @@ function closure_command(args)
             root_order=Symbol(get(cfg,"root-order","forward")),
             extension_cosets=parse(Int,get(cfg,"extension-cosets","1")),
             switching_directions=parse(Int,get(cfg,"switching-directions","1"))))
+    elseif action=="reduce"
+        cfg,_,pos=options(rest,["output","helper","threads","reserve-gib","max-gib"])
+        length(pos)==1 && all(k->haskey(cfg,k),("output","helper")) || error("closure reduce needs SOURCE --output DIR --helper EXECUTABLE")
+        println(VBFSearch.closure_reduce(only(pos);output=cfg["output"],helper=cfg["helper"],
+            threads=parse(Int,get(cfg,"threads","8")),reserve_bytes=parse(Int,get(cfg,"reserve-gib","12"))*1024^3,
+            max_bytes=parse(Int,get(cfg,"max-gib","55"))*1024^3))
     elseif action=="upgrade"
         cfg,_,pos=options(rest,["output","switching-directions"])
         length(pos)==1 && haskey(cfg,"output") || error("closure upgrade needs SOURCE --output DIR")

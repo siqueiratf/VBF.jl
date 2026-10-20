@@ -56,7 +56,8 @@ function continuous_baseline!(s,directory;policy="summary",cached_progress=Dict{
     ispath(path) && error("baseline already exists")
     watermarks=Dict{String,Int}()
     for table in ("candidates","parents","jobs","comparisons","sessions")
-        watermarks[table*"_max_rowid"]=EA._closure_count(s.db,"SELECT COALESCE(MAX(rowid),0) n FROM $table")
+        physical=EA._closure_normalized(s.db) && table in ("candidates","comparisons") ? "closure_"*table : table
+        watermarks[table*"_max_rowid"]=EA._closure_count(s.db,"SELECT COALESCE(MAX(rowid),0) n FROM $physical")
     end
     counters=Dict{String,Any}()
     for name in ("total_parents","promoted_parents","exact_luts","quadratic_apn_luts",

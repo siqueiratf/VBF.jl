@@ -23,7 +23,7 @@ end
 # so a complete window takes seconds and still has every kind of wave.
 const CONTROLLER_ROOT="00000079003b96d40083a55feb53d819009efe19a005c814cfd294f084a2491600094b3be0d23d7679f3976472c30ac220b7957b60cc4396968286eb3d12bbed002d13470c1a89e6802e36e167f247ab10a3fd37bc34c7365f6f175e1813c6b404205c01e8f72640fd5a00defa669174348e925178f948b0023b0141a5a7304b00598aaa04661803409a6fccaf4e168e08cf7cc2ac504ecb87c3566bc8b78f890252c3eae68db1a33be85ff534dcc6572ae415a26e9bc74bdc91467273057f700175989509460630c136fd7322ee883d19f37eedb16040e8167fd4c45507012a077ad5d1efa9ab94be40c94ebd785ce03fdc138977afcd6c4929c0d9eab1f5d7"
 
-function controller_window(directory,concurrency;duration=Inf)
+function controller_window(directory,concurrency;duration=Inf,normalized=false)
     mkpath(directory);p=ControllerVS.properties(hex2bytes(CONTROLLER_ROOT))
     rootfile=joinpath(directory,"root.tsv");write(rootfile,p["lut_hex"]*"\n")
     digest=ControllerVS.DiscoveryEvidence.filehash(rootfile)
@@ -32,7 +32,7 @@ function controller_window(directory,concurrency;duration=Inf)
         "implementation"=>ControllerVS.implementation_fingerprint(),"julia"=>string(VERSION),
         "scientific"=>Dict("n"=>8,"m"=>8,"target_b6"=>52,"max_kernel"=>23,"extension_cosets"=>65536,"switching_directions"=>255))
     run=joinpath(directory,"run")
-    ControllerVS._closure_initialize(run,identity,[(lut_sha256=p["lut_sha256"],lut_hex=p["lut_hex"],sigma_hash=p["sigma_hash"],catalog_id="controller-fixture:1")])
+    ControllerVS._closure_initialize(run,identity,[(lut_sha256=p["lut_sha256"],lut_hex=p["lut_hex"],sigma_hash=p["sigma_hash"],catalog_id="controller-fixture:1")];normalized)
     config=Dict{String,Any}("run"=>run,"evidence"=>joinpath(directory,"evidence"),"concurrency"=>concurrency,
         "window_size"=>1,"max_windows"=>1,"duration_seconds"=>duration)
     ContinuousSeedSearch.run(config),run
@@ -102,5 +102,19 @@ end
         c=controller_science(run2)
         @test c.running==0
         @test isempty(c.paths)
+    end
+end
+
+@testset "Normalized checkpoint completes the same full seed expansion" begin
+    mktempdir() do directory
+        legacy,old=controller_window(joinpath(directory,"legacy"),1)
+        compact,new=controller_window(joinpath(directory,"normalized"),1;normalized=true)
+        a=controller_science(old);b=controller_science(new)
+        @test legacy["state"]==compact["state"]=="paused_window_limit"
+        @test a.paths==b.paths && !isempty(b.paths)
+        @test a.ledger==b.ledger && !isempty(b.ledger)
+        @test a.kernels==b.kernels && length(b.kernels)==255
+        @test a.partition==b.partition && length(b.partition)>1
+        @test b.running==b.undecided==0
     end
 end

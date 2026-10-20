@@ -474,8 +474,7 @@ function _closure_deduplicate!(s,job;seconds,nodes,stop_requested)
         end
         proof=compare(hex2bytes(candidate["lut_hex"]),hex2bytes(target["lut_hex"]);relation=:ea,timeout_seconds=seconds,max_nodes=nodes)
         _closure_transaction(s) do
-            _closure_exec(s.db,"INSERT INTO comparisons(candidate_id,target_parent,status,evidence,session_id) VALUES(?,?,?,?,?)",
-                (id,target["id"],proof["status"],_closure_text(proof),s.session))
+            _closure_insert_comparison!(s,id,target["id"],proof)
             if proof["status"]=="equivalent_with_verified_witness"
                 verify_comparison(proof) || error("EA witness failed full replay")
                 _closure_exec(s.db,"UPDATE candidates SET class_id=?,state='equivalent' WHERE id=?",(target["id"],id))
