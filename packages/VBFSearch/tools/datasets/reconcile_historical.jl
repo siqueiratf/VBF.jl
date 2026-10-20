@@ -88,6 +88,7 @@ end
 "Find a budgeted EA witness using VBF; inconclusive results never imply equality."
 function prove(f,g;cached=nothing,seconds=1.0,nodes=100000)
     if cached!==nothing
+        length(cached)==35 && cached[1]==1 || error("cached EA witness is not a positive certificate")
         APNDatasetVerification.verify_pair(f,g,cached)
         return (status="equivalent",proof=cached)
     elseif f==g
@@ -103,6 +104,7 @@ function prove(f,g;cached=nothing,seconds=1.0,nodes=100000)
 end
 "Persist only a positive certificate independently replayed on all 256 points."
 function record!(db,old,target,proof,collection,identity,path,method,details)
+    length(proof)==35 && proof[1]==1 || error("recovery requires a positive EA certificate")
     f=Vector{UInt8}(old["lut"]);g=Vector{UInt8}(target["lut"])
     bytes2hex(SHA.sha256(f))==old["lut_sha256"] || error("historical LUT changed")
     bytes2hex(SHA.sha256(g))==target["sha"] || error("target LUT changed")
@@ -166,7 +168,12 @@ function current!(db,run;snapshot,deadline=Inf,pair_seconds=1.0,pair_nodes=10000
         cached["absent"]==1
     end
     try
-        reused=rows(db,"SELECT m.class_id,m.target_sha256,m.witness FROM matches m WHERE m.collection='published_roots' AND NOT EXISTS(SELECT 1 FROM matches x WHERE x.class_id=m.class_id AND x.collection='recursive' AND x.source_identity=?) ORDER BY m.class_id",(identity,))
+        for prior in rows(db,"SELECT target_class_id,target_sha256 FROM matches WHERE collection='recursive' AND source_identity=?",(identity,))
+            prior["target_class_id"]<=cutoff || error("recursive snapshot predates a verified recovery; retain its report and use a new source namespace")
+            actual=rows(source,"SELECT candidate_id FROM parents WHERE id=? AND origin='discovered'",(prior["target_class_id"],))
+            !isempty(actual) && only(actual)["candidate_id"]==prior["target_sha256"] || error("previously verified recursive target changed")
+        end
+        reused=rows(db,"SELECT m.class_id,m.target_sha256,m.witness FROM matches m WHERE (m.collection='published_roots' OR (m.collection='recursive' AND m.source_identity<>?)) AND NOT EXISTS(SELECT 1 FROM matches x WHERE x.class_id=m.class_id AND x.collection='recursive' AND x.source_identity=?) ORDER BY m.class_id",(identity,identity))
         for batch in Iterators.partition(reused,256)
             transaction(db) do
                 for prior in batch
@@ -174,7 +181,7 @@ function current!(db,run;snapshot,deadline=Inf,pair_seconds=1.0,pair_nodes=10000
                     found=targets(source,"candidate_id",prior["target_sha256"],cutoff)
                     isempty(found) && continue
                     target=only(found);eligible(old,target) || continue
-                    record!(db,old,target,prior["witness"],"recursive",identity,joinpath(run,"closure.sqlite"),"published_root_witness_replayed",details)
+                    record!(db,old,target,prior["witness"],"recursive",identity,joinpath(run,"closure.sqlite"),"cached_ea_witness_replayed",details)
                 end
             end
             progress("recursive_cached_witnesses")
@@ -292,7 +299,7 @@ function main(config_path)
         current=JSON3.read(read(config["current_pointer"],String),Dict{String,Any})
         run=dirname(current["current_recursive_checkpoint"])
         manifest=TOML.parsefile(joinpath(run,"identity.toml"))
-        snapshot=JSON3.read(read(joinpath(run,"reports","catalog.json"),String),Dict{String,Any})
+        snapshot=JSON3.read(read(get(config,"snapshot_path",joinpath(run,"reports","catalog.json")),String),Dict{String,Any})
         snapshot["current_run"]==abspath(run) && snapshot["catalog_snapshot_validated"] || error("catalog snapshot is not bound to current campaign")
         db=initialize(config["historical"],output;expected_sha256=config["historical_sha256"])
         last_progress=Ref(0.0)

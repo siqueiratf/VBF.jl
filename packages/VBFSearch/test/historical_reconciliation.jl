@@ -22,10 +22,12 @@ count(db,table)=only(H.rows(db,"SELECT COUNT(*) n FROM $table"))["n"]
             @test_throws ErrorException H.initialize(history,active;expected_sha256="0"^64)
             proof=H.witness(UInt16[1<<i for i in 0:15],5)
             @test H.prove(f,g;cached=proof).status=="equivalent"
+            @test_throws ErrorException H.prove(f,g;cached=zeros(UInt8,35))
             old=only(H.rows(db,"SELECT * FROM source_classes WHERE class_id=1"))
             target=Dict("id"=>999,"sha"=>sha(g),"lut"=>g)
             bad=H.witness(UInt16[1<<i for i in 0:15],0)
             @test_throws ErrorException H.record!(db,old,target,bad,"recursive","fake",history,"cached",Dict())
+            @test_throws ErrorException H.record!(db,old,target,zeros(UInt8,35),"recursive","fake",history,"cached",Dict())
             @test count(db,"classes")==2
             @test_throws ErrorException H.record!(db,old,merge(target,Dict("sha"=>"0"^64)),proof,"recursive","fake",history,"cached",Dict())
 
@@ -77,6 +79,7 @@ count(db,table)=only(H.rows(db,"SELECT COUNT(*) n FROM $table"))["n"]
             @test report["recursive_verified_overlap"]==2 && report["recursive_comparison_complete"]
             @test report["recursive_190454_prefix_overlap"]==1
             @test report["conditional_outside_catalog_estimate"]==2
+            @test_throws ErrorException H.current!(db,run;snapshot=merge(snapshot,Dict("parent_cutoff"=>101)))
             H.current!(db,run;snapshot,pair_seconds=5.0)
             @test count(db,"matches")==3
             @test Set(r["target_class_id"] for r in H.rows(db,"SELECT target_class_id FROM matches WHERE collection='recursive'"))==Set([101,102])
