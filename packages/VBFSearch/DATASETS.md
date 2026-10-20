@@ -19,12 +19,13 @@ Paths beginning with `data/` below are relative to `packages/VBFSearch/`;
 | Comparison evidence | `data/research/freezes/published-roots-b52-20261017/comparisons.sqlite` | Literature and historical membership evidence for the published-root result. This contains relationships and witnesses, not a reference corpus. |
 | Recursive campaign archive | Path recorded in the registry | The full stopped campaign ledger, including recursive work. This is a different scope from the direct published-root result. |
 | Current recursive checkpoint | `data/search/literature-b52-closure-20261014/run-reduced-20261020/closure.sqlite` | Losslessly normalized recursive campaign, stopped on 19 October 2026. Its published-reference comparisons are under `reports/`; it remains separate from both class freezes above. |
-| Pre-reduction rollback checkpoint | `data/search/literature-b52-closure-20261014/run-validation-20261018T232756Z/closure.sqlite` | The same scientific records in their original representation, retained for rollback. |
+| Retired pre-reduction source | `data/search/literature-b52-closure-20261014/run-validation-20261018T232756Z/closure.sqlite.retired.json` | Retirement receipt for the superseded 213.17 GiB database, removed after verification on 20 October 2026 UTC. All scientific records remain in the current checkpoint. |
 
-The current recursive checkpoint and its pre-reduction source represent the
-same candidate functions, classes, derivations and coverage. Their function
-counts describe the same dataset. The registry records both byte hashes and the
-lossless migration receipt; [STORAGE.md](STORAGE.md) describes the representation.
+The current recursive checkpoint preserves the pre-reduction source's candidate
+functions, classes, derivations and coverage. These are the same dataset. The
+registry selects the reduced file and retains the removed source's byte hash
+and retirement receipt under retired sources. [STORAGE.md](STORAGE.md) describes
+the representation and reclaimed space.
 
 The published-root result's `roots`, `methods`, and `derivations` tables preserve
 which original parent and construction produced each class. A derivation records
