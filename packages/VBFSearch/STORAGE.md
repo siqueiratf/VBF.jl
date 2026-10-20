@@ -2,7 +2,8 @@
 
 The current recursive checkpoint is
 `data/search/literature-b52-closure-20261014/run-reduced-20261020/closure.sqlite`.
-It remains stopped, with STOP retained. Its losslessly normalized SQLite is
+It was stopped for migration; `current.json` records its live controller state.
+Its losslessly normalized SQLite at the migration cutoff is
 **47,283,838,976 bytes (44.04 GiB)**, preserving all 8,052,863,858 logical coset
 records and every scientific table from the pre-reduction source.
 
@@ -71,8 +72,17 @@ The updated continuous controller uses a bounded FIFO of reserved jobs and
 refills a free compute slot without waiting for the other slots. Results are
 applied in reservation order by the sole database writer. Its default limit is
 twice the configured concurrency; an unusually slow first result can still
-apply backpressure at that limit. Scientific construction limits and coverage
-cursors retain their existing meaning.
+apply backpressure at that limit. `reservation_horizon` can explicitly raise this bounded
+queue; the current restart selects 128 tickets for 32 workers. Scientific
+construction limits and coverage cursors retain their existing meaning. In
+particular, the checkpoint keeps `extension_cosets = 65536`.
+
+The coordinator groups ready events, job reservations and ordered applications
+into one bounded transaction, committing before waiting for more worker results
+or publishing reports. Each application has a savepoint: a failed packet is
+rolled back while the successful earlier prefix is committed. `synchronous=FULL`
+is retained. This amortizes commit overhead without holding a transaction across
+worker computation waits. Failed commits roll back their uncommitted batch.
 
 `baseline_policy = "summary"` is the default for continuous runs. It saves a
 small TOML record of checkpoint identity, cached-counter freshness, indexed row
@@ -163,9 +173,10 @@ leaving approximately 12.72 GB before dependencies and derived artifacts.
 The latest graph payload is reused through hard links to immutable snapshot
 files; the structure and catalog JSON snapshots retain their original audit
 cutoffs. Mutable report databases are not hard-linked.
-A stopped 32-worker controller configuration is prepared under
-`data/search/literature-b52-closure-20261014/restart-controller-20261020-reduced/`.
-The older restart plan was removed during consolidation. No campaign was started. These migration budgets do not cap subsequent
+The 32-worker continuous campaign was resumed after migration, then restarted
+with bounded coordinator transaction batches and a 128-ticket reservation queue.
+The campaign's `current.json` points to its frozen controller, service and evidence.
+These migration budgets do not cap subsequent
 search growth. Workers should receive bounded work packets rather than copies
 of the coordinator database.
 

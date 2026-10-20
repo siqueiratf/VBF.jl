@@ -11,10 +11,11 @@ Timing measures remaining work, including classification, rather than a replay.
 The store stays open until cooperative STOP, with no default time limit.
 """
 module ContinuousSeedSearch
-using VBFSearch,TOML,SHA
+using VBFSearch,TOML,SHA,SQLite,DBInterface
 const FP=VBFSearch
 include("closure_baseline.jl")
 include("closure_refill.jl")
+include("closure_batches.jl")
 const _closure_rows=FP._closure_rows
 const _closure_count=FP._closure_count
 
@@ -81,6 +82,8 @@ function run(config)
     directory=abspath(config["run"]);out=abspath(config["evidence"])
     parents=Int[]
     concurrency=Int(get(config,"concurrency",32));concurrency>0 || error("invalid concurrency")
+    max_pending=Int(get(config,"reservation_horizon",2concurrency))
+    max_pending>=concurrency || error("reservation horizon must cover every slot")
     Int(get(config,"window_size",100))>0 || error("invalid window size")
     parent_scope=String(get(config,"parent_scope","all"))
     parent_scope in ("all","discovered") || throw(ArgumentError("invalid parent scope"))
@@ -91,7 +94,8 @@ function run(config)
     reporter=Base.include(@__MODULE__,helper)
     seed_summary(db)=Base.invokelatest(reporter,db)
     for (source,name) in ((@__FILE__,"controller.jl"),(joinpath(@__DIR__,"closure_baseline.jl"),"baseline-controller.jl"),
-            (joinpath(@__DIR__,"closure_refill.jl"),"refill-controller.jl"),(helper,"seed-progress-helper.jl"))
+            (joinpath(@__DIR__,"closure_refill.jl"),"refill-controller.jl"),
+            (joinpath(@__DIR__,"closure_batches.jl"),"batches-controller.jl"),(helper,"seed-progress-helper.jl"))
         cp(source,joinpath(out,name))
         # Preserve the literal include filenames as well as historical evidence
         # aliases, so the copied controller can resolve every sibling helper.
@@ -253,7 +257,9 @@ function run(config)
     function finish_item(item,value,compute_seconds,scheduling)
             job=item.job;packet=item.packet;equivalence=item.equivalence;apply_started=time_ns()
             if equivalence
-                outcome=FP._closure_equivalence_apply!(s,job,packet,value)
+                outcome=closure_apply_savepoint!(s.db) do
+                    FP._closure_equivalence_apply!(s,job,packet,value)
+                end
                 if outcome==:unresolved
                     deferred[Int(job["id"])]=time()+300
                     ea_attempts[Int(job["id"])]=get(ea_attempts,Int(job["id"]),0)+1
@@ -266,7 +272,9 @@ function run(config)
                     end
                 end
             else
-                evaluated+=FP._closure_apply!(s,job,value)
+                evaluated+=closure_apply_savepoint!(s.db) do
+                    FP._closure_apply!(s,job,value)
+                end
             end
             apply_seconds=Float64(time_ns()-apply_started)/1e9
             t=get(timings,Int(job["parent_id"]),Dict{String,Any}());key=equivalence ? "ea_task_seconds" : "construction_task_seconds"
@@ -324,7 +332,9 @@ function run(config)
             "rank_table_encoding"=>context_setup.rank_table_encoding,
             "scheduler"=>"bounded reserved FIFO; continuous slot refill; ordered durable apply",
             "scheduler_determinism"=>"FIFO reservation and application for a fixed eligible frontier; retry cooldowns and wall-clock budgets retained",
-            "reservation_horizon"=>2concurrency,
+            "reservation_horizon"=>max_pending,
+            "coordinator_transactions"=>"bounded steps, per-application savepoints, FULL synchronous commit",
+            "batches_controller_sha256"=>FP.DiscoveryEvidence.filehash(joinpath(@__DIR__,"closure_batches.jl")),
             "refill_controller_sha256"=>FP.DiscoveryEvidence.filehash(joinpath(@__DIR__,"closure_refill.jl")),
             "validation_seconds"=>validated-opened,"baseline_and_setup_seconds"=>active_started-validated,"descendant_expansion"=>true)
         FP._closure_exec(s.db,"INSERT INTO sessions(started,heartbeat,pid,host,state,budgets) VALUES(?,?,?,?,?,?)",(FP._closure_now(),FP._closure_now(),getpid(),get(ENV,"HOSTNAME","localhost"),"running",FP._closure_text(budgets)))
@@ -336,7 +346,8 @@ function run(config)
         publish!(;force=true)
         while true
             pool=run_refill_pool!(reserve_items,prepare_item,compute_item,finish_item;
-                concurrency,key=item->Int(item.job["id"]),stop_requested=stopped,on_tick=report_tick)
+                concurrency,max_pending,key=item->Int(item.job["id"]),stop_requested=stopped,on_tick=report_tick,
+                coordinator_step=f->closure_coordinator_step!(f,s.db))
             open(joinpath(out,"scheduler-metrics.jsonl"),"a") do io
                 println(io,FP.JSON3.write(Dict(string(k)=>v for (k,v) in pairs(pool))))
             end

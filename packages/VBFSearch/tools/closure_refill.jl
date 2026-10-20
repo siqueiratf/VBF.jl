@@ -1,7 +1,8 @@
 """Run a bounded FIFO of reserved jobs, refilling each free compute slot.
 
 `reserve(limit, excluded_keys)` runs only initially and after an ordered apply.
-It must return deterministic descriptors not already reserved. `prepare` and
+It must return deterministic descriptors not already reserved. `coordinator_step`
+may group writes; worker waits and reporting stay outside it. `prepare` and
 `apply` run on the coordinator; `compute` alone runs on worker tasks. A slot is
 an exclusive scratch owner, independent of the Julia thread executing its task.
 
@@ -18,7 +19,7 @@ is rethrown; the caller owns durable recovery of unapplied jobs.
 """
 function run_refill_pool!(reserve,prepare,compute,apply;
     concurrency::Int,max_pending::Int=2concurrency,key=identity,
-    stop_requested=()->false,on_tick=()->nothing)
+    stop_requested=()->false,on_tick=()->nothing,coordinator_step=f->f())
     concurrency>0 || throw(ArgumentError("invalid concurrency"))
     max_pending>=concurrency || throw(ArgumentError("reservation horizon must cover every slot"))
     events=Channel{Any}(max_pending)
@@ -79,23 +80,33 @@ function run_refill_pool!(reserve,prepare,compute,apply;
             reserve_more!();dispatch!()
         end
     end
+    function receive!(event)
+        wait(pop!(active,event.ticket))
+        push!(free_slots,event.slot);sort!(free_slots)
+        completed[event.ticket]=event
+        peak_completed=max(peak_completed,length(completed))
+        if event.problem!==nothing
+            failure===nothing && (failure=event.problem)
+            cancelled[]=true
+        end
+    end
     try
-        reserve_more!();dispatch!()
+        coordinator_step() do
+            reserve_more!();dispatch!()
+        end
         while !isempty(active)
             event=take!(events)
-            wait(pop!(active,event.ticket))
-            push!(free_slots,event.slot);sort!(free_slots)
-            completed[event.ticket]=event
-            peak_completed=max(peak_completed,length(completed))
-            if event.problem!==nothing
-                failure===nothing && (failure=event.problem)
-                cancelled[]=true
+            coordinator_step() do
+                receive!(event)
+                # Drain already completed work without waiting inside a transaction.
+                while isready(events)
+                    receive!(take!(events))
+                end
+                dispatch!();apply_prefix!()
             end
-            # Refill before serial application, using the already reserved FIFO.
-            dispatch!();apply_prefix!()
             failure===nothing && on_tick()
         end
-        apply_prefix!()
+        coordinator_step(apply_prefix!)
         failure===nothing || throw(failure.exception)
         (;state=worker_stop() ? :stopped : :drained,dispatched,applied,
             peak_active,peak_pending,peak_completed,

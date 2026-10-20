@@ -10,7 +10,7 @@ relative to `packages/VBFSearch/`.
 | Earlier discoveries | `data/research/datasets/earlier-discoveries-190638.sqlite` | 111,009 recovered representatives + 79,445 later finite-search representatives + 184 pilot representatives. |
 | Completed published-root result | `data/research/freezes/published-roots-b52-20261017/` | Complete direct V5 and switching expansion of 24,294 roots: 1,237,894 classes including roots, 294,000 absent from the pinned published reference. |
 | Completed-root witness ledger | `data/search/literature-b52-closure-20261014/run-compact-v15-20261016/closure.normalized.sqlite.zst` | Original construction/admission witnesses and IDs in normalized archival storage. Use the pinned restoration helper for SQL inspection or original execution. |
-| Current recursive checkpoint | `data/search/literature-b52-closure-20261014/run-reduced-20261020/` | Stopped resumable campaign, frozen code, root inputs, derivations, reports and graph. |
+| Current recursive checkpoint | `data/search/literature-b52-closure-20261014/run-reduced-20261020/` | Resumable campaign, frozen code, root inputs, derivations, reports and graph. |
 | Pinned published reference | `data/research/references/published-literature-20261017/` | Published-only comparison scope and signature/member evidence. |
 
 ## Merged earlier discoveries
@@ -61,7 +61,7 @@ inspection. See [STORAGE.md](STORAGE.md) for storage and restoration details.
 
 The current checkpoint retains 3,554,200 admitted parents and 7,650,225 exact LUTs.
 Admission is not a claim that every parent is new to the literature. The campaign
-remains stopped. `data/search/literature-b52-closure-20261014/current.json` identifies
+state is recorded in `data/search/literature-b52-closure-20261014/current.json`, which identifies
 the selected collections and prepared restart.
 
 The cleanup removed other experiments after verifying the merge, archives,
