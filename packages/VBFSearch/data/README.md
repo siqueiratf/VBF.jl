@@ -9,3 +9,8 @@ Generated results are ignored. READMEs and previously tracked research records
 remain tracked. Curated source inputs belong to `VBFCatalog/src/data/`; downloaded
 originals and materialized catalog stores belong to `.cache/vbfcatalog/`.
 See the [search guide](../README.md) and [tools](../tools/README.md).
+
+The [experiment inventory](../INVENTORY.md) indexes the local search and analysis
+directories, their disk use and retention recommendations. The canonical dataset
+roles are documented in [DATASETS.md](../DATASETS.md) and selected by
+`research/datasets/registry.json`.

@@ -6,6 +6,11 @@ snapshot exports. The CLI, Julia API and documentation inspector use the same
 implementation. Mathematical checks use VBF; there is no second verification
 engine and no Python dependency.
 
+For the current stopped recursive campaign, start with the
+[experiment inventory](INVENTORY.md), [dataset scopes](DATASETS.md) and
+[storage and restoration notes](STORAGE.md). The inventory lists local runs,
+analysis directories, sizes, operational dependencies and cleanup candidates.
+
 Research studies live in [VBFPaper](../VBFPaper/README.md): census
 sampling, hyperplane experiments, finite literature domains and publication
 figures. Original-source corpus preparation remains in VBFCatalog.
