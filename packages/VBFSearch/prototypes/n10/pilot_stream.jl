@@ -103,7 +103,7 @@ function write_summary(dir, st, scanned, nanchors, lastanchor)
     tmp = joinpath(dir, "summary.txt.tmp"); write(tmp, text); mv(tmp, joinpath(dir, "summary.txt"); force = true)
 end
 
-function pilot_stream(anchorfile, host, rdir, name, seedname; poll = 60, iters = 30_000)
+function pilot_stream(anchorfile, host, rdir, name, seedname; poll = 60, iters = 120_000)  # E1: 30k missed 3 of 24 certain extensions
     anchors = [[parse(UInt64, x; base = 16) for x in split(l)[2:end]] for l in readlines(anchorfile)]
     nanchors = length(anchors)
     flats = all_flats(); pts = flat_points()
@@ -126,7 +126,8 @@ function pilot_stream(anchorfile, host, rdir, name, seedname; poll = 60, iters =
         scanned = parse(Int, remote(host, "grep -c '^anchor' $rdir/pilot.log || true"))
         if size > st.offset
             nbytes = min(size - st.offset, 60_000)
-            chunk = remote(host, "tail -c +$(st.offset + 1) $rdir/$name.hits | head -c $nbytes")
+            # read, not readchomp: the final newline marks the last complete hit
+            chunk = read(`ssh -o BatchMode=yes -o ConnectTimeout=15 $host "tail -c +$(st.offset + 1) $rdir/$name.hits | head -c $nbytes"`, String)
             cut = findlast('\n', chunk)
             if cut !== nothing
                 body = chunk[1:cut]
@@ -215,5 +216,5 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     pilot_stream(ARGS[1], ARGS[2], ARGS[3], ARGS[4], ARGS[5];
                  poll = length(ARGS) > 5 ? parse(Int, ARGS[6]) : 60,
-                 iters = length(ARGS) > 6 ? parse(Int, ARGS[7]) : 30_000)
+                 iters = length(ARGS) > 6 ? parse(Int, ARGS[7]) : 120_000)
 end
