@@ -1,6 +1,7 @@
 # Portable GPU scan of the exchange step at n = 10: for an anchor V_7 < Q_10
 # (128 forms) and every coset q + V_7 of the 2^38 cosets, count the bent forms
-# (rank 10) and keep the cosets whose count equals `need`.
+# (rank 10) and keep the cosets whose count lies in the window `need` (an
+# integer or a range lo:hi).
 #
 # One KernelAbstractions kernel runs on CUDA (GTX 1060, CUDA 12.x runtime),
 # AMDGPU (RX 6700 / gfx1031) and the CPU. Choose with N10_BACKEND=cuda|amdgpu|cpu.
@@ -77,9 +78,9 @@ end
 
 # Thread t scans the aligned block [base + t*K, base + (t+1)*K) in Gray-code order.
 # exact = true fills the full histogram; exact = false stops a coset as soon as
-# it can no longer reach `need` (the production mode).
+# it can no longer reach the window [nlo, nhi] (the production mode).
 @kernel function scan_kernel!(hist, hits, nhits, @Const(vrows), @Const(crows), base::UInt64,
-                              logK::Int, need::Int, exact::Bool)
+                              logK::Int, nlo::Int, nhi::Int, exact::Bool)
     t = @index(Global, Linear)
     s = base + (((t - 1) % UInt64) << logK)
     q = ntuple(_ -> 0x0000, Val(10))
@@ -96,12 +97,12 @@ end
         cnt = 0
         for v in 0:127
             cnt += bent_tuple(xorrow(q, vrows, v * NR)) ? 1 : 0
-            (!exact && (cnt > need || cnt + 127 - v < need)) && break
+            (!exact && (cnt > nhi || cnt + 127 - v < nlo)) && break
         end
         if exact
             Atomix.@atomic hist[cnt+1] += UInt32(1)
         end
-        if cnt == need
+        if nlo <= cnt <= nhi
             g = (j ⊻ (j >> 1)) % UInt64
             h = Atomix.@atomic nhits[1] += UInt32(1)
             @inbounds h <= length(hits) && (hits[h] = s + g)
@@ -162,7 +163,7 @@ function slice_forms(Vs)
 end
 
 @kernel function scan_sliced!(hist, hits, nhits, @Const(vslice), @Const(crows), base::UInt64,
-                              logK::Int, need::Int, exact::Bool)
+                              logK::Int, nlo::Int, nhi::Int, exact::Bool)
     t = @index(Global, Linear)
     s = base + (((t - 1) % UInt64) << logK)
     q = ntuple(_ -> 0x0000, Val(10))
@@ -179,12 +180,12 @@ end
         cnt = 0
         for b in 0:3
             cnt += count_ones(bent_sliced(q, vslice, b * NR * NR))
-            (!exact && (cnt > need || cnt + 96 - 32b < need)) && break
+            (!exact && (cnt > nhi || cnt + 96 - 32b < nlo)) && break
         end
         if exact
             Atomix.@atomic hist[cnt+1] += UInt32(1)
         end
-        if cnt == need
+        if nlo <= cnt <= nhi
             g = (j ⊻ (j >> 1)) % UInt64
             h = Atomix.@atomic nhits[1] += UInt32(1)
             @inbounds h <= length(hits) && (hits[h] = s + g)
@@ -197,7 +198,7 @@ end
 function scan(vtab_d, crows_d, base, nthreads, logK, need; exact = false, maxhits = 1 << 16, kernel = :sliced)
     hist = devarray(zeros(UInt32, 129)); hits = devarray(zeros(UInt64, maxhits)); nh = devarray(zeros(UInt32, 1))
     k! = kernel == :sliced ? scan_sliced!(DEV, 256) : scan_kernel!(DEV, 256)
-    k!(hist, hits, nh, vtab_d, crows_d, UInt64(base), logK, need, exact; ndrange = nthreads)
+    k!(hist, hits, nh, vtab_d, crows_d, UInt64(base), logK, first(need), last(need), exact; ndrange = nthreads)
     KernelAbstractions.synchronize(DEV)
     n = Int(Array(nh)[1])
     Array(hist), sort(Array(hits)[1:min(n, maxhits)]), n
