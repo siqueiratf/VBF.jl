@@ -8,6 +8,7 @@ relative to `packages/VBFSearch/`.
 | Collection | Location | Meaning |
 | --- | --- | --- |
 | Earlier discoveries | `data/research/datasets/earlier-discoveries-190638.sqlite` | 111,009 recovered representatives + 79,445 later finite-search representatives + 184 pilot representatives. |
+| Earlier discoveries still awaiting provenance recovery | `data/research/datasets/earlier-discoveries-unrecovered.sqlite` | Active `classes` view excludes only historical representatives with replayed positive EA certificates to a provenance search. The original archive stays immutable. |
 | Completed published-root result | `data/research/freezes/published-roots-b52-20261017/` | Complete direct V5 and switching expansion of 24,294 roots: 1,237,894 classes including roots, 294,000 absent from the pinned published reference. |
 | Completed-root witness ledger | `data/search/literature-b52-closure-20261014/run-compact-v15-20261016/closure.normalized.sqlite.zst` | Original construction/admission witnesses and IDs in normalized archival storage. Use the pinned restoration helper for SQL inspection or original execution. |
 | Current recursive checkpoint | `data/search/literature-b52-closure-20261014/run-reduced-20261020/` | Resumable campaign, frozen code, root inputs, derivations, reports and graph. |
@@ -48,6 +49,46 @@ python3 packages/VBFSearch/data/research/datasets/extract_archive.py finite_b52 
 The output restores paths relative to the VBFSearch package root. The extractor
 checks the compressed archive SHA-256. SQLite clients can query representative
 LUTs directly without restoring original experiments.
+
+## Periodic provenance reconciliation
+
+`tools/datasets/reconcile_historical.jl CONFIG.json` maintains the active remaining
+collection. The local `vbf-historical-reconcile.timer` runs it every 30 minutes,
+with four Julia workers, a four-core CPU limit, low scheduling priority and a
+6 GiB memory limit. Each pass accepts at most 20 minutes of comparison work.
+The running APN search is read-only to this job and continues independently.
+
+The derived database retains original class IDs and exposes:
+
+- `classes`: representatives not yet recovered by either provenance search;
+- `source_classes`: all 190,638 original representative records;
+- `recovered_classes`: representatives with at least one verified recovery;
+- `matches`: positive 256-point EA graph certificates, target LUTs and hashes,
+  source paths, source identities, and class IDs in each source's own namespace;
+- `attempts`: exhausted or budget-limited comparisons, with bounded retries;
+- `cycles`: completed pass reports.
+
+Equal signatures only select candidate pairs. Byte-identical representatives
+and computed or cached EA witnesses must pass the existing VBF graph verifier
+before they disappear from `classes`. Incomplete comparisons leave them active.
+The completed-root comparison supplies cached certificates; the recursive
+comparison uses a fixed catalog-audited parent cutoff. Its report separately
+counts verified recursive overlap and unresolved candidate classes, including
+the original 190,454-entry prefix and the additional pilots.
+
+Live counts and conditional overlap estimates are written atomically to
+`data/research/datasets/earlier-discoveries-unrecovered.json`. The overlap estimate
+`historical_count * catalog_absent_count / verified_overlap` assumes uniform,
+independent class sampling; randomized seed selection does not establish that
+assumption. An unfinished comparison must not be presented as a complete overlap.
+The immutable historical archive remains available for future statistical audits.
+
+```sh
+systemctl --user status vbf-historical-reconcile.timer
+systemctl --user start vbf-historical-reconcile.service
+sqlite3 packages/VBFSearch/data/research/datasets/earlier-discoveries-unrecovered.sqlite \
+  'SELECT COUNT(*) FROM classes;'
+```
 
 ## Retained search provenance
 
