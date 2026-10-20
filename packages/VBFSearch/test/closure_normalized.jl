@@ -100,6 +100,16 @@ if haskey(ENV,"VBF_CLOSURE_REDUCE_HELPER")
         small=Cmd([helper,path,target,schema,"2","0",string(1024^2)])
         @test !success(pipeline(ignorestatus(small);stdout=devnull,stderr=devnull))
         command=Cmd([helper,path,target,schema,"2","0",string(16*1024^2)])
+        # A different helper cannot resume a partially converted checkpoint,
+        # even when its predecessor is explicitly supplied.
+        partial=SQLite.DB(target)
+        actual=only(VS._closure_rows(partial,"SELECT value FROM closure_reduction_state WHERE key='helper_sha256'"))["value"]
+        predecessor=repeat("a",64)
+        VS._closure_exec(partial,"UPDATE closure_reduction_state SET value=? WHERE key='helper_sha256'",(predecessor,));close(partial)
+        permit=Cmd(vcat(command.exec,[predecessor]))
+        @test !success(pipeline(ignorestatus(command);stdout=devnull,stderr=devnull))
+        @test !success(pipeline(ignorestatus(permit);stdout=devnull,stderr=devnull))
+        partial=SQLite.DB(target);VS._closure_exec(partial,"UPDATE closure_reduction_state SET value=? WHERE key='helper_sha256'",(actual,));close(partial)
         @test success(pipeline(command;stdout=devnull))
         @test before==VS.DiscoveryEvidence.filehash(path)
         reduced=SQLite.DB(target)
@@ -117,6 +127,13 @@ if haskey(ENV,"VBF_CLOSURE_REDUCE_HELPER")
         finally
             close(reduced)
         end
+        # Once all data proofs exist, an explicit predecessor permits rerunning
+        # final database checks with a replacement helper and records that lineage.
+        ready=SQLite.DB(target);VS._closure_exec(ready,"UPDATE closure_reduction_state SET value=? WHERE key='helper_sha256'",(predecessor,));close(ready)
+        @test success(pipeline(permit;stdout=devnull))
+        ready=SQLite.DB(target)
+        @test only(VS._closure_rows(ready,"SELECT value FROM closure_reduction_state WHERE key=?",("helper_history:"*predecessor,)))["value"]=="all data verified; resumed final database checks with "*actual
+        close(ready)
         @test success(pipeline(command;stdout=devnull))
     end
 end

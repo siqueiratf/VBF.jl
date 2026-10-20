@@ -49,9 +49,9 @@ struct Pool {
  template<class F> auto submit(F f){using R=decltype(f());auto t=std::make_shared<std::packaged_task<R()>>(std::move(f));auto result=t->get_future();{std::lock_guard<std::mutex> l(mutex);queue.emplace([t]{(*t)();});}cv.notify_one();return result;}
 };
 struct Reducer {
- sqlite3 *source=nullptr,*target=nullptr;int lock_fd=-1;std::string from,to,schema;uint64_t reserve,maximum;int threads;
+ sqlite3 *source=nullptr,*target=nullptr;int lock_fd=-1;std::string from,to,schema,resume_from;uint64_t reserve,maximum;int threads;
  std::unordered_map<std::string,int64_t> templates;std::unique_ptr<Query> ti,tq;
- Reducer(std::string a,std::string b,std::string c,int workers,uint64_t r,uint64_t m):from(a),to(b),schema(c),reserve(r),maximum(m),threads(workers){}
+ Reducer(std::string a,std::string b,std::string c,int workers,uint64_t r,uint64_t m,std::string predecessor=""):from(a),to(b),schema(c),resume_from(predecessor),reserve(r),maximum(m),threads(workers){}
  ~Reducer(){ti.reset();tq.reset();if(source)sqlite3_close_v2(source);if(target)sqlite3_close_v2(target);if(lock_fd>=0)close(lock_fd);}
  std::string state(const std::string& key){Query q(target,"SELECT value FROM closure_reduction_state WHERE key=?");bind_value(q.s,1,key);return q.step()?str(q.s,0):"";}
  void state(const std::string& key,const std::string& value){Query q(target,"INSERT OR REPLACE INTO closure_reduction_state VALUES(?,?)");bind_value(q.s,1,key);bind_value(q.s,2,value);q.step();}
@@ -78,7 +78,18 @@ struct Reducer {
    for(const auto& [name,ddl]:deferred){state("index:"+name,ddl);sql(target,"DROP INDEX "+quote(name));}
    Query q(source,"SELECT name,sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");while(q.step()){auto name=str(q.s,0);need(name.rfind("closure_",0)!=0,"source is already normalized");if(name=="candidates"||name=="comparisons")continue;auto ddl=str(q.s,1);replace_all(ddl,"REFERENCES candidates(id)","REFERENCES closure_candidates(id)");sql(target,ddl);}sql(target,"COMMIT");
   }
-  need(state("source")==signature&&state("schema_sha256")==digest(file_text(schema))&&state("helper_sha256")==executable_sha,"resume source, helper or schema changed");disk();
+  need(state("source")==signature&&state("schema_sha256")==digest(file_text(schema)),"resume source or schema changed");
+  auto previous=state("helper_sha256");
+  if(previous!=executable_sha){
+   need(resume_from==previous&&resume_from.size()==64&&binary_hex(resume_from),"resume helper changed; explicit verified-stage predecessor required");
+   // Tool upgrades cannot resume partially converted data under another codec.
+   // Every original table and ledger must already have its complete proof.
+   {Query tables(source,"SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");while(tables.step()){auto name=str(tables.s,0);need(state(name+":done")=="true"&&state(name+":sha256").size()==64,"helper upgrade requires all scientific tables and ledger already verified");}}
+   need(!state("chunks:logical_rows").empty(),"missing ledger proof");
+   sql(target,"BEGIN");state("helper_history:"+previous,"all data verified; resumed final database checks with "+executable_sha);state("helper_sha256",executable_sha);state("complete","false");sql(target,"COMMIT");
+   std::cout<<"{\"event\":\"verified_stage_helper_upgrade\",\"previous_sha256\":\""<<previous<<"\",\"current_sha256\":\""<<executable_sha<<"\"}"<<std::endl;
+  }
+  disk();
   {Query q(target,"ATTACH DATABASE ? AS old");bind_value(q.s,1,"file:"+from+"?mode=ro");q.step();}
   ti=std::make_unique<Query>(target,"INSERT OR IGNORE INTO closure_templates(digest,body) VALUES(?,?)");tq=std::make_unique<Query>(target,"SELECT id,body FROM closure_templates WHERE digest=?");
  }
@@ -152,12 +163,12 @@ struct Reducer {
   std::vector<std::pair<std::string,std::string>> deferred;
   {Query indexes(target,"SELECT key,value FROM closure_reduction_state WHERE key LIKE 'index:%' ORDER BY key");while(indexes.step())deferred.emplace_back(str(indexes.s,0).substr(6),str(indexes.s,1));}
   for(auto [name,ddl]:deferred){replace_all(ddl,"CREATE INDEX ","CREATE INDEX IF NOT EXISTS ");replace_all(ddl,"CREATE UNIQUE INDEX ","CREATE UNIQUE INDEX IF NOT EXISTS ");sql(target,ddl);disk();event("index_created",name,0);}
-  {Query check(target,"PRAGMA integrity_check");need(check.step()&&str(check.s,0)=="ok"&&!check.step(),"target integrity_check failed");}
-  {Query check(target,"PRAGMA foreign_key_check");need(!check.step(),"target foreign_key_check failed");}
+  {Query check(target,"PRAGMA main.integrity_check");need(check.step()&&str(check.s,0)=="ok"&&!check.step(),"target integrity_check failed");}
+  {Query check(target,"PRAGMA main.foreign_key_check");need(!check.step(),"target foreign_key_check failed");}
   state("complete","true");event("complete","",std::stoull(state("chunks:logical_rows")));
  }
 };
 int main(int argc,char** argv){
- if(argc<4||argc>7){std::cerr<<"usage: reduce_closure_store SOURCE.sqlite NEW.sqlite NORMALIZED.sql [threads=8] [reserve_bytes=12884901888] [max_bytes=59055800320]\n";return 2;}
- try{int n=argc>4?std::stoi(argv[4]):8;need(n>=1&&n<=32,"threads must be 1..32");Reducer r(argv[1],argv[2],argv[3],n,argc>5?std::stoull(argv[5]):uint64_t(12)<<30,argc>6?std::stoull(argv[6]):uint64_t(55)<<30);r.run();return 0;}catch(const std::exception& e){std::cerr<<e.what()<<std::endl;return 1;}
+ if(argc<4||argc>8){std::cerr<<"usage: reduce_closure_store SOURCE.sqlite NEW.sqlite NORMALIZED.sql [threads=8] [reserve_bytes=12884901888] [max_bytes=59055800320] [verified_stage_predecessor_sha256]\n";return 2;}
+ try{int n=argc>4?std::stoi(argv[4]):8;need(n>=1&&n<=32,"threads must be 1..32");Reducer r(argv[1],argv[2],argv[3],n,argc>5?std::stoull(argv[5]):uint64_t(12)<<30,argc>6?std::stoull(argv[6]):uint64_t(55)<<30,argc>7?argv[7]:"");r.run();return 0;}catch(const std::exception& e){std::cerr<<e.what()<<std::endl;return 1;}
 }
