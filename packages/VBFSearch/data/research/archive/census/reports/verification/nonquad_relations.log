@@ -1,6 +1,0 @@
-id 43 = x^57 over GF(2^8) mod 11b (cyclotomic class of 57: [39, 57, 78, 114, 147, 156, 201, 228])
-id 581 = x^57 over GF(2^8) mod 11d (cyclotomic class of 57: [39, 57, 78, 114, 147, 156, 201, 228])
-id 634 = x^228 over GF(2^8) mod 11b (cyclotomic class of 57: [39, 57, 78, 114, 147, 156, 201, 228])
-id 43: deg=4 du=2 |Z|=16575 ddt-multiset-hash=17616322674035405197 abs-walsh-multiset-hash=17619996652121915570 perm=false
-id 581: deg=4 du=2 |Z|=16575 ddt-multiset-hash=17616322674035405197 abs-walsh-multiset-hash=17619996652121915570 perm=false
-id 634: deg=4 du=2 |Z|=16575 ddt-multiset-hash=17616322674035405197 abs-walsh-multiset-hash=17619996652121915570 perm=false

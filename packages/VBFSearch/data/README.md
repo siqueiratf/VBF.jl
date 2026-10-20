@@ -1,16 +1,17 @@
-# Search and research evidence
+# Retained APN search data
 
-`search/` holds current and recovered search runs; `research/` holds reference
-snapshots, archived studies and inspector certificates. Pair evidence and derived
-curated classes also belong here. Existing evidence was preserved when moved
-from VBFCatalog; paths recorded in historical manifests remain historical.
+This directory holds three scientific collections: the merged earlier discoveries,
+the completed 24,294-root search, and the current recursive campaign. Their pinned
+reference, root qualification and provenance remain alongside them.
 
-Generated results are ignored. READMEs and previously tracked research records
-remain tracked. Curated source inputs belong to `VBFCatalog/src/data/`; downloaded
-originals and materialized catalog stores belong to `.cache/vbfcatalog/`.
-See the [search guide](../README.md) and [tools](../tools/README.md).
+- `research/datasets/earlier-discoveries-190638.sqlite`: the earlier-discovery database.
+- `research/freezes/published-roots-b52-20261017/`: completed-root results and comparisons.
+- `search/literature-b52-closure-20261014/`: both search ledgers and shared inputs.
+- `research/references/`: the pinned published-only comparison reference.
+- `research/analyses/`: retention, storage and cleanup receipts.
 
-The [experiment inventory](../INVENTORY.md) indexes the local search and analysis
-directories, their disk use and retention recommendations. The canonical dataset
-roles are documented in [DATASETS.md](../DATASETS.md) and selected by
-`research/datasets/registry.json`.
+Use the [inventory](../INVENTORY.md), [dataset scopes](../DATASETS.md) and
+[storage notes](../STORAGE.md). The registry is `research/datasets/registry.json`;
+`search/literature-b52-closure-20261014/current.json` selects the campaign.
+Generated databases are local ignored artifacts. Private discoveries remain
+separate from VBFCatalog's published reference.

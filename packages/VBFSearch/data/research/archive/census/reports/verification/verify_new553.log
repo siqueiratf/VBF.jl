@@ -1,5 +1,0 @@
-lines=553 decoders_agree=553 degree2=553 du2=553 hash_matches_stored=553 absent_from_index(any n)=553 absent_n8=553
-distinct hashes=553 distinct coeff strings=553
-query positive control: 5/5 random indexed hashes found by the same SQL
-problems: none
-wall 5.4s
