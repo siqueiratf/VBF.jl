@@ -120,7 +120,12 @@ SHA-256 and session cutoff, and validates the saved coverage cursors before
 publishing the stopped output directory. It never dispatches search work.
 
 Failure retains `OUTPUT.reducing` for recovery. Repeat the same command to
-resume; source identity, schema and helper binary must match. The reserve is a
+resume; source identity, schema and helper binary must match. After every
+scientific table and ledger has been verified, `--resume-helper OLD_SHA256` can
+explicitly permit a replacement helper for the final database checks. It records
+the predecessor and reruns those checks; it cannot resume partially converted
+data under a different helper. Integrity checks target `main`, excluding the
+attached read-only source. The reserve is a
 free-space check and the output budget also sets SQLite's page limit. Source
 and target coexist during conversion; budget for both or write the target to a
 separate filesystem. Neither success nor failure removes the source.

@@ -1,6 +1,6 @@
 """
     closure_reduce(source; output, helper, threads=8, reserve_bytes=12*1024^3,
-                   max_bytes=55*1024^3)
+                   max_bytes=55*1024^3,resume_helper_sha256=nothing)
 
 Losslessly normalize a cooperatively stopped checkpoint. The native helper is
 built from `tools/reduce_closure_store.cpp`; it verifies all logical table bytes,
@@ -8,10 +8,15 @@ every ledger block, SQLite integrity and foreign keys. Its fixed `output.reducin
 staging directory supports resuming the same command after interruption. Neither
 failure nor success deletes the source checkpoint. The output retains STOP and
 pins new storage code while leaving mathematical code and parameters unchanged.
+`resume_helper_sha256` explicitly permits replacing that pinned helper only after
+all scientific tables and ledger have been verified; the predecessor is recorded
+and final database checks run again. Source and schema pins remain mandatory.
 """
-function closure_reduce(source;output,helper,threads=8,reserve_bytes=12*1024^3,max_bytes=55*1024^3)
+function closure_reduce(source;output,helper,threads=8,reserve_bytes=12*1024^3,max_bytes=55*1024^3,resume_helper_sha256=nothing)
     threads isa Integer && 1<=threads<=32 || throw(ArgumentError("threads must be 1..32"))
     reserve_bytes isa Integer && reserve_bytes>=0 && max_bytes isa Integer && max_bytes>0 || throw(ArgumentError("invalid disk budgets"))
+    resume_helper_sha256===nothing || (resume_helper_sha256 isa String && occursin(r"^[0-9a-f]{64}$",resume_helper_sha256)) ||
+        throw(ArgumentError("resume_helper_sha256 must be a lowercase SHA-256"))
     origin=realpath(source);target=abspath(output);stage=target*".reducing"
     (ispath(target) || startswith(target,origin*string(Base.Filesystem.path_separator))) && error("output must be new and outside source")
     isfile(joinpath(origin,"STOP")) || error("source must have a STOP marker")
@@ -31,8 +36,10 @@ function closure_reduce(source;output,helper,threads=8,reserve_bytes=12*1024^3,m
         mkpath(stage);write(joinpath(stage,"STOP"),"Storage migration; search remains stopped.\n")
         log=joinpath(stage,"migration.jsonl");schema=joinpath(@__DIR__,"closure_normalized.sql")
         open(log,"a") do io
-            run(pipeline(Cmd([abspath(helper),joinpath(origin,"closure.sqlite"),joinpath(stage,"closure.sqlite"),schema,
-                string(threads),string(reserve_bytes),string(max_bytes)]);stdout=io))
+            arguments=[abspath(helper),joinpath(origin,"closure.sqlite"),joinpath(stage,"closure.sqlite"),schema,
+                string(threads),string(reserve_bytes),string(max_bytes)]
+            resume_helper_sha256===nothing || push!(arguments,resume_helper_sha256)
+            run(pipeline(Cmd(arguments);stdout=io))
         end
         check=SQLite.DB("file:"*joinpath(stage,"closure.sqlite")*"?mode=ro")
         proofs=try
