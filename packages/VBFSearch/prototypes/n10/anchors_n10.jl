@@ -9,7 +9,7 @@ using VBF, VBFCatalog
 
 # All 7-dim V < C2 with b(V) = M_7, via their 3-dim annihilators A in the
 # 10-dim coefficient space: b(V) = 2^-3 * sum_{a in A} bhat(a).
-function all_best_anchors(basis)
+function all_best_anchors(basis; keep = 8)
     m = length(basis); N = 1 << m
     comb(c) = reduce(⊻, (basis[k] for k in 1:m if bit(c, k) == 1); init = UInt64(0))
     bent = [c == 0 ? 0 : (is_bent(comb(c)) ? 1 : 0) for c in 0:N-1]
@@ -40,7 +40,7 @@ function all_best_anchors(basis)
                 end
                 if s == bests[id]
                     counts[id] += 1
-                    length(keeps[id]) < 8 && push!(keeps[id], (a1, a2, a3))
+                    length(keeps[id]) < keep && push!(keeps[id], (a1, a2, a3))
                 end
             end
         end
@@ -48,7 +48,7 @@ function all_best_anchors(basis)
     best = maximum(bests)
     nanchors = sum(counts[i] for i in 1:nt if bests[i] == best)
     args = reduce(vcat, (keeps[i] for i in 1:nt if bests[i] == best))
-    anchors = map(args[1:min(end, 8)]) do arg
+    anchors = map(args[1:min(end, keep)]) do arg
         V = [comb(c) for c in 0:N-1 if c != 0 && all(a -> iseven(count_ones(c & a)), arg)]
         Vb = UInt64[]
         for v in V
@@ -64,22 +64,28 @@ function target_b8(C, V7)
     maximum(coset_bent(q, Vs) for q in span(C) if rank_f2([V7; q]) == 8) + count(is_bent, Vs)
 end
 
-db = VBFCatalog.load_catalog()
-rows = list_functions(db; n = 10)
-seen = Set{String}()
-println(rpad("class", 40), lpad("bent", 6), lpad("M_7", 6), lpad("anchors", 9), lpad("b8 targets", 14))
-total = 0
-for r in rows
-    F = load_sbox(db, r.id)
-    VBF.differential_uniformity(F) == 2 || continue
-    VBF.algebraic_degree(F) == 2 || continue
-    s = sigma_hash(F)
-    s in seen && continue
-    push!(seen, s)
-    C = comp_basis(Int.(F.lut))
-    M7, na, anchors, nb = all_best_anchors(C)
-    b8 = sort(unique(target_b8(C, V) for V in anchors))
-    global total += na
-    println(rpad(r.canonical_name, 40), lpad(nb, 6), lpad(M7, 6), lpad(na, 9), lpad(join(b8, ","), 14)); flush(stdout)
+function anchors_main()
+    db = VBFCatalog.load_catalog()
+    rows = list_functions(db; n = 10)
+    seen = Set{String}()
+    println(rpad("class", 40), lpad("bent", 6), lpad("M_7", 6), lpad("anchors", 9), lpad("b8 targets", 14))
+    total = 0
+    for r in rows
+        F = load_sbox(db, r.id)
+        VBF.differential_uniformity(F) == 2 || continue
+        VBF.algebraic_degree(F) == 2 || continue
+        s = sigma_hash(F)
+        s in seen && continue
+        push!(seen, s)
+        C = comp_basis(Int.(F.lut))
+        M7, na, anchors, nb = all_best_anchors(C)
+        b8 = sort(unique(target_b8(C, V) for V in anchors))
+        total += na
+        println(rpad(r.canonical_name, 40), lpad(nb, 6), lpad(M7, 6), lpad(na, 9), lpad(join(b8, ","), 14)); flush(stdout)
+    end
+    println("classes = ", length(seen), ", anchors in total = ", total)
 end
-println("classes = ", length(seen), ", anchors in total = ", total)
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    anchors_main()
+end

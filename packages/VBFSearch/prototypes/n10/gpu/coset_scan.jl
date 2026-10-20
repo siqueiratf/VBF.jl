@@ -240,4 +240,6 @@ function run_scan()
     end
 end
 
-run_scan()
+if abspath(PROGRAM_FILE) == @__FILE__
+    run_scan()
+end
