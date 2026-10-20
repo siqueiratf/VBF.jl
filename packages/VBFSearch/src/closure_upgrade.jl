@@ -8,6 +8,8 @@ const _CLOSURE_UPGRADE_PATHS=Set([
     "packages/VBFSearch/src/VBFSearch.jl","packages/VBFSearch/src/closure.jl",
     "packages/VBFSearch/src/closure_upgrade.jl","packages/VBFSearch/src/closure_store.jl",
     "packages/VBFSearch/src/closure_ledger.jl",
+    "packages/VBFSearch/src/closure_ledger_v2.jl","packages/VBFSearch/src/closure_normalized.jl",
+    "packages/VBFSearch/src/closure_normalized.sql","packages/VBFSearch/src/closure_reduce.jl",
     "packages/VBFSearch/src/closure_algorithms.jl","packages/VBFSearch/src/closure_cluster.jl",
     "packages/VBFSearch/src/closure_equivalence.jl","packages/VBFSearch/src/cli.jl",
     "packages/VBFSearch/tools/closure_cluster.jl",

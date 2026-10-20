@@ -99,8 +99,7 @@ function _closure_equivalence_apply!(s,job,packet,result)
             else
                 error("unexpected equal-signature equivalence outcome")
             end
-            _closure_exec(s.db,"INSERT INTO comparisons(candidate_id,target_parent,status,evidence,session_id) VALUES(?,?,?,?,?)",
-                (id,targetid,status,_closure_text(proof),s.session))
+            _closure_insert_comparison!(s,id,targetid,proof)
             push!(checked,targetid)
             equivalent===nothing || break
         end

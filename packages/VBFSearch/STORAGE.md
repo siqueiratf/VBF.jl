@@ -61,3 +61,79 @@ recorded separately and preserves the primary compute or checkpoint error.
 Deploying the changed controller requires a fresh evidence directory and a
 new frozen source snapshot. Preserve the stopped checkpoint's original source
 identity. This maintenance does not restart the campaign.
+
+## Lossless normalized storage
+
+New public `closure_init` checkpoints use normalized storage by default
+(`compact_storage=false` retains the legacy layout for compatibility). Existing
+checkpoints remain readable. The mathematical search, candidate hashes, class
+assignments, paths and coverage cursors have the same meaning in both layouts.
+
+The reduction has three parts:
+
+- `VBFCHN02` coverage blocks factor out the job, forms and interval context,
+  intern equal five-integer outcome tuples, and encode signed differences of
+  successive coset representatives. Every logical coset is retained. The
+  envelope retains the **original V1 logical-stream length and SHA-256**;
+  decoding reconstructs that stream and verifies its digest. TEXT and
+  `VBFCHN01` blocks remain readable. Unrecognized proof schemas use V1.
+- `closure_candidates` stores binary LUTs and ortho-derivatives once, with
+  SHA-256-indexed templates for their repeated property text. The `candidates`
+  SQL view reconstructs the original columns and exact TOML bytes.
+- `closure_comparisons` references the existing candidate and target parent,
+  stores variable proof values separately, and shares the remaining proof
+  text. The `comparisons` SQL view restores the complete original evidence,
+  including both LUTs, without a SQLite extension. Positive EA witnesses are
+  still available to `verify_comparison`.
+
+Coverage packing follows computation packets. Long campaigns should select an
+explicit batch size such as `--extension-cosets 65536` at initialization, as the
+current campaign does. The one-coset default is useful for bounded experiments
+but retains one TEXT row per packet and does not provide the same ledger savings.
+
+Template hash lookups compare the complete bodies before reuse. Hashes are
+storage indexes, never mathematical equivalence certificates. Unknown schemas
+and literal template markers have opaque, byte-preserving fallbacks. Views use
+only built-in SQLite functions. Candidate class/state updates and legacy SQL
+inserts remain supported; candidate evidence is immutable. The hidden `rowid`
+is a physical-table property: use `closure_candidates.rowid` or
+`closure_comparisons.rowid` when collecting physical watermarks.
+
+Build and run the resumable migrator from the root environment:
+
+```sh
+c++ -O3 -std=c++17 packages/VBFSearch/tools/reduce_closure_store.cpp \
+    -lsqlite3 -lzstd -lcrypto -pthread -o /tmp/reduce_closure_store
+bin/vbf closure reduce /path/to/stopped-run --output /path/to/reduced-run \
+    --helper /tmp/reduce_closure_store --threads 8 --reserve-gib 12 --max-gib 55
+```
+
+The source must have a STOP marker and no active session, job or journal. The
+Julia wrapper takes its exclusive application lease and checks the original
+archived code, inputs and environment. The native helper opens the source
+read-only and keeps bounded batches and a bounded worker queue. Secondary
+indexes are built after the bulk copy to avoid rewriting them for each row. It verifies
+all logical table columns with independent streaming hashes, reconstructs and
+checks every ledger block, then runs SQLite integrity and foreign-key checks.
+The wrapper pins a new implementation archive, records the original database
+SHA-256 and session cutoff, and validates the saved coverage cursors before
+publishing the stopped output directory. It never dispatches search work.
+
+Failure retains `OUTPUT.reducing` for recovery. Repeat the same command to
+resume; source identity, schema and helper binary must match. The reserve is a
+free-space check and the output budget also sets SQLite's page limit. Source
+and target coexist during conversion; budget for both or write the target to a
+separate filesystem. Neither success nor failure removes the source.
+
+The complete campaign conversion is being recorded under
+`data/research/analyses/storage-reduction-20261020/`, with a target of
+`data/search/literature-b52-closure-20261014/run-reduced-20261020/`.
+The original checkpoint remains stopped and preserved until verification.
+Sample savings are estimates; the final database size determines whether a
+60 GB node has enough headroom. These migration budgets do not cap subsequent
+search growth. Workers should receive bounded work packets rather than copies
+of the coordinator database.
+
+The optional native integration tests run with
+`VBF_CLOSURE_REDUCE_HELPER=/path/to/reduce_closure_store`; ordinary package tests
+exercise the Julia codec, SQL views, rollback, constraints and EA proof replay.

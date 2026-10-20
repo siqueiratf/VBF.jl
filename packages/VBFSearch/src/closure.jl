@@ -11,7 +11,8 @@ admission order. Descendants are promoted without any interval or profile filter
 Independent root partitions can reach overlapping descendant EA classes.
 """
 function closure_init(campaign; output=joinpath(dirname(abspath(campaign)),"run"),
-    root_first=1,root_last=0,root_order=:forward,execution_backend=:serial,extension_cosets=1,switching_directions=1)
+    root_first=1,root_last=0,root_order=:forward,execution_backend=:serial,extension_cosets=1,switching_directions=1,compact_storage=true)
+    compact_storage isa Bool || throw(ArgumentError("compact_storage must be boolean"))
     path=abspath(campaign);plan=TOML.parsefile(path);base=dirname(path)
     startswith(plan["schema"],"vbfsearch-literature-closure-plan-") || error("unsupported campaign plan")
     rootspec=plan["roots"];methods=plan["methods"]
@@ -76,20 +77,20 @@ function closure_init(campaign; output=joinpath(dirname(abspath(campaign)),"run"
     identity=Dict{String,Any}("schema"=>CLOSURE_SCHEMA,"campaign"=>path,"campaign_sha256"=>inputs[path],
         "roots_sha256"=>digest,"initial_roots"=>length(assigned),"qualified_roots"=>expected,"qualification_complete"=>true,
         "inputs"=>inputs,"implementation"=>implementation_fingerprint(),"julia"=>string(VERSION),"scientific"=>scientific)
-    _closure_initialize(output,identity,assigned)
+    _closure_initialize(output,identity,assigned;normalized=compact_storage)
 end
 
-function _closure_initialize(directory, identity, roots)
+function _closure_initialize(directory, identity, roots;normalized=false)
     dir=abspath(directory)
     isdir(dir) && !isempty(readdir(dir)) && error("closure output directory must be empty")
     mkpath(dir);lease=_closure_lease(dir);db=SQLite.DB(joinpath(dir,"closure.sqlite"))
     s=ClosureStore(db,dir,lease,identity,0,UInt64(0))
     try
         _closure_exec(db,"PRAGMA journal_mode=WAL");_closure_exec(db,"PRAGMA synchronous=FULL")
-        _closure_exec(db,"PRAGMA foreign_keys=ON");_closure_create_schema(db)
+        _closure_exec(db,"PRAGMA foreign_keys=ON");_closure_create_schema(db;normalized)
         _closure_transaction(s) do
             _closure_exec(db,"INSERT INTO metadata VALUES('identity',?)",(_closure_text(identity),))
-            for (key,value) in (("created_utc",_closure_now()),("dispatch_sequence","0"),("origin_turn","root"),("method_turn","v5"),("ledger_encoding","VBFCHN01"))
+            for (key,value) in (("created_utc",_closure_now()),("dispatch_sequence","0"),("origin_turn","root"),("method_turn","v5"),("ledger_encoding","VBFCHN02"))
                 _closure_exec(db,"INSERT INTO metadata VALUES(?,?)",(key,value))
             end
             for (position,row) in enumerate(roots)

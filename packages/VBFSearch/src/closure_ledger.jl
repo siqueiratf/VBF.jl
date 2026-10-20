@@ -27,22 +27,25 @@ function _closure_pack_chunks(rows)
 end
 
 """Apply the unchanged digest, header and compression to a logical row stream."""
-function _closure_encode_chunk_bytes(raw::Vector{UInt8})
+function _closure_encode_chunk_bytes(raw::Vector{UInt8};normalized=_closure_v2_from_raw(raw))
     length(raw)<=_CLOSURE_LEDGER_LIMIT || error("compact ledger block exceeds size limit")
-    vcat(_CLOSURE_LEDGER_MAGIC,reinterpret(UInt8,[htol(UInt64(length(raw)))]),SHA.sha256(raw),
-        transcode(CodecZstd.ZstdCompressor,raw))
+    vcat(normalized===nothing ? _CLOSURE_LEDGER_MAGIC : _CLOSURE_LEDGER_MAGIC_V2,reinterpret(UInt8,[htol(UInt64(length(raw)))]),SHA.sha256(raw),
+        transcode(CodecZstd.ZstdCompressor,normalized===nothing ? raw : normalized))
 end
 
 """Decode a block and verify its digest, length and SQLite coverage envelope."""
 function _closure_unpack_chunks(row)
     value=row["evidence"]
     value isa AbstractString && return [Dict{String,Any}(key=>row[key] for key in (_CLOSURE_LEDGER_FIELDS...,"evidence"))]
-    value isa Vector{UInt8} && length(value)>=49 && value[1:8]==_CLOSURE_LEDGER_MAGIC || error("unknown compact ledger encoding")
+    value isa Vector{UInt8} && length(value)>=49 && value[1:8] in (_CLOSURE_LEDGER_MAGIC,_CLOSURE_LEDGER_MAGIC_V2) || error("unknown compact ledger encoding")
     size=Int(ltoh(read(IOBuffer(value[9:16]),UInt64)))
     4<=size<=_CLOSURE_LEDGER_LIMIT || error("invalid compact ledger decoded size")
     # Bound decompression before allocating the declared raw size.
     stream=CodecZstd.ZstdDecompressorStream(IOBuffer(value[49:end]))
-    raw=try read(stream,size+1) finally close(stream) end
+    normalized=value[1:8]==_CLOSURE_LEDGER_MAGIC_V2
+    raw=try read(stream,(normalized ? _CLOSURE_LEDGER_LIMIT : size)+1) finally close(stream) end
+    length(raw)<=_CLOSURE_LEDGER_LIMIT || error("ledger decompression exceeds size limit")
+    normalized && (raw=_closure_v2_raw(raw,size))
     length(raw)==size && SHA.sha256(raw)==value[17:48] || error("compact ledger checksum mismatch")
     io=IOBuffer(raw);n=Int(ltoh(read(io,UInt32)))
     1<=n<=65536 || error("invalid compact ledger row count")
@@ -110,7 +113,9 @@ function _closure_ledger_row(job_id,chunks)
         seek(io,length_position);write(io,htol(UInt32(next_position-text_position)));seek(io,next_position)
     end
     (job_id=job_id,first_x=firstproof["first_x"],next_x=lastproof["next_x"],total_x=firstproof["total_x"],
-        capped,evidence=_closure_encode_chunk_bytes(take!(io)))
+        capped,evidence=_closure_encode_chunk_bytes(take!(io);normalized=
+            all(c->_closure_common_coset_forms(c["proof"])!==nothing,chunks) ?
+                _closure_v2_payload(job_id,[c["proof"] for c in chunks]) : nothing))
 end
 
 """Persist an already validated work packet as one atomic coverage interval.

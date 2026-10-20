@@ -45,7 +45,7 @@ function _closure_lease(directory)
     lease
 end
 
-function _closure_create_schema(db)
+function _closure_create_schema(db;normalized=false)
     for sql in (
         "CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)",
         "CREATE TABLE candidates(id TEXT PRIMARY KEY,lut_hex TEXT NOT NULL UNIQUE,sigma TEXT,apn INTEGER NOT NULL,degree INTEGER NOT NULL,properties TEXT NOT NULL,class_id INTEGER,state TEXT NOT NULL)",
@@ -67,8 +67,14 @@ function _closure_create_schema(db)
         "CREATE INDEX comparisons_pair ON comparisons(candidate_id,target_parent,id)",
         "CREATE TABLE sessions(id INTEGER PRIMARY KEY,started TEXT NOT NULL,finished TEXT NOT NULL DEFAULT '',heartbeat TEXT NOT NULL,pid INTEGER NOT NULL,host TEXT NOT NULL,state TEXT NOT NULL,budgets TEXT NOT NULL,jobs INTEGER NOT NULL DEFAULT 0,evaluations INTEGER NOT NULL DEFAULT 0)",
     )
+        if normalized
+            (startswith(sql,"CREATE TABLE candidates(") || startswith(sql,"CREATE TABLE comparisons(") ||
+             occursin(r"^CREATE INDEX (candidates_|comparisons_)",sql)) && continue
+            sql=replace(sql,"REFERENCES candidates(id)"=>"REFERENCES closure_candidates(id)")
+        end
         _closure_exec(db,sql)
     end
+    normalized && _closure_create_normalized_schema(db)
 end
 
 function _closure_add_job!(s, parent, kind, key, payload)
@@ -87,6 +93,7 @@ function _closure_add_parent!(s, candidate, sigma; origin="discovered", source="
 end
 
 function _closure_insert_candidate!(s, p; state="observed")
+    _closure_normalized(s.db) && return _closure_normalized_candidate(s.db,p;state)
     _closure_exec(s.db,"INSERT OR IGNORE INTO candidates(id,lut_hex,sigma,apn,degree,properties,state) VALUES(?,?,?,?,?,?,?)",
         (p["lut_sha256"],p["lut_hex"],get(p,"sigma_hash",missing),Int(p["apn"]),p["algebraic_degree"],_closure_text(p),state))
     p["lut_sha256"]
@@ -160,7 +167,7 @@ function _closure_open(directory)
         # This optional covering index changes no scientific rows or identity.
         # Add it under the exclusive lease only after all normal identity,
         # input/archive and committed-coverage guards have succeeded.
-        _closure_exec(db,"CREATE INDEX IF NOT EXISTS candidates_state ON candidates(state)")
+        _closure_exec(db,"CREATE INDEX IF NOT EXISTS candidates_state ON "*(_closure_normalized(db) ? "closure_candidates" : "candidates")*"(state)")
         s
     catch
         close(db);close(lease);rethrow()
