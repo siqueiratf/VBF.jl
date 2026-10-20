@@ -73,7 +73,7 @@ refills a free compute slot without waiting for the other slots. Results are
 applied in reservation order by the sole database writer. Its default limit is
 twice the configured concurrency; an unusually slow first result can still
 apply backpressure at that limit. `reservation_horizon` can explicitly raise this bounded
-queue; the current restart selects 128 tickets for 32 workers. Scientific
+queue; the current restart selects 64 tickets for 32 workers. Scientific
 construction limits and coverage cursors retain their existing meaning. In
 particular, the checkpoint keeps `extension_cosets = 65536`.
 
@@ -83,6 +83,23 @@ or publishing reports. Each application has a savepoint: a failed packet is
 rolled back while the successful earlier prefix is committed. `synchronous=FULL`
 is retained. This amortizes commit overhead without holding a transaction across
 worker computation waits. Failed commits roll back their uncommitted batch.
+
+The continuous controller also builds a small partial index on pending/paused EA
+jobs, ordered by job ID with the last-session filter available in the index.
+It creates this index only after opening and validating the checkpoint under its
+exclusive application lease. The queue query uses that index to avoid sorting
+all pending jobs on each reservation. `indexed_ea_queue=false` retains the former
+query plan. Row eligibility and ID order are unchanged.
+
+A controlled replay of the same two discovered parents, with all 10,442 reference
+parents for their reached signatures, took 119.19 seconds with the previous
+controller and 79.99 seconds with batched commits, indexed EA reservation, four
+GC threads and a 64-ticket horizon. Average CPU use was 8.50 and 15.27 cores,
+respectively. Every arm produced the same 41,352 paths, 178 coverage blocks,
+510 switching kernel records and LUT/class assignments. These are single-run
+measurements of one light and one heavy parent, rather than a universal speedup
+claim. Receipts and the self-contained replay evidence are under
+`data/search/literature-b52-closure-20261014/utilization-ab-20261020/`.
 
 `baseline_policy = "summary"` is the default for continuous runs. It saves a
 small TOML record of checkpoint identity, cached-counter freshness, indexed row
@@ -174,7 +191,8 @@ The latest graph payload is reused through hard links to immutable snapshot
 files; the structure and catalog JSON snapshots retain their original audit
 cutoffs. Mutable report databases are not hard-linked.
 The 32-worker continuous campaign was resumed after migration, then restarted
-with bounded coordinator transaction batches and a 128-ticket reservation queue.
+with bounded coordinator transaction batches, four GC threads and a 64-ticket
+reservation queue.
 The campaign's `current.json` points to its frozen controller, service and evidence.
 These migration budgets do not cap subsequent
 search growth. Workers should receive bounded work packets rather than copies

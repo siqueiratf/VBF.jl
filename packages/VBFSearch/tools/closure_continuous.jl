@@ -84,6 +84,9 @@ function run(config)
     concurrency=Int(get(config,"concurrency",32));concurrency>0 || error("invalid concurrency")
     max_pending=Int(get(config,"reservation_horizon",2concurrency))
     max_pending>=concurrency || error("reservation horizon must cover every slot")
+    indexed_ea_queue=get(config,"indexed_ea_queue",true)
+    indexed_ea_queue isa Bool || throw(ArgumentError("indexed_ea_queue must be Boolean"))
+    ea_queue_index=indexed_ea_queue ? " INDEXED BY jobs_pending_ea" : ""
     Int(get(config,"window_size",100))>0 || error("invalid window size")
     parent_scope=String(get(config,"parent_scope","all"))
     parent_scope in ("all","discovered") || throw(ArgumentError("invalid parent scope"))
@@ -291,7 +294,7 @@ function run(config)
         retries=join([id for (id,when) in deferred if when<=time()],",")
         isempty(retries) && (retries="0")
         excluded_sql=isempty(excluded) ? "0" : join(sort!(Int[x for x in excluded]),",")
-        ea=FP._closure_rows(s.db,"SELECT * FROM jobs WHERE kind='deduplicate' AND status IN ('pending','paused') AND (last_session!=? OR id IN ($retries)) AND id NOT IN ($excluded_sql) ORDER BY id LIMIT ?",(s.session,limit))
+        ea=FP._closure_rows(s.db,"SELECT * FROM jobs$ea_queue_index WHERE kind='deduplicate' AND status IN ('pending','paused') AND (last_session!=? OR id IN ($retries)) AND id NOT IN ($excluded_sql) ORDER BY id LIMIT ?",(s.session,limit))
         items=Any[(job=j,equivalence=true) for j in ea]
         length(items)==limit && return items
         failed=FP._closure_count(s.db,"SELECT EXISTS(SELECT 1 FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('failed','blocked') LIMIT 1) n")
@@ -310,6 +313,9 @@ function run(config)
         println("Opening the archived checkpoint once for continuous seed expansion");flush(stdout)
         opened=time();s=FP._closure_open(directory);validated=time()
         FP._closure_count(s.db,"SELECT COUNT(*) n FROM sessions WHERE finished='' ")==0 || error("source session unfinished")
+        if indexed_ea_queue
+            FP._closure_exec(s.db,"CREATE INDEX IF NOT EXISTS jobs_pending_ea ON jobs(id,last_session) WHERE kind='deduplicate' AND status IN ('pending','paused')")
+        end
         baseline=continuous_baseline!(s,out;policy=String(get(config,"baseline_policy","summary")),
             cached_progress=base,full_reserve_bytes=Int(get(config,"full_baseline_reserve_bytes",8*1024^3)))
         FP.DiscoveryStore.atomic_toml(joinpath(out,"baseline.toml"),baseline)
@@ -334,6 +340,7 @@ function run(config)
             "scheduler_determinism"=>"FIFO reservation and application for a fixed eligible frontier; retry cooldowns and wall-clock budgets retained",
             "reservation_horizon"=>max_pending,
             "coordinator_transactions"=>"bounded steps, per-application savepoints, FULL synchronous commit",
+            "indexed_ea_queue"=>indexed_ea_queue,
             "batches_controller_sha256"=>FP.DiscoveryEvidence.filehash(joinpath(@__DIR__,"closure_batches.jl")),
             "refill_controller_sha256"=>FP.DiscoveryEvidence.filehash(joinpath(@__DIR__,"closure_refill.jl")),
             "validation_seconds"=>validated-opened,"baseline_and_setup_seconds"=>active_started-validated,"descendant_expansion"=>true)
