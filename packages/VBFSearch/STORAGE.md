@@ -7,11 +7,13 @@ stopped, with its STOP marker retained.
 
 The reduced file is **47,283,838,976 bytes (44.04 GiB)**, compared with
 228,888,621,056 bytes (213.17 GiB) for the original: **79.34% smaller**.
-The original remains at
-`data/search/literature-b52-closure-20261014/run-validation-20261018T232756Z/closure.sqlite`
-as a rollback checkpoint. Both files contain the same scientific records; the
-original is retained, so this comparison describes representation size rather
-than space already reclaimed from the local disk.
+The superseded original was removed on 20 October 2026 UTC after an explicit
+cleanup request, a fresh full-file SHA-256 check of the reduced checkpoint, and
+dashboard checks. Removing it reclaimed **213.17 GiB**, leaving approximately
+**240.25 GiB available** on the local filesystem at cleanup. All scientific
+records remain in the reduced checkpoint. The original run's reports, frozen
+code and provenance remain in place; `closure.sqlite.retired.json` records the
+removed file's identity and its replacement.
 
 All 7,650,225 candidate rows, 3,554,200 admitted parent classes, 16,403,548
 construction paths and 4,088,636 EA comparisons were retained. All
@@ -29,6 +31,11 @@ byte hashes and deployment receipts are under
 maintenance receipts remain under
 `data/research/analyses/campaign-maintenance-20261019/` and
 `data/research/analyses/storage-diagnosis-20261019/`.
+
+The cleanup's `retirement-receipt.json` records both file identities, final
+checks and free space before and after removal. The registry selects only the
+reduced checkpoint and retains the old identity under retired sources. The
+original representation is no longer available as a rollback copy.
 
 ## Historical artifacts
 
