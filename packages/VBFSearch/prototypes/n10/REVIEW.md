@@ -39,6 +39,8 @@ that can give a child with dim(C2(F) ∩ C2(G)) = 7.
 | E4 re-extension inside C2 | 60 random U_8 per seed (0.034% of the 174,251), 60k iterations | V: 23 of 25 seeds give only themselves; Gold x^3 and x^3 + Tr(x^9) give known BCL classes. H: most seeds are rigid in codimension 2; the sample is too small to prove it. |
 | Pilot exchange | Beierle-Leander 3, all 31 maximal anchors, all 2^38 cosets each, target 190 | V: 158,007 hits, 10,385 passed the prefilter, 104 extensions, all equal to C2(seed) (canonical basis and EA test); no U_8 with q outside C2 extended. |
 
+| W1 target window | anchor 1 of Beierle-Leander 3, window 78:82, 2^32 cosets (1/64), 60k iterations | V: 26,616 hits, 711 passed the prefilter (2.7%), 1 APN space (known, sigma of the seed), 0 new. Histogram of 2^30 cosets: counts are even, mean about 54; an APN child containing this V_7 has 82.3 bent forms per other coset on average. |
+
 Coverage of the pilot: the exchange covered every coset of every maximal anchor
 of one seed, but only cosets with exactly the target count. That is a fraction
 1.9e-8 of all U_8 = V_7 + <q>, and 31 of the 6.35 M 7-dim subspaces of C2(F).
@@ -51,8 +53,10 @@ of one seed, but only cosets with exactly the target count. That is a fraction
 2. V: the 25 known classes are closed under quadratic switching. H: they are
    also nearly closed under codimension-2 re-extension.
 3. V: for Beierle-Leander 3, the exchange with the parent-specific target found
-   only the parent. H: the target rule is the main reason, because it selects
-   U_8 that resemble the parent's own subspaces.
+   only the parent, and the wider window 78:82 (W1) did not change this. In
+   about 11,000 U_8 with q outside C2 that passed the prefilter, none extended.
+   H: the target rule is not the main obstacle. APN spaces that share a
+   bent-maximal 7-dim anchor with this seed are very rare or absent.
 4. H: new n = 10 classes, if they exist near the known ones, are at
    codimension 3 or more, or in other EA classes of the same CCZ class.
 
@@ -66,8 +70,9 @@ of one seed, but only cosets with exactly the target count. That is a fraction
 | 4 | Anchor rule from the lexicographic flag profile, from a (10,5)-bent V_5 | the maximal-V_7 rule gives 7.6 M anchors | H: a few hundred bent V_5 per seed; to be measured |
 | 5 | Closure driver: switching, then re-extension, then exchange, on each admitted class, with the same persistence as `pilot_stream.jl` | without it a new class never becomes a parent | small code; it is useful only after a new class appears |
 
-Experiments 1 and 2 are the first ones to run, because they test the two main
-hypotheses (target bias and EA-class choice) at low cost.
+Experiment 1 was run as W1 (section 3) and gave no new class. Experiment 2
+(switching from the other EA classes of each CCZ class) is now the first one
+to run, because it tests the remaining main hypothesis.
 
 ## 6. Reproduction
 
