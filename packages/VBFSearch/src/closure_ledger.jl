@@ -36,6 +36,7 @@ end
 """Decode a block and verify its digest, length and SQLite coverage envelope."""
 function _closure_unpack_chunks(row)
     value=row["evidence"]
+    _closure_segment_reference(value)===nothing || error("external coverage payload requires a checkpoint-aware read; use _closure_foreach_chunk or rehydrate")
     value isa AbstractString && return [Dict{String,Any}(key=>row[key] for key in (_CLOSURE_LEDGER_FIELDS...,"evidence"))]
     value isa Vector{UInt8} && length(value)>=49 && value[1:8] in (_CLOSURE_LEDGER_MAGIC,_CLOSURE_LEDGER_MAGIC_V2) || error("unknown compact ledger encoding")
     size=Int(ltoh(read(IOBuffer(value[9:16]),UInt64)))
@@ -69,8 +70,9 @@ end
 function _closure_foreach_chunk(f,db;job_id=nothing)
     sql="SELECT * FROM chunks"*(job_id===nothing ? " ORDER BY job_id,first_x" : " WHERE job_id=? ORDER BY first_x")
     query=DBInterface.execute(db,sql,job_id===nothing ? () : (job_id,))
+    cache=_ClosureSegmentCache()
     try
-        for row in query, record in _closure_unpack_chunks(row)
+        for row in query, record in _closure_unpack_chunks(_closure_resolve_chunk(db,row,cache))
             f(record)
         end
     finally

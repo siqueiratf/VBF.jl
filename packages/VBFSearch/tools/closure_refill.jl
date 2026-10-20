@@ -19,9 +19,11 @@ is rethrown; the caller owns durable recovery of unapplied jobs.
 """
 function run_refill_pool!(reserve,prepare,compute,apply;
     concurrency::Int,max_pending::Int=2concurrency,key=identity,
-    stop_requested=()->false,on_tick=()->nothing,coordinator_step=f->f())
+    stop_requested=()->false,on_tick=()->nothing,on_wait=()->nothing,
+    on_state=_->nothing,measure_result_bytes=false,poll_seconds=0.1,coordinator_step=f->f())
     concurrency>0 || throw(ArgumentError("invalid concurrency"))
     max_pending>=concurrency || throw(ArgumentError("reservation horizon must cover every slot"))
+    isfinite(poll_seconds) && poll_seconds>0 || throw(ArgumentError("invalid worker poll interval"))
     events=Channel{Any}(max_pending)
     cancelled=Threads.Atomic{Bool}(false)
     worker_stop()=cancelled[] || stop_requested()
@@ -30,11 +32,18 @@ function run_refill_pool!(reserve,prepare,compute,apply;
     active=Dict{Int,Task}();completed=Dict{Int,Any}()
     next_ticket=1;next_apply=1;dispatched=0;applied=0
     peak_active=0;peak_pending=0;peak_completed=0;failure=nothing
+    reserve_seconds=0.0;prepare_seconds=0.0;apply_seconds=0.0;event_wait_seconds=0.0
+    completed_bytes=0;peak_completed_bytes=0
+    function publish_state!()
+        on_state((;active=length(active),reserved=length(reserved),completed=length(completed),
+            peak_active,peak_pending,peak_completed,completed_bytes,peak_completed_bytes,
+            result_bytes_measured=measure_result_bytes,reserve_seconds,prepare_seconds,apply_seconds,event_wait_seconds))
+    end
     function reserve_more!()
         worker_stop() && return
         room=max_pending-length(reserved)
         room==0 && return
-        descriptors=reserve(room,copy(reserved_keys))
+        t=time_ns();descriptors=reserve(room,copy(reserved_keys));reserve_seconds+=(time_ns()-t)*1e-9
         length(descriptors)<=room || error("reservation exceeds bounded horizon")
         for item in descriptors
             id=key(item)
@@ -48,7 +57,7 @@ function run_refill_pool!(reserve,prepare,compute,apply;
         while !worker_stop() && !isempty(free_slots) && ready_head<=length(ready)
             ticket=ready[ready_head];ready_head+=1
             slot=popfirst!(free_slots)
-            prepared=prepare(reserved[ticket],ticket,slot)
+            t=time_ns();prepared=prepare(reserved[ticket],ticket,slot);prepare_seconds+=(time_ns()-t)*1e-9
             active[ticket]=Threads.@spawn begin
                 started=time_ns();value=nothing;problem=nothing
                 try
@@ -71,9 +80,11 @@ function run_refill_pool!(reserve,prepare,compute,apply;
         while haskey(completed,next_apply)
             event=completed[next_apply]
             event.problem===nothing || return
-            apply(event.prepared,event.value,event.compute_seconds,
+            t=time_ns();apply(event.prepared,event.value,event.compute_seconds,
                 (;ticket=event.ticket,slot=event.slot,
                     ready_wait_seconds=(time_ns()-event.finished_ns)*1e-9))
+            apply_seconds+=(time_ns()-t)*1e-9
+            completed_bytes-=event.result_bytes
             delete!(completed,next_apply)
             item=pop!(reserved,next_apply);delete!(reserved_keys,key(item))
             next_apply+=1;applied+=1
@@ -83,7 +94,9 @@ function run_refill_pool!(reserve,prepare,compute,apply;
     function receive!(event)
         wait(pop!(active,event.ticket))
         push!(free_slots,event.slot);sort!(free_slots)
-        completed[event.ticket]=event
+        bytes=measure_result_bytes ? Base.summarysize((event.prepared,event.value)) : 0
+        completed[event.ticket]=merge(event,(result_bytes=bytes,))
+        completed_bytes+=bytes;peak_completed_bytes=max(peak_completed_bytes,completed_bytes)
         peak_completed=max(peak_completed,length(completed))
         if event.problem!==nothing
             failure===nothing && (failure=event.problem)
@@ -94,7 +107,14 @@ function run_refill_pool!(reserve,prepare,compute,apply;
         coordinator_step() do
             reserve_more!();dispatch!()
         end
+        publish_state!()
         while !isempty(active)
+            t=time_ns()
+            while !isready(events)
+                maintenance_started=time_ns();on_wait();t+=time_ns()-maintenance_started
+                timedwait(()->isready(events),poll_seconds;pollint=min(0.001,poll_seconds))
+            end
+            event_wait_seconds+=(time_ns()-t)*1e-9
             event=take!(events)
             coordinator_step() do
                 receive!(event)
@@ -104,12 +124,15 @@ function run_refill_pool!(reserve,prepare,compute,apply;
                 end
                 dispatch!();apply_prefix!()
             end
+            publish_state!()
             failure===nothing && on_tick()
         end
         coordinator_step(apply_prefix!)
         failure===nothing || throw(failure.exception)
         (;state=worker_stop() ? :stopped : :drained,dispatched,applied,
             peak_active,peak_pending,peak_completed,
+            peak_completed_bytes,result_bytes_measured=measure_result_bytes,
+            reserve_seconds,prepare_seconds,apply_seconds,event_wait_seconds,
             reserved_unstarted=length(reserved),reservation_horizon=max_pending)
     catch error
         # Preserve the original worker failure if cleanup of its successful

@@ -26,6 +26,13 @@ struct Query{
     ~Query(){sqlite3_finalize(s);}
     bool step(){int rc=sqlite3_step(s);require(rc==SQLITE_ROW||rc==SQLITE_DONE,sqlite3_errmsg(sqlite3_db_handle(s)));return rc==SQLITE_ROW;}
 };
+void reject_segmented(sqlite3* db){
+    Query exists(db,"SELECT 1 FROM sqlite_master WHERE type='table' AND name='closure_evidence_segments'");
+    if(exists.step()){
+        Query rows(db,"SELECT 1 FROM closure_evidence_segments LIMIT 1");
+        require(!rows.step(),"checkpoint has external coverage segments; use closure_export_checkpoint or closure_rehydrate_segments! before this legacy helper");
+    }
+}
 std::string text(sqlite3_stmt* s,int i){const auto* p=sqlite3_column_text(s,i);return p?std::string(reinterpret_cast<const char*>(p),sqlite3_column_bytes(s,i)):"";}
 std::string quote(std::string s){std::string r="\"";for(char c:s){r+=c;if(c=='\"')r+=c;}return r+'\"';}
 void u32(Bytes& b,uint32_t v){for(int i=0;i<4;++i)b.push_back((v>>(8*i))&255);}
@@ -58,7 +65,9 @@ uint32_t get32(const Bytes& raw,size_t& pos){require(pos+4<=raw.size(),"truncate
 int verify_only(const char* from,const char* to){
     sqlite3 *source=nullptr,*target=nullptr;
     require(sqlite3_open_v2(from,&source,SQLITE_OPEN_READONLY,nullptr)==SQLITE_OK,"cannot open source");
+    reject_segmented(source);
     require(sqlite3_open_v2(to,&target,SQLITE_OPEN_READONLY,nullptr)==SQLITE_OK,"cannot open target");
+    reject_segmented(target);
     sql(source,"PRAGMA query_only=ON; PRAGMA cache_size=-65536; BEGIN");sql(target,"PRAGMA query_only=ON; PRAGMA cache_size=-65536; BEGIN");
     {Query tables(source,"SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name!='chunks' ORDER BY name");
     while(tables.step()){
@@ -104,8 +113,9 @@ int main(int argc,char** argv){
     if(argc!=3){std::cerr<<"usage: compact_closure_ledger SOURCE.sqlite NEW.sqlite\n";return 2;}
     sqlite3 *source=nullptr,*target=nullptr;
     try{
-        int fd=open(argv[2],O_CREAT|O_EXCL|O_WRONLY,0600);require(fd>=0,"output already exists or cannot be created");close(fd);
         require(sqlite3_open_v2(argv[1],&source,SQLITE_OPEN_READONLY,nullptr)==SQLITE_OK,"cannot open source");
+        reject_segmented(source);
+        int fd=open(argv[2],O_CREAT|O_EXCL|O_WRONLY,0600);require(fd>=0,"output already exists or cannot be created");close(fd);
         require(sqlite3_open(argv[2],&target)==SQLITE_OK,"cannot open target");
         sql(source,"PRAGMA query_only=ON; BEGIN");sql(target,"PRAGMA journal_mode=DELETE; PRAGMA synchronous=FULL; PRAGMA cache_size=-65536; BEGIN IMMEDIATE");
         Query attach(target,"ATTACH DATABASE ? AS old");sqlite3_bind_text(attach.s,1,argv[1],-1,SQLITE_STATIC);attach.step();
