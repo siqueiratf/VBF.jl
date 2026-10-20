@@ -133,4 +133,17 @@ end
     reserve=(limit,excluded)->[1,1]
     @test_throws ErrorException run_refill_pool!(reserve,identity,identity,identity;concurrency=2)
 end
+
+@testset "Waiting observes stop requests, drains and measures buffered results" begin
+    stopped=Threads.Atomic{Bool}(false);ticks=Ref(0);applied=Int[]
+    compute=(item,slot,stop)->begin while !stop();yield();end;item end
+    poll=()->begin ticks[]+=1;stopped[]=true end
+    result=run_refill_pool!(fifo_reserver(1:5),(item,ticket,slot)->item,compute,
+        (item,value,seconds,meta)->push!(applied,value);concurrency=1,
+        stop_requested=()->stopped[],on_wait=poll,measure_result_bytes=true)
+    @test ticks[]>0 && result.state==:stopped && applied==[1]
+    @test result.peak_completed_bytes>0 && result.result_bytes_measured
+    @test result.reserved_unstarted==1 && result.applied==1
+    @test result.event_wait_seconds>=0 && result.prepare_seconds>=0
+end
 end

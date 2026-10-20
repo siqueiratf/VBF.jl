@@ -4,6 +4,11 @@ Audited on 2026-10-20 against commit `810cab9` by separate scheduler, storage
 and deployment reviews. This is an implementation plan, not an installed
 cluster backend. The workstation campaign was left running.
 
+The general operational improvements have since been implemented; see
+[campaign operations](OPERATIONS.md) for their APIs, limits and tests. The findings
+below describe the audited baseline. Trillium deployment and a multi-node worker
+backend remain separate work; no cluster performance is established here.
+
 The recursive search needs migration and shutdown support before a reliable
 single-node pilot. Large multi-node execution additionally needs a worker
 transport and failure protocol. Increasing the Slurm node count alone will

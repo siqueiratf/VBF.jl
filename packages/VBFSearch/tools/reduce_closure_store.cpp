@@ -26,6 +26,13 @@ struct Query {
  bool step(){auto rc=sqlite3_step(s);need(rc==SQLITE_ROW||rc==SQLITE_DONE,sqlite3_errmsg(sqlite3_db_handle(s)));return rc==SQLITE_ROW;}
  void reset(){sqlite3_reset(s);sqlite3_clear_bindings(s);}
 };
+void reject_segmented(sqlite3* db){
+ Query exists(db,"SELECT 1 FROM sqlite_master WHERE type='table' AND name='closure_evidence_segments'");
+ if(exists.step()){
+  Query rows(db,"SELECT 1 FROM closure_evidence_segments LIMIT 1");
+  need(!rows.step(),"checkpoint has external coverage segments; use closure_export_checkpoint or closure_rehydrate_segments! before this legacy helper");
+ }
+}
 void sql(sqlite3* db,const std::string& q){char* e=nullptr;auto rc=sqlite3_exec(db,q.c_str(),nullptr,nullptr,&e);std::string why=e?e:"";sqlite3_free(e);need(rc==SQLITE_OK,q+": "+why);}
 std::string str(sqlite3_stmt* s,int i){auto p=sqlite3_column_text(s,i);return p?std::string(reinterpret_cast<const char*>(p),sqlite3_column_bytes(s,i)):"";}
 std::string quote(const std::string& s){std::string r="\"";for(char c:s){r+=c;if(c=='\"')r+=c;}return r+'\"';}
@@ -63,6 +70,7 @@ struct Reducer {
   for(auto suffix:{"-wal","-journal"})need(!std::filesystem::exists(from+suffix)||std::filesystem::file_size(from+suffix)==0,"source has an active journal");
   need(std::filesystem::exists(std::filesystem::path(from).parent_path()/"STOP"),"source must have STOP marker");
   need(sqlite3_open_v2(from.c_str(),&source,SQLITE_OPEN_READONLY,nullptr)==SQLITE_OK,"cannot open source");sql(source,"PRAGMA query_only=ON; PRAGMA cache_size=-65536; BEGIN");
+  reject_segmented(source);
   {Query q(source,"SELECT COUNT(*) FROM jobs WHERE status='running'");need(q.step()&&sqlite3_column_int64(q.s,0)==0,"source has running jobs");}
   {Query q(source,"SELECT COUNT(*) FROM sessions WHERE finished=''");need(q.step()&&sqlite3_column_int64(q.s,0)==0,"source has unfinished sessions");}
   bool exists=std::filesystem::exists(to);if(!exists){int fd=::open(to.c_str(),O_CREAT|O_EXCL|O_WRONLY,0600);need(fd>=0,"cannot create output");close(fd);}
@@ -76,7 +84,7 @@ struct Reducer {
    std::vector<std::pair<std::string,std::string>> deferred;
    {Query indexes(target,"SELECT name,sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL");while(indexes.step())deferred.emplace_back(str(indexes.s,0),str(indexes.s,1));}
    for(const auto& [name,ddl]:deferred){state("index:"+name,ddl);sql(target,"DROP INDEX "+quote(name));}
-   Query q(source,"SELECT name,sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");while(q.step()){auto name=str(q.s,0);need(name.rfind("closure_",0)!=0,"source is already normalized");if(name=="candidates"||name=="comparisons")continue;auto ddl=str(q.s,1);replace_all(ddl,"REFERENCES candidates(id)","REFERENCES closure_candidates(id)");sql(target,ddl);}sql(target,"COMMIT");
+   Query q(source,"SELECT name,sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");while(q.step()){auto name=str(q.s,0);need(name.rfind("closure_",0)!=0||name=="closure_evidence_segments"||name=="closure_segment_chunks","source is already normalized");if(name=="candidates"||name=="comparisons")continue;auto ddl=str(q.s,1);replace_all(ddl,"REFERENCES candidates(id)","REFERENCES closure_candidates(id)");sql(target,ddl);}sql(target,"COMMIT");
   }
   need(state("source")==signature&&state("schema_sha256")==digest(file_text(schema)),"resume source or schema changed");
   auto previous=state("helper_sha256");

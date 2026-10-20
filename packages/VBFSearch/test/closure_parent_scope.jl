@@ -22,6 +22,14 @@ const FP=VBFSearch
         FP._closure_exec(db,"UPDATE jobs SET status='done' WHERE parent_id=4")
         @test isempty(selected("discovered"))
         @test ids("all")==[1]
+        idle=ContinuousSeedSearch.select_parents(db,100;parent_scope="discovered",fallback=true)
+        @test only(idle)["id"]==1 && only(idle)["selection_kind"]=="idle"
+        FP._closure_exec(db,"INSERT INTO jobs(parent_id,kind,job_key,payload,status) VALUES(3,'deduplicate','ea-fixture','','paused')")
+        ea=ContinuousSeedSearch.select_parents(db,100;parent_scope="discovered",fallback=true)
+        @test only(ea)["id"]==3 && only(ea)["origin"]=="root"
+        @test only(ea)["selection_kind"]=="equivalence"
+        @test isempty(selected("discovered"))
+        @test ids("all")==[1]
         @test_throws ArgumentError selected("invalid")
         @test_throws ArgumentError selected("discovered",0)
     finally

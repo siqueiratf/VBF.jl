@@ -3,8 +3,8 @@
 VBFSearch consumes VBF mathematics and VBFCatalog reference data. It owns search
 configuration, scheduling, transactional checkpoints, candidate evidence and
 snapshot exports. The CLI, Julia API and documentation inspector use the same
-implementation. Mathematical checks use VBF; there is no second verification
-engine and no Python dependency.
+implementation. Mathematical checks use VBF. The signal-supervised campaign
+launcher additionally uses Python 3 for POSIX process supervision.
 
 For the retained recursive campaign, start with the
 [experiment inventory](INVENTORY.md), [dataset scopes](DATASETS.md) and
@@ -12,6 +12,8 @@ For the retained recursive campaign, start with the
 analysis directories, sizes, operational dependencies and cleanup candidates.
 The [Trillium readiness audit](CLUSTER.md) records the migration, scheduling and
 storage changes needed for single-node and multi-node cluster execution.
+See [campaign operations](OPERATIONS.md) for the implemented portable launcher,
+storage controls, metrics, checkpoint exports and cold evidence APIs.
 
 Research studies live in [VBFPaper](../VBFPaper/README.md): census
 sampling, hyperplane experiments, finite literature domains and publication

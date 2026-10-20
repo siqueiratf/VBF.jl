@@ -10,13 +10,17 @@ const _CLOSURE_UPGRADE_PATHS=Set([
     "packages/VBFSearch/src/closure_ledger.jl",
     "packages/VBFSearch/src/closure_ledger_v2.jl","packages/VBFSearch/src/closure_normalized.jl",
     "packages/VBFSearch/src/closure_normalized.sql","packages/VBFSearch/src/closure_reduce.jl",
+    "packages/VBFSearch/src/closure_portable.jl","packages/VBFSearch/src/closure_segments.jl",
     "packages/VBFSearch/src/closure_algorithms.jl","packages/VBFSearch/src/closure_cluster.jl",
     "packages/VBFSearch/src/closure_equivalence.jl","packages/VBFSearch/src/cli.jl",
     "packages/VBFSearch/tools/closure_cluster.jl",
 ])
 
 """Verify a stopped source against its own archived code and pinned inputs."""
-function _closure_upgrade_source(db,directory)
+function _closure_upgrade_source(db,directory;allow_execution_paths=false)
+    if isfile(joinpath(directory,_CLOSURE_PATH_MAP)) && !allow_execution_paths
+        error("this storage migration cannot preserve relocated execution paths; use closure_export_checkpoint for portable copies, or an explicitly supported migration")
+    end
     identity=TOML.parse(only(_closure_rows(db,"SELECT value FROM metadata WHERE key='identity'"))["value"])
     identity==TOML.parsefile(joinpath(directory,"identity.toml")) || error("source identity manifest differs from database")
     identity["schema"]==CLOSURE_SCHEMA || error("unsupported source closure schema")
@@ -32,12 +36,46 @@ function _closure_upgrade_source(db,directory)
         archived=joinpath(directory,"replay","workspace",relative)
         isfile(archived) && DiscoveryEvidence.filehash(archived)==digest || error("source implementation archive changed: $relative")
     end
+    _closure_validate_execution_inputs(directory,identity)
+    _closure_validate_active_runtime_environment(directory,identity)
     for (index,(path,digest)) in enumerate(sort!(collect(identity["inputs"]);by=first))
-        isfile(path) && DiscoveryEvidence.filehash(path)==digest || error("source input changed: $path")
         archived=joinpath(directory,"replay","inputs",string(index)*"-"*basename(path))
         isfile(archived) && DiscoveryEvidence.filehash(archived)==digest || error("source input archive changed: $path")
     end
     identity,tables
+end
+
+"""Carry verified execution pins across an explicit implementation upgrade."""
+function _closure_upgrade_execution_paths!(origin,stage,previous,identity,current,record)
+    map=_closure_execution_map(origin,identity)
+    map===nothing && return
+    source_map=joinpath(origin,_CLOSURE_PATH_MAP)
+    cp(source_map,joinpath(previous,_CLOSURE_PATH_MAP))
+    cp(source_map,joinpath(stage,_CLOSURE_PATH_MAP))
+    for (source,target) in ((joinpath(origin,"relocation-lineage"),joinpath(previous,"relocation-lineage")),
+            (joinpath(origin,"relocation-lineage"),joinpath(stage,"relocation-lineage")),
+            (joinpath(origin,"execution"),joinpath(stage,"execution")))
+        isdir(source) && _closure_portable_copy(source,target)
+    end
+    environment=get(map,"active_environment",nothing)
+    if environment!==nothing
+        _closure_verify_active_environment(origin,environment)
+        for key in ("project","manifest")
+            entry=environment[key]
+            source=_closure_portable_file(origin,entry["path"])
+            destination=_closure_portable_file(stage,entry["path"])
+            if isfile(destination)
+                _closure_portable_hash(destination,entry["sha256"],"upgraded active environment")
+            else
+                _closure_portable_copy(source,destination)
+            end
+        end
+    end
+    _closure_write_execution_map(stage,current;active_environment=environment,origin="verified execution upgrade from "*origin)
+    record["source_execution_paths_sha256"]=DiscoveryEvidence.filehash(source_map)
+    record["execution_paths_sha256"]=DiscoveryEvidence.filehash(joinpath(stage,_CLOSURE_PATH_MAP))
+    environment===nothing || (record["active_environment"]=environment)
+    haskey(map,"runtime_build") && (record["runtime_build"]=map["runtime_build"])
 end
 
 """Check that compression adds one dependency edge without changing pinned versions."""
@@ -84,6 +122,7 @@ function closure_compact(source;output,helper,prepared=nothing)
     lease=_closure_lease(origin);db=nothing;stage=nothing
     try
         db=SQLite.DB("file:"*joinpath(origin,"closure.sqlite")*"?mode=ro")
+        _closure_reject_segmented_clone(db)
         identity,tables=_closure_upgrade_source(db,origin)
         _closure_storage_environment(origin)
         for suffix in ("-wal","-journal")
@@ -188,8 +227,9 @@ function closure_upgrade(source;output,switching_directions=32)
     mkpath(dirname(target));lease=_closure_lease(origin);db=nothing;stage=nothing
     try
         db=SQLite.DB("file:"*joinpath(origin,"closure.sqlite")*"?mode=ro")
+        _closure_reject_segmented_clone(db)
         _closure_exec(db,"PRAGMA query_only=ON")
-        identity,tables=_closure_upgrade_source(db,origin)
+        identity,tables=_closure_upgrade_source(db,origin;allow_execution_paths=true)
         implementation=implementation_fingerprint()
         changed=sort!([path for path in union(keys(identity["implementation"]),keys(implementation)) if get(identity["implementation"],path,nothing)!=get(implementation,path,nothing)])
         all(path->path in _CLOSURE_UPGRADE_PATHS,changed) || error("upgrade changes mathematics, catalog or toolchain outside controller whitelist")
@@ -229,6 +269,8 @@ function closure_upgrade(source;output,switching_directions=32)
             mkpath(dirname(archived));cp(joinpath(DiscoveryInputs.ROOT,relative),archived)
             DiscoveryEvidence.filehash(archived)==digest || error("implementation changed during upgrade archival")
         end
+        DiscoveryStore.atomic_toml(joinpath(stage,"identity.toml"),current)
+        _closure_upgrade_execution_paths!(origin,stage,previous,identity,current,record)
         copydb=SQLite.DB(joinpath(stage,"closure.sqlite"))
         try
             all(table->_closure_count(copydb,"SELECT COUNT(*) n FROM \"$table\"")==counts[table],tables) || error("SQLite backup lost source rows")
@@ -240,7 +282,6 @@ function closure_upgrade(source;output,switching_directions=32)
         finally
             close(copydb)
         end
-        DiscoveryStore.atomic_toml(joinpath(stage,"identity.toml"),current)
         DiscoveryStore.atomic_toml(joinpath(stage,"upgrade.toml"),record)
         validated=_closure_open(stage)
         _closure_close(validated)

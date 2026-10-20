@@ -147,9 +147,8 @@ function _closure_open(directory)
         identity["implementation"]==implementation_fingerprint() || error("closure source or environment identity changed; use the archived implementation")
         identity["julia"]==string(VERSION) || error("closure Julia version changed")
         _closure_count(db,"SELECT COUNT(*) n FROM metadata WHERE key='initialization_complete' AND value='true'")==1 || error("closure initialization did not complete")
-        for (path,digest) in identity["inputs"]
-            isfile(path) && DiscoveryEvidence.filehash(path)==digest || error("closure input changed: $path")
-        end
+        _closure_validate_execution_inputs(dir,identity)
+        _closure_validate_active_runtime_environment(dir,identity)
         for (relative,digest) in identity["implementation"]
             archived=joinpath(dir,"replay","workspace",relative)
             isfile(archived) && DiscoveryEvidence.filehash(archived)==digest || error("closure implementation archive changed: $relative")
@@ -158,6 +157,7 @@ function _closure_open(directory)
             archived=joinpath(dir,"replay","inputs",string(i)*"-"*basename(source))
             isfile(archived) && DiscoveryEvidence.filehash(archived)==digest || error("closure input archive changed: $source")
         end
+        isdefined(@__MODULE__,:closure_verify_segments) && closure_verify_segments(db,dir)
         s=ClosureStore(db,dir,lease,identity,0,UInt64(0))
         _closure_transaction(s) do
             _closure_exec(db,"UPDATE jobs SET status='paused' WHERE status='running'")

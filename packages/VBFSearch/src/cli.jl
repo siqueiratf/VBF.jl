@@ -47,6 +47,12 @@ Usage: bin/vbf COMMAND [OPTIONS]
   closure  run|resume DIR [--duration 60s] [--evaluations 1000] [--jobs 16]
            [--parents 0] [--equivalence-duration 2s] [--equivalence-nodes 100000]
   closure  status|stop DIR
+  closure  continuous CONFIG.toml       (threaded, signal-supervised controller)
+  closure  export DIR --output BUNDLE [--active-project PROJECT.toml]
+  closure  verify-bundle BUNDLE
+  closure  relocate DIR [--active-project PROJECT.toml]
+  closure  seal DIR [--cold-directory DIR] [--rows 256] [--bytes 16777216]
+  closure  rehydrate DIR [--segments N]
 
 Search is currently restricted to quadratic (8,8)-APNs. Catalog seeds are the
 default; --corpus samples named bulk corpora deterministically with --seed.
@@ -103,6 +109,37 @@ function closure_command(args)
             max_parents=parse(Int,get(cfg,"parents","0")),
             equivalence_seconds=parse(Float64,duration(get(cfg,"equivalence-duration","2s"))),
             equivalence_nodes=parse(Int,get(cfg,"equivalence-nodes","100000"))))
+    elseif action=="continuous"
+        length(rest)==1 || error("closure continuous needs CONFIG.toml")
+        owner=Module(gensym(:ClosureLaunch))
+        Base.include(owner,joinpath(@__DIR__,"..","tools","closure_run.jl"))
+        Base.invokelatest() do
+            getfield(getfield(owner,:ClosureLauncher),:supervise)(only(rest))
+        end
+    elseif action=="export"
+        cfg,_,pos=options(rest,["output","active-project"])
+        length(pos)==1 && haskey(cfg,"output") || error("closure export needs DIR --output BUNDLE")
+        println(VBFSearch.closure_export_checkpoint(only(pos);output=cfg["output"],active_project=get(cfg,"active-project",nothing)))
+    elseif action=="verify-bundle"
+        length(rest)==1 || error("closure verify-bundle needs BUNDLE")
+        println(VBFSearch.closure_verify_checkpoint(only(rest)))
+    elseif action=="relocate"
+        cfg,_,pos=options(rest,["active-project"])
+        length(pos)==1 || error("closure relocate needs DIR")
+        println(VBFSearch.closure_relocate!(only(pos);active_project=get(cfg,"active-project",nothing)))
+    elseif action in ("seal","rehydrate")
+        cfg,_,pos=options(rest,action=="seal" ? ["cold-directory","rows","bytes"] : ["segments"])
+        length(pos)==1 || error("closure $action needs DIR")
+        store=VBFSearch._closure_open(only(pos))
+        try
+            value=action=="seal" ? VBFSearch.closure_seal_segments!(store;
+                cold_directory=get(cfg,"cold-directory",joinpath(store.directory,"cold")),
+                max_rows=parse(Int,get(cfg,"rows","256")),max_bytes=parse(Int,get(cfg,"bytes","16777216"))) :
+                VBFSearch.closure_rehydrate_segments!(store;max_segments=parse(Int,get(cfg,"segments",string(typemax(Int)))))
+            println(value)
+        finally
+            VBFSearch._closure_close(store)
+        end
     elseif action in ("status","stop")
         length(rest)==1 || error("closure $action needs RUN_DIRECTORY")
         action=="status" ? println(VBFSearch.closure_snapshot(only(rest))) : VBFSearch.closure_stop!(only(rest))

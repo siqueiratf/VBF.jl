@@ -37,7 +37,9 @@ include("closure_store.jl")
 include("closure_normalized.jl")
 include("closure_ledger_v2.jl")
 include("closure_ledger.jl")
+include("closure_segments.jl")
 include("closure.jl")
+include("closure_portable.jl")
 include("closure_upgrade.jl")
 include("closure_reduce.jl")
 include("closure_algorithms.jl")
@@ -54,7 +56,9 @@ export AuditedAPNReference, open_apn_reference, close_apn_reference, open_catalo
        report_snapshot, candidate_properties, compare, classify, classify_snapshot, open_reference,
        close_reference, verify_comparison, verify_ccz_witness, verify_ea_witness,
        verify_certificate, publish, main, closure_init, closure_run!, closure_snapshot, closure_progress, closure_stop!,
-       closure_upgrade, closure_reduce, V5CompletionCache, cached_v5_extensions!
+       closure_upgrade, closure_reduce, closure_relocate!, closure_export_checkpoint,
+       closure_verify_checkpoint, closure_seal_segments!, closure_rehydrate_segments!,
+       closure_verify_segments, closure_segment_artifacts, V5CompletionCache, cached_v5_extensions!
 
 function __init__()
     # Compute at process initialization, never bake a source identity into a cache.

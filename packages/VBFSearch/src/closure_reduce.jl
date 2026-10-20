@@ -23,6 +23,7 @@ function closure_reduce(source;output,helper,threads=8,reserve_bytes=12*1024^3,m
     lease=_closure_lease(origin);db=nothing
     try
         db=SQLite.DB("file:"*joinpath(origin,"closure.sqlite")*"?mode=ro")
+        _closure_reject_segmented_clone(db)
         identity,_=_closure_upgrade_source(db,origin)
         _closure_normalized(db) && error("source is already normalized")
         implementation=implementation_fingerprint()
