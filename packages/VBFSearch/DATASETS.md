@@ -18,7 +18,13 @@ Paths beginning with `data/` below are relative to `packages/VBFSearch/`;
 | Published-root result | `data/research/freezes/published-roots-b52-20261017/classes.sqlite` | Classes observed directly in complete V5 and switching expansions of the 24,294 published roots. Includes the initial seeds. |
 | Comparison evidence | `data/research/freezes/published-roots-b52-20261017/comparisons.sqlite` | Literature and historical membership evidence for the published-root result. This contains relationships and witnesses, not a reference corpus. |
 | Recursive campaign archive | Path recorded in the registry | The full stopped campaign ledger, including recursive work. This is a different scope from the direct published-root result. |
-| Current recursive checkpoint | `data/search/literature-b52-closure-20261014/run-validation-20261018T232756Z/closure.sqlite` | The later recursive campaign, stopped on 19 October 2026. Its published-reference comparisons are under `reports/`; it remains separate from both class freezes above. |
+| Current recursive checkpoint | `data/search/literature-b52-closure-20261014/run-reduced-20261020/closure.sqlite` | Losslessly normalized recursive campaign, stopped on 19 October 2026. Its published-reference comparisons are under `reports/`; it remains separate from both class freezes above. |
+| Pre-reduction rollback checkpoint | `data/search/literature-b52-closure-20261014/run-validation-20261018T232756Z/closure.sqlite` | The same scientific records in their original representation, retained for rollback. |
+
+The current recursive checkpoint and its pre-reduction source represent the
+same candidate functions, classes, derivations and coverage. Their function
+counts describe the same dataset. The registry records both byte hashes and the
+lossless migration receipt; [STORAGE.md](STORAGE.md) describes the representation.
 
 The published-root result's `roots`, `methods`, and `derivations` tables preserve
 which original parent and construction produced each class. A derivation records

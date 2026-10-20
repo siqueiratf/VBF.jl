@@ -1,14 +1,34 @@
 # Recursive campaign storage
 
-The recursive campaign was stopped at the user's request on 19 October 2026.
-The current checkpoint remains uncompressed at
-`data/search/literature-b52-closure-20261014/run-validation-20261018T232756Z/closure.sqlite`.
-Its STOP marker remains present. The dashboard remains available to inspect the
-retained reports; the search and report-generation services remain stopped.
+The current stopped checkpoint is
+`data/search/literature-b52-closure-20261014/run-reduced-20261020/closure.sqlite`.
+The lossless conversion completed on 20 October 2026 UTC. The search remains
+stopped, with its STOP marker retained.
 
-The current SQLite file is approximately 213 GiB and has no freelist pages.
-`VACUUM` therefore offers little space recovery. The disk audit and maintenance
-receipts are under `data/research/analyses/campaign-maintenance-20261019/`.
+The reduced file is **47,283,838,976 bytes (44.04 GiB)**, compared with
+228,888,621,056 bytes (213.17 GiB) for the original: **79.34% smaller**.
+The original remains at
+`data/search/literature-b52-closure-20261014/run-validation-20261018T232756Z/closure.sqlite`
+as a rollback checkpoint. Both files contain the same scientific records; the
+original is retained, so this comparison describes representation size rather
+than space already reclaimed from the local disk.
+
+All 7,650,225 candidate rows, 3,554,200 admitted parent classes, 16,403,548
+construction paths and 4,088,636 EA comparisons were retained. All
+**8,052,863,858 logical coset records** were reconstructed and checked across
+1,190,214 blocks. Logical table digests, target SQLite integrity and foreign-key
+checks, saved coverage cursors, frozen source files and pinned inputs passed.
+The stopped checkpoint still has 24,294 initial roots and 77,613 completed parents.
+These counts do not establish literature novelty for all admitted classes.
+
+The checkpoint's `storage-reduction.toml` records source identity, table and
+ledger proofs, implementation lineage and the original byte hash. Native helper
+versions and source hashes are preserved in `lineage/storage-tools/`. The final
+byte hashes and deployment receipts are under
+`data/research/analyses/storage-reduction-20261020/`. Earlier disk diagnostics and
+maintenance receipts remain under
+`data/research/analyses/campaign-maintenance-20261019/` and
+`data/research/analyses/storage-diagnosis-20261019/`.
 
 ## Historical artifacts
 
@@ -130,12 +150,14 @@ free-space check and the output budget also sets SQLite's page limit. Source
 and target coexist during conversion; budget for both or write the target to a
 separate filesystem. Neither success nor failure removes the source.
 
-The complete campaign conversion is being recorded under
-`data/research/analyses/storage-reduction-20261020/`, with a target of
-`data/search/literature-b52-closure-20261014/run-reduced-20261020/`.
-The original checkpoint remains stopped and preserved until verification.
-Sample savings are estimates; the final database size determines whether a
-60 GB node has enough headroom. These migration budgets do not cap subsequent
+The verified checkpoint's 47.28 GB SQLite file fits a 60 GB storage budget,
+leaving approximately 12.72 GB before dependencies and derived artifacts.
+The latest graph payload is reused through hard links to immutable snapshot
+files; the structure and catalog JSON snapshots retain their original audit
+cutoffs. Mutable report databases are not hard-linked.
+A stopped 32-worker controller configuration is prepared under
+`data/search/literature-b52-closure-20261014/restart-controller-20261020-reduced/`.
+The older restart plan is marked superseded. No campaign was started. These migration budgets do not cap subsequent
 search growth. Workers should receive bounded work packets rather than copies
 of the coordinator database.
 
