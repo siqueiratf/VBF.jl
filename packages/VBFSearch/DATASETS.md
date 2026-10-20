@@ -11,7 +11,8 @@ relative to `packages/VBFSearch/`.
 | Earlier discoveries still awaiting provenance recovery | `data/research/datasets/earlier-discoveries-unrecovered.sqlite` | Active `classes` view excludes only historical representatives with replayed positive EA certificates to a provenance search. The original archive stays immutable. |
 | Completed published-root result | `data/research/freezes/published-roots-b52-20261017/` | Complete direct V5 and switching expansion of 24,294 roots: 1,237,894 classes including roots, 294,000 absent from the pinned published reference. |
 | Completed-root witness ledger | `data/search/literature-b52-closure-20261014/run-compact-v15-20261016/closure.normalized.sqlite.zst` | Original construction/admission witnesses and IDs in normalized archival storage. Use the pinned restoration helper for SQL inspection or original execution. |
-| Current recursive checkpoint | `data/search/literature-b52-closure-20261014/run-reduced-20261020/` | Resumable campaign, frozen code, root inputs, derivations, reports and graph. |
+| Current recursive checkpoint | `data/search/literature-b52-closure-20261014/run-operations-20261020/` | Resumable campaign with portable execution pins, bounded telemetry, storage limits and cold coverage evidence. |
+| Pre-upgrade rollback | `data/search/literature-b52-closure-20261014/run-reduced-20261020/` | Stopped predecessor of the current campaign, retained for rollback; these are the same classes at the upgrade cutoff. |
 | Pinned published reference | `data/research/references/published-literature-20261017/` | Published-only comparison scope and signature/member evidence. |
 
 ## Merged earlier discoveries
@@ -100,12 +101,20 @@ Use `run-compact-v15-20261016/storage-tools/archive-v2/restore_checkpoint.py` to
 restore the original schema for its frozen code, or `--normalized-only` for SQL
 inspection. See [STORAGE.md](STORAGE.md) for storage and restoration details.
 
-The current checkpoint retains 3,554,200 admitted parents and 7,650,225 exact LUTs.
-Admission is not a claim that every parent is new to the literature. The campaign
-state is recorded in `data/search/literature-b52-closure-20261014/current.json`, which identifies
-the selected collections and prepared restart.
+The execution upgrade on October 20 preserved **4,135,660 admitted parents**,
+**10,969,253 exact LUTs** and **23,792,150 construction paths**, with all
+**24,294 published roots completed**. Every scientific parameter and saved
+search position was retained. These are cutoff counts, not live totals or a
+claim that every parent is new to the literature. The predecessor and its
+embedded rollback snapshot must not be counted as additional discoveries.
+
+`data/search/literature-b52-closure-20261014/current.json` identifies the live
+checkpoint and controller. The dashboard is served on Hypatia at
+<http://100.75.124.4:8766/>; search computation and SQLite remain on Galileo.
+The upgrade receipt and bounded-resume validation are under
+`data/research/analyses/operational-upgrade-20261020/`.
 
 The cleanup removed other experiments after verifying the merge, archives,
 protected search checksums, source files and inputs. See [INVENTORY.md](INVENTORY.md),
 [STORAGE.md](STORAGE.md), and `data/research/analyses/cleanup-20261020/`.
-Generated databases remain ignored. Nothing was pushed.
+Generated databases remain ignored and are not pushed.

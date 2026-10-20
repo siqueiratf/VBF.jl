@@ -1,5 +1,15 @@
 # VBFSearch inventory after consolidation
 
+The current checkpoint is now `run-operations-20261020/`, under the same campaign
+directory. The execution upgrade preserves the complete search state and frozen
+lineage. `run-reduced-20261020/` remains a stopped rollback copy; the new run also
+contains an immutable predecessor database. Do not add their class counts.
+The active controller, reports and dashboard location are recorded by
+`data/search/literature-b52-closure-20261014/current.json`. The dashboard frontend
+is on Hypatia; the campaign databases and search remain on Galileo.
+
+## Historical cleanup snapshot
+
 Updated 2026-10-20T04:26:20.753312+00:00. The authorized cleanup merged earlier discoveries
 and removed the other experiments except the completed 24,294-root search and
 current recursive campaign, with shared inputs and provenance. A subsequent
@@ -44,6 +54,10 @@ checkpoints, redundant projections, old graph caches, exports and vault copies
 were removed. Current report databases and session evidence were relocated or
 archived before removal. The dashboard, graph and structure pages passed checks;
 the search remains stopped.
+
+The paths, sizes and stopped-state statements above describe that cleanup
+snapshot. Later search growth, controller deployments, reconciliation evidence
+and the verified operational upgrade are retained as campaign provenance.
 
 The pre-cleanup file inventory is
 `data/research/analyses/cleanup-20261020/before-inventory.json.zst`. That directory

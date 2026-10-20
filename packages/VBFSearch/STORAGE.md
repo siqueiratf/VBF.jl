@@ -1,22 +1,41 @@
 # Retained campaign storage
 
 The current recursive checkpoint is
-`data/search/literature-b52-closure-20261014/run-reduced-20261020/closure.sqlite`.
-It was stopped for migration; `current.json` records its live controller state.
-Its losslessly normalized SQLite at the migration cutoff is
+`data/search/literature-b52-closure-20261014/run-operations-20261020/closure.sqlite`.
+`current.json` records its live controller state. The verified October 20 execution
+upgrade retained `run-reduced-20261020/` as a stopped rollback copy and includes
+another immutable predecessor snapshot in the new checkpoint's lineage. Each
+predecessor database is 68,591,058,944 bytes at this later cutoff. They are
+temporary storage overhead, not separate scientific collections.
+
+The new controller uses 32 compute slots, a 384 GiB campaign storage ceiling,
+a 32 GiB free-space floor and an 8 GiB drain allowance. Accounting includes
+rollback copies, cold evidence and periodic exports. It keeps one verified
+export generation, with space preflight for staging the next generation.
+Telemetry is bounded; completed coverage payloads move to verified compressed
+segments. These workstation settings are not a claim that this checkpoint fits
+a 60 GB cluster allocation. See [OPERATIONS.md](OPERATIONS.md).
+
+## Earlier reduction and cleanup cutoff
+
+The losslessly normalized SQLite at the earlier reduction cutoff was
 **47,283,838,976 bytes (44.04 GiB)**, preserving all 8,052,863,858 logical coset
 records and every scientific table from the pre-reduction source.
 
 The superseded 213.17 GiB source file was removed after conversion and final
 checksum verification. The subsequent consolidation reclaimed another
 **156.48 GiB**. A further lossless archival reduction reclaimed **26.63 GiB**.
-The retained package occupies **57.98 GiB**.
+The retained package occupied **57.98 GiB at that cleanup cutoff**. Subsequent
+search growth and the retained execution-upgrade rollback copies increase the
+current footprint; this figure is not a live storage measurement.
 
 ## Retained collections
 
-- The current checkpoint includes replay, identity, inputs, lineage, reports and
+- The checkpoint includes replay, identity, inputs, lineage, reports and
   graph. Earlier report databases were moved with WAL/SHM files into
-  `run-reduced-20261020/reports/` and passed SQLite checks.
+  `run-reduced-20261020/reports/` and passed SQLite checks. The execution upgrade
+  copies report caches using SQLite backup, verifies their parent bindings, and
+  preserves graph snapshot cutoffs under `run-operations-20261020/`.
 - `run-compact-v15-20261016/closure.normalized.sqlite.zst` preserves the completed
   24,294-root witness ledger: **7,880,146,707 bytes (7.34 GiB)** compressed,
   down from 32.91 GiB. It retains all 1,553,321,163 logical coset records, original
@@ -114,8 +133,9 @@ that failed during this campaign's final statistics update. A report failure is
 recorded separately and preserves the primary compute or checkpoint error.
 
 Deploying the changed controller requires a fresh evidence directory and a
-new frozen source snapshot. Preserve the stopped checkpoint's original source
-identity. This maintenance does not restart the campaign.
+new frozen source snapshot. The operational upgrade preserves the stopped
+checkpoint's identity in its lineage, verifies unchanged counts and scientific
+parameters, and checks a bounded resume before continuous execution.
 
 ## Lossless normalized storage
 
