@@ -87,6 +87,11 @@ end
         @test occursin("not a rollback backup",summary["scope"])
         s=ControllerVS._closure_open(run1)
         try
+            @test ControllerVS._closure_count(s.db,"SELECT COUNT(*) n FROM sqlite_master WHERE type='index' AND name='jobs_pending_ea'")==1
+            indexed="SELECT id FROM jobs INDEXED BY jobs_pending_ea WHERE kind='deduplicate' AND status IN ('pending','paused') AND (last_session!=0 OR id IN (0)) ORDER BY id LIMIT 32"
+            ordinary=replace(indexed," INDEXED BY jobs_pending_ea"=>"")
+            @test ControllerVS._closure_rows(s.db,indexed)==ControllerVS._closure_rows(s.db,ordinary)
+            @test any(occursin("jobs_pending_ea",string(row)) for row in ControllerVS._closure_rows(s.db,"EXPLAIN QUERY PLAN "*indexed))
             blocked=joinpath(directory,"full-baseline-preflight");mkpath(blocked)
             @test_throws ErrorException ContinuousSeedSearch.continuous_baseline!(s,blocked;
                 policy="full",full_reserve_bytes=typemax(Int))
