@@ -1,63 +1,67 @@
 # APN dataset scopes
 
-The default `VBFCatalog` is the published reference. Unpublished search discoveries
-belong to `VBFSearch` experiment databases and must not be registered as reference
-corpora. In particular, `legacy20261009_n8` is deliberately excluded from the
-default catalog and its signature index.
+The published reference remains in VBFCatalog. Unpublished discoveries belong to
+VBFSearch; they are excluded from the default catalog and current campaign roots.
+The local registry is `data/research/datasets/registry.json`. Paths below are
+relative to `packages/VBFSearch/`.
 
-The local registry is `data/research/datasets/registry.json`. It records absolute
-paths, content hashes, scopes, and the current comparison report. Generated SQLite
-files and reports remain ignored research artifacts.
-Paths beginning with `data/` below are relative to `packages/VBFSearch/`;
-`.cache/` is relative to the repository root.
-
-| Role | Local database or bundle | Meaning |
+| Collection | Location | Meaning |
 | --- | --- | --- |
-| Published reference | `.cache/vbfcatalog/`; pinned copy under `data/research/references/published-literature-20261017/` | Published corpora, named literature functions, and public reference supplements. No private historical discoveries. |
-| Earlier discoveries | `data/research/freezes/apn-20261014-190454/classes.sqlite` | The earlier 111,009 classes plus 79,445 later classes. Original packed input and frozen audit metadata are preserved in `source_artifacts`. |
-| Published-root result | `data/research/freezes/published-roots-b52-20261017/classes.sqlite` | Classes observed directly in complete V5 and switching expansions of the 24,294 published roots. Includes the initial seeds. |
-| Comparison evidence | `data/research/freezes/published-roots-b52-20261017/comparisons.sqlite` | Literature and historical membership evidence for the published-root result. This contains relationships and witnesses, not a reference corpus. |
-| Recursive campaign archive | Path recorded in the registry | The full stopped campaign ledger, including recursive work. This is a different scope from the direct published-root result. |
-| Current recursive checkpoint | `data/search/literature-b52-closure-20261014/run-reduced-20261020/closure.sqlite` | Losslessly normalized recursive campaign, stopped on 19 October 2026. Its published-reference comparisons are under `reports/`; it remains separate from both class freezes above. |
-| Retired pre-reduction source | `data/search/literature-b52-closure-20261014/run-validation-20261018T232756Z/closure.sqlite.retired.json` | Retirement receipt for the superseded 213.17 GiB database, removed after verification on 20 October 2026 UTC. All scientific records remain in the current checkpoint. |
+| Earlier discoveries | `data/research/datasets/earlier-discoveries-190638.sqlite` | 111,009 recovered representatives + 79,445 later finite-search representatives + 184 pilot representatives. |
+| Completed published-root result | `data/research/freezes/published-roots-b52-20261017/` | Complete direct V5 and switching expansion of 24,294 roots: 1,237,894 classes including roots, 294,000 absent from the pinned published reference. |
+| Completed-root witness ledger | `data/search/literature-b52-closure-20261014/run-compact-v15-20261016/closure.sqlite.zst` | Original construction/admission witnesses referenced by the completed-root result. Restore before reading as SQLite. |
+| Current recursive checkpoint | `data/search/literature-b52-closure-20261014/run-reduced-20261020/` | Stopped resumable campaign, frozen code, root inputs, derivations, reports and graph. |
+| Pinned published reference | `data/research/references/published-literature-20261017/` | Published-only comparison scope and signature/member evidence. |
 
-The current recursive checkpoint preserves the pre-reduction source's candidate
-functions, classes, derivations and coverage. These are the same dataset. The
-registry selects the reduced file and retains the removed source's byte hash
-and retirement receipt under retired sources. [STORAGE.md](STORAGE.md) describes
-the representation and reclaimed space.
+## Merged earlier discoveries
 
-The published-root result's `roots`, `methods`, and `derivations` tables preserve
-which original parent and construction produced each class. A derivation records
-the first path identifier in the retained campaign ledger and its multiplicity;
-that ledger retains the full construction and admission witnesses.
+The single SQLite file is self-contained, approximately 1.97 GiB. Its tables are:
 
-`comparison.json` answers two independent questions: absence from the published
-reference, and overlap with the earlier discovery dataset. It also records the
-classes outside both. A positive overlap requires exact equality or a replayed
-EA graph certificate. Different quadratic ortho-derivative signatures certify
-separation; matching signatures alone do not merge classes. CCZ/EA agreement for
-quadratic APNs supplies the interpretation of these comparisons.
+- `classes`: 190,638 representatives, one per distinct separating signature.
+  This is a class-count lower bound; equal signatures do not certify equivalence.
+- `exact_luts`: 645,851 distinct exact LUTs, including supporting/reference
+  observations and matching-signature alternatives retained from the source runs.
+- `observations` and `runs`: 676,241 original candidate observations across the
+  recovered run, completed finite B52 run, and two pilot arms.
+- `representative_sources`: source membership, including the pilots' overlap.
+- `archives`, `archive_parts` and `archived_files`: six verified original source
+  directory archives in bounded tar.zst chunks, with every file digest.
+- `source_artifacts` and `metadata`: original freeze evidence and merge identity.
 
-The reproducible consumers live under `tools/datasets/`: `freeze.jl`,
-`prepare_comparisons.jl`, `verify_comparisons.jl`, `restrict_reference.jl`,
-and `compact.jl`.
-Run expensive verification under an explicit Julia thread limit. The reference
-restriction tool only reuses repeated-bucket classification when every removed
-record was a singleton; it refuses a restriction that would alter shared-bucket
-evidence. Pin the original catalog before changing its source set.
+The original 190,454 classes retain their exact IDs, LUTs and source fields.
+`legacy_190454` exposes that prefix. The completed-root comparison's 32,671
+historical overlaps refer to this prefix; it did not compare the additional 184
+pilot representatives. Original source paths are historical paths; the merged
+database now contains the source bytes.
 
-Historical checkpoints can be stored as verified `.sqlite.zst` archives. Their
-adjacent manifests record the original byte hash and restore command; restore
-the SQLite file before opening one. Current storage locations and controller
-restart policies are described in [STORAGE.md](STORAGE.md).
+All 315,910 candidate records from the first nine-hour B52 search are retained
+with identical evidence in the completed split-run archive. The 44,350 discoveries
+from that first segment are included in the later 79,445.
 
-## Shared copies
+List or restore embedded original evidence:
 
-Git tracks both class datasets in a compact, lossless form: the vault archive
-`data/research/vault/apn-datasets-20261017.tar.zst.part*` (63 MB). Run
-`make -C packages/VBFSearch/data/research/vault restore-datasets` to rebuild
-both `classes.sqlite` files. The restore checks the logical SHA-256 of every
-table; see `data/research/vault/README.md`. The comparison witnesses, the
-campaign ledger and the pinned reference are not in git: the tools above
-calculate the witnesses again, and a catalog build gives the reference again.
+```sh
+python3 packages/VBFSearch/data/research/datasets/extract_archive.py
+python3 packages/VBFSearch/data/research/datasets/extract_archive.py finite_b52 --output /path/to/restore
+```
+
+The output restores paths relative to the VBFSearch package root. The extractor
+checks the compressed archive SHA-256. SQLite clients can query representative
+LUTs directly without restoring original experiments.
+
+## Retained search provenance
+
+The completed-root freeze's derivations refer to class/path IDs in its original
+compressed ledger. The current campaign uses different IDs and some different
+representatives; these are separate evidence namespaces. The original ledger
+stays alongside the frozen result.
+
+The current checkpoint retains 3,554,200 admitted parents and 7,650,225 exact LUTs.
+Admission is not a claim that every parent is new to the literature. The campaign
+remains stopped. `data/search/literature-b52-closure-20261014/current.json` identifies
+the selected collections and prepared restart.
+
+The cleanup removed other experiments after verifying the merge, archives,
+protected search checksums, source files and inputs. See [INVENTORY.md](INVENTORY.md),
+[STORAGE.md](STORAGE.md), and `data/research/analyses/cleanup-20261020/`.
+Generated databases remain ignored. Nothing was pushed.

@@ -1,5 +1,0 @@
-# Scan outputs (functions.tsv, pairs.tsv, p6.tsv, analysis.md, logs) are large and
-# reproducible with `make scan` and `make analyze`.
-results/*
-!README.md
-!**/README.md

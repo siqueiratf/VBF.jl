@@ -1,68 +1,41 @@
-# Recursive campaign storage
+# Retained campaign storage
 
-The current stopped checkpoint is
+The current recursive checkpoint is
 `data/search/literature-b52-closure-20261014/run-reduced-20261020/closure.sqlite`.
-The lossless conversion completed on 20 October 2026 UTC. The search remains
-stopped, with its STOP marker retained.
+It remains stopped, with STOP retained. Its losslessly normalized SQLite is
+**47,283,838,976 bytes (44.04 GiB)**, preserving all 8,052,863,858 logical coset
+records and every scientific table from the pre-reduction source.
 
-The reduced file is **47,283,838,976 bytes (44.04 GiB)**, compared with
-228,888,621,056 bytes (213.17 GiB) for the original: **79.34% smaller**.
-The superseded original was removed on 20 October 2026 UTC after an explicit
-cleanup request, a fresh full-file SHA-256 check of the reduced checkpoint, and
-dashboard checks. Removing it reclaimed **213.17 GiB**, leaving approximately
-**240.25 GiB available** on the local filesystem at cleanup. All scientific
-records remain in the reduced checkpoint. The original run's reports, frozen
-code and provenance remain in place; `closure.sqlite.retired.json` records the
-removed file's identity and its replacement.
+The superseded 213.17 GiB source file was removed after conversion and final
+checksum verification. The subsequent consolidation reclaimed another
+**156.48 GiB**. The retained package occupies about **85 GiB**.
 
-All 7,650,225 candidate rows, 3,554,200 admitted parent classes, 16,403,548
-construction paths and 4,088,636 EA comparisons were retained. All
-**8,052,863,858 logical coset records** were reconstructed and checked across
-1,190,214 blocks. Logical table digests, target SQLite integrity and foreign-key
-checks, saved coverage cursors, frozen source files and pinned inputs passed.
-The stopped checkpoint still has 24,294 initial roots and 77,613 completed parents.
-These counts do not establish literature novelty for all admitted classes.
+## Retained collections
 
-The checkpoint's `storage-reduction.toml` records source identity, table and
-ledger proofs, implementation lineage and the original byte hash. Native helper
-versions and source hashes are preserved in `lineage/storage-tools/`. The final
-byte hashes and deployment receipts are under
-`data/research/analyses/storage-reduction-20261020/`. Earlier disk diagnostics and
-maintenance receipts remain under
-`data/research/analyses/campaign-maintenance-20261019/` and
-`data/research/analyses/storage-diagnosis-20261019/`.
+- The current checkpoint includes replay, identity, inputs, lineage, reports and
+  graph. Earlier report databases were moved with WAL/SHM files into
+  `run-reduced-20261020/reports/` and passed SQLite checks.
+- `run-compact-v15-20261016/closure.sqlite.zst` preserves the completed 24,294-root
+  witness ledger: **35,338,196,637 bytes (32.91 GiB)** compressed. Its manifest
+  records the restored SQLite SHA-256. Replay and identity remain; obsolete
+  predecessor databases and classification baselines were removed.
+- `data/research/datasets/earlier-discoveries-190638.sqlite` embeds the earlier
+  discoveries and six verified original evidence archives in one
+  **2,117,996,544-byte (1.97 GiB)** file. See [DATASETS.md](DATASETS.md).
 
-The cleanup's `retirement-receipt.json` records both file identities, final
-checks and free space before and after removal. The registry selects only the
-reduced checkpoint and retains the old identity under retired sources. The
-original representation is no longer available as a rollback copy.
-
-## Historical artifacts
-
-Under `data/search/literature-b52-closure-20261014/`, the stopped checkpoints
-`run-fresh-20261017/closure.sqlite` and
-`run-compact-v15-20261016/closure.sqlite` are now `.sqlite.zst` archives.
-Each archive was decompressed to a SHA-256 stream and checked against the
-original before removing the uncompressed file. The adjacent
-`.zst.manifest.json` records both hashes and the exact restore command.
-Restore a checkpoint before using a tool that expects SQLite:
+Restore the completed-root ledger at its original location:
 
 ```sh
-zstd -d /path/to/closure.sqlite.zst -o /path/to/closure.sqlite
+zstd -d /path/to/run-compact-v15-20261016/closure.sqlite.zst -o /path/to/run-compact-v15-20261016/closure.sqlite
 ```
 
-The former `code-20261017-36f1485/` and `code-20261018-08d5fee/` source trees
-are preserved under `archive/source-snapshots/` as `.tar.zst` files. Their
-manifests verify every file and symlink. They include the original copied
-README files and source changes. To restore one at its original path:
-
-```sh
-tar --zstd -xf /path/to/archive/source-snapshots/code-20261018-08d5fee.tar.zst -C /path/to/literature-b52-closure-20261014
-```
-
-The live checkpoint's `replay/workspace/` remains in place. Published catalog
-inputs, earlier discoveries, direct published-root results, and the current
-recursive results retain their separate dataset scopes in [DATASETS.md](DATASETS.md).
+Current source/session evidence retired during cleanup is preserved under
+`run-reduced-20261020/lineage/cleanup-20261020/`. Cleanup and relocation receipts
+are under `data/research/analyses/cleanup-20261020/`. The lossless conversion proofs
+remain in `storage-reduction.toml` and `data/research/analyses/storage-reduction-20261020/`.
+Selected paths are recorded in `data/research/datasets/registry.json` and the
+campaign's `current.json`. Obsolete launch pointers and other experiment
+directories were removed.
 
 ## Controller restart policy
 
@@ -164,7 +137,7 @@ files; the structure and catalog JSON snapshots retain their original audit
 cutoffs. Mutable report databases are not hard-linked.
 A stopped 32-worker controller configuration is prepared under
 `data/search/literature-b52-closure-20261014/restart-controller-20261020-reduced/`.
-The older restart plan is marked superseded. No campaign was started. These migration budgets do not cap subsequent
+The older restart plan was removed during consolidation. No campaign was started. These migration budgets do not cap subsequent
 search growth. Workers should receive bounded work packets rather than copies
 of the coordinator database.
 

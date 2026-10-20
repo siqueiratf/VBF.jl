@@ -128,61 +128,19 @@ certificate = compare(gold_apn(8).lut, gold_apn(8).lut)
 snapshot = report_snapshot(config.output)
 ```
 
-## Register discoveries and replay the historical B52 experiment
+## Retained discovery collections
 
-```sh
-# Search and register newly separating classes with one command.
-bin/vbf discover --name b52-next --corpus legacy20261009_n8 --parents 1000 \
-    --method v5 --target-b6 52 --bent max \
-    --duration 8h --threads 30 --chunk-size 32768
-# Or register the current snapshot of a stopped, stopped run.
-bin/vbf publish packages/VBFSearch/data/search/experiment01 --name experiment01_n8
-# Repeat the recovered 11,405-parent plan, using the current catalog baseline.
-bin/vbf discover --name b52-replay --method v5 --target-b6 52 --bent max \
-    --input packages/VBFSearch/data/search/legacy20261009/parents.tsv \
-    --parents 11405 --seed 82026 --duration 8h --threads 30 --chunk-size 32768
-```
+The earlier discovery runs are merged into
+`data/research/datasets/earlier-discoveries-190638.sqlite`. It holds 111,009 recovered
+representatives, 79,445 later representatives and 184 pilot additions, alternative
+exact LUTs, source membership and compressed original evidence. These private
+discoveries remain outside the published-reference catalog.
 
-Registration rechecks LUT identity, APN, degree and signature with VBF and selects
-one representative per distinct signature absent from the current catalog.
-Matching signatures remain unresolved in the run. `VBFCatalog.import_lut_corpus!`
-owns conversion, corpus registration and compact storage; Search writes the
-immutable input and declaration in the catalog, then tops up its index. Rerunning
-publication reuses the immutable dataset and rejects changed results under the
-same name. Resume remains possible after registration. Publish a changed run
-snapshot under a fresh name; each increment retains its own immutable input.
-Registration means new relative to that frozen catalog, never proven
-literature-wide novelty. Publication freezes timestamp-free coefficient gzip
-inputs under `VBFCatalog/src/data/luts/`; rebuilds consume these files and their
-checksum-bound declarations without reading a previous catalog or run database.
-The derived catalog class summary retains its frozen snapshot until explicitly
-rebuilt with the [catalog classification command](../VBFCatalog/README.md).
-
-`--corpus NAME` selects eight-bit quadratic APN parents from a named catalog
-corpus, including registered discoveries. Repeat it for several corpora. Sampling
-uses `--seed` and the parent limit; selected source/member IDs and exact LUTs are
-frozen in the run. With no corpus or input, seeds come from curated catalog entries.
-Explicit input files and corpus selection are mutually exclusive. Named corpora
-replace the default seed set, so later epochs can explore prior discoveries
-without exporting files or restoring the old research code.
-
-On 2026-10-10, 114,062 archived rows passed validation, yielding 111,835 distinct
-LUTs and 111,009 distinct signatures absent from the expanded public reference.
-The historical 110,868-signature union accounts for most of these; later runs add
-141. The public reference first gained the 546 missing May 2025 signatures and
-the Galissant slide LUT that had previously lived in a separate supplement.
-The full inputs and validation evidence remain under
-`packages/VBFSearch/data/search/legacy20261009/validated/`.
-
-The old search recursively promoted discoveries and pruned by histogram keys.
-The recovered plan fixes its 11,405 completed parents and uses the tested VBF
-Fourier construction without that pruning. This is a reproducible restricted
-replay, not a byte-identical repeat of its scheduling or an exhaustive search of
-all APNs. A completed pilot on its first recorded parent recovered all 25
-historical child signatures in about 30 seconds. The full 11,405-parent replay
-has not been executed; eight hours is a resumable budget, not a completion claim.
-Existing archived discoveries are now catalogued, so rediscovering them will
-not increment new-to-catalog counts.
+The completed 24,294-root result and its original compressed witness ledger stay
+separate from the current recursive checkpoint. [DATASETS.md](DATASETS.md) records
+their scopes; [INVENTORY.md](INVENTORY.md) shows the cleaned layout. Restore old
+source/run directories with `data/research/datasets/extract_archive.py`.
+Historical class/path IDs retain their original dataset namespaces.
 
 Run tests with
 `julia --project=. -e 'using Pkg; Pkg.test("VBFSearch")'`. Self-contained fixtures
