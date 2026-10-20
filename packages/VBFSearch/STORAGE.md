@@ -8,26 +8,54 @@ records and every scientific table from the pre-reduction source.
 
 The superseded 213.17 GiB source file was removed after conversion and final
 checksum verification. The subsequent consolidation reclaimed another
-**156.48 GiB**. The retained package occupies about **85 GiB**.
+**156.48 GiB**. A further lossless archival reduction reclaimed **26.63 GiB**.
+The retained package occupies **57.98 GiB**.
 
 ## Retained collections
 
 - The current checkpoint includes replay, identity, inputs, lineage, reports and
   graph. Earlier report databases were moved with WAL/SHM files into
   `run-reduced-20261020/reports/` and passed SQLite checks.
-- `run-compact-v15-20261016/closure.sqlite.zst` preserves the completed 24,294-root
-  witness ledger: **35,338,196,637 bytes (32.91 GiB)** compressed. Its manifest
-  records the restored SQLite SHA-256. Replay and identity remain; obsolete
-  predecessor databases and classification baselines were removed.
+- `run-compact-v15-20261016/closure.normalized.sqlite.zst` preserves the completed
+  24,294-root witness ledger: **7,880,146,707 bytes (7.34 GiB)** compressed,
+  down from 32.91 GiB. It retains all 1,553,321,163 logical coset records, original
+  scientific table columns and class/path IDs. The manifest pins the normalized
+  SQLite and archive SHA-256. Replay, original identity and frozen execution remain.
 - `data/research/datasets/earlier-discoveries-190638.sqlite` embeds the earlier
   discoveries and six verified original evidence archives in one
   **2,117,996,544-byte (1.97 GiB)** file. See [DATASETS.md](DATASETS.md).
 
-Restore the completed-root ledger at its original location:
+Restore the completed-root ledger for its original frozen code:
 
 ```sh
-zstd -d /path/to/run-compact-v15-20261016/closure.sqlite.zst -o /path/to/run-compact-v15-20261016/closure.sqlite
+python3 /path/to/run-compact-v15-20261016/storage-tools/archive-v2/restore_checkpoint.py
 ```
+
+The wrapper verifies the archive and normalized database, then reconstructs the
+original schema and V1 coverage frames. Table and ledger digests, integrity and
+foreign keys must pass. Allow about 64 GiB temporary space. For compact SQL
+inspection, add `--normalized-only --output /path/to/inspection.sqlite`; allow
+at least 16 GiB. The original frozen execution needs the default restoration.
+Restored scientific records are exact; physical SQLite layout and compressed
+frame bytes can differ. Pinned sources, a native restorer and detailed
+`RESTORE.md` instructions live alongside the wrapper.
+
+Cold completed-root graph snapshots and old session files are now verified
+`tar.zst` archives under `run-compact-v15-20261016/cold/`. Their manifests contain
+per-file hashes and restoration commands. The live recursive graph remains
+unpacked. Fourteen duplicate frozen input copies now share read-only hardlinks;
+canonical source inputs remain independent. These changes saved another
+approximately 1.06 GiB. The retained queryable databases have no free pages, so
+`VACUUM` offers no material savings. The earlier-discovery SQLite remains directly
+queryable with its embedded source archives.
+
+Every completed-root scientific table and coverage block was compared with the
+original. All 1,237,894 frozen class representatives and 1,434,339 derivation
+references were checked against the rewritten ledger. A real-data restoration
+fixture passed the original frozen Julia decoder and corrupt-block rejection.
+The compressed archive passed a full decompression SHA-256 comparison before
+the superseded archive and temporary databases were removed. Receipts are under
+`data/research/analyses/further-storage-20261020/`.
 
 Current source/session evidence retired during cleanup is preserved under
 `run-reduced-20261020/lineage/cleanup-20261020/`. Cleanup and relocation receipts
