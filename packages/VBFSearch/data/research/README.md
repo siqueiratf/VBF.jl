@@ -10,6 +10,8 @@ checkpoints were removed at the user's request.
 - `freezes/published-roots-b52-20261017/`: completed-root results and comparison witnesses.
 - `references/published-literature-20261017/`: the pinned published-only reference.
 - `analyses/storage-reduction-20261020/`: lossless checkpoint reduction receipts.
+- `analyses/further-storage-20261020/`: completed-root archive normalization, restoration
+  tests, cold-file archival, input deduplication and final storage inventory.
 - `analyses/retention-audit-20261020/`: identification and containment evidence.
 - `analyses/cleanup-20261020/`: relocation checks, deletion manifest and cleanup receipt.
 
