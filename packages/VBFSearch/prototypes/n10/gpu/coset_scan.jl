@@ -109,10 +109,95 @@ end
     end
 end
 
+# --- Bit-sliced variant: one UInt32 word holds entry (i, j) of 32 forms q + v ----
+# For column c, the first row with bit c is the pivot in each lane; every row
+# with bit c is reduced by it. Columns below c are already zero, so only j >= c
+# is updated. A lane stays alive while each column has a pivot (rank 10).
+function _bent_sliced_expr()
+    r(i, j) = Symbol("r_", i, "_", j); p(j) = Symbol("p_", j)
+    body = Expr[]
+    for i in 1:NR, j in 1:NR
+        push!(body, :($(r(i, j)) = @inbounds(vs[off+$((i - 1) * NR + j)]) ⊻ (UInt32(0) - UInt32((q[$i] >> $(j - 1)) & 0x0001))))
+    end
+    push!(body, :(alive = 0xffffffff))
+    for c in 1:NR
+        push!(body, :(found = 0x00000000))
+        for j in c:NR
+            push!(body, :($(p(j)) = 0x00000000))
+        end
+        for k in 1:NR
+            push!(body, :(sel = $(r(k, c)) & ~found))
+            push!(body, :(found |= $(r(k, c))))
+            for j in c:NR
+                push!(body, :($(p(j)) |= sel & $(r(k, j))))
+            end
+        end
+        push!(body, :(alive &= found))
+        push!(body, :(alive == 0x00000000 && return alive))
+        c == NR && continue
+        for k in 1:NR
+            push!(body, :(h = $(r(k, c))))
+            for j in c:NR
+                push!(body, :($(r(k, j)) ⊻= h & $(p(j))))
+            end
+        end
+    end
+    push!(body, :(return alive))
+    Expr(:block, body...)
+end
+@eval @inline function bent_sliced(q::NTuple{10,UInt16}, vs, off::Int)
+    $(_bent_sliced_expr())
+end
+
+# vs[b*100 + (i-1)*10 + j], bit l = bit j-1 of row i of form 32b + l.
+function slice_forms(Vs)
+    vs = zeros(UInt32, 4 * NR * NR)
+    for b in 0:3, l in 0:31
+        rows = form_rows(Vs[32b+l+1])
+        for i in 1:NR, j in 1:NR
+            (rows[i] >> (j - 1)) & 1 == 1 && (vs[b*NR*NR+(i-1)*NR+j] |= UInt32(1) << l)
+        end
+    end
+    vs
+end
+
+@kernel function scan_sliced!(hist, hits, nhits, @Const(vslice), @Const(crows), base::UInt64,
+                              logK::Int, need::Int, exact::Bool)
+    t = @index(Global, Linear)
+    s = base + (UInt64(t - 1) << logK)
+    q = ntuple(_ -> 0x0000, Val(10))
+    for b in 0:37
+        if (s >> b) & 1 == 1
+            q = xorrow(q, crows, b * NR)
+        end
+    end
+    K = 1 << logK
+    for j in 0:K-1
+        if j > 0
+            q = xorrow(q, crows, trailing_zeros(j) * NR)
+        end
+        cnt = 0
+        for b in 0:3
+            cnt += count_ones(bent_sliced(q, vslice, b * NR * NR))
+            (!exact && (cnt > need || cnt + 96 - 32b < need)) && break
+        end
+        if exact
+            Atomix.@atomic hist[cnt+1] += UInt32(1)
+        end
+        if cnt == need
+            g = UInt64(j ⊻ (j >> 1))
+            h = Atomix.@atomic nhits[1] += UInt32(1)
+            @inbounds h <= length(hits) && (hits[h] = s + g)
+        end
+    end
+end
+
 # Scan cosets [base, base + nthreads*K); returns (histogram, hit indices).
-function scan(vrows_d, crows_d, base, nthreads, logK, need; exact = false, maxhits = 1 << 16)
+# kernel = :regs takes the row table of the 128 forms, :sliced the slice table.
+function scan(vtab_d, crows_d, base, nthreads, logK, need; exact = false, maxhits = 1 << 16, kernel = :sliced)
     hist = devarray(zeros(UInt32, 129)); hits = devarray(zeros(UInt64, maxhits)); nh = devarray(zeros(UInt32, 1))
-    scan_kernel!(DEV, 256)(hist, hits, nh, vrows_d, crows_d, UInt64(base), logK, need, exact; ndrange = nthreads)
+    k! = kernel == :sliced ? scan_sliced!(DEV, 256) : scan_kernel!(DEV, 256)
+    k!(hist, hits, nh, vtab_d, crows_d, UInt64(base), logK, need, exact; ndrange = nthreads)
     KernelAbstractions.synchronize(DEV)
     n = Int(Array(nh)[1])
     Array(hist), sort(Array(hits)[1:min(n, maxhits)]), n
@@ -126,31 +211,32 @@ function run_scan()
     Vs = span(V7)                                       # 128 forms, index = combination of V7
     Cb = complement_basis(V7)
     @assert length(Cb) == 38
-    vrows_d = devarray(reduce(vcat, form_rows.(Vs)))
+    tables = Dict(:regs => devarray(reduce(vcat, form_rows.(Vs))), :sliced => devarray(slice_forms(Vs)))
     crows_d = devarray(reduce(vcat, form_rows.(Cb)))
     println("backend = $BACKEND, anchor b(V7) = $b7, need = $need")
 
     # 1. correctness: exact histogram of a small range against the CPU reference.
     logK = 6; nth = 1 << 12                             # 2^18 cosets
-    hist, _, _ = scan(vrows_d, crows_d, 0, nth, logK, need; exact = true)
     ref = zeros(UInt32, 129)
     for idx in UInt64(0):UInt64(nth << logK - 1)
         ref[coset_bent(coset_rep(idx, Cb), Vs)+1] += 1
     end
-    println("histogram matches the CPU reference: ", hist == ref, "  (", sum(hist), " cosets, max count ",
-            findlast(!iszero, hist) - 1, ")")
-
-    # 2. throughput in production mode (early exit).
     lg = length(ARGS) > 0 ? parse(Int, ARGS[1]) : 28
-    logK = 8; nth = 1 << (lg - logK)
-    scan(vrows_d, crows_d, 0, 1 << 8, logK, need)       # compile
-    t = @elapsed (_, hits, n) = scan(vrows_d, crows_d, 0, nth, logK, need)
-    rate = 2.0^lg / t
-    println("scanned 2^$lg cosets in ", round(t, digits = 2), " s: ", round(rate / 1e6, digits = 1),
-            " M cosets/s; hits = $n")
-    println("projected full scan of 2^38 cosets: ", round(2.0^38 / rate / 3600, digits = 2), " h per anchor")
-    for idx in hits[1:min(end, 3)]
-        println("  hit $idx: CPU count = ", coset_bent(coset_rep(idx, Cb), Vs))
+    kernels = Symbol.(split(get(ENV, "N10_KERNEL", "regs,sliced"), ","))
+    for kern in kernels
+        hist, _, _ = scan(tables[kern], crows_d, 0, nth, logK, need; exact = true, kernel = kern)
+        println("[$kern] histogram matches the CPU reference: ", hist == ref, "  (", sum(hist), " cosets)")
+
+        # 2. throughput in production mode (early exit).
+        lK = 8; nt = 1 << (lg - lK)
+        scan(tables[kern], crows_d, 0, 1 << 8, lK, need; kernel = kern)    # compile
+        t = @elapsed (_, hits, nh) = scan(tables[kern], crows_d, 0, nt, lK, need; kernel = kern)
+        rate = 2.0^lg / t
+        println("[$kern] scanned 2^$lg cosets in ", round(t, digits = 2), " s: ", round(rate / 1e6, digits = 1),
+                " M cosets/s; hits = $nh; projected 2^38 scan: ", round(2.0^38 / rate / 3600, digits = 2), " h per anchor")
+        for idx in hits[1:min(end, 2)]
+            println("  hit $idx: CPU count = ", coset_bent(coset_rep(idx, Cb), Vs))
+        end
     end
 end
 
