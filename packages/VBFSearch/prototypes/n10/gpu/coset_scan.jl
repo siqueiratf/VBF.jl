@@ -81,7 +81,7 @@ end
 @kernel function scan_kernel!(hist, hits, nhits, @Const(vrows), @Const(crows), base::UInt64,
                               logK::Int, need::Int, exact::Bool)
     t = @index(Global, Linear)
-    s = base + (UInt64(t - 1) << logK)
+    s = base + (((t - 1) % UInt64) << logK)
     q = ntuple(_ -> 0x0000, Val(10))
     for b in 0:37                                       # rows of the first coset of the block
         if (s >> b) & 1 == 1
@@ -102,7 +102,7 @@ end
             Atomix.@atomic hist[cnt+1] += UInt32(1)
         end
         if cnt == need
-            g = UInt64(j ⊻ (j >> 1))
+            g = (j ⊻ (j >> 1)) % UInt64
             h = Atomix.@atomic nhits[1] += UInt32(1)
             @inbounds h <= length(hits) && (hits[h] = s + g)
         end
@@ -164,7 +164,7 @@ end
 @kernel function scan_sliced!(hist, hits, nhits, @Const(vslice), @Const(crows), base::UInt64,
                               logK::Int, need::Int, exact::Bool)
     t = @index(Global, Linear)
-    s = base + (UInt64(t - 1) << logK)
+    s = base + (((t - 1) % UInt64) << logK)
     q = ntuple(_ -> 0x0000, Val(10))
     for b in 0:37
         if (s >> b) & 1 == 1
@@ -185,7 +185,7 @@ end
             Atomix.@atomic hist[cnt+1] += UInt32(1)
         end
         if cnt == need
-            g = UInt64(j ⊻ (j >> 1))
+            g = (j ⊻ (j >> 1)) % UInt64
             h = Atomix.@atomic nhits[1] += UInt32(1)
             @inbounds h <= length(hits) && (hits[h] = s + g)
         end
