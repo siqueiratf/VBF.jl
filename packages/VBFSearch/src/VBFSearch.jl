@@ -43,6 +43,7 @@ include("closure_portable.jl")
 include("closure_upgrade.jl")
 include("closure_reduce.jl")
 include("closure_algorithms.jl")
+include("closure_equivalence_snapshots.jl")
 include("closure_equivalence.jl")
 include("cli.jl")
 

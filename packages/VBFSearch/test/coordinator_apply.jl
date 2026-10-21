@@ -33,10 +33,10 @@ snapshot(s)=Dict(table=>VS._closure_rows(s.db,"SELECT * FROM $table ORDER BY row
             @test result["work"]["done"]
             @test result["work"]["processed_cosets"]>1000
             @test !isempty(result["work"]["records"])
-            @test result["work"]["chunks"] isa Vector{VS._ClosureCosetChunk}
+            @test result["work"]["chunks"] isa Vector{VS._ClosurePreparedV5Chunk}
             wire=VS.JSON3.read(VS.JSON3.write(result),Dict{String,Any})
             @test first(wire["work"]["chunks"]) isa AbstractDict
-            @test !(first(wire["work"]["chunks"]) isa VS._ClosureCosetChunk)
+            @test !(first(wire["work"]["chunks"]) isa VS._ClosurePreparedV5Chunk)
             base=snapshot(s);expected=nothing
             for payload in (result,wire)
                 VS._closure_exec(s.db,"BEGIN IMMEDIATE")

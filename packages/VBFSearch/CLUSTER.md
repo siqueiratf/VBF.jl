@@ -1,16 +1,28 @@
 # Trillium readiness audit
 
-Audited on 2026-10-20 against commit `810cab9` by separate scheduler, storage
-and deployment reviews. This is an implementation plan, not an installed
-cluster backend. The workstation campaign was left running.
+Initially audited on 2026-10-20 against commit `810cab9` by separate scheduler,
+storage and deployment reviews. The findings below capture that baseline.
+The workstation campaign briefly resumed on 2026-10-21 after a verified CPU
+execution upgrade, then stopped for the later CPU measurements. Its first
+three-minute sample used 23.1 CPU cores with 32 workers and processed
+134 packets/s. No Trillium job has been submitted.
+
+The later CPU work adds exact-LUT property and verified-session fingerprint
+caches, bounded prepared statements, lighter reporting, scheduler occupancy
+metrics and opt-in overlapping parent windows. See [campaign operations](OPERATIONS.md)
+for configuration, the fixed-work parity replay and the explicit source-bound
+performance upgrade. `tools/trillium_cpu.sbatch` is a fresh one-node debug pilot with offline
+inputs, single-file output and complete CPU-pool budgeting. Its installation
+does not establish 192-core scaling or submit a cluster job.
 
 The general operational improvements have since been implemented; see
 [campaign operations](OPERATIONS.md) for their APIs, limits and tests. The findings
 below describe the audited baseline. Trillium deployment and a multi-node worker
 backend remain separate work; no cluster performance is established here.
 
-The recursive search needs migration and shutdown support before a reliable
-single-node pilot. Large multi-node execution additionally needs a worker
+The baseline audit identified migration and shutdown support as prerequisites
+for a reliable single-node pilot; the implemented controls are documented in
+OPERATIONS.md. Large multi-node execution additionally needs a worker
 transport and failure protocol. Increasing the Slurm node count alone will
 not distribute this controller.
 
@@ -37,7 +49,96 @@ after the job. It contains older hardware/filesystem figures that disagree with
 the quickstart; do not infer a RAM allowance, current filesystem block size or
 purge schedule from those figures. Check the actual allocation and site policy.
 
-## Required changes
+## Prepared operator commands
+
+The default pilot starts a fresh search through `bin/vbfsearch`. It does not
+require the workstation checkpoint or its Julia executable. These commands are
+for the operator; preparation does not SSH, submit a job or restart production.
+
+Stage the committed checkout and audited seed inputs on scratch. The ignored
+campaign data is not included by `git clone`: preserve `campaign.toml`,
+`published_pool.toml`, and the `seed_count/` files `verified_roots.tsv`,
+`selected_roots.tsv`, `EA_certificates.tsv`, `result.toml` and
+`equivalence_result.toml`. Keep their relative directory layout. The command
+checks the existing qualification/equivalence hashes before construction.
+A generated source/input archive can carry these alongside the tracked sources;
+it must exclude generated databases, runs, credentials and copyrighted inputs.
+
+On the CPU login node, select a cluster-compatible Julia >= 1.12 and set:
+
+```sh
+export VBF_WORKSPACE="$SCRATCH/VBF.jl"
+export VBF_DEPOT="$SCRATCH/vbf/depot"
+export VBF_JULIA="/path/to/cluster-compatible/julia"
+export JULIA_DEPOT_PATH="$VBF_DEPOT"
+export JULIA_PKG_PRECOMPILE_AUTO=0 JULIA_NUM_PRECOMPILE_TASKS=1
+```
+
+Download dependencies beforehand with automatic precompilation disabled. Heavy
+builds/precompilation belong in a compute allocation; the pilot is offline and
+never installs packages. Do not copy the workstation Julia executable: its
+system-library requirements have not been tested on Trillium. A fresh run pins
+its actual runtime and inputs when it starts, rather than inheriting a prior
+checkpoint's executable identity.
+
+Run the bounded login check after staging:
+
+```sh
+bash "$VBF_WORKSPACE/packages/VBFSearch/tools/trillium_login_check.sh"
+```
+
+The check pins its entire process tree to one CPU, limits Julia to 30 CPU seconds
+and 60 wall seconds, loads the actual root-environment search dependencies,
+checks the four-bit Gold APN and exercises `vbfsearch --dry-run`. It neither
+constructs search packets nor scans a checkpoint. It also prints the default
+Slurm account and partition limits when those commands are available. Omit
+`--account` to use the registered default, or specify the required association.
+
+Submit from scratch, on a CPU login node:
+
+```sh
+cd "$SCRATCH"
+sbatch "$VBF_WORKSPACE/packages/VBFSearch/tools/trillium_cpu.sbatch"
+```
+
+The default requests one 192-core node in `debug` for 30 minutes. It searches
+audited rows 1–100 recursively for up to 600 seconds, using `-j` to budget all
+compute, interactive and GC pools together. Override the pilot interval, search
+seconds or heap hint as arguments after the script:
+
+```sh
+sbatch "$VBF_WORKSPACE/packages/VBFSearch/tools/trillium_cpu.sbatch" \
+  --start=101 --end=200 --time=900 --heap=64G
+```
+
+The wrapper reads the actual allocation end time and shortens the search budget
+to preserve 600 seconds for drain/finalization and 300 seconds for copying.
+Slurm's advance warning, TERM and Ctrl-C latch a file request that the supervisor
+observes even during Julia startup. Its own 600-second grace bounds drain.
+The wrapper requires RAM-backed `$SLURM_TMPDIR`; the working database, WAL,
+SQLite temporary files and supervisor controls stay there. A 192-CPU allocation
+currently resolves to 182 compute threads, one interactive thread and GC `8,1`.
+These are pilot settings, not a claim of full-node utilization.
+
+After clean completion it copies the closed single SQLite once to
+`$SCRATCH/vbfsearch/pilot-$SLURM_JOB_ID.sqlite`. `VBF_OUTPUT` can select another new
+SQLite filename under scratch. The transfer hashes its source stream, checks
+single-file publication metadata and size, fsyncs, and publishes atomically
+without overwriting an existing file. This checks transfer/publication boundaries;
+it does not re-prove every scientific row or reread the entire result for hashing.
+Slurm stdout records the final path, bytes and SHA-256. A failed search or copy
+returns a failing job status; a partial copy is never published as the result.
+The local source is retained until Slurm cleans the job directory. RAM contents
+are lost if the node fails. A successful local test does not establish Trillium
+runtime compatibility, filesystem behavior, larger-node scaling or long-run size.
+
+The older sealed-checkpoint workflow remains explicitly available through
+`tools/trillium_checkpoint.sbatch` and `tools/trillium_stage.jl`. It needs
+`VBF_CHECKPOINT`, `VBF_LAUNCHER_DIR`, `VBF_JOB_TOOLS`, `VBF_DEPOT` and a matching
+checkpoint runtime. It is separate from the fresh command and does not resume
+an arbitrary single-file result.
+
+## Historical audit findings
 
 | Priority | Repository evidence | Change and completion criterion |
 |---|---|---|
@@ -187,5 +288,6 @@ or storage budget automatically. Slurm owns the allocation in either case.
    scientific results and useful throughput before requesting larger allocations.
 
 No Trillium account, allocation, job submission, node access or actual cluster
-performance was tested during this audit. No new runtime changes were deployed
-to the running workstation campaign.
+performance was tested during this audit. Later CPU changes were validated in
+isolated local replays. The production checkpoint retains its original source
+identity and remains stopped.

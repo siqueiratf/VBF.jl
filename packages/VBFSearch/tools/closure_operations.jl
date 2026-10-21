@@ -9,8 +9,9 @@ const FP=VBFSearch
 
 """Validate compute slots and optional allocation against the actual Julia pools."""
 function validate_resources(config;default_threads=Threads.nthreads(:default),
-    interactive_threads=Threads.nthreads(:interactive),gc_threads=Threads.ngcthreads(),env=ENV)
-    concurrency=Int(get(config,"concurrency",min(32,default_threads)))
+    interactive_threads=Threads.nthreads(:interactive),gc_threads=Threads.ngcthreads(),env=ENV,
+    heap_size_hint=Int(Base.JLOptions().heap_size_hint))
+    concurrency=Int(get(config,"concurrency",default_threads))
     concurrency>0 && concurrency<=default_threads || throw(ArgumentError("concurrency must be between 1 and Julia's $default_threads default threads"))
     explicit=Int(get(config,"cpu_allocation",0))
     scheduler=haskey(env,"SLURM_CPUS_PER_TASK") ? parse(Int,env["SLURM_CPUS_PER_TASK"]) : 0
@@ -18,11 +19,104 @@ function validate_resources(config;default_threads=Threads.nthreads(:default),
     limits=filter(>(0),[explicit,scheduler]);allocation=isempty(limits) ? 0 : minimum(limits)
     runtime_threads=default_threads+interactive_threads+gc_threads
     allocation==0 || runtime_threads<=allocation || throw(ArgumentError("Julia compute, interactive and GC pools require $runtime_threads CPUs, exceeding allocation $allocation"))
+    # V5Work owns 2^23 Int32 counts and Int16 transform entries per
+    # slot at n=8. This is a lower bound, excluding DU7/EA/result allocations.
+    rank_bytes=get(config,"precompute_rank_table",true) ? (get(config,"packed_rank_table",true) ? 1<<26 : 1<<28) : 0
+    work_bytes=concurrency*(6*(1<<23)+256*sizeof(Int))+rank_bytes
+    heap_size_hint>=0 || throw(ArgumentError("heap size hint must be nonnegative"))
+    warnings=String[]
+    heap_size_hint>0 && heap_size_hint<2work_bytes && push!(warnings,
+        "Julia heap-size-hint $(heap_size_hint) bytes leaves limited headroom above V5 work buffers ($work_bytes bytes minimum); measure a larger hint within the job memory allocation to reduce GC")
     Dict{String,Any}("concurrency"=>concurrency,"default_threads"=>default_threads,
         "interactive_threads"=>interactive_threads,"gc_threads"=>gc_threads,
         "runtime_threads"=>runtime_threads,"cpu_allocation"=>allocation,
+        "concurrency_source"=>haskey(config,"concurrency") ? "explicit" : "all default-pool threads",
+        "work_buffer_lower_bound_bytes"=>work_bytes,"heap_size_hint_bytes"=>heap_size_hint,
+        "memory_estimate_scope"=>"n=8 primary V5 arrays and shared rank lookup only; excludes runtime, EA, DU7 and buffered results",
+        "warnings"=>warnings,
         "host"=>get(env,"HOSTNAME",Base.Libc.gethostname()),"pid"=>getpid(),
         "job_id"=>get(env,"SLURM_JOB_ID","none"))
+end
+
+const REPORT_COUNTER_FIELDS=("total_parents","promoted_parents","exact_luts","quadratic_apn_luts",
+    "nonquadratic_apn_luts","unresolved_equivalence","verified_equivalent_luts")
+const REPORT_COUNTER_SELECT="SELECT "*join(REPORT_COUNTER_FIELDS,",")*" FROM temp.closure_runtime_counts WHERE singleton=1"
+
+"""Connection-local exact report counters under the store's exclusive writer lease.
+
+Seed with the controller's first fresh count results. TEMP triggers update one
+wide row in the same transaction/savepoint as scientific changes, including
+rollbacks. Physical tables are used so normalized-view writes count once. No
+counter or trigger enters a checkpoint, and each invocation recounts initially.
+"""
+struct ReportCounters
+    store::FP.ClosureStore
+end
+function install_report_counters!(s::FP.ClosureStore,counts)
+    isopen(s.lease) || error("report counters require the open exclusive writer store")
+    FP.SQLite.intransaction(s.db) && error("install report counters at a committed boundary")
+    values=Int[counts[k] for k in REPORT_COUNTER_FIELDS]
+    all(>=(0),values) || throw(ArgumentError("report counters must be nonnegative"))
+    physical=FP._closure_normalized(s.db) ? "closure_candidates" : "candidates"
+    predicates(alias)=(
+        "quadratic_apn_luts"=>"($alias.apn=1 AND $alias.degree=2)",
+        "nonquadratic_apn_luts"=>"($alias.apn=1 AND $alias.degree>2)",
+        "unresolved_equivalence"=>"($alias.apn=1 AND $alias.degree=2 AND $alias.class_id IS NULL)",
+        "verified_equivalent_luts"=>"($alias.state='equivalent')")
+    insert_values=join(["$key=$key+$value" for (key,value) in predicates("NEW")],",")
+    delete_values=join(["$key=$key-$value" for (key,value) in predicates("OLD")],",")
+    updates=join(["$key=$key+($new)-($old)" for ((key,new),(_,old)) in zip(predicates("NEW"),predicates("OLD"))],",")
+    changed="OLD.apn IS NOT NEW.apn OR OLD.degree IS NOT NEW.degree OR (OLD.class_id IS NULL)!=(NEW.class_id IS NULL) OR (OLD.state='equivalent')!=(NEW.state='equivalent')"
+    FP._closure_transaction(s) do
+        columns=join(["$key INTEGER NOT NULL CHECK($key>=0)" for key in REPORT_COUNTER_FIELDS],",")
+        FP._closure_exec(s,"CREATE TEMP TABLE closure_runtime_counts(singleton INTEGER PRIMARY KEY CHECK(singleton=1),$columns)")
+        placeholders=join(fill("?",length(values)),",")
+        FP._closure_exec(s,"INSERT INTO temp.closure_runtime_counts VALUES(1,$placeholders)",Tuple(values))
+        for (name,operation,body) in (
+                ("candidate_insert","AFTER INSERT ON main.$physical","exact_luts=exact_luts+1,$insert_values"),
+                ("candidate_delete","AFTER DELETE ON main.$physical","exact_luts=exact_luts-1,$delete_values"),
+                ("candidate_update","AFTER UPDATE OF apn,degree,class_id,state ON main.$physical WHEN $changed",updates),
+                ("parent_insert","AFTER INSERT ON main.parents","total_parents=total_parents+1,promoted_parents=promoted_parents+(NEW.origin='discovered')"),
+                ("parent_delete","AFTER DELETE ON main.parents","total_parents=total_parents-1,promoted_parents=promoted_parents-(OLD.origin='discovered')"),
+                ("parent_update","AFTER UPDATE OF origin ON main.parents WHEN OLD.origin IS NOT NEW.origin","promoted_parents=promoted_parents+(NEW.origin='discovered')-(OLD.origin='discovered')"))
+            FP._closure_exec(s,"CREATE TEMP TRIGGER closure_runtime_$name $operation BEGIN UPDATE closure_runtime_counts SET $body WHERE singleton=1; END")
+        end
+    end
+    ReportCounters(s)
+end
+report_counter_snapshot(counters::ReportCounters)=only(FP._closure_rows(counters.store,REPORT_COUNTER_SELECT))
+
+"""Cache a freshly observed terminal published-root summary within one invocation.
+
+Controller admission adds discovered parents only; completed construction jobs
+never reopen. Only a committed boundary can populate this cache; a rolled-back
+packet must not make a partial root set appear permanently complete. Partial
+root summaries and helpers with additional fields continue to query the archived
+reporter. The expected root count comes from the validated scientific identity.
+"""
+mutable struct SeedSummaryCache
+    terminal::Union{Nothing,Dict{String,Any}}
+    expected_roots::Int
+    hits::Int
+    misses::Int
+end
+SeedSummaryCache()=SeedSummaryCache(nothing,-1,0,0)
+function seed_summary!(cache::SeedSummaryCache,reader,db,expected_roots::Int)
+    expected_roots>=0 || throw(ArgumentError("expected root count must be nonnegative"))
+    if cache.expected_roots!=expected_roots
+        cache.terminal=nothing;cache.expected_roots=expected_roots
+    end
+    if cache.terminal!==nothing
+        cache.hits+=1;return deepcopy(cache.terminal)
+    end
+    cache.misses+=1;value=reader(db)
+    connection=db isa FP.ClosureStore ? db.db : db isa FP.SQLite.DB ? db : nothing
+    committed=connection!==nothing && !FP.SQLite.intransaction(connection)
+    if committed && value isa AbstractDict && length(value)==5 && get(value,"focus_available",true)===false &&
+            all(key->get(value,key,-1)==expected_roots,("total","completed","v5_completed","switching_completed"))
+        cache.terminal=Dict{String,Any}(String(k)=>deepcopy(v) for (k,v) in pairs(value))
+    end
+    value
 end
 
 """Archive and pin the actual active workspace environment before dispatch.
@@ -241,6 +335,10 @@ function runtime_snapshot(metrics,resources)
         "gc_pause_seconds"=>max(0.0,(Int(Base.gc_num().total_time)-metrics.gc_started_ns)*1e-9),
         "packet_totals"=>deepcopy(metrics.kinds),"scheduler"=>copy(metrics.scheduler),
         "scheduler_scope"=>"current or latest refill pool; packet totals cover this process run",
+        "scheduler_active_scope"=>"dispatched tasks whose events have not been collected, including finished tasks; slot occupancy is not CPU utilization",
+        "scheduler_compute_scope"=>"workers_computing counts entered compute calls, including blocked calls and GC; use average_cpu_cores for process CPU use",
+        "coordinator_timing_scope"=>"step includes reserve, prepare, apply, scheduling and transaction control; transaction_control is nested; tick includes completion checking, publication and maintenance; wait_maintenance is excluded from event_wait",
+        "reporting_scope"=>"publication only; completion checks are reported separately by the controller",
         "reporting_seconds"=>metrics.reporting_seconds,"checkpoint_seconds"=>metrics.checkpoint_seconds,
         "scope"=>"this controller process; compute durations overlap across slots; CPU includes GC and coordinator")
 end

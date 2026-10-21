@@ -1,6 +1,162 @@
 module NormalizedClosureTests
 using Test,SQLite,VBFSearch,VBF,TOML,SHA
 const VS=VBFSearch
+struct PointerProofInteger <: Integer
+    value::Ptr{Int}
+end
+@testset "Store statement reuse releases bindings and survives failure and rollback" begin
+    db=SQLite.DB();cache=VS.DiscoveryStore.StatementCache(db;limit=2)
+    execute(sql,args=())=VS.DiscoveryStore.execute!(cache,sql,args)
+    query(sql,args=())=VS.DiscoveryStore.query(cache,sql,args)
+    try
+        VS._closure_exec(db,"CREATE TABLE fixture(id INTEGER PRIMARY KEY,value TEXT NOT NULL)")
+        insert="INSERT INTO fixture VALUES(?,?)"
+        execute(insert,(1,"first"));prepared=cache.statements[insert]
+        @test isempty(prepared.params)
+        @test_throws Exception execute(insert,(1,"duplicate"))
+        @test isempty(prepared.params)
+        execute("BEGIN IMMEDIATE")
+        execute(insert,(2,"rolled back"))
+        @test cache.statements[insert]===prepared
+        execute("ROLLBACK")
+        @test query("SELECT value FROM fixture ORDER BY id")==[Dict("value"=>"first")]
+        execute(insert,(2,"second"))
+        @test query("SELECT value FROM fixture ORDER BY id")==[Dict("value"=>"first"),Dict("value"=>"second")]
+        @test length(cache.statements)==2
+        @test all(isempty(statement.params) for statement in values(cache.statements))
+        VS.DiscoveryStore.close_statements!(cache)
+        @test isempty(cache.statements)
+        @test !SQLite.isready(prepared)
+    finally
+        VS.DiscoveryStore.close_statements!(cache);close(db)
+    end
+end
+
+@testset "Single-scan proof normalization matches the previous exact encoding" begin
+    function previous_storage(proof,values)
+        evidence=VS._closure_text(proof);body=evidence;slots=fill("",9);encoded=false
+        if !occursin(VS._CLOSURE_TOKEN_PREFIX,evidence)
+            fields=("candidate_lut_hex","target_lut_hex","candidate_sha256","target_sha256")
+            encoded=all(get(proof,k,nothing)==v for (k,v) in zip(fields,values))
+            if encoded
+                for (key,value) in zip(("c:lut","t:lut","c:id","t:id"),values)
+                    isempty(value) || (body=replace(body,value=>VS._closure_token(key)))
+                end
+                for (i,key) in enumerate(VS._CLOSURE_PROOF_SLOTS)
+                    pattern=Regex("(?m)^"*key*" = ([^\\n]*)\n")
+                    matches=collect(eachmatch(pattern,body))
+                    if length(matches)==1
+                        slots[i]=String(only(matches).captures[1])
+                        body=replace(body,pattern=>(key*" = "*VS._closure_token("v$(i-1)")*"\n"))
+                    end
+                end
+            end
+        end
+        (;body,slots,encoded)
+    end
+    values=(repeat("a",512),repeat("b",512),repeat("c",64),repeat("d",64))
+    proof=Dict{String,Any}("candidate_lut_hex"=>values[1],"target_lut_hex"=>values[2],
+        "candidate_sha256"=>values[3],"target_sha256"=>values[4],"status"=>"inconclusive_budget",
+        "graph_map_columns"=>collect(1:16),"graph_map_constant"=>17,"nodes"=>125,"seconds"=>0.125,
+        "timeout_seconds"=>5.0,"max_nodes"=>1000,"stop"=>"budget","evidence"=>"αβ\nfuture","rng_seed"=>940)
+    nested=deepcopy(proof);nested["future"]=Dict("nodes"=>27,"evidence"=>"nested αβ","seconds"=>0.0)
+    literal=deepcopy(proof);literal["future"]="literal !!vbf:v0!!"
+    unbound=deepcopy(proof);unbound["candidate_sha256"]="different"
+    multiline=deepcopy(proof);multiline["evidence"]="αβ\nnodes = 5\nseconds = 9\n"
+    identical=deepcopy(proof);identical["target_lut_hex"]=values[1];identical["target_sha256"]=values[3]
+    for (record,pair) in ((proof,values),(nested,values),(literal,values),(unbound,values),
+            (multiline,values),(identical,(values[1],values[1],values[3],values[3])))
+        @test VS._closure_comparison_storage(record,VS._closure_text(record),pair)==previous_storage(record,pair)
+    end
+end
+
+@testset "Template lookup retains exact collision checks without copying the body" begin
+    db=SQLite.DB();VS._closure_create_schema(db;normalized=true)
+    try
+        body="literal αβ\0with embedded NUL"
+        id=VS._closure_template!(db,body)
+        @test VS._closure_template!(db,body)==id
+        other="another exact body"
+        VS._closure_exec(db,"INSERT INTO closure_templates(digest,body) VALUES(?,?)",(SHA.sha256(other),"different"))
+        @test_throws ErrorException VS._closure_template!(db,other)
+        @test only(VS._closure_rows(db,"SELECT body FROM closure_templates WHERE digest=?",(SHA.sha256(other),)))["body"]=="different"
+    finally
+        close(db)
+    end
+end
+
+@testset "Worker-prepared proofs are immutable, exact and transparent over JSON" begin
+    values=(repeat("a",512),repeat("b",512),repeat("c",64),repeat("d",64))
+    original=Dict{String,Any}("candidate_lut_hex"=>values[1],"target_lut_hex"=>values[2],
+        "candidate_sha256"=>values[3],"target_sha256"=>values[4],"status"=>"inconclusive_budget",
+        "graph_map_columns"=>collect(1:16),"graph_map_constant"=>17,"seconds"=>0.125,
+        "future"=>Dict("nested"=>Any[Dict("unicode"=>"αβ"),big(2)^100,Int[]]))
+    expected=deepcopy(original);prepared=VS._closure_prepare_comparison_proof(original,values)
+    @test prepared isa VS._ClosurePreparedProof
+    @test copy(prepared)==expected
+    @test VS._closure_text(prepared)==VS._closure_text(expected)
+    original["graph_map_columns"][1]=99
+    original["future"]["nested"][1]["unicode"]="changed"
+    prepared["graph_map_columns"][1]=88
+    prepared["future"]["nested"][1]["unicode"]="changed again"
+    copied=copy(prepared);copied["future"]["nested"][1]["unicode"]="copy changed"
+    iterated=Dict(prepared);iterated["future"]["nested"][1]["unicode"]="iteration changed"
+    immutable_graph(value)=value isa String || (isimmutable(value) && all(
+        immutable_graph(getfield(value,index)) for index in 1:fieldcount(typeof(value))))
+    @test all(immutable_graph(getfield(prepared,key)) for key in propertynames(prepared))
+    @test copy(prepared)==expected
+    @test VS._closure_text(prepared)==VS._closure_text(expected)
+    @test_throws Exception (prepared["status"]="changed")
+    @test_throws MethodError VS._ClosurePreparedProof(prepared.fields,prepared.evidence,
+        prepared.body,prepared.slots,prepared.encoded,prepared.pair)
+    wire=VS.JSON3.read(VS.JSON3.write(prepared),Dict{String,Any})
+    @test wire isa Dict && !(wire isa VS._ClosurePreparedProof)
+    @test Set(keys(wire))==Set(keys(expected))
+    @test !haskey(wire,"body") && !haskey(wire,"slots")
+    plain=VS._closure_comparison_storage(expected,VS._closure_text(expected),values)
+    cached=VS._closure_comparison_storage(prepared,VS._closure_text(prepared),values)
+    @test plain.body==cached.body && plain.slots==collect(cached.slots) && plain.encoded==cached.encoded
+    other=(values[1],values[2],values[3],"different")
+    fallback=VS._closure_comparison_storage(prepared,VS._closure_text(prepared),other)
+    @test !fallback.encoded && fallback.body==VS._closure_text(expected)
+    future=copy(expected);future["opaque"]=(1,2)
+    @test VS._closure_prepare_comparison_proof(future,values)===future
+    future["opaque"]=PointerProofInteger(Ptr{Int}(0))
+    @test VS._closure_prepare_comparison_proof(future,values)===future
+end
+
+@testset "Duplicate candidates retain every path without serializing properties again" begin
+    for normalized in (false,true)
+        db=SQLite.DB();VS._closure_create_schema(db;normalized)
+        lease=open(tempname(),"w");s=VS.ClosureStore(db,"",lease,Dict{String,Any}(),1,UInt64(0))
+        try
+            VS._closure_exec(s,"PRAGMA foreign_keys=ON")
+            p=VS.properties(gold_apn(8).lut)
+            VS._closure_insert_candidate!(s,p)
+            parent=VS._closure_add_parent!(s,p["lut_sha256"],p["sigma_hash"])
+            job=only(VS._closure_rows(s,"SELECT id,parent_id,kind FROM jobs WHERE kind='switching'"))
+            original=only(VS._closure_rows(s,"SELECT properties FROM candidates"))["properties"]
+            templates=normalized ? VS._closure_count(s,"SELECT COUNT(*) n FROM closure_templates") : 0
+            duplicate=copy(p);duplicate["would_fail_TOML_serialization"]=Ref(1)
+            @test VS._closure_record_candidate!(s,job,duplicate,"1:1",Dict("direction"=>1))==p["lut_sha256"]
+            @test VS._closure_record_candidate!(s,job,duplicate,"1:2",Dict("direction"=>1))==p["lut_sha256"]
+            @test VS._closure_count(s,"SELECT COUNT(*) n FROM paths")==2
+            @test VS._closure_count(s,"SELECT COUNT(*) n FROM candidates")==1
+            @test only(VS._closure_rows(s,"SELECT properties FROM candidates"))["properties"]==original
+            normalized && @test VS._closure_count(s,"SELECT COUNT(*) n FROM closure_templates")==templates
+            collision=copy(p);collision["lut_hex"]=repeat("00",256)
+            @test_throws ErrorException VS._closure_insert_candidate!(s,collision)
+            VS._closure_exec(s,"BEGIN IMMEDIATE")
+            VS._closure_record_candidate!(s,job,duplicate,"1:3",Dict("direction"=>1))
+            VS._closure_exec(s,"ROLLBACK")
+            @test VS._closure_count(s,"SELECT COUNT(*) n FROM paths")==2
+            @test only(VS._closure_rows(s,"SELECT class_id FROM candidates"))["class_id"]==parent
+        finally
+            VS.DiscoveryStore.close_statements!(s.statements);close(db);close(lease)
+        end
+    end
+end
+
 @testset "Normalized SQL evidence retains exact text, constraints and transactions" begin
     db=SQLite.DB();VS._closure_create_schema(db;normalized=true)
     lease=open(tempname(),"w");s=VS.ClosureStore(db,"",lease,Dict{String,Any}(),1,UInt64(0))
@@ -41,6 +197,20 @@ const VS=VBFSearch
         @test last(VS._closure_rows(db,"SELECT evidence FROM comparisons ORDER BY id"))["evidence"]==VS._closure_text(proof)
         VS._closure_exec(db,"INSERT INTO comparisons(candidate_id,target_parent,status,evidence,session_id) VALUES(?,1,'opaque','future αβ',1)",(p["lut_sha256"],))
         @test last(VS._closure_rows(db,"SELECT evidence FROM comparisons ORDER BY id"))["evidence"]=="future αβ"
+        pair=(p["lut_hex"],p["lut_hex"],p["lut_sha256"],p["lut_sha256"])
+        plain=copy(proof);delete!(plain,"future")
+        for original in (plain,proof)
+            native=VS._closure_prepare_comparison_proof(original,pair)
+            wire=VS.JSON3.read(VS.JSON3.write(native),Dict{String,Any})
+            @test native isa VS._ClosurePreparedProof && !(wire isa VS._ClosurePreparedProof)
+            for record in (native,wire)
+                VS._closure_insert_comparison!(s,p["lut_sha256"],1,record;bound_pair=pair)
+                @test last(VS._closure_rows(db,"SELECT evidence FROM comparisons ORDER BY id"))["evidence"]==VS._closure_text(original)
+            end
+            encoded=VS._closure_rows(db,"SELECT template_id,encoding,v0,v1,v2,v3,v4,v5,v6,v7,v8 FROM closure_comparisons ORDER BY id DESC LIMIT 2")
+            @test first(encoded)==last(encoded)
+            @test VS.verify_comparison(wire)
+        end
     finally
         close(db);close(lease)
     end

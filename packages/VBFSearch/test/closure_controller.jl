@@ -10,6 +10,15 @@ const ControllerVS=VBFSearch
     @test all(c->c.rank_table===prepared.contexts[1].rank_table,prepared.contexts)
     @test length(unique(c.guard for c in prepared.contexts))==3
     @test all(c->c.work===nothing && c.geometry===nothing,prepared.contexts)
+    @test all(c->c.property_cache===prepared.contexts[1].property_cache,prepared.contexts)
+    @test ContinuousSeedSearch.property_cache_statistics(prepared.contexts)==
+        Dict("caches"=>1,"capacity"=>8192,"entries"=>0,"hits"=>0,"misses"=>0)
+    uncached=ContinuousSeedSearch.worker_contexts(2;precompute_rank_table=false,
+        shared_property_cache_entries=0,geometry=Q.geometry(4))
+    @test uncached.contexts[1].property_cache!==uncached.contexts[2].property_cache
+    @test ContinuousSeedSearch.property_cache_statistics(uncached.contexts)["capacity"]==128
+    @test_throws ArgumentError ContinuousSeedSearch.worker_contexts(1;
+        shared_property_cache_entries=-1,geometry=Q.geometry(4))
     byte=ContinuousSeedSearch.worker_contexts(2;packed_rank_table=false,geometry=Q.geometry(4))
     @test byte.rank_table_bytes==64 && byte.rank_table_encoding=="byte"
     @test all(c->c.rank_table isa Q.PolarRankTable,byte.contexts)
@@ -24,16 +33,17 @@ end
 # so a complete window takes seconds and still has every kind of wave.
 const CONTROLLER_ROOT="00000079003b96d40083a55feb53d819009efe19a005c814cfd294f084a2491600094b3be0d23d7679f3976472c30ac220b7957b60cc4396968286eb3d12bbed002d13470c1a89e6802e36e167f247ab10a3fd37bc34c7365f6f175e1813c6b404205c01e8f72640fd5a00defa669174348e925178f948b0023b0141a5a7304b00598aaa04661803409a6fccaf4e168e08cf7cc2ac504ecb87c3566bc8b78f890252c3eae68db1a33be85ff534dcc6572ae415a26e9bc74bdc91467273057f700175989509460630c136fd7322ee883d19f37eedb16040e8167fd4c45507012a077ad5d1efa9ab94be40c94ebd785ce03fdc138977afcd6c4929c0d9eab1f5d7"
 
-function controller_window(directory,concurrency;duration=Inf,normalized=false,extra=Dict{String,Any}())
+function controller_window(directory,concurrency;duration=Inf,normalized=false,root_count=1,extra=Dict{String,Any}())
     mkpath(directory);p=ControllerVS.properties(hex2bytes(CONTROLLER_ROOT))
-    rootfile=joinpath(directory,"root.tsv");write(rootfile,p["lut_hex"]*"\n")
+    roots=[ControllerVS.properties(hex2bytes(CONTROLLER_ROOT) .⊻ UInt8(i)) for i in 0:root_count-1]
+    rootfile=joinpath(directory,"root.tsv");write(rootfile,join([r["lut_hex"] for r in roots],"\n")*"\n")
     digest=ControllerVS.DiscoveryEvidence.filehash(rootfile)
     identity=Dict{String,Any}("schema"=>ControllerVS.CLOSURE_SCHEMA,"campaign"=>rootfile,"campaign_sha256"=>digest,
-        "roots_sha256"=>digest,"initial_roots"=>1,"qualification_complete"=>true,"inputs"=>Dict(rootfile=>digest),
+        "roots_sha256"=>digest,"initial_roots"=>root_count,"qualification_complete"=>true,"inputs"=>Dict(rootfile=>digest),
         "implementation"=>ControllerVS.implementation_fingerprint(),"julia"=>string(VERSION),
         "scientific"=>Dict("n"=>8,"m"=>8,"target_b6"=>52,"max_kernel"=>23,"extension_cosets"=>65536,"switching_directions"=>255))
     run=joinpath(directory,"run")
-    ControllerVS._closure_initialize(run,identity,[(lut_sha256=p["lut_sha256"],lut_hex=p["lut_hex"],sigma_hash=p["sigma_hash"],catalog_id="controller-fixture:1")];normalized)
+    ControllerVS._closure_initialize(run,identity,[(lut_sha256=r["lut_sha256"],lut_hex=r["lut_hex"],sigma_hash=r["sigma_hash"],catalog_id="controller-fixture:$i") for (i,r) in enumerate(roots)];normalized)
     config=merge(Dict{String,Any}("run"=>run,"evidence"=>joinpath(directory,"evidence"),"concurrency"=>concurrency,
         "window_size"=>1,"max_windows"=>1,"duration_seconds"=>duration),extra)
     ContinuousSeedSearch.run(config),run
@@ -79,6 +89,10 @@ end
         @test length(a.partition)>1 && a.partition==b.partition
         @test length(readlines(joinpath(directory,"three","evidence","seed-timings.jsonl")))==1
         @test one["baseline"]["policy"]==three["baseline"]["policy"]=="summary"
+        completed_progress=TOML.parsefile(joinpath(run1,"progress.toml"))
+        @test completed_progress["seed_progress_cache"]["terminal"]
+        @test completed_progress["seed_progress_cache"]["hits"]>0
+
         @test one["baseline"]["bytes"]<65536
         @test !isfile(joinpath(directory,"one","evidence","classification-before.sqlite"))
         @test isfile(joinpath(directory,"one","evidence","closure_refill.jl"))
@@ -211,5 +225,49 @@ end
         @test budgeted["state"]=="paused_storage" && isempty(budgeted["checkpoint_error"])
         @test budgeted["storage_stop_reason"]=="checkpoint_storage_max_bytes"
         @test isdir(latest) && ControllerVS.closure_verify_checkpoint(latest)["verified"]
+    end
+end
+
+@testset "Rolling windows overlap bounded cohorts and preserve the exact window cap" begin
+    mktempdir() do directory
+        common=Dict{String,Any}("max_windows"=>2,"precompute_rank_table"=>false,
+            "report_interval_seconds"=>3600.0,"global_count_interval_seconds"=>3600.0)
+        batch,old=controller_window(joinpath(directory,"batch"),min(3,Threads.nthreads(:default));root_count=3,extra=common)
+        rolling,new=controller_window(joinpath(directory,"rolling"),min(3,Threads.nthreads(:default));root_count=3,
+            extra=merge(common,Dict("rolling_windows"=>true)))
+        @test batch["state"]==rolling["state"]=="paused_window_limit"
+        a=controller_science(old);b=controller_science(new)
+        @test a.paths==b.paths && a.ledger==b.ledger && a.kernels==b.kernels && a.partition==b.partition
+        @test a.running==b.running==0
+        @test batch["seed_statistics"]["completed_this_session"]==rolling["seed_statistics"]["completed_this_session"]==2
+        progress=TOML.parsefile(joinpath(new,"progress.toml"))
+        @test progress["continuous_search"]["windows_completed"]==2
+        @test progress["continuous_search"]["windows_started"]==2
+        @test progress["continuous_search"]["active_windows"]==0
+        @test progress["global_counts_current"]
+        db=ControllerVS.SQLite.DB(joinpath(new,"closure.sqlite"))
+        try
+            @test progress["total_parents"]==ControllerVS._closure_count(db,"SELECT COUNT(*) n FROM parents")
+            @test progress["construction_paths"]==ControllerVS._closure_count(db,"SELECT COUNT(*) n FROM paths")
+            @test ControllerVS._closure_count(db,"SELECT COUNT(*) n FROM jobs WHERE parent_id=3 AND kind IN ('prepare_v5','v5','switching') AND status!='pending'")==0
+        finally
+            close(db)
+        end
+        events=[ControllerVS.JSON3.read(line,Dict{String,Any}) for line in readlines(joinpath(directory,"rolling","evidence","publish-metrics.jsonl"))]
+        @test length(events)<rolling["processed_packets"]
+        cached,counter_run=controller_window(joinpath(directory,"counters"),min(3,Threads.nthreads(:default));root_count=3,
+            extra=merge(common,Dict("rolling_windows"=>true,"cached_global_counts"=>true,
+                "reservation_horizon"=>8,"reservation_refill_batch"=>4)))
+        c=controller_science(counter_run)
+        @test cached["state"]==rolling["state"]
+        @test cached["runtime_metrics"]["scheduler"]["reservation_refill_batch"]==4
+        @test cached["runtime_metrics"]["scheduler"]["reservation_calls"]>0
+        @test c.paths==b.paths && c.ledger==b.ledger && c.kernels==b.kernels && c.partition==b.partition
+        counted=TOML.parsefile(joinpath(counter_run,"progress.toml"))
+        @test occursin("transactional TEMP counters",counted["global_count_policy"])
+        @test counted["total_parents"]==progress["total_parents"]
+        @test counted["exact_luts"]==progress["exact_luts"]
+        @test counted["unresolved_equivalence"]==progress["unresolved_equivalence"]==0
+
     end
 end

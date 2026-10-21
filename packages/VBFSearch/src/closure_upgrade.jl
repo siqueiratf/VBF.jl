@@ -16,6 +16,56 @@ const _CLOSURE_UPGRADE_PATHS=Set([
     "packages/VBFSearch/tools/closure_cluster.jl",
 ])
 
+const _CLOSURE_PERFORMANCE_PATHS=union(_CLOSURE_UPGRADE_PATHS,Set([
+    "packages/VBF/src/constructions/quadratic_extension_du7.jl",
+    "packages/VBF/src/constructions/quadratic_extensions.jl",
+    "packages/VBF/src/invariants/classification_keys.jl",
+    "packages/VBF/src/spectra/linear.jl",
+    "packages/VBF/src/spectra/differential.jl",
+    "packages/VBF/src/spectra/walsh.jl",
+    "packages/VBF/src/equivalence/partition_refinement/partition.jl",
+    "packages/VBF/src/equivalence/partition_refinement/refine.jl",
+    "packages/VBF/src/equivalence/partition_refinement/search.jl",
+    "packages/VBF/src/equivalence/partition_refinement/automorphisms.jl",
+    "packages/VBFSearch/src/closure_prepared_proof.jl",
+    "packages/VBFSearch/src/closure_prepared_construction.jl",
+    "packages/VBFSearch/src/closure_prepared_v5.jl",
+    "packages/VBFSearch/src/closure_equivalence_snapshots.jl",
+    "packages/VBFSearch/src/store.jl","packages/VBFSearch/src/evidence.jl",
+    "packages/VBFSearch/src/reference/equivalence.jl",
+]))
+
+"""Bind an explicit performance transition to a completed fixed-work parity replay.
+
+This records bounded computational evidence, not a proof that all future search
+outputs agree. Catalogs, dependencies, unrelated mathematics and Julia remain
+pinned. Ordinary controller upgrades retain their narrower source whitelist.
+"""
+function _closure_performance_evidence(path,identity,implementation,changed)
+    all(in(_CLOSURE_PERFORMANCE_PATHS),changed) || error("performance upgrade changes unrelated mathematics, catalog or toolchain")
+    proof=JSON3.read(read(path,String),Dict{String,Any})
+    get(proof,"schema","")=="vbfsearch-cpu-performance-validation-v1" || error("unsupported performance validation schema")
+    before=proof["before"];after=proof["after"]
+    before["implementation"]==identity["implementation"] || error("performance baseline does not match source implementation")
+    after["implementation"]==implementation || error("performance replay does not match current implementation")
+    before["julia"]==after["julia"]==identity["julia"]==string(VERSION) || error("performance replay changes Julia version")
+    before["fixture_sha256"]==after["fixture_sha256"] || error("performance replays used different fixtures")
+    digest=before["fixture_sha256"]
+    digest isa AbstractString && occursin(r"^[0-9a-f]{64}$",digest) || error("invalid performance fixture digest")
+    for result in (before,after)
+        result["result"]["state"]=="paused_window_limit" || error("performance replay did not finish its finite plan")
+        result["result"]["processed_packets"]>0 || error("performance replay did no work")
+        Set(keys(result["science"]))==Set(("paths","classes","kernels","coverage")) || error("performance replay lacks scientific digests")
+        for value in values(result["science"])
+            value["rows"]>0 && occursin(r"^[0-9a-f]{64}$",value["sha256"]) || error("invalid performance scientific digest")
+        end
+    end
+    before["science"]==after["science"] || error("performance replay scientific outputs differ")
+    Dict("sha256"=>DiscoveryEvidence.filehash(path),"fixture_sha256"=>digest,
+        "scope"=>"completed bounded construction/EA replay with identical paths, classes, kernels and coverage",
+        "science"=>before["science"])
+end
+
 """Verify a stopped source against its own archived code and pinned inputs."""
 function _closure_upgrade_source(db,directory;allow_execution_paths=false)
     if isfile(joinpath(directory,_CLOSURE_PATH_MAP)) && !allow_execution_paths
@@ -208,7 +258,7 @@ function closure_compact(source;output,helper,prepared=nothing)
 end
 
 """
-    closure_upgrade(source; output, switching_directions=32)
+    closure_upgrade(source; output, switching_directions=32, performance_evidence=nothing)
 
 Clone a cooperatively stopped frontier under the source's exclusive application
 lease. SQLite's backup API includes committed WAL pages without rewriting the
@@ -217,8 +267,12 @@ the prior identity, session cutoff and snapshot digest under `lineage/previous/`
 All pre-existing rows and IDs survive; only identity metadata and the execution
 batch policy change. The new directory appears only after integrity and cursor
 validation. The source remains available for rollback.
+
+`performance_evidence` explicitly permits the listed CPU implementation changes
+only when before/after replay manifests bind both implementations and agree on
+every scientific digest. The evidence is copied into the upgrade lineage.
 """
-function closure_upgrade(source;output,switching_directions=32)
+function closure_upgrade(source;output,switching_directions=32,performance_evidence=nothing)
     switching_directions isa Integer && 1<=switching_directions<=255 || throw(ArgumentError("switching_directions must be in 1:255"))
     origin=realpath(source);target=abspath(output)
     isfile(joinpath(origin,"closure.sqlite")) || error("source closure database is absent")
@@ -227,18 +281,35 @@ function closure_upgrade(source;output,switching_directions=32)
     mkpath(dirname(target));lease=_closure_lease(origin);db=nothing;stage=nothing
     try
         db=SQLite.DB("file:"*joinpath(origin,"closure.sqlite")*"?mode=ro")
-        _closure_reject_segmented_clone(db)
+        performance_evidence===nothing && _closure_reject_segmented_clone(db)
         _closure_exec(db,"PRAGMA query_only=ON")
         identity,tables=_closure_upgrade_source(db,origin;allow_execution_paths=true)
         implementation=implementation_fingerprint()
         changed=sort!([path for path in union(keys(identity["implementation"]),keys(implementation)) if get(identity["implementation"],path,nothing)!=get(implementation,path,nothing)])
-        all(path->path in _CLOSURE_UPGRADE_PATHS,changed) || error("upgrade changes mathematics, catalog or toolchain outside controller whitelist")
+        validation=performance_evidence===nothing ? nothing :
+            _closure_performance_evidence(abspath(performance_evidence),identity,implementation,changed)
+        validation===nothing && !all(path->path in _CLOSURE_UPGRADE_PATHS,changed) &&
+            error("upgrade changes mathematics, catalog or toolchain outside controller whitelist; an explicit validated CPU transition requires performance_evidence")
+        artifacts=validation===nothing ? Dict{String,String}() : closure_segment_artifacts(db,origin)
+        isempty(artifacts) || closure_verify_segments(db,origin;full=true)
         cutoff=_closure_count(db,"SELECT COALESCE(MAX(id),0) n FROM sessions")
         counts=Dict(table=>_closure_count(db,"SELECT COUNT(*) n FROM \"$table\"") for table in tables)
         stage=mktempdir(dirname(target);prefix=".closure-upgrade-")
         previous=joinpath(stage,"lineage","previous");mkpath(previous)
         snapshot=joinpath(previous,"closure.sqlite")
         SQLite.backup(db,snapshot)
+        if !isempty(artifacts)
+            for (relative,path) in artifacts
+                _closure_portable_copy(path,joinpath(previous,relative))
+                _closure_portable_copy(path,joinpath(stage,relative))
+            end
+            backup=SQLite.DB(snapshot)
+            try
+                _closure_exec(backup,"INSERT OR REPLACE INTO metadata(key,value) VALUES('closure_segment_root','cold')")
+            finally
+                close(backup)
+            end
+        end
         record=Dict{String,Any}("schema"=>"vbfsearch-closure-upgrade-v1","created_utc"=>_closure_now(),
             "source_directory"=>origin,"source_main_sha256"=>DiscoveryEvidence.filehash(joinpath(origin,"closure.sqlite")),
             "source_snapshot_sha256"=>DiscoveryEvidence.filehash(snapshot),"source_identity_sha256"=>DiscoveryEvidence.filehash(joinpath(origin,"identity.toml")),
@@ -248,6 +319,11 @@ function closure_upgrade(source;output,switching_directions=32)
             "switching_directions"=>Int(switching_directions),
             "scientific_scope"=>"unchanged; switching packet size is an execution policy",
             "session_attribution"=>"sessions through source_sessions_through use prior_implementation; subsequent sessions use new_implementation")
+        if validation!==nothing
+            record["performance_validation"]=validation
+            record["cold_artifacts_copied"]=length(artifacts)
+            cp(abspath(performance_evidence),joinpath(stage,"performance-validation.json"))
+        end
         wal=joinpath(origin,"closure.sqlite-wal")
         isfile(wal) && (record["source_wal_sha256"]=DiscoveryEvidence.filehash(wal))
         cp(joinpath(origin,"identity.toml"),joinpath(previous,"identity.toml"))

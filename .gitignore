@@ -86,6 +86,11 @@ packages/VBFPaper/doc/generated/**
 packages/VBFPaper/bench/data/**
 !packages/VBFPaper/bench/data/**/
 
+# Maintained login-node smoke check (shell scratch files are otherwise ignored).
+!packages/VBFSearch/tools/trillium_login_check.sh
+!packages/VBFSearch/tools/trillium_fresh.py
+!packages/VBFSearch/test/trillium_fresh_test.py
+
 # READMEs are always tracked — including the per-paper review summaries under
 # packages/VBFRepro/src/<Paper_ID>/README.md. Git resolves a path by the LAST matching
 # pattern, so this block must stay at the very bottom of the file: a negation

@@ -15,26 +15,138 @@ function atomic_toml(path,x)
     mv(path*".tmp",path;force=true)
 end
 
+"""Bounded FIFO of prepared statements, retaining late first-use hot queries.
+
+Active statements stay pinned until their callback returns. Recursive use of
+the same SQL, zero capacity, or a wholly pinned cache uses a temporary statement.
+"""
+mutable struct StatementCache
+    db::SQL.DB
+    statements::Dict{String,SQL.Stmt}
+    limit::Int
+    order::Vector{String}
+    active::Base.IdSet{SQL.Stmt}
+    hits::Int
+    misses::Int
+    prepares::Int
+    evictions::Int
+    temporary_statements::Int
+    peak_entries::Int
+end
+function StatementCache(db;limit::Int=128)
+    limit>=0 || throw(ArgumentError("statement cache limit must be nonnegative"))
+    StatementCache(db,Dict{String,SQL.Stmt}(),limit,String[],Base.IdSet{SQL.Stmt}(),0,0,0,0,0,0)
+end
+
+"""Cheap connection-local cache counters; no SQL or statement traversal."""
+statement_cache_stats(cache::StatementCache)=Dict{String,Any}(
+    "entries"=>length(cache.statements),"peak_entries"=>cache.peak_entries,"limit"=>cache.limit,"hits"=>cache.hits,
+    "misses"=>cache.misses,"prepares"=>cache.prepares,"evictions"=>cache.evictions,
+    "temporary_statements"=>cache.temporary_statements,"active"=>length(cache.active),
+    "policy"=>"bounded FIFO; active statements pinned; recursive SQL uses temporary statements")
+
+function _statement(f,cache::StatementCache,sql)
+    statement=get(cache.statements,sql,nothing)
+    temporary=false
+    if statement===nothing || statement in cache.active
+        recursive=statement!==nothing
+        cache.misses+=1
+        # Invalid SQL must not discard a healthy cached statement.
+        statement=SQL.Stmt(cache.db,sql)
+        cache.prepares+=1
+        if !recursive && cache.limit>0 && length(cache.statements)>=cache.limit
+            victim_index=findfirst(key->!(cache.statements[key] in cache.active),cache.order)
+            if victim_index!==nothing
+                victim_key=cache.order[victim_index]
+                victim=pop!(cache.statements,victim_key)
+                deleteat!(cache.order,victim_index)
+                DBI.close!(victim)
+                cache.evictions+=1
+            end
+        end
+        if !recursive && length(cache.statements)<cache.limit
+            cache.statements[sql]=statement
+            push!(cache.order,sql)
+            cache.peak_entries=max(cache.peak_entries,length(cache.statements))
+        else
+            temporary=true
+            cache.temporary_statements+=1
+        end
+    else
+        cache.hits+=1
+    end
+    push!(cache.active,statement)
+    try
+        f(statement)
+    finally
+        # Bindings can include large evidence strings. Do not retain them until
+        # this SQL happens to run again, or until the writer exits.
+        try
+            SQL.clear!(statement)
+        finally
+            delete!(cache.active,statement)
+            temporary && DBI.close!(statement)
+        end
+    end
+end
+
+function close_statements!(cache::StatementCache)
+    isempty(cache.active) || error("cannot close statement cache during active execution")
+    for statement in values(cache.statements)
+        DBI.close!(statement)
+    end
+    empty!(cache.statements)
+    empty!(cache.order)
+    nothing
+end
+
 struct Store
     db::SQL.DB
     guard::ReentrantLock
     lease::IOStream
     path::String
+    statements::StatementCache
 end
-execute!(db,args...) = (foreach(_->nothing,DBI.execute(db,args...)); nothing)
-query(s::Store,sql,args=()) = query(s.db,sql,args)
-query(db::SQL.DB,sql,args=()) = [Dict(String(k)=>v for (k,v) in pairs(r)) for r in DBI.execute(db,sql,args)]
+Store(db,guard,lease,path)=Store(db,guard,lease,path,StatementCache(db))
+
+function execute!(db::SQL.DB,sql,args=())
+    statement=SQL.Stmt(db,sql;register=false)
+    try
+        DBI.execute(rows->foreach(_->nothing,rows),statement,args)
+        nothing
+    finally
+        DBI.close!(statement)
+    end
+end
+function execute!(cache::StatementCache,sql,args=())
+    _statement(cache,sql) do statement
+        DBI.execute(rows->foreach(_->nothing,rows),statement,args)
+        nothing
+    end
+end
+execute!(s::Store,sql,args=())=lock(()->execute!(s.statements,sql,args),s.guard)
+query(s::Store,sql,args=())=lock(()->query(s.statements,sql,args),s.guard)
+_copy_rows(rows)=[Dict(String(k)=>v for (k,v) in pairs(r)) for r in rows]
+function query(db::SQL.DB,sql,args=())
+    statement=SQL.Stmt(db,sql;register=false)
+    try
+        DBI.execute(_copy_rows,statement,args)
+    finally
+        DBI.close!(statement)
+    end
+end
+query(cache::StatementCache,sql,args=())=_statement(statement->DBI.execute(_copy_rows,statement,args),cache,sql)
 
 function transaction(f,s)
     lock(s.guard) do
         SQL.intransaction(s.db) && return f()
-        execute!(s.db,"BEGIN IMMEDIATE")
+        execute!(s,"BEGIN IMMEDIATE")
         try
             value=f()
-            execute!(s.db,"COMMIT")
+            execute!(s,"COMMIT")
             value
         catch
-            execute!(s.db,"ROLLBACK")
+            execute!(s,"ROLLBACK")
             rethrow()
         end
     end
@@ -96,11 +208,19 @@ function open_store(dir,identity;resume=false)
         end
         s
     catch
-        SQL.close(db);close(lease);rethrow()
+        close_statements!(s.statements);SQL.close(db);close(lease);rethrow()
     end
 end
 
-close_store(s)=(execute!(s.db,"PRAGMA wal_checkpoint(TRUNCATE)");SQL.close(s.db);close(s.lease))
+function close_store(s)
+    try
+        execute!(s,"PRAGMA wal_checkpoint(TRUNCATE)")
+    finally
+        close_statements!(s.statements)
+        SQL.close(s.db)
+        close(s.lease)
+    end
+end
 
 struct ProgressReporter
     db::SQL.DB
@@ -151,7 +271,8 @@ function register_unlocked!(s,p)
     id=p["lut_sha256"]
     existing=query(s,"SELECT lut_hex FROM candidates WHERE lut_id=?",(id,))
     isempty(existing) || only(existing)["lut_hex"]==p["lut_hex"] || error("LUT digest collision")
-    execute!(s.db,"INSERT OR IGNORE INTO candidates VALUES(?,?,?,?,?,?)",
+    isempty(existing) || return id
+    execute!(s,"INSERT OR IGNORE INTO candidates VALUES(?,?,?,?,?,?)",
         (id,p["lut_hex"],get(p,"sigma_hash",nothing),texttoml(p),
          Int(get(p,"evidence_level","")=="inequivalent_to_documented_quadratic_corpus"),
          Int(get(p,"additional_signature",false))))
@@ -164,10 +285,10 @@ end
 function seed!(s,lut,sigma,kind)
     transaction(s) do
         hex=bytes2hex(UInt8.(lut));id=lut_id(lut)
-        execute!(s.db,"INSERT OR IGNORE INTO seeds(lut_id,lut_hex,sigma) VALUES(?,?,?)",(id,hex,sigma))
+        execute!(s,"INSERT OR IGNORE INTO seeds(lut_id,lut_hex,sigma) VALUES(?,?,?)",(id,hex,sigma))
         row=only(query(s,"SELECT id,lut_hex FROM seeds WHERE lut_id=?",(id,)))
         row["lut_hex"]==hex || error("seed digest collision")
-        execute!(s.db,"INSERT OR IGNORE INTO units(seed_id,kind,payload) VALUES(?,?,?)",
+        execute!(s,"INSERT OR IGNORE INTO units(seed_id,kind,payload) VALUES(?,?,?)",
             (row["id"],kind,texttoml(Dict("lut_hex"=>hex,"ccz_columns"=>[1<<i for i in 0:15],"ccz_constant"=>0))))
     end
 end
@@ -182,16 +303,16 @@ function commit_chunk!(s,unit,proof,records;done=false)
             push!(ids,register_unlocked!(s,p))
         end
         proof["candidate_ids"]=ids
-        execute!(s.db,"INSERT INTO chunks VALUES(?,?,?,?,?,?)",
+        execute!(s,"INSERT INTO chunks VALUES(?,?,?,?,?,?)",
             (unit["id"],proof["first_x"],proof["next_x"],proof["total_x"],Int(proof["capped"]),texttoml(proof)))
-        execute!(s.db,"UPDATE units SET direction=?,status=?,result=? WHERE id=?",
+        execute!(s,"UPDATE units SET direction=?,status=?,result=? WHERE id=?",
             (proof["next_x"],done ? "done" : "paused",texttoml(proof),unit["id"]))
     end
 end
 
 function add_unit!(s,seed_id,kind,payload)
     transaction(s) do
-        execute!(s.db,"INSERT OR IGNORE INTO units(seed_id,kind,payload) VALUES(?,?,?)",
+        execute!(s,"INSERT OR IGNORE INTO units(seed_id,kind,payload) VALUES(?,?,?)",
             (seed_id,kind,texttoml(payload)))
     end
 end
@@ -201,7 +322,7 @@ function claim!(s)
         rows=query(s,"SELECT u.*,s.lut_hex,s.sigma FROM units u JOIN seeds s ON s.id=u.seed_id WHERE u.status IN ('pending','paused') ORDER BY u.id LIMIT 1")
         isempty(rows) && return nothing
         row=only(rows)
-        execute!(s.db,"UPDATE units SET status='running' WHERE id=?",(row["id"],))
+        execute!(s,"UPDATE units SET status='running' WHERE id=?",(row["id"],))
         row
     end
 end
@@ -215,7 +336,7 @@ function checkpoint!(s,unit,event,value,properties=nothing)
                 "raw_dimension"=>value.raw_dimension,"dimension"=>value.quotient_dimension)
             old=query(s,"SELECT evidence FROM kernels WHERE unit_id=? AND direction=?",(id,value.direction))
             isempty(old) || only(old)["evidence"]==texttoml(proof) || error("resumed kernel changed")
-            execute!(s.db,"INSERT OR IGNORE INTO kernels VALUES(?,?,?,?)",
+            execute!(s,"INSERT OR IGNORE INTO kernels VALUES(?,?,?,?)",
                 (id,value.direction,value.quotient_dimension,texttoml(proof)))
         else
             current=only(query(s,"SELECT direction,combination FROM units WHERE id=?",(id,)))
@@ -226,7 +347,7 @@ function checkpoint!(s,unit,event,value,properties=nothing)
                 value.next_direction==value.direction && value.next_combination==value.combination+1 || error("invalid candidate cursor transition")
                 properties["apn"]==value.apn || error("candidate evidence disagrees with APN flag")
                 cid=register_unlocked!(s,properties)
-                execute!(s.db,"INSERT INTO evaluations VALUES(?,?,?,?,?)",
+                execute!(s,"INSERT INTO evaluations VALUES(?,?,?,?,?)",
                     (id,value.direction,string(value.combination),cid,Int(value.apn)))
             elseif event===:direction_complete
                 dimension=Int(only(query(s,"SELECT dimension FROM kernels WHERE unit_id=? AND direction=?",(id,value.direction)))["dimension"])
@@ -236,7 +357,7 @@ function checkpoint!(s,unit,event,value,properties=nothing)
             else
                 error("unknown checkpoint event")
             end
-            execute!(s.db,"UPDATE units SET direction=?,combination=? WHERE id=?",
+            execute!(s,"UPDATE units SET direction=?,combination=? WHERE id=?",
                 (value.next_direction,string(value.next_combination),id))
         end
     end
@@ -253,7 +374,7 @@ function finish!(s,unit,result;done=false)
             current=only(query(s,"SELECT direction,combination FROM units WHERE id=?",(unit["id"],)))
             current["direction"]==256 && current["combination"]=="1" || error("nonterminal switching cursor")
         end
-        execute!(s.db,"UPDATE units SET status=?,result=? WHERE id=?",
+        execute!(s,"UPDATE units SET status=?,result=? WHERE id=?",
             (done ? "done" : "paused",texttoml(result),unit["id"]))
     end
 end

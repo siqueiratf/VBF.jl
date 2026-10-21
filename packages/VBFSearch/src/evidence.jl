@@ -2,6 +2,7 @@
 module DiscoveryEvidence
 using VBF, VBFCatalog, SHA, TOML, Dates
 using ..VBFSearch: equivalence_evidence, equivalence_solver_fingerprint, AuditedAPNReference,
+    _EquivalenceSolverSession,
     open_apn_reference, close_apn_reference, reference_metadata,
     reference_contains_signature, reference_exact_lut_match
 include("verification/ea_witness.jl")
@@ -13,8 +14,61 @@ export equivalence_evidence, verify_graph_witness, properties, open_reference, c
 filehash(path) = bytes2hex(open(SHA.sha256,path))
 lut_id(lut) = bytes2hex(SHA.sha256(UInt8.(lut)))
 
+"""Bounded exact-LUT property cache, optionally shared within one execution.
+
+Values are copied at the boundary so callers cannot mutate previously verified
+properties. Cache keys retain every input byte, including the detailed mode.
+Miss calculations and boundary copies run outside the lock. Concurrent misses
+may repeat mathematics, but retain only one verified entry for each exact key.
+"""
+mutable struct PropertyCache
+    max_entries::Int
+    values::Dict{Tuple{String,Bool},Dict{String,Any}}
+    order::Vector{Tuple{String,Bool}}
+    guard::ReentrantLock
+    hits::Int
+    misses::Int
+end
+
+"""Allocate an empty bounded property cache; zero entries disables retention."""
+function PropertyCache(;max_entries::Integer=64)
+    max_entries>=0 || throw(ArgumentError("nonnegative property cache capacity required"))
+    PropertyCache(Int(max_entries),Dict{Tuple{String,Bool},Dict{String,Any}}(),
+        Tuple{String,Bool}[],ReentrantLock(),0,0)
+end
+
+"""Read or populate a cache without allowing mutable results to poison it."""
+function _cached_properties(cache::PropertyCache,lut,detailed)
+    length(lut)==256 && all(x->x isa Integer && 0<=x<=255,lut) || error("expected 256 bytes")
+    bytes=UInt8.(lut);key=(bytes2hex(bytes),Bool(detailed))
+    cached=lock(cache.guard) do
+        value=get(cache.values,key,nothing)
+        if value===nothing
+            cache.misses+=1
+        else
+            cache.hits+=1
+        end
+        value
+    end
+    cached===nothing || return deepcopy(cached)
+    result=properties(bytes;detailed)
+    cache.max_entries==0 && return result
+    owned=deepcopy(result)
+    lock(cache.guard) do
+        if !haskey(cache.values,key)
+            if length(cache.values)>=cache.max_entries
+                delete!(cache.values,popfirst!(cache.order))
+            end
+            cache.values[key]=owned
+            push!(cache.order,key)
+        end
+    end
+    result
+end
+
 """Compute candidate properties through VBF's public mathematical APIs."""
-function properties(lut; detailed=false)
+function properties(lut; detailed=false,cache::Union{Nothing,PropertyCache}=nothing)
+    cache===nothing || return _cached_properties(cache,lut,detailed)
     length(lut)==256 && all(x->x isa Integer && 0<=x<=255,lut) || error("expected 256 bytes")
     f=UInt8.(lut);F=SBox{8}(f)
     degree=algebraic_degree(F);spectrum=differential_spectrum(F)
@@ -31,8 +85,9 @@ function properties(lut; detailed=false)
         "verification"=>"VBF differential spectrum, algebraic degree and ortho-derivative signature",
         "literature_novelty"=>"unresolved","non_apn_witness"=>failure)
     if uniformity==2 && degree==2
-        result["sigma_hash"]=VBF.sigma_hash(F)
-        result["ortho_lut_hex"]=bytes2hex(UInt8.(ortho_derivative(F).lut))
+        pi=ortho_derivative(F)
+        result["sigma_hash"]=VBF.sigma_hash_from_ortho_derivative(pi)
+        result["ortho_lut_hex"]=bytes2hex(UInt8.(pi.lut))
         result["sigma_definition"]="SHA256 of differential and absolute-Walsh histograms of the ortho-derivative; v1"
     end
     if detailed
@@ -102,6 +157,10 @@ end
 # Exhaustive negative outcomes are implementation-dependent; cache them only
 # against the exact mathematical solver sources, while positive maps are checked through VBF's graph API.
 solver_fingerprint() = equivalence_solver_fingerprint()
+solver_fingerprint(::Nothing) = solver_fingerprint()
+solver_fingerprint(session::_EquivalenceSolverSession) = session.solver_sha256
+_evidence_fingerprint(::Nothing) = filehash(@__FILE__)
+_evidence_fingerprint(session::_EquivalenceSolverSession) = session.evidence_sha256
 
 """Return a checked positive map, a separating invariant, exhaustive negative, or inconclusive budget."""
 function compare(f,g;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000)
@@ -110,16 +169,17 @@ function compare(f,g;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000)
     _compare_verified_properties(f,g,pf,pg;relation,timeout_seconds,max_nodes)
 end
 
-"""Reuse freshly computed properties inside the trusted worker boundary.
+"""Reuse locally verified properties inside the trusted worker boundary.
 
 This private helper is never fed transported property claims: its callers first
-run `properties` on each LUT. Exact byte identities are checked here so a fresh
-property record cannot accidentally be paired with another candidate or target.
+run `properties` on each LUT, optionally through an exact-LUT compute cache.
+Exact byte identities are checked here so a verified property record cannot
+accidentally be paired with another candidate or target.
 Public `compare` always performs both property calculations itself. Solver
 fingerprints, bounded native search and full positive-witness replay are shared
 with that public path.
 """
-function _compare_verified_properties(f,g,pf,pg;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000)
+function _compare_verified_properties(f,g,pf,pg;relation=:ccz,timeout_seconds=30,max_nodes=1_000_000,solver_session=nothing)
     relation in (:ea,:ccz) || error("relation must be ea or ccz")
     for (lut,p) in ((f,pf),(g,pg))
         bytes=UInt8.(lut)
@@ -129,7 +189,7 @@ function _compare_verified_properties(f,g,pf,pg;relation=:ccz,timeout_seconds=30
         "target_lut_hex"=>pg["lut_hex"],"candidate_sha256"=>pf["lut_sha256"],
         "target_sha256"=>pg["lut_sha256"],"julia_version"=>string(VERSION),
         "solver"=>"partition_refinement_equivalence", "algorithm"=>"paper", "rng_seed"=>940,
-        "source_sha256"=>filehash(@__FILE__),"solver_implementation_sha256"=>solver_fingerprint(),"timeout_seconds"=>timeout_seconds,"max_nodes"=>max_nodes)
+        "source_sha256"=>_evidence_fingerprint(solver_session),"solver_implementation_sha256"=>solver_fingerprint(solver_session),"timeout_seconds"=>timeout_seconds,"max_nodes"=>max_nodes)
     if get(pf,"sigma_hash",nothing)!==nothing && get(pg,"sigma_hash",nothing)!==nothing && pf["sigma_hash"]!=pg["sigma_hash"]
         merge!(result,Dict("status"=>"inequivalent_by_quadratic_invariant","equivalent"=>false,
             "candidate_sigma"=>pf["sigma_hash"],"target_sigma"=>pg["sigma_hash"],
