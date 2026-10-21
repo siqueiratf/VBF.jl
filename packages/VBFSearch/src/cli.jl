@@ -41,7 +41,7 @@ Usage: bin/vbf COMMAND [OPTIONS]
   closure  init CAMPAIGN.toml --output DIR
            [--root-first 1] [--root-last 0] [--root-order forward|reverse]
            [--extension-cosets 1] [--switching-directions 1]
-  closure  upgrade SOURCE --output DIR [--switching-directions 32]
+  closure  upgrade SOURCE --output DIR [--switching-directions 32] [--performance-evidence JSON]
   closure  reduce SOURCE --output DIR --helper EXECUTABLE [--threads 8]
            [--reserve-gib 12] [--max-gib 55] [--resume-helper SHA256]
   closure  run|resume DIR [--duration 60s] [--evaluations 1000] [--jobs 16]
@@ -96,10 +96,11 @@ function closure_command(args)
             threads=parse(Int,get(cfg,"threads","8")),reserve_bytes=parse(Int,get(cfg,"reserve-gib","12"))*1024^3,
             max_bytes=parse(Int,get(cfg,"max-gib","55"))*1024^3,resume_helper_sha256=get(cfg,"resume-helper",nothing)))
     elseif action=="upgrade"
-        cfg,_,pos=options(rest,["output","switching-directions"])
+        cfg,_,pos=options(rest,["output","switching-directions","performance-evidence"])
         length(pos)==1 && haskey(cfg,"output") || error("closure upgrade needs SOURCE --output DIR")
         println(VBFSearch.closure_upgrade(only(pos);output=cfg["output"],
-            switching_directions=parse(Int,get(cfg,"switching-directions","32"))))
+            switching_directions=parse(Int,get(cfg,"switching-directions","32")),
+            performance_evidence=get(cfg,"performance-evidence",nothing)))
     elseif action in ("run","resume")
         cfg,_,pos=options(rest,["duration","evaluations","jobs","parents","equivalence-duration","equivalence-nodes"])
         length(pos)==1 || error("closure $action needs RUN_DIRECTORY")

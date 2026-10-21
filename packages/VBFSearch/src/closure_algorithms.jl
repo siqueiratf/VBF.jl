@@ -1,5 +1,5 @@
 function _closure_parent(s, job)
-    row=only(_closure_rows(s.db,"SELECT c.* FROM parents p JOIN candidates c ON c.id=p.candidate_id WHERE p.id=?",(job["parent_id"],)))
+    row=only(_closure_rows(s,"SELECT c.lut_hex,c.sigma FROM parents p JOIN candidates c ON c.id=p.candidate_id WHERE p.id=?",(job["parent_id"],)))
     F=SBox{8,UInt8}(hex2bytes(row["lut_hex"]))
     differential_uniformity(F)==2 && algebraic_degree(F)==2 || error("construction parent is not a quadratic APN")
     VBF.sigma_hash(F)==row["sigma"] || error("construction parent signature differs from pinned evidence")
@@ -10,29 +10,29 @@ function _closure_claim!(s)
     _closure_transaction(s) do
         # Resolve each newly observed candidate once per session before deriving
         # its descendants. Inconclusive pairs wait for the next explicit run.
-        rows=_closure_rows(s.db,"SELECT * FROM jobs WHERE kind='deduplicate' AND status IN ('pending','paused') AND last_session!=? ORDER BY id LIMIT 1",(s.session,))
+        rows=_closure_rows(s,"SELECT * FROM jobs WHERE kind='deduplicate' AND status IN ('pending','paused') AND last_session!=? ORDER BY id LIMIT 1",(s.session,))
         if isempty(rows)
-            meta=Dict(r["key"]=>r["value"] for r in _closure_rows(s.db,"SELECT key,value FROM metadata WHERE key IN ('origin_turn','method_turn','dispatch_sequence')"))
+            meta=Dict(r["key"]=>r["value"] for r in _closure_rows(s,"SELECT key,value FROM metadata WHERE key IN ('origin_turn','method_turn','dispatch_sequence')"))
             wanted_origin=meta["origin_turn"];wanted_method=meta["method_turn"]
             # Ranking supplies a deterministic fallback if either queue is empty.
-            rows=_closure_rows(s.db,"SELECT j.* FROM jobs j JOIN parents p ON p.id=j.parent_id WHERE j.kind IN ('prepare_v5','v5','switching') AND j.status IN ('pending','paused') ORDER BY (p.origin!=?), (CASE WHEN j.kind='switching' THEN 'switching' ELSE 'v5' END !=?),p.last_dispatch,p.id,j.id LIMIT 1",
+            rows=_closure_rows(s,"SELECT j.* FROM jobs j JOIN parents p ON p.id=j.parent_id WHERE j.kind IN ('prepare_v5','v5','switching') AND j.status IN ('pending','paused') ORDER BY (p.origin!=?), (CASE WHEN j.kind='switching' THEN 'switching' ELSE 'v5' END !=?),p.last_dispatch,p.id,j.id LIMIT 1",
                 (wanted_origin,wanted_method))
             isempty(rows) && return nothing
-            job=only(rows);origin=only(_closure_rows(s.db,"SELECT origin FROM parents WHERE id=?",(job["parent_id"],)))["origin"]
+            job=only(rows);origin=only(_closure_rows(s,"SELECT origin FROM parents WHERE id=?",(job["parent_id"],)))["origin"]
             sequence=parse(Int,meta["dispatch_sequence"])+1
-            _closure_exec(s.db,"UPDATE parents SET last_dispatch=? WHERE id=?",(sequence,job["parent_id"]))
+            _closure_exec(s,"UPDATE parents SET last_dispatch=? WHERE id=?",(sequence,job["parent_id"]))
             for (key,value) in (("dispatch_sequence",string(sequence)),("origin_turn",origin=="root" ? "discovered" : "root"),("method_turn",job["kind"]=="switching" ? "v5" : "switching"))
-                _closure_exec(s.db,"UPDATE metadata SET value=? WHERE key=?",(value,key))
+                _closure_exec(s,"UPDATE metadata SET value=? WHERE key=?",(value,key))
             end
         end
         job=only(rows)
-        _closure_exec(s.db,"UPDATE jobs SET status='running',last_session=?,error='' WHERE id=?",(s.session,job["id"]))
+        _closure_exec(s,"UPDATE jobs SET status='running',last_session=?,error='' WHERE id=?",(s.session,job["id"]))
         job
     end
 end
 
 function _closure_finish!(s,job,result;done=false,blocked=false)
-    _closure_exec(s.db,"UPDATE jobs SET status=?,result=? WHERE id=?",
+    _closure_exec(s,"UPDATE jobs SET status=?,result=? WHERE id=?",
         (blocked ? "blocked" : done ? "done" : "paused",_closure_text(result),job["id"]))
 end
 
@@ -42,16 +42,24 @@ A task may migrate between Julia threads. Its slot context remains private and
 can be reused for subsequent packets; simultaneous use is rejected explicitly.
 The optional `rank_table` is read-only and may be shared across contexts. Build
 it explicitly before a long campaign; a context does not allocate one itself.
+An optional `property_cache` may be shared by the slots of one execution; its
+own lock protects exact-LUT entries while each slot keeps private Fourier work.
+`property_cache_entries` sets the capacity only when a cache is created here.
 """
 mutable struct ClosureWorkContext
     geometry::Any
     work::Any
     guard::ReentrantLock
     rank_table::Any
+    property_cache::DiscoveryEvidence.PropertyCache
 end
-ClosureWorkContext(;rank_table=nothing)=ClosureWorkContext(nothing,nothing,ReentrantLock(),rank_table)
-ClosureWorkContext(geometry,work)=ClosureWorkContext(geometry,work,ReentrantLock(),nothing)
-ClosureWorkContext(geometry,work,guard::ReentrantLock)=ClosureWorkContext(geometry,work,guard,nothing)
+ClosureWorkContext(;rank_table=nothing,property_cache_entries=64,
+    property_cache::Union{Nothing,DiscoveryEvidence.PropertyCache}=nothing)=
+    ClosureWorkContext(nothing,nothing,ReentrantLock(),rank_table,
+        property_cache===nothing ? DiscoveryEvidence.PropertyCache(;max_entries=property_cache_entries) : property_cache)
+ClosureWorkContext(geometry,work)=ClosureWorkContext(geometry,work,ReentrantLock(),nothing,DiscoveryEvidence.PropertyCache())
+ClosureWorkContext(geometry,work,guard::ReentrantLock)=ClosureWorkContext(geometry,work,guard,nothing,DiscoveryEvidence.PropertyCache())
+ClosureWorkContext(geometry,work,guard::ReentrantLock,rank_table)=ClosureWorkContext(geometry,work,guard,rank_table,DiscoveryEvidence.PropertyCache())
 
 const CLOSURE_WORK_SCHEMA="vbfsearch-closure-work-v1"
 const CLOSURE_RESULT_SCHEMA="vbfsearch-closure-result-v1"
@@ -64,7 +72,7 @@ end
 """Coordinator-only descriptor construction; no database handle crosses transport."""
 function _closure_work_packet(s,job)
     job["kind"] in ("prepare_v5","v5","switching") || error("not a transportable construction job")
-    parent=only(_closure_rows(s.db,"SELECT c.id,c.lut_hex,c.sigma FROM parents p JOIN candidates c ON c.id=p.candidate_id WHERE p.id=?",(job["parent_id"],)))
+    parent=only(_closure_rows(s,"SELECT c.id,c.lut_hex,c.sigma FROM parents p JOIN candidates c ON c.id=p.candidate_id WHERE p.id=?",(job["parent_id"],)))
     packet=Dict{String,Any}("schema"=>CLOSURE_WORK_SCHEMA,"job_id"=>Int(job["id"]),
         "parent_id"=>Int(job["parent_id"]),"job_key"=>String(job["job_key"]),"kind"=>String(job["kind"]),
         "direction"=>Int(job["direction"]),"combination"=>String(job["combination"]),
@@ -77,7 +85,7 @@ function _closure_work_packet(s,job)
     packet
 end
 
-function _closure_compute_parent(packet)
+function _closure_compute_parent(packet,context=nothing)
     packet["schema"]==CLOSURE_WORK_SCHEMA || error("unsupported closure work packet")
     packet["packet_sha256"]==_closure_packet_digest(packet) || error("closure work packet digest mismatch")
     packet["target_b6"]==52 && packet["max_kernel"]==23 || error("unsupported construction parameters")
@@ -86,9 +94,10 @@ function _closure_compute_parent(packet)
     directions isa Integer && 1<=directions<=255 || error("invalid switching direction batch")
     parent=packet["parent"];lut=hex2bytes(parent["lut_hex"])
     length(lut)==256 && DiscoveryEvidence.lut_id(lut)==parent["lut_sha256"] || error("worker parent digest mismatch")
+    p=properties(lut;cache=context===nothing ? nothing : context.property_cache)
     F=SBox{8,UInt8}(lut)
-    differential_uniformity(F)==2 && algebraic_degree(F)==2 || error("worker parent is not a quadratic APN")
-    VBF.sigma_hash(F)==parent["sigma"] || error("worker parent signature mismatch")
+    p["apn"] && p["quadratic"] || error("worker parent is not a quadratic APN")
+    p["sigma_hash"]==parent["sigma"] || error("worker parent signature mismatch")
     F
 end
 
@@ -113,32 +122,37 @@ function _closure_compute_prepare(packet,F,context)
 end
 
 include("closure_coset_proofs.jl")
+include("closure_prepared_v5.jl")
 
 function _closure_compute_v5(packet,F,context,stop_requested)
     G=_closure_context_geometry!(context);work=_closure_context_work!(context)
     payload=packet["payload"];first_x=Int(packet["direction"])
-    chunks=_ClosureCosetChunk[];records=Dict{String,Any}[]
+    chunks=Union{_ClosureCosetChunk,_ClosurePreparedV5Chunk}[];records=Any[]
+    scope=_ClosureV5ValidationScope(packet)
     forms=convert(NTuple{5,Int},Tuple(Int.(payload["forms"])))
-    checked=Dict{Tuple,Dict{String,Any}}()
+    checked=Dict{Tuple,Any}()
     function observe(event)
-        local_records=Dict{String,Any}[]
-        for S in sort!(collect(event.Ss);by=v->Tuple(v))
+        local_records=nothing
+        spaces=isempty(event.Ss) ? () : sort!(collect(event.Ss);by=v->Tuple(v))
+        for S in spaces
             # Retain every coset edge while avoiding repeated APN verification
             # of the identical canonical output space within this packet.
             p=get!(checked,Tuple(S)) do
-                _,H=Fourier.function_of(G,S);p=properties(H.lut)
+                _,H=Fourier.function_of(G,S);p=properties(H.lut;cache=context.property_cache)
                 p["apn"] && p["quadratic"] || error("invalid quadratic APN completion")
-                p
+                _closure_prepare_construction(_ClosurePreparedCandidate,p)
             end
-            witness=Dict("V5_forms"=>payload["forms"],"eligible_coset_index"=>event.index,
+            witness=_closure_prepare_construction(_ClosurePreparedWitness,Dict("V5_forms"=>payload["forms"],"eligible_coset_index"=>event.index,
                 "coset_representative"=>Int(event.representative),"need"=>payload["need"],
-                "output_forms"=>Int.(S),"target_b6"=>52)
+                "output_forms"=>Int.(S),"target_b6"=>52))
+            local_records===nothing && (local_records=Dict{String,Any}[])
             push!(local_records,Dict("properties"=>p,"cursor"=>string(event.index),"witness"=>witness))
         end
         coset_proof=_ClosureCosetProof(forms,event.index,event.next_x,event.total_x,
-            length(local_records),event.ncand,event.du_reject,event.nT,Int(event.representative),event.capped)
-        push!(chunks,_ClosureCosetChunk(coset_proof,isempty(local_records) ? nothing : local_records))
-        append!(records,local_records)
+            local_records===nothing ? 0 : length(local_records),event.ncand,event.du_reject,event.nT,Int(event.representative),event.capped)
+        chunk=_closure_prepare_v5_chunk(_ClosureCosetChunk(coset_proof,local_records),scope)
+        push!(chunks,chunk)
+        append!(records,chunk["records"])
     end
     result=Fourier.v5_extensions(G,UInt32.(payload["forms"]),Int(payload["need"]),work;
         beta=Fourier.BETA8,max_kernel=23,max_x=Int(get(packet,"extension_cosets",1)),start_x=first_x,
@@ -160,6 +174,10 @@ function _closure_compute_v5(packet,F,context,stop_requested)
         # selected five-space has no eligible six-space extensions.
         output_chunks=[Dict("proof"=>copy(proof),"records"=>Dict{String,Any}[],"processed_cosets"=>0)]
     end
+    output_chunks=_closure_native_v5_chunks(output_chunks)
+    if output_chunks isa AbstractVector{_ClosurePreparedV5Chunk}
+        records=_ClosurePreparedV5Record[record for record in records]
+    end
     # Encode the coverage ledger in the worker; the single writer only checks and stores it.
     ledger=isempty(output_chunks) ? nothing : _closure_ledger_row(Int(packet["job_id"]),output_chunks)
     Dict{String,Any}("chunks"=>output_chunks,"records"=>records,"proof"=>proof,"processed_cosets"=>result.nX_used,"ledger"=>ledger,
@@ -167,7 +185,7 @@ function _closure_compute_v5(packet,F,context,stop_requested)
         "done"=>result.next_x>result.nX && !result.capped,"evaluations"=>result.ncand+length(records))
 end
 
-function _closure_compute_switching(packet,F;seconds,evaluations,stop_requested)
+function _closure_compute_switching(packet,F;seconds,evaluations,stop_requested,context=nothing)
     direction_limit=Int(get(packet,"switching_directions",1))
     directions_done=Ref(0);events=Dict{String,Any}[]
     next_direction=Ref(Int(packet["direction"]));next_combination=Ref(String(packet["combination"]))
@@ -179,7 +197,7 @@ function _closure_compute_switching(packet,F;seconds,evaluations,stop_requested)
             push!(events,Dict("event"=>"kernel","direction"=>value.direction,
                 "dimension"=>value.quotient_dimension,"evidence"=>evidence))
         elseif event===:candidate_complete
-            p=properties(value.candidate.lut)
+            p=properties(value.candidate.lut;cache=context===nothing ? nothing : context.property_cache)
             p["apn"]==value.apn || error("switching APN check disagrees with fresh VBF validation")
             witness=Dict("direction"=>value.direction,"quotient_combination"=>string(value.combination),
                 "kernel_job"=>packet["job_id"],"kernel_direction"=>value.direction)
@@ -224,7 +242,7 @@ function _closure_compute(packet;context=ClosureWorkContext(),stop_requested=()-
     elapsed()=Float64(time_ns()-started)/1e9
     stopped()=stop_requested() || elapsed()>=seconds
     try
-        F=_closure_compute_parent(packet)
+        F=_closure_compute_parent(packet,context)
         work=if stopped()
             Dict{String,Any}("noop"=>true,"evaluations"=>0,"done"=>false,"proof"=>Dict("stop"=>"time_or_external"))
         elseif packet["kind"]=="prepare_v5"
@@ -232,7 +250,7 @@ function _closure_compute(packet;context=ClosureWorkContext(),stop_requested=()-
         elseif packet["kind"]=="v5"
             _closure_compute_v5(packet,F,context,stopped)
         elseif packet["kind"]=="switching"
-            _closure_compute_switching(packet,F;seconds=max(0.0,seconds-elapsed()),evaluations,stop_requested=stopped)
+            _closure_compute_switching(packet,F;seconds=max(0.0,seconds-elapsed()),evaluations,stop_requested=stopped,context)
         else
             error("unknown closure compute kind")
         end
@@ -308,15 +326,26 @@ end
 """Return byte-identical sorted TOML, including generic and empty-schema fallbacks."""
 _closure_coset_evidence_text(proof)=sprint(io->_closure_write_coset_evidence(io,proof);sizehint=512)
 
-"""Validate and apply each complete coset within the coordinator transaction.
+"""Validate each complete coset within the coordinator transaction.
 
 This function barrier specializes on the actual chunk representation. Native
 worker views retain scalar inference; transported dictionary chunks use the
-same checks and construction-path writes.
+same checks before any construction-path writes.
 """
 function _closure_apply_v5_cosets!(s,current,expected,proof,chunks,first_x,flat_records)
     cursor=first_x;count_cosets=0;count_candidates=0;count_du=0;count_completions=0;capped=false
     for chunk in chunks
+        if chunk isa _ClosurePreparedV5Chunk
+            cp=chunk.proof
+            # The constructor checked local coverage, every immutable record,
+            # witness and property against this exact frozen work descriptor.
+            chunk.scope.packet_sha256==expected["packet_sha256"] || error("native extension chunk belongs to another work packet")
+            cp.first_x==cursor && cp.total_x==proof["total_x"] || error("noncontiguous extension coset ledger")
+            append!(flat_records,chunk.records)
+            cursor=cp.next_x;count_cosets+=1;count_candidates+=cp.linear_system_candidates
+            count_du+=cp.du_reject;count_completions+=cp.completion_spaces;capped|=cp.capped
+            continue
+        end
         cp=chunk["proof"];step=Int(chunk["processed_cosets"])
         cp["first_x"]==cursor && cp["next_x"]==cursor+step && cp["total_x"]==proof["total_x"] || error("noncontiguous extension coset ledger")
         cp["V5_forms"]==expected["payload"]["forms"] && cp["heuristic_pruning"]===false || error("extension coset scientific scope mismatch")
@@ -334,11 +363,29 @@ function _closure_apply_v5_cosets!(s,current,expected,proof,chunks,first_x,flat_
             witness["eligible_coset_index"]==cursor && witness["coset_representative"]==cp["coset_representative"] &&
                 witness["V5_forms"]==cp["V5_forms"] && witness["need"]==expected["payload"]["need"] &&
                 witness["target_b6"]==expected["target_b6"] && length(witness["output_forms"])==8 || error("extension construction witness mismatch")
-            _closure_record_candidate!(s,current,p,record["cursor"],witness)
         end
         append!(flat_records,chunk["records"])
         cursor+=step;count_cosets+=step;count_candidates+=cp["linear_system_candidates"]
         count_du+=cp["du_reject"];count_completions+=cp["completion_spaces"];capped|=cp["capped"]
+    end
+    (cursor,count_cosets,count_candidates,count_du,count_completions,capped)
+end
+
+"""Bind scalar packet fields once for a wholly immutable native coset vector."""
+function _closure_apply_v5_cosets!(s,current,expected,proof,
+        chunks::AbstractVector{_ClosurePreparedV5Chunk},first_x,flat_records)
+    _closure_apply_native_v5_cosets!(chunks,expected["packet_sha256"],proof["total_x"],first_x,flat_records)
+end
+
+function _closure_apply_native_v5_cosets!(chunks::AbstractVector{_ClosurePreparedV5Chunk},packet_sha256,total_x,first_x,flat_records)
+    cursor=first_x;count_cosets=0;count_candidates=0;count_du=0;count_completions=0;capped=false
+    for chunk in chunks
+        p=chunk.proof
+        chunk.scope.packet_sha256==packet_sha256 || error("native extension chunk belongs to another work packet")
+        p.first_x==cursor && p.total_x==total_x || error("noncontiguous extension coset ledger")
+        p.candidate_spaces==0 || append!(flat_records,chunk.records)
+        cursor=p.next_x;count_cosets+=1;count_candidates+=p.linear_system_candidates
+        count_du+=p.du_reject;count_completions+=p.completion_spaces;capped|=p.capped
     end
     (cursor,count_cosets,count_candidates,count_du,count_completions,capped)
 end
@@ -353,7 +400,7 @@ this coordinator rechecks transport identities and cursor/event consistency.
 function _closure_apply!(s,job,result)
     result["schema"]==CLOSURE_RESULT_SCHEMA || error("unsupported closure result")
     _closure_transaction(s) do
-        current=only(_closure_rows(s.db,"SELECT * FROM jobs WHERE id=?",(job["id"],)))
+        current=only(_closure_rows(s,"SELECT * FROM jobs WHERE id=?",(job["id"],)))
         current["status"] in ("pending","paused","running") || error("result targets a completed or blocked job")
         expected=_closure_work_packet(s,current)
         result["job_id"]==current["id"] && result["kind"]==current["kind"] || error("closure result job mismatch")
@@ -379,7 +426,7 @@ function _closure_apply!(s,job,result)
             proof["first_x"]==first_x && 0<=processed<=limit &&
                 proof["next_x"]==first_x+processed || error("extension result cursor mismatch")
             proof["V5_forms"]==expected["payload"]["forms"] && proof["heuristic_pruning"]===false || error("extension result scientific scope mismatch")
-            chunks=work["chunks"];flat_records=Dict{String,Any}[]
+            chunks=work["chunks"];flat_records=_closure_v5_record_buffer(chunks)
             work["commit_chunk"]==!isempty(chunks) || error("extension commit flag disagrees with coset ledger")
             length(chunks)==processed ||
                 (processed==0 && proof["total_x"]==0 && length(chunks)==1) || error("extension result lost per-coset coverage")
@@ -392,8 +439,9 @@ function _closure_apply!(s,job,result)
             if haskey(proof,"distinct_candidate_spaces")
                 proof["distinct_candidate_spaces"]==length(unique(r["properties"]["lut_sha256"] for r in flat_records)) || error("extension distinct output count mismatch")
             end
+            _closure_record_v5_candidates!(s,current,flat_records)
             _closure_insert_chunks!(s,current["id"],chunks;encoded=get(work,"ledger",nothing))
-            _closure_exec(s.db,"UPDATE jobs SET direction=? WHERE id=?",(cursor,current["id"]))
+            _closure_exec(s,"UPDATE jobs SET direction=? WHERE id=?",(cursor,current["id"]))
             done=cursor>proof["total_x"] && !capped
             work["done"]==done && work["blocked"]==capped || error("extension completion flag mismatch")
             _closure_finish!(s,current,proof;done,blocked=capped)
@@ -405,20 +453,20 @@ function _closure_apply!(s,job,result)
                 if event["event"]=="kernel"
                     evidence=event["evidence"]
                     evidence["complete_constraints"]===true && length(evidence["basis_hex"])==event["dimension"] || error("incomplete switching kernel evidence")
-                    previous=_closure_rows(s.db,"SELECT evidence FROM kernels WHERE job_id=? AND direction=?",(current["id"],direction))
+                    previous=_closure_rows(s,"SELECT evidence FROM kernels WHERE job_id=? AND direction=?",(current["id"],direction))
                     isempty(previous) || TOML.parse(only(previous)["evidence"])==evidence || error("resumed switching kernel changed")
-                    _closure_exec(s.db,"INSERT OR IGNORE INTO kernels VALUES(?,?,?,?)",(current["id"],direction,event["dimension"],_closure_text(evidence)))
+                    _closure_exec(s,"INSERT OR IGNORE INTO kernels VALUES(?,?,?,?)",(current["id"],direction,event["dimension"],_closure_text(evidence)))
                 elseif event["event"]=="candidate_complete"
                     parse(BigInt,event["combination"])==combination && event["next_direction"]==direction &&
                         parse(BigInt,event["next_combination"])==combination+1 || error("switching candidate sequence mismatch")
                     p=event["properties"];_closure_check_result_properties(p)
                     event["cursor"]==string(direction)*":"*string(combination) || error("switching path cursor mismatch")
                     child=_closure_record_candidate!(s,current,p,event["cursor"],event["witness"])
-                    _closure_exec(s.db,"INSERT INTO evaluations VALUES(?,?,?,?,?)",(current["id"],direction,string(combination),child,Int(p["apn"])))
+                    _closure_exec(s,"INSERT INTO evaluations VALUES(?,?,?,?,?)",(current["id"],direction,string(combination),child,Int(p["apn"])))
                     combination+=1;count_candidates+=1
                 elseif event["event"]=="direction_complete"
                     event["next_direction"]==direction+1 && event["next_combination"]=="1" || error("switching direction transition mismatch")
-                    kernel=only(_closure_rows(s.db,"SELECT dimension FROM kernels WHERE job_id=? AND direction=?",(current["id"],direction)))
+                    kernel=only(_closure_rows(s,"SELECT dimension FROM kernels WHERE job_id=? AND direction=?",(current["id"],direction)))
                     total=(big(1)<<Int(kernel["dimension"]))-1
                     combination==total+1 && _closure_count(s.db,"SELECT COUNT(*) n FROM evaluations WHERE job_id=? AND direction=?",(current["id"],direction))==total || error("switching direction completion lacks full candidate coverage")
                     direction+=1;combination=big(1);completed_directions+=1
@@ -432,7 +480,7 @@ function _closure_apply!(s,job,result)
             proof["next_direction"]==direction && parse(BigInt,proof["next_combination"])==combination || error("switching result final cursor mismatch")
             done=direction==256 && combination==1
             work["done"]==done || error("switching exhaustion flag mismatch")
-            _closure_exec(s.db,"UPDATE jobs SET direction=?,combination=? WHERE id=?",(direction,string(combination),current["id"]))
+            _closure_exec(s,"UPDATE jobs SET direction=?,combination=? WHERE id=?",(direction,string(combination),current["id"]))
             _closure_finish!(s,current,proof;done)
         else
             error("unknown construction result kind")
@@ -461,14 +509,14 @@ end
 
 function _closure_deduplicate!(s,job;seconds,nodes,stop_requested)
     id=TOML.parse(job["payload"])["candidate_id"]
-    candidate=only(_closure_rows(s.db,"SELECT * FROM candidates WHERE id=?",(id,)))
+    candidate=only(_closure_rows(s,"SELECT lut_hex,sigma,class_id FROM candidates WHERE id=?",(id,)))
     !ismissing(candidate["class_id"]) && return (_closure_finish!(s,job,Dict("already_admitted"=>true);done=true);0)
     p=properties(hex2bytes(candidate["lut_hex"]))
     p["apn"] && p["quadratic"] && p["sigma_hash"]==candidate["sigma"] || error("invalid pending quadratic candidate")
     unresolved=false
-    for target in _closure_rows(s.db,"SELECT p.id,c.lut_hex FROM parents p JOIN candidates c ON c.id=p.candidate_id WHERE p.sigma=? ORDER BY p.id",(candidate["sigma"],))
+    for target in _closure_rows(s,"SELECT p.id,c.lut_hex FROM parents p JOIN candidates c ON c.id=p.candidate_id WHERE p.sigma=? ORDER BY p.id",(candidate["sigma"],))
         stop_requested() && return (_closure_finish!(s,job,Dict("stop"=>"session_budget"));0)
-        saved=_closure_rows(s.db,"SELECT * FROM comparisons WHERE candidate_id=? AND target_parent=? ORDER BY id DESC LIMIT 1",(id,target["id"]))
+        saved=_closure_rows(s,"SELECT status FROM comparisons WHERE candidate_id=? AND target_parent=? ORDER BY id DESC LIMIT 1",(id,target["id"]))
         if !isempty(saved) && first(saved)["status"]=="inequivalent_by_exhaustive_solver"
             continue
         end
@@ -477,7 +525,7 @@ function _closure_deduplicate!(s,job;seconds,nodes,stop_requested)
             _closure_insert_comparison!(s,id,target["id"],proof)
             if proof["status"]=="equivalent_with_verified_witness"
                 verify_comparison(proof) || error("EA witness failed full replay")
-                _closure_exec(s.db,"UPDATE candidates SET class_id=?,state='equivalent' WHERE id=?",(target["id"],id))
+                _closure_candidate_state!(s,id,"equivalent";class_id=target["id"])
                 _closure_finish!(s,job,Dict("verified_equivalent_parent"=>target["id"]);done=true)
             end
         end
@@ -487,7 +535,7 @@ function _closure_deduplicate!(s,job;seconds,nodes,stop_requested)
     end
     _closure_transaction(s) do
         if unresolved
-            _closure_exec(s.db,"UPDATE candidates SET state='unresolved_equivalence' WHERE id=?",(id,))
+            _closure_candidate_state!(s,id,"unresolved_equivalence")
             _closure_finish!(s,job,Dict("unresolved_equivalence"=>true))
         else
             parent=_closure_add_parent!(s,id,candidate["sigma"])
@@ -524,9 +572,9 @@ function closure_run!(directory;duration_seconds=60.0,max_evaluations=1000,max_j
         rm(joinpath(s.directory,"STOP");force=true)
         budgets=Dict("duration_seconds"=>duration_seconds,"max_evaluations"=>max_evaluations,"max_jobs"=>max_jobs,
             "max_parents"=>max_parents,"equivalence_seconds"=>equivalence_seconds,"equivalence_nodes"=>equivalence_nodes)
-        _closure_exec(s.db,"INSERT INTO sessions(started,heartbeat,pid,host,state,budgets) VALUES(?,?,?,?,?,?)",
+        _closure_exec(s,"INSERT INTO sessions(started,heartbeat,pid,host,state,budgets) VALUES(?,?,?,?,?,?)",
             (_closure_now(),_closure_now(),getpid(),get(ENV,"HOSTNAME","localhost"),"running",_closure_text(budgets)))
-        s.session=Int(only(_closure_rows(s.db,"SELECT last_insert_rowid() id"))["id"])
+        s.session=Int(only(_closure_rows(s,"SELECT last_insert_rowid() id"))["id"])
         _closure_report!(s;force=true)
         while !stopped() && processed<max_jobs && evaluated<max_evaluations
             if max_parents>0 && _closure_count(s.db,"SELECT COUNT(*) n FROM parents")>=max_parents
@@ -550,11 +598,11 @@ function closure_run!(directory;duration_seconds=60.0,max_evaluations=1000,max_j
                     job["kind"]=="prepare_v5" ? _closure_prepare!(s,job,G) : _closure_v5!(s,job,G,work,stopped)
                 end
                 evaluated+=n;processed+=1
-                _closure_exec(s.db,"UPDATE sessions SET jobs=?,evaluations=? WHERE id=?",(processed,evaluated,s.session))
+                _closure_exec(s,"UPDATE sessions SET jobs=?,evaluations=? WHERE id=?",(processed,evaluated,s.session))
                 _closure_report!(s)
             catch err
                 interrupted=err isa InterruptException
-                _closure_exec(s.db,"UPDATE jobs SET status=?,error=? WHERE id=?",(interrupted ? "paused" : "failed",sprint(showerror,err),job["id"]))
+                _closure_exec(s,"UPDATE jobs SET status=?,error=? WHERE id=?",(interrupted ? "paused" : "failed",sprint(showerror,err),job["id"]))
                 reason=interrupted ? "interrupted" : "failed";rethrow()
             end
         end
@@ -564,7 +612,7 @@ function closure_run!(directory;duration_seconds=60.0,max_evaluations=1000,max_j
     finally
         try
             if s.session>0
-                _closure_exec(s.db,"UPDATE sessions SET state=?,finished=?,heartbeat=?,jobs=?,evaluations=? WHERE id=?",
+                _closure_exec(s,"UPDATE sessions SET state=?,finished=?,heartbeat=?,jobs=?,evaluations=? WHERE id=?",
                     (reason,_closure_now(),_closure_now(),processed,evaluated,s.session))
                 _closure_report!(s;force=true)
             end

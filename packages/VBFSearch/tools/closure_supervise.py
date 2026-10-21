@@ -23,7 +23,7 @@ class StopRequest:
 
 
 def supervise(command, *, stop_file, grace_seconds=600.0, duration_seconds=None,
-              request=None, poll_seconds=0.05, environment=None):
+              request=None, poll_seconds=0.05, environment=None, request_file=None):
     """Return the child status, 124 on a drain timeout, or zero before dispatch."""
     if not command or not math.isfinite(grace_seconds) or grace_seconds <= 0 or not math.isfinite(poll_seconds) or poll_seconds <= 0:
         raise ValueError("command and positive shutdown/poll intervals required")
@@ -47,6 +47,11 @@ def supervise(command, *, stop_file, grace_seconds=600.0, duration_seconds=None,
             try:
                 while process.poll() is None:
                     now = time.monotonic()
+                    if request_file is not None and request.reason is None:
+                        try:
+                            request.reason = Path(request_file).read_text().strip() or "external_request"
+                        except FileNotFoundError:
+                            pass
                     if duration_seconds is not None and now - started >= duration_seconds and request.reason is None:
                         request.reason = "deadline"
                     if request.reason is not None:
@@ -90,11 +95,12 @@ def main(arguments=None):
     parser.add_argument("--stop-file", required=True)
     parser.add_argument("--grace-seconds", type=float, default=600)
     parser.add_argument("--duration-seconds", type=float)
+    parser.add_argument("--request-file", help="Latch an outer batch wrapper's STOP, including during Julia startup")
     parser.add_argument("command", nargs=argparse.REMAINDER)
     options = parser.parse_args(arguments)
     command = options.command[1:] if options.command[:1] == ["--"] else options.command
     return supervise(command, stop_file=options.stop_file, grace_seconds=options.grace_seconds,
-                     duration_seconds=options.duration_seconds)
+                     duration_seconds=options.duration_seconds, request_file=options.request_file)
 
 
 if __name__ == "__main__":

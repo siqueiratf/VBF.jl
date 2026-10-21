@@ -146,4 +146,178 @@ end
     @test result.reserved_unstarted==1 && result.applied==1
     @test result.event_wait_seconds>=0 && result.prepare_seconds>=0
 end
+@testset "Bounded application steps expose real occupancy and horizon stalls" begin
+    slow=Channel{Nothing}(1);saturated=Channel{Nothing}(1)
+    applied=Int[];tick_prefixes=Int[];notified=Ref(false)
+    compute=(item,slot,stop)->begin item==1 && take!(slow);item end
+    observe=state->begin
+        if state.active==1 && state.completed==3 && !notified[]
+            notified[]=true;put!(saturated,nothing)
+        end
+    end
+    coordinator=@async run_refill_pool!(fifo_reserver(1:12),(item,ticket,slot)->item,compute,
+        (item,value,seconds,meta)->push!(applied,value);concurrency=2,max_pending=4,
+        max_apply_per_step=1,on_state=observe,on_tick=()->push!(tick_prefixes,length(applied)))
+    @test timedwait(()->isready(saturated),10.0)==:ok
+    put!(slow,nothing)
+    result=fetch(coordinator)
+    @test applied==collect(1:12)
+    @test maximum(diff(vcat(0,tick_prefixes)))<=1
+    @test result.horizon_backpressure_seconds>0
+    @test result.underfilled_seconds>=result.horizon_backpressure_seconds
+    @test 0<result.active_slot_seconds<=2result.pool_wall_seconds
+    @test 0<result.slot_occupancy<=1
+    @test result.compute_slot_seconds>0 && result.completed_ticket_seconds>0
+    @test_throws ArgumentError run_refill_pool!(nothing,nothing,nothing,nothing;concurrency=1,max_apply_per_step=0)
+end
+
+@testset "Head waiting excludes coordinator maintenance and application work" begin
+    gate=Channel{Nothing}(1);head_blocked=Ref(false);wait_ticks=Ref(0)
+    observe=state->(head_blocked[]=state.active==1 && state.completed==3)
+    maintain=()->begin
+        if head_blocked[]
+            wait_ticks[]+=1
+            wait_ticks[]==2 && put!(gate,nothing)
+        end
+    end
+    result=run_refill_pool!(fifo_reserver(1:4),(item,ticket,slot)->item,
+        (item,slot,stop)->begin item==1 && take!(gate);item end,
+        (item,value,seconds,meta)->nothing;concurrency=2,max_pending=4,
+        on_state=observe,on_wait=maintain,poll_seconds=.005)
+    @test wait_ticks[]>=2
+    @test 0<result.horizon_wait_seconds<=result.ordered_head_wait_seconds<=result.event_wait_seconds
+    @test result.horizon_wait_seconds<=result.horizon_backpressure_seconds
+    @test result.idle_slot_wait_seconds>=result.horizon_wait_seconds
+    @test result.applied==4
+end
+
+@testset "Reservation batching keeps short and generated frontiers live" begin
+    prepare=(item,ticket,slot)->item
+    compute=(item,slot,stop)->item
+    applied=Int[]
+    result=run_refill_pool!(fifo_reserver(1:2),prepare,compute,
+        (item,value,seconds,meta)->push!(applied,value);concurrency=2,max_pending=8,reservation_refill_batch=8)
+    @test applied==[1,2] && result.dispatched==result.applied==2
+    @test result.reservation_calls==2 && result.reservation_refill_batch==8
+    @test result.peak_pending==2 && result.reserved_unstarted==0
+    queue=[1];empty!(applied)
+    reserve=(limit,excluded)->begin
+        n=min(limit,length(queue));items=queue[1:n];deleteat!(queue,1:n);items
+    end
+    apply=(item,value,seconds,meta)->begin
+        push!(applied,value)
+        item<7 && push!(queue,item+1)
+    end
+    generated=run_refill_pool!(reserve,prepare,compute,apply;concurrency=2,max_pending=8,reservation_refill_batch=8)
+    @test applied==collect(1:7) && isempty(queue)
+    @test generated.reservation_calls==8 && generated.peak_pending==1
+    empty=run_refill_pool!((limit,excluded)->Int[],prepare,compute,apply;concurrency=2,max_pending=8,reservation_refill_batch=8)
+    @test empty.applied==empty.dispatched==0 && empty.reservation_calls==1
+    @test_throws ArgumentError run_refill_pool!(nothing,nothing,nothing,nothing;concurrency=1,max_pending=8,reservation_refill_batch=0)
+    @test_throws ArgumentError run_refill_pool!(nothing,nothing,nothing,nothing;concurrency=1,max_pending=8,reservation_refill_batch=9)
+end
+
+@testset "Coordinator timing separates callbacks, transactions and finished workers" begin
+    snapshots=Any[];applied=Int[]
+    step=work->begin
+        yield()
+        work()
+        sleep(.001)
+    end
+    result=run_refill_pool!(fifo_reserver(1:8),(item,ticket,slot)->item,
+        (item,slot,stop)->begin yield();item end,
+        (item,value,seconds,meta)->push!(applied,value);
+        concurrency=2,max_pending=4,max_apply_per_step=1,coordinator_step=step,
+        on_tick=()->yield(),on_state=x->push!(snapshots,x))
+    @test applied==collect(1:8)
+    @test result.coordinator_step_seconds>=result.transaction_control_seconds>0
+    @test result.tick_seconds>0 && result.wait_maintenance_seconds>=0
+    @test result.event_collection_seconds>0 && result.peak_uncollected>=1
+    @test result.finished_compute_seconds≈result.compute_slot_seconds
+    @test all(s->0<=s.workers_computing<=2 && 0<=s.completed_uncollected<=2,snapshots)
+    @test last(snapshots).workers_computing==last(snapshots).workers_scheduled==last(snapshots).completed_uncollected==0
+end
+
+function generated_reservation_trace(batch;slow_head=false,explicit=true)
+    frontier=Set(1:12);applied=Int[];trace=Any[]
+    gate=Channel{Nothing}(1);finished=Channel{Int}(24)
+    reserve=(limit,excluded)->begin
+        selected=sort!(Int[x for x in frontier if !(x in excluded) && !(x in applied)])
+        resize!(selected,min(limit,length(selected)))
+        push!(trace,(prefix=copy(applied),room=limit,excluded=sort!(Int[x for x in excluded]),items=copy(selected)))
+        selected
+    end
+    compute=(item,slot,stop)->begin
+        if item==(slow_head ? 1 : 3)
+            take!(gate)
+        elseif item==(slow_head ? 3 : 1)
+            put!(finished,item);put!(gate,nothing);return item
+        end
+        put!(finished,item);item
+    end
+    apply=(item,value,seconds,meta)->begin
+        @test value==item && meta.ticket==length(applied)+1
+        push!(applied,item)
+        item>0 && push!(frontier,-item)
+    end
+    kwargs=explicit ? (;reservation_refill_batch=batch) : NamedTuple()
+    result=run_refill_pool!(reserve,(item,ticket,slot)->item,compute,apply;
+        concurrency=4,max_pending=8,kwargs...)
+    completion=[take!(finished) for _ in 1:24]
+    (;result,trace,applied,completion)
+end
+
+@testset "Reservation batches follow the applied prefix independently of worker completion" begin
+    ordinary=generated_reservation_trace(1;explicit=false)
+    explicit=generated_reservation_trace(1)
+    @test ordinary.applied==explicit.applied && ordinary.trace==explicit.trace
+    @test ordinary.result.reservation_calls==explicit.result.reservation_calls==25
+    fast_head=generated_reservation_trace(4)
+    slow_head=generated_reservation_trace(4;slow_head=true)
+    @test findfirst(==(1),fast_head.completion)<findfirst(==(3),fast_head.completion)
+    @test findfirst(==(3),slow_head.completion)<findfirst(==(1),slow_head.completion)
+    @test fast_head.trace==slow_head.trace && fast_head.applied==slow_head.applied
+    @test sort(fast_head.applied)==sort(ordinary.applied)==vcat(collect(-12:-1),collect(1:12))
+    @test fast_head.applied!=ordinary.applied # Newly generated priority changes can affect admission order.
+    @test fast_head.result.reservation_calls==length(fast_head.trace)<ordinary.result.reservation_calls
+    @test all(event->event.room>=4,fast_head.trace)
+    @test all(event->event.room+length(event.excluded)==8,fast_head.trace)
+    @test fast_head.result.peak_pending<=8 && slow_head.result.peak_pending<=8
+end
+
+@testset "Batched reservations preserve STOP draining and the successful failure prefix" begin
+    for batch in (1,4,8)
+        stop=Threads.Atomic{Bool}(false);started=Channel{Int}(2);release=Channel{Nothing}(2)
+        applied=Int[]
+        compute=(item,slot,cancel)->begin put!(started,item);take!(release);item end
+        coordinator=@async run_refill_pool!(fifo_reserver(1:12),(item,ticket,slot)->item,compute,
+            (item,value,seconds,meta)->push!(applied,value);concurrency=2,max_pending=8,
+            reservation_refill_batch=batch,stop_requested=()->stop[])
+        @test sort!([take!(started),take!(started)])==[1,2]
+        stop[]=true;put!(release,nothing);put!(release,nothing)
+        result=fetch(coordinator)
+        @test applied==[1,2] && result.state==:stopped
+        @test result.reservation_calls==1 && result.reserved_unstarted==6 && result.peak_pending<=8
+
+        head_started=Channel{Nothing}(1);head_finished=Threads.Atomic{Bool}(false);empty!(applied)
+        fail_compute=(item,slot,cancel)->begin
+            if item==1
+                put!(head_started,nothing)
+                while !cancel();yield();end
+                head_finished[]=true;return item
+            end
+            take!(head_started);error("batched worker failure")
+        end
+        failure=try
+            run_refill_pool!(fifo_reserver(1:12),(item,ticket,slot)->item,fail_compute,
+                (item,value,seconds,meta)->push!(applied,value);concurrency=2,max_pending=8,reservation_refill_batch=batch)
+            nothing
+        catch error
+            error
+        end
+        @test failure isa ErrorException && occursin("batched worker failure",sprint(showerror,failure))
+        @test applied==[1] && head_finished[]
+    end
+end
+
 end

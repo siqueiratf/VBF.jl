@@ -11,6 +11,10 @@ results. Completed results apply in reservation order. A fast slot immediately
 takes the next reserved ticket while an earlier slow ticket is still running.
 An extreme head straggler eventually causes bounded backpressure. Reservation
 depends on the committed prefix, not the order in which workers complete.
+`reservation_refill_batch` amortizes reservation calls by waiting for that many
+free ticket positions. The threshold depends only on ordered applications;
+worker completions alone never trigger another reservation. Initial and empty
+horizons always have room for a complete refill batch.
 
 STOP stops reservation/dispatch and cooperatively interrupts workers. Every
 already dispatched successful result still applies in order. On failure, the
@@ -18,11 +22,14 @@ successful prefix is applied, all workers are joined, and the original error
 is rethrown; the caller owns durable recovery of unapplied jobs.
 """
 function run_refill_pool!(reserve,prepare,compute,apply;
-    concurrency::Int,max_pending::Int=2concurrency,key=identity,
+    concurrency::Int,max_pending::Int=2concurrency,reservation_refill_batch::Int=1,key=identity,
     stop_requested=()->false,on_tick=()->nothing,on_wait=()->nothing,
-    on_state=_->nothing,measure_result_bytes=false,poll_seconds=0.1,coordinator_step=f->f())
+    on_state=_->nothing,measure_result_bytes=false,poll_seconds=0.1,
+    max_apply_per_step::Int=concurrency,coordinator_step=f->f())
     concurrency>0 || throw(ArgumentError("invalid concurrency"))
     max_pending>=concurrency || throw(ArgumentError("reservation horizon must cover every slot"))
+    1<=reservation_refill_batch<=max_pending || throw(ArgumentError("reservation refill batch must be between 1 and the reservation horizon"))
+    max_apply_per_step>0 || throw(ArgumentError("invalid application step bound"))
     isfinite(poll_seconds) && poll_seconds>0 || throw(ArgumentError("invalid worker poll interval"))
     events=Channel{Any}(max_pending)
     cancelled=Threads.Atomic{Bool}(false)
@@ -30,21 +37,78 @@ function run_refill_pool!(reserve,prepare,compute,apply;
     reserved=Dict{Int,Any}();reserved_keys=Set{Any}()
     ready=Int[];ready_head=1;free_slots=collect(1:concurrency)
     active=Dict{Int,Task}();completed=Dict{Int,Any}()
+    workers_started=Threads.Atomic{Int}(0);workers_finished=Threads.Atomic{Int}(0)
+    worker_compute_ns=Threads.Atomic{UInt64}(0)
     next_ticket=1;next_apply=1;dispatched=0;applied=0
     peak_active=0;peak_pending=0;peak_completed=0;failure=nothing
-    reserve_seconds=0.0;prepare_seconds=0.0;apply_seconds=0.0;event_wait_seconds=0.0
+    reserve_seconds=0.0;prepare_seconds=0.0;apply_seconds=0.0;event_wait_seconds=0.0;reservation_calls=0
     completed_bytes=0;peak_completed_bytes=0
+    pool_started=time_ns();accounted=pool_started
+    active_slot_seconds=0.0;queued_ticket_seconds=0.0;completed_ticket_seconds=0.0
+    horizon_backpressure_seconds=0.0;underfilled_seconds=0.0;compute_slot_seconds=0.0
+    ordered_head_wait_seconds=0.0;horizon_wait_seconds=0.0;idle_slot_wait_seconds=0.0
+    coordinator_step_seconds=0.0;transaction_control_seconds=0.0
+    tick_seconds=0.0;wait_maintenance_seconds=0.0;event_collection_seconds=0.0
+    peak_uncollected=0
+    # Integrate before each state transition. Active slots include a completed
+    # event until the coordinator receives it; compute_slot_seconds measures
+    # the worker itself and therefore excludes that coordinator delay.
+    function account_state!()
+        now=time_ns();dt=(now-accounted)*1e-9;accounted=now
+        active_slot_seconds+=length(active)*dt
+        queued_ticket_seconds+=max(0,length(ready)-ready_head+1)*dt
+        completed_ticket_seconds+=length(completed)*dt
+        peak_uncollected=max(peak_uncollected,workers_finished[]-(dispatched-length(active)))
+        # This structural backpressure state can overlap coordinator work.
+        # The *_wait_seconds metrics below count actual event waits separately.
+        blocked=length(reserved)==max_pending && ready_head>length(ready) && !isempty(completed) && length(active)<concurrency
+        horizon_backpressure_seconds+=blocked ? dt : 0.0
+        underfilled_seconds+=length(active)<concurrency && !isempty(reserved) ? dt : 0.0
+    end
     function publish_state!()
+        account_state!();pool_wall_seconds=(time_ns()-pool_started)*1e-9
+        finished=workers_finished[];started=workers_started[]
         on_state((;active=length(active),reserved=length(reserved),completed=length(completed),
+            workers_computing=max(0,started-finished),workers_scheduled=max(0,dispatched-started),
+            completed_uncollected=max(0,finished-(dispatched-length(active))),peak_uncollected,
+            finished_compute_seconds=worker_compute_ns[]*1e-9,
+            coordinator_step_seconds,transaction_control_seconds,tick_seconds,wait_maintenance_seconds,event_collection_seconds,
             peak_active,peak_pending,peak_completed,completed_bytes,peak_completed_bytes,
-            result_bytes_measured=measure_result_bytes,reserve_seconds,prepare_seconds,apply_seconds,event_wait_seconds))
+            result_bytes_measured=measure_result_bytes,reserve_seconds,prepare_seconds,apply_seconds,event_wait_seconds,
+            reservation_calls,reservation_refill_batch,
+            pool_wall_seconds,active_slot_seconds,compute_slot_seconds,queued_ticket_seconds,completed_ticket_seconds,
+            horizon_backpressure_seconds,underfilled_seconds,
+            ordered_head_wait_seconds,horizon_wait_seconds,idle_slot_wait_seconds,
+            average_active_slots=pool_wall_seconds>0 ? active_slot_seconds/pool_wall_seconds : 0.0,
+            slot_occupancy=pool_wall_seconds>0 ? active_slot_seconds/(concurrency*pool_wall_seconds) : 0.0))
+    end
+    """Measure transaction control separately from the coordinator body it wraps."""
+    function measured_coordinator_step!(work)
+        body_ns=UInt64(0);started=time_ns()
+        try
+            coordinator_step() do
+                body_started=time_ns()
+                try
+                    work()
+                finally
+                    body_ns=time_ns()-body_started
+                end
+            end
+        finally
+            elapsed=time_ns()-started
+            coordinator_step_seconds+=elapsed*1e-9
+            transaction_control_seconds+=max(0.0,Float64(elapsed)-Float64(body_ns))*1e-9
+        end
     end
     function reserve_more!()
         worker_stop() && return
         room=max_pending-length(reserved)
         room==0 && return
+        room<reservation_refill_batch && return
+        reservation_calls+=1
         t=time_ns();descriptors=reserve(room,copy(reserved_keys));reserve_seconds+=(time_ns()-t)*1e-9
         length(descriptors)<=room || error("reservation exceeds bounded horizon")
+        account_state!()
         for item in descriptors
             id=key(item)
             id in reserved_keys && error("job reserved twice")
@@ -54,11 +118,19 @@ function run_refill_pool!(reserve,prepare,compute,apply;
         peak_pending=max(peak_pending,length(reserved))
     end
     function dispatch!()
-        while !worker_stop() && !isempty(free_slots) && ready_head<=length(ready)
+        while true
+            # Preparing a packet can outlast another worker. Reclaim completed
+            # slots between preparations, retaining FIFO order for descriptors.
+            while isready(events)
+                receive!(take!(events))
+            end
+            (worker_stop() || isempty(free_slots) || ready_head>length(ready)) && break
+            account_state!()
             ticket=ready[ready_head];ready_head+=1
             slot=popfirst!(free_slots)
             t=time_ns();prepared=prepare(reserved[ticket],ticket,slot);prepare_seconds+=(time_ns()-t)*1e-9
             active[ticket]=Threads.@spawn begin
+                Threads.atomic_add!(workers_started,1)
                 started=time_ns();value=nothing;problem=nothing
                 try
                     value=compute(prepared,slot,worker_stop)
@@ -66,6 +138,8 @@ function run_refill_pool!(reserve,prepare,compute,apply;
                     problem=(exception=error,backtrace=catch_backtrace())
                 end
                 finished=time_ns()
+                Threads.atomic_add!(worker_compute_ns,finished-started)
+                Threads.atomic_add!(workers_finished,1)
                 put!(events,(;ticket,slot,prepared,value,problem,
                     compute_seconds=(finished-started)*1e-9,finished_ns=finished))
             end
@@ -77,23 +151,32 @@ function run_refill_pool!(reserve,prepare,compute,apply;
         end
     end
     function apply_prefix!()
-        while haskey(completed,next_apply)
+        step_applied=0
+        while haskey(completed,next_apply) && step_applied<max_apply_per_step
             event=completed[next_apply]
             event.problem===nothing || return
             t=time_ns();apply(event.prepared,event.value,event.compute_seconds,
                 (;ticket=event.ticket,slot=event.slot,
                     ready_wait_seconds=(time_ns()-event.finished_ns)*1e-9))
             apply_seconds+=(time_ns()-t)*1e-9
+            account_state!()
             completed_bytes-=event.result_bytes
             delete!(completed,next_apply)
             item=pop!(reserved,next_apply);delete!(reserved_keys,key(item))
-            next_apply+=1;applied+=1
+            next_apply+=1;applied+=1;step_applied+=1
+            # Applications may be much slower than compute. Harvest completions
+            # between applications so their slots can refill immediately.
+            while isready(events)
+                receive!(take!(events))
+            end
             reserve_more!();dispatch!()
         end
     end
     function receive!(event)
+        account_state!();compute_slot_seconds+=event.compute_seconds
+        event_collection_seconds+=(time_ns()-event.finished_ns)*1e-9
         wait(pop!(active,event.ticket))
-        push!(free_slots,event.slot);sort!(free_slots)
+        push!(free_slots,event.slot)
         bytes=measure_result_bytes ? Base.summarysize((event.prepared,event.value)) : 0
         completed[event.ticket]=merge(event,(result_bytes=bytes,))
         completed_bytes+=bytes;peak_completed_bytes=max(peak_completed_bytes,completed_bytes)
@@ -104,20 +187,27 @@ function run_refill_pool!(reserve,prepare,compute,apply;
         end
     end
     try
-        coordinator_step() do
+        measured_coordinator_step!() do
             reserve_more!();dispatch!()
         end
         publish_state!()
-        while !isempty(active)
+        while !isempty(active) || (haskey(completed,next_apply) && completed[next_apply].problem===nothing)
             t=time_ns()
-            while !isready(events)
-                maintenance_started=time_ns();on_wait();t+=time_ns()-maintenance_started
+            while !isready(events) && !(haskey(completed,next_apply) && completed[next_apply].problem===nothing)
+                maintenance_started=time_ns();on_wait();maintenance_ns=time_ns()-maintenance_started
+                wait_maintenance_seconds+=maintenance_ns*1e-9;t+=maintenance_ns
+                waiting_for_head=!isempty(completed) && !haskey(completed,next_apply)
+                waiting_on_horizon=waiting_for_head && length(reserved)==max_pending && ready_head>length(ready) && length(active)<concurrency
+                wait_started=time_ns()
                 timedwait(()->isready(events),poll_seconds;pollint=min(0.001,poll_seconds))
+                waited=(time_ns()-wait_started)*1e-9
+                ordered_head_wait_seconds+=waiting_for_head ? waited : 0.0
+                horizon_wait_seconds+=waiting_on_horizon ? waited : 0.0
+                idle_slot_wait_seconds+=(concurrency-length(active))*waited
             end
             event_wait_seconds+=(time_ns()-t)*1e-9
-            event=take!(events)
-            coordinator_step() do
-                receive!(event)
+            measured_coordinator_step!() do
+                isready(events) && receive!(take!(events))
                 # Drain already completed work without waiting inside a transaction.
                 while isready(events)
                     receive!(take!(events))
@@ -125,15 +215,31 @@ function run_refill_pool!(reserve,prepare,compute,apply;
                 dispatch!();apply_prefix!()
             end
             publish_state!()
-            failure===nothing && on_tick()
+            if failure===nothing
+                tick_started=time_ns()
+                try
+                    on_tick()
+                finally
+                    tick_seconds+=(time_ns()-tick_started)*1e-9
+                    account_state!()
+                end
+            end
         end
-        coordinator_step(apply_prefix!)
+        publish_state!()
         failure===nothing || throw(failure.exception)
         (;state=worker_stop() ? :stopped : :drained,dispatched,applied,
             peak_active,peak_pending,peak_completed,
             peak_completed_bytes,result_bytes_measured=measure_result_bytes,
             reserve_seconds,prepare_seconds,apply_seconds,event_wait_seconds,
-            reserved_unstarted=length(reserved),reservation_horizon=max_pending)
+            reservation_calls,reservation_refill_batch,
+            reserved_unstarted=length(reserved),reservation_horizon=max_pending,
+            pool_wall_seconds=(time_ns()-pool_started)*1e-9,active_slot_seconds,compute_slot_seconds,
+            queued_ticket_seconds,completed_ticket_seconds,horizon_backpressure_seconds,underfilled_seconds,
+            ordered_head_wait_seconds,horizon_wait_seconds,idle_slot_wait_seconds,
+            coordinator_step_seconds,transaction_control_seconds,tick_seconds,wait_maintenance_seconds,event_collection_seconds,
+            finished_compute_seconds=worker_compute_ns[]*1e-9,peak_uncollected,
+            average_active_slots=active_slot_seconds/max(eps(),(time_ns()-pool_started)*1e-9),
+            slot_occupancy=active_slot_seconds/max(eps(),concurrency*(time_ns()-pool_started)*1e-9))
     catch error
         # Preserve the original worker failure if cleanup of its successful
         # prefix or a progress callback also encounters an error.

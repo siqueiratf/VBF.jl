@@ -23,18 +23,27 @@ mutable struct ClosureStore
     report_backend::Symbol
     report_timeout_seconds::Float64
     report_reader::Any
+    statements::DiscoveryStore.StatementCache
+    solver_session::Any
 end
 
 ClosureStore(db,directory,lease,identity,session,last_report_ns)=
-    ClosureStore(db,directory,lease,identity,session,last_report_ns,nothing,:thread,180.0,nothing)
+    ClosureStore(db,directory,lease,identity,session,last_report_ns,nothing,:thread,180.0,nothing,
+        DiscoveryStore.StatementCache(db),nothing)
+
+_closure_rows(s::ClosureStore,sql,args=())=DiscoveryStore.query(s.statements,sql,args)
+_closure_exec(s::ClosureStore,sql,args=())=DiscoveryStore.execute!(s.statements,sql,args)
+_closure_rows(s::NamedTuple,sql,args=())=_closure_rows(s.db,sql,args)
+_closure_exec(s::NamedTuple,sql,args=())=_closure_exec(s.db,sql,args)
+_closure_solver_session(s)=hasproperty(s,:solver_session) ? s.solver_session : nothing
 
 function _closure_transaction(f, s::ClosureStore)
     SQLite.intransaction(s.db) && return f()
-    _closure_exec(s.db,"BEGIN IMMEDIATE")
+    _closure_exec(s,"BEGIN IMMEDIATE")
     try
-        result=f();_closure_exec(s.db,"COMMIT");result
+        result=f();_closure_exec(s,"COMMIT");result
     catch
-        _closure_exec(s.db,"ROLLBACK");rethrow()
+        _closure_exec(s,"ROLLBACK");rethrow()
     end
 end
 
@@ -78,23 +87,39 @@ function _closure_create_schema(db;normalized=false)
 end
 
 function _closure_add_job!(s, parent, kind, key, payload)
-    _closure_exec(s.db,"INSERT OR IGNORE INTO jobs(parent_id,kind,job_key,payload) VALUES(?,?,?,?)",
+    _closure_exec(s,"INSERT OR IGNORE INTO jobs(parent_id,kind,job_key,payload) VALUES(?,?,?,?)",
         (parent,kind,key,_closure_text(payload)))
 end
 
 function _closure_add_parent!(s, candidate, sigma; origin="discovered", source="construction")
-    _closure_exec(s.db,"INSERT INTO parents(candidate_id,sigma,origin,source,admitted_utc) VALUES(?,?,?,?,?)",
+    _closure_exec(s,"INSERT INTO parents(candidate_id,sigma,origin,source,admitted_utc) VALUES(?,?,?,?,?)",
         (candidate,sigma,origin,source,_closure_now()))
-    parent=Int(only(_closure_rows(s.db,"SELECT last_insert_rowid() id"))["id"])
-    _closure_exec(s.db,"UPDATE candidates SET class_id=?,state='admitted' WHERE id=?",(parent,candidate))
+    parent=Int(only(_closure_rows(s,"SELECT last_insert_rowid() id"))["id"])
+    _closure_candidate_state!(s,candidate,"admitted";class_id=parent)
     _closure_add_job!(s,parent,"prepare_v5","$parent:prepare_v5",Dict{String,Any}())
     _closure_add_job!(s,parent,"switching","$parent:switching",Dict{String,Any}())
     parent
 end
 
+"""Update mutable admission fields without expanding the normalized proof view."""
+function _closure_candidate_state!(s,id,state;class_id=nothing)
+    table=_closure_normalized(s.db) ? "closure_candidates" : "candidates"
+    if class_id===nothing
+        _closure_exec(s,"UPDATE $table SET state=? WHERE id=?",(state,id))
+    else
+        _closure_exec(s,"UPDATE $table SET class_id=?,state=? WHERE id=?",(class_id,state,id))
+    end
+    nothing
+end
+
 function _closure_insert_candidate!(s, p; state="observed")
-    _closure_normalized(s.db) && return _closure_normalized_candidate(s.db,p;state)
-    _closure_exec(s.db,"INSERT OR IGNORE INTO candidates(id,lut_hex,sigma,apn,degree,properties,state) VALUES(?,?,?,?,?,?,?)",
+    existing=_closure_rows(s,"SELECT lut_hex FROM candidates WHERE id=?",(p["lut_sha256"],))
+    if !isempty(existing)
+        only(existing)["lut_hex"]==p["lut_hex"] || error("LUT digest collision")
+        return p["lut_sha256"]
+    end
+    _closure_normalized(s.db) && return _closure_normalized_candidate(s,p;state)
+    _closure_exec(s,"INSERT OR IGNORE INTO candidates(id,lut_hex,sigma,apn,degree,properties,state) VALUES(?,?,?,?,?,?,?)",
         (p["lut_sha256"],p["lut_hex"],get(p,"sigma_hash",missing),Int(p["apn"]),p["algebraic_degree"],_closure_text(p),state))
     p["lut_sha256"]
 end
@@ -102,16 +127,102 @@ end
 """Record a construction edge even when the exact child already exists."""
 function _closure_record_candidate!(s, job, p, cursor, witness)
     child=_closure_insert_candidate!(s,p)
-    _closure_exec(s.db,"INSERT OR IGNORE INTO paths(parent_id,job_id,method,cursor,child_id,witness) VALUES(?,?,?,?,?,?)",
+    _closure_exec(s,"INSERT OR IGNORE INTO paths(parent_id,job_id,method,cursor,child_id,witness) VALUES(?,?,?,?,?,?)",
         (job["parent_id"],job["id"],job["kind"],string(cursor),child,_closure_text(witness)))
     if p["apn"] && p["quadratic"]
-        row=only(_closure_rows(s.db,"SELECT class_id FROM candidates WHERE id=?",(child,)))
+        row=only(_closure_rows(s,"SELECT class_id FROM candidates WHERE id=?",(child,)))
         if ismissing(row["class_id"])
-            _closure_exec(s.db,"UPDATE candidates SET state='awaiting_equivalence' WHERE id=?",(child,))
+            _closure_candidate_state!(s,child,"awaiting_equivalence")
             _closure_add_job!(s,job["parent_id"],"deduplicate","deduplicate:$child",Dict("candidate_id"=>child))
         end
     end
     child
+end
+
+const _CLOSURE_PATH_INSERT_SQL="INSERT OR IGNORE INTO paths(parent_id,job_id,method,cursor,child_id,witness) VALUES(?,?,?,?,?,?)"
+const _CLOSURE_PATH_BATCH_ROWS=32
+const _CLOSURE_PATH_BATCH_SQL="INSERT OR IGNORE INTO paths(parent_id,job_id,method,cursor,child_id,witness) VALUES"*
+    join(fill("(?,?,?,?,?,?)",_CLOSURE_PATH_BATCH_ROWS),",")
+const _CLOSURE_DEDUP_JOB_INSERT_SQL="INSERT OR IGNORE INTO jobs(parent_id,kind,job_key,payload) VALUES(?,?,?,?)"
+const _CLOSURE_DEDUP_JOB_BATCH_SQL="INSERT OR IGNORE INTO jobs(parent_id,kind,job_key,payload) VALUES"*
+    join(fill("(?,?,?,?)",_CLOSURE_PATH_BATCH_ROWS),",")
+
+"""The canonical one-field payload, with generic escaping for future IDs."""
+function _closure_deduplication_payload(id)
+    if id isa String && sizeof(id)==64 && all(c->UInt8('0')<=c<=UInt8('9') || UInt8('a')<=c<=UInt8('f'),codeunits(id))
+        return "candidate_id = \""*id*"\"\n"
+    end
+    _closure_text(Dict("candidate_id"=>id))
+end
+_closure_unique_properties_buffer(records)=Any[]
+
+"""Persist a validated V5 packet with one admission check per exact child.
+
+All coset paths retain their original order and exact witness bytes. Lookup and
+template reuse are scoped to this call, so rollback never leaves an admission
+cache ahead of the database. Ordinary physical writes also retain per-row SQLite
+triggers, foreign keys and the caller's transaction/savepoint semantics.
+"""
+function _closure_record_v5_candidates!(s,job,records)
+    isempty(records) && return nothing
+    unique_properties=_closure_unique_properties_buffer(records);seen=Dict{String,String}()
+    for record in records
+        p=record["properties"];id=String(p["lut_sha256"]);lut=String(p["lut_hex"])
+        p["apn"] && p["quadratic"] || error("V5 application requires quadratic APN outputs")
+        if haskey(seen,id)
+            seen[id]==lut || error("LUT digest collision")
+        else
+            seen[id]=lut;push!(unique_properties,p)
+        end
+    end
+    existing=Dict{String,Any}()
+    for start in 1:128:length(unique_properties)
+        part=@view unique_properties[start:min(start+127,end)]
+        placeholders=join(fill("?",length(part)),",")
+        for row in _closure_rows(s,"SELECT id,lut_hex,class_id FROM candidates WHERE id IN ($placeholders)",
+                [p["lut_sha256"] for p in part])
+            existing[row["id"]]=row
+        end
+    end
+    normalized=_closure_normalized(s.db);templates=Dict{String,Int}();dedup_arguments=Any[]
+    sizehint!(dedup_arguments,4*_CLOSURE_PATH_BATCH_ROWS)
+    for p in unique_properties
+        id=p["lut_sha256"];row=get(existing,id,nothing)
+        if row===nothing
+            if normalized
+                _closure_normalized_candidate(s,p;state="awaiting_equivalence",templates)
+            else
+                _closure_exec(s,"INSERT OR IGNORE INTO candidates(id,lut_hex,sigma,apn,degree,properties,state) VALUES(?,?,?,?,?,?,?)",
+                    (id,p["lut_hex"],get(p,"sigma_hash",missing),Int(p["apn"]),p["algebraic_degree"],_closure_text(p),"awaiting_equivalence"))
+            end
+        else
+            row["lut_hex"]==p["lut_hex"] || error("LUT digest collision")
+        end
+        if row===nothing || ismissing(row["class_id"])
+            row===nothing || _closure_candidate_state!(s,id,"awaiting_equivalence")
+            append!(dedup_arguments,(job["parent_id"],"deduplicate","deduplicate:$id",_closure_deduplication_payload(id)))
+            if length(dedup_arguments)==4*_CLOSURE_PATH_BATCH_ROWS
+                _closure_exec(s,_CLOSURE_DEDUP_JOB_BATCH_SQL,dedup_arguments);empty!(dedup_arguments)
+            end
+        end
+    end
+    for start in 1:4:length(dedup_arguments)
+        _closure_exec(s,_CLOSURE_DEDUP_JOB_INSERT_SQL,@view dedup_arguments[start:start+3])
+    end
+    # Reuse only two statement shapes. A bounded full batch amortizes binding
+    # and stepping without filling the statement cache with every tail length.
+    arguments=Any[];sizehint!(arguments,6*_CLOSURE_PATH_BATCH_ROWS)
+    for record in records
+        append!(arguments,(job["parent_id"],job["id"],job["kind"],string(record["cursor"]),
+            record["properties"]["lut_sha256"],_closure_text(record["witness"])))
+        if length(arguments)==6*_CLOSURE_PATH_BATCH_ROWS
+            _closure_exec(s,_CLOSURE_PATH_BATCH_SQL,arguments);empty!(arguments)
+        end
+    end
+    for start in 1:6:length(arguments)
+        _closure_exec(s,_CLOSURE_PATH_INSERT_SQL,@view arguments[start:start+5])
+    end
+    nothing
 end
 
 """Poll STOP files at most once in `interval_ns`; a seen request stays set.
@@ -136,6 +247,7 @@ function _closure_open(directory)
     dir=abspath(directory);isfile(joinpath(dir,"closure.sqlite")) || error("closure frontier is not initialized")
     lease=_closure_lease(dir)
     db=SQLite.DB(joinpath(dir,"closure.sqlite"))
+    s=nothing
     try
         _closure_exec(db,"PRAGMA busy_timeout=10000")
         _closure_exec(db,"PRAGMA foreign_keys=ON")
@@ -168,8 +280,10 @@ function _closure_open(directory)
         # Add it under the exclusive lease only after all normal identity,
         # input/archive and committed-coverage guards have succeeded.
         _closure_exec(db,"CREATE INDEX IF NOT EXISTS candidates_state ON "*(_closure_normalized(db) ? "closure_candidates" : "candidates")*"(state)")
+        s.solver_session=_equivalence_solver_session()
         s
     catch
+        s===nothing || DiscoveryStore.close_statements!(s.statements)
         close(db);close(lease);rethrow()
     end
 end
@@ -182,8 +296,9 @@ function _closure_close(s)
             _closure_shutdown_reporter!(s)
         finally
             try
-                _closure_exec(s.db,"PRAGMA wal_checkpoint(PASSIVE)")
+                _closure_exec(s,"PRAGMA wal_checkpoint(PASSIVE)")
             finally
+                DiscoveryStore.close_statements!(s.statements)
                 close(s.db);close(s.lease)
             end
         end

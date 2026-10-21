@@ -1,4 +1,4 @@
-using VBFSearch, TOML, SHA, SQLite
+using VBFSearch, TOML, SHA
 
 """Shared baseline helper for the threaded closure controllers.
 

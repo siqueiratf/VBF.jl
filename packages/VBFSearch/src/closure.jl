@@ -171,7 +171,8 @@ classes exclude unresolved candidates; seed completion excludes descendant work.
 function closure_snapshot(directory)
     dir=abspath(directory);path=joinpath(dir,"closure.sqlite")
     isfile(path) || error("closure frontier is not initialized")
-    db=SQLite.DB("file:"*path*"?mode=ro")
+    escaped=replace(path,"%"=>"%25","?"=>"%3f","#"=>"%23")
+    db=SQLite.DB("file:"*escaped*"?mode=ro")
     try
         _closure_exec(db,"PRAGMA query_only=ON");_closure_exec(db,"BEGIN")
         identity=TOML.parse(only(_closure_rows(db,"SELECT value FROM metadata WHERE key='identity'"))["value"])

@@ -69,6 +69,20 @@ function equivalence_solver_fingerprint()
     bytes2hex(SHA.sha256(join([relpath(p,root)*":"*bytes2hex(open(SHA.sha256,p)) for p in paths],"\n")))
 end
 
+"""Source fingerprints retained only for one validated immutable closure execution.
+
+Construct this after checking the frozen execution inputs and implementation.
+Mutable tooling continues to call `equivalence_solver_fingerprint()` afresh.
+"""
+struct _EquivalenceSolverSession
+    solver_sha256::String
+    evidence_sha256::String
+end
+
+"""Capture the solver and evidence sources after validating a frozen execution."""
+_equivalence_solver_session() = _EquivalenceSolverSession(equivalence_solver_fingerprint(),
+    bytes2hex(open(SHA.sha256,joinpath(@__DIR__,"..","evidence.jl"))))
+
 """Return a canonical pair orientation and its dimension-bound content addresses."""
 function _equivalence_pair(F::SBox,G::SBox)
     inputbits(F)==inputbits(G) || throw(ArgumentError("different dimensions"))
