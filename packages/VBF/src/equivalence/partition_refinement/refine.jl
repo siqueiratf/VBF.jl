@@ -30,20 +30,34 @@ struct _PRWorkspace{T<:Signed,R<:AbstractRNG}
     algorithm::Symbol
     rng::R
     trace::Any
+    sort_order::Vector{Int}
+    sort_counts::Vector{Int}
+    native_direct::Bool
 end
+
+"""Retain private constructors and their full-width direct arithmetic."""
+_PRWorkspace{T,R}(args::Vararg{Any,16}) where {T<:Signed,R<:AbstractRNG}=
+    _PRWorkspace{T,R}(args...,false)
+
+_PRWorkspace(s,a,b,c,d,e,f,g,h,t,k,algorithm,rng,trace,sort_order,sort_counts)=
+    _PRWorkspace(s,a,b,c,d,e,f,g,h,t,k,algorithm,rng,trace,sort_order,sort_counts,false)
+
+_PRWorkspace(s,a,b,c,d,e,f,g,h,t,k,algorithm,rng,trace)=
+    _PRWorkspace(s,a,b,c,d,e,f,g,h,t,k,algorithm,rng,trace,Int[],Int[],false)
 
 # Existing private kernel tests construct workspaces directly.
 _PRWorkspace(s,a,b,c,d,e,f,g,h,t,k) = _PRWorkspace(s,a,b,c,d,e,f,g,h,t,k,:optimized,Xoshiro(940),nothing)
 
 """Allocate safe-width scratch space and choose the direct-summation crossover."""
 function _PRWorkspace(d::Int, npoints::Int, nplanes::Int; threaded::Bool = false,
-                      algorithm::Symbol = :optimized, rng::AbstractRNG = Xoshiro(940), trace=nothing)
+                      algorithm::Symbol = :optimized, rng::AbstractRNG = Xoshiro(940), trace=nothing,
+                      native_direct::Bool = false)
     T = Int128(max(npoints, nplanes)) * 8191 <= typemax(Int32) ? Int32 : Int64
     return _PRWorkspace(
         zeros(T, 1 << d), zeros(Int, npoints), zeros(Int, npoints),
         zeros(Int, nplanes), zeros(Int, nplanes), zeros(UInt32, nplanes),
         zeros(Int, nplanes), zeros(Int, npoints), zeros(Int, npoints),
-        threaded, (d * (1 << d)) ÷ npoints, algorithm, rng, trace,
+        threaded, (d * (1 << d)) ÷ npoints, algorithm, rng, trace,Int[],Int[],native_direct,
     )
 end
 
@@ -67,6 +81,107 @@ end
     return score
 end
 
+"""Native bounded signatures with narrow SIMD lanes and the historical Int result.
+
+Call only after `_pr_direct_weights!` establishes the weight and sum bounds.
+"""
+@inline function _pr_signed_sum32(p,normals,weights,k)
+    score=Int32(0)
+    @inbounds @simd for j in 1:k
+        w=weights[j]
+        score+=ifelse(isodd(count_ones(p & normals[j])),-w,w)
+    end
+    Int(score)
+end
+
+"""Sum checked Int32 weights once for a batch of signed incidence signatures."""
+@inline function _pr_direct_weight_total32(weights,k)
+    total=Int32(0)
+    @inbounds @simd for j in 1:k
+        total+=weights[j]
+    end
+    Int(total)
+end
+
+"""Reuse weights across two signatures and accumulate only odd incidences.
+
+The checked native bound covers each subset sum. Convert before doubling so
+the adjustment can exceed Int32 even when both final signatures fit Int32.
+"""
+@inline function _pr_signed_sum32_pair(p,q,normals,weights,k,total)
+    a=Int32(0);b=Int32(0)
+    @inbounds @simd for j in 1:k
+        n=normals[j];w=weights[j]
+        a+=ifelse(isodd(count_ones(p & n)),w,Int32(0))
+        b+=ifelse(isodd(count_ones(q & n)),w,Int32(0))
+    end
+    (total-2Int(a),total-2Int(b))
+end
+
+"""Write one pair of point signatures, retaining the scalar kernel for a tail."""
+@inline function _pr_point_score_pair32!(scores,points,normals,weights,k,total,pair)
+    i=2pair-1
+    @inbounds if i<length(points)
+        a,b=_pr_signed_sum32_pair(points[i],points[i+1],normals,weights,k,total)
+        scores[i]=a;scores[i+1]=b
+    else
+        scores[i]=_pr_signed_sum32(points[i],normals,weights,k)
+    end
+    nothing
+end
+
+"""Write one active hyperplane pair in its original order, including its signs."""
+@inline function _pr_plane_score_pair32!(scores,points,planes,active,weights,total,pair)
+    j=2pair-1
+    @inbounds if j<length(active)
+        i=active[j];l=active[j+1]
+        a,b=_pr_signed_sum32_pair(planes.normals[i],planes.normals[l],points,weights,length(points),total)
+        scores[i]=a*planes.signs[i];scores[l]=b*planes.signs[l]
+    else
+        i=active[j]
+        scores[i]=_pr_signed_sum32(planes.normals[i],points,weights,length(points))*planes.signs[i]
+    end
+    nothing
+end
+
+"""Compute checked direct point signatures in adjacent output pairs."""
+function _pr_direct_point_scores32!(scores,points,normals,weights,k)
+    total=_pr_direct_weight_total32(weights,k)
+    for pair in 1:cld(length(points),2)
+        _pr_point_score_pair32!(scores,points,normals,weights,k,total,pair)
+    end
+    scores
+end
+
+"""Compute checked direct hyperplane signatures in adjacent active pairs."""
+function _pr_direct_plane_scores32!(scores,points,planes,active,weights)
+    total=_pr_direct_weight_total32(weights,length(points))
+    for pair in 1:cld(length(active),2)
+        _pr_plane_score_pair32!(scores,points,planes,active,weights,total,pair)
+    end
+    scores
+end
+
+
+"""Reuse transform scratch only for independently bounded native direct sums.
+
+Private/custom-key workspaces retain full-width arithmetic by default. All
+weights must satisfy the native bound, and the worst possible absolute sum
+must fit Int32. Unsupported scratch widths, sizes and traced work fall back.
+"""
+_pr_direct_weights!(work,weights,k)=nothing
+function _pr_direct_weights!(work::_PRWorkspace{Int32},weights,k)
+    work.native_direct && work.trace===nothing || return nothing
+    0<=k<=length(work.scratch) && k<=length(weights) && k<=fld(typemax(Int32),8191) || return nothing
+    @inbounds for j in 1:k
+        -8191<=weights[j]<=8191 || return nothing
+    end
+    @inbounds for j in 1:k
+        work.scratch[j]=weights[j] % Int32
+    end
+    work.scratch
+end
+
 _pr_parallel_direct(work, points, planes) = work.threaded && Threads.nthreads() > 1 &&
     points * planes >= (1 << 19)
 
@@ -87,6 +202,22 @@ function _pr_parallel_plane_scores!(scores, points, planes, active, weights)
         end
     end
     return scores
+end
+
+function _pr_parallel_point_scores32!(scores,points,normals,weights,k)
+    total=_pr_direct_weight_total32(weights,k)
+    Threads.@threads :dynamic for pair in 1:cld(length(points),2)
+        _pr_point_score_pair32!(scores,points,normals,weights,k,total,pair)
+    end
+    scores
+end
+
+function _pr_parallel_plane_scores32!(scores,points,planes,active,weights)
+    total=_pr_direct_weight_total32(weights,length(points))
+    Threads.@threads :dynamic for pair in 1:cld(length(active),2)
+        _pr_plane_score_pair32!(scores,points,planes,active,weights,total,pair)
+    end
+    scores
 end
 
 """Count all nonconstant affine hyperplanes by graph intersection size."""
@@ -142,7 +273,7 @@ function _pr_build_planes(walsh, npoints::Int, classes::Vector{Int}, histogram)
             positions[c] += 1
         end
     end
-    return _PRPlanes(normals, signs), _PRPartition(collect(1:nplanes), starts)
+    return _PRPlanes(normals, signs), _pr_native_partition(nplanes, starts)
 end
 
 """Compute point signatures from signed hyperplane-cell weights (Algorithm 1)."""
@@ -159,7 +290,14 @@ function _pr_point_scores!(scores, points, planes::_PRPlanes, hp::_PRPartition,
         end
     end
     if k <= work.direct_threshold
-        if _pr_parallel_direct(work, length(points), k)
+        packed=_pr_direct_weights!(work,work.weights,k)
+        if packed!==nothing
+            if _pr_parallel_direct(work,length(points),k)
+                _pr_parallel_point_scores32!(scores,points,work.normals,packed,k)
+            else
+                _pr_direct_point_scores32!(scores,points,work.normals,packed,k)
+            end
+        elseif _pr_parallel_direct(work, length(points), k)
             _pr_parallel_point_scores!(scores, points, work.normals, work.weights, k)
         else
             @inbounds for i in eachindex(points)
@@ -189,7 +327,14 @@ function _pr_plane_scores!(scores, points, pp::_PRPartition, planes::_PRPlanes,
         end
     end
     if length(hp.order) <= work.direct_threshold
-        if _pr_parallel_direct(work, length(points), length(hp.order))
+        packed=_pr_direct_weights!(work,work.point_weights,length(points))
+        if packed!==nothing
+            if _pr_parallel_direct(work,length(points),length(hp.order))
+                _pr_parallel_plane_scores32!(scores,points,planes,hp.order,packed)
+            else
+                _pr_direct_plane_scores32!(scores,points,planes,hp.order,packed)
+            end
+        elseif _pr_parallel_direct(work, length(points), length(hp.order))
             _pr_parallel_plane_scores!(scores, points, planes, hp.order, work.point_weights)
         else
             @inbounds for i in hp.order

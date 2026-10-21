@@ -43,6 +43,16 @@ function walsh_hadamard!(v::Vector{<:Signed}; threaded::Bool = false)
         return _walsh_hadamard_threaded!(v)
     end
     block = 1
+    if eltype(v) === Int32 && n_pow >= 8
+        # Fixed early stages avoid a short inner loop for every butterfly.
+        # Keep GC response bounded even when many searches transform in parallel.
+        chunk_size = 1 << 14
+        for lo in 1:chunk_size:n_pow
+            n_pow >= (1 << 16) && GC.safepoint()
+            _walsh_hadamard_prefix8!(v,lo,min(n_pow,lo+chunk_size-1))
+        end
+        block = 8
+    end
     while block < n_pow
         # A large serial transform can otherwise delay collection requested by
         # independent tasks. Keep the SIMD butterflies allocation-free.
@@ -57,6 +67,21 @@ function walsh_hadamard!(v::Vector{<:Signed}; threaded::Bool = false)
             end
         end
         block = step
+    end
+    v
+end
+
+"""Fuse the width-1, width-2 and width-4 Int32 butterflies over complete groups."""
+@noinline function _walsh_hadamard_prefix8!(v::Vector{Int32},lo::Int,hi::Int)
+    @inbounds @simd for i in lo:8:hi-7
+        a=v[i];b=v[i+1];c=v[i+2];d=v[i+3]
+        e=v[i+4];f=v[i+5];g=v[i+6];h=v[i+7]
+        ab=a+b;am=a-b;cd=c+d;cm=c-d
+        ef=e+f;em=e-f;gh=g+h;gm=g-h
+        t0=ab+cd;t1=am+cm;t2=ab-cd;t3=am-cm
+        t4=ef+gh;t5=em+gm;t6=ef-gh;t7=em-gm
+        v[i]=t0+t4;v[i+1]=t1+t5;v[i+2]=t2+t6;v[i+3]=t3+t7
+        v[i+4]=t0-t4;v[i+5]=t1-t5;v[i+6]=t2-t6;v[i+7]=t3-t7
     end
     v
 end

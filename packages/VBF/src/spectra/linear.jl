@@ -37,14 +37,9 @@ Invariants (checked in tests):
 function lat(s::SBox{N,T}) where {N,T}
     n = 1 << N
     L = zeros(Int, n, n)
-    lut = s.lut
+    v = Vector{Int}(undef, n)
     @inbounds for b = 0:(n-1)
-        bT = T(b)
-        v = Vector{Int}(undef, n)
-        for x = 0:(n-1)
-            v[x+1] = 1 - 2 * (count_ones(bT & lut[x+1]) & 1)
-        end
-        walsh_hadamard!(v)
+        _component_walsh!(v,s.lut,T(b))
         for a = 0:(n-1)
             L[a+1, b+1] = v[a+1]
         end
@@ -52,19 +47,37 @@ function lat(s::SBox{N,T}) where {N,T}
     L
 end
 
+"""Transform one output component into a caller-owned Walsh buffer."""
+function _component_walsh!(v,lut,mask)
+    @inbounds for x in eachindex(lut)
+        v[x]=1-2*(count_ones(mask&lut[x])&1)
+    end
+    walsh_hadamard!(v)
+end
+
 """
     absolute_walsh_spectrum(s::SBox) -> Spectrum
 
 Histogram of `|LAT[a, b]|` over `(a, b) ≠ (0, 0)`. The peak of the
 spectrum is the [`linearity`](@ref).
+
+Components share one Walsh buffer; the full LAT is not materialized.
 """
-function absolute_walsh_spectrum(s::SBox)
-    L = lat(s)
-    n = size(L, 1)
+function absolute_walsh_spectrum(s::SBox{N,T}) where {N,T}
+    n = 1 << N
+    v = Vector{Int}(undef,n)
+    frequencies = zeros(Int,n+1)
+    @inbounds for b = 0:(n-1)
+        _component_walsh!(v,s.lut,T(b))
+        for a = 1:n
+            a == 1 && b == 0 && continue
+            frequencies[abs(v[a])+1]+=1
+        end
+    end
     sp = Spectrum()
-    @inbounds for a = 1:n, b = 1:n
-        a == 1 && b == 1 && continue
-        add!(sp, abs(L[a, b]))
+    @inbounds for value in 0:n
+        count=frequencies[value+1]
+        count==0 || add!(sp,value,count)
     end
     sp
 end

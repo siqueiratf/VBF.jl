@@ -13,8 +13,20 @@ sorted_pairs(abs-Walsh-spectrum(π_F)))`. `F` must be a quadratic APN function.
 function sigma_key(F::SBox)
     pi = ortho_derivative(F)
     pi === nothing && error("sigma_key: ortho_derivative undefined (F not APN?)")
-    (sorted_pairs(differential_spectrum(pi)), sorted_pairs(absolute_walsh_spectrum(pi)))
+    sigma_key_from_ortho_derivative(pi)
 end
+
+"""Compute the sigma key from an already computed ortho-derivative.
+
+The caller must supply the ortho-derivative of its verified quadratic APN.
+This shares the signature encoding with [`sigma_key`](@ref) when the derivative
+is also needed for evidence or other invariants.
+"""
+sigma_key_from_ortho_derivative(pi::SBox) =
+    (sorted_pairs(differential_spectrum(pi)), sorted_pairs(absolute_walsh_spectrum(pi)))
+
+"""Hash a precomputed ortho-derivative using the stable [`sigma_hash`](@ref) encoding."""
+sigma_hash_from_ortho_derivative(pi::SBox) = bytes2hex(SHA.sha256(string(sigma_key_from_ortho_derivative(pi))))
 
 """
     sigma_hash(F::SBox) -> String
