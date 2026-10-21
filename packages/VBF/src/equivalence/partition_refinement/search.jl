@@ -80,13 +80,13 @@ function _pr_refine!(pl, pr, hl, hr, left, right, planes_left, planes_right,
         keys = work.algorithm === :paper ? rand(work.rng,1:8191,length(hl.starts)-1) : nothing
         _pr_point_scores!(work.point_left, left, planes_left, hl, work;keys)
         _pr_point_scores!(work.point_right, right, planes_right, hr, work;keys)
-        _pr_split_pair!(pl, pr, work.point_left, work.point_right) || return false
+        _pr_split_pair!(pl, pr, work.point_left, work.point_right,work) || return false
         work.trace === nothing || work.trace(:points,pl,pr,hl,hr)
         _pr_check!(budget) || return false
         keys = work.algorithm === :paper ? rand(work.rng,1:8191,length(pl.starts)-1) : nothing
         _pr_plane_scores!(work.plane_left, left, pl, planes_left, hl, work;keys)
         _pr_plane_scores!(work.plane_right, right, pr, planes_right, hr, work;keys)
-        _pr_split_pair!(hl, hr, work.plane_left, work.plane_right) || return false
+        _pr_split_pair!(hl, hr, work.plane_left, work.plane_right,work) || return false
         work.trace === nothing || work.trace(:hyperplanes,pl,pr,hl,hr)
         if before == length(pl.starts) + length(hl.starts)
             _pr_trim_pair!(hl, hr, floor;preserve_order=work.algorithm!==:paper)
@@ -158,12 +158,55 @@ function _pr_prepare_node!(pl, pr, left, right, a, work, M, ea, fixed)
             end
         end
     end
-    return cell, xindex
+    return cell, Int(xindex)
+end
+
+"""Search-local child partitions, privately owned at each recursion depth.
+
+Every recursive edge anchors the affine map or increases its ambient rank, so
+the existing live-partition memory estimate also bounds these retained layers.
+No buffers survive the query. Traced and ordinary private calls retain fresh
+copies, allowing observers to keep partition references.
+"""
+struct _PRPartitionPool{P<:Tuple}
+    layers::Vector{P}
+end
+
+function _PRPartitionPool(pl,pr,hl,hr)
+    P=Tuple{typeof(pl),typeof(pr),typeof(hl),typeof(hr)}
+    _PRPartitionPool{P}(P[])
+end
+
+"""Overwrite a private partition, including lengths changed by refinement."""
+function _pr_partition_copyto!(destination::_PRPartition{I},source::_PRPartition{I}) where {I}
+    resize!(destination.order,length(source.order))
+    copyto!(destination.order,source.order)
+    resize!(destination.starts,length(source.starts))
+    copyto!(destination.starts,source.starts)
+    destination
+end
+
+"""Reuse four independent child snapshots without touching ancestor partitions."""
+function _pr_child_partitions!(pool::_PRPartitionPool,depth::Int,pl,pr,hl,hr)
+    if depth>length(pool.layers)
+        depth==length(pool.layers)+1 || error("partition pool depth skipped")
+        layer=(copy(pl),copy(pr),copy(hl),copy(hr))
+        push!(pool.layers,layer)
+        return layer
+    end
+    layer=pool.layers[depth]
+    _pr_partition_copyto!(layer[1],pl)
+    _pr_partition_copyto!(layer[2],pr)
+    _pr_partition_copyto!(layer[3],hl)
+    _pr_partition_copyto!(layer[4],hr)
+    layer
 end
 
 """Depth-first affine recovery with paired partitions (Algorithm 6)."""
 function _pr_dfs!(F::AbstractTruthTable{N,M}, G, left, right, planes_left, planes_right, pl, pr,
-                  hl, hr, a, work, floor, ea, budget, transitive, H = nothing) where {N,M}
+                  hl, hr, a, work, floor, ea, budget, transitive, H = nothing,
+                  pool = nothing, depth::Int = 0) where {N,M}
+    pool=work.trace===nothing ? pool : nothing
     _pr_check!(budget) || return nothing
     if budget.nodes >= budget.max_nodes
         budget.stopped = :nodes
@@ -190,7 +233,7 @@ function _pr_dfs!(F::AbstractTruthTable{N,M}, G, left, right, planes_left, plane
     transitive && !a.anchored && (hi = lo)
     for j = lo:hi
         _pr_check!(budget) || return nothing
-        yindex = pr.order[j]
+        yindex = Int(pr.order[j])
         if labels !== nothing
             orbit = labels[yindex]
             seen[orbit] && continue
@@ -200,11 +243,19 @@ function _pr_dfs!(F::AbstractTruthTable{N,M}, G, left, right, planes_left, plane
         _pr_insert!(b, left[xindex], right[yindex], M, ea && work.algorithm!==:paper) || continue
         child_group = H === nothing ? nothing : _pr_group_stabilizer(H, yindex, budget)
         H !== nothing && child_group === nothing && return nothing
-        ql, qr = copy(pl), copy(pr)
-        _pr_individualize!(ql, cell, xindex)
-        _pr_individualize!(qr, cell, yindex)
-        cert = _pr_dfs!(F, G, left, right, planes_left, planes_right, ql, qr,
-                        copy(hl), copy(hr), b, work, floor, ea, budget, transitive, child_group)
+        if pool===nothing
+            ql, qr = copy(pl), copy(pr)
+            _pr_individualize!(ql, cell, xindex)
+            _pr_individualize!(qr, cell, yindex)
+            cert = _pr_dfs!(F, G, left, right, planes_left, planes_right, ql, qr,
+                            copy(hl), copy(hr), b, work, floor, ea, budget, transitive, child_group)
+        else
+            ql, qr, qhl, qhr = _pr_child_partitions!(pool,depth+1,pl,pr,hl,hr)
+            _pr_individualize!(ql, cell, xindex)
+            _pr_individualize!(qr, cell, yindex)
+            cert = _pr_dfs!(F, G, left, right, planes_left, planes_right, ql, qr,
+                            qhl, qhr, b, work, floor, ea, budget, transitive, child_group,pool,depth+1)
+        end
         cert === nothing || return cert
         budget.stopped === :none || return nothing
     end
@@ -358,11 +409,12 @@ function partition_refinement_equivalence(
     _pr_check!(budget) || return finish(nothing)
     planes_left, hl = _pr_build_planes(wf, length(left), classes, hf)
     planes_right, hr = _pr_build_planes(wg, length(right), classes, hg)
-    work = _PRWorkspace((N+M), length(left), nplanes; threaded, algorithm, rng)
-    pl, pr = _PRPartition(length(left)), _PRPartition(length(right))
+    work = _PRWorkspace((N+M), length(left), nplanes; threaded, algorithm, rng,native_direct=true)
+    pl, pr = _pr_native_partition(length(left)), _pr_native_partition(length(right))
     transitive = algorithm === :optimized && algebraic_degree(G) <= 2
+    pool = _PRPartitionPool(pl,pr,hl,hr)
     cert = _pr_dfs!(F, G, left, right, planes_left, planes_right, pl, pr, hl, hr,
-                    _PRAffineMap(N,M), work, floor, relation === :ea, budget, transitive, H)
+                    _PRAffineMap(N,M), work, floor, relation === :ea, budget, transitive, H,pool)
     return finish(cert)
 end
 

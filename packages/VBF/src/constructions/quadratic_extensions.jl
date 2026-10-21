@@ -656,6 +656,12 @@ end
 V5Work(D5::Int, n::Int = 8) = V5Work(zeros(Int32, 1 << D5), zeros(Int16, 1 << D5), zeros(Int, 1 << n))
 
 include("quadratic_extension_du7.jl")
+
+"""Immutable empty completion set shared by observers until a coset has an output."""
+struct _EmptyCompletionSpaces <: AbstractSet{Vector{UInt32}} end
+Base.length(::_EmptyCompletionSpaces)=0
+Base.iterate(::_EmptyCompletionSpaces)=nothing
+Base.in(x,::_EmptyCompletionSpaces)=false
 include("quadratic_extension_histograms.jl")
 
 """
@@ -780,7 +786,7 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
         should_stop() && break
         nX_used += 1
         first_ncand = ncand; coset_capped = false
-        coset_Ss = coset_observer === nothing ? nothing : Set{Vector{UInt32}}()
+        coset_Ss = nothing
         nWU = (g0 + Int(g5[x+1])) ÷ 2
         empty!(Cx)
         empty!(triangle_pairs)
@@ -811,7 +817,7 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
             du_rej += 1
             coset_observer === nothing || coset_observer((;
                 index=indices[xi], next_x=selected_scope ? nothing : indices[xi]+1, total_x=nX,
-                representative=lifted[xi], Ss=coset_Ss,
+                representative=lifted[xi], Ss=_EmptyCompletionSpaces(),
                 du_reject=1, ncand=0, nT=0, capped=false))
             continue
         end
@@ -845,13 +851,16 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
                 S = rref(vcat(R, lifted[xi], lift(t, Qmask), lift(v, Qmask)))[1]
                 length(S) == G.n || error("dimension of S")
                 push!(Ss, S)
-                coset_Ss === nothing || push!(coset_Ss, S)
+                if coset_observer!==nothing
+                    coset_Ss===nothing && (coset_Ss=Set{Vector{UInt32}}())
+                    push!(coset_Ss,S)
+                end
             end
         end
         nT += length(Tseen)
         coset_observer === nothing || coset_observer((;
             index=indices[xi], next_x=selected_scope ? nothing : indices[xi]+1, total_x=nX,
-            representative=lifted[xi], Ss=coset_Ss,
+            representative=lifted[xi], Ss=coset_Ss===nothing ? _EmptyCompletionSpaces() : coset_Ss,
             du_reject=0, ncand=ncand-first_ncand, nT=length(Tseen), capped=coset_capped))
     end
     finish((; Ss, nX, nX_used, next_x=start_x+nX_used, du_reject = du_rej, ncand, nT, key, capped, skipped = false))

@@ -105,7 +105,7 @@ function _pr_auto_dfs!(F::AbstractTruthTable{N,M}, points, planes, pl, pr, hl, h
         end
         j = findfirst(k -> !covered[labels[pr.order[k]]], lo:hi)
         j === nothing && return
-        yindex = pr.order[lo+j-1]
+        yindex = Int(pr.order[lo+j-1])
         touched[yindex] = true
         b = copy(a)
         _pr_insert!(b, points[xindex], points[yindex], M, ea && work.algorithm!==:paper) || continue
@@ -206,7 +206,7 @@ function partition_refinement_automorphisms(F::AbstractTruthTable{N,M}; relation
         return finish()
     end
     planes, hl = _pr_build_planes(spectrum, length(points), classes, histogram)
-    pl, pr = _PRPartition(length(points)), _PRPartition(length(points))
+    pl, pr = _pr_native_partition(length(points)), _pr_native_partition(length(points))
     a, fixed = _PRAffineMap(N,M), Int[]
     if quadratic
         _pr_insert!(a, first(points), first(points), M, relation === :ea && algorithm!==:paper)

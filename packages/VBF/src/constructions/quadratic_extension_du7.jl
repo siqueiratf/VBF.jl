@@ -18,7 +18,7 @@ struct _DU7Plan
     groupmask::UInt64
     validmask::NTuple{4,UInt64}
     tables::Vector{Vector{NTuple{9,UInt64}}}
-    states::Vector{Tuple{NTuple{4,UInt64},UInt64}}
+    candidates::Vector{UInt32}
 end
 
 """Linear evaluation signatures, used only to build the byte lookup tables."""
@@ -50,7 +50,7 @@ end
 end
 
 """Prepare reusable masks from the installed VBF flat geometry."""
-function _du7_prepare(C,Cidx,G,L)
+function _du7_prepare(C,Cidx,G,L=UInt32[])
     points=[UInt32[] for _ in 1:1<<G.n]
     for (c,fi) in zip(C,Cidx),p in G.flatpts[fi]
         push!(points[p+1],c)
@@ -71,8 +71,7 @@ function _du7_prepare(C,Cidx,G,L)
     groupmask=foldl(|,(UInt64(1)<<(3(i-1)) for i in eachindex(triples));init=UInt64(0))
     validmask=ntuple(word->foldl(|,(UInt64(1)<<((i-1)&63) for i in eachindex(pairs)
         if ((i-1)>>6)+1==word);init=UInt64(0)),Val(4))
-    plan=_DU7Plan(pairs,triples,groupmask,validmask,Vector{NTuple{9,UInt64}}[],
-        Tuple{NTuple{4,UInt64},UInt64}[])
+    plan=_DU7Plan(pairs,triples,groupmask,validmask,Vector{NTuple{9,UInt64}}[],L)
     columns=[_du7_linear_state(plan,UInt32(1)<<j) for j in 0:23]
     for chunk in 0:2
         table=Vector{NTuple{9,UInt64}}(undef,256)
@@ -84,8 +83,6 @@ function _du7_prepare(C,Cidx,G,L)
         end
         push!(plan.tables,table)
     end
-    sizehint!(plan.states,length(L))
-    for t in L;push!(plan.states,_du7_state(plan,t));end
     plan
 end
 
@@ -104,13 +101,13 @@ struct _DU7Bits
     bad::Vector{UInt64}
 end
 
-"""Transpose previously certified point signatures into candidate bitsets."""
-function _DU7Bits(plan)
-    words=cld(length(plan.states),64)
+"""Produce candidate bitsets directly, without retaining a second state array."""
+function _DU7Bits(plan,L=plan.candidates)
+    words=cld(length(L),64)
     zeroes=zeros(UInt64,words,length(plan.pairs))
     signatures=zeros(UInt64,words,8length(plan.triples))
-    for i in eachindex(plan.states)
-        masks,sig=plan.states[i];word=((i-1)>>6)+1;bit=UInt64(1)<<((i-1)&63)
+    for i in eachindex(L)
+        masks,sig=_du7_state(plan,L[i]);word=((i-1)>>6)+1;bit=UInt64(1)<<((i-1)&63)
         for block in 1:4
             mask=masks[block]
             while mask!=0

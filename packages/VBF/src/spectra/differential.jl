@@ -63,15 +63,20 @@ function differential_spectrum(s::SBox)
     lut = s.lut
     fieldsize = length(lut)
     counts = zeros(Int, fieldsize)
-    sp = Spectrum()
+    frequencies = zeros(Int, fieldsize+1)
     @inbounds for a = 1:(fieldsize-1)      # skip row a=0
         fill!(counts, 0)
         for x = 0:(fieldsize-1)
             counts[(Int(lut[x+1]) ⊻ Int(lut[(x⊻a)+1]))+1] += 1
         end
         for b = 1:fieldsize
-            add!(sp, counts[b])
+            frequencies[counts[b]+1] += 1
         end
+    end
+    sp = Spectrum()
+    @inbounds for value in 0:fieldsize
+        count=frequencies[value+1]
+        count==0 || add!(sp,value,count)
     end
     sp
 end

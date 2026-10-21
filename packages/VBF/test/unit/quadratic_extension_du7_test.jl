@@ -43,9 +43,11 @@ end
         R,p=Q.rref([q]);_,mask=Q.pivots_masks(R,p,G.N)
         fi=[i for (i,w) in enumerate(G.flats) if !Q.par(w&q)]
         C=UInt32[Q.pext(G.flats[i],mask) for i in fi]
-        L=UInt32.(0:129);plan=Q._du7_prepare(C,fi,G,L)
+        L=UInt32.(0:129);plan=Q._du7_prepare(C,fi,G)
         plan===nothing && continue
-        bits=Q._DU7Bits(plan)
+        bits=Q._DU7Bits(plan,L)
+        @test !hasfield(typeof(plan),:states)
+        @test size(bits.zeroes,1)==cld(length(L),64)
         for x in UInt32(1):UInt32(31)
             lifted=Q.lift(x,mask)
             cx=[i for i in fi if !Q.par(G.flats[i]&lifted)]
@@ -70,6 +72,11 @@ end
     end
     @test Q._du7_triangle_reject([(UInt32(1),UInt32(2))],UInt32(4))
     @test !Q._du7_triangle_reject([(UInt32(1),UInt32(2))],UInt32(1))
+    empty_spaces=Q._EmptyCompletionSpaces()
+    @test empty_spaces==Set{Vector{UInt32}}()
+    @test Set{Vector{UInt32}}()==empty_spaces
+    @test collect(empty_spaces)==Vector{UInt32}[]
+    @test !(UInt32[1] in empty_spaces)
 end
 
 @testitem "DU7 pruning preserves partial-search observer scopes" begin
