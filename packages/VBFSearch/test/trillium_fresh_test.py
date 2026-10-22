@@ -62,6 +62,21 @@ class FreshPilotTests(unittest.TestCase):
         self.assertFalse(p['local'].exists())
         with self.assertRaises(ValueError):F.plan(self.args,self.env,remaining=900)
 
+    def test_scheduling_controls_reach_search_command(self):
+        args=F.parser().parse_args(['--window-size=256','--rolling-windows',
+                                    '--progress-interval=20'])
+        command=F.plan(args,self.env,remaining=1800)['command']
+        for flag in ('--window-size=256','--rolling-windows','--progress-interval=20.0'):
+            self.assertIn(flag,command)
+        for key,values in [('window_size',(0,-1)),
+                           ('progress_interval',(0,-1,float('nan'),float('inf')))]:
+            for value in values:
+                invalid=F.parser().parse_args([])
+                setattr(invalid,key,value)
+                with self.subTest(key=key,value=value),self.assertRaises(ValueError):
+                    F.plan(invalid,self.env,remaining=1800)
+        self.assertEqual(list(self.local.iterdir()),[])
+
     def test_bad_scope_or_resources_fail_before_writes(self):
         for key,value in [('SLURM_CPUS_PER_TASK','1'),('SLURM_JOB_ID','../123'),
                           ('VBF_OUTPUT',str(self.root/'outside.sqlite')),('VBF_OUTPUT',str(self.scratch/'directory'))]:

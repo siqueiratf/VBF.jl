@@ -30,17 +30,46 @@ function console_event(event;human=false,io=stdout)
         println(io,FP.JSON3.write(event))
     elseif event["event"]=="window_started"
         origin=event["origin"]=="root" ? "initial seeds" : "discovered parents"
-        println(io,"Processing ",origin,"…")
+        action=get(event,"rolling",false) ? "Adding" : "Processing"
+        println(io,action," ",origin,": parent IDs ",event["first"],"–",event["last"],
+            " (",get(event,"active_windows",1)," scheduling window(s) active).")
     elseif event["event"]=="seed_completed"
         timing=event["timing"]
         origin=get(timing,"origin","root")=="root" ? "initial seed" : "discovered parent"
         elapsed=round(timing["elapsed_from_first_dispatch_seconds"];digits=1)
-        println(io,"Completed ",origin," (",elapsed," seconds).")
+        parent=get(event,"parent_id",get(timing,"parent_id","?"))
+        print(io,"Completed ",origin,", parent #",parent," (",elapsed," seconds)")
+        haskey(event,"completed_this_session") && print(io,"; ",event["completed_this_session"]," parents complete this run")
+        println(io,".")
+    elseif event["event"]=="window_drained"
+        println(io,"Construction window ",event["first"],"–",event["last"],
+            " drained; updating progress and selecting further work.")
     elseif event["event"]=="batch_progress"
         batch=event["batch"]
-        println(io,"Progress: ",batch["completed"],"/",batch["target_count"],
-            " parents in current group; ",batch["processed_packets"]," work packets; ",
-            round(batch["elapsed_seconds"];digits=1)," seconds.")
+        origin=get(event,"window_origin","root")=="root" ? "Published" : "Discovered"
+        print(io,"[",round(batch["elapsed_seconds"];digits=1),"s] ",origin," parents ",
+            get(batch,"first_parent","?"),"–",get(batch,"last_parent","?"),": ",
+            batch["completed"],"/",batch["target_count"]," parents complete")
+        statistics=get(event,"seed_statistics",Dict())
+        haskey(statistics,"completed_this_session") && print(io,"; total this run: ",statistics["completed_this_session"])
+        println(io,".")
+        metrics=get(event,"runtime_metrics",Dict());scheduler=get(metrics,"scheduler",Dict())
+        resources=get(metrics,"resources",Dict())
+        print(io,"  ",batch["processed_packets"]," work packets")
+        if haskey(scheduler,"workers_computing")
+            print(io,"; compute calls: ",scheduler["workers_computing"],"/",get(resources,"concurrency","?"),
+                "; results waiting to apply: ",get(scheduler,"completed",0)+get(scheduler,"completed_uncollected",0))
+        end
+        println(io,".")
+        if get(metrics,"process_cpu_available",false) && haskey(metrics,"recent_average_cpu_cores")
+            cores=metrics["recent_average_cpu_cores"];allocation=get(resources,"cpu_allocation",0)
+            print(io,"  Recent CPU: ",round(cores;digits=1)," busy cores")
+            allocation>0 && print(io," / ",allocation," allocated (",round(100cores/allocation;digits=1),"%)")
+            println(io,"; GC: ",round(metrics["recent_gc_pause_seconds"];digits=2),"s.")
+            println(io,"  Recent coordinator apply: ",round(metrics["recent_apply_seconds"];digits=2),
+                "s; progress update: ",round(get(event,"publication_seconds",metrics["recent_reporting_seconds"]);digits=2),"s over ",
+                round(metrics["recent_wall_seconds"];digits=1),"s (wall timers overlap).")
+        end
     end
     flush(io)
     nothing
@@ -220,6 +249,7 @@ function run(config)
         end
     end
     runtime=ClosureOperations.RuntimeMetrics()
+    last_console_metrics=(wall=0.0,cpu=0.0,gc=0.0,apply=0.0,reporting=0.0)
     storage_paths=vcat([directory,out],String.(get(config,"storage_paths",String[])))
     checkpoint_root=String(get(config,"checkpoint_directory",""))
     isempty(checkpoint_root) || push!(storage_paths,abspath(checkpoint_root))
@@ -327,7 +357,8 @@ function run(config)
             length(same_origin)>100 && deleteat!(history,first(same_origin))
             filter!(t->now-t<=300,completion_events)
             emit!("seed-timings.jsonl",t)
-            console(Dict("event"=>"seed_completed","parent_id"=>parent,"timing"=>t))
+            console(Dict("event"=>"seed_completed","parent_id"=>parent,"timing"=>t,
+                "completed_this_session"=>completed_this_session))
         end
         ClosureCompletion.release!(completion,ready)
         active_parent_ids=Set(parents)
@@ -423,6 +454,17 @@ function run(config)
         report["continuous_search"]=merge(batch,Dict("window_origin"=>window_origin,"windows_completed"=>windows_completed,"windows_started"=>windows_started,"rolling_windows"=>rolling_windows,"active_windows"=>window_active ? length(cohorts) : 0,"duration_policy"=>"until STOP","parent_scope"=>parent_scope))
         report["seed_statistics"]=seed_statistics(history,completion_events,active_started;now=time(),completed_this_session,parent_scope)
         report["runtime_metrics"]=ClosureOperations.runtime_snapshot(runtime,resources)
+        metrics=report["runtime_metrics"]
+        apply_total=sum(get(t,"apply_wall_seconds",0.0) for t in values(metrics["packet_totals"]);init=0.0)
+        current=(wall=metrics["wall_seconds"],cpu=metrics["process_cpu_seconds"],
+            gc=metrics["gc_pause_seconds"],apply=apply_total,reporting=metrics["reporting_seconds"])
+        interval=max(0.0,current.wall-last_console_metrics.wall)
+        metrics["recent_wall_seconds"]=interval
+        metrics["recent_average_cpu_cores"]=interval>0 ? max(0.0,current.cpu-last_console_metrics.cpu)/interval : 0.0
+        metrics["recent_gc_pause_seconds"]=max(0.0,current.gc-last_console_metrics.gc)
+        metrics["recent_apply_seconds"]=max(0.0,current.apply-last_console_metrics.apply)
+        metrics["recent_reporting_seconds"]=max(0.0,current.reporting-last_console_metrics.reporting)
+        last_console_metrics=current
         completion_metrics=completion===nothing ? Dict{String,Any}() : merge(ClosureCompletion.snapshot(completion),Dict("record_seconds"=>completion_record_seconds))
         report["runtime_metrics"]["completion"]=completion_metrics
         report["runtime_metrics"]["parent_target_cache"]=target_cache===nothing ? Dict{String,Any}() : FP._closure_parent_target_cache_stats(target_cache)
@@ -442,7 +484,9 @@ function run(config)
         publish_times["total"]=(time_ns()-publish_started)*1e-9
         runtime.reporting_seconds+=publish_times["total"]
         emit!("publish-metrics.jsonl",Dict("utc"=>FP._closure_now(),"finished"=>finished,"processed_packets"=>processed,"seconds"=>publish_times))
-        console(Dict("event"=>"batch_progress","batch"=>batch));last_report=time();last_publication_key=publication_key;last_publication_fresh=recount
+        console(Dict("event"=>"batch_progress","batch"=>batch,"window_origin"=>window_origin,
+            "seed_statistics"=>report["seed_statistics"],"runtime_metrics"=>report["runtime_metrics"],
+            "publication_seconds"=>publish_times["total"]));last_report=time();last_publication_key=publication_key;last_publication_fresh=recount
     end
     function prepare_item(item,ticket,slot)
         job=item.job;equivalence=item.equivalence
@@ -508,6 +552,7 @@ function run(config)
             unfinished==0 || break
             record_completed!(construction();selected_parents=cohort)
             windows_completed+=1
+            console(Dict("event"=>"window_drained","first"=>first(cohort),"last"=>last(cohort)))
             publish!(;force=true,fresh_counts=true)
             base=TOML.parsefile(joinpath(directory,"progress.toml"))
             popfirst!(cohorts);filter!(p->!(p in cohort),parents)
@@ -734,6 +779,7 @@ function run(config)
             all(j->j["status"]=="done",jobs) || error("parent coverage requires recovery")
             if window_active
                 windows_completed+=1;window_active=false
+                console(Dict("event"=>"window_drained","first"=>first(parents),"last"=>last(parents)))
                 publish!(;force=true,fresh_counts=true)
                 base=TOML.parsefile(joinpath(directory,"progress.toml"))
                 before_jobs=deepcopy(jobs);before_paths=Dict(kind=>paths(kind) for kind in ("v5","switching"));before_kernels=kernels()
