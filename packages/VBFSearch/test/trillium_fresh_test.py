@@ -121,7 +121,7 @@ class FreshPilotTests(unittest.TestCase):
             os.kill(os.getpid(),signal.SIGUSR1)
             self.assertEqual(Path(kw['env']['VBF_SEARCH_STOP_FILE']).read_text(),'SIGUSR1\n')
             self.assertEqual(kw['env']['JULIA_PKG_OFFLINE'],'true')
-            self.assertEqual(kw['env']['JULIA_DEPOT_PATH'],str(self.depot))
+            self.assertEqual(kw['env']['JULIA_DEPOT_PATH'],str(self.depot)+os.pathsep)
             output=Path(next(arg.split('=',1)[1] for arg in command if arg.startswith('--output=')))
             fixture(output)
             return subprocess.CompletedProcess(command,0)
