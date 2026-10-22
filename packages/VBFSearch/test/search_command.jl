@@ -182,22 +182,32 @@ end
         "timing"=>Dict("origin"=>"root","elapsed_from_first_dispatch_seconds"=>2.34))
     ContinuousSeedSearch.console_event(completed;human=true,io=text)
     human=String(take!(text))
-    @test occursin("parent #124",human) && occursin("119 parents complete this run",human)
+    @test isempty(human)
+    ContinuousSeedSearch.console_event(completed;io=text)
+    @test VBFSearch.JSON3.read(String(take!(text)),Dict{String,Any})==completed
     window=Dict("event"=>"window_started","origin"=>"root","first"=>101,"last"=>200,
         "rolling"=>true,"active_windows"=>2)
     ContinuousSeedSearch.console_event(window;human=true,io=text)
     @test occursin("101–200 (2 scheduling window(s) active)",String(take!(text)))
+    window["first_seed"]=21101;window["last_seed"]=21200
+    ContinuousSeedSearch.console_event(window;human=true,io=text)
+    @test occursin("audited rows 21101–21200",String(take!(text)))
+    @test ContinuousSeedSearch.published_row(Dict("root_first"=>21001),101)==21101
+    @test ContinuousSeedSearch.published_row(Dict("root_order"=>"reverse","root_last"=>22000),101)==21900
     event["window_origin"]="discovered"
-    event["seed_statistics"]=Dict("completed_this_session"=>1234)
+    event["seed_statistics"]=Dict("completed_this_session"=>1234,
+        "published_completed_this_session"=>1200,"published_selected"=>24294)
     event["runtime_metrics"]=Dict("process_cpu_available"=>true,
         "resources"=>Dict("concurrency"=>182,"cpu_allocation"=>192),
         "scheduler"=>Dict("workers_computing"=>160,"completed"=>120,"completed_uncollected"=>8),
         "recent_average_cpu_cores"=>144.0,"recent_gc_pause_seconds"=>1.0,
-        "recent_apply_seconds"=>8.0,"recent_reporting_seconds"=>0.2,"recent_wall_seconds"=>15.0)
+        "recent_apply_seconds"=>8.0,"recent_reporting_seconds"=>0.2,"recent_wall_seconds"=>15.0,
+        "recent_packets"=>150,"recent_packets_per_second"=>10.0)
     ContinuousSeedSearch.console_event(event;human=true,io=text)
     human=String(take!(text))
-    @test occursin("Discovered parents",human) && occursin("total this run: 1234",human)
-    @test occursin("compute calls: 160/182",human) && occursin("waiting to apply: 128",human)
+    @test occursin("Discovered parents",human) && occursin("expanded this run: 1234",human)
+    @test occursin("1200/24294 selected",human) && occursin("waiting to apply: 128",human)
+    @test occursin("+150; 10.0/s",human) && !occursin("compute calls:",human)
     @test occursin("144.0 busy cores / 192 allocated (75.0%)",human)
     @test occursin("coordinator apply: 8.0s",human) && occursin("progress update: 0.2s",human)
     event["publication_seconds"]=1.75
@@ -224,6 +234,8 @@ end
         progress=TOML.parsefile(joinpath(config["run"],"progress.toml"))
         @test progress["initial_roots"]==1
         @test progress["qualified_roots"]==2 && progress["root_first"]==progress["root_last"]==2
+        @test occursin("audited rows 2–2",read(joinpath(directory,"worker.stdout"),String))
+        @test progress["seed_statistics"]["published_selected"]==1
         identity=TOML.parsefile(joinpath(config["run"],"identity.toml"))
         @test identity["scientific"]["extension_cosets"]==65536
         @test identity["scientific"]["switching_directions"]==32

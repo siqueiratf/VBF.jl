@@ -240,6 +240,8 @@ end
         @test a.paths==b.paths && a.ledger==b.ledger && a.kernels==b.kernels && a.partition==b.partition
         @test a.running==b.running==0
         @test batch["seed_statistics"]["completed_this_session"]==rolling["seed_statistics"]["completed_this_session"]==2
+        @test batch["seed_statistics"]["published_completed_this_session"]==rolling["seed_statistics"]["published_completed_this_session"]==2
+        @test batch["seed_statistics"]["published_selected"]==rolling["seed_statistics"]["published_selected"]==3
         progress=TOML.parsefile(joinpath(new,"progress.toml"))
         @test progress["continuous_search"]["windows_completed"]==2
         @test progress["continuous_search"]["windows_started"]==2
