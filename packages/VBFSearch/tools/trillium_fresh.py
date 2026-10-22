@@ -174,7 +174,8 @@ def run(args, env=None):
             request.write_text(reason[0]+'\n')
 
     previous = {s: signal.signal(s, stop) for s in (signal.SIGUSR1, signal.SIGTERM, signal.SIGINT)}
-    child_env = dict(env, JULIA_DEPOT_PATH=str(launch['depot']),
+    # Keep the runtime's standard-library caches, while excluding the user depot.
+    child_env = dict(env, JULIA_DEPOT_PATH=str(launch['depot'])+os.pathsep,
         JULIA_PKG_OFFLINE='true', JULIA_PKG_PRECOMPILE_AUTO='0', JULIA_NUM_PRECOMPILE_TASKS='1',
         OPENBLAS_NUM_THREADS='1', OMP_NUM_THREADS='1', MKL_NUM_THREADS='1',
         TMPDIR=str(local), SQLITE_TMPDIR=str(local), VBF_SEARCH_STOP_FILE=str(request))
