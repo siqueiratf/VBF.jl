@@ -55,6 +55,10 @@ def plan(args, env, *, remaining=None):
         raise ValueError('seed interval must satisfy 1 <= start <= end')
     if not math.isfinite(args.time) or args.time <= 0:
         raise ValueError('search time must be positive and finite')
+    if args.window_size <= 0:
+        raise ValueError('window size must be positive')
+    if not math.isfinite(args.progress_interval) or args.progress_interval <= 0:
+        raise ValueError('progress interval must be positive and finite')
     left = remaining_seconds(env) if remaining is None else remaining
     budget = min(args.time, left-GRACE_SECONDS-COPY_MARGIN_SECONDS)
     if not math.isfinite(budget) or budget <= 0:
@@ -80,6 +84,12 @@ def plan(args, env, *, remaining=None):
         command += ['--campaign', str(Path(args.campaign).absolute())]
     if args.heap:
         command += ['--heap', args.heap]
+    if args.window_size != 100:
+        command += ['--window-size='+str(args.window_size)]
+    if args.rolling_windows:
+        command += ['--rolling-windows']
+    if args.progress_interval != 15:
+        command += ['--progress-interval='+str(args.progress_interval)]
     return dict(command=command, workspace=workspace, depot=depot, local=local,
                 source=local/'results.sqlite', output=output, budget=budget)
 
@@ -204,6 +214,9 @@ def parser():
     p.add_argument('--time', type=float, default=600, help='search seconds; shortened to preserve drain/copy time')
     p.add_argument('--campaign', help='staged audited campaign, otherwise the command default')
     p.add_argument('--heap', help='optional Julia heap hint, e.g. 64G')
+    p.add_argument('--window-size', type=int, default=100, help='parents per scheduling window')
+    p.add_argument('--rolling-windows', action='store_true', help='overlap up to two scheduling windows')
+    p.add_argument('--progress-interval', type=float, default=15, help='seconds between progress updates')
     return p
 
 

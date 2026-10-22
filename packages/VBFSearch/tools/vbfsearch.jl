@@ -9,7 +9,8 @@ using TOML, Dates
 const ROOT=normpath(joinpath(@__DIR__,"..","..",".."))
 const VALUES=Dict("--start"=>"start","--end"=>"end","--time"=>"time",
     "--output"=>"output","--campaign"=>"campaign","--threads"=>"threads",
-    "--heap-size-hint"=>"heap","--heap"=>"heap")
+    "--heap-size-hint"=>"heap","--heap"=>"heap",
+    "--window-size"=>"window_size","--progress-interval"=>"progress_interval")
 
 """Describe seed numbering, limits, and the fresh-run command surface."""
 function help(io=stdout)
@@ -27,6 +28,10 @@ Usage: vbfsearch --recursive-closure [OPTIONS]
   --campaign FILE     Audited seed plan (default: installed literature b6=52 plan,
                       overridable with VBF_SEARCH_CAMPAIGN)
   --heap SIZE         Julia heap hint, e.g. 16G; defaults scale with thread count
+  --window-size N     Parents per scheduling window (default: 100)
+  --rolling-windows   Overlap up to two windows to reduce boundary draining
+  --progress-interval SECONDS
+                      Progress publication interval; accepts 10s (default: 15s)
   --dry-run           Print the resolved plan without creating files or searching
   -h, --help          Show this help
 
@@ -56,7 +61,7 @@ function options(args)
         token=args[i]
         if token in ("--help","-h")
             push!(flags,"help");i+=1;continue
-        elseif token in ("--recursive-closure","--dry-run")
+        elseif token in ("--recursive-closure","--dry-run","--rolling-windows")
             token in flags && throw(ArgumentError("repeated option $token"))
             push!(flags,token);i+=1;continue
         elseif token=="-j"
@@ -89,11 +94,11 @@ function positive(value,name)
 end
 
 """Interpret a finite positive budget in seconds, minutes or hours."""
-function seconds(value)
+function seconds(value;name="--time")
     found=match(r"^([0-9]+(?:\.[0-9]+)?)([smh]?)$",value)
-    found===nothing && throw(ArgumentError("--time needs seconds, 30s, 15m or 8h"))
+    found===nothing && throw(ArgumentError("$name needs seconds, 30s, 15m or 8h"))
     result=parse(Float64,found[1])*get(Dict(""=>1,"s"=>1,"m"=>60,"h"=>3600),found[2],1)
-    isfinite(result) && result>0 || throw(ArgumentError("--time must be positive and finite"))
+    isfinite(result) && result>0 || throw(ArgumentError("$name must be positive and finite"))
     result
 end
 
@@ -147,6 +152,8 @@ function plan(parsed;env=ENV,cpu_threads=available_cpu_count(),output_default=no
     last_seed=haskey(cfg,"end") ? positive(cfg["end"],"--end") : nothing
     budget=haskey(cfg,"time") ? seconds(cfg["time"]) : nothing
     pools=threads(get(cfg,"threads","1");env,cpu_threads)
+    window_size=positive(get(cfg,"window_size","100"),"--window-size")
+    progress_interval=seconds(get(cfg,"progress_interval","15s");name="--progress-interval")
     heap=get(cfg,"heap",pools.compute==1 ? "512M" : pools.compute<16 ? "4G" : pools.compute<64 ? "16G" : "32G")
     occursin(r"^[1-9][0-9]*(?:[KMGTP]B?|B)?$",heap) || throw(ArgumentError("--heap needs positive bytes or a size such as 512M or 16G"))
     campaign=abspath(get(cfg,"campaign",default_campaign(env)))
@@ -179,7 +186,9 @@ function plan(parsed;env=ENV,cpu_threads=available_cpu_count(),output_default=no
         "julia_threads"=>string(pools.compute,",",pools.interactive),
         "julia_gc_threads"=>string(pools.mark,",",pools.sweep),"heap_size_hint"=>heap,
         "concurrency"=>pools.compute,"reservation_horizon"=>max(1024,4pools.compute),
-        "reservation_refill_batch"=>16,"max_apply_per_step"=>32,"window_size"=>100,
+        "reservation_refill_batch"=>16,"max_apply_per_step"=>32,"window_size"=>window_size,
+        "rolling_windows"=>("--rolling-windows" in parsed.flags),
+        "report_interval_seconds"=>progress_interval,
         "parent_scope"=>"all","baseline_policy"=>"summary","indexed_ea_queue"=>true,
         "cached_global_counts"=>true,"shared_property_cache_entries"=>8192,
         "checkpoint_on_stop"=>false,"human_progress"=>true,"shutdown_grace_seconds"=>600.0)
@@ -195,6 +204,9 @@ function describe(io,launch)
     println(io,"Initial seeds: ",cfg["root_first"],"–",cfg["root_last"]," of ",launch.total," (inclusive audited rows)")
     println(io,"CPU pools: ",p.compute," compute, ",p.interactive," interactive, GC ",p.mark,",",p.sweep)
     println(io,"Heap hint: ",launch.heap)
+    println(io,"Scheduling: ",cfg["window_size"]," parents/window; overlap ",
+        cfg["rolling_windows"] ? "on (up to two windows)" : "off",
+        "; progress every ",cfg["report_interval_seconds"]," seconds")
     println(io,"Time: ",launch.budget===nothing ? "until stopped" : string(launch.budget," seconds including worker setup; then drain"))
     println(io,"Seed plan: ",cfg["campaign"])
     println(io,"Output: ",cfg["output"])

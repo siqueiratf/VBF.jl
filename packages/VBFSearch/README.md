@@ -19,6 +19,28 @@ Research studies live in [VBFPaper](../VBFPaper/README.md): census
 sampling, hyperplane experiments, finite literature domains and publication
 figures. Original-source corpus preparation remains in VBFCatalog.
 
+## One-command recursive search
+
+With the dependencies and audited seed inputs prepared, run:
+
+```sh
+bin/vbfsearch --recursive-closure -j --start=1 --end=24294 --time=30m \
+  --output=results.sqlite
+```
+
+Each invocation starts fresh and publishes one SQLite after cooperative shutdown.
+The seed bounds select published input rows; admitted descendants remain eligible.
+The foreground command reports parent IDs, cumulative completion, current compute
+calls, recent process CPU use, GC time, and coordinator application/reporting time.
+Compute calls can be blocked or stopped by GC; they do not measure CPU use.
+
+The default scheduling window is 100 parents. `--window-size=200` changes it;
+`--rolling-windows` enables the existing bounded overlap of two windows so the
+next window can supply work before the current one drains. It is opt-in and
+does not remove the serial admission coordinator. `--progress-interval=10s`
+changes progress publication frequency. These settings apply when launching a
+new run; they do not reconfigure an already running process.
+
 ## Search, stop and resume
 
 Instantiate the root Julia >=1.12 project and prepare

@@ -68,12 +68,14 @@ end
         @test cfg==Dict("threads"=>"8","start"=>"2","end"=>"3","time"=>"15m")
     end
     @test C.options(["--recursive-closure","-j","--dry-run"]).config["threads"]=="auto"
+    @test "--rolling-windows" in C.options(["--rolling-windows"]).flags
     @test C.seconds("60")==60.0 && C.seconds("1.5h")==5400.0
     for value in ("0","-1","NaN","Inf","1d","1e1000")
         @test_throws ArgumentError C.seconds(value)
     end
     for argv in (["--time"],["--start="],["--unknown","1"],["--recursive-closure","--recursive-closure"],
-            ["-j1","--threads=2"],["--heap=1G","--heap-size-hint=2G"],["--time=1","--time=2"],["stray"])
+            ["-j1","--threads=2"],["--heap=1G","--heap-size-hint=2G"],["--time=1","--time=2"],
+            ["--rolling-windows","--rolling-windows"],["--window-size=10","--window-size=20"],["stray"])
         @test_throws ArgumentError C.options(argv)
     end
     text=IOBuffer()
@@ -110,18 +112,38 @@ end
         @test launch.config["checkpoint_on_stop"]===false
         @test launch.config["cached_global_counts"]===true
         @test launch.config["human_progress"]===true
+        @test launch.config["window_size"]==100 && !launch.config["rolling_windows"]
+        @test launch.config["report_interval_seconds"]==15.0
         @test !ispath(output)
         text=IOBuffer()
         @test C.main([args;"--dry-run"];env=Dict{String,String}(),io=text)==0
         @test occursin("1–1",String(take!(text)))
         @test !ispath(output)
-        for extra in (["--start=0"],["--start=2"],["--end=2"],["--time=0"],["--heap=0G"])
+        for extra in (["--start=0"],["--start=2"],["--end=2"],["--time=0"],["--heap=0G"],
+                ["--window-size=0"],["--window-size=no"],["--progress-interval=0"],["--progress-interval=Inf"])
             stripped=filter(x->!startswith(x,first(split(first(extra),'='))*"="),args)
             @test_throws ArgumentError C.plan(C.options([stripped;extra]);env=Dict{String,String}())
         end
         rm(joinpath(directory,"EA_certificates.tsv"))
         @test_throws ArgumentError C.plan(parsed;env=Dict{String,String}())
         @test !ispath(output)
+    end
+end
+
+@testset "Scheduling controls reach the persisted plan without changing seed scope" begin
+    mktempdir() do directory
+        campaign=campaign_fixture(directory);output=joinpath(directory,"configured")
+        args=["--recursive-closure","--campaign",campaign,"--output",output,"-j1",
+            "--window-size=256","--rolling-windows","--progress-interval=10s"]
+        text=IOBuffer()
+        @test C.main(args;env=Dict{String,String}(),io=text,dispatch=_->nothing)==0
+        config=TOML.parsefile(joinpath(output,"command.toml"))
+        @test config["window_size"]==256 && config["rolling_windows"]===true
+        @test config["report_interval_seconds"]==10.0
+        @test config["root_first"]==config["root_last"]==1
+        @test config["parent_scope"]=="all" && config["concurrency"]==1
+        description=String(take!(text))
+        @test occursin("256 parents/window; overlap on",description)
     end
 end
 
@@ -156,6 +178,34 @@ end
     @test !occursin("\"event\"",human)
     ContinuousSeedSearch.console_event(event;io=text)
     @test VBFSearch.JSON3.read(String(take!(text)),Dict{String,Any})==event
+    completed=Dict("event"=>"seed_completed","parent_id"=>124,"completed_this_session"=>119,
+        "timing"=>Dict("origin"=>"root","elapsed_from_first_dispatch_seconds"=>2.34))
+    ContinuousSeedSearch.console_event(completed;human=true,io=text)
+    human=String(take!(text))
+    @test occursin("parent #124",human) && occursin("119 parents complete this run",human)
+    window=Dict("event"=>"window_started","origin"=>"root","first"=>101,"last"=>200,
+        "rolling"=>true,"active_windows"=>2)
+    ContinuousSeedSearch.console_event(window;human=true,io=text)
+    @test occursin("101–200 (2 scheduling window(s) active)",String(take!(text)))
+    event["window_origin"]="discovered"
+    event["seed_statistics"]=Dict("completed_this_session"=>1234)
+    event["runtime_metrics"]=Dict("process_cpu_available"=>true,
+        "resources"=>Dict("concurrency"=>182,"cpu_allocation"=>192),
+        "scheduler"=>Dict("workers_computing"=>160,"completed"=>120,"completed_uncollected"=>8),
+        "recent_average_cpu_cores"=>144.0,"recent_gc_pause_seconds"=>1.0,
+        "recent_apply_seconds"=>8.0,"recent_reporting_seconds"=>0.2,"recent_wall_seconds"=>15.0)
+    ContinuousSeedSearch.console_event(event;human=true,io=text)
+    human=String(take!(text))
+    @test occursin("Discovered parents",human) && occursin("total this run: 1234",human)
+    @test occursin("compute calls: 160/182",human) && occursin("waiting to apply: 128",human)
+    @test occursin("144.0 busy cores / 192 allocated (75.0%)",human)
+    @test occursin("coordinator apply: 8.0s",human) && occursin("progress update: 0.2s",human)
+    event["publication_seconds"]=1.75
+    ContinuousSeedSearch.console_event(event;human=true,io=text)
+    @test occursin("progress update: 1.75s",String(take!(text)))
+    drained=Dict("event"=>"window_drained","first"=>101,"last"=>200)
+    ContinuousSeedSearch.console_event(drained;human=true,io=text)
+    @test occursin("101–200 drained",String(take!(text)))
 end
 
 @testset "Fresh worker reuses audited initialization and the real controller" begin
