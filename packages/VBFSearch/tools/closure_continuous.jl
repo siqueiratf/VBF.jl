@@ -31,34 +31,37 @@ function console_event(event;human=false,io=stdout)
     elseif event["event"]=="window_started"
         origin=event["origin"]=="root" ? "initial seeds" : "discovered parents"
         action=get(event,"rolling",false) ? "Adding" : "Processing"
-        println(io,action," ",origin,": parent IDs ",event["first"],"–",event["last"],
+        label=event["origin"]=="root" && haskey(event,"first_seed") ? "audited rows " : "parent IDs "
+        println(io,action," ",origin,": ",label,get(event,"first_seed",event["first"]),"–",get(event,"last_seed",event["last"]),
             " (",get(event,"active_windows",1)," scheduling window(s) active).")
     elseif event["event"]=="seed_completed"
-        timing=event["timing"]
-        origin=get(timing,"origin","root")=="root" ? "initial seed" : "discovered parent"
-        elapsed=round(timing["elapsed_from_first_dispatch_seconds"];digits=1)
-        parent=get(event,"parent_id",get(timing,"parent_id","?"))
-        print(io,"Completed ",origin,", parent #",parent," (",elapsed," seconds)")
-        haskey(event,"completed_this_session") && print(io,"; ",event["completed_this_session"]," parents complete this run")
-        println(io,".")
+        # Full per-parent timing records remain in seed-timings.jsonl. Bursts of
+        # one hundred near-identical lines obscure the campaign-level progress.
+        return nothing
     elseif event["event"]=="window_drained"
         println(io,"Construction window ",event["first"],"–",event["last"],
             " drained; updating progress and selecting further work.")
     elseif event["event"]=="batch_progress"
         batch=event["batch"]
-        origin=get(event,"window_origin","root")=="root" ? "Published" : "Discovered"
-        print(io,"[",round(batch["elapsed_seconds"];digits=1),"s] ",origin," parents ",
-            get(batch,"first_parent","?"),"–",get(batch,"last_parent","?"),": ",
-            batch["completed"],"/",batch["target_count"]," parents complete")
+        published=get(event,"window_origin","root")=="root"
+        origin=published && haskey(batch,"first_seed") ? "Published seed rows" : published ? "Published parents" : "Discovered parents"
+        print(io,"[",round(batch["elapsed_seconds"];digits=1),"s] ",origin," ",
+            get(batch,"first_seed",get(batch,"first_parent","?")),"–",get(batch,"last_seed",get(batch,"last_parent","?")),": ",
+            batch["completed"],"/",batch["target_count"]," parents in window")
         statistics=get(event,"seed_statistics",Dict())
-        haskey(statistics,"completed_this_session") && print(io,"; total this run: ",statistics["completed_this_session"])
+        haskey(statistics,"completed_this_session") && print(io,"; expanded this run: ",statistics["completed_this_session"])
         println(io,".")
+        if haskey(statistics,"published_completed_this_session")
+            println(io,"  Published seeds completed this run: ",statistics["published_completed_this_session"],
+                "/",statistics["published_selected"]," selected.")
+        end
         metrics=get(event,"runtime_metrics",Dict());scheduler=get(metrics,"scheduler",Dict())
         resources=get(metrics,"resources",Dict())
         print(io,"  ",batch["processed_packets"]," work packets")
+        haskey(metrics,"recent_packets_per_second") && print(io," (+",metrics["recent_packets"],
+            "; ",round(metrics["recent_packets_per_second"];digits=1),"/s)")
         if haskey(scheduler,"workers_computing")
-            print(io,"; compute calls: ",scheduler["workers_computing"],"/",get(resources,"concurrency","?"),
-                "; results waiting to apply: ",get(scheduler,"completed",0)+get(scheduler,"completed_uncollected",0))
+            print(io,"; results waiting to apply: ",get(scheduler,"completed",0)+get(scheduler,"completed_uncollected",0))
         end
         println(io,".")
         if get(metrics,"process_cpu_available",false) && haskey(metrics,"recent_average_cpu_cores")
@@ -73,6 +76,12 @@ function console_event(event;human=false,io=stdout)
     end
     flush(io)
     nothing
+end
+
+"""Translate a root's run-local parent ID back to its audited input row."""
+function published_row(progress,parent)
+    get(progress,"root_order","forward")=="reverse" ?
+        Int(progress["root_last"])-parent+1 : Int(get(progress,"root_first",1))+parent-1
 end
 
 """Keep original dispatch accounting while a retired seed waits for admission.
@@ -249,7 +258,7 @@ function run(config)
         end
     end
     runtime=ClosureOperations.RuntimeMetrics()
-    last_console_metrics=(wall=0.0,cpu=0.0,gc=0.0,apply=0.0,reporting=0.0)
+    last_console_metrics=(wall=0.0,cpu=0.0,gc=0.0,apply=0.0,reporting=0.0,packets=0)
     storage_paths=vcat([directory,out],String.(get(config,"storage_paths",String[])))
     checkpoint_root=String(get(config,"checkpoint_directory",""))
     isempty(checkpoint_root) || push!(storage_paths,abspath(checkpoint_root))
@@ -289,6 +298,7 @@ function run(config)
     base["directory"]=directory
     FP.DiscoveryStore.atomic_toml(joinpath(out,"progress-before.toml"),base)
     ids="0";window_origin="root";window_kind="construction";windows_completed=0;window_active=true;completed_this_session=0
+    published_completed_this_session=0
     windows_started=0;cohorts=Vector{Vector{Int}}()
     context_setup=worker_contexts(concurrency;precompute_rank_table=get(config,"precompute_rank_table",true),
         packed_rank_table=get(config,"packed_rank_table",true),
@@ -326,7 +336,9 @@ function run(config)
         for root in roots
             seed_timing!(timings,root,before_jobs;preserve_existing=!window_active)
         end
-        console(Dict("event"=>"window_started","origin"=>window_origin,"kind"=>window_kind,"first"=>first(parents),"last"=>last(parents)))
+        event=Dict{String,Any}("event"=>"window_started","origin"=>window_origin,"kind"=>window_kind,"first"=>first(parents),"last"=>last(parents))
+        window_origin=="root" && merge!(event,Dict("first_seed"=>published_row(base,first(parents)),"last_seed"=>published_row(base,last(parents))))
+        console(event)
         true
     end
     function record_completed!(jobs=nothing;selected_parents=nothing)
@@ -353,6 +365,7 @@ function run(config)
             t["maximizing_five_spaces"]=count(j->j["kind"]=="v5",own)
             push!(history,deepcopy(t));push!(completion_events,now)
             completed_this_session+=1
+            get(t,"origin","root")=="root" && (published_completed_this_session+=1)
             same_origin=findall(x->get(x,"origin","root")==t["origin"],history)
             length(same_origin)>100 && deleteat!(history,first(same_origin))
             filter!(t->now-t<=300,completion_events)
@@ -451,19 +464,26 @@ function run(config)
             "elapsed_seconds"=>time()-started,"active_seconds"=>active_started>0 ? time()-active_started : 0.0,
             "scope"=>execution_scope*"; both constructions; EA admission before recursion")
         report["root_batch"]=batch
+        if window_origin=="root" && !isempty(parents)
+            batch["first_seed"]=published_row(base,first(parents));batch["last_seed"]=published_row(base,last(parents))
+        end
         report["continuous_search"]=merge(batch,Dict("window_origin"=>window_origin,"windows_completed"=>windows_completed,"windows_started"=>windows_started,"rolling_windows"=>rolling_windows,"active_windows"=>window_active ? length(cohorts) : 0,"duration_policy"=>"until STOP","parent_scope"=>parent_scope))
         report["seed_statistics"]=seed_statistics(history,completion_events,active_started;now=time(),completed_this_session,parent_scope)
+        report["seed_statistics"]["published_completed_this_session"]=published_completed_this_session
+        report["seed_statistics"]["published_selected"]=Int(s.identity["initial_roots"])
         report["runtime_metrics"]=ClosureOperations.runtime_snapshot(runtime,resources)
         metrics=report["runtime_metrics"]
         apply_total=sum(get(t,"apply_wall_seconds",0.0) for t in values(metrics["packet_totals"]);init=0.0)
         current=(wall=metrics["wall_seconds"],cpu=metrics["process_cpu_seconds"],
-            gc=metrics["gc_pause_seconds"],apply=apply_total,reporting=metrics["reporting_seconds"])
+            gc=metrics["gc_pause_seconds"],apply=apply_total,reporting=metrics["reporting_seconds"],packets=processed)
         interval=max(0.0,current.wall-last_console_metrics.wall)
         metrics["recent_wall_seconds"]=interval
         metrics["recent_average_cpu_cores"]=interval>0 ? max(0.0,current.cpu-last_console_metrics.cpu)/interval : 0.0
         metrics["recent_gc_pause_seconds"]=max(0.0,current.gc-last_console_metrics.gc)
         metrics["recent_apply_seconds"]=max(0.0,current.apply-last_console_metrics.apply)
         metrics["recent_reporting_seconds"]=max(0.0,current.reporting-last_console_metrics.reporting)
+        metrics["recent_packets"]=max(0,current.packets-last_console_metrics.packets)
+        metrics["recent_packets_per_second"]=interval>0 ? metrics["recent_packets"]/interval : 0.0
         last_console_metrics=current
         completion_metrics=completion===nothing ? Dict{String,Any}() : merge(ClosureCompletion.snapshot(completion),Dict("record_seconds"=>completion_record_seconds))
         report["runtime_metrics"]["completion"]=completion_metrics
@@ -581,8 +601,10 @@ function run(config)
                     seed_timing!(timings,root,before_jobs)
                 end
                 push!(cohorts,selected);windows_started+=1;changed=true
-                console(Dict("event"=>"window_started","origin"=>window_origin,"kind"=>"construction",
-                    "first"=>first(selected),"last"=>last(selected),"rolling"=>true,"active_windows"=>length(cohorts)))
+                event=Dict{String,Any}("event"=>"window_started","origin"=>window_origin,"kind"=>"construction",
+                    "first"=>first(selected),"last"=>last(selected),"rolling"=>true,"active_windows"=>length(cohorts))
+                window_origin=="root" && merge!(event,Dict("first_seed"=>published_row(base,first(selected)),"last_seed"=>published_row(base,last(selected))))
+                console(event)
             end
         end
         window_active=!isempty(cohorts)
@@ -869,6 +891,8 @@ function run(config)
         "telemetry_error"=>telemetry_error,
         "elapsed_seconds"=>time()-started,"active_seconds"=>active_started>0 ? time()-active_started : 0.0,
         "seed_statistics"=>seed_statistics(history,completion_events,active_started;now=time(),completed_this_session,parent_scope),"window_origin"=>window_origin)
+    result["seed_statistics"]["published_completed_this_session"]=published_completed_this_session
+    result["seed_statistics"]["published_selected"]=Int(s.identity["initial_roots"])
     result["runtime_metrics"]["property_cache"]=property_cache_statistics(contexts)
     result["runtime_metrics"]["completion"]=completion_metrics
     result["runtime_metrics"]["parent_target_cache"]=FP._closure_parent_target_cache_stats(target_cache)

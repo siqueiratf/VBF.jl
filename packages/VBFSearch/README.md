@@ -30,9 +30,12 @@ bin/vbfsearch --recursive-closure -j --start=1 --end=24294 --time=30m \
 
 Each invocation starts fresh and publishes one SQLite after cooperative shutdown.
 The seed bounds select published input rows; admitted descendants remain eligible.
-The foreground command reports parent IDs, cumulative completion, current compute
-calls, recent process CPU use, GC time, and coordinator application/reporting time.
-Compute calls can be blocked or stopped by GC; they do not measure CPU use.
+The foreground command reports audited input rows or discovered parent IDs,
+cumulative completion, recent packet rate, process CPU use, GC time, and
+coordinator application/reporting time. It aggregates completion into periodic
+status updates; full per-parent timings remain in the embedded search evidence.
+Structured scheduler metrics retain compute-call counts, which can include
+blocked calls and do not measure CPU use.
 
 The default scheduling window is 100 parents. `--window-size=200` changes it;
 `--rolling-windows` enables the existing bounded overlap of two windows so the
