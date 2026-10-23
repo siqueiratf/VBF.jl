@@ -60,3 +60,44 @@ end
     wrong=Q.PolarRankTable(Q.geometry(2))
     @test_throws ArgumentError Q.coset_bent_counts!(lookup,G,first(spaces),beta;rank_table=wrong)
 end
+
+@testitem "coset rank fill preserves binary coordinates and exact bent counts" begin
+    using VBF,Test
+    Q=VBF.QuadraticExtensions
+    G=Q.geometry(4);beta=Q.bent_fourier(G)
+    tables=(nothing,Q.PolarRankTable(G),Q.PackedPolarRankTable(G))
+    for table in tables
+        buffer=fill(Int32(-9),19)
+        metadata=Q.coset_bent_counts!(buffer,G,UInt32[1,2],beta;rank_table=table)
+        @test buffer==vcat(Int32[0,0,0,16],fill(Int32(8),12))
+        @test metadata.R==UInt32[2,1]
+        @test metadata.Qmask==UInt32(0x3c)
+        @test metadata.D==4 && metadata.scale==4
+    end
+
+    table=last(tables)
+    for V in Q.each_rref(G.N,2)
+        buffer=Int32[]
+        metadata=Q.coset_bent_counts!(buffer,G,V,beta;rank_table=table)
+        span=Q.comp_forms(V)
+        expected=Int32[metadata.scale*count(w->Q.form_rank(G,Q.lift(UInt32(tau),metadata.Qmask)⊻w)==G.n,span)
+            for tau in 0:(1<<metadata.D)-1]
+        @test buffer==expected
+    end
+end
+
+@testitem "zero-dimensional coset fill never converts unused rank weights" begin
+    using VBF,Test
+    Q=VBF.QuadraticExtensions
+    for n in 2:6
+        G=Q.geometry(n)
+        full=UInt32[UInt32(1)<<j for j in 0:G.N-1]
+        beta=vcat(Int[1],fill(typemax(Int),n÷2))
+        for table in (nothing,Q.PolarRankTable(G),Q.PackedPolarRankTable(G))
+            buffer=Int32[-17,-19]
+            metadata=Q.coset_bent_counts!(buffer,G,full,beta;rank_table=table)
+            @test buffer==Int32[1]
+            @test metadata.D==0 && iszero(metadata.Qmask) && metadata.scale==1
+        end
+    end
+end
