@@ -35,14 +35,31 @@ Base.@noinline function _v5_bent_histogram(cnt,scale,need,d)
     h,X
 end
 
-"""Count all signed 16-bit Fourier values with their original exact keys."""
-Base.@noinline function _v5_flat_histogram(g5::Vector{Int16})
+"""Count signed Fourier values, optionally reusing exclusively owned dense bins.
+
+Dense scratch is resized and cleared before use. The returned dictionary owns
+its counts, so later calls cannot change previous results. Small inputs retain
+the sparse path without touching or allocating dense scratch.
+"""
+Base.@noinline function _v5_flat_histogram(g5::Vector{Int16},bins::Union{Nothing,Vector{Int}}=nothing)
     if length(g5)<4096
         h=Dict{Int16,Int}()
         @inbounds for v in g5;h[v]=get(h,v,0)+1;end
         return h
     end
-    bins=zeros(Int,65536)
+    counts=bins===nothing ? Vector{Int}(undef,65536) : bins
+    _v5_flat_histogram_dense(g5,counts)
+end
+
+"""Keep dense scratch and histogram counts concretely typed through both loops."""
+Base.@noinline function _v5_flat_histogram_dense(g5::Vector{Int16},bins::Vector{Int})
+    length(bins)==65536 || resize!(bins,65536)
+    fill!(bins,0)
     @inbounds for v in g5;bins[Int(v)+32769]+=1;end
-    Dict{Int16,Int}(Int16(i-32769)=>bins[i] for i in eachindex(bins) if bins[i]>0)
+    h=Dict{Int16,Int}()
+    @inbounds for i in eachindex(bins)
+        count=bins[i]
+        count>0 && (h[Int16(i-32769)]=count)
+    end
+    h
 end

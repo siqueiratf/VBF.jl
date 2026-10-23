@@ -17,6 +17,68 @@
     @test_throws ArgumentError Q.v5_extensions(G,UInt32[1],1,work;beta,du7_filter=:invalid)
 end
 
+@testitem "DU7 private capacity resets domains and obeys its retained byte cap" begin
+    using VBF,Test
+    Q=VBF.QuadraticExtensions
+    function synthetic_plan(npairs,ntriples,L)
+        pairs=fill((UInt32(1),UInt32(2)),npairs)
+        triples=fill((UInt32(1),UInt32(2),UInt32(4)),ntriples)
+        mask=foldl(|,(UInt64(1)<<(3(i-1)) for i in 1:ntriples);init=UInt64(0))
+        valid=ntuple(word->foldl(|,(UInt64(1)<<((i-1)&63) for i in 1:npairs
+            if ((i-1)>>6)+1==word);init=UInt64(0)),4)
+        tables=Vector{NTuple{9,UInt64}}[]
+        plan=Q._DU7Plan(pairs,triples,mask,valid,tables,L)
+        for chunk in 0:2
+            push!(tables,[Q._du7_linear_state(plan,UInt32(value)<<(8chunk)) for value in 0:255])
+        end
+        plan
+    end
+    work=Q._DU7Workspace()
+    @test Q._du7_workspace_bytes(work)==0
+    @test work.max_bytes==8*1024^2
+    @test_throws ArgumentError Q._DU7Workspace(;max_bytes=-1)
+    for (npairs,ntriples,L) in ((8,2,UInt32.(0:129)),(1,0,UInt32.(0:64)),
+            (4,1,reverse(UInt32.(0:129))),(0,0,UInt32[]),(2,1,UInt32[5]))
+        plan=synthetic_plan(npairs,ntriples,L)
+        fresh=Q._DU7Bits(plan);reused=Q._DU7Bits(plan,work)
+        @test (@inferred Q._DU7Bits(plan,work)) isa Q._DU7Bits
+        words=cld(length(L),64)
+        @test reused.zeroes===work.zeroes && reused.signatures===work.signatures && reused.bad===work.bad
+        @test reused.triple_count==ntriples
+        @test reused.zeroes[1:words,1:npairs]==fresh.zeroes
+        @test reused.signatures[1:words,1:8ntriples]==fresh.signatures
+        @test Q._du7_workspace_bytes(work)<=work.max_bytes
+        for x in UInt32(0):UInt32(7),last in unique([0,min(1,length(L)),min(63,length(L)),
+                min(64,length(L)),min(65,length(L)),length(L)])
+            state=Q._du7_state(plan,x)
+            actual=collect(Q._du7_valid_indices!(reused,state,last))
+            expected=collect(Q._du7_valid_indices!(fresh,state,last))
+            @test actual==expected
+        end
+        legacy=Q._DU7Bits(fresh.zeroes,fresh.signatures,fresh.bad)
+        @test legacy.triple_count==ntriples
+        converted=Q._DU7Bits(UInt128.(fresh.zeroes),UInt128.(fresh.signatures),UInt128.(fresh.bad))
+        @test converted.zeroes==fresh.zeroes && converted.signatures==fresh.signatures
+    end
+    wide=synthetic_plan(8,0,UInt32.(0:129));narrow=synthetic_plan(1,1,UInt32.(0:63))
+    crossed=Q._DU7Workspace(;max_bytes=216)
+    Q._DU7Bits(wide,crossed)
+    @test Q._du7_workspace_bytes(crossed)==216
+    value=Q._DU7Bits(narrow,crossed)
+    @test size(crossed.zeroes)==(1,1) && size(crossed.signatures)==(1,8)
+    @test Q._du7_workspace_bytes(crossed)==80
+    @test value.zeroes==Q._DU7Bits(narrow).zeroes
+    oversized=Q._DU7Workspace(;max_bytes=79)
+    old=(oversized.zeroes,oversized.signatures,oversized.bad)
+    fallback=Q._DU7Bits(narrow,oversized)
+    @test Q._du7_workspace_bytes(oversized)==0
+    @test all(a===b for (a,b) in zip(old,(oversized.zeroes,oversized.signatures,oversized.bad)))
+    @test fallback.zeroes!==oversized.zeroes && fallback.zeroes==Q._DU7Bits(narrow).zeroes
+    disabled=Q._DU7Workspace(;max_bytes=0)
+    @test Q._DU7Bits(narrow,disabled).signatures==Q._DU7Bits(narrow).signatures
+    @test Q._du7_workspace_bytes(disabled)==0
+end
+
 @testitem "fused selected affine equations retain canonical solutions" begin
     using VBF,Test,Random
     Q=VBF.QuadraticExtensions;rng=Xoshiro(18105272)

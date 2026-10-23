@@ -9,8 +9,8 @@ the sorted candidate list, preserving its order. A surviving position asserts
 no completion: the existing exact affine solver still decides it.
 
 Unsupported point-space dimensions use the separate verified triangle test or
-the original algorithm. The bitset domain and all scratch buffers belong to one
-invocation; no shared mutable work buffers or probabilistic decisions are used.
+the original algorithm. Bitsets are fresh or use bounded scratch owned by one
+exclusive V5 worker; no shared mutable buffers or probabilistic decisions are used.
 """
 struct _DU7Plan
     pairs::Vector{NTuple{2,UInt32}}
@@ -99,13 +99,90 @@ struct _DU7Bits
     zeroes::Matrix{UInt64}
     signatures::Matrix{UInt64}
     bad::Vector{UInt64}
+    triple_count::Int
+end
+
+"""Retain the historical exact-size three-array constructor."""
+_DU7Bits(zeroes::Matrix{UInt64},signatures::Matrix{UInt64},bad::Vector{UInt64}) =
+    _DU7Bits(zeroes,signatures,bad,size(signatures,2)÷8)
+"""Preserve ordinary array conversions supported by the historical constructor."""
+_DU7Bits(zeroes,signatures,bad) = _DU7Bits(convert(Matrix{UInt64},zeroes),
+    convert(Matrix{UInt64},signatures),convert(Vector{UInt64},bad))
+
+"""Byte-bounded, exclusively owned DU7 matrix capacity; results never retain it.
+
+The bound covers retained array payloads. Replacing an old array can briefly
+retain both allocations until GC. Requests exceeding the bound use fresh
+invocation-local arrays without expanding this workspace.
+"""
+mutable struct _DU7Workspace
+    zeroes::Matrix{UInt64}
+    signatures::Matrix{UInt64}
+    bad::Vector{UInt64}
+    max_bytes::Int
+end
+
+"""Create empty DU7 capacity with an 8 MiB retained-payload limit by default."""
+function _DU7Workspace(;max_bytes::Integer=8*1024^2)
+    0<=max_bytes<=typemax(Int) || throw(ArgumentError("invalid DU7 workspace byte limit"))
+    _DU7Workspace(Matrix{UInt64}(undef,0,0),Matrix{UInt64}(undef,0,0),UInt64[],Int(max_bytes))
+end
+
+"""Report owned array payloads without counting aliased views or allocator headers."""
+_du7_workspace_bytes(work::_DU7Workspace) = sizeof(work.zeroes)+sizeof(work.signatures)+sizeof(work.bad)
+
+"""Grow whole owned arrays within the cap, replacing crossed shapes when needed."""
+function _du7_reserve!(work::_DU7Workspace,words,pairs,signatures)
+    requested=8Int128(words)*(pairs+signatures+1)
+    requested<=work.max_bytes || return false
+    zr=max(size(work.zeroes,1),words);zc=max(size(work.zeroes,2),pairs)
+    sr=max(size(work.signatures,1),words);sc=max(size(work.signatures,2),signatures)
+    bad=max(length(work.bad),words)
+    retained=8*(Int128(zr)*zc+Int128(sr)*sc+bad)
+    if retained>work.max_bytes
+        work.zeroes=Matrix{UInt64}(undef,words,pairs)
+        work.signatures=Matrix{UInt64}(undef,words,signatures)
+        work.bad=Vector{UInt64}(undef,words)
+    else
+        (zr,zc)==size(work.zeroes) || (work.zeroes=Matrix{UInt64}(undef,zr,zc))
+        (sr,sc)==size(work.signatures) || (work.signatures=Matrix{UInt64}(undef,sr,sc))
+        bad==length(work.bad) || (work.bad=Vector{UInt64}(undef,bad))
+    end
+    true
+end
+
+"""Clear active matrix cells without allocating views or clearing unused capacity."""
+function _du7_zero_active!(values::Matrix{UInt64},words,columns)
+    @inbounds for column in 1:columns,word in 1:words
+        values[word,column]=0
+    end
+    values
 end
 
 """Produce candidate bitsets directly, without retaining a second state array."""
 function _DU7Bits(plan,L=plan.candidates)
     words=cld(length(L),64)
-    zeroes=zeros(UInt64,words,length(plan.pairs))
-    signatures=zeros(UInt64,words,8length(plan.triples))
+    zeroes=Matrix{UInt64}(undef,words,length(plan.pairs))
+    signatures=Matrix{UInt64}(undef,words,8length(plan.triples))
+    _du7_fill_bits!(zeroes,signatures,Vector{UInt64}(undef,words),plan,L)
+end
+
+"""Reuse private capacity, falling back to fresh arrays for oversized domains."""
+function _DU7Bits(plan,L,work::_DU7Workspace)
+    words=cld(length(L),64)
+    _du7_reserve!(work,words,length(plan.pairs),8length(plan.triples)) || return _DU7Bits(plan,L)
+    _du7_fill_bits!(work.zeroes,work.signatures,work.bad,plan,L)
+end
+
+"""Build bitsets for the plan's ordered candidates using private retained capacity."""
+_DU7Bits(plan,work::_DU7Workspace)=_DU7Bits(plan,plan.candidates,work)
+
+"""Reset and rebuild exact active columns; unused capacity never enters filtering."""
+function _du7_fill_bits!(zeroes,signatures,bad,plan,L)
+    words=cld(length(L),64)
+    _du7_zero_active!(zeroes,words,length(plan.pairs))
+    _du7_zero_active!(signatures,words,8length(plan.triples))
+    fill!(bad,0)
     for i in eachindex(L)
         masks,sig=_du7_state(plan,L[i]);word=((i-1)>>6)+1;bit=UInt64(1)<<((i-1)&63)
         for block in 1:4
@@ -121,7 +198,7 @@ function _DU7Bits(plan,L=plan.candidates)
             signatures[word,8(p-1)+value+1]|=bit
         end
     end
-    _DU7Bits(zeroes,signatures,zeros(UInt64,words))
+    _DU7Bits(zeroes,signatures,bad,length(plan.triples))
 end
 
 """Ordered iterator over the complement of an impossible-candidate bitset."""
@@ -166,7 +243,7 @@ function _du7_valid_indices!(bits::_DU7Bits,xstate,last)
             mask&=mask-1
         end
     end
-    for p in 1:size(bits.signatures,2)÷8
+    for p in 1:bits.triple_count
         value=Int((sig>>(3(p-1)))&7)
         _du7_or_column!(bits.bad,8(p-1)+1,bits.signatures,words)
         _du7_or_column!(bits.bad,8(p-1)+value+1,bits.signatures,words)
