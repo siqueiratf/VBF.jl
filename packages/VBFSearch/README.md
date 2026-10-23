@@ -46,6 +46,17 @@ does not remove the serial admission coordinator. `--progress-interval=10s`
 changes progress publication frequency. These settings apply when launching a
 new run; they do not reconfigure an already running process.
 
+`--classification-batch-size=256` groups cheap classifications into worker tasks,
+including packet preparation and property validation. They share the compute
+pool by default. `--classification-slots=1` reserves one slot for them, leaving
+the remaining slots for construction and expensive EA comparisons.
+The default, `--classification-batch-size=1`, retains individual jobs. On a
+one-thread run both kinds share that thread. Every candidate retains its property
+checks and current-signature admission check; same-signature stale snapshots
+return to the ordinary EA queue. The reservation horizon counts constituent jobs,
+so batching does not enlarge the result buffer. Scheduler ticket counts describe
+tasks; `dispatched_jobs` and `applied_jobs` count their constituent jobs.
+
 ## Search, stop and resume
 
 Instantiate the root Julia >=1.12 project and prepare

@@ -139,6 +139,7 @@ end
         @test launch.config["cached_global_counts"]===true
         @test launch.config["human_progress"]===true
         @test launch.config["window_size"]==100 && !launch.config["rolling_windows"]
+        @test launch.config["classification_batch_size"]==1 && launch.config["classification_slots"]==0
         @test launch.config["report_interval_seconds"]==15.0
         @test !ispath(output)
         text=IOBuffer()
@@ -146,7 +147,8 @@ end
         @test occursin("1–1",String(take!(text)))
         @test !ispath(output)
         for extra in (["--start=0"],["--start=2"],["--end=2"],["--time=0"],["--heap=0G"],
-                ["--window-size=0"],["--window-size=no"],["--progress-interval=0"],["--progress-interval=Inf"])
+                ["--window-size=0"],["--window-size=no"],["--progress-interval=0"],["--progress-interval=Inf"],
+                ["--classification-batch-size=0"],["--classification-slots=2"],["--classification-slots=-1"],["--classification-slots=no"])
             stripped=filter(x->!startswith(x,first(split(first(extra),'='))*"="),args)
             @test_throws ArgumentError C.plan(C.options([stripped;extra]);env=Dict{String,String}())
         end
@@ -160,13 +162,15 @@ end
     mktempdir() do directory
         campaign=campaign_fixture(directory);output=joinpath(directory,"configured")
         args=["--recursive-closure","--campaign",campaign,"--output",output,"-j1",
-            "--window-size=256","--rolling-windows","--progress-interval=10s","--gcthreads=2,0"]
+            "--window-size=256","--rolling-windows","--progress-interval=10s","--gcthreads=2,0",
+            "--classification-batch-size=64","--classification-slots=0"]
         launch=C.plan(C.options(args);env=Dict{String,String}())
         text=IOBuffer()
         @test C.main(args;env=Dict{String,String}(),io=text,dispatch=_->nothing)==0
         config=TOML.parsefile(joinpath(output,"command.toml"))
         @test config["window_size"]==256 && config["rolling_windows"]===true
         @test config["report_interval_seconds"]==10.0
+        @test config["classification_batch_size"]==64 && config["classification_slots"]==0
         @test config["julia_gc_threads"]=="2,0"
         @test "--gcthreads=2,0" in C.worker_command(launch,joinpath(directory,"plan.toml")).exec
         @test config["root_first"]==config["root_last"]==1

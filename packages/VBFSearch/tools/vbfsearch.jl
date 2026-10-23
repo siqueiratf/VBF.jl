@@ -11,7 +11,8 @@ const VALUES=Dict("--start"=>"start","--end"=>"end","--time"=>"time",
     "--output"=>"output","--campaign"=>"campaign","--threads"=>"threads",
     "--gcthreads"=>"gc_threads",
     "--heap-size-hint"=>"heap","--heap"=>"heap",
-    "--window-size"=>"window_size","--progress-interval"=>"progress_interval")
+    "--window-size"=>"window_size","--progress-interval"=>"progress_interval",
+    "--classification-batch-size"=>"classification_batch_size","--classification-slots"=>"classification_slots")
 
 """Describe seed numbering, limits, and the fresh-run command surface."""
 function help(io=stdout)
@@ -33,6 +34,10 @@ Usage: vbfsearch --recursive-closure [OPTIONS]
   --heap SIZE         Julia heap hint, e.g. 16G; defaults scale with thread count
   --window-size N     Parents per scheduling window (default: 100)
   --rolling-windows   Overlap up to two windows to reduce boundary draining
+  --classification-batch-size N
+                      Cheap candidates per worker task (default: 1, individual)
+  --classification-slots N
+                      Slots reserved for cheap batches (default: 0, shared)
   --progress-interval SECONDS
                       Progress publication interval; accepts 10s (default: 15s)
   --dry-run           Print the resolved plan without creating files or searching
@@ -168,6 +173,10 @@ function plan(parsed;env=ENV,cpu_threads=available_cpu_count(),output_default=no
     budget=haskey(cfg,"time") ? seconds(cfg["time"]) : nothing
     pools=threads(get(cfg,"threads","1");gc=get(cfg,"gc_threads",nothing),env,cpu_threads)
     window_size=positive(get(cfg,"window_size","100"),"--window-size")
+    classification_batch_size=positive(get(cfg,"classification_batch_size","1"),"--classification-batch-size")
+    classification_slots=tryparse(Int,get(cfg,"classification_slots","0"))
+    classification_slots!==nothing && 0<=classification_slots<=pools.compute ||
+        throw(ArgumentError("--classification-slots must be between 0 and $(pools.compute)"))
     progress_interval=seconds(get(cfg,"progress_interval","15s");name="--progress-interval")
     heap=get(cfg,"heap",pools.compute==1 ? "512M" : pools.compute<16 ? "4G" : pools.compute<64 ? "16G" : "32G")
     occursin(r"^[1-9][0-9]*(?:[KMGTP]B?|B)?$",heap) || throw(ArgumentError("--heap needs positive bytes or a size such as 512M or 16G"))
@@ -202,6 +211,7 @@ function plan(parsed;env=ENV,cpu_threads=available_cpu_count(),output_default=no
         "julia_gc_threads"=>string(pools.mark,",",pools.sweep),"heap_size_hint"=>heap,
         "concurrency"=>pools.compute,"reservation_horizon"=>max(1024,4pools.compute),
         "reservation_refill_batch"=>16,"max_apply_per_step"=>32,"window_size"=>window_size,
+        "classification_batch_size"=>classification_batch_size,"classification_slots"=>classification_slots,
         "rolling_windows"=>("--rolling-windows" in parsed.flags),
         "report_interval_seconds"=>progress_interval,
         "parent_scope"=>"all","baseline_policy"=>"summary","indexed_ea_queue"=>true,
@@ -222,6 +232,12 @@ function describe(io,launch)
     println(io,"Scheduling: ",cfg["window_size"]," parents/window; overlap ",
         cfg["rolling_windows"] ? "on (up to two windows)" : "off",
         "; progress every ",cfg["report_interval_seconds"]," seconds")
+    if cfg["classification_batch_size"]==1
+        println(io,"Classification: individual jobs in the shared compute pool")
+    else
+        println(io,"Classification: up to ",cfg["classification_batch_size"]," candidates/task; ",
+            cfg["classification_slots"]==0 ? "shared compute pool" : string(cfg["classification_slots"]," reserved slot(s)"))
+    end
     println(io,"Time: ",launch.budget===nothing ? "until stopped" : string(launch.budget," seconds including worker setup; then drain"))
     println(io,"Seed plan: ",cfg["campaign"])
     println(io,"Output: ",cfg["output"])

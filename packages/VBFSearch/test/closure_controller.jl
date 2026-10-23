@@ -105,6 +105,77 @@ function controller_science(run)
     end
 end
 
+@testset "Cheap batches validate properties and requeue same-signature snapshots" begin
+    for normalized in (false,true)
+        mktempdir() do directory
+            db=ControllerVS.SQLite.DB();ControllerVS._closure_create_schema(db;normalized)
+            lease=ControllerVS._closure_lease(directory)
+            s=ControllerVS.ClosureStore(db,directory,lease,Dict{String,Any}(),1,UInt64(0))
+            try
+                root=ControllerVS.properties(gold_apn(8).lut)
+                a=ControllerVS.properties(gold_apn(8,3).lut)
+                b=ControllerVS.properties(gold_apn(8,3).lut .⊻ UInt8(1))
+                @test a["sigma_hash"]==b["sigma_hash"]!=root["sigma_hash"]
+                ControllerVS._closure_insert_candidate!(s,root)
+                ControllerVS._closure_add_parent!(s,root["lut_sha256"],root["sigma_hash"])
+                for p in (a,b)
+                    ControllerVS._closure_insert_candidate!(s,p)
+                    ControllerVS._closure_add_job!(s,1,"deduplicate","deduplicate:"*p["lut_sha256"],Dict("candidate_id"=>p["lut_sha256"]))
+                end
+                jobs=ControllerVS._closure_rows(s,"SELECT * FROM jobs WHERE kind='deduplicate' ORDER BY id")
+                item=only(ContinuousSeedSearch.classification_items(s,jobs,256))
+                @test collect(ContinuousSeedSearch.classification_keys(item))==[j["id"] for j in jobs]
+                @test ContinuousSeedSearch.classification_lane(item)==:classification
+                packets=[ContinuousSeedSearch.classification_packet(j,p) for (j,p) in zip(item.jobs,item.candidates)]
+                expected=ControllerVS._closure_equivalence_packet(s,first(jobs);native=true)
+                @test first(packets)==expected
+                result=ContinuousSeedSearch.compute_classification_batch(packets,nothing,s.solver_session)
+                @test result.failure===nothing && length(result.results)==2
+                worker_prepared=ContinuousSeedSearch.compute_classification_batch(zip(item.jobs,item.candidates),nothing,s.solver_session;
+                    make_packet=pair->ContinuousSeedSearch.classification_packet(pair...))
+                @test worker_prepared.failure===nothing && length(worker_prepared.results)==2
+                @test [r.packet for r in worker_prepared.results]==packets
+                forged=copy(item.candidates[2]);forged["sigma"]="wrong-signature"
+                bad=ContinuousSeedSearch.classification_packet(jobs[2],forged)
+                rejected=ContinuousSeedSearch.compute_classification_batch([packets[1],bad],nothing,s.solver_session)
+                @test length(rejected.results)==1 && rejected.failure!==nothing
+                @test ControllerVS._closure_equivalence_apply!(s,jobs[1],packets[1],result.results[1].value)==:done
+                @test ControllerVS._closure_equivalence_apply!(s,jobs[2],packets[2],result.results[2].value)==:revalidate
+                @test ControllerVS._closure_count(s,"SELECT COUNT(*) n FROM parents")==2
+                retry=only(ContinuousSeedSearch.classification_items(s,[jobs[2]],256))
+                @test ContinuousSeedSearch.classification_lane(retry)==:default
+                packet=ControllerVS._closure_equivalence_packet(s,jobs[2];native=true)
+                value=ControllerVS._closure_equivalence_compute(packet;seconds=30.0,nodes=100_000,solver_session=s.solver_session)
+                @test ControllerVS._closure_equivalence_apply!(s,jobs[2],packet,value)==:done
+                @test ControllerVS._closure_count(s,"SELECT COUNT(*) n FROM parents")==2
+                @test ControllerVS._closure_count(s,"SELECT COUNT(*) n FROM candidates WHERE state='equivalent'")==1
+                @test isempty(ControllerVS._closure_rows(s,"PRAGMA foreign_key_check"))
+            finally
+                ControllerVS.DiscoveryStore.close_statements!(s.statements);close(db);close(lease)
+            end
+        end
+    end
+end
+
+@testset "Batched classification and one reserved slot preserve full seed evidence" begin
+    mktempdir() do directory
+        baseline,original=controller_window(joinpath(directory,"ordinary"),min(3,Threads.nthreads(:default));normalized=true)
+        expected=controller_science(original)
+        for slots in (0,1)
+            result,path=controller_window(joinpath(directory,"batched-$slots"),min(3,Threads.nthreads(:default));normalized=true,
+                extra=Dict("classification_batch_size"=>256,"classification_slots"=>slots))
+            actual=controller_science(path)
+            @test result["state"]==baseline["state"]=="paused_window_limit"
+            @test actual==expected
+            scheduler=result["runtime_metrics"]["scheduler"]
+            @test scheduler["dispatched_jobs"]==result["processed_packets"]
+            @test scheduler["applied_jobs"]==result["processed_packets"]
+            @test scheduler["dispatched_jobs"]>scheduler["dispatched"]
+            @test scheduler["peak_pending"]<=2min(3,Threads.nthreads(:default))
+        end
+    end
+end
+
 @testset "Refilled controller slots preserve scientific evidence and bounded restart storage" begin
     mktempdir() do directory
         one,run1=controller_window(joinpath(directory,"one"),1)
