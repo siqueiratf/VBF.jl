@@ -57,6 +57,20 @@ the maintained validator requires at least two allocated CPUs for one compute
 thread plus serial GC. Local one-thread checks do not require a Slurm allocation.
 BLAS/OMP threads are fixed to one. `--heap=16G` overrides the heap hint.
 
+`--gcthreads=8,0` selects eight GC collectors and disables concurrent page
+sweeping. The second value defaults to zero; `--gcthreads=16` is equivalent to
+`16,0`. Bare `-j` includes these pools in its Slurm CPU budget. For example,
+192 allocated CPUs with `--gcthreads=8,0` select 183 compute threads, one
+interactive thread and eight collectors; `16,0` selects 175 compute threads.
+An explicit pool configuration that exceeds the allocation is refused.
+
+Concurrent sweeping defaults off because Julia 1.13.0 has a
+[page-pool race](https://github.com/JuliaLang/julia/pull/62162) in that path.
+This launch setting avoids the affected path while retaining parallel GC
+collectors; it requires no modification of the Julia runtime. The historical
+measurements below used `8,1` before that diagnosis. An explicit `8,1` remains
+available for comparisons on a runtime containing the upstream correction.
+
 The default seed plan is the installed
 `data/search/literature-b52-closure-20261014/campaign.toml` beneath
 `VBF_SEARCH_DATA_DIR` (normally this package's `data/`). Use `--campaign FILE` or

@@ -68,6 +68,7 @@ end
         @test cfg==Dict("threads"=>"8","start"=>"2","end"=>"3","time"=>"15m")
     end
     @test C.options(["--recursive-closure","-j","--dry-run"]).config["threads"]=="auto"
+    @test C.options(["--gcthreads=16,0"]).config["gc_threads"]=="16,0"
     @test "--rolling-windows" in C.options(["--rolling-windows"]).flags
     @test C.seconds("60")==60.0 && C.seconds("1.5h")==5400.0
     for value in ("0","-1","NaN","Inf","1d","1e1000")
@@ -87,13 +88,26 @@ end
     @test C.available_cpu_count(status="Cpus_allowed_list:\t4-7,9\n",fallback=32)==5
     @test C.available_cpu_count(status="",fallback=4)==4
     plain=C.threads("auto";env=Dict{String,String}(),cpu_threads=32)
-    @test (plain.compute,plain.interactive,plain.mark,plain.sweep)==(32,1,8,1)
+    @test (plain.compute,plain.interactive,plain.mark,plain.sweep)==(32,1,8,0)
     for allocation in (2,4,8,16,32,192)
         p=C.threads("auto";env=Dict("SLURM_CPUS_PER_TASK"=>string(allocation)))
         @test p.compute>0 && p.compute+p.interactive+p.mark+p.sweep<=allocation
     end
     p=C.threads("auto";env=Dict("SLURM_CPUS_PER_TASK"=>"192"))
-    @test p.compute==182
+    @test p.compute==183
+    explicit=C.threads("auto";gc="16,0",env=Dict("SLURM_CPUS_PER_TASK"=>"192"))
+    @test (explicit.compute,explicit.mark,explicit.sweep)==(175,16,0)
+    collectors=C.threads("32";gc="8",env=Dict{String,String}(),cpu_threads=32)
+    @test (collectors.mark,collectors.sweep)==(8,0)
+    concurrent=C.threads("auto";gc="8,1",env=Dict("SLURM_CPUS_PER_TASK"=>"192"))
+    @test (concurrent.compute,concurrent.mark,concurrent.sweep)==(182,8,1)
+    @test_throws ArgumentError C.threads("8";gc="8,0",env=Dict("SLURM_CPUS_PER_TASK"=>"8"))
+    @test_throws ArgumentError C.threads("8";gc="8,0",env=Dict("SLURM_CPUS_PER_TASK"=>"10"))
+    preserved=C.threads("8";gc="8,0",env=Dict("SLURM_CPUS_PER_TASK"=>"17"))
+    @test (preserved.compute,preserved.interactive,preserved.mark,preserved.sweep)==(8,1,8,0)
+    for invalid in ("0","-1","no","8,2","8,-1","8,","8,0,1")
+        @test_throws ArgumentError C.threads("auto";gc=invalid,env=Dict{String,String}(),cpu_threads=32)
+    end
     @test C.threads("1";env=Dict("SLURM_CPUS_PER_TASK"=>"2")).compute==1
     @test_throws ArgumentError C.threads("auto";env=Dict("SLURM_CPUS_PER_TASK"=>"1"))
     @test_throws ArgumentError C.threads("8";env=Dict("SLURM_CPUS_PER_TASK"=>"8"))
@@ -134,12 +148,15 @@ end
     mktempdir() do directory
         campaign=campaign_fixture(directory);output=joinpath(directory,"configured")
         args=["--recursive-closure","--campaign",campaign,"--output",output,"-j1",
-            "--window-size=256","--rolling-windows","--progress-interval=10s"]
+            "--window-size=256","--rolling-windows","--progress-interval=10s","--gcthreads=2,0"]
+        launch=C.plan(C.options(args);env=Dict{String,String}())
         text=IOBuffer()
         @test C.main(args;env=Dict{String,String}(),io=text,dispatch=_->nothing)==0
         config=TOML.parsefile(joinpath(output,"command.toml"))
         @test config["window_size"]==256 && config["rolling_windows"]===true
         @test config["report_interval_seconds"]==10.0
+        @test config["julia_gc_threads"]=="2,0"
+        @test "--gcthreads=2,0" in C.worker_command(launch,joinpath(directory,"plan.toml")).exec
         @test config["root_first"]==config["root_last"]==1
         @test config["parent_scope"]=="all" && config["concurrency"]==1
         description=String(take!(text))
