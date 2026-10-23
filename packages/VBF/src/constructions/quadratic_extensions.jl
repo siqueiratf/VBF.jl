@@ -482,51 +482,156 @@ end
 
 # --- subspaces of the component space -----------------------------------------------------
 
-"All r x m reduced row echelon matrices over F_2 (rows as UInt32, pivot = highest bit)."
+"Visit canonical RREF bases in enumeration order, reusing rows only during the callback."
+function _foreach_rref(visit, m::Int, r::Int)
+    _foreach_rref_pivots!(visit, m, r, zeros(UInt32, max(r, 0)), Int[], 0)
+    nothing
+end
+
+"Fill one pivot pattern without retaining temporary row vectors."
+function _foreach_rref_pivots!(visit, m, r, rows, pivots, depth)
+    if depth == r
+        pivmask = foldl(|, (UInt32(1) << p for p in pivots); init=UInt32(0))
+        free_rows = Int[]
+        free_bits = UInt32[]
+        for row in 1:r, q in 0:pivots[row]-1
+            iszero(pivmask & (UInt32(1) << q)) || continue
+            push!(free_rows, row)
+            push!(free_bits, UInt32(1) << q)
+        end
+        for x in 0:(1 << length(free_rows))-1
+            for row in 1:r
+                rows[row] = UInt32(1) << pivots[row]
+            end
+            for t in eachindex(free_rows)
+                iszero(x & (1 << (t-1))) || (rows[free_rows[t]] |= free_bits[t])
+            end
+            visit(rows)
+        end
+        return
+    end
+    lo = isempty(pivots) ? m : last(pivots)
+    for p in lo-1:-1:0
+        push!(pivots, p)
+        _foreach_rref_pivots!(visit, m, r, rows, pivots, depth+1)
+        pop!(pivots)
+    end
+    nothing
+end
+
+"All r x m reduced row echelon matrices over F_2, with independent owned row vectors."
 function each_rref(m::Int, r::Int)
     out = Vector{Vector{UInt32}}()
-    function rec(pivs::Vector{Int})
-        if length(pivs) == r
-            pivmask = reduce(|, (1 << p for p in pivs); init = 0)
-            free = [[q for q in 0:pivs[k]-1 if (pivmask >> q) & 1 == 0] for k in 1:r]
-            nf = sum(length, free; init = 0)
-            for x in 0:(1 << nf)-1
-                rs = [UInt32(1) << p for p in pivs]; t = 0
-                for k in 1:r, q in free[k]
-                    (x >> t) & 1 == 1 && (rs[k] |= UInt32(1) << q); t += 1
-                end
-                push!(out, rs)
-            end
-            return
+    _foreach_rref(m, r) do rows
+        push!(out, copy(rows))
+    end
+    out
+end
+
+const _component_kernel_cache = Dict{Tuple{Int,Int},Any}()
+const _component_kernel_cache_lock = ReentrantLock()
+
+"Build immutable nonzero kernel bitsets in the original dual RREF order."
+function _build_component_kernels(m::Int, k::Int, ::Val{NW}) where NW
+    out = Vector{NTuple{NW,UInt64}}()
+    sizehint!(out, Int(gauss_binom(m, k)))
+    scratch = zeros(UInt64, NW)
+    _foreach_rref(m, m-k) do rows
+        fill!(scratch, UInt64(0))
+        for b in 1:(1 << m)-1
+            any(a -> par(a & UInt32(b)), rows) && continue
+            scratch[(b >> 6)+1] |= UInt64(1) << (b & 63)
         end
-        lo = isempty(pivs) ? m : pivs[end]
-        for p in lo-1:-1:0                   # strictly decreasing pivots
-            rec(vcat(pivs, p))
+        push!(out, ntuple(i -> scratch[i], Val(NW)))
+    end
+    out
+end
+
+"Cache only the finite m≤8, codimension≤3 family (under 3.8 MB of UInt64 masks)."
+function _cached_component_kernels(m::Int, k::Int)
+    0 <= m <= 8 && 0 <= k <= m && m-k <= 3 || return nothing
+    lock(_component_kernel_cache_lock) do
+        get!(_component_kernel_cache, (m, k)) do
+            _build_component_kernels(m, k, Val(max(1, (1 << m) >> 6)))
         end
     end
-    rec(Int[])
+end
+
+"Pack component bent flags once into the coordinate convention of cached kernel bitsets."
+function _component_bent_words(bent, m, ::Vector{NTuple{NW,UInt64}}) where NW
+    ntuple(Val(NW)) do i
+        word = UInt64(0)
+        for b in max(1, (i-1) << 6):min((i << 6)-1, (1 << m)-1)
+            bent[b+1] && (word |= UInt64(1) << (b & 63))
+        end
+        word
+    end
+end
+
+"Count bent coordinates with word intersections, excluding the zero component."
+@inline function _kernel_bent_count(kernel, bent_words)
+    count = 0
+    for i in eachindex(kernel)
+        count += count_ones(kernel[i] & bent_words[i])
+    end
+    count
+end
+
+"Recover owned, increasing nonzero component coordinates from an immutable kernel bitset."
+function _component_kernel_elements(kernel)
+    els = Int[]
+    sizehint!(els, sum(count_ones, kernel))
+    for (i, bits) in enumerate(kernel)
+        while !iszero(bits)
+            push!(els, ((i-1) << 6)+trailing_zeros(bits))
+            bits &= bits-UInt64(1)
+        end
+    end
+    els
+end
+
+"Materialize accepted component subspaces, retaining independent mutable outputs."
+function _subspaces_from_kernels(comp, bent, kernels, keep, m)
+    out = NamedTuple[]
+    bent_words = _component_bent_words(bent, m, kernels)
+    for kernel in kernels
+        nb = _kernel_bent_count(kernel, bent_words)
+        keep(nb) || continue
+        els = _component_kernel_elements(kernel)
+        bb = rref(UInt32.(els))[1]
+        push!(out, (; els, bbasis=bb, forms=[comp[Int(b)+1] for b in bb], nbent=nb))
+    end
     out
 end
 
 """
     subspaces_of_comp(comp, bent, k; keep) -> Vector{NamedTuple}
 
-All k-dim subspaces of the b-space F_2^m (kernels of the (m-k)-dim dual subspaces) whose
-bent count satisfies `keep(nbent)`. Each entry has `els` (nonzero b), `bbasis` (RREF
-basis in b-space), `forms` (forms of `bbasis`) and `nbent`.
+All k-dimensional subspaces of the component space whose bent count satisfies
+`keep(nbent)`, in canonical dual RREF order. Outputs own their `els`, `bbasis`
+and `forms`. Common m≤8 subspaces of codimension≤3 share immutable coordinate
+bitsets; other dimensions reuse enumeration scratch without retaining rejected
+subspaces. `comp` and `bent` must remain fixed during the call. The `keep`
+predicate is called once per subspace in the same canonical order.
 """
-function subspaces_of_comp(comp::Vector{UInt32}, bent::BitVector, k::Int; keep::Function)
+function subspaces_of_comp(comp::Vector{UInt32}, bent::BitVector, k::Int; keep::F) where F
     m = trailing_zeros(length(comp))
+    kernels = _cached_component_kernels(m, k)
+    kernels === nothing || return _subspaces_from_kernels(comp, bent, kernels, keep, m)
     out = NamedTuple[]
-    for A in each_rref(m, m - k)
-        els = Int[]; nb = 0
+    scratch = Int[]
+    _foreach_rref(m, m-k) do rows
+        empty!(scratch)
+        nb = 0
         for b in 1:(1 << m)-1
-            any(a -> par(a & UInt32(b)), A) && continue
-            push!(els, b); bent[b+1] && (nb += 1)
+            any(a -> par(a & UInt32(b)), rows) && continue
+            push!(scratch, b)
+            bent[b+1] && (nb += 1)
         end
-        keep(nb) || continue
+        keep(nb) || return
+        els = copy(scratch)
         bb = rref(UInt32.(els))[1]
-        push!(out, (; els, bbasis = bb, forms = [comp[Int(b)+1] for b in bb], nbent = nb))
+        push!(out, (; els, bbasis=bb, forms=[comp[Int(b)+1] for b in bb], nbent=nb))
     end
     out
 end
@@ -647,15 +752,24 @@ end
 #   c . t = 0} in F_2^D5; x is in the kernel, so v is taken modulo x.
 #   The x come from the coset bent counts: #bent(x + V5) = target.
 
-"Work buffers for `v5_extensions` (2^D5 Int32 counts, 2^D5 Int16 transform)."
+include("quadratic_extension_du7.jl")
+
+"Per-worker Fourier buffers and lazy histogram, bitmap and DU7 scratch; results never retain them."
 mutable struct V5Work
     cnt::Vector{Int32}
     g5::Vector{Int16}
     pts::Vector{Int}
+    flat_histogram::Vector{Int}
+    bitmap::Vector{UInt64}
+    du7::_DU7Workspace
 end
+"Preserve supplied count, transform and point buffers; extra scratch is allocated lazily."
+V5Work(cnt, g5, pts) = V5Work(cnt, g5, pts, Int[], UInt64[])
+"Preserve supplied Fourier and histogram/bitmap buffers; DU7 scratch is independently owned."
+V5Work(cnt, g5, pts, flat_histogram, bitmap) =
+    V5Work(cnt, g5, pts, flat_histogram, bitmap, _DU7Workspace())
+"Allocate the Fourier buffers for a D5-dimensional quotient on n input bits."
 V5Work(D5::Int, n::Int = 8) = V5Work(zeros(Int32, 1 << D5), zeros(Int16, 1 << D5), zeros(Int, 1 << n))
-
-include("quadratic_extension_du7.jl")
 
 """Immutable empty completion set shared by observers until a coset has an output."""
 struct _EmptyCompletionSpaces <: AbstractSet{Vector{UInt32}} end
@@ -745,7 +859,7 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
     @inbounds for c in C; g5[c+1] = Int16(1); end
     fwht!(g5)
     g0 = Int(g5[1])
-    hg = _v5_flat_histogram(g5)
+    hg = _v5_flat_histogram(g5, work.flat_histogram)
     key = hist_key(Dict(vcat([(Int(k), v) for (k, v) in hc], [(100_000_000 + Int(k), v) for (k, v) in hg])))
     Ss = Set{Vector{UInt32}}()
     should_skip(key) &&
@@ -763,12 +877,14 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
     # with a = g5(t) >= -2 nW(U)/3 - thb, a partner b = g5(t+x) > thb cannot satisfy
     # a + b <= -2 nW(U)/3, so the bitmap rejects most pairs without a read of g5.
     thb = -(nWmin ÷ 6)
-    bm = zeros(UInt64, max(1, (1 << D) >> 6))
+    bm = work.bitmap
+    resize!(bm, max(1, (1 << D) >> 6))
+    fill!(bm, UInt64(0))
     @inbounds for t in 0:(1 << D)-1
         g5[t+1] <= thb && (bm[(t >> 6)+1] |= UInt64(1) << (t & 63))
     end
     du7_plan=use_du7 && du7_filter!==:triangles ? _du7_prepare(C,Cidx,G,L) : nothing
-    du7_bits=du7_plan===nothing ? nothing : _DU7Bits(du7_plan)
+    du7_bits=du7_plan===nothing ? nothing : _DU7Bits(du7_plan, work.du7)
     # Keep both candidate branches on one iterator type: mixed iteration states
     # otherwise box millions of indices in the filtered inner loop.
     unfiltered_bad=du7_bits===nothing ? zeros(UInt64,cld(length(L),64)) : UInt64[]
@@ -872,12 +988,33 @@ function function_of(G::Geometry, S::AbstractVector{UInt32})
     c, SBox{G.n}(UInt8.(lut_from_coeffs(G, c)))
 end
 
-"""Largest bent-element count among all k-dimensional subspaces of a component space."""
-function max_bent_dim(comp::Vector{UInt32}, bent::BitVector, k::Int)
-    best = Ref(0); nbest = Ref(0)
-    subspaces_of_comp(comp, bent, k; keep = nb -> begin
-        nb > best[] ? (best[] = nb; nbest[] = 1) : (nb == best[] && (nbest[] += 1)); false
-    end)
-    best[], nbest[]
+"Find the maximum bent count without materializing accepted subspace records."
+function _max_bent_from_kernels(kernels, bent, m)
+    bent_words = _component_bent_words(bent, m, kernels)
+    best = 0
+    nbest = 0
+    for kernel in kernels
+        nb = _kernel_bent_count(kernel, bent_words)
+        nb > best ? (best=nb; nbest=1) : (nb == best && (nbest += 1))
+    end
+    best, nbest
 end
+
+"Largest bent-element count and its multiplicity among all k-dimensional component subspaces."
+function max_bent_dim(comp::Vector{UInt32}, bent::BitVector, k::Int)
+    m = trailing_zeros(length(comp))
+    kernels = _cached_component_kernels(m, k)
+    kernels === nothing || return _max_bent_from_kernels(kernels, bent, m)
+    result = [0, 0]
+    _foreach_rref(m, m-k) do rows
+        nb = 0
+        for b in 1:(1 << m)-1
+            any(a -> par(a & UInt32(b)), rows) && continue
+            bent[b+1] && (nb += 1)
+        end
+        nb > result[1] ? (result[1]=nb; result[2]=1) : (nb == result[1] && (result[2] += 1))
+    end
+    result[1], result[2]
+end
+
 end

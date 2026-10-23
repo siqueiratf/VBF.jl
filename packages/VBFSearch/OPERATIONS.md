@@ -107,11 +107,19 @@ default, interactive and GC thread pools. The smaller applicable allocation wins
 Without an explicit/scheduler allocation, compute slots still cannot exceed
 Julia's default pool. BLAS threads should be configured separately, usually to 1.
 When `concurrency` is omitted it now uses the whole default pool; an explicit
-value still takes precedence. The launcher reports the primary V5 buffer lower
-bound (48 MiB per initialized eight-bit slot, plus the shared rank table) and
-warns when the heap hint leaves little room beyond it. A heap hint controls GC
+value still takes precedence. The launcher reports the V5 buffer lower bound
+(about 49.5 MiB per fully initialized eight-bit slot, plus the shared rank table)
+and warns when the heap hint leaves little room beyond it. A heap hint controls GC
 heuristics, rather than limiting all process memory. Budget EA state, buffered
 results, SQLite, reporting and RAM-backed checkpoint storage separately.
+Each slot reuses its histogram and bitmap instead of allocating them for every
+V5 packet. Component-subspace membership tables are shared read-only across
+workers; the usual eight-bit preparation table occupies about 3 MiB.
+DU7 matrices also reuse private capacity, retaining at most 8 MiB of array
+payload per slot. Larger requests use fresh temporary arrays. Budget this
+capacity separately from the reported V5 lower bound; replacing old arrays can
+briefly retain both allocations until GC. These caches reduce allocation churn;
+garbage collection remains enabled.
 
 The launcher replaces itself with a small Python 3 supervisor on POSIX systems.
 `USR1`, `TERM`, `INT` and an optional supervisor deadline create cooperative STOP

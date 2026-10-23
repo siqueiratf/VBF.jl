@@ -15,4 +15,33 @@
     h=Q._v5_flat_histogram(values)
     @test length(h)==65536 && sum(Base.values(h))==length(values)
     @test h[typemin(Int16)]==2 && h[0]==3 && h[typemax(Int16)]==2
+
+    @testset "exclusive dense scratch resets without aliasing results" begin
+        bins=fill(-19,3)
+        reused=Q._v5_flat_histogram(values,bins)
+        @test reused==h
+        @test length(bins)==65536
+        previous=copy(reused)
+        fill!(bins,-31)
+        constant=fill(typemin(Int16),4096)
+        @test Q._v5_flat_histogram(constant,bins)==Dict(typemin(Int16)=>4096)
+        @test reused==previous
+        @test Q._v5_flat_histogram(values,bins)==h
+        @test Q._v5_flat_histogram(values,Int[])==h
+        @test Q._v5_flat_histogram(values,fill(77,65537))==h
+
+        fill!(bins,23)
+        @test Q._v5_flat_histogram(Int16[-1,0,0,1],bins)==Dict{Int16,Int}(-1=>1,0=>2,1=>1)
+        @test all(==(23),bins)
+        @test isempty(Q._v5_flat_histogram(Int16[],bins))
+        @test all(==(23),bins)
+        @test Q._v5_flat_histogram(values,bins)==h
+        @test reused==previous
+
+        large=zeros(Int16,1<<20)
+        Q._v5_flat_histogram(large,bins)
+        allocated=@allocated Q._v5_flat_histogram(large,bins)
+        @test Q._v5_flat_histogram(large,bins)==Dict{Int16,Int}(0=>length(large))
+        @test allocated<16_384
+    end
 end

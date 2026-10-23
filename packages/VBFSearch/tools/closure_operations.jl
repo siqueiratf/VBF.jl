@@ -19,10 +19,12 @@ function validate_resources(config;default_threads=Threads.nthreads(:default),
     limits=filter(>(0),[explicit,scheduler]);allocation=isempty(limits) ? 0 : minimum(limits)
     runtime_threads=default_threads+interactive_threads+gc_threads
     allocation==0 || runtime_threads<=allocation || throw(ArgumentError("Julia compute, interactive and GC pools require $runtime_threads CPUs, exceeding allocation $allocation"))
-    # V5Work owns 2^23 Int32 counts and Int16 transform entries per
-    # slot at n=8. This is a lower bound, excluding DU7/EA/result allocations.
+    # Fully initialized n=8 slots retain histogram and candidate-bitmap scratch
+    # as well as the primary transform arrays. DU7/EA/results remain separate.
     rank_bytes=get(config,"precompute_rank_table",true) ? (get(config,"packed_rank_table",true) ? 1<<26 : 1<<28) : 0
-    work_bytes=concurrency*(6*(1<<23)+256*sizeof(Int))+rank_bytes
+    histogram_bytes=(1<<16)*sizeof(Int)
+    bitmap_bytes=(1<<23)÷8
+    work_bytes=concurrency*(6*(1<<23)+256*sizeof(Int)+histogram_bytes+bitmap_bytes)+rank_bytes
     heap_size_hint>=0 || throw(ArgumentError("heap size hint must be nonnegative"))
     warnings=String[]
     heap_size_hint>0 && heap_size_hint<2work_bytes && push!(warnings,
@@ -32,7 +34,7 @@ function validate_resources(config;default_threads=Threads.nthreads(:default),
         "runtime_threads"=>runtime_threads,"cpu_allocation"=>allocation,
         "concurrency_source"=>haskey(config,"concurrency") ? "explicit" : "all default-pool threads",
         "work_buffer_lower_bound_bytes"=>work_bytes,"heap_size_hint_bytes"=>heap_size_hint,
-        "memory_estimate_scope"=>"n=8 primary V5 arrays and shared rank lookup only; excludes runtime, EA, DU7 and buffered results",
+        "memory_estimate_scope"=>"fully initialized n=8 V5 arrays, histogram/bitmap scratch and shared rank lookup; excludes component tables, runtime, EA, DU7 and buffered results",
         "warnings"=>warnings,
         "host"=>get(env,"HOSTNAME",Base.Libc.gethostname()),"pid"=>getpid(),
         "job_id"=>get(env,"SLURM_JOB_ID","none"))
