@@ -84,6 +84,25 @@ function published_row(progress,parent)
         Int(progress["root_last"])-parent+1 : Int(get(progress,"root_first",1))+parent-1
 end
 
+"""Group reporting rows once instead of scanning every job for each parent."""
+function construction_jobs_by_parent(jobs::AbstractVector)
+    grouped=Dict{Int,Vector{eltype(jobs)}}()
+    for job in jobs
+        own=get!(() -> eltype(jobs)[],grouped,Int(job["parent_id"]))
+        push!(own,job)
+    end
+    grouped
+end
+
+"""Count the historical all-jobs-done predicate, including empty parent groups."""
+function completed_construction_parents(grouped,parents,kinds=nothing)
+    count(parents) do parent
+        all(get(grouped,parent,())) do job
+            (kinds!==nothing && !(job["kind"] in kinds)) || job["status"]=="done"
+        end
+    end
+end
+
 """Keep original dispatch accounting while a retired seed waits for admission.
 
 Fallback equivalence or idle selection must retain an existing construction
@@ -322,7 +341,7 @@ function run(config)
     contexts=context_setup.contexts
     external=FP._closure_stop_poller(stop_path,joinpath(out,"STOP"),String.(get(config,"stop_files",String[]))...)
     stopped()=external() || storage.stopped[] || time()>=deadline
-    construction()=FP._closure_rows(s,"SELECT * FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') ORDER BY parent_id,id")
+    construction()=FP._closure_rows(s,"SELECT id,parent_id,kind,status,direction FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') ORDER BY parent_id,id")
     paths(kind)=FP._closure_count(s,"SELECT COUNT(*) n FROM paths WHERE job_id IN (SELECT id FROM jobs WHERE parent_id IN ($ids) AND kind=?)",(kind,))
     kernels()=FP._closure_count(s,"SELECT COUNT(*) n FROM kernels WHERE job_id IN (SELECT id FROM jobs WHERE parent_id IN ($ids) AND kind='switching') AND dimension>0")
     cosets(rows)=sum(max(0,Int(j["direction"])-1) for j in rows if j["kind"]=="v5";init=0)
@@ -341,8 +360,9 @@ function run(config)
             ClosureCompletion.track!(completion,parents)
         end
         before_jobs=construction();before_paths=Dict(kind=>paths(kind) for kind in ("v5","switching"));before_kernels=kernels()
+        grouped=construction_jobs_by_parent(before_jobs)
         for root in roots
-            seed_timing!(timings,root,before_jobs;preserve_existing=!window_active)
+            seed_timing!(timings,root,get(grouped,Int(root["id"]),());preserve_existing=!window_active)
         end
         event=Dict{String,Any}("event"=>"window_started","origin"=>window_origin,"kind"=>window_kind,"first"=>first(parents),"last"=>last(parents))
         window_origin=="root" && merge!(event,Dict("first_seed"=>published_row(base,first(parents)),"last_seed"=>published_row(base,last(parents))))
@@ -359,11 +379,12 @@ function run(config)
         isempty(ready) && return
         if jobs===nothing
             selected_json=String(FP.JSON3.write(ready))
-            jobs=FP._closure_rows(s,"SELECT * FROM jobs WHERE parent_id IN (SELECT value FROM json_each(?)) AND kind IN ('prepare_v5','v5','switching')",(selected_json,))
+            jobs=FP._closure_rows(s,"SELECT id,parent_id,kind,status,direction FROM jobs WHERE parent_id IN (SELECT value FROM json_each(?)) AND kind IN ('prepare_v5','v5','switching')",(selected_json,))
         end
+        grouped=construction_jobs_by_parent(jobs)
         for parent in ready
             t=timings[parent];haskey(t,"completed_utc") && continue
-            own=filter(j->j["parent_id"]==parent,jobs)
+            own=get(grouped,parent,())
             now=time();t["completed_utc"]=FP._closure_now()
             t["batch_completion_seconds"]=now-active_started
             t["elapsed_from_first_dispatch_seconds"]=now-get(t,"first_dispatch_epoch",now)
@@ -397,6 +418,8 @@ function run(config)
         force && publication_key==last_publication_key && (!fresh_counts || last_publication_fresh) && time()-last_report<report_interval && return
         publish_started=time_ns();publish_times=Dict{String,Float64}()
         now=FP._closure_now();jobs=construction();report=deepcopy(base)
+        grouped=construction_jobs_by_parent(jobs)
+        before_grouped=construction_jobs_by_parent(before_jobs)
         report["updated_utc"]=now;report["heartbeat_utc"]=now
         report["heartbeat_age_seconds"]=0.0;report["heartbeat_stale"]=false
         report["running"]=!finished;report["state"]=finished || state=="waiting_frontier" ? state : "running"
@@ -437,8 +460,8 @@ function run(config)
             for status in ("pending","paused","running","done","failed","blocked")
                 method["jobs_"*status]+=count_status(jobs,kinds,status)-count_status(before_jobs,kinds,status)+(status=="pending" ? newparents : 0)
             end
-            completed(rows)=count(p->all(j->j["status"]=="done",filter(j->j["parent_id"]==p && j["kind"] in kinds,rows)),parents)
-            method["parents_completed"]+=completed(jobs)-completed(before_jobs)
+            method["parents_completed"]+=completed_construction_parents(grouped,parents,kinds)-
+                completed_construction_parents(before_grouped,parents,kinds)
         end
         report["methods"]["v5"]["cosets_checked"]+=cosets(jobs)-cosets(before_jobs)
         addedv5=paths("v5")-before_paths["v5"];addedswitching=paths("switching")-before_paths["switching"]
@@ -448,8 +471,8 @@ function run(config)
         report["methods"]["switching"]["directions_checked"]+=sum(j["direction"]-1 for j in jobs if j["kind"]=="switching";init=0)-sum(j["direction"]-1 for j in before_jobs if j["kind"]=="switching";init=0)
         report["methods"]["switching"]["nontrivial_kernels"]+=kernels()-before_kernels
         report["methods"]["v5"]["parents_prepared"]+=count_status(jobs,("prepare_v5",),"done")-count_status(before_jobs,("prepare_v5",),"done")
-        complete(rows)=count(p->all(j->j["status"]=="done",filter(j->j["parent_id"]==p,rows)),parents)
-        report["completed_parents"]+=complete(jobs)-complete(before_jobs)
+        report["completed_parents"]+=completed_construction_parents(grouped,parents)-
+            completed_construction_parents(before_grouped,parents)
         report["active_parents"]=0
         report["queued_parents"]=max(0,report["total_parents"]-report["completed_parents"]-report["blocked_parents"])
         report["cluster"]["enabled"]=false;report["cluster"]["workers"]=Any[]
@@ -605,8 +628,9 @@ function run(config)
                 ClosureCompletion.track!(completion,selected)
                 append!(parents,selected);ids=join(parents,",")
                 before_jobs=construction();before_paths=Dict(kind=>paths(kind) for kind in ("v5","switching"));before_kernels=kernels()
+                grouped=construction_jobs_by_parent(before_jobs)
                 for root in roots
-                    seed_timing!(timings,root,before_jobs)
+                    seed_timing!(timings,root,get(grouped,Int(root["id"]),()))
                 end
                 push!(cohorts,selected);windows_started+=1;changed=true
                 event=Dict{String,Any}("event"=>"window_started","origin"=>window_origin,"kind"=>"construction",
