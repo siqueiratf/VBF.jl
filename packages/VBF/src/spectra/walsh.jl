@@ -59,6 +59,14 @@ end
 
 """Apply complete butterfly stages inside an aligned power-of-two range."""
 function _walsh_hadamard_stages!(v::Vector{<:Signed},lo::Int,hi::Int,block::Int,stop::Int)
+    # Fuse only global stages: the local tile already stays in cache.
+    if (eltype(v) === Int16 || eltype(v) === Int32) &&
+            block >= (eltype(v) === Int16 ? 1 << 14 : 1 << 16)
+        while block <= stop >> 2
+            _walsh_hadamard_pair_stages!(v,lo,hi,block)
+            block <<= 2
+        end
+    end
     while block < stop
         # Keep collection responsive during long allocation-free transforms.
         hi-lo+1 >= (1 << 16) && GC.safepoint()
@@ -81,12 +89,32 @@ end
     @inbounds @simd for i in lo:8:hi-7
         a=v[i];b=v[i+1];c=v[i+2];d=v[i+3]
         e=v[i+4];f=v[i+5];g=v[i+6];h=v[i+7]
-        ab=a+b;am=a-b;cd=c+d;cm=c-d
-        ef=e+f;em=e-f;gh=g+h;gm=g-h
-        t0=ab+cd;t1=am+cm;t2=ab-cd;t3=am-cm
-        t4=ef+gh;t5=em+gm;t6=ef-gh;t7=em-gm
+        t0,t1,t2,t3=_walsh_hadamard4(a,b,c,d)
+        t4,t5,t6,t7=_walsh_hadamard4(e,f,g,h)
         v[i]=t0+t4;v[i+1]=t1+t5;v[i+2]=t2+t6;v[i+3]=t3+t7
         v[i+4]=t0-t4;v[i+5]=t1-t5;v[i+6]=t2-t6;v[i+7]=t3-t7
+    end
+    v
+end
+
+"""Two canonical butterfly stages with fixed-width modular arithmetic."""
+@inline function _walsh_hadamard4(a::T,b::T,c::T,d::T) where {T<:Union{Int16,Int32}}
+    ab=a+b;am=a-b;cd=c+d;cm=c-d
+    (ab+cd,am+cm,ab-cd,am-cm)
+end
+
+"""Fuse two large stages over four streams, polling between bounded lane chunks."""
+@noinline function _walsh_hadamard_pair_stages!(v::Vector{T},lo::Int,hi::Int,block::Int) where {T<:Union{Int16,Int32}}
+    @inbounds for start in (lo-1):(4block):(hi-1)
+        for lane in 1:4096:block
+            hi-lo+1 >= (1 << 16) && GC.safepoint()
+            @simd for i in lane:min(block,lane+4095)
+                p=start+i
+                a=v[p];b=v[p+block];c=v[p+2block];d=v[p+3block]
+                y0,y1,y2,y3=_walsh_hadamard4(a,b,c,d)
+                v[p]=y0;v[p+block]=y1;v[p+2block]=y2;v[p+3block]=y3
+            end
+        end
     end
     v
 end

@@ -178,4 +178,35 @@ if haskey(ENV,"VBF_CLOSURE_COMPACT_HELPER")
         end
     end
 end
+
+@testset "Private native ledger text scratch preserves scalar and fallback bytes" begin
+    forms=(134658561,34016355,17372590,10987437,4393092)
+    writer=VS._ClosureCosetEvidenceWriter(forms)
+    for n in (typemin(Int),-1000,-1,0,1,9,10,99,100,1000,typemax(Int)), capped in (false,true)
+        proof=VS._ClosureCosetProof(forms,n,n,n,n,n,n,n,n,capped)
+        expected=VS._closure_coset_evidence_text(proof)
+        @test sprint(io->VS._closure_write_coset_evidence(io,proof,typemax(Int),writer))==expected
+        @test sprint(io->VS._closure_write_decimal(io,n,writer.digits))==string(n)
+    end
+    proof=VS._ClosureCosetProof(forms,1,2,2,0,0,1,0,23,false)
+    original=VS._closure_coset_evidence_text(proof)
+    other=VS._ClosureCosetProof((1,2,3,4,5),2,3,2,0,0,1,0,29,true)
+    future=copy(proof);future["future_field"]="αβ\nquoted \"proof\""
+    narrow=copy(proof);narrow["V5_forms"]=Int32[1,2,3,4,5]
+    for candidate in (proof,other,copy(proof),future,narrow)
+        @test sprint(io->VS._closure_write_coset_evidence(io,candidate,typemax(Int),writer))==VS._closure_coset_evidence_text(candidate)
+    end
+    @test VS._closure_coset_evidence_text(proof)==original
+    @test_throws ErrorException VS._closure_write_coset_evidence(IOBuffer(),proof,0,writer)
+    @test_throws ErrorException VS._closure_write_coset_evidence(IOBuffer(),future,0,writer)
+
+    # A different native forms tuple must still serialize its own bytes and
+    # retain the existing V1 fallback for a nonuniform block.
+    chunks=[VS._ClosureCosetChunk(p,nothing) for p in (proof,other)]
+    row=VS._closure_ledger_row(17,chunks)
+    @test row.evidence[1:8]==VS._CLOSURE_LEDGER_MAGIC
+    decoded=VS._closure_unpack_chunks(Dict{String,Any}(String(k)=>v for (k,v) in pairs(row)))
+    @test [r["evidence"] for r in decoded]==collect(VS._closure_coset_evidence_text.((proof,other)))
+end
+
 end

@@ -165,3 +165,67 @@ end
         end
     end
 end
+
+@testitem "V5 observer emission preserves concrete fields and callback behavior" begin
+    using VBF, Test
+    Q=VBF.QuadraticExtensions
+    empty_spaces=Q._EmptyCompletionSpaces()
+    spaces=Set([UInt32[1,2,4]])
+    retained=Any[]
+    observer=event->push!(retained,event)
+    for next_x in (nothing,1002),Ss in (empty_spaces,spaces)
+        @test Q._v5_emit_coset(observer,1001,next_x,2000,UInt32(73),Ss,1,20,3,true)===nothing
+        event=last(retained)
+        @test event==(;index=1001,next_x,total_x=2000,representative=UInt32(73),
+                      Ss,du_reject=1,ncand=20,nT=3,capped=true)
+        @test event.Ss===Ss
+        @test isconcretetype(typeof(event))
+        @test fieldtype(typeof(event),:next_x)===typeof(next_x)
+        @test fieldtype(typeof(event),:Ss)===typeof(Ss)
+    end
+    @test length(retained)==4
+    failure=ErrorException("observer interruption")
+    caught=try
+        Q._v5_emit_coset(_->throw(failure),1,2,2,UInt32(0),empty_spaces,0,0,0,false)
+    catch error
+        error
+    end
+    @test caught===failure
+end
+
+@testitem "V5 nonretaining observer does not box every event" begin
+    using VBF, Test
+    Q=VBF.QuadraticExtensions
+    # Test items run at module scope; capture typed local Refs in this callback.
+    let events=Ref(0),fields=Ref(UInt64(0))
+        observer=event->begin
+            events[]+=1
+            fields[]+=UInt64(event.index+event.total_x+event.du_reject+event.ncand+event.nT)+
+                      UInt64(event.representative)+UInt64(event.capped)
+            event.next_x===nothing || (fields[]+=UInt64(event.next_x))
+            fields[]+=UInt64(length(event.Ss))
+            nothing
+        end
+        function emit_many(observer::F,empty_spaces,spaces,count) where F
+            for index in 1:count
+                next_x=iseven(index) ? nothing : index+1
+                # Keep pre-existing Set wrappers out of a boxing union join.
+                if index%3==0
+                    VBF.QuadraticExtensions._v5_emit_coset(observer,index,next_x,count,UInt32(index),spaces,
+                                    index%2,index%17,index%5,isodd(index))
+                else
+                    VBF.QuadraticExtensions._v5_emit_coset(observer,index,next_x,count,UInt32(index),empty_spaces,
+                                    index%2,index%17,index%5,isodd(index))
+                end
+            end
+            nothing
+        end
+        empty_spaces=Q._EmptyCompletionSpaces();spaces=Set([UInt32[1,2,4]])
+        # Warm the same measurement path used by the allocation guard.
+        @allocated emit_many(observer,empty_spaces,spaces,10_000)
+        before=events[]
+        @test (@allocated emit_many(observer,empty_spaces,spaces,10_000))<4096
+        @test events[]-before==10_000
+        @test fields[]>0
+    end
+end

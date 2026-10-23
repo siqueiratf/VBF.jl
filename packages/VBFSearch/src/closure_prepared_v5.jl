@@ -74,7 +74,7 @@ struct _ClosurePreparedV5Chunk <: AbstractDict{String,Any}
         0<=p.du_reject<=1 && p.linear_system_candidates>=0 && p.completion_spaces>=0 || error("invalid extension coset counters")
         length(records)==p.candidate_spaces || error("extension coset lost candidate records")
         0<p.coset_representative<(1<<28) || error("invalid eligible extension coset")
-        cursor=string(p.first_x)
+        cursor=isempty(records) ? "" : string(p.first_x)
         for record in records
             properties=record.properties;w=record.witness
             properties["apn"] && properties["quadratic"] || error("worker returned an invalid APN completion")
