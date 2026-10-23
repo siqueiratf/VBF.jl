@@ -177,8 +177,14 @@ function _reservation_ea_sql(indexed)
     index=indexed ? " INDEXED BY jobs_pending_ea" : ""
     "SELECT * FROM jobs$index WHERE kind='deduplicate' AND status IN ('pending','paused') AND (last_session!=? OR id IN (SELECT value FROM json_each(?))) AND id NOT IN (SELECT value FROM json_each(?)) ORDER BY id LIMIT ?"
 end
-_reservation_construction_sql(ids)=
-    "SELECT * FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('pending','paused') AND id NOT IN (SELECT value FROM json_each(?)) ORDER BY parent_id,id LIMIT ?"
+function _reservation_construction_sql(ids,indexed=false)
+    index=indexed ? " INDEXED BY jobs_pending_construction" : ""
+    "SELECT * FROM jobs$index WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('pending','paused') AND id NOT IN (SELECT value FROM json_each(?)) ORDER BY parent_id,id LIMIT ?"
+end
+function _reservation_failed_construction_sql(ids,indexed=false)
+    index=indexed ? " INDEXED BY jobs_failed_construction" : ""
+    "SELECT EXISTS(SELECT 1 FROM jobs$index WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('failed','blocked') LIMIT 1) n"
+end
 
 """Rolling completion latency and throughput, excluding checkpoint startup.
 
@@ -231,6 +237,8 @@ function run(config)
     max_apply_per_step>0 || throw(ArgumentError("invalid application step bound"))
     indexed_ea_queue=get(config,"indexed_ea_queue",true)
     indexed_ea_queue isa Bool || throw(ArgumentError("indexed_ea_queue must be Boolean"))
+    indexed_construction_queue=get(config,"indexed_construction_queue",true)
+    indexed_construction_queue isa Bool || throw(ArgumentError("indexed_construction_queue must be Boolean"))
     ea_queue_sql=_reservation_ea_sql(indexed_ea_queue)
     Int(get(config,"window_size",100))>0 || error("invalid window size")
     rolling_windows=get(config,"rolling_windows",false)
@@ -616,16 +624,16 @@ function run(config)
         ea=FP._closure_rows(s,ea_queue_sql,(s.session,retries_json,excluded_json,limit))
         items=Any[(job=j,equivalence=true) for j in ea]
         length(items)==limit && return items
-        failed=FP._closure_count(s,"SELECT EXISTS(SELECT 1 FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('failed','blocked') LIMIT 1) n")
+        failed=FP._closure_count(s,_reservation_failed_construction_sql(ids,indexed_construction_queue))
         failed==0 || error("parent coverage requires recovery")
-        pending=FP._closure_rows(s,_reservation_construction_sql(ids),(excluded_json,limit-length(items)))
+        pending=FP._closure_rows(s,_reservation_construction_sql(ids,indexed_construction_queue),(excluded_json,limit-length(items)))
         append!(items,[(job=j,equivalence=false) for j in pending])
         if length(items)<limit && advance_rolling_window!()
             # Requery after the bounded frontier changes. Existing descriptors
             # remain in the FIFO, and exclusions preserve unique reservations.
             used=union(excluded,Set(Int[item.job["id"] for item in items]))
             used_json=_reservation_ids_json(used)
-            extra=FP._closure_rows(s,_reservation_construction_sql(ids),(used_json,limit-length(items)))
+            extra=FP._closure_rows(s,_reservation_construction_sql(ids,indexed_construction_queue),(used_json,limit-length(items)))
             append!(items,[(job=j,equivalence=false) for j in extra])
         end
         items
@@ -729,6 +737,10 @@ function run(config)
         if indexed_ea_queue
             FP._closure_exec(s,"CREATE INDEX IF NOT EXISTS jobs_pending_ea ON jobs(id,last_session) WHERE kind='deduplicate' AND status IN ('pending','paused')")
         end
+        if indexed_construction_queue
+            FP._closure_exec(s,"CREATE INDEX IF NOT EXISTS jobs_pending_construction ON jobs(parent_id,id) WHERE kind IN ('prepare_v5','v5','switching') AND status IN ('pending','paused')")
+            FP._closure_exec(s,"CREATE INDEX IF NOT EXISTS jobs_failed_construction ON jobs(parent_id) WHERE kind IN ('prepare_v5','v5','switching') AND status IN ('failed','blocked')")
+        end
         baseline=continuous_baseline!(s,out;policy=String(get(config,"baseline_policy","summary")),
             cached_progress=base,full_reserve_bytes=Int(get(config,"full_baseline_reserve_bytes",8*1024^3)))
         FP.DiscoveryStore.atomic_toml(joinpath(out,"baseline.toml"),baseline)
@@ -759,7 +771,8 @@ function run(config)
             "report_interval_seconds"=>report_interval,"global_count_interval_seconds"=>global_count_interval,"cached_global_counts"=>cached_global_counts,
             "coordinator_transactions"=>"bounded steps, per-application savepoints, FULL synchronous commit",
             "max_apply_per_step"=>max_apply_per_step,"cached_control_statements"=>true,
-            "indexed_ea_queue"=>indexed_ea_queue,"reservation_sets"=>"bound integer JSON arrays; statement-local exclusions",
+            "indexed_ea_queue"=>indexed_ea_queue,"indexed_construction_queue"=>indexed_construction_queue,
+            "reservation_sets"=>"bound integer JSON arrays; statement-local exclusions",
             "batches_controller_sha256"=>FP.DiscoveryEvidence.filehash(joinpath(@__DIR__,"closure_batches.jl")),
             "refill_controller_sha256"=>FP.DiscoveryEvidence.filehash(joinpath(@__DIR__,"closure_refill.jl")),
             "operations_controller_sha256"=>FP.DiscoveryEvidence.filehash(joinpath(@__DIR__,"closure_operations.jl")),

@@ -44,21 +44,26 @@ function walsh_hadamard!(v::Vector{<:Signed}; threaded::Bool = false)
     end
     block = 1
     if (eltype(v) === Int16 || eltype(v) === Int32) && n_pow >= 8
-        # Fixed early stages avoid a short inner loop for every butterfly.
-        # Keep GC response bounded even when many searches transform in parallel.
-        chunk_size = 1 << 14
-        for lo in 1:chunk_size:n_pow
+        # Complete the local stages while each tile remains in cache.
+        tile = min(eltype(v) === Int16 ? 1 << 14 : 1 << 16, n_pow)
+        for lo in 1:tile:n_pow
             n_pow >= (1 << 16) && GC.safepoint()
-            _walsh_hadamard_prefix8!(v,lo,min(n_pow,lo+chunk_size-1))
+            hi = min(n_pow,lo+tile-1)
+            _walsh_hadamard_prefix8!(v,lo,hi)
+            _walsh_hadamard_stages!(v,lo,hi,8,tile)
         end
-        block = 8
+        block = tile
     end
-    while block < n_pow
-        # A large serial transform can otherwise delay collection requested by
-        # independent tasks. Keep the SIMD butterflies allocation-free.
-        n_pow >= (1 << 16) && GC.safepoint()
+    _walsh_hadamard_stages!(v,1,n_pow,block,n_pow)
+end
+
+"""Apply complete butterfly stages inside an aligned power-of-two range."""
+function _walsh_hadamard_stages!(v::Vector{<:Signed},lo::Int,hi::Int,block::Int,stop::Int)
+    while block < stop
+        # Keep collection responsive during long allocation-free transforms.
+        hi-lo+1 >= (1 << 16) && GC.safepoint()
         step = 2 * block
-        @inbounds for start = 0:step:(n_pow-1)
+        @inbounds for start = (lo-1):step:(hi-1)
             @simd for i = 1:block
                 a = v[start+i]
                 b = v[start+i+block]

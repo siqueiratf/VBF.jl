@@ -24,17 +24,21 @@ function _closure_getvar(io)
 end
 function _closure_v2_payload(job,proofs)
     n=length(proofs);1<=n<=65536 || return nothing
-    p=first(proofs);forms=p["V5_forms"];first_x=p["first_x"];total=p["total_x"]
+    # Mixed containers keep the legacy vector comparisons; native arrays need no copies.
+    native_forms=eltype(proofs)<:_ClosureCosetProof
+    p=first(proofs);forms=native_forms ? p.forms : p["V5_forms"];first_x=p["first_x"];total=p["total_x"]
     length(forms)==5 && all(v->v isa Integer && 0<=v<=typemax(UInt32),forms) || return nothing
     templates=NTuple{5,UInt64}[];lookup=Dict{NTuple{5,UInt64},UInt64}();entries=Tuple{Int64,UInt64}[]
     for (i,q) in enumerate(proofs)
-        q["V5_forms"]==forms && q["first_x"]==first_x+i-1 && q["next_x"]==first_x+i && q["total_x"]==total || return nothing
+        (native_forms ? q.forms : q["V5_forms"])==forms && q["first_x"]==first_x+i-1 && q["next_x"]==first_x+i && q["total_x"]==total || return nothing
         values=(q["candidate_spaces"],q["completion_spaces"],q["du_reject"],q["linear_system_candidates"],Int(q["capped"]))
         all(v->v isa Integer && 0<=v<=typemax(Int64),values) && values[5] in (0,1) || return nothing
         rep=q["coset_representative"];rep isa Integer && 0<=rep<=typemax(Int64) || return nothing
-        key=UInt64.(values)
-        index=get!(lookup,key) do
-            push!(templates,key);UInt64(length(templates)-1)
+        key=(UInt64(values[1]),UInt64(values[2]),UInt64(values[3]),UInt64(values[4]),UInt64(values[5]))
+        # At most 65536 templates exist, so the all-ones index is an unambiguous miss.
+        index=get(lookup,key,typemax(UInt64))
+        if index==typemax(UInt64)
+            index=UInt64(length(templates));push!(templates,key);lookup[key]=index
         end
         push!(entries,(Int64(rep),index))
     end

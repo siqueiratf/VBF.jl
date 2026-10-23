@@ -96,6 +96,29 @@ end
     @test_throws Exception VS._closure_ledger_row(-1,proof_chunks(2))
 end
 
+@testset "Normalized native and mixed proofs preserve template bytes and validation" begin
+    native=[VS._ClosureCosetProof((1,2,3,4,5),i,i+1,12,i%3,17(i%3),i%2,i%3,23i,i%3==0) for i in 1:12]
+    generic=copy.(native)
+    expected=VS._closure_v2_payload(17,generic)
+    @test expected!==nothing
+    for proofs in (native,Any[native...],Tuple(native),Any[isodd(i) ? p : copy(p) for (i,p) in enumerate(native)])
+        @test VS._closure_v2_payload(17,proofs)==expected
+    end
+    mixed=Any[native...];mixed[2]=copy(native[2]);mixed[2]["V5_forms"]=Float64.(mixed[2]["V5_forms"])
+    @test VS._closure_v2_payload(17,mixed)==expected
+    badforms=[(-1,2,3,4,5)]
+    Sys.WORD_SIZE==64 && push!(badforms,(Int(typemax(UInt32))+1,2,3,4,5))
+    for forms in badforms
+        proof=VS._ClosureCosetProof(forms,1,2,6,0,0,0,0,1,false)
+        @test VS._closure_v2_payload(17,[proof])===nothing
+        @test VS._closure_v2_payload(17,[copy(proof)])===nothing
+    end
+    for (field,value) in (("first_x",99),("next_x",99),("total_x",99),("completion_spaces",-1))
+        broken=deepcopy(generic);broken[2][field]=value
+        @test VS._closure_v2_payload(17,broken)===nothing
+    end
+end
+
 @testset "Direct proof encoding preserves canonical text and bounded fallback writes" begin
     native=VS._ClosureCosetProof((1,2,3,4,5),7,8,16,1,9,0,3,23,false)
     ordinary=copy(native);future=copy(native);future["future_field"]="αβ\nquoted \"proof\""
