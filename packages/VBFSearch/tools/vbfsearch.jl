@@ -9,6 +9,7 @@ using TOML, Dates
 const ROOT=normpath(joinpath(@__DIR__,"..","..",".."))
 const VALUES=Dict("--start"=>"start","--end"=>"end","--time"=>"time",
     "--output"=>"output","--campaign"=>"campaign","--threads"=>"threads",
+    "--gcthreads"=>"gc_threads",
     "--heap-size-hint"=>"heap","--heap"=>"heap",
     "--window-size"=>"window_size","--progress-interval"=>"progress_interval")
 
@@ -21,6 +22,8 @@ Usage: vbfsearch --recursive-closure [OPTIONS]
   --end ID            Last audited seed row (inclusive; default last seed)
   -j [N], --threads N Compute threads; bare -j or N=auto chooses automatically
                       Default: 1. Under Slurm, auto budgets GC/interactive CPUs.
+  --gcthreads N[,M]   GC collectors and optional concurrent sweeper (0 or 1)
+                      Default collectors: 1, 2 or 8; sweeper: 0. For example 8,0.
   --time SECONDS      Wall-time budget, including worker startup and setup
                       Also accepts 30s, 15m, 8h. Default: until stopped.
   --output PATH       Final .sqlite file (default: data/search/vbfsearch-....sqlite)
@@ -115,22 +118,31 @@ end
 
 """Choose compute and auxiliary pools within an explicit Slurm allocation.
 
-Local auto uses the available CPU count and the previously measured 8,1 GC
-setting at 32 or more compute threads. Slurm additionally reserves auxiliary
-pools, following the maintained controller's conservative resource validator.
+Local auto uses the available CPU count. Concurrent sweeping defaults off to
+avoid Julia 1.13.0's known page-pool race; collectors still run in parallel.
+Slurm reserves auxiliary pools, following the controller resource validator.
 """
-function threads(value;env=ENV,cpu_threads=available_cpu_count())
+function threads(value;gc=nothing,env=ENV,cpu_threads=available_cpu_count())
     allocation=haskey(env,"SLURM_CPUS_PER_TASK") ? positive(env["SLURM_CPUS_PER_TASK"],"SLURM_CPUS_PER_TASK") : 0
     auto=value=="auto"
     count=auto ? (allocation>0 ? allocation : cpu_threads) : positive(value,"--threads")
     allocation==0 && count>cpu_threads && throw(ArgumentError("--threads=$count exceeds the $cpu_threads available local CPUs"))
     mark=count>=32 ? 8 : count>=8 ? 2 : 1
-    sweep=count>=32 ? 1 : 0
+    sweep=0
+    if gc!==nothing
+        parts=split(gc,',')
+        length(parts) in (1,2) || throw(ArgumentError("--gcthreads needs N or N,0/N,1"))
+        mark=positive(first(parts),"--gcthreads collector count")
+        if length(parts)==2
+            last(parts) in ("0","1") || throw(ArgumentError("--gcthreads sweep count must be 0 or 1"))
+            sweep=parse(Int,last(parts))
+        end
+    end
     interactive=count>1 ? 1 : 0
     if auto && allocation>0
         interactive=allocation>=4 ? 1 : 0
         count=allocation-mark-sweep-interactive
-    elseif allocation>0 && count+mark+sweep+interactive>allocation
+    elseif gc===nothing && allocation>0 && count+mark+sweep+interactive>allocation
         mark=1;sweep=0;interactive=0
     end
     count>0 && (allocation==0 || count+mark+sweep+interactive<=allocation) ||
@@ -151,7 +163,7 @@ function plan(parsed;env=ENV,cpu_threads=available_cpu_count(),output_default=no
     first_seed=positive(get(cfg,"start","1"),"--start")
     last_seed=haskey(cfg,"end") ? positive(cfg["end"],"--end") : nothing
     budget=haskey(cfg,"time") ? seconds(cfg["time"]) : nothing
-    pools=threads(get(cfg,"threads","1");env,cpu_threads)
+    pools=threads(get(cfg,"threads","1");gc=get(cfg,"gc_threads",nothing),env,cpu_threads)
     window_size=positive(get(cfg,"window_size","100"),"--window-size")
     progress_interval=seconds(get(cfg,"progress_interval","15s");name="--progress-interval")
     heap=get(cfg,"heap",pools.compute==1 ? "512M" : pools.compute<16 ? "4G" : pools.compute<64 ? "16G" : "32G")
