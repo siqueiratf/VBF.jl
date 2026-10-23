@@ -10,6 +10,60 @@ function fifo_reserver(items)
     end
 end
 
+@testset "Grouped reservations retain every job key within the horizon" begin
+    remaining=collect(1:40);applied=Int[]
+    reserve=(limit,excluded)->begin
+        @test all(id->!(id in excluded),remaining)
+        n=min(limit,length(remaining));selected=remaining[1:n];deleteat!(remaining,1:n)
+        [selected[i:min(i+3,n)] for i in 1:4:n]
+    end
+    result=run_refill_pool!(reserve,(ids,ticket,slot)->ids,(ids,slot,stop)->ids,
+        (ids,value,seconds,meta)->append!(applied,value);
+        concurrency=2,max_pending=8,item_keys=identity)
+    @test applied==collect(1:40)
+    @test result.dispatched_jobs==result.applied_jobs==40
+    @test result.dispatched==result.applied==10
+    @test result.peak_pending==8 && result.peak_completed_jobs<=8
+    @test result.reserved_jobs_unstarted==0
+    @test_throws ErrorException run_refill_pool!((n,excluded)->[[1,1]],identity,identity,identity;
+        concurrency=1,max_pending=2,item_keys=identity)
+    @test_throws ErrorException run_refill_pool!((n,excluded)->[[1,2,3]],identity,identity,identity;
+        concurrency=1,max_pending=2,item_keys=identity)
+end
+
+@testset "Grouped reservation membership survives descriptor mutation" begin
+    groups=[[1,2],[3,4]];applied=Int[]
+    reserve=(limit,excluded)->isempty(groups) ? Vector{Int}[] : [popfirst!(groups)]
+    prepare=(ids,ticket,slot)->begin
+        original=copy(ids);empty!(ids);original
+    end
+    result=run_refill_pool!(reserve,prepare,(ids,slot,stop)->ids,
+        (ids,value,seconds,meta)->append!(applied,value);
+        concurrency=1,max_pending=2,item_keys=identity)
+    @test applied==collect(1:4)
+    @test result.applied_jobs==4 && result.peak_pending==2
+    @test result.reserved_jobs_unstarted==0
+end
+
+@testset "A reserved classification lane drains STOP across undispatched gaps" begin
+    stop=Threads.Atomic{Bool}(false);started=Channel{Int}(2);release=Channel{Nothing}(2)
+    dispatched=Int[];applied=Int[]
+    prepare=(item,ticket,slot)->begin push!(dispatched,item);item end
+    compute=(item,slot,cancel)->begin put!(started,item);take!(release);item end
+    coordinator=@async run_refill_pool!(fifo_reserver(1:4),prepare,compute,
+        (item,value,seconds,meta)->push!(applied,value);
+        concurrency=2,max_pending=4,lane=item->item<=2 ? :classification : :default,
+        lane_limits=Dict(:classification=>1,:default=>1),stop_requested=()->stop[])
+    @test sort!([take!(started),take!(started)])==[1,3]
+    stop[]=true;put!(release,nothing);put!(release,nothing)
+    result=fetch(coordinator)
+    @test dispatched==applied==[1,3]
+    @test result.state==:stopped && result.applied_jobs==2
+    @test result.reserved_jobs_unstarted==2
+    @test_throws ArgumentError run_refill_pool!(nothing,nothing,nothing,nothing;
+        concurrency=1,lane_limits=Dict(:classification=>0))
+end
+
 @testset "A fast slot refills before the first slow ticket completes" begin
     slow_gate=Channel{Nothing}(1);third_started=Channel{Nothing}(1)
     dispatched=Int[];applied=Int[];first_finished=Threads.Atomic{Bool}(false)

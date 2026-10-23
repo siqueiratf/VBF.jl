@@ -6,9 +6,14 @@ may group writes; worker waits and reporting stay outside it. `prepare` and
 `apply` run on the coordinator; `compute` alone runs on worker tasks. A slot is
 an exclusive scratch owner, independent of the Julia thread executing its task.
 
-At most `max_pending` tickets exist, including queued, computing and completed
-results. Completed results apply in reservation order. A fast slot immediately
+At most `max_pending` job keys exist, including queued, computing and completed
+results. `item_keys` groups several jobs into one ticket without enlarging that
+bound. Optional lane limits reserve compute capacity for distinct work kinds;
+dispatch can skip a full lane while application retains reservation order.
+Completed results apply in reservation order. A fast slot immediately
 takes the next reserved ticket while an earlier slow ticket is still running.
+An atomic grouped ticket may exceed `max_apply_per_step`; the allowance is
+checked between tickets. Callers can size that allowance for their batch bound.
 An extreme head straggler eventually causes bounded backpressure. Reservation
 depends on the committed prefix, not the order in which workers complete.
 `reservation_refill_batch` amortizes reservation calls by waiting for that many
@@ -23,6 +28,7 @@ is rethrown; the caller owns durable recovery of unapplied jobs.
 """
 function run_refill_pool!(reserve,prepare,compute,apply;
     concurrency::Int,max_pending::Int=2concurrency,reservation_refill_batch::Int=1,key=identity,
+    item_keys=item->(key(item),),lane=item->:default,lane_limits=Dict{Symbol,Int}(),
     stop_requested=()->false,on_tick=()->nothing,on_wait=()->nothing,
     on_state=_->nothing,measure_result_bytes=false,poll_seconds=0.1,
     max_apply_per_step::Int=concurrency,coordinator_step=f->f())
@@ -31,20 +37,25 @@ function run_refill_pool!(reserve,prepare,compute,apply;
     1<=reservation_refill_batch<=max_pending || throw(ArgumentError("reservation refill batch must be between 1 and the reservation horizon"))
     max_apply_per_step>0 || throw(ArgumentError("invalid application step bound"))
     isfinite(poll_seconds) && poll_seconds>0 || throw(ArgumentError("invalid worker poll interval"))
+    all(n->n>0,values(lane_limits)) || throw(ArgumentError("lane capacities must be positive"))
     events=Channel{Any}(max_pending)
     cancelled=Threads.Atomic{Bool}(false)
     worker_stop()=cancelled[] || stop_requested()
     reserved=Dict{Int,Any}();reserved_keys=Set{Any}()
+    ticket_keys=Dict{Int,Any}();active_lanes=Dict{Symbol,Int}()
     ready=Int[];ready_head=1;free_slots=collect(1:concurrency)
     active=Dict{Int,Task}();completed=Dict{Int,Any}()
     workers_started=Threads.Atomic{Int}(0);workers_finished=Threads.Atomic{Int}(0)
+    worker_jobs_finished=Threads.Atomic{Int}(0)
     worker_compute_ns=Threads.Atomic{UInt64}(0)
-    next_ticket=1;next_apply=1;dispatched=0;applied=0
+    next_ticket=1;next_apply=1;dispatched=0;applied=0;dispatched_jobs=0;applied_jobs=0
     peak_active=0;peak_pending=0;peak_completed=0;failure=nothing
     reserve_seconds=0.0;prepare_seconds=0.0;apply_seconds=0.0;event_wait_seconds=0.0;reservation_calls=0
     completed_bytes=0;peak_completed_bytes=0
+    queued_jobs=0;completed_jobs=0;collected_jobs=0;peak_completed_jobs=0
     pool_started=time_ns();accounted=pool_started
     active_slot_seconds=0.0;queued_ticket_seconds=0.0;completed_ticket_seconds=0.0
+    queued_job_seconds=0.0;completed_job_seconds=0.0
     horizon_backpressure_seconds=0.0;underfilled_seconds=0.0;compute_slot_seconds=0.0
     ordered_head_wait_seconds=0.0;horizon_wait_seconds=0.0;idle_slot_wait_seconds=0.0
     coordinator_step_seconds=0.0;transaction_control_seconds=0.0
@@ -58,17 +69,20 @@ function run_refill_pool!(reserve,prepare,compute,apply;
         active_slot_seconds+=length(active)*dt
         queued_ticket_seconds+=max(0,length(ready)-ready_head+1)*dt
         completed_ticket_seconds+=length(completed)*dt
+        queued_job_seconds+=queued_jobs*dt;completed_job_seconds+=completed_jobs*dt
         peak_uncollected=max(peak_uncollected,workers_finished[]-(dispatched-length(active)))
         # This structural backpressure state can overlap coordinator work.
         # The *_wait_seconds metrics below count actual event waits separately.
-        blocked=length(reserved)==max_pending && ready_head>length(ready) && !isempty(completed) && length(active)<concurrency
+        blocked=length(reserved_keys)==max_pending && ready_head>length(ready) && !isempty(completed) && length(active)<concurrency
         horizon_backpressure_seconds+=blocked ? dt : 0.0
         underfilled_seconds+=length(active)<concurrency && !isempty(reserved) ? dt : 0.0
     end
     function publish_state!()
         account_state!();pool_wall_seconds=(time_ns()-pool_started)*1e-9
         finished=workers_finished[];started=workers_started[]
-        on_state((;active=length(active),reserved=length(reserved),completed=length(completed),
+        on_state((;active=length(active),reserved=length(reserved),completed=length(completed),dispatched,applied,
+            reserved_jobs=length(reserved_keys),dispatched_jobs,applied_jobs,completed_jobs,peak_completed_jobs,
+            completed_uncollected_jobs=max(0,worker_jobs_finished[]-collected_jobs),active_lanes=copy(active_lanes),
             workers_computing=max(0,started-finished),workers_scheduled=max(0,dispatched-started),
             completed_uncollected=max(0,finished-(dispatched-length(active))),peak_uncollected,
             finished_compute_seconds=worker_compute_ns[]*1e-9,
@@ -77,6 +91,7 @@ function run_refill_pool!(reserve,prepare,compute,apply;
             result_bytes_measured=measure_result_bytes,reserve_seconds,prepare_seconds,apply_seconds,event_wait_seconds,
             reservation_calls,reservation_refill_batch,
             pool_wall_seconds,active_slot_seconds,compute_slot_seconds,queued_ticket_seconds,completed_ticket_seconds,
+            queued_job_seconds,completed_job_seconds,
             horizon_backpressure_seconds,underfilled_seconds,
             ordered_head_wait_seconds,horizon_wait_seconds,idle_slot_wait_seconds,
             average_active_slots=pool_wall_seconds>0 ? active_slot_seconds/pool_wall_seconds : 0.0,
@@ -102,7 +117,7 @@ function run_refill_pool!(reserve,prepare,compute,apply;
     end
     function reserve_more!()
         worker_stop() && return
-        room=max_pending-length(reserved)
+        room=max_pending-length(reserved_keys)
         room==0 && return
         room<reservation_refill_batch && return
         reservation_calls+=1
@@ -110,12 +125,20 @@ function run_refill_pool!(reserve,prepare,compute,apply;
         length(descriptors)<=room || error("reservation exceeds bounded horizon")
         account_state!()
         for item in descriptors
-            id=key(item)
-            id in reserved_keys && error("job reserved twice")
-            reserved[next_ticket]=item;push!(reserved_keys,id);push!(ready,next_ticket)
+            keys=item_keys(item)
+            # Freeze mutable membership without specializing on every batch
+            # length. Singleton tuples retain the scalar fast path.
+            ids=keys isa Tuple ? keys : collect(keys)
+            isempty(ids) && error("reservation ticket has no jobs")
+            (length(ids)==1 || allunique(ids)) || error("job repeated within a reservation ticket")
+            any(id->id in reserved_keys,ids) && error("job reserved twice")
+            length(reserved_keys)+length(ids)<=max_pending || error("reservation exceeds bounded job horizon")
+            ticket_keys[next_ticket]=ids
+            reserved[next_ticket]=item;union!(reserved_keys,ids);push!(ready,next_ticket)
+            queued_jobs+=length(ids)
             next_ticket+=1
         end
-        peak_pending=max(peak_pending,length(reserved))
+        peak_pending=max(peak_pending,length(reserved_keys))
     end
     function dispatch!()
         while true
@@ -126,9 +149,22 @@ function run_refill_pool!(reserve,prepare,compute,apply;
             end
             (worker_stop() || isempty(free_slots) || ready_head>length(ready)) && break
             account_state!()
-            ticket=ready[ready_head];ready_head+=1
+            selected=findfirst(ready_head:length(ready)) do index
+                kind=lane(reserved[ready[index]])
+                get(active_lanes,kind,0)<get(lane_limits,kind,concurrency)
+            end
+            selected===nothing && break
+            index=ready_head+selected-1
+            ticket=ready[index]
+            if index==ready_head
+                ready_head+=1
+            else
+                deleteat!(ready,index)
+            end
             slot=popfirst!(free_slots)
             t=time_ns();prepared=prepare(reserved[ticket],ticket,slot);prepare_seconds+=(time_ns()-t)*1e-9
+            kind=lane(reserved[ticket]);active_lanes[kind]=get(active_lanes,kind,0)+1
+            count_jobs=length(ticket_keys[ticket]);queued_jobs-=count_jobs
             active[ticket]=Threads.@spawn begin
                 Threads.atomic_add!(workers_started,1)
                 started=time_ns();value=nothing;problem=nothing
@@ -140,19 +176,31 @@ function run_refill_pool!(reserve,prepare,compute,apply;
                 finished=time_ns()
                 Threads.atomic_add!(worker_compute_ns,finished-started)
                 Threads.atomic_add!(workers_finished,1)
+                Threads.atomic_add!(worker_jobs_finished,count_jobs)
                 put!(events,(;ticket,slot,prepared,value,problem,
                     compute_seconds=(finished-started)*1e-9,finished_ns=finished))
             end
             dispatched+=1;peak_active=max(peak_active,length(active))
+            dispatched_jobs+=length(ticket_keys[ticket])
         end
         # Keep the reservation queue bounded in memory during an indefinite run.
         if ready_head>max_pending
             deleteat!(ready,1:ready_head-1);ready_head=1
         end
     end
+    """Drain dispatched work after STOP even when a full lane left queued gaps."""
+    function prefix_ready()
+        if worker_stop()
+            while next_apply<next_ticket && haskey(reserved,next_apply) &&
+                    !haskey(active,next_apply) && !haskey(completed,next_apply)
+                next_apply+=1
+            end
+        end
+        haskey(completed,next_apply) && completed[next_apply].problem===nothing
+    end
     function apply_prefix!()
         step_applied=0
-        while haskey(completed,next_apply) && step_applied<max_apply_per_step
+        while prefix_ready() && step_applied<max_apply_per_step
             event=completed[next_apply]
             event.problem===nothing || return
             t=time_ns();apply(event.prepared,event.value,event.compute_seconds,
@@ -162,8 +210,12 @@ function run_refill_pool!(reserve,prepare,compute,apply;
             account_state!()
             completed_bytes-=event.result_bytes
             delete!(completed,next_apply)
-            item=pop!(reserved,next_apply);delete!(reserved_keys,key(item))
-            next_apply+=1;applied+=1;step_applied+=1
+            pop!(reserved,next_apply)
+            ids=pop!(ticket_keys,next_apply)
+            for id in ids;delete!(reserved_keys,id);end
+            completed_jobs-=length(ids)
+            next_apply+=1;applied+=1;step_applied+=length(ids)
+            applied_jobs+=length(ids)
             # Applications may be much slower than compute. Harvest completions
             # between applications so their slots can refill immediately.
             while isready(events)
@@ -176,6 +228,9 @@ function run_refill_pool!(reserve,prepare,compute,apply;
         account_state!();compute_slot_seconds+=event.compute_seconds
         event_collection_seconds+=(time_ns()-event.finished_ns)*1e-9
         wait(pop!(active,event.ticket))
+        kind=lane(reserved[event.ticket]);active_lanes[kind]-=1
+        count_jobs=length(ticket_keys[event.ticket]);collected_jobs+=count_jobs;completed_jobs+=count_jobs
+        peak_completed_jobs=max(peak_completed_jobs,completed_jobs)
         push!(free_slots,event.slot)
         bytes=measure_result_bytes ? Base.summarysize((event.prepared,event.value)) : 0
         completed[event.ticket]=merge(event,(result_bytes=bytes,))
@@ -191,13 +246,13 @@ function run_refill_pool!(reserve,prepare,compute,apply;
             reserve_more!();dispatch!()
         end
         publish_state!()
-        while !isempty(active) || (haskey(completed,next_apply) && completed[next_apply].problem===nothing)
+        while !isempty(active) || prefix_ready()
             t=time_ns()
-            while !isready(events) && !(haskey(completed,next_apply) && completed[next_apply].problem===nothing)
+            while !isready(events) && !prefix_ready()
                 maintenance_started=time_ns();on_wait();maintenance_ns=time_ns()-maintenance_started
                 wait_maintenance_seconds+=maintenance_ns*1e-9;t+=maintenance_ns
                 waiting_for_head=!isempty(completed) && !haskey(completed,next_apply)
-                waiting_on_horizon=waiting_for_head && length(reserved)==max_pending && ready_head>length(ready) && length(active)<concurrency
+                waiting_on_horizon=waiting_for_head && length(reserved_keys)==max_pending && ready_head>length(ready) && length(active)<concurrency
                 wait_started=time_ns()
                 timedwait(()->isready(events),poll_seconds;pollint=min(0.001,poll_seconds))
                 waited=(time_ns()-wait_started)*1e-9
@@ -227,14 +282,14 @@ function run_refill_pool!(reserve,prepare,compute,apply;
         end
         publish_state!()
         failure===nothing || throw(failure.exception)
-        (;state=worker_stop() ? :stopped : :drained,dispatched,applied,
-            peak_active,peak_pending,peak_completed,
+        (;state=worker_stop() ? :stopped : :drained,dispatched,applied,dispatched_jobs,applied_jobs,
+            peak_active,peak_pending,peak_completed,peak_completed_jobs,
             peak_completed_bytes,result_bytes_measured=measure_result_bytes,
             reserve_seconds,prepare_seconds,apply_seconds,event_wait_seconds,
             reservation_calls,reservation_refill_batch,
-            reserved_unstarted=length(reserved),reservation_horizon=max_pending,
+            reserved_unstarted=length(reserved),reserved_jobs_unstarted=length(reserved_keys),reservation_horizon=max_pending,
             pool_wall_seconds=(time_ns()-pool_started)*1e-9,active_slot_seconds,compute_slot_seconds,
-            queued_ticket_seconds,completed_ticket_seconds,horizon_backpressure_seconds,underfilled_seconds,
+            queued_ticket_seconds,completed_ticket_seconds,queued_job_seconds,completed_job_seconds,horizon_backpressure_seconds,underfilled_seconds,
             ordered_head_wait_seconds,horizon_wait_seconds,idle_slot_wait_seconds,
             coordinator_step_seconds,transaction_control_seconds,tick_seconds,wait_maintenance_seconds,event_collection_seconds,
             finished_compute_seconds=worker_compute_ns[]*1e-9,peak_uncollected,

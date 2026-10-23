@@ -18,6 +18,7 @@ const DBInterface=FP.DBInterface
 include("closure_baseline.jl")
 include("closure_refill.jl")
 include("closure_batches.jl")
+include("closure_classification.jl")
 include("closure_operations.jl")
 include("closure_completion.jl")
 using .ClosureOperations: validate_resources
@@ -61,7 +62,8 @@ function console_event(event;human=false,io=stdout)
         haskey(metrics,"recent_packets_per_second") && print(io," (+",metrics["recent_packets"],
             "; ",round(metrics["recent_packets_per_second"];digits=1),"/s)")
         if haskey(scheduler,"workers_computing")
-            print(io,"; results waiting to apply: ",get(scheduler,"completed",0)+get(scheduler,"completed_uncollected",0))
+            print(io,"; results waiting to apply: ",get(scheduler,"completed_jobs",get(scheduler,"completed",0))+
+                get(scheduler,"completed_uncollected_jobs",get(scheduler,"completed_uncollected",0)))
         end
         println(io,".")
         if get(metrics,"process_cpu_available",false) && haskey(metrics,"recent_average_cpu_cores")
@@ -252,8 +254,16 @@ function run(config)
     max_pending>=concurrency || error("reservation horizon must cover every slot")
     reservation_refill_batch=Int(get(config,"reservation_refill_batch",1))
     1<=reservation_refill_batch<=max_pending || throw(ArgumentError("reservation refill batch must be between 1 and the reservation horizon"))
+    classification_batch_size=Int(get(config,"classification_batch_size",1))
+    classification_batch_size>0 || throw(ArgumentError("classification batch size must be positive"))
+    classification_slots=Int(get(config,"classification_slots",0))
+    0<=classification_slots<=concurrency || throw(ArgumentError("invalid classification slot count"))
+    classification_batch_size>1 && (reservation_refill_batch=min(max_pending,max(reservation_refill_batch,classification_batch_size)))
+    lane_limits=classification_batch_size>1 && classification_slots>0 ?
+        Dict(:classification=>classification_slots,:default=>max(1,concurrency-classification_slots)) : Dict{Symbol,Int}()
     max_apply_per_step=Int(get(config,"max_apply_per_step",concurrency))
     max_apply_per_step>0 || throw(ArgumentError("invalid application step bound"))
+    classification_batch_size>1 && (max_apply_per_step=max(max_apply_per_step,min(classification_batch_size,max_pending)))
     indexed_ea_queue=get(config,"indexed_ea_queue",true)
     indexed_ea_queue isa Bool || throw(ArgumentError("indexed_ea_queue must be Boolean"))
     indexed_construction_queue=get(config,"indexed_construction_queue",true)
@@ -313,6 +323,7 @@ function run(config)
     for (source,name) in ((@__FILE__,"controller.jl"),(joinpath(@__DIR__,"closure_baseline.jl"),"baseline-controller.jl"),
             (joinpath(@__DIR__,"closure_refill.jl"),"refill-controller.jl"),
             (joinpath(@__DIR__,"closure_batches.jl"),"batches-controller.jl"),
+            (joinpath(@__DIR__,"closure_classification.jl"),"classification-controller.jl"),
             (joinpath(@__DIR__,"closure_completion.jl"),"completion-controller.jl"),
             (joinpath(@__DIR__,"closure_operations.jl"),"operations-controller.jl"),(helper,"seed-progress-helper.jl"))
         cp(source,joinpath(out,name))
@@ -540,6 +551,11 @@ function run(config)
             "publication_seconds"=>publish_times["total"]));last_report=time();last_publication_key=publication_key;last_publication_fresh=recount
     end
     function prepare_item(item,ticket,slot)
+        if get(item,:cheap,false)
+            selected=String(FP.JSON3.write(Int[j["id"] for j in item.jobs]))
+            FP._closure_exec(s,"UPDATE jobs SET status='running',last_session=?,error='' WHERE id IN (SELECT value FROM json_each(?))",(s.session,selected))
+            return (;item...,ticket,slot)
+        end
         job=item.job;equivalence=item.equivalence
         FP._closure_exec(s,"UPDATE jobs SET status='running',last_session=?,error='' WHERE id=?",(s.session,job["id"]))
         if !equivalence
@@ -551,7 +567,10 @@ function run(config)
         (;job,packet,equivalence,level,ticket,slot)
     end
     function compute_item(item,slot,pool_stopped)
-        if item.equivalence
+        if get(item,:cheap,false)
+            compute_classification_batch(zip(item.jobs,item.candidates),contexts[slot],s.solver_session;
+                make_packet=pair->classification_packet(pair...))
+        elseif item.equivalence
             FP._closure_equivalence_compute(item.packet;
                 seconds=min(300.0,Float64(get(config,"equivalence_seconds",30.0))*4^item.level),
                 nodes=min(1_000_000,Int(get(config,"equivalence_nodes",100_000))*4^item.level),
@@ -562,6 +581,15 @@ function run(config)
         end
     end
     function finish_item(item,value,compute_seconds,scheduling)
+            if get(item,:cheap,false)
+                for (index,result) in enumerate(value.results)
+                    member=(;job=item.jobs[index],packet=result.packet,equivalence=true)
+                    finish_item(member,result.value,result.seconds,merge(scheduling,
+                        (;batch_index=index,ready_wait_seconds=(time_ns()-result.finished_ns)*1e-9)))
+                end
+                value.failure===nothing || throw(value.failure.exception)
+                return
+            end
             job=item.job;packet=item.packet;equivalence=item.equivalence;apply_started=time_ns()
             if equivalence
                 outcome=closure_apply_savepoint!(s.db;execute_control) do
@@ -585,6 +613,7 @@ function run(config)
             metric=Dict("parent_id"=>job["parent_id"],"job_id"=>job["id"],"kind"=>job["kind"],
                 "first_direction"=>job["direction"],"compute_wall_seconds"=>compute_seconds,"application_wall_seconds"=>apply_seconds,
                 "reservation_ticket"=>scheduling.ticket,"compute_slot"=>scheduling.slot,"ready_wait_seconds"=>scheduling.ready_wait_seconds,
+                "batch_index"=>get(scheduling,:batch_index,1),
                 "processed_cosets"=>equivalence ? 0 : get(value["work"],"processed_cosets",0))
             ClosureOperations.record_packet!(runtime,job["kind"],compute_seconds,apply_seconds,scheduling.ready_wait_seconds)
             emit!("packet-metrics.jsonl",metric)
@@ -646,18 +675,19 @@ function run(config)
         retries_json=_reservation_ids_json(id for (id,when) in deferred if when<=time())
         excluded_json=_reservation_ids_json(excluded)
         ea=FP._closure_rows(s,ea_queue_sql,(s.session,retries_json,excluded_json,limit))
-        items=Any[(job=j,equivalence=true) for j in ea]
-        length(items)==limit && return items
+        items=classification_items(s,ea,classification_batch_size)
+        length(ea)==limit && return items
         failed=FP._closure_count(s,_reservation_failed_construction_sql(ids,indexed_construction_queue))
         failed==0 || error("parent coverage requires recovery")
-        pending=FP._closure_rows(s,_reservation_construction_sql(ids,indexed_construction_queue),(excluded_json,limit-length(items)))
+        pending=FP._closure_rows(s,_reservation_construction_sql(ids,indexed_construction_queue),(excluded_json,limit-length(ea)))
         append!(items,[(job=j,equivalence=false) for j in pending])
-        if length(items)<limit && advance_rolling_window!()
+        used_count=length(ea)+length(pending)
+        if used_count<limit && advance_rolling_window!()
             # Requery after the bounded frontier changes. Existing descriptors
             # remain in the FIFO, and exclusions preserve unique reservations.
-            used=union(excluded,Set(Int[item.job["id"] for item in items]))
+            used=union(excluded,Set(id for item in items for id in classification_keys(item)))
             used_json=_reservation_ids_json(used)
-            extra=FP._closure_rows(s,_reservation_construction_sql(ids,indexed_construction_queue),(used_json,limit-length(items)))
+            extra=FP._closure_rows(s,_reservation_construction_sql(ids,indexed_construction_queue),(used_json,limit-used_count))
             append!(items,[(job=j,equivalence=false) for j in extra])
         end
         items
@@ -742,7 +772,7 @@ function run(config)
         bound_cold=FP._closure_rows(s,"SELECT value FROM metadata WHERE key='closure_segment_root'")
         isempty(bound_cold) || push!(storage.paths,FP._closure_segment_root(s.db,directory))
         sources=String[@__FILE__,helper]
-        append!(sources,[joinpath(@__DIR__,name) for name in ("closure_baseline.jl","closure_refill.jl","closure_batches.jl","closure_operations.jl","closure_completion.jl","closure_run.jl","closure_supervise.py")])
+        append!(sources,[joinpath(@__DIR__,name) for name in ("closure_baseline.jl","closure_refill.jl","closure_batches.jl","closure_classification.jl","closure_operations.jl","closure_completion.jl","closure_run.jl","closure_supervise.py")])
         digests=Dict(basename(path)=>FP.DiscoveryEvidence.filehash(path) for path in sources if isfile(path))
         bundle_digest=bytes2hex(SHA.sha256(FP._closure_text(digests)))
         controller_archive=joinpath(directory,"execution","controllers",bundle_digest);mkpath(controller_archive)
@@ -792,6 +822,7 @@ function run(config)
             "scheduler"=>"bounded reserved FIFO; continuous slot refill; ordered durable apply",
             "scheduler_determinism"=>"FIFO reservation and application for a fixed eligible frontier; retry cooldowns and wall-clock budgets retained",
             "reservation_horizon"=>max_pending,"reservation_refill_batch"=>reservation_refill_batch,"rolling_windows"=>rolling_windows,"max_overlapping_windows"=>rolling_windows ? 2 : 1,
+            "classification_batch_size"=>classification_batch_size,"classification_slots"=>classification_slots,
             "report_interval_seconds"=>report_interval,"global_count_interval_seconds"=>global_count_interval,"cached_global_counts"=>cached_global_counts,
             "coordinator_transactions"=>"bounded steps, per-application savepoints, FULL synchronous commit",
             "max_apply_per_step"=>max_apply_per_step,"cached_control_statements"=>true,
@@ -816,7 +847,8 @@ function run(config)
         publish!(;force=true)
         while true
             pool=run_refill_pool!(reserve_items,prepare_item,compute_item,finish_item;
-                concurrency,max_pending,max_apply_per_step,reservation_refill_batch,key=item->Int(item.job["id"]),stop_requested=stopped,on_tick=report_tick,
+                concurrency,max_pending,max_apply_per_step,reservation_refill_batch,key=item->Int(item.job["id"]),
+                item_keys=classification_keys,lane=classification_lane,lane_limits,stop_requested=stopped,on_tick=report_tick,
                 on_wait=maintenance!,
                 on_state=x->merge!(runtime.scheduler,Dict(string(k)=>v for (k,v) in pairs(x))),
                 measure_result_bytes=get(config,"measure_result_bytes",false),
