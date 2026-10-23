@@ -42,7 +42,7 @@ function run(path)
         println("Verifying audited seed inputs and creating a fresh search…");flush(stdout)
         engine.closure_init(config["campaign"];output=config["run"],
             root_first=Int(config["root_first"]),root_last=Int(config["root_last"]),
-            extension_cosets=65536,switching_directions=64)
+            extension_cosets=65536,switching_directions=128)
         if stop_requested()
             println("Stopped before search dispatch. Initialized results: ",config["output"])
             finish(owner,config,Dict("state"=>"stopped_before_dispatch","processed_packets"=>0))
