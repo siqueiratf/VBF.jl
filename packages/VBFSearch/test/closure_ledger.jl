@@ -208,5 +208,78 @@ end
     decoded=VS._closure_unpack_chunks(Dict{String,Any}(String(k)=>v for (k,v) in pairs(row)))
     @test [r["evidence"] for r in decoded]==collect(VS._closure_coset_evidence_text.((proof,other)))
 end
+@testset "Native ledger SHA batches preserve logical bytes and fallback errors" begin
+    function native_chunks(n)
+        [VS._ClosureCosetChunk(VS._ClosureCosetProof((1,2,3,4,5),i,i+1,n,
+            i%3,101i,Int(i%5==0),i%7,27i,i==n),nothing) for i in 1:n]
+    end
+    function logical_rows(job_id,chunks)
+        [Dict{String,Any}("job_id"=>job_id,"first_x"=>c.proof.first_x,
+            "next_x"=>c.proof.next_x,"total_x"=>c.proof.total_x,
+            "capped"=>Int(c.proof.capped),"evidence"=>VS._closure_coset_evidence_text(c.proof)) for c in chunks]
+    end
+    function encoding_outcome(f)
+        try
+            (true,f())
+        catch exception
+            (false,typeof(exception),sprint(showerror,exception))
+        end
+    end
+
+    # Preserve exact bytes for small blocks and around the batching crossover.
+    for n in (2,255,256,257)
+        selected=native_chunks(n)
+        @test VS._closure_ledger_row(17,selected).evidence==VS._closure_pack_chunks(logical_rows(17,selected))
+    end
+    chunks=native_chunks(2048);rows=logical_rows(17,chunks)
+    packed=VS._closure_ledger_row(17,chunks)
+    @test packed.evidence==VS._closure_pack_chunks(rows)
+    @test packed.evidence[1:8]==VS._CLOSURE_LEDGER_MAGIC_V2
+    logical_size=4+sum(44+sizeof(r["evidence"]) for r in rows)
+    @test logical_size>2*64*1024
+    @test Int(ltoh(read(IOBuffer(packed.evidence[9:16]),UInt64)))==logical_size
+    normalized=transcode(VS.CodecZstd.ZstdDecompressor,packed.evidence[49:end])
+    raw=VS._closure_v2_raw(normalized,logical_size)
+    @test packed.evidence[17:48]==VS.SHA.sha256(raw)
+    @test VS._closure_unpack_chunks(Dict{String,Any}(String(k)=>v for (k,v) in pairs(packed)))==rows
+
+    # Integer boundaries and failures near the end also cross batch boundaries.
+    for (forms,value,magic) in (((1,2,3,4,5),typemax(Int),VS._CLOSURE_LEDGER_MAGIC_V2),
+            ((1,2,3,4,5),typemin(Int),VS._CLOSURE_LEDGER_MAGIC),
+            ((typemin(Int),typemax(Int),3,4,5),0,VS._CLOSURE_LEDGER_MAGIC),
+            ((6,7,8,9,10),0,VS._CLOSURE_LEDGER_MAGIC))
+        selected=native_chunks(1024);n=length(selected)
+        selected[end]=VS._ClosureCosetChunk(VS._ClosureCosetProof(forms,n,n+1,n,
+            value,value,value,value,value,true),nothing)
+        actual=VS._closure_ledger_row(17,selected)
+        # The raw native path retains the historical normalization policy.
+        # Generic TOML reparsing can widen large Ints and select V1 instead.
+        @test actual.evidence==VS._closure_ledger_row(17,Any[selected...]).evidence
+        @test VS._closure_unpack_chunks(Dict{String,Any}(String(k)=>v for (k,v) in pairs(actual)))==logical_rows(17,selected)
+        @test actual.evidence[1:8]==magic
+    end
+    for value in (typemin(Int),typemax(Int))
+        proof=VS._ClosureCosetProof(ntuple(_->value,5),value,value,value,
+            value,value,value,value,value,false)
+        @test 44+sizeof(VS._closure_coset_evidence_text(proof))<1024
+    end
+
+    selected=native_chunks(512)
+    for job_id in (-1,UInt64(typemax(Int))+1,big(typemax(UInt64))+1)
+        @test encoding_outcome(()->VS._closure_ledger_row(job_id,selected).evidence)==
+            encoding_outcome(()->VS._closure_pack_chunks(logical_rows(job_id,selected)))
+    end
+    invalid=copy(selected)
+    invalid[end]=VS._ClosureCosetChunk(VS._ClosureCosetProof((1,2,3,4,5),-1,0,length(invalid),
+        0,0,0,0,23,false),nothing)
+    @test encoding_outcome(()->VS._closure_ledger_row(17,invalid).evidence)==
+        encoding_outcome(()->VS._closure_pack_chunks(logical_rows(17,invalid)))
+    # Container and future-field fallbacks retain the unchanged raw encoder.
+    @test VS._closure_ledger_row(17,Any[selected...])==VS._closure_ledger_row(17,selected)
+    future=copy(last(selected).proof);future["future_field"]="αβ\nquoted \"proof\""
+    mixed=Any[first(selected),Dict("proof"=>future)]
+    generic=[Dict("proof"=>copy(first(selected).proof)),Dict("proof"=>future)]
+    @test VS._closure_ledger_row(17,mixed)==VS._closure_ledger_row(17,generic)
+end
 
 end

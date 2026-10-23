@@ -70,5 +70,5 @@ end
     @test bitmap == fill(typemax(UInt64), 64)
     Q._v5_flat_histogram(other, bins)
     bytes = @allocated Q._v5_candidate_lists!(other, 0, bitmap, bins)
-    @test bytes < 12length(other)+4096
+    @test bytes < 6length(other)+4096
 end

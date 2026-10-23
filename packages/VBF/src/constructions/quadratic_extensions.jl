@@ -975,7 +975,7 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
         @inbounds for i in candidate_indices
             t = L[i]; tx = t ⊻ x
             (t == x) && continue
-            a = Lv[i]
+            a = Int(Lv[i])
             (3a >= -2nWU - 3thb && (bm[(tx >> 6)+1] >> (tx & 63)) & 1 == 0) && continue
             b = Int(g5[tx+1])
             # visit each coset {t, t+x} once: from its smaller-g5 member (ties: smaller t)

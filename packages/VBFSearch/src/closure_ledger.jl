@@ -81,6 +81,70 @@ function _closure_foreach_chunk(f,db;job_id=nothing)
     nothing
 end
 
+# A native row has thirteen machine Ints, one Bool and fixed ASCII text.
+# On supported word sizes its complete framed representation fits in 1024 bytes.
+const _CLOSURE_LEDGER_SHA_BATCH=64*1024
+const _CLOSURE_LEDGER_NATIVE_ROW_BOUND=1024
+
+"""Append one logical row without changing the historical framing or checks."""
+function _closure_write_ledger_row!(io,job_id,proof,cap::Int,first_evidence,limit::Int,native_writer)
+    position(io)+44<=limit || error("compact ledger block exceeds size limit")
+    for value in (job_id,proof["first_x"],proof["next_x"],proof["total_x"],cap)
+        value isa Integer && value>=0 || error("invalid compact ledger integer")
+        write(io,htol(UInt64(value)))
+    end
+    length_position=position(io);write(io,UInt32(0));text_position=position(io)
+    if first_evidence===nothing
+        _closure_write_coset_evidence(io,proof,limit,native_writer)
+    else
+        sizeof(first_evidence)<=limit-text_position || error("compact ledger block exceeds size limit")
+        write(io,first_evidence)
+    end
+    next_position=position(io)
+    # Patching a fixed-width length preserves the previous raw byte stream.
+    seek(io,length_position);write(io,htol(UInt32(next_position-text_position)));seek(io,next_position)
+    nothing
+end
+
+"""Hash only the active bytes, then reuse both private bounded buffers."""
+function _closure_flush_ledger_sha!(context,io,scratch)
+    n=position(io);seekstart(io)
+    readbytes!(io,scratch,n)==n || error("private ledger buffer lost bytes")
+    SHA.update!(context,scratch,n)
+    truncate(io,0);seekstart(io)
+    n
+end
+
+"""Retain the V1 logical digest without materializing its complete native stream.
+
+A batch ends only between complete rows, after its text-length field is patched.
+The two 64 KiB buffers remain private to this encoding. Native schemas that fail
+V2 normalization return to the original raw encoder; generic schemas never enter
+this path.
+"""
+function _closure_native_ledger_row(job_id,chunks,n,first_evidence,native_writer)
+    io=IOBuffer(;sizehint=_CLOSURE_LEDGER_SHA_BATCH,maxsize=_CLOSURE_LEDGER_SHA_BATCH)
+    scratch=Vector{UInt8}(undef,_CLOSURE_LEDGER_SHA_BATCH)
+    context=SHA.SHA256_CTX()
+    write(io,htol(UInt32(n)));capped=0;flushed=0
+    for (i,chunk) in enumerate(chunks)
+        position(io)>_CLOSURE_LEDGER_SHA_BATCH-_CLOSURE_LEDGER_NATIVE_ROW_BOUND &&
+            (flushed+=_closure_flush_ledger_sha!(context,io,scratch))
+        proof=chunk["proof"];cap=Int(proof["capped"]);capped=max(capped,cap)
+        _closure_write_ledger_row!(io,job_id,proof,cap,i==1 ? first_evidence : nothing,
+            _CLOSURE_LEDGER_LIMIT-flushed,native_writer)
+    end
+    raw_length=flushed+_closure_flush_ledger_sha!(context,io,scratch)
+    normalized=all(c->_closure_common_coset_forms(c["proof"])!==nothing,chunks) ?
+        _closure_v2_payload(job_id,[c["proof"] for c in chunks]) : nothing
+    normalized===nothing && return nothing
+    firstproof=first(chunks)["proof"];lastproof=last(chunks)["proof"]
+    evidence=vcat(_CLOSURE_LEDGER_MAGIC_V2,reinterpret(UInt8,[htol(UInt64(raw_length))]),
+        SHA.digest!(context),transcode(CodecZstd.ZstdCompressor,normalized))
+    (job_id=job_id,first_x=firstproof["first_x"],next_x=lastproof["next_x"],
+        total_x=firstproof["total_x"],capped,evidence)
+end
+
 """Encode one packet's coverage rows exactly as the ledger stores them."""
 function _closure_ledger_row(job_id,chunks)
     n=length(chunks)
@@ -95,25 +159,19 @@ function _closure_ledger_row(job_id,chunks)
     # Proof lengths vary slightly with integer widths. Reserve near the final
     # size without retaining a second array of Dict rows solely for encoding.
     estimate=4+n*max(512,44+sizeof(first_evidence)+64)
+    # Small blocks need less scratch in the original raw encoder. Only the
+    # immutable native schema gives the bounded row width needed for batching.
+    if Sys.WORD_SIZE<=64 && estimate>2*_CLOSURE_LEDGER_SHA_BATCH &&
+            eltype(chunks)<:Union{_ClosurePreparedV5Chunk,_ClosureCosetChunk}
+        row=_closure_native_ledger_row(job_id,chunks,n,first_evidence,native_writer)
+        row===nothing || return row
+    end
     io=IOBuffer(;sizehint=min(_CLOSURE_LEDGER_LIMIT,estimate))
     write(io,htol(UInt32(n)));capped=0
     for (i,chunk) in enumerate(chunks)
         proof=chunk["proof"];cap=Int(proof["capped"]);capped=max(capped,cap)
-        position(io)+44<=_CLOSURE_LEDGER_LIMIT || error("compact ledger block exceeds size limit")
-        for value in (job_id,proof["first_x"],proof["next_x"],proof["total_x"],cap)
-            value isa Integer && value>=0 || error("invalid compact ledger integer")
-            write(io,htol(UInt64(value)))
-        end
-        length_position=position(io);write(io,UInt32(0));text_position=position(io)
-        if i==1
-            sizeof(first_evidence)<=_CLOSURE_LEDGER_LIMIT-text_position || error("compact ledger block exceeds size limit")
-            write(io,first_evidence)
-        else
-            _closure_write_coset_evidence(io,proof,_CLOSURE_LEDGER_LIMIT,native_writer)
-        end
-        next_position=position(io)
-        # Patching a fixed-width length preserves the previous raw byte stream.
-        seek(io,length_position);write(io,htol(UInt32(next_position-text_position)));seek(io,next_position)
+        _closure_write_ledger_row!(io,job_id,proof,cap,i==1 ? first_evidence : nothing,
+            _CLOSURE_LEDGER_LIMIT,native_writer)
     end
     (job_id=job_id,first_x=firstproof["first_x"],next_x=lastproof["next_x"],total_x=firstproof["total_x"],
         capped,evidence=_closure_encode_chunk_bytes(take!(io);normalized=
