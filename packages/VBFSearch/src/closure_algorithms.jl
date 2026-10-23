@@ -286,6 +286,9 @@ function _closure_common_coset_forms(proof)
     forms
 end
 
+"""The immutable native type guarantees the fixed format without copying forms."""
+_closure_common_coset_forms(proof::_ClosureCosetProof)=proof.forms
+
 """Print the fixed canonical TOML schema from already typed native fields."""
 function _closure_print_coset_evidence(io,forms,candidates::Int,capped::Bool,completions::Int,
         representative::Int,du_reject::Int,first_x::Int,systems::Int,next_x::Int,total_x::Int)

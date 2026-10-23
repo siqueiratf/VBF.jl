@@ -76,6 +76,16 @@ end
         @test packed.job_id==17 && packed.first_x==1 && packed.next_x==n+1 && packed.total_x==n && packed.capped==1
         envelope=Dict{String,Any}(String(k)=>v for (k,v) in pairs(packed))
         @test VS._closure_unpack_chunks(envelope)==expected
+        if !future
+            native=map(chunks) do chunk
+                p=chunk["proof"]
+                proof=VS._ClosureCosetProof(Tuple(p["V5_forms"]),p["first_x"],p["next_x"],p["total_x"],
+                    p["candidate_spaces"],p["linear_system_candidates"],p["du_reject"],p["completion_spaces"],
+                    p["coset_representative"],p["capped"])
+                VS._ClosureCosetChunk(proof,nothing)
+            end
+            @test VS._closure_ledger_row(17,native)==packed
+        end
     end
     empty=Dict("proof"=>Dict{String,Any}("first_x"=>1,"next_x"=>1,"total_x"=>0,"capped"=>false))
     @test VS._closure_ledger_row(17,[empty]).evidence==VS._closure_text(empty["proof"])

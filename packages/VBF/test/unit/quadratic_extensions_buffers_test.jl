@@ -130,3 +130,38 @@ end
         push!(retained, (actual, deepcopy(actual)))
     end
 end
+
+@testitem "packet constraint priorities preserve flat pairing and canonical affine kernels" begin
+    using VBF, Test, Random
+    Q=VBF.QuadraticExtensions
+    constraints=UInt32[1,4,3,2,12,8,5,0,6,4]
+    indices=collect(101:110)
+    Q._v5_order_constraints!(constraints,indices)
+    @test constraints==UInt32[0,8,4,4,12,2,6,1,3,5]
+    @test indices==[108,106,102,110,105,104,109,101,103,107]
+    @test Q._v5_order_constraints!(UInt32[],Int[])===nothing
+    rng=MersenneTwister(0x501ae2)
+    rows=UInt32[];pivots=Int[];kernel=UInt32[]
+    for D in (1,5,12,23,31),_ in 1:30
+        rank_dimension=max(1,D-3)
+        mask=(UInt32(1)<<rank_dimension)-UInt32(1)
+        solution=rand(rng,UInt32)|UInt32(1)
+        original=UInt32[c for c in rand(rng,UInt32,120).&mask if Q.par(c&solution)]
+        reordered=copy(original);indices=collect(eachindex(original))
+        Q._v5_order_constraints!(reordered,indices)
+        @test reordered==original[indices]
+        @test sort(indices)==collect(eachindex(original))
+        for t in (UInt32(0),rand(rng,UInt32)&((UInt32(1)<<D)-UInt32(1)))
+            selected=filter(c->!Q.par(c&t),original)
+            expected=isempty(selected) ? nothing : Q.solve_ones(selected,D)
+            actual=Q._solve_ones_annihilating(reordered,t,D,rows,pivots,kernel)
+            @test actual==expected
+            if actual!==nothing
+                v0,K=actual
+                @test length(K)>=D-rank_dimension
+                @test all(c->Q.par(c&v0),selected)
+                @test all(k->all(c->!Q.par(c&k),selected),K)
+            end
+        end
+    end
+end

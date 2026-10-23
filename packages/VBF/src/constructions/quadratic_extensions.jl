@@ -695,7 +695,7 @@ const BETA8 = [112881664, -888832, 28672, -4096, 4096]
 #       #bent(x + V) = 2^-D sum_{y in V^perp} Bhat(y) (-1)^{y . x},
 #   and Bhat(y) = beta(rank y) depends only on the rank (GL(n) acts transitively on the
 #   forms of a given rank and preserves the pairing). V^perp is parametrized by its Q-bits
-#   c: y(c) = pdep(c, Q) + sum_{k: r_k has bit q} e_{p_k}. A Gray-code walk fills
+#   c: y(c) = pdep(c, Q) + sum_{k: r_k has bit q} e_{p_k}. Prefix-XOR steps fill
 #   buf[c+1] = beta(rank y(c)) / gcd(beta); one D-bit FWHT gives 2^D/gcd * #bent(x + V)
 #   for all cosets at once. For n = 8 the sum of |beta/gcd| is below 2^31 (Int32 is safe).
 
@@ -725,16 +725,23 @@ function coset_bent_counts!(buf::Vector{Int32}, G::Geometry, V::AbstractVector{U
         end
         push!(yb, y)
     end
-    y = UInt32(0); c = 0
+    # A binary increment toggles a prefix of coordinates, so prefix-XOR lifts
+    # advance directly to the next form while stores follow quotient order.
+    transition = UInt32(0)
+    for j in eachindex(yb)
+        transition ⊻= yb[j]
+        yb[j] = transition
+    end
+    y = UInt32(0)
     @inbounds buf[1] = Int32(betap[1])
     @inbounds for i in 1:(1 << D)-1
         # Large quotients run millions of allocation-free iterations. Let other
         # search tasks collect without waiting for the complete rank table.
         (i & 4095) == 0 && GC.safepoint()
         j = trailing_zeros(i)
-        y ⊻= yb[j+1]; c ⊻= 1 << j
+        y ⊻= yb[j+1]
         rk=rank_table===nothing ? form_rank(G,y) : _polar_rank(rank_table,y)
-        buf[c+1] = Int32(betap[(rk >> 1)+1])
+        buf[i+1] = Int32(betap[(rk >> 1)+1])
     end
     fwht!(buf)
     (; R, Qmask, D, scale)
@@ -778,6 +785,19 @@ Base.iterate(::_EmptyCompletionSpaces)=nothing
 Base.in(x,::_EmptyCompletionSpaces)=false
 include("quadratic_extension_histograms.jl")
 include("quadratic_extension_candidates.jl")
+
+"""Order a packet's constraints once, preserving each quotient row's flat index.
+
+Larger least-set-bit positions come first, with lower-weight rows breaking
+ties. The point-degree filters and canonical affine solution depend on the same
+constraint set, so the permutation changes only elimination work.
+"""
+function _v5_order_constraints!(C::Vector{UInt32}, Cidx::Vector{Int})
+    permutation=sortperm(C;by=c->(-trailing_zeros(c),count_ones(c),c))
+    C[:]=C[permutation]
+    Cidx[:]=Cidx[permutation]
+    nothing
+end
 
 """
     v5_extensions(G, V5, need, work; beta, du_filter=true, max_kernel=12, max_x=typemax(Int))
@@ -854,6 +874,7 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
         end
         ok && (push!(C, pext(w, Qmask)); push!(Cidx, fi))
     end
+    _v5_order_constraints!(C,Cidx)
     g5 = work.g5
     length(g5) == (1 << D) || resize!(g5, 1 << D)
     fill!(g5, Int16(0))
