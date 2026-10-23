@@ -43,7 +43,7 @@ function walsh_hadamard!(v::Vector{<:Signed}; threaded::Bool = false)
         return _walsh_hadamard_threaded!(v)
     end
     block = 1
-    if eltype(v) === Int32 && n_pow >= 8
+    if (eltype(v) === Int16 || eltype(v) === Int32) && n_pow >= 8
         # Fixed early stages avoid a short inner loop for every butterfly.
         # Keep GC response bounded even when many searches transform in parallel.
         chunk_size = 1 << 14
@@ -71,8 +71,8 @@ function walsh_hadamard!(v::Vector{<:Signed}; threaded::Bool = false)
     v
 end
 
-"""Fuse the width-1, width-2 and width-4 Int32 butterflies over complete groups."""
-@noinline function _walsh_hadamard_prefix8!(v::Vector{Int32},lo::Int,hi::Int)
+"""Fuse width-1, width-2 and width-4 Int16/Int32 butterflies over complete groups."""
+@noinline function _walsh_hadamard_prefix8!(v::Vector{T},lo::Int,hi::Int) where {T<:Union{Int16,Int32}}
     @inbounds @simd for i in lo:8:hi-7
         a=v[i];b=v[i+1];c=v[i+2];d=v[i+3]
         e=v[i+4];f=v[i+5];g=v[i+6];h=v[i+7]

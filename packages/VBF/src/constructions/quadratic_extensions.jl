@@ -777,6 +777,7 @@ Base.length(::_EmptyCompletionSpaces)=0
 Base.iterate(::_EmptyCompletionSpaces)=nothing
 Base.in(x,::_EmptyCompletionSpaces)=false
 include("quadratic_extension_histograms.jl")
+include("quadratic_extension_candidates.jl")
 
 """
     v5_extensions(G, V5, need, work; beta, du_filter=true, max_kernel=12, max_x=typemax(Int))
@@ -865,24 +866,9 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
     should_skip(key) &&
         return finish((; Ss, nX, nX_used = 0, next_x=start_x, du_reject = 0, ncand = 0, nT = 0, key, capped = false, skipped = true))
     isempty(X) && return finish((; Ss, nX, nX_used = 0, next_x=start_x, du_reject = 0, ncand = 0, nT = 0, key, capped = false, skipped = false))
-    # sorted list of t with small g5 (enough for the largest threshold)
     nWmin = minimum((g0 + Int(g5[x+1])) ÷ 2 for x in X)
-    L = UInt32[]
-    @inbounds for t in 2:length(g5)
-        3 * Int(g5[t]) <= -nWmin && push!(L, UInt32(t - 1))
-    end
-    sort!(L, by = t -> g5[t+1])
-    Lv = [Int(g5[t+1]) for t in L]
-    # bitmap of {t : g5(t) <= thb} (2^D5 bits, cache resident). For a prefix element t
-    # with a = g5(t) >= -2 nW(U)/3 - thb, a partner b = g5(t+x) > thb cannot satisfy
-    # a + b <= -2 nW(U)/3, so the bitmap rejects most pairs without a read of g5.
-    thb = -(nWmin ÷ 6)
     bm = work.bitmap
-    resize!(bm, max(1, (1 << D) >> 6))
-    fill!(bm, UInt64(0))
-    @inbounds for t in 0:(1 << D)-1
-        g5[t+1] <= thb && (bm[(t >> 6)+1] |= UInt64(1) << (t & 63))
-    end
+    L, Lv, thb = _v5_candidate_lists!(g5, nWmin, bm, work.flat_histogram)
     du7_plan=use_du7 && du7_filter!==:triangles ? _du7_prepare(C,Cidx,G,L) : nothing
     du7_bits=du7_plan===nothing ? nothing : _DU7Bits(du7_plan, work.du7)
     # Keep both candidate branches on one iterator type: mixed iteration states
