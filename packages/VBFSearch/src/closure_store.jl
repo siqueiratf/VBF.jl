@@ -94,10 +94,10 @@ end
 function _closure_add_parent!(s, candidate, sigma; origin="discovered", source="construction")
     _closure_exec(s,"INSERT INTO parents(candidate_id,sigma,origin,source,admitted_utc) VALUES(?,?,?,?,?)",
         (candidate,sigma,origin,source,_closure_now()))
-    parent=Int(only(_closure_rows(s,"SELECT last_insert_rowid() id"))["id"])
+    parent=Int(SQLite.last_insert_rowid(s.db))
     _closure_candidate_state!(s,candidate,"admitted";class_id=parent)
-    _closure_add_job!(s,parent,"prepare_v5","$parent:prepare_v5",Dict{String,Any}())
-    _closure_add_job!(s,parent,"switching","$parent:switching",Dict{String,Any}())
+    _closure_exec(s,"INSERT OR IGNORE INTO jobs(parent_id,kind,job_key,payload) VALUES(?,'prepare_v5',?,''),(?,'switching',?,'')",
+        (parent,"$parent:prepare_v5",parent,"$parent:switching"))
     parent
 end
 
