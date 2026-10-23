@@ -1,0 +1,267 @@
+VBFSEARCH ON TRILLIUM - OFFLINE JULIA 1.13.0
+
+The archive contains the tested source, audited seed inputs, Julia 1.13.0,
+its search dependencies and portable dependency caches. No Julia module,
+downloads, Pkg.instantiate or full-workspace Pkg.precompile is needed.
+Small workspace caches rebuild automatically after extraction. Search
+methods still compile when first used; package caches do not remove JIT.
+
+This guide uses the CPU login cluster and ONE 192-core CPU node. One
+vbfsearch process uses threads within one node. Reserving two nodes for
+this command would leave the second node unused. No GPUs are requested.
+
+The bundled command disables concurrent GC sweeping: GC 8,0 retains eight
+collectors while avoiding the page-pool race diagnosed in Julia 1.13.0.
+The runtime itself is unmodified. Local tests passed; the debug run below
+is the next validation on Trillium, before considering an overnight job.
+
+Defaults stay at 100 parents/window with rolling overlap off. Local
+five-minute comparisons found no gain from rolling with 100 or 256 parents;
+512 parents completed less work. Do not add --rolling-windows here.
+
+Every invocation starts fresh. Steps 1-3 produce separate SQLite files;
+they do not resume each other. Bounds select audited published input rows,
+not discovered parent IDs. Omitting --end selects the final row, 24294.
+Reached quadratic descendants remain eligible regardless of these bounds.
+
+STEP 0 - COPY AND SET UP
+
+On this computer, in a local terminal:
+
+cd /home/zambonin/VBF.jl
+bundle_dir=packages/VBFSearch/data/research/analyses/trillium-debug-20261023
+bundle=vbfsearch-offline-julia-1.13.0-20261023-linux-x86_64.tar.gz
+scp "$bundle_dir/$bundle" "$bundle_dir/$bundle.sha256" \
+  YOUR_TRILLIUM_SSH_ALIAS:~/
+
+Replace YOUR_TRILLIUM_SSH_ALIAS with your existing working SSH alias or
+user@hostname. Then log in using your usual command, to the CPU login
+cluster. These instructions do not require an agent to SSH to Trillium.
+
+On the CPU login node, verify and extract into a NEW installation:
+
+cd "$HOME"
+bundle=vbfsearch-offline-julia-1.13.0-20261023-linux-x86_64.tar.gz
+sha256sum -c "$bundle.sha256"
+bundle_install="$SCRATCH/vbfsearch-20261023"
+test ! -e "$bundle_install" && mkdir "$bundle_install" && \
+  tar -xzf "$HOME/$bundle" -C "$bundle_install"
+source "$SCRATCH/vbfsearch-20261023/vbfsearch-trillium/env.sh"
+mkdir -p "$SCRATCH/vbfsearch"
+cd "$SCRATCH/vbfsearch"
+
+The checksum must print OK. Keep any old installation unchanged while an
+old job is using it. Stop here if checksum verification or extraction fails.
+In each new terminal, source this installation's env.sh again.
+
+Confirm the bundled runtime and the system Python are available:
+
+"$VBF_JULIA" --startup-file=no --version
+python3 -c 'import sqlite3; print("Python SQLite:", sqlite3.sqlite_version)'
+
+Julia must report 1.13.0. The archive's BUNDLE.json records the full source
+commit and runtime identity. Preview a one-thread search without running:
+
+"$VBF_WORKSPACE/bin/vbfsearch" --recursive-closure -j1 \
+  --start=21001 --end=21001 --time=60s --dry-run
+
+Expect one compute thread, zero interactive threads, GC 1,0, and seed 21001.
+env.sh selects the bundled Julia/depot and excludes your user Julia depot.
+
+STEP 1 - ONE-MINUTE TEST ON THE LOGIN NODE
+
+Keep login tests small: one CPU, 512M heap hint, and a 60-second search
+budget here. The hint is not a hard RAM limit. The local verification
+receipt records actual wall time and peak memory for this exact bundle.
+
+Run this block on the CPU login node:
+
+(
+  set -e
+  source "$SCRATCH/vbfsearch-20261023/vbfsearch-trillium/env.sh"
+  login_cpu=$(awk '/^Cpus_allowed_list:/ {
+    split($2,a,/[-,]/); print a[1]
+  }' /proc/self/status)
+  login_work=$(mktemp -d /tmp/vbf-login.XXXXXXXX)
+  taskset -c "$login_cpu" "$VBF_WORKSPACE/bin/vbfsearch" \
+    --recursive-closure -j1 --gcthreads=1,0 \
+    --start=21001 --end=21001 --time=60s --heap=512M \
+    --output="$login_work/results.sqlite"
+  login_output=$(mktemp "$SCRATCH/vbfsearch/login-XXXXXXXX.sqlite")
+  cp "$login_work/results.sqlite" "$login_output"
+  rm -r -- "$login_work"
+  printf 'Saved: %s\n' "$login_output"
+)
+
+taskset pins the whole process tree, including GC, to one CPU. Live SQLite
+writes stay in node-local /tmp for this small test. Only the finished file
+is copied to SCRATCH. A failure preserves the temporary directory.
+
+Expect Results and then Saved with the SQLite filename. The budget includes
+startup; drain/publication may add seconds. Stop before step 2 if this fails.
+
+STEP 2 - THIRTY-MINUTE SEARCH IN AN INTERACTIVE CPU DEBUG JOB
+
+From the CPU login terminal, request one CPU debug node:
+
+debugjob 1
+
+Wait for the compute-node shell. SciNet documents a one-hour allocation
+for one CPU debug node. This leaves room for a 30-minute search, drain and
+copy-out. Do not use debugjob 2: that reserves two nodes for 30 minutes.
+
+Inside the allocated compute-node shell:
+
+source "$SCRATCH/vbfsearch-20261023/vbfsearch-trillium/env.sh"
+cd "$SCRATCH/vbfsearch"
+debug_job="$SLURM_JOB_ID"
+debug_result="$SLURM_TMPDIR/vbf-debug-${debug_job}.sqlite"
+debug_log="$SCRATCH/vbfsearch/vbf-debug-${debug_job}.log"
+export TMPDIR="$SLURM_TMPDIR" SQLITE_TMPDIR="$SLURM_TMPDIR"
+printf 'Debug job: %s\n' "$debug_job"
+set -o pipefail
+
+Run the usual vbfsearch command through one 192-CPU Slurm task:
+
+srun --nodes=1 --ntasks=1 --cpus-per-task=192 --cpu-bind=cores \
+  "$VBF_WORKSPACE/bin/vbfsearch" --recursive-closure -j \
+  --gcthreads=8,0 --window-size=100 --progress-interval=15s \
+  --start=1 --end=24294 --time=30m --output="$debug_result" \
+  2>&1 | tee "$debug_log"
+
+Startup should show 184 compute threads, one interactive thread and GC 8,0.
+The triggering mutator is one of the eight collectors, leaving seven extra
+GC threads: 184+1+7=192. Bare -j budgets this from SLURM_CPUS_PER_TASK.
+
+The database and SQLite temporaries stay in node-local RAM. Progress prints
+cumulative completed parents, the current input interval/recursive phase,
+packet rate, actual busy CPUs, GC and coordinator/reporting costs. Full
+per-parent timing and scheduler metrics are embedded in the final SQLite.
+
+The budget includes startup. Ctrl-C once requests a clean stop; wait for
+drain and the Results line. Do not exit the allocation before copy-out.
+Rows 1-24294 are the published roots. Recursion continues if those finish;
+the test does not promise that all published roots finish within 30 minutes.
+
+After a successful Results line, save the closed database before exiting:
+
+cp "$debug_result" "$SCRATCH/vbfsearch/vbf-debug-${debug_job}.sqlite"
+ls -lh "$SCRATCH/vbfsearch/vbf-debug-${debug_job}.sqlite"
+
+Measure both construction completion and settled class admissions:
+
+python3 - "$SCRATCH/vbfsearch/vbf-debug-${debug_job}.sqlite" <<'PYTHON'
+import json, sqlite3, sys
+from pathlib import Path
+uri = Path(sys.argv[1]).resolve().as_uri() + "?mode=ro"
+with sqlite3.connect(uri, uri=True) as db:
+    row = db.execute("SELECT value FROM metadata "
+                     "WHERE key='vbfsearch_result'").fetchone()
+    r = json.loads(row[0])
+    roots = {x[0] for x in db.execute(
+        "SELECT id FROM parents WHERE origin='root'")}
+    unfinished = {x[0] for x in db.execute(
+        "SELECT DISTINCT parent_id FROM jobs "
+        "WHERE kind IN ('prepare_v5','v5','switching') AND status!='done'")}
+    unsettled = {x[0] for x in db.execute(
+        "SELECT DISTINCT x.parent_id FROM paths x "
+        "JOIN candidates c ON c.id=x.child_id "
+        "WHERE c.apn=1 AND c.degree=2 AND c.class_id IS NULL")}
+print("Published roots:", len(roots))
+print("Construction complete:", len(roots - unfinished))
+print("Also class-admission settled:", len(roots - unfinished - unsettled))
+print("Work packets:", r["processed_packets"])
+print("Mean busy CPUs:", r.get("runtime_metrics", {}).get("average_cpu_cores"))
+PYTHON
+
+Parallel completion can leave gaps: the highest completed ID is not a count
+of all preceding seeds. Keep the SQLite and log for comparisons.
+
+From a SECOND CPU login terminal, use the printed job number:
+
+jobperf JOB_ID
+sstat -j JOB_ID --allsteps --format=JobID,AveCPU,AveRSS,MaxRSS
+
+Compare actual busy CPUs with the 192 allocated CPUs. Our pilot target is
+at least 144 busy CPUs (75%); that is our target, not a cluster pass mark.
+Local 32-CPU tests averaged about 80% including startup and finalization.
+They do not establish scaling to this 192-core node.
+
+When the SQLite is copied, leave the compute-node shell:
+
+exit
+
+On the login node, inspect the final Slurm accounting after it updates:
+
+sacct -j JOB_ID --format=JobID,State,Elapsed,AllocCPUS,TotalCPU,MaxRSS
+
+Do not sum parent allocation and step rows: their accounting can overlap.
+For the single search step, CPU efficiency is TotalCPU/(Elapsed*AllocCPUS).
+
+STEP 3 - OPTIONAL OVERNIGHT COMPUTE JOB, AFTER REVIEWING DEBUG RESULTS
+
+This is a fresh search and repeats work done by the debug run. The wrapper
+runs the live database in SLURM_TMPDIR and copies one closed SQLite to
+SCRATCH after a clean stop. Create the batch script on the CPU login node:
+
+cd "$SCRATCH/vbfsearch"
+cat > vbf-job.sbatch <<'SBATCH'
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=192
+#SBATCH --signal=B:USR1@900
+#SBATCH --output=vbf-%j.log
+set -euo pipefail
+source "$SCRATCH/vbfsearch-20261023/vbfsearch-trillium/env.sh"
+result_name="${SLURM_JOB_NAME}-${SLURM_JOB_ID}.sqlite"
+export VBF_OUTPUT="$SCRATCH/vbfsearch/$result_name"
+exec python3 \
+  "$VBF_WORKSPACE/packages/VBFSearch/tools/trillium_fresh.py" "$@"
+SBATCH
+
+No Slurm account is hard-coded. If submission rejects your default account,
+obtain the valid account and add --account=YOUR_ACCOUNT to sbatch.
+
+Submit only after reviewing the debug run:
+
+overnight_job=$(sbatch --parsable --export=ALL \
+  --partition=compute --time=08:15:00 --job-name=vbf-overnight \
+  "$SCRATCH/vbfsearch/vbf-job.sbatch" \
+  --start=1 --end=24294 --time=28800 --window-size=100)
+printf 'Overnight job: %s\n' "$overnight_job"
+
+The search gets up to eight hours. Fifteen extra minutes reserve 10 minutes
+for the maximum drain grace and five for copy-out; these are allowances,
+not required work. The job exits as soon as publication/copy finishes.
+The wrapper uses the same default GC 8,0 and 100-parent scheduling settings.
+
+Monitor from a login terminal:
+
+squeue -j "$overnight_job"
+jobperf "$overnight_job"
+tail -f "vbf-${overnight_job}.log"
+
+Request an early clean stop and copy-out:
+
+scancel --signal=USR1 --batch "$overnight_job"
+
+After the job finishes:
+
+grep 'Published SQLite:' "vbf-${overnight_job}.log"
+ls -lh "$SCRATCH/vbfsearch/vbf-overnight-${overnight_job}.sqlite"
+
+If you reconnect, recover the ID from squeue -u "$USER" or the log filename.
+Keep the final SQLite and log. Node loss or an allocation hard kill before
+publication/copy-out can lose RAM-only work; these commands do not resume.
+
+DOCUMENTATION SOURCES
+
+CPU-node size and quickstart:
+https://docs.scinet.utoronto.ca/index.php/Trillium_Quickstart
+Interactive debugjob 1/2 allocations:
+https://docs.scinet.utoronto.ca/index.php/Parallel_Debugging_with_DDT
+Alliance quickstart (may require a browser to pass its access check):
+https://docs.alliancecan.ca/wiki/Trillium_Quickstart
+Slurm step accounting:
+https://slurm.schedmd.com/sacct.html

@@ -11,6 +11,12 @@ before adopting changed core sources; never overwrite a live replay workspace.
 
 ## Launch and stop
 
+For the offline Julia 1.13.0 deployment and exact login/debug/batch commands,
+follow the [Trillium walkthrough](TRILLIUM.txt). One threaded process uses one
+node; the walkthrough requests one CPU node and keeps concurrent GC sweeping
+disabled. No package installation or full-workspace precompilation is needed
+on the cluster.
+
 Start a new recursive CPU search with one command:
 
 ```sh
