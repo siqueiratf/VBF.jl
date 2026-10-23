@@ -53,15 +53,19 @@ cooperative supervisor, with a 600-second drain grace.
 Use `-j 1` for one compute thread. Bare `-j` selects all local compute threads or
 automatically budgets compute, interactive and GC pools within
 `SLURM_CPUS_PER_TASK`. An explicit count is validated against that allocation;
-the maintained validator requires at least two allocated CPUs for one compute
-thread plus serial GC. Local one-thread checks do not require a Slurm allocation.
+one allocated CPU supports one compute thread with serial GC. The mutator
+that starts collection is also its serial collector. Local one-thread checks
+do not require a Slurm allocation.
 BLAS/OMP threads are fixed to one. `--heap=16G` overrides the heap hint.
 
 `--gcthreads=8,0` selects eight GC collectors and disables concurrent page
 sweeping. The second value defaults to zero; `--gcthreads=16` is equivalent to
 `16,0`. Bare `-j` includes these pools in its Slurm CPU budget. For example,
-192 allocated CPUs with `--gcthreads=8,0` select 183 compute threads, one
-interactive thread and eight collectors; `16,0` selects 175 compute threads.
+192 allocated CPUs with `--gcthreads=8,0` select 184 compute threads, one
+interactive thread and seven additional GC threads; the triggering mutator is
+the eighth collector. `16,0` selects 176 compute threads. The strict budget is
+`compute + interactive + (collectors - 1) + sweepers`; it counts native Julia
+pool threads rather than assuming collection and computation cannot overlap.
 An explicit pool configuration that exceeds the allocation is refused.
 
 Concurrent sweeping defaults off because Julia 1.13.0 has a
@@ -109,7 +113,12 @@ relative to that file. No systemd service or machine-specific directory is requi
 
 The launcher validates compute slots before loading the controller. An explicit
 `cpu_allocation` and, when present, `SLURM_CPUS_PER_TASK` both constrain the total
-default, interactive and GC thread pools. The smaller applicable allocation wins.
+default, interactive and auxiliary GC thread pools. The smaller allocation wins.
+The stock collectors in Julia 1.12 and 1.13 include the triggering mutator in
+`Threads.ngcthreads()`. Runtime metadata preserves that raw `gc_threads` count
+and reports the additional threads as `gc_auxiliary_threads`. `runtime_threads`
+is the native default + interactive + auxiliary-GC pool total; it excludes
+foreign and library-owned threads, including independent BLAS or libuv workers.
 Without an explicit/scheduler allocation, compute slots still cannot exceed
 Julia's default pool. BLAS threads should be configured separately, usually to 1.
 When `concurrency` is omitted it now uses the whole default pool; an explicit

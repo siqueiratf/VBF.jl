@@ -49,8 +49,8 @@ def plan(args, env, *, remaining=None):
             raise ValueError('required environment variable: '+key)
     if not re.fullmatch(r'[0-9]+', env['SLURM_JOB_ID']):
         raise ValueError('invalid SLURM_JOB_ID')
-    if int(env['SLURM_CPUS_PER_TASK']) < 2:
-        raise ValueError('at least two allocated CPUs are required')
+    if int(env['SLURM_CPUS_PER_TASK']) < 1:
+        raise ValueError('at least one allocated CPU is required')
     if args.start < 1 or args.end < args.start:
         raise ValueError('seed interval must satisfy 1 <= start <= end')
     if not math.isfinite(args.time) or args.time <= 0:

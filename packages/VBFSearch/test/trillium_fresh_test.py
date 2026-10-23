@@ -62,6 +62,14 @@ class FreshPilotTests(unittest.TestCase):
         self.assertFalse(p['local'].exists())
         with self.assertRaises(ValueError):F.plan(self.args,self.env,remaining=900)
 
+    def test_one_cpu_pilot_delegates_serial_budget_without_writes(self):
+        env=dict(self.env,SLURM_CPUS_PER_TASK='1')
+        result=F.plan(self.args,env,remaining=1800)
+        self.assertIn('-j',result['command'])
+        self.assertEqual(result['budget'],self.args.time)
+        self.assertFalse(result['local'].exists())
+        self.assertEqual(list(self.local.iterdir()),[])
+
     def test_scheduling_controls_reach_search_command(self):
         args=F.parser().parse_args(['--window-size=256','--rolling-windows',
                                     '--progress-interval=20'])
@@ -78,7 +86,7 @@ class FreshPilotTests(unittest.TestCase):
         self.assertEqual(list(self.local.iterdir()),[])
 
     def test_bad_scope_or_resources_fail_before_writes(self):
-        for key,value in [('SLURM_CPUS_PER_TASK','1'),('SLURM_JOB_ID','../123'),
+        for key,value in [('SLURM_CPUS_PER_TASK','0'),('SLURM_CPUS_PER_TASK','-1'),('SLURM_JOB_ID','../123'),
                           ('VBF_OUTPUT',str(self.root/'outside.sqlite')),('VBF_OUTPUT',str(self.scratch/'directory'))]:
             with self.subTest(key=key,value=value),self.assertRaises(ValueError):
                 F.plan(self.args,dict(self.env,**{key:value}),remaining=1800)

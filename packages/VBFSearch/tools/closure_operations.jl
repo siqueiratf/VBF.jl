@@ -7,7 +7,12 @@ module ClosureOperations
 using VBFSearch, TOML
 const FP=VBFSearch
 
-"""Validate compute slots and optional allocation against the actual Julia pools."""
+"""Validate compute slots and allocation against native Julia pool threads.
+
+Threads.ngcthreads() includes the triggering mutator. Count only the remaining
+GC threads as additional to the default and interactive pools. This strict
+native-pool budget does not count foreign or library-owned threads.
+"""
 function validate_resources(config;default_threads=Threads.nthreads(:default),
     interactive_threads=Threads.nthreads(:interactive),gc_threads=Threads.ngcthreads(),env=ENV,
     heap_size_hint=Int(Base.JLOptions().heap_size_hint))
@@ -17,8 +22,10 @@ function validate_resources(config;default_threads=Threads.nthreads(:default),
     scheduler=haskey(env,"SLURM_CPUS_PER_TASK") ? parse(Int,env["SLURM_CPUS_PER_TASK"]) : 0
     explicit>=0 && scheduler>=0 || throw(ArgumentError("CPU allocations must be nonnegative"))
     limits=filter(>(0),[explicit,scheduler]);allocation=isempty(limits) ? 0 : minimum(limits)
-    runtime_threads=default_threads+interactive_threads+gc_threads
-    allocation==0 || runtime_threads<=allocation || throw(ArgumentError("Julia compute, interactive and GC pools require $runtime_threads CPUs, exceeding allocation $allocation"))
+    interactive_threads>=0 && gc_threads>=0 || throw(ArgumentError("interactive and GC thread counts must be nonnegative"))
+    gc_auxiliary_threads=max(gc_threads-1,0)
+    runtime_threads=default_threads+interactive_threads+gc_auxiliary_threads
+    allocation==0 || runtime_threads<=allocation || throw(ArgumentError("Julia compute, interactive and auxiliary GC pools require $runtime_threads CPUs, exceeding allocation $allocation"))
     # Fully initialized n=8 slots retain histogram and candidate-bitmap scratch
     # as well as the primary transform arrays. DU7/EA/results remain separate.
     rank_bytes=get(config,"precompute_rank_table",true) ? (get(config,"packed_rank_table",true) ? 1<<26 : 1<<28) : 0
@@ -31,7 +38,9 @@ function validate_resources(config;default_threads=Threads.nthreads(:default),
         "Julia heap-size-hint $(heap_size_hint) bytes leaves limited headroom above V5 work buffers ($work_bytes bytes minimum); measure a larger hint within the job memory allocation to reduce GC")
     Dict{String,Any}("concurrency"=>concurrency,"default_threads"=>default_threads,
         "interactive_threads"=>interactive_threads,"gc_threads"=>gc_threads,
+        "gc_auxiliary_threads"=>gc_auxiliary_threads,
         "runtime_threads"=>runtime_threads,"cpu_allocation"=>allocation,
+        "runtime_threads_scope"=>"Julia default, interactive and auxiliary GC pools; excludes foreign and library-owned threads",
         "concurrency_source"=>haskey(config,"concurrency") ? "explicit" : "all default-pool threads",
         "work_buffer_lower_bound_bytes"=>work_bytes,"heap_size_hint_bytes"=>heap_size_hint,
         "memory_estimate_scope"=>"fully initialized n=8 V5 arrays, histogram/bitmap scratch and shared rank lookup; excludes component tables, runtime, EA, DU7 and buffered results",

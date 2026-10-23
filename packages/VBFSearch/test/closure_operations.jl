@@ -5,11 +5,27 @@ const O=ClosureOperations
 
 @testset "Resource limits describe actual Julia pools" begin
     resources=O.validate_resources(Dict();default_threads=8,interactive_threads=1,gc_threads=2,env=Dict())
-    @test resources["concurrency"]==8 && resources["runtime_threads"]==11
+    @test resources["concurrency"]==8 && resources["runtime_threads"]==10
     @test resources["cpu_allocation"]==0 && resources["job_id"]=="none"
+    @test resources["gc_threads"]==2 && resources["gc_auxiliary_threads"]==1
+    @test occursin("excludes foreign and library-owned threads",resources["runtime_threads_scope"])
+    serial=O.validate_resources(Dict();default_threads=1,interactive_threads=0,gc_threads=1,
+        env=Dict("SLURM_CPUS_PER_TASK"=>"1"))
+    @test serial["runtime_threads"]==1 && serial["gc_auxiliary_threads"]==0
+    @test serial["gc_threads"]==1
+    # The raw count includes the GC master;9 means8 collectors plus1 sweeper.
+    swept=O.validate_resources(Dict();default_threads=183,interactive_threads=1,gc_threads=9,
+        env=Dict("SLURM_CPUS_PER_TASK"=>"192"))
+    @test swept["runtime_threads"]==192 && swept["gc_auxiliary_threads"]==8
+    @test_throws ArgumentError O.validate_resources(Dict();default_threads=184,interactive_threads=1,gc_threads=9,
+        env=Dict("SLURM_CPUS_PER_TASK"=>"192"))
+    @test_throws ArgumentError O.validate_resources(Dict();default_threads=1,interactive_threads=0,gc_threads=-1,env=Dict())
+    @test_throws ArgumentError O.validate_resources(Dict();default_threads=1,interactive_threads=-1,gc_threads=1,env=Dict())
+    @test O.validate_resources(Dict();default_threads=1,interactive_threads=0,gc_threads=0,
+        env=Dict("SLURM_CPUS_PER_TASK"=>"1"))["gc_auxiliary_threads"]==0
     large=O.validate_resources(Dict();default_threads=190,interactive_threads=0,gc_threads=2,
         env=Dict("SLURM_CPUS_PER_TASK"=>"192"),heap_size_hint=4*1024^3)
-    @test large["concurrency"]==190 && large["runtime_threads"]==192
+    @test large["concurrency"]==190 && large["runtime_threads"]==191
     @test large["work_buffer_lower_bound_bytes"]>8*1024^3
     @test !isempty(large["warnings"])
     explicit=O.validate_resources(Dict("concurrency"=>12);default_threads=190,interactive_threads=0,gc_threads=2,

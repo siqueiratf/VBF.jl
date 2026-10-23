@@ -35,8 +35,14 @@ end
         @test_throws ArgumentError ClosureLauncher.run(path;controller_path=controller,env=Dict{String,String}())
         @test !isfile(marker)
         configure(Dict("concurrency"=>1,"cpu_allocation"=>1))
-        @test_throws ArgumentError ClosureLauncher.run(path;controller_path=controller,env=Dict{String,String}())
-        @test !isfile(marker)
+        serial=Threads.nthreads(:default)==1 && Threads.nthreads(:interactive)==0 && Threads.ngcthreads()<=1
+        if serial
+            allocated=ClosureLauncher.run(path;controller_path=controller,env=Dict{String,String}())
+            @test isfile(marker) && allocated["concurrency"]==1
+        else
+            @test_throws ArgumentError ClosureLauncher.run(path;controller_path=controller,env=Dict{String,String}())
+            @test !isfile(marker)
+        end
         configure(Dict("concurrency"=>1))
         config=ClosureLauncher.run(path;controller_path=controller,env=Dict{String,String}())
         @test isfile(marker) && config["concurrency"]==1

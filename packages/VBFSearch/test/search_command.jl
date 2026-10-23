@@ -84,36 +84,48 @@ end
     @test occursin("--recursive-closure",String(take!(text)))
 end
 
-@testset "Automatic pools respect Slurm compute and auxiliary budgets" begin
+@testset "Automatic pools count the GC master once within Slurm budgets" begin
     @test C.available_cpu_count(status="Cpus_allowed_list:\t4-7,9\n",fallback=32)==5
     @test C.available_cpu_count(status="",fallback=4)==4
     plain=C.threads("auto";env=Dict{String,String}(),cpu_threads=32)
     @test (plain.compute,plain.interactive,plain.mark,plain.sweep)==(32,1,8,0)
-    for allocation in (2,4,8,16,32,192)
-        p=C.threads("auto";env=Dict("SLURM_CPUS_PER_TASK"=>string(allocation)))
-        @test p.compute>0 && p.compute+p.interactive+p.mark+p.sweep<=allocation
+    for (allocation,expected) in ((1,1),(2,2),(3,3),(4,3),(8,6),(16,14),(32,24),(192,184))
+        env=Dict("SLURM_CPUS_PER_TASK"=>string(allocation))
+        p=C.threads("auto";env)
+        @test p.compute==expected
+        @test p.compute+p.interactive+(p.mark-1)+p.sweep==allocation
+        resources=ContinuousSeedSearch.ClosureOperations.validate_resources(Dict();
+            default_threads=p.compute,interactive_threads=p.interactive,
+            gc_threads=p.mark+p.sweep,env)
+        @test resources["runtime_threads"]==allocation
+        @test resources["gc_threads"]==p.mark+p.sweep
     end
-    p=C.threads("auto";env=Dict("SLURM_CPUS_PER_TASK"=>"192"))
-    @test p.compute==183
     explicit=C.threads("auto";gc="16,0",env=Dict("SLURM_CPUS_PER_TASK"=>"192"))
-    @test (explicit.compute,explicit.mark,explicit.sweep)==(175,16,0)
+    @test (explicit.compute,explicit.mark,explicit.sweep)==(176,16,0)
     collectors=C.threads("32";gc="8",env=Dict{String,String}(),cpu_threads=32)
     @test (collectors.mark,collectors.sweep)==(8,0)
     concurrent=C.threads("auto";gc="8,1",env=Dict("SLURM_CPUS_PER_TASK"=>"192"))
-    @test (concurrent.compute,concurrent.mark,concurrent.sweep)==(182,8,1)
+    @test (concurrent.compute,concurrent.mark,concurrent.sweep)==(183,8,1)
     @test_throws ArgumentError C.threads("8";gc="8,0",env=Dict("SLURM_CPUS_PER_TASK"=>"8"))
     @test_throws ArgumentError C.threads("8";gc="8,0",env=Dict("SLURM_CPUS_PER_TASK"=>"10"))
-    preserved=C.threads("8";gc="8,0",env=Dict("SLURM_CPUS_PER_TASK"=>"17"))
+    preserved=C.threads("8";gc="8,0",env=Dict("SLURM_CPUS_PER_TASK"=>"16"))
     @test (preserved.compute,preserved.interactive,preserved.mark,preserved.sweep)==(8,1,8,0)
+    @test_throws ArgumentError C.threads("8";gc="8,0",env=Dict("SLURM_CPUS_PER_TASK"=>"15"))
+    serial=C.threads("1";gc="1,0",env=Dict("SLURM_CPUS_PER_TASK"=>"1"))
+    @test (serial.compute,serial.interactive,serial.mark,serial.sweep)==(1,0,1,0)
+    @test_throws ArgumentError C.threads("auto";gc="1,1",env=Dict("SLURM_CPUS_PER_TASK"=>"1"))
+    # An explicit full compute pool can retain the existing serial-GC fallback.
+    full=C.threads("8";env=Dict("SLURM_CPUS_PER_TASK"=>"8"))
+    @test (full.compute,full.interactive,full.mark,full.sweep)==(8,0,1,0)
+    @test_throws ArgumentError C.threads("9";env=Dict("SLURM_CPUS_PER_TASK"=>"8"))
     for invalid in ("0","-1","no","8,2","8,-1","8,","8,0,1")
         @test_throws ArgumentError C.threads("auto";gc=invalid,env=Dict{String,String}(),cpu_threads=32)
     end
     @test C.threads("1";env=Dict("SLURM_CPUS_PER_TASK"=>"2")).compute==1
-    @test_throws ArgumentError C.threads("auto";env=Dict("SLURM_CPUS_PER_TASK"=>"1"))
-    @test_throws ArgumentError C.threads("8";env=Dict("SLURM_CPUS_PER_TASK"=>"8"))
     @test_throws ArgumentError C.threads("0";env=Dict{String,String}())
     @test_throws ArgumentError C.threads("33";env=Dict{String,String}(),cpu_threads=32)
     @test_throws ArgumentError C.threads("auto";env=Dict("SLURM_CPUS_PER_TASK"=>"garbage"))
+    @test_throws ArgumentError C.threads("auto";env=Dict("SLURM_CPUS_PER_TASK"=>"0"))
 end
 
 @testset "Dry run validates seed selection without creating state" begin
