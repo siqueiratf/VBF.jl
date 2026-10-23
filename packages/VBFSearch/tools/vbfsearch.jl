@@ -121,6 +121,8 @@ end
 Local auto uses the available CPU count. Concurrent sweeping defaults off to
 avoid Julia 1.13.0's known page-pool race; collectors still run in parallel.
 Slurm reserves auxiliary pools, following the controller resource validator.
+The mark count includes the triggering mutator, so only mark-1+sweep threads
+are additional to the compute and interactive pools (Julia stock GC).
 """
 function threads(value;gc=nothing,env=ENV,cpu_threads=available_cpu_count())
     allocation=haskey(env,"SLURM_CPUS_PER_TASK") ? positive(env["SLURM_CPUS_PER_TASK"],"SLURM_CPUS_PER_TASK") : 0
@@ -138,15 +140,16 @@ function threads(value;gc=nothing,env=ENV,cpu_threads=available_cpu_count())
             sweep=parse(Int,last(parts))
         end
     end
+    auxiliary=mark-1+sweep
     interactive=count>1 ? 1 : 0
     if auto && allocation>0
         interactive=allocation>=4 ? 1 : 0
-        count=allocation-mark-sweep-interactive
-    elseif gc===nothing && allocation>0 && count+mark+sweep+interactive>allocation
-        mark=1;sweep=0;interactive=0
+        count=allocation-auxiliary-interactive
+    elseif gc===nothing && allocation>0 && count+auxiliary+interactive>allocation
+        mark=1;sweep=0;interactive=0;auxiliary=0
     end
-    count>0 && (allocation==0 || count+mark+sweep+interactive<=allocation) ||
-        throw(ArgumentError("thread pools exceed SLURM_CPUS_PER_TASK=$allocation; use bare -j for automatic budgeting (at least 2 allocated CPUs are required)"))
+    count>0 && (allocation==0 || count+auxiliary+interactive<=allocation) ||
+        throw(ArgumentError("thread pools exceed SLURM_CPUS_PER_TASK=$allocation; use bare -j for automatic budgeting"))
     (;compute=count,interactive,mark,sweep,allocation)
 end
 

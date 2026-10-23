@@ -117,8 +117,10 @@ Slurm's advance warning, TERM and Ctrl-C latch a file request that the superviso
 observes even during Julia startup. Its own 600-second grace bounds drain.
 The wrapper requires RAM-backed `$SLURM_TMPDIR`; the working database, WAL,
 SQLite temporary files and supervisor controls stay there. A 192-CPU allocation
-currently resolves to 182 compute threads, one interactive thread and GC `8,1`.
-These are pilot settings, not a claim of full-node utilization.
+currently resolves to 184 compute threads, one interactive thread and GC `8,0`.
+Those eight collectors include the triggering mutator, so seven GC threads
+are additional to the compute and interactive pools. These are pilot settings,
+not a claim of full-node utilization.
 
 After clean completion it copies the closed single SQLite once to
 `$SCRATCH/vbfsearch/pilot-$SLURM_JOB_ID.sqlite`. `VBF_OUTPUT` can select another new
