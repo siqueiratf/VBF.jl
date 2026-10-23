@@ -255,7 +255,7 @@ end
         @test progress["seed_statistics"]["published_selected"]==1
         identity=TOML.parsefile(joinpath(config["run"],"identity.toml"))
         @test identity["scientific"]["extension_cosets"]==65536
-        @test identity["scientific"]["switching_directions"]==32
+        @test identity["scientific"]["switching_directions"]==64
         @test progress["state"]=="paused_budget"
         @test !progress["running"]
         @test isfile(joinpath(config["evidence"],"result.json"))

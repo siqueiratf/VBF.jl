@@ -1,4 +1,4 @@
-@testitem "Int32 Walsh prefix fusion" begin
+@testitem "Int16 and Int32 Walsh prefix fusion" begin
 using VBF,Test,Random
 
 # Int64 retains the generic transform and cannot overflow on these Int32 inputs.
@@ -19,6 +19,47 @@ function check32(source;threaded=false)
     @test result isa Vector{Int32}
     @test vector==expected
     @test source==original
+end
+
+function check16(source;threaded=false)
+    wide=Int64.(source)
+    walsh_hadamard!(wide)
+    expected=map(x->x % Int16,wide)
+    original=copy(source)
+    vector=copy(source)
+    @test walsh_hadamard!(vector;threaded)===vector
+    @test vector isa Vector{Int16}
+    @test vector==expected
+    @test source==original
+end
+
+@testset "Int16 full-width wrapping and independent callers" begin
+    rng=Xoshiro(0x16f057)
+    for bits in 0:255
+        check16(Int16[iszero(bits & (1<<i)) ? 1 : -1 for i in 0:7])
+    end
+    for power in 0:16
+        count=1<<power
+        for source in (rand(rng,Int16,count),fill(typemin(Int16),count),
+                       fill(typemax(Int16),count),
+                       Int16[isodd(i) ? typemin(Int16) : typemax(Int16) for i in 1:count])
+            check16(source)
+        end
+    end
+    check16(rand(rng,Int16,1<<18);threaded=true)
+    inputs=[rand(rng,Int16,1<<16) for _ in 1:4]
+    expected=map(inputs) do input
+        wide=Int64.(input)
+        walsh_hadamard!(wide)
+        map(x->x % Int16,wide)
+    end
+    tasks=map(inputs) do input
+        Threads.@spawn walsh_hadamard!(copy(input))
+    end
+    @test fetch.(tasks)==expected
+    work=zeros(Int16,1<<16)
+    walsh_hadamard!(work)
+    @test (@allocated walsh_hadamard!(work))<1024
 end
 
 @testset "exact small transforms and all Boolean eight-element inputs" begin
