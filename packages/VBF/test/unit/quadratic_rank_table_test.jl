@@ -101,3 +101,59 @@ end
         end
     end
 end
+
+
+@testitem "coset rank and Walsh fusion crosses two cache tiles" begin
+    using VBF,Test
+    Q=VBF.QuadraticExtensions
+    G=Q.geometry(7)
+    V=UInt32[1,2,4,8]
+    beta=Int[1,2,3,4]
+    # Coordinate V makes its orthogonal forms exactly the high-bit coordinates.
+    # Int64 uses the generic transform independently of either tiled kernel.
+    reference=Int64[beta[Q.form_rank(G,UInt32(c)<<4)÷2+1] for c in 0:(1<<17)-1]
+    walsh_hadamard!(reference)
+    expected=Int32.(reference)
+    for table in (nothing,Q.PolarRankTable(G),Q.PackedPolarRankTable(G))
+        buffer=fill(Int32(-31),1<<17)
+        metadata=Q.coset_bent_counts!(buffer,G,V,beta;rank_table=table)
+        @test buffer==expected
+        @test metadata.R==UInt32[8,4,2,1]
+        @test metadata.Qmask==UInt32(0x1ffff0)
+        @test metadata.D==17 && metadata.scale==1<<17
+    end
+end
+
+@testitem "coset fusion preserves unused weights and partial conversion errors" begin
+    using VBF,Test
+    Q=VBF.QuadraticExtensions
+    G=Q.geometry(4)
+    tables=(nothing,Q.PolarRankTable(G),Q.PackedPolarRankTable(G))
+    for table in tables
+        # The annihilator is the three-bit star: only ranks zero and two occur.
+        buffer=Int32[]
+        metadata=Q.coset_bent_counts!(buffer,G,UInt32[8,16,32],Int[1,2];rank_table=table)
+        @test buffer==vcat(Int32[15],fill(Int32(-1),7))
+        @test metadata.D==3 && metadata.scale==8
+        full=UInt32[UInt32(1)<<j for j in 0:G.N-1]
+        metadata=Q.coset_bent_counts!(buffer,G,full,Int[1];rank_table=table)
+        @test buffer==Int32[1]
+        @test metadata.D==0 && metadata.scale==1
+
+        if Sys.WORD_SIZE==64
+            # The first full-rank form in binary order has bits 2 and 3.
+            # An early transform would corrupt the first eight rank cells.
+            buffer=fill(Int32(-31),64)
+            @test_throws InexactError Q.coset_bent_counts!(buffer,G,UInt32[],
+                Int[1,2,typemax(Int)];rank_table=table)
+            @test buffer==vcat(Int32[1],fill(Int32(2),11),fill(Int32(-31),52))
+            buffer=fill(Int32(-31),64)
+            @test_throws InexactError Q.coset_bent_counts!(buffer,G,UInt32[],
+                Int[1,typemax(Int),3];rank_table=table)
+            @test buffer==vcat(Int32[1],fill(Int32(-31),63))
+        end
+        buffer=fill(Int32(-31),19)
+        @test_throws DivideError Q.coset_bent_counts!(buffer,G,UInt32[],zeros(Int,3);rank_table=table)
+        @test buffer==fill(Int32(-31),19)
+    end
+end

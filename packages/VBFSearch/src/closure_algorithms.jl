@@ -471,7 +471,7 @@ function _closure_apply!(s,job,result)
                     event["next_direction"]==direction+1 && event["next_combination"]=="1" || error("switching direction transition mismatch")
                     kernel=only(_closure_rows(s,"SELECT dimension FROM kernels WHERE job_id=? AND direction=?",(current["id"],direction)))
                     total=(big(1)<<Int(kernel["dimension"]))-1
-                    combination==total+1 && _closure_count(s.db,"SELECT COUNT(*) n FROM evaluations WHERE job_id=? AND direction=?",(current["id"],direction))==total || error("switching direction completion lacks full candidate coverage")
+                    combination==total+1 && _closure_count(s,"SELECT COUNT(*) n FROM evaluations WHERE job_id=? AND direction=?",(current["id"],direction))==total || error("switching direction completion lacks full candidate coverage")
                     direction+=1;combination=big(1);completed_directions+=1
                 else
                     error("unknown switching checkpoint event")

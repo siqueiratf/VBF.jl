@@ -1,4 +1,4 @@
-@testitem "Int16 and Int32 Walsh prefix fusion" begin
+@testitem "Int16 and Int32 Walsh cache tiles and prefix fusion" begin
 using VBF,Test,Random
 
 # Int64 retains the generic transform and cannot overflow on these Int32 inputs.
@@ -82,7 +82,7 @@ end
             check32(source)
         end
     end
-    # A complete transform crosses four prefix chunks at the native n=8 scale.
+    # Sparse point and plane inputs also cover complete local tile stages.
     points=zeros(Int32,1<<16)
     for x in 0:255
         points[(x<<8)+rand(rng,0:255)+1]=rand(rng,Int32(1):Int32(8191))
@@ -139,4 +139,29 @@ end
     end
     @test map(fetch,tasks)==expected
 end
+end
+
+
+@testitem "serial Walsh cache tiles preserve wide-reference spectra" begin
+    using VBF,Test,Random
+    rng=Xoshiro(0xcac4e)
+    for T in (Int16,Int32)
+        for power in (17,18)
+            count=1<<power
+            for source in (rand(rng,T,count),fill(typemin(T),count),
+                           fill(typemax(T),count),
+                           T[isodd(i) ? typemin(T) : typemax(T) for i in 1:count])
+                reference=Int64.(source)
+                walsh_hadamard!(reference)
+                expected=map(x->x % T,reference)
+                vector=copy(source)
+                @test walsh_hadamard!(vector)===vector
+                @test vector==expected
+            end
+        end
+        # Repeated large calls retain no per-tile arrays.
+        work=zeros(T,1<<18)
+        walsh_hadamard!(work)
+        @test (@allocated walsh_hadamard!(work))<1024
+    end
 end

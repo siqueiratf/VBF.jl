@@ -68,7 +68,8 @@ export Geometry, geometry, form_rank, form_rank_slow, coeffs_from_hex, hex_from_
        coset_bent_counts!, bent_mask, gauss_binom, V5Work, v5_extensions, function_of, max_bent_dim,
        PolarRankTable, PackedPolarRankTable
 
-using ..VBF: SBox, linear_basis, rank_f2, gauss_jordan!, rref_from_echelon!, walsh_hadamard!
+using ..VBF: SBox, linear_basis, rank_f2, gauss_jordan!, rref_from_echelon!, walsh_hadamard!,
+             _walsh_hadamard_prefix8!, _walsh_hadamard_stages!
 using SHA
 
 "Fingerprint a histogram; equality is not an equivalence certificate."
@@ -734,16 +735,32 @@ function coset_bent_counts!(buf::Vector{Int32}, G::Geometry, V::AbstractVector{U
     end
     y = UInt32(0)
     @inbounds buf[1] = Int32(betap[1])
-    @inbounds for i in 1:(1 << D)-1
-        # Large quotients run millions of allocation-free iterations. Let other
-        # search tasks collect without waiting for the complete rank table.
-        (i & 4095) == 0 && GC.safepoint()
-        j = trailing_zeros(i)
-        y ⊻= yb[j+1]
-        rk=rank_table===nothing ? form_rank(G,y) : _polar_rank(rank_table,y)
-        buf[i+1] = Int32(betap[(rk >> 1)+1])
+    n_pow = length(buf)
+    # Convert only ranks actually used by the original fill when weights are
+    # incomplete or outside Int32; an error must leave the same partial buffer.
+    fuse = n_pow >= 8 && length(betap) >= fld(G.n,2)+1 &&
+        all(x->typemin(Int32)<=x<=typemax(Int32),betap)
+    tile = fuse ? min(1 << 16,n_pow) : n_pow
+    @inbounds for lo in 1:tile:n_pow
+        hi = min(n_pow,lo+tile-1)
+        for i in max(1,lo-1):hi-1
+            # Preserve the rank fill's collection points between tiles too.
+            (i & 4095) == 0 && GC.safepoint()
+            y ⊻= yb[trailing_zeros(i)+1]
+            rk=rank_table===nothing ? form_rank(G,y) : _polar_rank(rank_table,y)
+            buf[i+1] = Int32(betap[(rk >> 1)+1])
+        end
+        if fuse
+            n_pow >= (1 << 16) && GC.safepoint()
+            _walsh_hadamard_prefix8!(buf,lo,hi)
+            _walsh_hadamard_stages!(buf,lo,hi,8,tile)
+        end
     end
-    fwht!(buf)
+    if fuse
+        _walsh_hadamard_stages!(buf,1,n_pow,tile,n_pow)
+    else
+        fwht!(buf)
+    end
     (; R, Qmask, D, scale)
 end
 
