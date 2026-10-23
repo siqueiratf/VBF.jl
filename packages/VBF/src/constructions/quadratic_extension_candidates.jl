@@ -28,7 +28,7 @@ function _v5_candidate_lists_sparse!(g5::Vector{Int16}, nWmin::Int, bitmap::Vect
         3 * Int(g5[i]) <= -nWmin && push!(L, UInt32(i-1))
     end
     sort!(L; by=t -> g5[Int(t)+1])
-    Lv = [Int(g5[Int(t)+1]) for t in L]
+    Lv = [g5[Int(t)+1] for t in L]
     thb = -(nWmin ÷ 6)
     resize!(bitmap, max(1, cld(length(g5), 64)))
     fill!(bitmap, UInt64(0))
@@ -52,7 +52,7 @@ function _v5_candidate_lists_dense!(g5::Vector{Int16}, nWmin::Int,
         next_position += count
     end
     L = Vector{UInt32}(undef, next_position-1)
-    Lv = Vector{Int}(undef, next_position-1)
+    Lv = Vector{Int16}(undef, next_position-1)
     thb = -(nWmin ÷ 6)
     resize!(bitmap, max(1, cld(length(g5), 64)))
     fill!(bitmap, UInt64(0))
@@ -64,7 +64,7 @@ function _v5_candidate_lists_dense!(g5::Vector{Int16}, nWmin::Int,
             bin = value+32769
             position = bins[bin]
             L[position] = UInt32(t)
-            Lv[position] = value
+            Lv[position] = g5[i]
             bins[bin] = position+1
         end
         value <= thb && (bitmap[(t >> 6)+1] |= UInt64(1) << (t & 63))
