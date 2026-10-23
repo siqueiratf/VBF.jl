@@ -71,11 +71,11 @@ collectors; it requires no modification of the Julia runtime. The historical
 measurements below used `8,1` before that diagnosis. An explicit `8,1` remains
 available for comparisons on a runtime containing the upstream correction.
 
-The one-command worker batches up to 64 switching directions per packet and
+The one-command worker batches up to 128 switching directions per packet and
 65,536 V5 cosets. These limits amortize preparation and are frozen in the search
 identity. Switching retains its 256-candidate evaluation cap and checks stop/time
-limits within a batch. Local matched tests found that 64 directions shortened
-the serial switching tail; performance on other seed ranges can differ.
+limits within a batch. Local matched tests of 64, 128 and 255 directions favored
+128; performance on other seed ranges can differ.
 
 The default seed plan is the installed
 `data/search/literature-b52-closure-20261014/campaign.toml` beneath
