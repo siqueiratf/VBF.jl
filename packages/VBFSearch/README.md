@@ -14,6 +14,8 @@ The [Trillium readiness audit](CLUSTER.md) records the migration, scheduling and
 storage changes needed for single-node and multi-node cluster execution.
 See [campaign operations](OPERATIONS.md) for the implemented portable launcher,
 storage controls, metrics, checkpoint exports and cold evidence APIs.
+The [Trillium walkthrough](TRILLIUM.txt) gives the offline Julia 1.13.0 bundle,
+one-CPU login check, interactive CPU debug run and overnight commands.
 
 Research studies live in [VBFPaper](../VBFPaper/README.md): census
 sampling, hyperplane experiments, finite literature domains and publication
