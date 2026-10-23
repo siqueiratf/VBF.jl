@@ -3,6 +3,36 @@ isdefined(@__MODULE__,:ClosureRefillTests) || include(joinpath(@__DIR__,"closure
 isdefined(@__MODULE__,:ContinuousSeedSearch) || include(joinpath(@__DIR__,"..","tools","closure_continuous.jl"))
 const ControllerVS=VBFSearch
 
+@testset "Grouped progress preserves mixed job and empty-parent counts" begin
+    jobs=[Dict{String,Any}("id"=>i,"parent_id"=>parent,"kind"=>kind,"status"=>status,"direction"=>direction)
+        for (i,(parent,kind,status,direction)) in enumerate([
+            (1,"prepare_v5","done",1),(1,"v5","done",4),(1,"switching","paused",3),
+            (2,"prepare_v5","done",1),(2,"v5","failed",2),(2,"switching","done",256),
+            (3,"prepare_v5","done",1),(3,"v5","done",8),(3,"switching","done",256),
+            (4,"v5","pending",1),(5,"switching","running",1),(6,"v5","blocked",1)])]
+    parents=collect(1:7)
+    grouped=ContinuousSeedSearch.construction_jobs_by_parent(reverse(jobs))
+    @test ContinuousSeedSearch.completed_construction_parents(grouped,parents)==2
+    @test ContinuousSeedSearch.completed_construction_parents(grouped,parents,("prepare_v5","v5"))==4
+    @test ContinuousSeedSearch.completed_construction_parents(grouped,parents,("switching",))==5
+    for selected in (parents,[1,2,3],[7],Int[]), kinds in (nothing,("prepare_v5","v5"),("switching",))
+        old=count(parent->all(j->j["status"]=="done",filter(j->j["parent_id"]==parent &&
+            (kinds===nothing || j["kind"] in kinds),jobs)),selected)
+        @test ContinuousSeedSearch.completed_construction_parents(grouped,selected,kinds)==old
+    end
+    before=deepcopy(jobs)
+    root=Dict("id"=>1,"origin"=>"root","source"=>"fixture")
+    old_timing=Dict{Int,Dict{String,Any}}();new_timing=Dict{Int,Dict{String,Any}}()
+    ContinuousSeedSearch.seed_timing!(old_timing,root,jobs)
+    ContinuousSeedSearch.seed_timing!(new_timing,root,grouped[1])
+    @test old_timing==new_timing
+    ContinuousSeedSearch.seed_timing!(new_timing,root,();preserve_existing=true)
+    @test old_timing==new_timing
+    @test jobs==before
+    @test ContinuousSeedSearch.completed_construction_parents(
+        ContinuousSeedSearch.construction_jobs_by_parent(Dict{String,Any}[]),parents)==7
+end
+
 @testset "Controller slots share explicit rank lookup and private scratch" begin
     Q=VBF.QuadraticExtensions
     prepared=ContinuousSeedSearch.worker_contexts(3;geometry=Q.geometry(4))
@@ -210,7 +240,8 @@ end
         working=joinpath(directory,"moved-working-copy");cp(latest,working)
         frozen_project=joinpath(working,"replay","workspace","docs","inspector")
         child=`$(Base.julia_cmd()) --startup-file=no --compiled-modules=existing --threads=1,0 --gcthreads=1,0 --project=$frozen_project -e 'using VBFSearch; s=VBFSearch._closure_open(only(ARGS)); VBFSearch._closure_close(s)' -- $working`
-        @test success(child)
+        child_process=Base.run(ignorestatus(child))
+        @test success(child_process)
         cfg["evidence"]=joinpath(directory,"failed-session")
         cfg["checkpoint_active_project"]=joinpath(directory,"missing")
         failure=ContinuousSeedSearch.run(cfg)

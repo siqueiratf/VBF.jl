@@ -15,9 +15,11 @@ collectors while avoiding the page-pool race diagnosed in Julia 1.13.0.
 The runtime itself is unmodified. Local tests passed; the debug run below
 is the next validation on Trillium, before considering an overnight job.
 
-Defaults stay at 100 parents/window with rolling overlap off. Local
-five-minute comparisons found no gain from rolling with 100 or 256 parents;
-512 parents completed less work. Do not add --rolling-windows here.
+Defaults stay at 100 parents/window with rolling overlap off. The r2 archive
+fixes repeated full-job scans in progress reporting, exposed by a Trillium
+512-parent rolling test. Local counter benchmarks and controller checks
+pass; node utilization still needs a new Trillium comparison. Keep the
+default settings for this walkthrough; test larger windows separately.
 
 Every invocation starts fresh. Steps 1-3 produce separate SQLite files;
 they do not resume each other. Bounds select audited published input rows,
@@ -29,8 +31,8 @@ STEP 0 - COPY AND SET UP
 On this computer, in a local terminal:
 
 cd /home/zambonin/VBF.jl
-bundle_dir=packages/VBFSearch/data/research/analyses/trillium-debug-20261023
-bundle=vbfsearch-offline-julia-1.13.0-20261023-linux-x86_64.tar.gz
+bundle_dir=packages/VBFSearch/data/research/analyses/trillium-reporting-20261023
+bundle=vbfsearch-offline-julia-1.13.0-20261023-r2-linux-x86_64.tar.gz
 scp "$bundle_dir/$bundle" "$bundle_dir/$bundle.sha256" \
   YOUR_TRILLIUM_SSH_ALIAS:~/
 
@@ -41,12 +43,12 @@ cluster. These instructions do not require an agent to SSH to Trillium.
 On the CPU login node, verify and extract into a NEW installation:
 
 cd "$HOME"
-bundle=vbfsearch-offline-julia-1.13.0-20261023-linux-x86_64.tar.gz
+bundle=vbfsearch-offline-julia-1.13.0-20261023-r2-linux-x86_64.tar.gz
 sha256sum -c "$bundle.sha256"
-bundle_install="$SCRATCH/vbfsearch-20261023"
+bundle_install="$SCRATCH/vbfsearch-20261023-r2"
 test ! -e "$bundle_install" && mkdir "$bundle_install" && \
   tar -xzf "$HOME/$bundle" -C "$bundle_install"
-source "$SCRATCH/vbfsearch-20261023/vbfsearch-trillium/env.sh"
+source "$SCRATCH/vbfsearch-20261023-r2/vbfsearch-trillium/env.sh"
 mkdir -p "$SCRATCH/vbfsearch"
 cd "$SCRATCH/vbfsearch"
 
@@ -78,7 +80,7 @@ Run this block on the CPU login node:
 
 (
   set -e
-  source "$SCRATCH/vbfsearch-20261023/vbfsearch-trillium/env.sh"
+  source "$SCRATCH/vbfsearch-20261023-r2/vbfsearch-trillium/env.sh"
   login_cpu=$(awk '/^Cpus_allowed_list:/ {
     split($2,a,/[-,]/); print a[1]
   }' /proc/self/status)
@@ -112,7 +114,7 @@ copy-out. Do not use debugjob 2: that reserves two nodes for 30 minutes.
 
 Inside the allocated compute-node shell:
 
-source "$SCRATCH/vbfsearch-20261023/vbfsearch-trillium/env.sh"
+source "$SCRATCH/vbfsearch-20261023-r2/vbfsearch-trillium/env.sh"
 cd "$SCRATCH/vbfsearch"
 debug_job="$SLURM_JOB_ID"
 debug_result="$SLURM_TMPDIR/vbf-debug-${debug_job}.sqlite"
@@ -127,7 +129,7 @@ srun --nodes=1 --ntasks=1 --cpus-per-task=192 --cpu-bind=cores \
   "$VBF_WORKSPACE/bin/vbfsearch" --recursive-closure -j \
   --gcthreads=8,0 --window-size=100 --progress-interval=15s \
   --start=1 --end=24294 --time=30m --output="$debug_result" \
-  2>&1 | tee "$debug_log"
+  2>&1 | tee -i "$debug_log"
 
 Startup should show 184 compute threads, one interactive thread and GC 8,0.
 The triggering mutator is one of the eight collectors, leaving seven extra
@@ -213,7 +215,7 @@ cat > vbf-job.sbatch <<'SBATCH'
 #SBATCH --signal=B:USR1@900
 #SBATCH --output=vbf-%j.log
 set -euo pipefail
-source "$SCRATCH/vbfsearch-20261023/vbfsearch-trillium/env.sh"
+source "$SCRATCH/vbfsearch-20261023-r2/vbfsearch-trillium/env.sh"
 result_name="${SLURM_JOB_NAME}-${SLURM_JOB_ID}.sqlite"
 export VBF_OUTPUT="$SCRATCH/vbfsearch/$result_name"
 exec python3 \
