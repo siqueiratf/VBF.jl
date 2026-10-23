@@ -146,7 +146,9 @@ end
     using VBF,Test,Random
     rng=Xoshiro(0xcac4e)
     for T in (Int16,Int32)
-        for power in (17,18)
+        # Powers19/20 cross eight/sixteen Int32 cache tiles, exercising all
+        # large-stage pairs and the final unpaired stage against generic Int64.
+        for power in (17,18,19,20)
             count=1<<power
             for source in (rand(rng,T,count),fill(typemin(T),count),
                            fill(typemax(T),count),

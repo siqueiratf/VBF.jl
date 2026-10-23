@@ -816,6 +816,14 @@ function _v5_order_constraints!(C::Vector{UInt32}, Cidx::Vector{Int})
     nothing
 end
 
+"""Specialize cursor and completion-container types before constructing an observer event."""
+@noinline function _v5_emit_coset(observer::F,index::Int,next_x::N,total_x::Int,
+                                representative::UInt32,Ss::S,du_reject::Int,
+                                ncand::Int,nT::Int,capped::Bool) where {F,N,S}
+    observer((;index,next_x,total_x,representative,Ss,du_reject,ncand,nT,capped))
+    nothing
+end
+
 """
     v5_extensions(G, V5, need, work; beta, du_filter=true, max_kernel=12, max_x=typemax(Int))
 
@@ -955,10 +963,9 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
         end
         if bad
             du_rej += 1
-            coset_observer === nothing || coset_observer((;
-                index=indices[xi], next_x=selected_scope ? nothing : indices[xi]+1, total_x=nX,
-                representative=lifted[xi], Ss=_EmptyCompletionSpaces(),
-                du_reject=1, ncand=0, nT=0, capped=false))
+            coset_observer === nothing || _v5_emit_coset(coset_observer,indices[xi],
+                selected_scope ? nothing : indices[xi]+1,nX,lifted[xi],
+                _EmptyCompletionSpaces(),1,0,0,false)
             continue
         end
         empty!(Tseen)
@@ -998,10 +1005,10 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
             end
         end
         nT += length(Tseen)
-        coset_observer === nothing || coset_observer((;
-            index=indices[xi], next_x=selected_scope ? nothing : indices[xi]+1, total_x=nX,
-            representative=lifted[xi], Ss=coset_Ss===nothing ? _EmptyCompletionSpaces() : coset_Ss,
-            du_reject=0, ncand=ncand-first_ncand, nT=length(Tseen), capped=coset_capped))
+        coset_observer === nothing || _v5_emit_coset(coset_observer,indices[xi],
+            selected_scope ? nothing : indices[xi]+1,nX,lifted[xi],
+            coset_Ss===nothing ? _EmptyCompletionSpaces() : coset_Ss,
+            0,ncand-first_ncand,length(Tseen),coset_capped)
     end
     finish((; Ss, nX, nX_used, next_x=start_x+nX_used, du_reject = du_rej, ncand, nT, key, capped, skipped = false))
 end

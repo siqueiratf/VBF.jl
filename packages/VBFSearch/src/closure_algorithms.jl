@@ -329,6 +329,64 @@ end
 """Return byte-identical sorted TOML, including generic and empty-schema fallbacks."""
 _closure_coset_evidence_text(proof)=sprint(io->_closure_write_coset_evidence(io,proof);sizehint=512)
 
+"""Private text prefix and decimal scratch for one native ledger encoding.
+
+Forms stay signed Ints here; the existing V2 format checks still decide whether
+the complete block can use its normalized representation. No bytes or scratch
+from this writer escape into a returned ledger row.
+"""
+struct _ClosureCosetEvidenceWriter
+    forms::NTuple{5,Int}
+    prefix::String
+    digits::Vector{UInt8}
+    function _ClosureCosetEvidenceWriter(forms::NTuple{5,Int})
+        prefix=sprint(;sizehint=128) do io
+            write(io,"V5_forms = [");print(io,forms[1]);write(io,", ")
+            print(io,forms[2]);write(io,", ");print(io,forms[3]);write(io,", ")
+            print(io,forms[4]);write(io,", ");print(io,forms[5]);write(io,"]\ncandidate_spaces = ")
+        end
+        new(forms,prefix,Vector{UInt8}(undef,20))
+    end
+end
+
+"""Write every signed machine integer without allocating an intermediate String."""
+@inline function _closure_write_decimal(io,n::Int,digits::Vector{UInt8})
+    # Avoid negating typemin(Int); its unsigned magnitude is still representable.
+    magnitude=n<0 ? unsigned(-(n+1))+one(UInt) : unsigned(n)
+    position=21
+    while true
+        magnitude,digit=divrem(magnitude,UInt(10));position-=1
+        digits[position]=UInt8('0')+UInt8(digit)
+        iszero(magnitude) && break
+    end
+    if n<0
+        position-=1;digits[position]=UInt8('-')
+    end
+    write(io,view(digits,position:20))
+    nothing
+end
+
+_closure_write_coset_evidence(io,proof,limit::Int,::Nothing)=_closure_write_coset_evidence(io,proof,limit)
+_closure_write_coset_evidence(io,proof,limit::Int,::_ClosureCosetEvidenceWriter)=_closure_write_coset_evidence(io,proof,limit)
+
+"""Reuse only a matching native prefix; mixed and future proofs keep their checks."""
+function _closure_write_coset_evidence(io,p::_ClosureCosetProof,limit::Int,writer::_ClosureCosetEvidenceWriter)
+    p.forms==writer.forms || return _closure_write_coset_evidence(io,p,limit)
+    digits=writer.digits
+    write(io,writer.prefix);_closure_write_decimal(io,p.candidate_spaces,digits)
+    write(io,"\ncapped = ");write(io,p.capped ? "true" : "false")
+    write(io,"\ncompletion_spaces = ");_closure_write_decimal(io,p.completion_spaces,digits)
+    write(io,"\ncoset_order = \"increasing nonzero quotient integer with exact bent count\"\ncoset_representative = ")
+    _closure_write_decimal(io,p.coset_representative,digits)
+    write(io,"\ndu_reject = ");_closure_write_decimal(io,p.du_reject,digits)
+    write(io,"\nfirst_x = ");_closure_write_decimal(io,p.first_x,digits)
+    write(io,"\nheuristic_pruning = false\nlinear_system_candidates = ");_closure_write_decimal(io,p.linear_system_candidates,digits)
+    write(io,"\nnext_x = ");_closure_write_decimal(io,p.next_x,digits)
+    write(io,"\ntotal_x = ");_closure_write_decimal(io,p.total_x,digits);write(io,UInt8('\n'))
+    position(io)<=limit || error("compact ledger block exceeds size limit")
+    nothing
+end
+
 """Validate each complete coset within the coordinator transaction.
 
 This function barrier specializes on the actual chunk representation. Native

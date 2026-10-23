@@ -91,6 +91,7 @@ function _closure_ledger_row(job_id,chunks)
         return (job_id=job_id,first_x=firstproof["first_x"],next_x=lastproof["next_x"],
             total_x=firstproof["total_x"],capped=Int(firstproof["capped"]),evidence=first_evidence)
     end
+    native_writer=firstproof isa _ClosureCosetProof ? _ClosureCosetEvidenceWriter(firstproof.forms) : nothing
     # Proof lengths vary slightly with integer widths. Reserve near the final
     # size without retaining a second array of Dict rows solely for encoding.
     estimate=4+n*max(512,44+sizeof(first_evidence)+64)
@@ -108,7 +109,7 @@ function _closure_ledger_row(job_id,chunks)
             sizeof(first_evidence)<=_CLOSURE_LEDGER_LIMIT-text_position || error("compact ledger block exceeds size limit")
             write(io,first_evidence)
         else
-            _closure_write_coset_evidence(io,proof,_CLOSURE_LEDGER_LIMIT)
+            _closure_write_coset_evidence(io,proof,_CLOSURE_LEDGER_LIMIT,native_writer)
         end
         next_position=position(io)
         # Patching a fixed-width length preserves the previous raw byte stream.
