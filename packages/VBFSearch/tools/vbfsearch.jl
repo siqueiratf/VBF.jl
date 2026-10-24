@@ -12,7 +12,8 @@ const VALUES=Dict("--start"=>"start","--end"=>"end","--time"=>"time",
     "--gcthreads"=>"gc_threads",
     "--heap-size-hint"=>"heap","--heap"=>"heap",
     "--window-size"=>"window_size","--progress-interval"=>"progress_interval",
-    "--classification-batch-size"=>"classification_batch_size","--classification-slots"=>"classification_slots")
+    "--classification-batch-size"=>"classification_batch_size","--classification-slots"=>"classification_slots",
+    "--backend"=>"backend","--memory-limit"=>"memory_limit","--plan-cache-size"=>"plan_cache_size")
 
 """Describe seed numbering, limits, and the fresh-run command surface."""
 function help(io=stdout)
@@ -31,13 +32,19 @@ Usage: vbfsearch --recursive-closure [OPTIONS]
                       A path without .sqlite/.sqlite3/.db retains directory output.
   --campaign FILE     Audited seed plan (default: installed literature b6=52 plan,
                       overridable with VBF_SEARCH_CAMPAIGN)
-  --heap SIZE         Julia heap hint, e.g. 16G; defaults scale with thread count
+  --heap SIZE         Julia heap hint; RAM default stays below its RSS threshold
+  --backend NAME      sqlite (default) or ram (bounded RAM search; final SQLite)
+  --initial-seeds-only
+                      Stop after the selected published-root phase
+  --memory-limit SIZE RAM backend process RSS stop threshold (default: 8G)
+  --plan-cache-size SIZE
+                      RAM backend active immutable-plan budget (default: 512M)
   --window-size N     Parents per scheduling window (default: 100)
-  --rolling-windows   Overlap up to two windows to reduce boundary draining
+  --rolling-windows   SQLite: overlap up to two scheduling windows
   --classification-batch-size N
-                      Cheap candidates per worker task (default: 1, individual)
+                      SQLite cheap candidates/task (default: 1, individual)
   --classification-slots N
-                      Slots reserved for cheap batches (default: 0, shared)
+                      SQLite cheap-batch slots (default: 0, shared)
   --progress-interval SECONDS
                       Progress publication interval; accepts 10s (default: 15s)
   --dry-run           Print the resolved plan without creating files or searching
@@ -69,7 +76,7 @@ function options(args)
         token=args[i]
         if token in ("--help","-h")
             push!(flags,"help");i+=1;continue
-        elseif token in ("--recursive-closure","--dry-run","--rolling-windows")
+        elseif token in ("--recursive-closure","--dry-run","--rolling-windows","--initial-seeds-only")
             token in flags && throw(ArgumentError("repeated option $token"))
             push!(flags,token);i+=1;continue
         elseif token=="-j"
@@ -99,6 +106,17 @@ function positive(value,name)
     number=tryparse(Int,value)
     number!==nothing && number>0 || throw(ArgumentError("$name must be a positive integer"))
     number
+end
+
+"""Parse a positive binary byte budget without importing the search engine."""
+function byte_size(value,name)
+    found=match(r"^([1-9][0-9]*)([KMGTP]?)(?:B)?$",uppercase(value))
+    found===nothing && throw(ArgumentError("$name needs positive bytes or a size such as 512M or 8G"))
+    number=positive(found[1],name)
+    exponent=findfirst(==(found[2]),("","K","M","G","T","P"))-1
+    factor=Int(1024)^exponent
+    number<=typemax(Int)÷factor || throw(ArgumentError("$name is too large"))
+    number*factor
 end
 
 """Interpret a finite positive budget in seconds, minutes or hours."""
@@ -172,13 +190,27 @@ function plan(parsed;env=ENV,cpu_threads=available_cpu_count(),output_default=no
     last_seed=haskey(cfg,"end") ? positive(cfg["end"],"--end") : nothing
     budget=haskey(cfg,"time") ? seconds(cfg["time"]) : nothing
     pools=threads(get(cfg,"threads","1");gc=get(cfg,"gc_threads",nothing),env,cpu_threads)
+    backend=get(cfg,"backend","sqlite")
+    backend in ("sqlite","ram") || throw(ArgumentError("--backend must be sqlite or ram"))
+    backend=="ram" && "--rolling-windows" in parsed.flags &&
+        throw(ArgumentError("--rolling-windows requires --backend=sqlite; RAM search uses bounded cohorts"))
+    memory_limit=byte_size(get(cfg,"memory_limit","8G"),"--memory-limit")
+    plan_bytes=byte_size(get(cfg,"plan_cache_size","512M"),"--plan-cache-size")
+    backend=="ram" && (memory_limit<(256<<20) || plan_bytes>memory_limit÷2 || plan_bytes<(64<<20)) &&
+        throw(ArgumentError("RAM search needs at least 256M memory and 64M <= plan cache <= half the memory budget"))
     window_size=positive(get(cfg,"window_size","100"),"--window-size")
     classification_batch_size=positive(get(cfg,"classification_batch_size","1"),"--classification-batch-size")
     classification_slots=tryparse(Int,get(cfg,"classification_slots","0"))
     classification_slots!==nothing && 0<=classification_slots<=pools.compute ||
         throw(ArgumentError("--classification-slots must be between 0 and $(pools.compute)"))
     progress_interval=seconds(get(cfg,"progress_interval","15s");name="--progress-interval")
-    heap=get(cfg,"heap",pools.compute==1 ? "512M" : pools.compute<16 ? "4G" : pools.compute<64 ? "16G" : "32G")
+    heap_default=pools.compute==1 ? "512M" : pools.compute<16 ? "4G" : pools.compute<64 ? "16G" : "32G"
+    if backend=="ram"
+        heap_bytes=min(byte_size(heap_default,"default heap"),3*(memory_limit÷4))
+        heap_default=heap_bytes%(1<<30)==0 ? string(heap_bytes÷(1<<30),"G") :
+            heap_bytes%(1<<20)==0 ? string(heap_bytes÷(1<<20),"M") : string(heap_bytes)
+    end
+    heap=get(cfg,"heap",heap_default)
     occursin(r"^[1-9][0-9]*(?:[KMGTP]B?|B)?$",heap) || throw(ArgumentError("--heap needs positive bytes or a size such as 512M or 16G"))
     campaign=abspath(get(cfg,"campaign",default_campaign(env)))
     isfile(campaign) || throw(ArgumentError("audited seed plan is not installed at $campaign; use --campaign FILE or VBF_SEARCH_CAMPAIGN"))
@@ -204,6 +236,8 @@ function plan(parsed;env=ENV,cpu_threads=available_cpu_count(),output_default=no
     workspace=single ? joinpath(dirname(output),"."*basename(output)*".work") : output
     single && (ispath(workspace) || islink(workspace)) && throw(ArgumentError("working data already exists at $workspace; choose a new output filename"))
     config=Dict{String,Any}("campaign"=>campaign,"output"=>output,
+        "backend"=>backend,"initial_only"=>("--initial-seeds-only" in parsed.flags),
+        "rss_limit_bytes"=>memory_limit,"plan_bytes"=>plan_bytes,
         "output_format"=>single ? "sqlite" : "directory","workspace"=>workspace,
         "root_first"=>first_seed,"root_last"=>last_seed,
         "run"=>joinpath(workspace,"state"),"evidence"=>joinpath(workspace,"session"),
@@ -218,6 +252,16 @@ function plan(parsed;env=ENV,cpu_threads=available_cpu_count(),output_default=no
         "cached_global_counts"=>true,"shared_property_cache_entries"=>8192,
         "checkpoint_on_stop"=>false,"human_progress"=>true,"shutdown_grace_seconds"=>600.0)
     pools.allocation>0 && (config["cpu_allocation"]=pools.allocation)
+    if backend=="ram"
+        config["candidate_capacity"]=max(total,memory_limit÷2048)
+        config["class_capacity"]=max(total,memory_limit÷4096)
+        config["evidence_bytes"]=memory_limit÷2
+        config["extension_cosets"]=4096
+        config["switching_directions"]=32
+        config["plan_builders"]=min(pools.compute,max(1,plan_bytes÷(64<<20)))
+    elseif config["initial_only"]
+        config["max_windows"]=cld(last_seed-first_seed+1,window_size)
+    end
     budget===nothing || (config["supervisor_duration_seconds"]=budget)
     (;config,pools,heap,total,budget)
 end
@@ -226,13 +270,22 @@ end
 function describe(io,launch)
     cfg=launch.config;p=launch.pools
     println(io,"Search: recursive closure (V5 extensions + complete switching)")
+    println(io,"Backend: ",cfg["backend"],cfg["initial_only"] ? "; initial published seeds only" : "; recursive expansion enabled")
+    cfg["backend"]=="ram" && println(io,"RAM limits: RSS stop ",cfg["rss_limit_bytes"]," bytes; active plans ",cfg["plan_bytes"]," bytes")
     println(io,"Initial seeds: ",cfg["root_first"],"–",cfg["root_last"]," of ",launch.total," (inclusive audited rows)")
     println(io,"CPU pools: ",p.compute," compute, ",p.interactive," interactive, GC ",p.mark,",",p.sweep)
     println(io,"Heap hint: ",launch.heap)
-    println(io,"Scheduling: ",cfg["window_size"]," parents/window; overlap ",
-        cfg["rolling_windows"] ? "on (up to two windows)" : "off",
-        "; progress every ",cfg["report_interval_seconds"]," seconds")
-    if cfg["classification_batch_size"]==1
+    if cfg["backend"]=="ram"
+        println(io,"Scheduling: ",cfg["window_size"]," parents/cohort; bounded RAM work queue; progress every ",
+            cfg["report_interval_seconds"]," seconds")
+    else
+        println(io,"Scheduling: ",cfg["window_size"]," parents/window; overlap ",
+            cfg["rolling_windows"] ? "on (up to two windows)" : "off",
+            "; progress every ",cfg["report_interval_seconds"]," seconds")
+    end
+    if cfg["backend"]=="ram"
+        println(io,"Admission: compact LUT records; direct new signatures; verified EA comparisons on workers")
+    elseif cfg["classification_batch_size"]==1
         println(io,"Classification: individual jobs in the shared compute pool")
     else
         println(io,"Classification: up to ",cfg["classification_batch_size"]," candidates/task; ",

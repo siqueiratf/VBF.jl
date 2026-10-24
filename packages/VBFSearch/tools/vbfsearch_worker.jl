@@ -39,6 +39,42 @@ function run(path)
             finish(owner,config,Dict("state"=>"stopped_before_initialization","processed_packets"=>0))
             return
         end
+        if get(config,"backend","sqlite")=="ram"
+            Base.include(owner,joinpath(@__DIR__,"ram_closure_search.jl"))
+            Base.include(owner,joinpath(@__DIR__,"ram_closure_output.jl"))
+            result=Base.invokelatest() do
+                ram=getfield(owner,:RAMClosureSearch)
+                function progress(snapshot)
+                    mkpath(config["evidence"])
+                    record=Dict(string(k)=>v for (k,v) in pairs(snapshot))
+                    temporary=joinpath(config["evidence"],"ram-progress.json.tmp")
+                    write(temporary,engine.JSON3.write(record))
+                    mv(temporary,joinpath(config["evidence"],"ram-progress.json");force=true)
+                    target=min(snapshot.initial_roots,Int(get(config,"root_limit",snapshot.initial_roots)))
+                    println("RAM progress: ",snapshot.admission_settled,"/",target,
+                        " roots settled; ",snapshot.construction_completed," construction complete; ",
+                        snapshot.store.candidate_count," LUTs; ",snapshot.store.class_count," classes; ",
+                        round(snapshot.evidence_bytes/2.0^20;digits=1)," MiB evidence; ",
+                        round(snapshot.average_cpu_cores;digits=1)," mean busy CPUs; RSS ",
+                        round(snapshot.rss_bytes/2.0^30;digits=2)," GiB")
+                    flush(stdout)
+                end
+                println("Verifying audited seeds and starting bounded RAM search…");flush(stdout)
+                haskey(config,"root_limit") && println("Benchmark expansion prefix: ",config["root_limit"]," roots; full selected registry retained")
+                searched=ram.run(config;on_progress=progress,stop_requested=()->stop_requested())
+                println("RAM search ended: ",searched.report["state"],"; exporting final SQLite…");flush(stdout)
+                getfield(owner,:RAMClosureOutput).write_database(searched,config;
+                    on_progress=counts->begin println("Final export: ",counts);flush(stdout) end)
+                searched.state.failure===nothing || begin
+                    println(stderr,"RAM search failure retained in final output: ")
+                    showerror(stderr,searched.state.failure.error);println(stderr)
+                end
+                searched.report
+            end
+            finish(owner,config,result)
+            result["state"]=="failed" && error("RAM search failed; partial scientific output retained at "*config["output"])
+            return result
+        end
         println("Verifying audited seed inputs and creating a fresh search…");flush(stdout)
         engine.closure_init(config["campaign"];output=config["run"],
             root_first=Int(config["root_first"]),root_last=Int(config["root_last"]),
