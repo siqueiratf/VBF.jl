@@ -66,7 +66,8 @@ export Geometry, geometry, form_rank, form_rank_slow, coeffs_from_hex, hex_from_
        extensions, extensions_bruteforce, ExtWork, s_key, lift, fwht!, each_rref,
        subspaces_of_comp, best_hyperplane_bent, bent_fourier, flat_fourier, BETA8,
        coset_bent_counts!, bent_mask, gauss_binom, V5Work, v5_extensions, function_of, max_bent_dim,
-       PolarRankTable, PackedPolarRankTable
+       PolarRankTable, PackedPolarRankTable, V5Plan, prepare_v5_plan, v5_plan_bytes,
+       V5OutputLimit
 
 using ..VBF: SBox, linear_basis, rank_f2, gauss_jordan!, rref_from_echelon!, walsh_hadamard!,
              _walsh_hadamard_prefix8!, _walsh_hadamard_stages!
@@ -824,6 +825,24 @@ end
     nothing
 end
 
+include("quadratic_v5_plan.jl")
+
+"""A resource interruption before adding another output or finishing its coset.
+
+`output_spaces` counts constructed spaces across the invocation, including a
+space reached through different cosets. This is separate from mathematical
+kernel caps; the interrupted coset has no complete observer event.
+"""
+struct V5OutputLimit <: Exception
+    limit::Int
+    coset_index::Int
+    output_spaces::Int
+end
+function Base.showerror(io::IO,error::V5OutputLimit)
+    print(io,"V5 output-space resource limit ",error.limit," reached in eligible coset ",
+        error.coset_index," after ",error.output_spaces," constructed spaces; this coset is incomplete")
+end
+
 """
     v5_extensions(G, V5, need, work; beta, du_filter=true, max_kernel=12, max_x=typemax(Int))
 
@@ -855,23 +874,46 @@ in `ncand`; triangle mode retains the original candidate count. The default
 `:none` retains the original work counters. Pruning is
 disabled when `du_filter=false`. `rank_table` optionally shares a precomputed
 [`PolarRankTable`](@ref) or [`PackedPolarRankTable`](@ref) during Fourier bent-count preparation.
+
+`plan` optionally shares a read-only [`V5Plan`](@ref), prepared once by
+[`prepare_v5_plan`](@ref) for this geometry, canonical V5, `need`, `beta` and
+rank-lookup binding. It reuses invariant transforms and constraints, while
+candidate thresholds, bitmap and DU7 scratch remain private to this range.
+The planned path accepts lightweight `V5Work(0,G.n)` scratch and never changes
+that scratch's count or Walsh arrays. Without `plan`, the original preparation
+and enumeration path remains independent.
+
+`max_output_spaces` bounds constructed completion spaces across this invocation,
+including repeated spaces reached in separate cosets. Before another output can
+grow the private sets, [`V5OutputLimit`](@ref) interrupts the current coset without
+emitting its completion event. This resource stop does not certify coverage or
+turn into a mathematical kernel cap. The default leaves ordinary work unchanged.
 """
 function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work::V5Work;
                        beta::Vector{Int}, du_filter::Bool = true, max_kernel::Int = 12,
                        max_x::Int = typemax(Int), should_skip::Function = k -> false,
                        start_x::Int = 1, should_stop::Function = () -> false,
                        coset_observer = nothing, selected_coset_indices = nothing,
-                       du7_filter::Symbol=:none, rank_table::Union{Nothing,_PolarRankLookup}=nothing)
+                       du7_filter::Symbol=:none, rank_table::Union{Nothing,_PolarRankLookup}=nothing,
+                       plan::Union{Nothing,V5Plan}=nothing,
+                       max_output_spaces::Int=typemax(Int))
     max_x >= 0 && start_x >= 1 || error("invalid coset cursor or chunk size")
+    max_output_spaces>=0 || throw(ArgumentError("output-space resource limit must be nonnegative"))
     du7_filter in (:none,:auto,:bitsets,:triangles) || throw(ArgumentError("unknown DU7 filter"))
     use_du7=du_filter && du7_filter!==:none
     selected_scope = selected_coset_indices !== nothing
     selected_scope && (start_x != 1 || max_x != typemax(Int)) &&
         throw(ArgumentError("selected cosets cannot be combined with cursor or max_x"))
-    r = coset_bent_counts!(work.cnt, G, V5, beta;rank_table)
-    R, Qmask, D = r.R, r.Qmask, r.D
-    cnt = work.cnt
-    hc,X = _v5_bent_histogram(cnt,r.scale,need,length(R))
+    if plan===nothing
+        r = coset_bent_counts!(work.cnt, G, V5, beta;rank_table)
+        R, Qmask, D = r.R, r.Qmask, r.D
+        cnt = work.cnt
+        hc,X = _v5_bent_histogram(cnt,r.scale,need,length(R))
+    else
+        _validate_v5_plan(plan,G,V5,need,beta,rank_table)
+        R, Qmask, D = plan.basis, plan.quotient_mask, plan.quotient_dimension
+        X=plan.eligible_cosets
+    end
     nX = length(X)
     start_x <= nX+1 || error("coset cursor exceeds extension space")
     stop_x = max_x > nX ? nX : min(nX,start_x+max_x-1)
@@ -890,24 +932,30 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
     finish = result -> selected_scope ? merge(result, (;
         selected_scope=true, selected_coset_indices=copy(indices), next_x=nothing)) : result
     X = X[indices]
-    # flats of V5^perp and g5
-    C = UInt32[]; Cidx = Int[]
-    @inbounds for (fi, w) in enumerate(G.flats)
-        ok = true
-        for rr in R
-            par(w & rr) && (ok = false; break)
+    if plan===nothing
+        # flats of V5^perp and g5
+        C = UInt32[]; Cidx = Int[]
+        @inbounds for (fi, w) in enumerate(G.flats)
+            ok = true
+            for rr in R
+                par(w & rr) && (ok = false; break)
+            end
+            ok && (push!(C, pext(w, Qmask)); push!(Cidx, fi))
         end
-        ok && (push!(C, pext(w, Qmask)); push!(Cidx, fi))
+        _v5_order_constraints!(C,Cidx)
+        g5 = work.g5
+        length(g5) == (1 << D) || resize!(g5, 1 << D)
+        fill!(g5, Int16(0))
+        @inbounds for c in C; g5[c+1] = Int16(1); end
+        fwht!(g5)
+        hg = _v5_flat_histogram(g5, work.flat_histogram)
+        key = hist_key(Dict(vcat([(Int(k), v) for (k, v) in hc], [(100_000_000 + Int(k), v) for (k, v) in hg])))
+    else
+        C,Cidx,g5=plan.constraints,plan.constraint_flat_indices,plan.walsh
+        key=plan.key
+        _restore_v5_plan_histogram!(work.flat_histogram,plan)
     end
-    _v5_order_constraints!(C,Cidx)
-    g5 = work.g5
-    length(g5) == (1 << D) || resize!(g5, 1 << D)
-    fill!(g5, Int16(0))
-    @inbounds for c in C; g5[c+1] = Int16(1); end
-    fwht!(g5)
     g0 = Int(g5[1])
-    hg = _v5_flat_histogram(g5, work.flat_histogram)
-    key = hist_key(Dict(vcat([(Int(k), v) for (k, v) in hc], [(100_000_000 + Int(k), v) for (k, v) in hg])))
     Ss = Set{Vector{UInt32}}()
     should_skip(key) &&
         return finish((; Ss, nX, nX_used = 0, next_x=start_x, du_reject = 0, ncand = 0, nT = 0, key, capped = false, skipped = true))
@@ -929,7 +977,7 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
     pts = work.pts
     Cx = UInt32[]; Tseen = Set{NTuple{3,UInt32}}()
     srows = UInt32[]; spiv = Int[]; sK = UInt32[]
-    nX_used = 0
+    nX_used = 0;output_spaces = 0
     for (xi, x) in enumerate(X)
         should_stop() && break
         nX_used += 1
@@ -994,10 +1042,13 @@ function v5_extensions(G::Geometry, V5::AbstractVector{UInt32}, need::Int, work:
                 end
                 tk = sort3(min(t, t ⊻ x), min(v, v ⊻ x), min(t ⊻ v, t ⊻ v ⊻ x))
                 tk in Tseen && continue
+                output_spaces<max_output_spaces ||
+                    throw(V5OutputLimit(max_output_spaces,indices[xi],output_spaces))
                 push!(Tseen, tk)
                 S = rref(vcat(R, lifted[xi], lift(t, Qmask), lift(v, Qmask)))[1]
                 length(S) == G.n || error("dimension of S")
                 push!(Ss, S)
+                output_spaces+=1
                 if coset_observer!==nothing
                     coset_Ss===nothing && (coset_Ss=Set{Vector{UInt32}}())
                     push!(coset_Ss,S)

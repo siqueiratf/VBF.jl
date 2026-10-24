@@ -52,17 +52,31 @@ mutable struct ClosureWorkContext
     guard::ReentrantLock
     rank_table::Any
     property_cache::DiscoveryEvidence.PropertyCache
+    v5_plan::Any
+    record_limit::Int
 end
 ClosureWorkContext(;rank_table=nothing,property_cache_entries=64,
-    property_cache::Union{Nothing,DiscoveryEvidence.PropertyCache}=nothing)=
+    property_cache::Union{Nothing,DiscoveryEvidence.PropertyCache}=nothing,v5_plan=nothing,record_limit::Int=typemax(Int))=
     ClosureWorkContext(nothing,nothing,ReentrantLock(),rank_table,
-        property_cache===nothing ? DiscoveryEvidence.PropertyCache(;max_entries=property_cache_entries) : property_cache)
+        property_cache===nothing ? DiscoveryEvidence.PropertyCache(;max_entries=property_cache_entries) : property_cache,v5_plan,record_limit)
+ClosureWorkContext(geometry,work,guard::ReentrantLock,rank_table,cache::DiscoveryEvidence.PropertyCache,v5_plan)=
+    ClosureWorkContext(geometry,work,guard,rank_table,cache,v5_plan,typemax(Int))
+ClosureWorkContext(geometry,work,guard::ReentrantLock,rank_table,cache::DiscoveryEvidence.PropertyCache)=
+    ClosureWorkContext(geometry,work,guard,rank_table,cache,nothing)
 ClosureWorkContext(geometry,work)=ClosureWorkContext(geometry,work,ReentrantLock(),nothing,DiscoveryEvidence.PropertyCache())
 ClosureWorkContext(geometry,work,guard::ReentrantLock)=ClosureWorkContext(geometry,work,guard,nothing,DiscoveryEvidence.PropertyCache())
 ClosureWorkContext(geometry,work,guard::ReentrantLock,rank_table)=ClosureWorkContext(geometry,work,guard,rank_table,DiscoveryEvidence.PropertyCache())
 
 const CLOSURE_WORK_SCHEMA="vbfsearch-closure-work-v1"
 const CLOSURE_RESULT_SCHEMA="vbfsearch-closure-result-v1"
+
+"""A worker resource stop retaining completed evidence without certifying its suffix."""
+struct _ClosureWorkCapacity <: Exception
+    kind::Symbol
+    limit::Int
+    retained::Any
+end
+Base.showerror(io::IO,error::_ClosureWorkCapacity)=print(io,"closure worker ",error.kind," capacity exhausted (",error.limit,")")
 
 function _closure_packet_digest(packet)
     body=Dict{String,Any}(String(k)=>v for (k,v) in packet if String(k)!="packet_sha256")
@@ -106,7 +120,11 @@ function _closure_context_geometry!(context)
     context.geometry
 end
 function _closure_context_work!(context)
-    context.work===nothing && (context.work=Fourier.V5Work(23))
+    if context.work===nothing
+        context.work=Fourier.V5Work(context.v5_plan===nothing ? 23 : 0)
+    elseif context.v5_plan===nothing && length(context.work.cnt)<(1<<23)
+        context.work=Fourier.V5Work(23)
+    end
     context.work
 end
 
@@ -135,6 +153,9 @@ function _closure_compute_v5(packet,F,context,stop_requested)
         local_records=nothing
         spaces=isempty(event.Ss) ? () : sort!(collect(event.Ss);by=v->Tuple(v))
         for S in spaces
+            produced=length(records)+(local_records===nothing ? 0 : length(local_records))
+            produced<context.record_limit || throw(_ClosureWorkCapacity(:records,context.record_limit,
+                (;packet,chunks,records,partial_records=local_records,coset=event.index)))
             # Retain every coset edge while avoiding repeated APN verification
             # of the identical canonical output space within this packet.
             p=get!(checked,Tuple(S)) do
@@ -154,9 +175,16 @@ function _closure_compute_v5(packet,F,context,stop_requested)
         push!(chunks,chunk)
         append!(records,chunk["records"])
     end
-    result=Fourier.v5_extensions(G,UInt32.(payload["forms"]),Int(payload["need"]),work;
-        beta=Fourier.BETA8,max_kernel=23,max_x=Int(get(packet,"extension_cosets",1)),start_x=first_x,
-        should_stop=stop_requested,coset_observer=observe,du7_filter=:bitsets,rank_table=context.rank_table)
+    result=try
+        Fourier.v5_extensions(G,UInt32.(payload["forms"]),Int(payload["need"]),work;
+            beta=Fourier.BETA8,max_kernel=23,max_x=Int(get(packet,"extension_cosets",1)),start_x=first_x,
+            should_stop=stop_requested,coset_observer=observe,du7_filter=:bitsets,rank_table=context.rank_table,
+            plan=context.v5_plan,max_output_spaces=context.record_limit)
+    catch error
+        error isa Fourier.V5OutputLimit || rethrow()
+        throw(_ClosureWorkCapacity(:output_spaces,error.limit,
+            (;packet,chunks,records,coset=error.coset_index,output_spaces=error.output_spaces)))
+    end
     result.skipped && error("unexpected heuristic skip")
     length(chunks)==result.nX_used || error("extension callback lost a complete coset")
     proof=Dict{String,Any}("first_x"=>first_x,"next_x"=>result.next_x,"total_x"=>result.nX,
