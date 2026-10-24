@@ -119,6 +119,42 @@ end
     @test haskey(record["properties"],"transport_only_test")
 end
 
+@testset "Queued V5 completions retain compact evidence and original packet bindings" begin
+    state=R.initialize(fixture(),config())
+    prepare_item=R.Item(id=1,kind=:math,parent=1,job=1)
+    prepared=R.prepare_item(state,prepare_item,1,1)
+    value=R.compute_item(state,prepared,1,()->false)
+    R.apply_item!(state,prepared,value,0.0,(;ticket=1,slot=1,ready_wait_seconds=0.0))
+    plan_item=R.dequeue!(state.planning)
+    @test R.reserve_plan!(state,plan_item)
+    planned=R.prepare_item(state,plan_item,2,1)
+    plan=R.compute_item(state,planned,1,()->false)
+    R.apply_item!(state,planned,plan,0.0,(;ticket=2,slot=1,ready_wait_seconds=0.0))
+    range=R.range_item!(state)
+    queued=R.prepare_item(state,range,3,1)
+    completion=R.compute_item(state,queued,1,()->false)
+    result=completion.result;work=result["work"]
+    @test !haskey(work,"chunks")
+    @test work["property_format"]==S.COMPACT_RECORD_PROPERTIES_FORMAT
+    @test !isempty(work["records"])
+    @test all(record["properties"] isa Dict{String,Any} for record in work["records"])
+    @test all(record["cursor"]==string(record["witness"]["eligible_coset_index"]) &&
+        record["witness"]["V5_forms"]==queued.packet["payload"]["forms"] for record in work["records"])
+    @test result["schema"]==VBFSearch.CLOSURE_RESULT_SCHEMA
+    @test result["job_id"]==queued.packet["job_id"]
+    @test result["packet"]==queued.packet
+    @test result["packet_sha256"]==VBFSearch._closure_packet_digest(queued.packet)
+    restored=R.decode_frame(completion.frame)
+    @test restored.packet==queued.packet && restored.work==work
+    chunks=VBFSearch._closure_unpack_chunks(Dict(String(key)=>value for (key,value) in pairs(work["ledger"])))
+    @test length(chunks)==work["processed_cosets"]==4096
+    @test first(chunks)["first_x"]==work["proof"]["first_x"]
+    @test last(chunks)["next_x"]==work["proof"]["next_x"]
+    R.drain_frames!(state)
+    @test only(state.frame_applied[2:end])==0
+    R.cleanup_work!(state)
+end
+
 """Canonicalize scientific rows independently of task/plan completion order."""
 function science(result)
     state=result.state

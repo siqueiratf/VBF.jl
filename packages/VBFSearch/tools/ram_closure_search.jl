@@ -46,10 +46,9 @@ function encode_payload(packet,kind,work,limit)
     frame
 end
 
-"""Encode one validated worker result without duplicating V5's per-coset ledger."""
-function encode_frame(packet,result,limit)
-    work=result["work"]
-    retained=if packet["kind"]=="v5" && !get(work,"noop",false)
+"""Retain validated evidence without V5's duplicate chunks or derived properties."""
+function retained_work(packet,work)
+    if packet["kind"]=="v5" && !get(work,"noop",false)
         compact=Dict{String,Any}(k=>work[k] for k in ("proof","processed_cosets","ledger",
             "commit_chunk","blocked","done","evaluations","apn_luts_checked"))
         compact["records"]=[compact_record(record) for record in work["records"]]
@@ -63,8 +62,10 @@ function encode_frame(packet,result,limit)
     else
         work
     end
-    encode_payload(packet,packet["kind"],retained,limit)
 end
+
+"""Encode the same compact work object that is safe to queue for ordered commit."""
+encode_frame(packet,result,limit)=encode_payload(packet,packet["kind"],retained_work(packet,result["work"]),limit)
 
 """Compact validated property transport while preserving every construction field."""
 function compact_record(record)
@@ -560,7 +561,10 @@ function compute_item(s,prepared,slot,stopped)
                 context.v5_plan=nothing
             end
             get(result["work"],"noop",false) || prepared.packet["kind"]!="v5" || validate_v5(prepared.packet,result["work"])
-            frame=encode_frame(prepared.packet,result,Int(get(s.config,"max_frame_bytes",128*1024^2)))
+            # Validate the original native chunks first, then let completed
+            # queue entries retain only the evidence also stored in the frame.
+            result["work"]=retained_work(prepared.packet,result["work"])
+            frame=encode_payload(prepared.packet,prepared.packet["kind"],result["work"],Int(get(s.config,"max_frame_bytes",128*1024^2)))
             journal_frame!(s,item,frame)
             return (;result,frame)
         end
