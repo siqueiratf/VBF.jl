@@ -19,6 +19,7 @@ const _CLOSURE_UPGRADE_PATHS=Set([
 const _CLOSURE_PERFORMANCE_PATHS=union(_CLOSURE_UPGRADE_PATHS,Set([
     "packages/VBF/src/constructions/quadratic_extension_du7.jl",
     "packages/VBF/src/constructions/quadratic_extensions.jl",
+    "packages/VBF/src/constructions/quadratic_v5_plan.jl",
     "packages/VBF/src/invariants/classification_keys.jl",
     "packages/VBF/src/spectra/linear.jl",
     "packages/VBF/src/spectra/differential.jl",
