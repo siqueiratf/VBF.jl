@@ -1,0 +1,185 @@
+RAM ARENA INVESTIGATION - 2026-10-24
+
+This is a bounded experimental model, separate from bin/vbfsearch. The
+production command still uses SQLite. The toy uses RAM for intermediate
+candidate, edge, work-result and proof state; its mathematical path calls no
+SQLite API. A separate comparator uses SQLite only as the reference backend.
+
+DESIGN
+
+One compact persistent record belongs to each distinct candidate APN LUT.
+Repeated observations reuse that record and retain their separate paths.
+Slots are claimed as discoveries arrive. Neither candidate storage nor
+class storage requires predicting the final number of equivalence classes.
+
+The toy uses fixed-capacity typed slabs rather than unsafe wrappers around
+one byte vector. Logical records have disjoint mutable storage. Large
+mathematical scratch belongs to exclusive active work slots. Geometry and
+other prepared read-only tables can be shared after initialization.
+
+  candidate identity --> digest-sharded index --> canonical candidate slot
+                                                   |
+  immutable work ranges --> workers/private scratch --> result/edge slots
+                                                   |
+                          full original proofs retained in result buffers
+
+Future EA admission needs a separate signature-sharded owner. It can admit
+different signatures concurrently, using version checks for stale negative
+EA snapshots. Exact digest/LUT collision checks, verified positive witnesses,
+solver-bound exhaustive negatives and inconclusive outcomes must retain
+their current meaning. Queues, slot allocation and publication still need
+short synchronization; preallocation does not replace those protocols.
+
+MEASURED TOY RESULTS
+
+Official Julia 1.13.0; eight compute threads, GC 2,0; three warmed trials per
+case, medians below. Inputs/setup/verification and parity checks are outside
+the timings. Managed allocations and GC inside each timed body are included.
+No other test or benchmark ran concurrently with these measurements.
+
+Compact ingest: 131,072 observations of 4,096 actual verified APN LUTs from
+the Trillium pilot, with 4,091 distinct signatures. Every observation appends
+the same synthetic edge descriptor in both backends. The reference SQLite
+database is entirely in RAM, uses prepared statements and one transaction.
+Both backends retain the same compact candidate and edge fields, including
+the exact-LUT collision guard. Full EA/proof/durability semantics are outside
+BOTH storage timings. Canonical candidate and edge hashes match exactly.
+
+  Backend                    Median seconds     Managed allocation
+  SQLite in RAM                    0.6138           459,577,744 B
+  RAM arena, one worker            0.01395                  816 B
+  RAM arena, eight workers         0.00694                3,936 B
+
+The remaining arena allocations are task/setup overhead. Separate warmed
+microtests allocate zero bytes for new/duplicate insertion, path append and
+slot claim. This is a storage primitive result, not an overall campaign
+speedup. Sub-100ms process-CPU averages have coarse timer resolution; use
+wall-time throughput for this compact comparison.
+
+Actual mathematics: four output-translated LUTs of one sparse parent,
+therefore four EA-equivalent inputs. All maximizing V5 spaces are processed
+over 58,864 cosets, along with all 1,020 switching directions. The same 68
+disjoint packets run in both cases. All original mathematical work/proof
+objects and canonical candidate/path rows match exactly. Coverage checks
+independently verify the complete union without gaps or overlaps.
+
+  Workers             Median seconds        Mean busy CPU cores
+  One                       8.169                    1.00
+  Eight                     1.330                    6.94
+
+This is about 6.1x scaling for the same split mathematical workload. It does
+not compare a full production campaign with the current command, nor test
+184-worker scaling. The toy retains 16 candidate LUTs and 104 edges in this
+workload. Full managed result graphs occupy about 12.3 MiB. Mathematical
+execution still allocates about 162-163 MiB across all packets; it is not
+fully preallocated or GC-free.
+
+An initial closure-based insertion allocated about 295 bytes/observation.
+Profiling found captured/boxed state. Explicit lock/try/finally and exact
+byte comparisons removed those per-record allocations while preserving
+locking, collision guards and publication order.
+
+MEMORY ON THE PROPOSED 768 GB NODE
+
+Measured n=8 sample sizes, excluding process/runtime overhead:
+
+  Candidate LUT                            256 B
+  Current property dictionary, one sample  3,294 B
+  Maximizer preparation, one sample        1,122 B
+  Shared geometry                        307,684 B
+  Shared component-kernel cache         3,109,512 B
+  Shared packed rank table             67,108,864 B
+  Retained V5 scratch per active slot   51,906,560 B
+
+184 current V5 scratch slots plus one rank table need about 8.96 GiB.
+Retained DU7 caches can add 1.44 GiB. Temporary arrays, EA, runtime and proof
+storage require additional measured headroom; these are not peak bounds.
+
+Copying the current 49.5 MiB scratch for every historical candidate would
+cost about 47.2 TiB for a million candidates. Large scratch should therefore
+scale with active work. One million illustrative 4 KiB persistent records
+need 3.815 GiB. Four KiB is not a bound for all preparation, paths or proofs.
+For comparison, 100 GB / 1 MB is about 100,000 records, before other pools.
+
+Candidate records, indexes, active plans, work ranges and variable evidence
+need independent byte budgets. Leave room to drain already dispatched work
+when a pool fills. A 32G heap hint from the existing command should not be
+carried unchanged into a Julia process retaining 100+ GB of arena arrays.
+Keep GC enabled and size the hint together with measured total live memory.
+
+A LARGER MATHEMATICAL PRECOMPUTATION OPPORTUNITY
+
+Current V5 packets repeat large preparation for each coset slice. The 32 MiB
+cnt transform depends on the canonical V5 space, geometry and beta; after
+eligible cosets are produced it is unused in the per-coset loop. The 16 MiB
+g5 transform, constraints and eligible-domain data are read-only in that loop.
+
+A future API can prepare an immutable V5 plan once, then process disjoint
+ranges using smaller private scratch. Active APN records reference these
+plans. For example, 512 cached g5 arrays alone occupy 8 GiB; other plan data
+adds variable memory. Cache by bytes and active leases, recycling plans once
+their work completes, rather than retaining every historical plan.
+
+The candidate L/Lv lists, bitmap and DU7 domain currently depend on a
+threshold derived from the selected coset range. They cannot simply be
+shared unchanged across arbitrary ranges. First cache the invariant layers;
+a conservative full-domain candidate plan needs further proof/parity tests.
+This optimization is identified by code inspection, not implemented or timed.
+
+OWNERSHIP AND SCIENTIFIC CHECKS
+
+The standalone tests exercise:
+- Exact duplicate contention and independent record/path writes.
+- Fixed capacity, including duplicate lookup after the pool is full.
+- Shared read-only geometry with private mutable worker caches and scratch.
+- Rejection of overlapping work ranges, including canonical V5 spaces.
+- Rejection of underlying array aliases through different scratch wrappers.
+- Existing VBFSearch APN/property checks and original V5 coverage validation.
+- Exact sequential/parallel mathematical work and proof parity.
+- Joined-worker failures retaining full original result/proof buffers.
+- A real emitting V5 coset whose edge pool fills without losing its witness.
+
+All 74 checks passed on Julia 1.13.0 with two threads and bounds checks on.
+
+Each run_packets! call owns its result buffers. Use a fresh arena for each
+invocation: compact edge packet references are run-local in this prototype.
+Raw snapshots are taken after workers join. Read-only arrays are immutable
+by ownership discipline; an immutable Julia wrapper alone does not enforce
+that its referenced arrays cannot change. Packed bit writes must own whole
+storage words; independent bits may share one writable word.
+
+WHAT REMAINS BEFORE REPLACING THE PRODUCTION BACKEND
+
+Implement and validate signature/EA admission, the recursive frontier,
+dependency completion and ordering, complete bounded evidence storage,
+clean capacity-stop/drain behavior, and final catalog/result publication.
+Changing admission order can change representative LUTs and the bounded
+recursive trajectory. Preserve logical discovery order for exact replay,
+or explicitly record and validate the new scheduling policy.
+
+The toy is one Julia process with threads. Multiple processes need bits-only
+shared mappings and offset handles, or explicit owner-to-owner messages.
+Ordinary Julia object graphs and ReentrantLocks are not process-shared state.
+NUMA placement and first-touch behavior need measurement on the actual node.
+
+REPRODUCTION
+
+From a repository with its Julia dependencies already installed:
+
+  julia --startup-file=no --project=. --threads=8,0 --gcthreads=2,0 \
+    packages/VBFSearch/test/arena_toy.jl
+
+The comparator accepts a JSON configuration, with optional fixture/root_hex,
+concurrency, repeats, storage_trials, math_trials and required output fields:
+
+  julia --startup-file=no --project=. --threads=8,0 --gcthreads=2,0 \
+    packages/VBFSearch/tools/analysis/arena_toy_benchmark.jl CONFIG.json
+
+Actual measurements/configurations/source hashes and read-only fixture pins:
+  data/research/analyses/arena-toy-20261024/
+  data/research/analyses/arena-memory-20261024/
+  data/research/analyses/arena-coordination-20261024/
+
+Julia documentation for the ownership/process constraints:
+  https://docs.julialang.org/en/v1/manual/multi-threading/
+  https://docs.julialang.org/en/v1/stdlib/SharedArrays/

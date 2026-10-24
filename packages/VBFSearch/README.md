@@ -57,6 +57,11 @@ return to the ordinary EA queue. The reservation horizon counts constituent jobs
 so batching does not enlarge the result buffer. Scheduler ticket counts describe
 tasks; `dispatched_jobs` and `applied_jobs` count their constituent jobs.
 
+An isolated [RAM arena experiment](ARENA.txt) tests fixed candidate/edge pools
+and several workers processing disjoint construction ranges without intermediate
+SQLite calls. It includes measured memory sizing and parity checks. The current
+`bin/vbfsearch` command continues to use its SQLite campaign backend.
+
 ## Search, stop and resume
 
 Instantiate the root Julia >=1.12 project and prepare
