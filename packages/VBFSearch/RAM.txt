@@ -99,9 +99,28 @@ trials, not a statistical speedup estimate. Walsh allocations fell from 13,204
 to 688 in this prefix; 12,516 leases reused a buffer. Retained evidence was
 127,409,712 bytes. Scratch cleanup reduced RSS to 2.43 GiB before export.
 
-Full 24,294-root validation is still in progress. Do not infer full campaign
-performance, Trillium utilization, or a safe cluster memory budget from a toy
-or a short prefix. Machine-readable receipts and resource configurations live
+The user stopped the larger run after 3,767 roots. The search body took
+2,081.16 seconds (34m41s), averaging 1.81 settled roots/second and 23.56 busy
+CPU cores on this 16-core/32-logical-CPU host. Peak observed RSS was 7.74 GiB;
+host MemAvailable stayed above 20.12 GiB. There were no unresolved EA outcomes.
+The job exited cleanly, and final export took 53.86 seconds. Its single SQLite
+is full-initial-24294-r2.sqlite under the analysis directory below, explicitly
+marked paused_external. It contains 251,600 candidate LUTs, 241,136 admitted
+classes (including the complete published registry), and 427,504 paths.
+
+Conclusions: the paired 512-root trial establishes roughly 15% lower elapsed
+time locally with exact current-worker scientific parity. The wider-queue
+variant took 327.04 seconds, close to the earlier 324.54-second trial, and
+also passed strict proof/counter parity. The larger stopped run demonstrates
+sustained operation and bounded memory, not a paired 3,767-root speedup.
+The RAM approach is a better candidate for scaling because intermediate SQL
+updates and duplicate queued object graphs have left the search hot path.
+Scaling to a complete Trillium CPU node remains unmeasured.
+
+Full 24,294-root reproduction and its historical parity audit were not finished;
+the original full-run goal is paused at the user's request. Do not infer full
+campaign performance or Trillium utilization from these samples.
+Machine-readable receipts and resource configurations live
 under data/research/analyses/ram-seed-campaign-20261024/ and
 data/research/analyses/full-seed-baseline-20261024/.
 The previously packed r3 offline bundle predates this experimental backend.
