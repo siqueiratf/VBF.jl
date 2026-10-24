@@ -13,6 +13,18 @@ Independent root partitions can reach overlapping descendant EA classes.
 function closure_init(campaign; output=joinpath(dirname(abspath(campaign)),"run"),
     root_first=1,root_last=0,root_order=:forward,execution_backend=:serial,extension_cosets=1,switching_directions=1,compact_storage=true)
     compact_storage isa Bool || throw(ArgumentError("compact_storage must be boolean"))
+    prepared=closure_seed_inputs(campaign;root_first,root_last,root_order,execution_backend,
+        extension_cosets,switching_directions)
+    _closure_initialize(output,prepared.identity,prepared.roots;normalized=compact_storage)
+end
+
+"""Verify the complete published-root audit and select inputs without creating a store.
+
+Both RAM and SQLite search backends consume this same identity and root order.
+Input verification performs no construction search or database access.
+"""
+function closure_seed_inputs(campaign;root_first=1,root_last=0,root_order=:forward,
+    execution_backend=:serial,extension_cosets=1,switching_directions=1)
     path=abspath(campaign);plan=TOML.parsefile(path);base=dirname(path)
     startswith(plan["schema"],"vbfsearch-literature-closure-plan-") || error("unsupported campaign plan")
     rootspec=plan["roots"];methods=plan["methods"]
@@ -77,7 +89,7 @@ function closure_init(campaign; output=joinpath(dirname(abspath(campaign)),"run"
     identity=Dict{String,Any}("schema"=>CLOSURE_SCHEMA,"campaign"=>path,"campaign_sha256"=>inputs[path],
         "roots_sha256"=>digest,"initial_roots"=>length(assigned),"qualified_roots"=>expected,"qualification_complete"=>true,
         "inputs"=>inputs,"implementation"=>implementation_fingerprint(),"julia"=>string(VERSION),"scientific"=>scientific)
-    _closure_initialize(output,identity,assigned;normalized=compact_storage)
+    (;identity,roots=assigned)
 end
 
 function _closure_initialize(directory, identity, roots;normalized=false)

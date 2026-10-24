@@ -1,8 +1,9 @@
 RAM ARENA INVESTIGATION - 2026-10-24
 
-This is a bounded experimental model, separate from bin/vbfsearch. The
-production command still uses SQLite. The toy uses RAM for intermediate
-candidate, edge, work-result and proof state; its mathematical path calls no
+This records the original bounded toy, separate from bin/vbfsearch. The
+command now also has an experimental RAM backend; see RAM.txt for its
+implementation and full-seed validation status. The toy keeps candidate,
+edge, work-result and proof state in RAM; its mathematical path calls no
 SQLite API. A separate comparator uses SQLite only as the reference backend.
 
 DESIGN
@@ -124,7 +125,9 @@ The candidate L/Lv lists, bitmap and DU7 domain currently depend on a
 threshold derived from the selected coset range. They cannot simply be
 shared unchanged across arbitrary ranges. First cache the invariant layers;
 a conservative full-domain candidate plan needs further proof/parity tests.
-This optimization is identified by code inspection, not implemented or timed.
+This was identified by code inspection in the toy. The subsequent V5Plan
+implementation caches the invariant layers; see RAM.txt and the exact parity
+tests in test/immutable_v5_plan.jl. Range-dependent data stays private.
 
 OWNERSHIP AND SCIENTIFIC CHECKS
 
@@ -148,11 +151,11 @@ by ownership discipline; an immutable Julia wrapper alone does not enforce
 that its referenced arrays cannot change. Packed bit writes must own whole
 storage words; independent bits may share one writable word.
 
-WHAT REMAINS BEFORE REPLACING THE PRODUCTION BACKEND
+FOLLOW-UP IMPLEMENTATION
 
-Implement and validate signature/EA admission, the recursive frontier,
-dependency completion and ordering, complete bounded evidence storage,
-clean capacity-stop/drain behavior, and final catalog/result publication.
+The experimental RAM backend implements signature/EA admission, the recursive
+frontier, dependency completion, bounded compressed evidence, capacity stops
+and final result publication. RAM.txt records its validation and limitations.
 Changing admission order can change representative LUTs and the bounded
 recursive trajectory. Preserve logical discovery order for exact replay,
 or explicitly record and validate the new scheduling policy.

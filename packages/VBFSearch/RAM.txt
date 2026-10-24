@@ -1,0 +1,125 @@
+EXPERIMENTAL RAM SEARCH - 2026-10-24
+
+Use --backend=ram with bin/vbfsearch. SQLite remains the default backend.
+The RAM backend performs no intermediate SQLite computation. After workers
+join, it streams one final SQLite database with inputs, code and provenance.
+It intentionally has no resume or crash recovery.
+
+PIPELINE AND OWNERSHIP
+
+An observation first claims or finds one compact candidate LUT slot. A
+signature-owned EA bucket then admits a representative or requests an exact
+comparison on the worker pool. Equal signatures alone never merge classes.
+Positive witnesses are replayed. Exhaustive negatives retain their solver
+binding; stale snapshots are rechecked. Inconclusive results remain unresolved.
+Only admitted class representatives enter recursive expansion.
+
+Candidate and class columns have independent fixed capacities. Mathematical
+scratch belongs to active workers, rather than every candidate. V5Plan owns
+range-invariant transforms and constraints. Its arrays are read-only by
+ownership discipline; each consumer uses independent mutable scratch.
+Plans are cached by bytes and released after every range completes. Geometry
+and the packed polar-rank table are shared. Plan builders reuse private count
+buffers. The number of builders follows available plan bytes and worker count.
+The bounded Walsh pool reuses a transform only after its last reader finishes.
+Idle buffers remain charged; reservation can evict spare idle buffers. Fresh
+buffers are first touched by the builder worker. Joined shutdown releases
+mathematical scratch before export. Large hosts need a larger plan budget too:
+the default 512 MiB permits eight 64 MiB reservations, even with a large -j.
+
+Candidate-dependent range thresholds and DU7 buffers remain private. The
+unchanged exact bitset pruning can avoid linear systems examined by older
+historical code; that changes operation counters, not mathematical coverage.
+
+This is one threaded Julia process. Candidate index and signature owners
+have short locks. The coordinator commits in deterministic reservation order.
+This implementation does not claim lock-free execution, a completely
+preallocated heap, multiple independent coordinators, or multi-process shared
+Julia object graphs. Workers still allocate temporary results and proof data.
+
+BOUNDS AND STOPPING
+
+--memory-limit=8G sets the cooperative process RSS threshold. It is not a hard
+OS limit. --plan-cache-size=1G bounds active plans independently. Candidate,
+class, comparison and compressed-evidence pools have separate capacities.
+Workers cap retained output spaces and records before a single emitting coset
+can grow without bound. Completed workers journal their compressed evidence
+before returning; a joined application failure retains unapplied evidence.
+
+Limits stop new scheduling and drain workers before final export. Leave RAM
+for in-flight results, runtime overhead, GC and SQLite export. GC stays enabled.
+A hard process kill can lose the RAM campaign. A clean partial result records
+its stop state and incomplete coverage; it is not a completed search.
+
+The local benchmark has a separate process-group supervisor. It watches child
+RSS and host MemAvailable, requests a cooperative stop, and terminates only
+its own child process group if the hard threshold or drain deadline is crossed.
+That supervisor is a benchmark guard, not part of the public command.
+
+REPRESENTATIVE BENCHMARK
+
+The target is expansion and EA settlement of all 24,294 audited published
+roots, with full V5 and complete switching evidence. All roots are admitted
+before prefix comparisons, so a small prefix uses the full comparison registry.
+Descendant classes are retained but not recursively expanded in this benchmark.
+
+The read-only historical reference is run-cpu-optimized-20261020/closure.sqlite
+under data/search/literature-b52-closure-20261014/. Its initial-root scope has
+619,846 completed V5 jobs, 1,336,872,456 completed cosets, 2,710,792 paths and
+1,439,788 distinct output LUTs. Later recursive work in that database is
+excluded. Input digests are checked against the current audited campaign.
+
+The first four roots pass comparison of candidate properties, EA partitions,
+all paths and full witnesses, switching kernels and per-coset mathematical
+coverage. Coverage comparison verifies the original compressed envelopes and
+checksums before normalizing physical job IDs and block boundaries. The older
+initial worker did not use the current exact DU7 bitset filter; the comparator
+reports linear_system_candidates differences separately and requires all other
+proof fields to agree. Strict historical proof-byte parity is not claimed.
+
+The final implementation also passes a matched 512-root comparison against a
+fresh current SQLite run. All 54,375 candidates, 53,650 EA classes, 57,011 full
+path witnesses, 130,560 switching kernels, two switching evaluations and
+28,151,270 complete coset proofs agree. All operation counters agree too.
+This comparison uses four disjoint root shards, checks the full candidate/EA
+partition in every shard, and verifies an exact complete root union at merge.
+Per-shard digests are retained; their summary is not a sequential stream digest.
+
+One matched local trial, Julia 1.13.0, 24 compute threads and GC 2,0:
+
+  Backend                     End-to-end seconds       Peak observed RSS
+  Current SQLite                       382.26                 3.35 GiB
+  RAM, final pooled implementation     324.54                 5.17 GiB
+
+The RAM search body took 302.64 seconds, averaged 18.55 busy CPU cores and
+spent 20.47 seconds in GC. Final database export took 9.25 seconds. Timings
+include managed allocations; end-to-end also includes startup and publication.
+No other test or benchmark ran during either timed search. These are single
+trials, not a statistical speedup estimate. Walsh allocations fell from 13,204
+to 688 in this prefix; 12,516 leases reused a buffer. Retained evidence was
+127,409,712 bytes. Scratch cleanup reduced RSS to 2.43 GiB before export.
+
+Full 24,294-root validation is still in progress. Do not infer full campaign
+performance, Trillium utilization, or a safe cluster memory budget from a toy
+or a short prefix. Machine-readable receipts and resource configurations live
+under data/research/analyses/ram-seed-campaign-20261024/ and
+data/research/analyses/full-seed-baseline-20261024/.
+The previously packed r3 offline bundle predates this experimental backend.
+
+REPRODUCTION TOOLS
+
+tools/analysis/ram_seed_prepare.jl prepares the public command from a TOML
+arguments array and explicit internal benchmark overrides. Prefix benchmarks
+use root_limit to expand a prefix while retaining all selected published roots.
+
+tools/analysis/ram_seed_supervise.py launches that worker with local resource
+guards. tools/analysis/ram_seed_compare.jl compares final RAM SQLite output
+against the reference using read-only SQLite handles and bounded proof streams.
+Use --root-shard=I/N for independent bounded comparison processes, then check
+their union with tools/analysis/ram_seed_compare_merge.jl. The merger rejects
+missing, repeated, overlapping or differently sourced receipts.
+These helpers require the repository's prepared Julia environment and inputs.
+
+Tests are test/immutable_v5_plan.jl, test/ram_closure_store.jl,
+test/ram_closure_search.jl and test/ram_closure_output.jl. They are included
+in the package test runner.

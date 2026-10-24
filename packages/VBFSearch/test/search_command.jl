@@ -140,6 +140,7 @@ end
         @test launch.config["human_progress"]===true
         @test launch.config["window_size"]==100 && !launch.config["rolling_windows"]
         @test launch.config["classification_batch_size"]==1 && launch.config["classification_slots"]==0
+        @test launch.config["backend"]=="sqlite" && !launch.config["initial_only"]
         @test launch.config["report_interval_seconds"]==15.0
         @test !ispath(output)
         text=IOBuffer()
@@ -148,13 +149,39 @@ end
         @test !ispath(output)
         for extra in (["--start=0"],["--start=2"],["--end=2"],["--time=0"],["--heap=0G"],
                 ["--window-size=0"],["--window-size=no"],["--progress-interval=0"],["--progress-interval=Inf"],
-                ["--classification-batch-size=0"],["--classification-slots=2"],["--classification-slots=-1"],["--classification-slots=no"])
+                ["--classification-batch-size=0"],["--classification-slots=2"],["--classification-slots=-1"],["--classification-slots=no"],
+                ["--backend=unknown"],["--memory-limit=0"],["--memory-limit=999999999999999999999G"])
             stripped=filter(x->!startswith(x,first(split(first(extra),'='))*"="),args)
             @test_throws ArgumentError C.plan(C.options([stripped;extra]);env=Dict{String,String}())
         end
         rm(joinpath(directory,"EA_certificates.tsv"))
         @test_throws ArgumentError C.plan(parsed;env=Dict{String,String}())
         @test !ispath(output)
+    end
+end
+
+@testset "RAM backend limits and initial-only scope reach the public worker" begin
+    mktempdir() do directory
+        campaign=campaign_fixture(directory)
+        args=["--recursive-closure","--campaign",campaign,"--output",joinpath(directory,"ram.sqlite"),
+            "--backend=ram","--initial-seeds-only","-j1","--memory-limit=2G","--plan-cache-size=128M"]
+        launch=C.plan(C.options(args);env=Dict{String,String}())
+        @test launch.config["backend"]=="ram" && launch.config["initial_only"]
+        @test launch.config["rss_limit_bytes"]==2*1024^3
+        @test launch.config["plan_bytes"]==128*1024^2
+        @test launch.config["root_first"]==launch.config["root_last"]==1
+        @test launch.config["plan_builders"]==1
+        parallel=C.plan(C.options(filter(!=("-j1"),[args;"-j24"]));env=Dict{String,String}(),cpu_threads=32)
+        @test C.byte_size(parallel.heap,"heap")<=3*(parallel.config["rss_limit_bytes"]÷4)
+        @test C.byte_size("512M","size")==512*1024^2
+        for value in ("0","-1G","3.5G","nothing")
+            @test_throws ArgumentError C.byte_size(value,"size")
+        end
+        @test_throws ArgumentError C.plan(C.options([args;"--heap=0G"]);env=Dict{String,String}())
+        @test_throws ArgumentError C.plan(C.options([args;"--rolling-windows"]);env=Dict{String,String}())
+        sqlite=filter(x->!startswith(x,"--backend=") && !startswith(x,"--memory-limit=") && !startswith(x,"--plan-cache-size="),args)
+        selected=C.plan(C.options(sqlite);env=Dict{String,String}())
+        @test selected.config["backend"]=="sqlite" && selected.config["max_windows"]==1
     end
 end
 

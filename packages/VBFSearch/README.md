@@ -45,6 +45,7 @@ next window can supply work before the current one drains. It is opt-in and
 does not remove the serial admission coordinator. `--progress-interval=10s`
 changes progress publication frequency. These settings apply when launching a
 new run; they do not reconfigure an already running process.
+Rolling windows apply to the SQLite backend; RAM uses bounded cohorts.
 
 `--classification-batch-size=256` groups cheap classifications into worker tasks,
 including packet preparation and property validation. They share the compute
@@ -57,10 +58,26 @@ return to the ordinary EA queue. The reservation horizon counts constituent jobs
 so batching does not enlarge the result buffer. Scheduler ticket counts describe
 tasks; `dispatched_jobs` and `applied_jobs` count their constituent jobs.
 
-An isolated [RAM arena experiment](ARENA.txt) tests fixed candidate/edge pools
-and several workers processing disjoint construction ranges without intermediate
-SQLite calls. It includes measured memory sizing and parity checks. The current
-`bin/vbfsearch` command continues to use its SQLite campaign backend.
+The experimental RAM backend separates compact candidate LUT records from EA
+classes and active mathematical scratch. Immutable V5 plans are prepared once
+per active space and shared across disjoint worker ranges. Workers and admission
+use RAM; SQLite is written after they join. Select it explicitly:
+
+```sh
+bin/vbfsearch --recursive-closure --backend=ram --initial-seeds-only -j \
+  --start=1 --end=24294 --time=5m --memory-limit=8G --plan-cache-size=1G \
+  --output=ram-results.sqlite
+```
+
+`--initial-seeds-only` completes selected published roots without expanding
+discovered classes. Omitting it enables recursive representative expansion.
+The RAM backend has fixed candidate/class capacities and separate plan, proof
+and comparison budgets. Capacity or RSS limits stop scheduling and retain
+partial evidence for final export. The RSS threshold is cooperative, so leave
+headroom for in-flight work, garbage collection and export. This backend has
+no crash recovery or resume. SQLite remains the default. See the
+[RAM implementation and benchmark notes](RAM.txt); the earlier
+[arena experiment](ARENA.txt) records the storage and scratch investigation.
 
 ## Search, stop and resume
 
