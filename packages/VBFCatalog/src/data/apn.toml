@@ -29,8 +29,8 @@ n                 = 10
 m                 = 10
 is_permutation    = false
 algebraic_form    = "x^57 in GF(2^10), modulus x^10 + x^3 + 1"
-bib_key = "Nyberg_199400"
-source            = "Nyberg, EUROCRYPT 1994; Kasami exponent family."
+bib_key = "Kasami_197105"
+source            = "Kasami exponent family (Kasami, Inform. Control 18, 1971)."
 monomial_exponent = 57
 
 [[apn_functions]]
@@ -40,8 +40,8 @@ n                 = 10
 m                 = 10
 is_permutation    = false
 algebraic_form    = "x^339 in GF(2^10), modulus x^10 + x^3 + 1"
-bib_key = "Nyberg_199400"
-source            = "Dobbertin's APN power function (Dobbertin 1999, IEEE Trans. Inf. Theory); listed by Nyberg EUROCRYPT 1994."
+bib_key = "Dobbertin_200100"
+source            = "Dobbertin, 'Almost perfect nonlinear power functions on GF(2^n): a new case for n divisible by 5', Finite Fields and Applications (2001)."
 monomial_exponent = 339
 
 
@@ -75,8 +75,8 @@ n              = 4
 m              = 4
 is_permutation = false
 algebraic_form = "x^3 in GF(2^4), modulus x^4 + x + 1"
-bib_key = "Nyberg_199400"
-source         = "Nyberg, 'Differentially uniform mappings for cryptography', EUROCRYPT 1994 (APN definition); Gold APN family from Gold, IEEE Trans. Inform. Theory, 1968."
+bib_key = "Gold_196801"
+source         = "Gold, IEEE Trans. Inf. Theory 1968; APN property per Nyberg, 'Differentially uniform mappings for cryptography', EUROCRYPT '93 (LNCS 765, 1994), Prop. 3."
 lut            = [0, 1, 8, 15, 12, 10, 1, 1, 10, 15, 15, 12, 8, 10, 8, 12]
 
 
@@ -109,8 +109,8 @@ n              = 5
 m              = 5
 is_permutation = true
 algebraic_form = "x^15 in GF(2^5), modulus x^5 + x^2 + 1"
-bib_key = "Nyberg_199400"
-source         = "Kasami exponents and APN property per Nyberg EUROCRYPT 1994."
+bib_key = "Kasami_197105"
+source         = "Kasami exponent family (Kasami, Inform. Control 18, 1971)."
 lut            = [0, 1, 31, 21, 18, 28, 10, 17, 29, 2, 22, 4, 24, 11, 25, 16, 9, 23, 27, 20, 14, 12, 19, 3, 5, 8, 7, 15, 26, 30, 6, 13]
 
 
@@ -132,8 +132,8 @@ n                 = 6
 m                 = 6
 is_permutation    = false
 algebraic_form    = "x^48 in GF(2^6), modulus x^6 + x + 1"
-bib_key = "Nyberg_199400"
-source            = "Nyberg, EUROCRYPT 1994 (general APN treatment); Kasami exponent family. CCZ-equivalence to n6_Gold_x3 flagged independently by the Calderini_202009 and Budaghyan_202008 reproduction reviews."
+bib_key = "Kasami_197105"
+source            = "Kasami exponent family (Kasami, Inform. Control 18, 1971). CCZ-equivalence to n6_Gold_x3 flagged independently by the Calderini_202009 and Budaghyan_202008 reproduction reviews."
 monomial_exponent = 48
 ccz_equivalent_to = "n6_Gold_x3"
 
@@ -200,8 +200,8 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^13 in GF(2^7), modulus x^7 + x + 1"
-bib_key = "Nyberg_199400"
-source            = "Nyberg, EUROCRYPT 1994."
+bib_key = "Kasami_197105"
+source            = "Kasami exponent family (Kasami, Inform. Control 18, 1971)."
 monomial_exponent = 13
 
 [[apn_functions]]
@@ -211,8 +211,8 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^57 in GF(2^7), modulus x^7 + x + 1"
-bib_key = "Nyberg_199400"
-source            = "Nyberg, EUROCRYPT 1994."
+bib_key = "Kasami_197105"
+source            = "Kasami exponent family (Kasami, Inform. Control 18, 1971)."
 monomial_exponent = 57
 
 # --- Welch ------------------------------------------------------------------
@@ -224,8 +224,8 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^11 in GF(2^7), modulus x^7 + x + 1"
-bib_key = "Nyberg_199400"
-source            = "Welch exponent x^(2^t + 3) for n = 2t+1. APN-ness for n=7 confirmed numerically; full proof by Canteaut-Charpin-Dobbertin (2000)."
+bib_key = "Dobbertin_199905b"
+source            = "Welch exponent x^(2^t + 3) for n = 2t+1; APN-ness proved by Dobbertin, IEEE Trans. Inf. Theory 45(4), 1999 (the Welch case)."
 monomial_exponent = 11
 
 # --- Niho -------------------------------------------------------------------
@@ -237,8 +237,8 @@ n                 = 7
 m                 = 7
 is_permutation    = true
 algebraic_form    = "x^39 in GF(2^7), modulus x^7 + x + 1"
-bib_key = "Nyberg_199400"
-source            = "Niho exponent (1972 thesis); APN-ness per Hollmann-Xiang / Dobbertin."
+bib_key = "Dobbertin_199905"
+source            = "Niho exponent (1972 thesis); APN-ness proved by Dobbertin, Inform. Comput. 151, 1999 (the Niho case)."
 monomial_exponent = 39
 
 # --- Inverse ----------------------------------------------------------------
@@ -288,8 +288,8 @@ n                 = 8
 m                 = 8
 is_permutation    = false
 algebraic_form    = "x^57 in GF(2^8), modulus x^8 + x^4 + x^3 + x + 1"
-bib_key = "Nyberg_199400"
-source            = "Nyberg, EUROCRYPT 1994; Kasami exponent family."
+bib_key = "Kasami_197105"
+source            = "Kasami exponent family (Kasami, Inform. Control 18, 1971)."
 monomial_exponent = 57
 
 # --- Calderini-Budaghyan-Carlet (2021) Theorem 6.2 — new quadratic APN class -
@@ -365,8 +365,8 @@ n                 = 9
 m                 = 9
 is_permutation    = true
 algebraic_form    = "x^13 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key = "Nyberg_199400"
-source            = "Nyberg, EUROCRYPT 1994; Kasami exponent family."
+bib_key = "Kasami_197105"
+source            = "Kasami exponent family (Kasami, Inform. Control 18, 1971)."
 monomial_exponent = 13
 
 [[apn_functions]]
@@ -376,8 +376,8 @@ n                 = 9
 m                 = 9
 is_permutation    = true
 algebraic_form    = "x^241 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key = "Nyberg_199400"
-source            = "Nyberg, EUROCRYPT 1994."
+bib_key = "Kasami_197105"
+source            = "Kasami exponent family (Kasami, Inform. Control 18, 1971)."
 monomial_exponent = 241
 
 # --- Welch / Niho (coincide at n=9) -----------------------------------------
@@ -389,8 +389,8 @@ n                 = 9
 m                 = 9
 is_permutation    = true
 algebraic_form    = "x^19 in GF(2^9), modulus x^9 + x^4 + 1"
-bib_key = "Nyberg_199400"
-source            = "Welch x^(2^t + 3); Niho x^(2^t + 2^(t/2) - 1) for t even; equal for n=9. APN-ness per Canteaut-Charpin-Dobbertin and Hollmann-Xiang."
+bib_key = "Dobbertin_199905b"
+source            = "Welch x^(2^t + 3); Niho x^(2^t + 2^(t/2) - 1) for t even; equal for n=9. Keyed to the Welch case (Dobbertin, IEEE Trans. Inf. Theory 45(4), 1999); x^19 is also the Niho exponent, APN by Dobbertin, Inform. Comput. 151, 1999 (Dobbertin_199905)."
 monomial_exponent = 19
 
 # --- Inverse ----------------------------------------------------------------

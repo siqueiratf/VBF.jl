@@ -8,10 +8,10 @@ Both have the binomial shape
 with `w ∈ GF(2ⁿ)*` of a prescribed multiplicative order. The two families differ
 only in the divisor `p` of `n` and the parameter conditions:
 
-| family | source                          | n    | conditions                                          | order of `w`            |
-|--------|---------------------------------|------|-----------------------------------------------------|-------------------------|
-| BCP    | Budaghyan–Carlet–Pott 2006      | 3k   | `gcd(k,3)=gcd(s,3k)=1`, `i=s·k mod 3`, `t=3−i`, `g₁≠g₂` | `2^{2k}+2ᵏ+1`        |
-| BCL    | Budaghyan–Carlet–Leander 2008   | 4k   | `gcd(k,2)=gcd(s,2k)=1`, `s≤4k−1`, `i=s·k mod 4`, `t=4−i` | `2^{3k}+2^{2k}+2ᵏ+1` |
+| family | source                              | n    | conditions                                          | order of `w`            |
+|--------|-------------------------------------|------|-----------------------------------------------------|-------------------------|
+| BCP    | Budaghyan–Carlet–Felke–Leander 2006 | 3k   | `gcd(k,3)=gcd(s,3k)=1`, `i=s·k mod 3`, `t=3−i`, `g₁≠g₂` | `2^{2k}+2ᵏ+1`        |
+| BCL    | Budaghyan–Carlet–Leander 2008       | 4k   | `gcd(k,2)=gcd(s,2k)=1`, `s≤4k−1`, `i=s·k mod 4`, `t=4−i` | `2^{3k}+2^{2k}+2ᵏ+1` |
 
 Here `α = gf_primitive_element(n; modulus)` is a verified multiplicative generator, so a `w`
 of order `2^{2k}+2ᵏ+1` (resp. `2^{3k}+2^{2k}+2ᵏ+1`) is `α^{2ᵏ−1}` — a non-`(2ᵏ−1)`-th
@@ -20,10 +20,15 @@ power, as required by the papers. The `g₁ ≠ g₂` test of the BCP family is
     d  = 2^{ik} + 2^{tk+s} − (2ˢ+1)
     g₁ = gcd(2^{3k}−1, d/(2ᵏ−1)),   g₂ = gcd(2ᵏ−1, d/(2ᵏ−1)).
 
+The family label "BCP" is historical and kept for compatibility (`bcp_apn`, the
+catalog names `n*_BCP_*`); the `n = 3k` binomial is not in Budaghyan–Carlet–Pott
+(IEEE Trans. IT 52(3), 2006), whose Theorems 1–4 concern functions CCZ-equivalent
+to Gold functions.
+
 References:
-- L. Budaghyan, C. Carlet, A. Pott, "New classes of almost bent and almost
-  perfect nonlinear polynomials", IEEE Trans. IT 52(3), 2006 — Theorem 2
-  (the `n = 3k` family; the `n` divisible by 3 case of the unified binomial).
+- L. Budaghyan, C. Carlet, P. Felke, G. Leander, "An infinite class of quadratic
+  APN functions which are not equivalent to power mappings", Proc. IEEE ISIT
+  2006 — Theorem 1 / Corollary 1 (the `n = 3k` family).
 - L. Budaghyan, C. Carlet, G. Leander, "Two classes of quadratic APN binomials
   inequivalent to power functions", IEEE Trans. IT 54(9), 2008 — Theorem 1
   (`n = 3k`, Table II row 2) and Theorem 2 (`n = 4k`, Table II row 3).
@@ -63,9 +68,9 @@ The quadratic APN binomial over `GF(2^{3k})`
     F(x) = x^{2ˢ+1} + w · x^{2^{ik} + 2^{tk+s}},   i = s·k mod 3,  t = 3 − i,
 
 with `w = α^{2ᵏ−1}` (with a verified primitive `α`, so `w` has order `2^{2k}+2ᵏ+1`). This is the
-`n` divisible by `3` class: [Budaghyan–Carlet–Pott (2006)](@cite Budaghyan_200603),
-Theorem 2, refined as [Budaghyan–Carlet–Leander (2008)](@cite Budaghyan_200809),
-Theorem 1.
+`n` divisible by `3` class: [Budaghyan–Carlet–Felke–Leander (ISIT 2006)](@cite Budaghyan_200607),
+Theorem 1 / Corollary 1, refined as [Budaghyan–Carlet–Leander (2008)](@cite Budaghyan_200809),
+Theorem 1. The name `bcp_apn` is historical and kept for compatibility.
 
 Requires `gcd(k, 3) = gcd(s, 3k) = 1` and the inequivalence guarantee
 `g₁ ≠ g₂` (see the module docstring); throws `ArgumentError` otherwise.
