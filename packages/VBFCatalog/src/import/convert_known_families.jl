@@ -83,8 +83,10 @@ function known_family_instances(n::Int)
     if n % 3 == 0
         k = n ÷ 3
         for s = 1:(n-1)
-            push_ok!("n$(n)_BCP_k$(k)_s$(s)", () -> bcp_apn(k, s), "Budaghyan_200603",
-                     "Budaghyan-Carlet-Pott binomial, n=3k=$n, k=$k, s=$s.")
+            # "BCP" is a historical name kept for compatibility; the n=3k binomial
+            # is Budaghyan-Carlet-Felke-Leander (ISIT 2006), Theorem 1 / Corollary 1.
+            push_ok!("n$(n)_BCP_k$(k)_s$(s)", () -> bcp_apn(k, s), "Budaghyan_200607",
+                     "Budaghyan-Carlet-Felke-Leander binomial (ISIT 2006, Thm. 1), n=3k=$n, k=$k, s=$s.")
         end
     end
     if n % 4 == 0
