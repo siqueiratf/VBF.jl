@@ -18,18 +18,23 @@ function fetch_source(name)
     root = _bfa_source_root(src); mkpath(root)
     path = joinpath(root,src["check_path"])
     if !isfile(path)
-        compressed = path * ".gz"
-        if !isfile(compressed)
-            partial = compressed * ".partial"
+        # A .gz URL is a compressed mirror; anything else is the published file itself.
+        gzipped = endswith(src["download"],".gz")
+        target = gzipped ? path * ".gz" : path
+        if !isfile(target)
+            partial = target * ".partial"
             run(`curl --fail --location --retry 5 --continue-at - --output $partial $(src["download"])`)
-            mv(partial,compressed)
+            gzipped || verify_original(partial,src)
+            mv(partial,target)
         end
-        partial = path * ".partial"
-        open(partial,"w") do io
-            run(pipeline(`gzip -dc $compressed`;stdout=io))
+        if gzipped
+            partial = path * ".partial"
+            open(partial,"w") do io
+                run(pipeline(`gzip -dc $target`;stdout=io))
+            end
+            verify_original(partial,src)
+            mv(partial,path)
         end
-        verify_original(partial,src)
-        mv(partial,path)
     end
     verify_original(path,src)
     provenance=Dict("source"=>name,"download"=>src["download"],"fetched_utc"=>string(now(UTC)),
