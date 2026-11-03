@@ -96,3 +96,7 @@ packages/VBFPaper/bench/data/**
 # no negation can rescue a README there. Never ignore a papers/ README that way.
 !README.md
 !**/README.md
+
+# Zenodo deposit metadata, read by the GitHub-Zenodo integration (keep last,
+# with the negations above, because *.json is ignored).
+!/.zenodo.json

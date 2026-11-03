@@ -3,15 +3,21 @@ message: "If you use VBF in academic work, please cite it as below."
 type: software
 title: "VBF: vectorial Boolean function analysis"
 authors:
-  - family-names: Zambonin
-    given-names: Gustavo
-repository-code: "https://github.com/zambonin/VBF.jl"
+  - family-names: Siqueira
+    given-names: Tiago Faustino de
+    affiliation: "Universidade Federal de Santa Catarina"
+repository-code: "https://github.com/siqueiratf/VBF.jl"
 license: MIT
-version: 0.1.0-DEV
-date-released: 2026-06-01
+version: 0.1.0
 abstract: >
   A Julia library for analysing vectorial Boolean functions, focused on APN
   functions and the linear, affine, EA, and CCZ equivalence hierarchy. It
   reimplements, in native Julia, the algorithmic content of the sboxU
   cryptanalysis stack and several satellite projects, and ships a curated
   S-box catalogue with provenance and paper-reproduction scripts.
+keywords:
+  - APN functions
+  - vectorial Boolean functions
+  - CCZ equivalence
+  - reproducibility
+  - Julia
