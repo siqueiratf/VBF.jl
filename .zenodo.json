@@ -1,0 +1,16 @@
+{
+  "title": "VBF: vectorial Boolean function analysis",
+  "upload_type": "software",
+  "version": "0.1.0",
+  "creators": [
+    {
+      "name": "Siqueira, Tiago Faustino de",
+      "affiliation": "Universidade Federal de Santa Catarina"
+    }
+  ],
+  "description": "A Julia library for analysing vectorial Boolean functions, focused on APN functions and the linear, affine, EA, and CCZ equivalence hierarchy. It ships a curated catalogue of APN functions with provenance (declaration files, import code and SHA-256 digests of every imported source) and paper-reproduction scripts. This version is the one cited in the undergraduate thesis \"Reprodutibilidade computacional na literatura de funções APN\" (UFSC).",
+  "license": "MIT",
+  "access_right": "open",
+  "language": "eng",
+  "keywords": ["APN functions", "vectorial Boolean functions", "CCZ equivalence", "reproducibility", "Julia"]
+}
