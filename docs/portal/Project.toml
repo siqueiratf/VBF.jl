@@ -1,0 +1,30 @@
+name = "VBFPortal"
+uuid = "5d3c1b8e-7a2f-4c6e-9b1d-3f8a2e6c4d71"
+version = "0.1.0"
+
+[deps]
+DBInterface = "a10d1c49-ce27-4219-8d33-6db1a4562965"
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+SQLite = "0aa819cd-b072-5ff4-a722-6bc24af294d9"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+VBF = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
+VBFCatalog = "806e9246-bd0c-40c6-b7ea-7b2eabc2fba0"
+VBFRepro = "16c7b88e-2149-4d60-a411-73f4bac0dd42"
+
+[sources]
+VBF = {path = "../../packages/VBF"}
+VBFCatalog = {path = "../../packages/VBFCatalog"}
+VBFRepro = {path = "../../packages/VBFRepro"}
+
+[compat]
+DBInterface = "2"
+SHA = "0.7, 1"
+SQLite = "1.6"
+TOML = "1"
+julia = "1.12"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
