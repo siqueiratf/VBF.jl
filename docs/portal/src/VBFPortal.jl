@@ -6,7 +6,7 @@ cross-checks of `paper.toml`, the site model, the HTML rendering and the link ch
 """
 module VBFPortal
 
-using DBInterface, SHA, SQLite, TOML, Markdown
+using DBInterface, SHA, SQLite, TOML, Markdown, Dates
 using Bibliography, Mustache
 using VBF
 using VBFCatalog
@@ -19,7 +19,7 @@ export FunctionKey, function_key, key_string, display_key, parse_key, MemberRef,
     CatalogSnapshot, catalog_snapshot, resolve_member, current_member,
     EquivalenceRecord, EQUIVALENCE_LEVELS, proves_equivalence, proves_inequivalence,
     CheckContext, check_paper, check_all,
-    load_references, build_model, render_portal, write_redirects, check_links
+    load_references, build_model, render_portal, write_redirects, check_links, build_query_db
 
 include("identity.jl")
 include("snapshots.jl")
@@ -28,6 +28,7 @@ include("crosscheck.jl")
 include("model.jl")
 include("render.jl")
 include("linkcheck.jl")
+include("querydb.jl")
 
 """Check every paper that has a `paper.toml`; return (errors, review) over all of them."""
 function check_all(db = load_catalog())

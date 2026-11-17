@@ -1,4 +1,4 @@
-using Test, SHA, TOML
+using Test, SHA, TOML, SQLite, DBInterface
 using VBF, VBFCatalog, VBFPortal
 using VBFCatalog: canonical_lut_bytes
 
@@ -65,6 +65,26 @@ if is_catalog_built()
         errors, review = check_all(db)
         @test isempty(errors)
         @test "differential_uniformity" in ctx.vbf_names
+    end
+    @testset "query database" begin
+        out = tempname() * ".sqlite"
+        r = build_query_db(out, db; corpora = ["edelpott2009_n8", "taniguchi2019_n8"])
+        @test r.corpora == 2 && r.members == 24
+        q = SQLite.DB(out)
+        meta = Dict(x.key => x.value for x in DBInterface.execute(q, "SELECT * FROM meta"))
+        @test meta["schema"] == "vbf-query-1" && meta["prebuilt_key"] == catalog_snapshot(db).prebuilt_key
+        # A member's key is the key of the function VBFCatalog decodes for the same index.
+        row = first(DBInterface.execute(q, "SELECT m.idx, m.lut_sha256 FROM members m JOIN corpora c ON c.id = m.corpus_id WHERE c.name = 'edelpott2009_n8' AND m.idx = 3"))
+        F = VBFCatalog.corpus_function(db, "edelpott2009_n8", 3)
+        @test bytes2hex(row.lut_sha256) == function_key(F, 8).lut_sha256
+        @test only(x.k for x in DBInterface.execute(q, "SELECT count(*) AS k FROM functions")) ==
+              only(x.k for x in DBInterface.execute(db, "SELECT count(*) AS k FROM functions"))
+        # The online queries use an index (no full scan).
+        plan(sql) = join([x.detail for x in DBInterface.execute(q, "EXPLAIN QUERY PLAN " * sql)], " ")
+        @test occursin("members_lut", plan("SELECT corpus_id, idx FROM members WHERE lut_sha256 = x'00'"))
+        @test occursin("members_sigma", plan("SELECT corpus_id, idx FROM members WHERE sigma = x'00'"))
+        @test occursin("PRIMARY KEY", plan("SELECT * FROM members WHERE corpus_id = 1 AND idx = 3"))
+        close(q); rm(out)
     end
     close(db)
 else
