@@ -231,6 +231,48 @@ jobs:
           ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
         run: julia --startup-file=no --project=packages/VBFCatalog/src/import packages/VBFCatalog/src/import/prebuilt.jl publish $([ "$CREATE" = true ] && echo --create)
 
+  # Portal data model (docs/portal): identity, snapshots, equivalence levels, and the
+  # checks of every paper.toml against the rebuilt catalog. Errors fail the job; review
+  # items are printed only.
+  portal-model:
+    name: Portal model and paper metadata
+    needs: catalog-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Install Julia 1.12
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+
+      - name: Cache Julia depot
+        uses: julia-actions/cache@v2
+
+      - name: Download rebuilt catalog
+        uses: actions/download-artifact@v4
+        with:
+          name: catalog
+          path: .cache/vbfcatalog
+
+      - name: Instantiate portal environment
+        run: julia --startup-file=no --project=docs/portal -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Test the portal model
+        run: julia --startup-file=no --project=docs/portal -e 'using Pkg; Pkg.test()'
+
+      - name: Check every paper.toml
+        run: |
+          julia --startup-file=no --project=docs/portal -e '
+            using VBFPortal
+            errors, review = check_all()
+            foreach(r -> println("review: ", r), review)
+            foreach(e -> println("::error::", e), errors)
+            println(length(errors), " error(s), ", length(review), " review item(s)")
+            exit(isempty(errors) ? 0 : 1)'
+
   # Builds the Documenter site with the rebuilt catalog and publishes it to GitHub Pages
   # (https://siqueiratf.github.io/VBF.jl/). The site is a GitHub Actions artifact; there is
   # no gh-pages branch. docs.yml builds the same site for pull requests without publishing it.
