@@ -317,7 +317,11 @@ end
         @test evidence_fingerprint(id; root, project, parameters = Dict("limit" => "5"))["parameters"] != fp["parameters"]
 
         ev = mktempdir()
-        r = test_with_evidence(id; evidence_dir = ev, root, project)
+        # A local run: clear the CI variables, which CI itself sets.
+        r = withenv("GITHUB_REPOSITORY" => nothing, "GITHUB_RUN_ID" => nothing, "GITHUB_RUN_ATTEMPT" => nothing,
+                    "GITHUB_WORKFLOW" => nothing, "GITHUB_REF" => nothing) do
+            test_with_evidence(id; evidence_dir = ev, root, project)
+        end
         @test r.outcome == "failed"
         files = Dict(t["file"] => t for t in r.record["testsets"])
         @test files["test/test_lemma1.jl"]["pass"] == 2 && files["test/test_lemma1.jl"]["claims"] == ["lemma1"]
