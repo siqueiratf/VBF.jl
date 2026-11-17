@@ -137,13 +137,17 @@ claims whose tests these files are.
 function test_with_evidence(id::AbstractString; evidence_dir, root = papers_root(), project = repo_root(),
                             timeout_seconds = nothing, julia = "julia")
     path = paper_path(id; root)
-    runtests = first(filter(isfile, [joinpath(path, "test", "runtests.jl"), joinpath(path, "tests", "runtests.jl")]))
     run_id = Dates.format(now(UTC), "yyyymmddTHHMMSS") * "-" * string(uuid4())
     dir = joinpath(abspath(evidence_dir), id, run_id)
     mkpath(dir)
     results = joinpath(dir, "testsets.toml")
-    argv = [julia, "--startup-file=no", "--project=$project", joinpath(@__DIR__, "evidence_runner.jl"), runtests, results]
-    status, exit_code, elapsed = _run_logged(Cmd(Cmd(argv); dir = path), joinpath(dir, "output.log"); timeout_seconds)
+    # Run `make test`, so that the prerequisites of `test` run as usual; only the recipe of
+    # `test` itself gets evidence_julia.sh as JULIA (`private`: not inherited by prerequisites).
+    shim = joinpath(@__DIR__, "evidence_julia.sh")
+    argv = ["make", "--no-print-directory", "-C", path, "ROOT=$project", "--eval", ".PHONY: test",
+            "--eval", "test: private JULIA = $shim", "test"]
+    cmd = addenv(Cmd(argv), "VBF_EVIDENCE_OUT" => results, "VBF_EVIDENCE_JULIA" => julia)
+    status, exit_code, elapsed = _run_logged(cmd, joinpath(dir, "output.log"); timeout_seconds)
     files = isfile(results) ? TOML.parsefile(results)["files"] : Dict{String,Any}[]
     outcome = status == "timed_out" ? "timed_out" : !isfile(results) ? "error" :
               TOML.parsefile(results)["total"]["outcome"]
@@ -155,8 +159,7 @@ function test_with_evidence(id::AbstractString; evidence_dir, root = papers_root
         "schema" => EVIDENCE_SCHEMA, "kind" => "regression", "paper" => id, "run_id" => run_id,
         "outcome" => outcome, "exit_code" => exit_code, "elapsed_seconds" => elapsed,
         "command" => "bin/vbfrepro test $id --evidence DIR",
-        "argv" => [julia, "--startup-file=no", "--project=.", "packages/VBFRepro/src/evidence_runner.jl",
-                   relpath(runtests, project), "testsets.toml"],
+        "argv" => ["make", "-C", relpath(path, project), "test", "(recipe of test through evidence_runner.jl)"],
         "parameters" => Dict{String,String}(),
         "testsets" => files,
         "claims" => sort(unique(vcat([f["claims"] for f in files]...))),

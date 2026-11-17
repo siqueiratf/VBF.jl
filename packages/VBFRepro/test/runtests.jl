@@ -274,7 +274,7 @@ end
         write(joinpath(project, "packages", "VBF", "Project.toml"), "name = \"VBF\"\n")
         write(joinpath(project, "Project.toml"), "[deps]\n")
         write(joinpath(root, "paper.mk"), "JULIA ?= julia\n")
-        write(joinpath(paper, "Makefile"), "test:\n\techo t\nlemma1:\n\techo l\n")
+        write(joinpath(paper, "Makefile"), "JULIA ?= julia\ntest:\n\t\$(JULIA) --startup-file=no --project=\$(ROOT) test/runtests.jl\nlemma1:\n\techo l\n")
         write(joinpath(paper, "lemma1.jl"), "# Implements Lemma 1\nlemma1_value() = 2\n")
         write(joinpath(paper, "README.md"), "notes\n")
         write(joinpath(paper, "test", "runtests.jl"), """
