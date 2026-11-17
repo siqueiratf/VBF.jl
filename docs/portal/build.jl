@@ -75,6 +75,13 @@ db = load_catalog()
 model = build_model(db; evidence_dirs = evidence)
 mkpath(joinpath(OUT, "assets"))
 cp(joinpath(@__DIR__, "assets"), joinpath(OUT, "assets", "portal"); force = true)   # beside Documenter's assets
+# The query database of this snapshot, at catalog/data/<prebuilt key>/query.sqlite. A local
+# build links to the file; --copy-query copies it (for a deployment).
+if query !== nothing
+    qdir = joinpath(OUT, "catalog", "data", model["snapshot"].prebuilt_key)
+    mkpath(qdir)
+    "--copy-query" in args ? cp(query, joinpath(qdir, "query.sqlite")) : symlink(query, joinpath(qdir, "query.sqlite"))
+end
 pages = render_portal(model, OUT)
 append!(pages, render_catalog_functions(model, OUT, db; query_db = query))
 unresolved = write_redirects(OUT)

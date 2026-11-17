@@ -1,0 +1,13 @@
+{
+  "name": "vbf-portal-js",
+  "private": true,
+  "description": "Browser code of the VBF.jl portal: the catalog member view (SQLite over HTTP Range)",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "sqlite-wasm-http": "^1.2.0"
+  }
+}

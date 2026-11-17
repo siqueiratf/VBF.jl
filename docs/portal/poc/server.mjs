@@ -20,7 +20,9 @@ http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");
   if (url.pathname === "/__stats") { res.end(JSON.stringify(stats)); return; }
   if (url.pathname === "/__reset") { stats = { requests: 0, bytes: 0 }; res.end("{}"); return; }
-  const file = path.join(root, decodeURIComponent(url.pathname));
+  let file = path.join(root, decodeURIComponent(url.pathname));
+  // As GitHub Pages: a folder address serves its index.html.
+  if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, "index.html");
   if (!file.startsWith(path.resolve(root)) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
     res.writeHead(404); res.end(); return;
   }

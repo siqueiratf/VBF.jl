@@ -31,6 +31,10 @@ docs/src/generated/
 docs/portal/build/
 docs/portal/library-src/
 docs/portal/poc/node_modules/
+docs/portal/js/node_modules/
+docs/portal/assets/js/
+!docs/portal/js/package.json
+!docs/portal/js/package-lock.json
 docs/portal/poc/public/
 !docs/portal/poc/package.json
 !docs/portal/poc/package-lock.json

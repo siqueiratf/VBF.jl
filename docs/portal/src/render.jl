@@ -130,7 +130,8 @@ function render_portal(model, out)
         pubs = join(["<li><a href=\"$(root)reproductions/$(r["id"])/\">$(reference_html(r["ref"]))</a></li>" for r in users(c["name"])])
         body = "<dl><dt>Functions</dt><dd>$(c["member_count"])</dd><dt>Dimensions</dt><dd>n = $(c["n"]), m = $(c["m"])</dd>" *
                "<dt>Corpus digest</dt><dd><code>$(esc(c["digest"]))</code></dd><dt>Source</dt><dd>$(esc(c["source_repo"]))</dd></dl>" *
-               (isempty(pubs) ? "" : "<h2>Publications</h2><ol>$pubs</ol>")
+               (isempty(pubs) ? "" : "<h2>Publications</h2><ol>$pubs</ol>") *
+               member_view(c, root, model["snapshot"].prebuilt_key)
         push!(written, write_page(out, path, c["name"],
             Mustache.render(template("page"), Dict("title" => c["name"], "body" => body)); nav = "catalog"))
     end
@@ -146,6 +147,19 @@ function render_portal(model, out)
         Mustache.render(template("page"), Dict("title" => "About", "body" => about)); nav = "about"))
     written
 end
+
+"""Member view of a corpus page: a form, read by assets/portal/js/members.js."""
+member_view(c, root, key) = """
+    <h2 id="members">Members</h2>
+    <section id="member-view" data-db="$(root)catalog/data/$(key)/query.sqlite" data-corpus="$(esc(c["name"]))"
+             data-digest="$(esc(c["digest"]))" data-root="$(root)">
+    <form><label>Member index <input name="idx" type="number" min="1" max="$(c["member_count"])" required></label>
+    <button type="submit">Show</button></form>
+    <div class="member-result" aria-live="polite"></div>
+    <noscript>The member view needs JavaScript. In Julia: corpus_function(load_catalog(), "$(esc(c["name"]))", i).</noscript>
+    </section>
+    <script type="module" src="$(root)assets/portal/js/members.js"></script>
+    """
 
 """
     write_redirects(out, legacy) -> Vector{String}
