@@ -1,0 +1,133 @@
+# Portal metadata of this reproduction (schema vbf-paper-1).
+# `bin/vbfrepro scaffold` writes candidates with review = "pending"; a person reviews
+# each claim against the paper and the code, then sets review = "done".
+schema = "vbf-paper-1"
+code = []
+corpora = ["edelpott2009_n8"]
+functions = []
+support = []
+unassigned = []
+
+[[publications]]
+key = "Edel_200900"
+role = "primary"
+
+[[claims]]
+id = "proposition2"
+label = "Proposition 2"
+summary = "The function x^3 + tr(x^9) is APN on F_{2^n} for every n."
+files = ["proposition2.jl"]
+targets = ["proposition2"]
+tests = ["test/test_proposition2.jl"]
+verification = "computational-check"
+completeness = "partial"
+scope = "n = 2, ..., 8 (parameter max_n); the statement is for every n"
+api = ["gf_pow", "gf_trace", "primitive_polynomial", "differential_uniformity", "SBox"]
+review = "done"
+
+[[claims]]
+id = "theorem7"
+label = "Theorem 7"
+summary = "A CCZ-crooked APN function has Delta-rank at most 2^(n+1)."
+files = ["theorem7.jl"]
+targets = ["theorem7"]
+tests = ["test/test_theorem7.jl"]
+verification = "computational-check"
+completeness = "partial"
+scope = "the 14 functions of Table 5 (n = 6): the 13 quadratic ones satisfy the bound; 2.11 (Delta-rank 152) does not"
+api = ["delta_rank", "differential_uniformity", "SBox"]
+review = "done"
+
+[[claims]]
+id = "corollary8"
+label = "Corollary 8"
+summary = "The Kasami functions x^13 and x^57 on F_{2^7} are not CCZ-crooked."
+files = ["theorem7.jl"]
+targets = ["theorem7"]
+parameters = { full_search = "true" }
+tests = ["test/test_theorem7.jl"]
+verification = "computational-check"
+completeness = "complete"
+scope = "n = 7: Delta-ranks 338 (x^13) and 436 (x^57), both above 2^8"
+api = ["delta_rank", "gf_monomial_lut", "differential_uniformity", "SBox"]
+note = "Runs only with full_search=true. The default test checks that it was not run."
+review = "done"
+
+[[claims]]
+id = "theorem9"
+label = "Theorem 9"
+summary = "Switching criterion: v -> F(v) + f(v)u is APN if and only if f satisfies the four-point condition of F."
+files = ["theorem9.jl"]
+targets = ["theorem9"]
+tests = ["test/test_theorem9.jl"]
+verification = "computational-check"
+completeness = "partial"
+scope = "one switch at n = 6: Table 5 entry 2.3 to 2.11 (u = 46), in both directions"
+api = ["differential_uniformity"]
+review = "done"
+
+[[claims]]
+id = "theorem10"
+label = "Theorem 10"
+summary = "Divisibility conditions on the multiplier group order for CCZ-quadratic and power-like functions."
+files = ["theorem10.jl"]
+targets = ["theorem10"]
+tests = ["test/test_theorem10.jl"]
+verification = "transcription"
+completeness = "partial"
+scope = "the divisibility tests on the multiplier orders published in Table 6 (n = 6)"
+note = "The orders were computed with MAGMA in the paper and are not recomputed here. The code uses |M(G_F)| = |Aut(dev(G_F))|/2^(2n), which the paper observes for n <= 7."
+review = "done"
+
+[[claims]]
+id = "theorem11"
+label = "Theorem 11"
+summary = "A non-quadratic APN function on F_{2^6} (equation 9)."
+files = ["theorem11.jl"]
+targets = ["theorem11"]
+tests = ["test/test_theorem11.jl"]
+verification = "computational-check"
+completeness = "partial"
+scope = "the function of equation 9: APN, algebraic degree 3, Gamma-rank 1300, Delta-rank 152 (so not crooked, by Theorem 7); not CCZ-equivalent to x^3"
+api = ["differential_uniformity", "algebraic_degree", "gamma_rank", "delta_rank", "are_ccz_equivalent"]
+note = "Inequivalence is tested against x^3 only (different Gamma-rank; are_ccz_equivalent returns false), not against every power function. Its invariants equal those of Table 5 entry 2.11, which is consistent with CCZ-equivalence to 2.11 but does not prove it. The switching relation to the base function is not tested."
+review = "done"
+
+[[claims]]
+id = "table5"
+label = "Table 5"
+summary = "The 14 APN functions on F_{2^6} obtained by switching, with their algebraic degrees."
+files = ["table5.jl"]
+targets = ["table5"]
+tests = ["test/test_table5.jl"]
+verification = "computational-check"
+completeness = "complete"
+scope = "n = 6, all 14 representatives: APN and algebraic degree (one of degree 3, the others quadratic)"
+api = ["differential_uniformity", "algebraic_degree"]
+review = "done"
+
+[[claims]]
+id = "table6"
+label = "Table 6"
+summary = "Gamma-rank, Delta-rank and Walsh spectrum class of the 14 functions of Table 5."
+files = ["table6.jl"]
+targets = ["table6"]
+tests = ["test/test_table6.jl"]
+verification = "computational-check"
+completeness = "complete"
+scope = "n = 6, all 14 rows: Gamma-rank, Delta-rank and Walsh spectrum class"
+api = ["gamma_rank", "delta_rank", "absolute_walsh_spectrum"]
+review = "done"
+
+[[claims]]
+id = "table7"
+label = "Table 7"
+summary = "APN functions on F_{2^7} obtained by switching."
+files = ["table7.jl"]
+targets = ["table7"]
+tests = ["test/test_table7.jl"]
+verification = "computational-check"
+completeness = "partial"
+scope = "entry 14.3 only (n = 7): APN, algebraic degree 2, Gamma-rank 4046, Delta-rank 212"
+api = ["gf_pow", "gf_mul", "gf_trace", "differential_uniformity", "algebraic_degree", "gamma_rank", "delta_rank"]
+review = "done"

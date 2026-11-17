@@ -1,0 +1,109 @@
+# Portal metadata of this reproduction (schema vbf-paper-1).
+# `bin/vbfrepro scaffold` writes candidates with review = "pending"; a person reviews
+# each claim against the paper and the code, then sets review = "done".
+schema = "vbf-paper-1"
+code = []
+corpora = ["beierle2025_n8", "langevin_may2025_extra_n8"]
+functions = []
+support = ["catalog_validation.jl", "dataset_validation.jl"]
+unassigned = []
+
+[[publications]]
+key = "Beierle_202508"
+role = "primary"
+
+[[publications]]
+key = "Beierle_202500"
+role = "dataset"
+
+[[claims]]
+id = "theorem2_3"
+label = "Theorem 2.3"
+summary = "Identities between the ranks of the quadratic components and the Walsh moments of a quadratic APN function (with Remark 2.4)."
+files = ["component_profiles.jl"]
+targets = ["component_profiles"]
+tests = ["test/test_component_profiles.jl"]
+verification = "computational-check"
+completeness = "partial"
+scope = "the Gold function x^3 on F_{2^4}: the sum of the alpha values is 30 = 2^5 - 2"
+api = ["SBox", "anf", "rank_f2", "gold_apn", "differential_uniformity"]
+review = "done"
+
+[[claims]]
+id = "table4_1"
+label = "Table 4.1"
+summary = "Distribution of the profiles P_k of the known quadratic APN functions in eight variables."
+files = ["paper_counts.jl", "table4_1.jl"]
+targets = ["paper_counts", "table4_1"]
+tests = ["test/test_paper_counts.jl", "test/test_table4_1.jl"]
+verification = "transcription"
+completeness = "partial"
+scope = "the 14 published rows and their sum 32,892; profile prefixes of length 3 for sampled members, under a node budget"
+note = "The full profiles P_k of Definition 4.1 are not computed; an estimate of the cost is 1.6 s per function, about 15 hours for the whole distribution."
+review = "done"
+
+[[claims]]
+id = "lemma4_6"
+label = "Lemma 4.6"
+summary = "A function with differential uniformity above 2^(n-m+1) has no APN extension."
+files = ["extension_criteria.jl"]
+targets = ["extension_criteria"]
+tests = ["test/test_extension_criteria.jl"]
+verification = "computational-check"
+completeness = "partial"
+scope = "(n, m) = (4, 4) only: the Gold function x^3 and the zero function"
+note = "With m = n the bound is 2, so the check reduces to 'APN or not'. The case m < n, which carries the content of the lemma, is not checked."
+api = ["SBox", "differential_uniformity"]
+review = "done"
+
+[[claims]]
+id = "lemma4_7"
+label = "Lemma 4.7"
+summary = "Criterion for APN extensions through the rank-2 forms orthogonal to the components."
+files = ["extension_criteria.jl"]
+targets = ["extension_criteria"]
+tests = ["test/test_extension_criteria.jl"]
+verification = "computational-check"
+completeness = "partial"
+scope = "n = 4, exhaustive over the 35 rank-2 forms, for the Gold function x^3 and the zero function"
+api = ["SBox", "anf", "rank_f2", "gold_apn", "differential_uniformity"]
+review = "done"
+
+[[claims]]
+id = "theorem4_9"
+label = "Theorem 4.9"
+summary = "Condition on a linear map for an APN extension of a quadratic function."
+files = ["extension_criteria.jl"]
+targets = ["extension_criteria"]
+tests = ["test/test_extension_criteria.jl"]
+verification = "computational-check"
+completeness = "partial"
+scope = "(n, m) = (2, 3), exhaustive over all 64 linear maps: the condition holds for 24 and exactly these give APN extensions"
+api = ["SBox", "differential_uniformity"]
+review = "done"
+
+[[claims]]
+id = "theorem5_1"
+label = "Theorem 5.1"
+summary = "There are at least 3,808,491 CCZ-inequivalent quadratic APN functions in eight variables."
+files = ["paper_counts.jl"]
+targets = ["paper_counts"]
+tests = ["test/test_paper_counts.jl"]
+verification = "transcription"
+completeness = "partial"
+scope = "the arithmetic 32,892 + 3,775,599 = 3,808,491 on the published counts"
+note = "The inequivalence of the dataset members is not checked by this reproduction."
+review = "done"
+
+[[claims]]
+id = "section5"
+label = "Section 5"
+summary = "Estimates of the total number of CCZ-classes of quadratic APN functions in eight variables."
+files = ["estimators.jl"]
+targets = ["estimators"]
+tests = ["test/test_estimators.jl"]
+verification = "computational-check"
+completeness = "complete"
+scope = "the coupon-collector and overlap estimators on the published counts"
+note = "The overlap estimate is 5,786,151, as published. The coupon-collector estimate is 6,123,207; the paper gives 6,123,206. The test accepts a difference of up to 2."
+review = "done"
