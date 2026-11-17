@@ -283,6 +283,52 @@ jobs:
             println(length(errors), " error(s), ", length(review), " review item(s)")
             exit(isempty(errors) ? 0 : 1)'
 
+  # Preview of the new portal (stage S3 to S5): built from the rebuilt catalog and the
+  # evidence of the paper jobs, checked, and kept as an artifact. It is not deployed; the
+  # live site still comes from docs/make.jl until the switch.
+  portal-preview:
+    name: Portal preview
+    needs: [catalog-check, paper-tests]
+    if: always() && needs.catalog-check.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Install Julia 1.12
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+
+      - name: Cache Julia depot
+        uses: julia-actions/cache@v2
+
+      - name: Download rebuilt catalog
+        uses: actions/download-artifact@v4
+        with:
+          name: catalog
+          path: .cache/vbfcatalog
+
+      - name: Download the evidence of the paper jobs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: evidence-*
+          path: evidence
+          merge-multiple: true
+
+      - name: Instantiate portal environment
+        run: julia --startup-file=no --project=docs/portal -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Build and check the portal
+        run: julia --startup-file=no --project=docs/portal docs/portal/build.jl --evidence evidence
+
+      - name: Upload the preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-preview
+          path: docs/portal/build
+
   # Builds the Documenter site with the rebuilt catalog and publishes it to GitHub Pages
   # (https://siqueiratf.github.io/VBF.jl/). The site is a GitHub Actions artifact; there is
   # no gh-pages branch. docs.yml builds the same site for pull requests without publishing it.
