@@ -1,0 +1,2504 @@
+[
+ {
+  "profile": "local",
+  "lib": "httpvfs",
+  "db": "query_full_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 241,
+  "renderer_rss_bytes": 155967488,
+  "page_js_heap_bytes": 2180420,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 66.70000004768372,
+    "requests": 5,
+    "bytes": 5120,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 26.30000001192093,
+    "requests": 8,
+    "bytes": 12288,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 page of 50 members",
+    "ms": 26,
+    "requests": 10,
+    "bytes": 21504,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4 corpora of a function",
+    "ms": 17.69999998807907,
+    "requests": 6,
+    "bytes": 8192,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4b function by member hash",
+    "ms": 9.900000035762787,
+    "requests": 4,
+    "bytes": 4096,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5 count with an invariant key",
+    "ms": 35.5,
+    "requests": 13,
+    "bytes": 1050624,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5b members with an invariant key",
+    "ms": 0.699999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 0.3999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 page of 50 members",
+    "ms": 0.800000011920929,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4 corpora of a function",
+    "ms": 0.5999999642372131,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4b function by member hash",
+    "ms": 0.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5 count with an invariant key",
+    "ms": 2.199999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5b members with an invariant key",
+    "ms": 0.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "httpvfs",
+  "db": "catalog_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 143,
+  "renderer_rss_bytes": 151576576,
+  "page_js_heap_bytes": 1972980,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 61.30000001192093,
+    "requests": 5,
+    "bytes": 8192,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 63,
+    "requests": 22,
+    "bytes": 92160,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 1.100000023841858,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "httpvfs",
+  "db": "members_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 116,
+  "renderer_rss_bytes": 161988608,
+  "page_js_heap_bytes": 2025644,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 54.30000001192093,
+    "requests": 2,
+    "bytes": 1024,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 19.19999998807907,
+    "requests": 6,
+    "bytes": 7168,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 raw page of 50",
+    "ms": 18.599999964237213,
+    "requests": 7,
+    "bytes": 11264,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 0.7000000476837158,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 raw page of 50",
+    "ms": 0.7999999523162842,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "httpvfs",
+  "db": "query_full_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 195,
+  "renderer_rss_bytes": 155701248,
+  "page_js_heap_bytes": 2180400,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 60,
+    "requests": 3,
+    "bytes": 8192,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 19.30000001192093,
+    "requests": 6,
+    "bytes": 40960,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 page of 50 members",
+    "ms": 16,
+    "requests": 5,
+    "bytes": 24576,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4 corpora of a function",
+    "ms": 7.5,
+    "requests": 3,
+    "bytes": 12288,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4b function by member hash",
+    "ms": 8,
+    "requests": 3,
+    "bytes": 12288,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5 count with an invariant key",
+    "ms": 31.19999998807907,
+    "requests": 11,
+    "bytes": 1056768,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5b members with an invariant key",
+    "ms": 0.5999999642372131,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 0.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 page of 50 members",
+    "ms": 0.699999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4 corpora of a function",
+    "ms": 0.699999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4b function by member hash",
+    "ms": 0.3999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5 count with an invariant key",
+    "ms": 1.699999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5b members with an invariant key",
+    "ms": 0.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "httpvfs",
+  "db": "catalog_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 111,
+  "renderer_rss_bytes": 163573760,
+  "page_js_heap_bytes": 1972984,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 52.89999997615814,
+    "requests": 2,
+    "bytes": 4096,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 40.90000003576279,
+    "requests": 14,
+    "bytes": 122880,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 0.800000011920929,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "httpvfs",
+  "db": "members_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 110,
+  "renderer_rss_bytes": 162377728,
+  "page_js_heap_bytes": 2025616,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 57.89999997615814,
+    "requests": 2,
+    "bytes": 4096,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 13.699999988079071,
+    "requests": 4,
+    "bytes": 20480,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 raw page of 50",
+    "ms": 11.599999964237213,
+    "requests": 4,
+    "bytes": 20480,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 0.8999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 raw page of 50",
+    "ms": 0.800000011920929,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "httpvfs",
+  "db": "query_full_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 2728,
+  "renderer_rss_bytes": 1014628352,
+  "page_js_heap_bytes": 1967776,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 65.19999998807907,
+    "requests": 5,
+    "bytes": 5120,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q6 count of a whole corpus",
+    "ms": 2272.2999999523163,
+    "requests": 111,
+    "bytes": 485500928,
+    "rows": 1,
+    "first": {
+     "k": 3775599
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q6 count of a whole corpus",
+    "ms": 351.7000000476837,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "k": 3775599
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "wasmhttp",
+  "db": "query_full_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 603,
+  "renderer_rss_bytes": 307822592,
+  "page_js_heap_bytes": 2223284,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 385.69999998807907,
+    "requests": 5,
+    "bytes": 4096,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 31,
+    "requests": 8,
+    "bytes": 8192,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 page of 50 members",
+    "ms": 32.59999996423721,
+    "requests": 11,
+    "bytes": 16384,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4 corpora of a function",
+    "ms": 24,
+    "requests": 8,
+    "bytes": 11264,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4b function by member hash",
+    "ms": 9.699999988079071,
+    "requests": 4,
+    "bytes": 4096,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5 count with an invariant key",
+    "ms": 60,
+    "requests": 14,
+    "bytes": 1054720,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5b members with an invariant key",
+    "ms": 1.0999999642372131,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 0.3999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 page of 50 members",
+    "ms": 1.199999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4 corpora of a function",
+    "ms": 0.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4b function by member hash",
+    "ms": 0.3999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5 count with an invariant key",
+    "ms": 5.400000035762787,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5b members with an invariant key",
+    "ms": 1.899999976158142,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "wasmhttp",
+  "db": "catalog_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 468,
+  "renderer_rss_bytes": 279711744,
+  "page_js_heap_bytes": 1962532,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 385.39999997615814,
+    "requests": 7,
+    "bytes": 8192,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 65.30000001192093,
+    "requests": 22,
+    "bytes": 87040,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 1.2999999523162842,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "wasmhttp",
+  "db": "members_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 427,
+  "renderer_rss_bytes": 202743808,
+  "page_js_heap_bytes": 2040400,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 359,
+    "requests": 2,
+    "bytes": 1024,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 21.19999998807907,
+    "requests": 6,
+    "bytes": 7168,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 raw page of 50",
+    "ms": 22.400000035762787,
+    "requests": 7,
+    "bytes": 12288,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 0.699999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 raw page of 50",
+    "ms": 1.300000011920929,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "wasmhttp",
+  "db": "query_full_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 540,
+  "renderer_rss_bytes": 257892352,
+  "page_js_heap_bytes": 2223424,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 364.89999997615814,
+    "requests": 4,
+    "bytes": 9216,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 23.399999976158142,
+    "requests": 6,
+    "bytes": 24576,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 page of 50 members",
+    "ms": 19.400000035762787,
+    "requests": 5,
+    "bytes": 28672,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4 corpora of a function",
+    "ms": 14.199999988079071,
+    "requests": 5,
+    "bytes": 28672,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4b function by member hash",
+    "ms": 7.600000023841858,
+    "requests": 3,
+    "bytes": 12288,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5 count with an invariant key",
+    "ms": 34.39999997615814,
+    "requests": 10,
+    "bytes": 1052672,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5b members with an invariant key",
+    "ms": 1.100000023841858,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 0.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 page of 50 members",
+    "ms": 1.300000011920929,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4 corpora of a function",
+    "ms": 0.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4b function by member hash",
+    "ms": 0.3999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5 count with an invariant key",
+    "ms": 4.100000023841858,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5b members with an invariant key",
+    "ms": 5.899999976158142,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "wasmhttp",
+  "db": "catalog_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 439,
+  "renderer_rss_bytes": 254902272,
+  "page_js_heap_bytes": 1962612,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 374.9000000357628,
+    "requests": 3,
+    "bytes": 5120,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 46.5,
+    "requests": 14,
+    "bytes": 106496,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 1.399999976158142,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "wasmhttp",
+  "db": "members_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 422,
+  "renderer_rss_bytes": 230916096,
+  "page_js_heap_bytes": 2040028,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 367.80000001192093,
+    "requests": 3,
+    "bytes": 5120,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 14.899999976158142,
+    "requests": 4,
+    "bytes": 20480,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 raw page of 50",
+    "ms": 13.700000047683716,
+    "requests": 4,
+    "bytes": 20480,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 0.699999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 raw page of 50",
+    "ms": 1.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "wasmhttp",
+  "db": "query_full_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 16046,
+  "renderer_rss_bytes": 453529600,
+  "page_js_heap_bytes": 1947624,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 383.60000002384186,
+    "requests": 5,
+    "bytes": 4096,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q6 count of a whole corpus",
+    "ms": 7964.699999988079,
+    "requests": 1704,
+    "bytes": 965302272,
+    "rows": 1,
+    "first": {
+     "k": 3775599
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q6 count of a whole corpus",
+    "ms": 7648.899999976158,
+    "requests": 1705,
+    "bytes": 965303296,
+    "rows": 1,
+    "first": {
+     "k": 3775599
+    }
+   }
+  ]
+ },
+ {
+  "profile": "local",
+  "lib": "binary",
+  "db": "members_beierle2025_n8.bin",
+  "wall_ms": 37,
+  "renderer_rss_bytes": 136445952,
+  "page_js_heap_bytes": 1970732,
+  "rows": [
+   {
+    "pass": "cold",
+    "label": "Q1 idx=123456",
+    "ms": 2.900000035762787,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "004e41334da5d973845daf9f37b97b14251764c41a1c053154dd957867ea5447b212c4cf87"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 idx=1",
+    "ms": 2.199999988079071,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "00fefb2cde69674802ded88cc103339bc63f98ca0a3bf37f4c829e414c74d4eccb0e739270"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 idx=3775599",
+    "ms": 2,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "00d98e2ad40d81ba1fb953629af903aa680b021e5feb87ac7f0a4a4a92775fb4c0389c98a5"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 idx=123456",
+    "ms": 1.9000000357627869,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "004e41334da5d973845daf9f37b97b14251764c41a1c053154dd957867ea5447b212c4cf87"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 idx=1",
+    "ms": 1.9000000357627869,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "00fefb2cde69674802ded88cc103339bc63f98ca0a3bf37f4c829e414c74d4eccb0e739270"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 idx=3775599",
+    "ms": 2.099999964237213,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "00d98e2ad40d81ba1fb953629af903aa680b021e5feb87ac7f0a4a4a92775fb4c0389c98a5"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "httpvfs",
+  "db": "query_full_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 3471,
+  "renderer_rss_bytes": 158248960,
+  "page_js_heap_bytes": 2180420,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 373.5,
+    "requests": 5,
+    "bytes": 5120,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 515.7000000476837,
+    "requests": 8,
+    "bytes": 12288,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 page of 50 members",
+    "ms": 643.8999999761581,
+    "requests": 10,
+    "bytes": 21504,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4 corpora of a function",
+    "ms": 385.0999999642372,
+    "requests": 6,
+    "bytes": 8192,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4b function by member hash",
+    "ms": 256.60000002384186,
+    "requests": 4,
+    "bytes": 4096,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5 count with an invariant key",
+    "ms": 1245,
+    "requests": 13,
+    "bytes": 1050624,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5b members with an invariant key",
+    "ms": 0.6000000238418579,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 0.3999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 page of 50 members",
+    "ms": 0.699999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4 corpora of a function",
+    "ms": 0.3999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4b function by member hash",
+    "ms": 0.6000000238418579,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5 count with an invariant key",
+    "ms": 2.200000047683716,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5b members with an invariant key",
+    "ms": 0.6000000238418579,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "httpvfs",
+  "db": "catalog_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 1814,
+  "renderer_rss_bytes": 153165824,
+  "page_js_heap_bytes": 1972968,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 365.69999998807907,
+    "requests": 5,
+    "bytes": 8192,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 1433.2000000476837,
+    "requests": 22,
+    "bytes": 92160,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 0.9000000357627869,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "httpvfs",
+  "db": "members_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 1038,
+  "renderer_rss_bytes": 152166400,
+  "page_js_heap_bytes": 2025616,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 178,
+    "requests": 2,
+    "bytes": 1024,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 386.4000000357628,
+    "requests": 6,
+    "bytes": 7168,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 raw page of 50",
+    "ms": 450.2000000476837,
+    "requests": 7,
+    "bytes": 11264,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 0.699999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 raw page of 50",
+    "ms": 1,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "httpvfs",
+  "db": "query_full_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 2514,
+  "renderer_rss_bytes": 157081600,
+  "page_js_heap_bytes": 2180204,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 241.4000000357628,
+    "requests": 3,
+    "bytes": 8192,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 394.7999999523163,
+    "requests": 6,
+    "bytes": 40960,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 page of 50 members",
+    "ms": 323.2000000476837,
+    "requests": 5,
+    "bytes": 24576,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4 corpora of a function",
+    "ms": 193.10000002384186,
+    "requests": 3,
+    "bytes": 12288,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4b function by member hash",
+    "ms": 192.60000002384186,
+    "requests": 3,
+    "bytes": 12288,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5 count with an invariant key",
+    "ms": 1116.3999999761581,
+    "requests": 11,
+    "bytes": 1056768,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5b members with an invariant key",
+    "ms": 0.5999999642372131,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 0.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 page of 50 members",
+    "ms": 0.800000011920929,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4 corpora of a function",
+    "ms": 0.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4b function by member hash",
+    "ms": 0.5999999642372131,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5 count with an invariant key",
+    "ms": 1.9000000357627869,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5b members with an invariant key",
+    "ms": 0.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "httpvfs",
+  "db": "catalog_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 1117,
+  "renderer_rss_bytes": 153231360,
+  "page_js_heap_bytes": 1972956,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 173.30000001192093,
+    "requests": 2,
+    "bytes": 4096,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 928.3999999761581,
+    "requests": 14,
+    "bytes": 122880,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 0.699999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "httpvfs",
+  "db": "members_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 715,
+  "renderer_rss_bytes": 152027136,
+  "page_js_heap_bytes": 2025568,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 176.29999995231628,
+    "requests": 2,
+    "bytes": 4096,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 260.60000002384186,
+    "requests": 4,
+    "bytes": 20480,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 raw page of 50",
+    "ms": 257.5,
+    "requests": 4,
+    "bytes": 20480,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 0.6000000238418579,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 raw page of 50",
+    "ms": 0.7000000476837158,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "httpvfs",
+  "db": "query_full_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 120007,
+  "renderer_rss_bytes": 698216448,
+  "page_js_heap_bytes": 1301152,
+  "error": "Error: timeout"
+ },
+ {
+  "profile": "remote",
+  "lib": "wasmhttp",
+  "db": "query_full_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 4069,
+  "renderer_rss_bytes": 176357376,
+  "page_js_heap_bytes": 2223120,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 694.6999999880791,
+    "requests": 5,
+    "bytes": 4096,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 530.8999999761581,
+    "requests": 8,
+    "bytes": 8192,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 page of 50 members",
+    "ms": 707.1000000238419,
+    "requests": 11,
+    "bytes": 16384,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4 corpora of a function",
+    "ms": 512.8000000119209,
+    "requests": 8,
+    "bytes": 11264,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4b function by member hash",
+    "ms": 256,
+    "requests": 4,
+    "bytes": 4096,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5 count with an invariant key",
+    "ms": 1312.1000000238419,
+    "requests": 14,
+    "bytes": 1054720,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5b members with an invariant key",
+    "ms": 0.8999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 0.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 page of 50 members",
+    "ms": 1,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4 corpora of a function",
+    "ms": 0.3999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4b function by member hash",
+    "ms": 0.40000003576278687,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5 count with an invariant key",
+    "ms": 4.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5b members with an invariant key",
+    "ms": 1,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "wasmhttp",
+  "db": "catalog_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 2288,
+  "renderer_rss_bytes": 170491904,
+  "page_js_heap_bytes": 1962612,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 825,
+    "requests": 7,
+    "bytes": 8192,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 1447.199999988079,
+    "requests": 22,
+    "bytes": 87040,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 1.300000011920929,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "wasmhttp",
+  "db": "members_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 1375,
+  "renderer_rss_bytes": 270516224,
+  "page_js_heap_bytes": 2040084,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 494.69999998807907,
+    "requests": 2,
+    "bytes": 1024,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 389.2000000476837,
+    "requests": 6,
+    "bytes": 7168,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 raw page of 50",
+    "ms": 450.39999997615814,
+    "requests": 7,
+    "bytes": 12288,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 0.699999988079071,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 raw page of 50",
+    "ms": 6.799999952316284,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "wasmhttp",
+  "db": "query_full_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 2964,
+  "renderer_rss_bytes": 175153152,
+  "page_js_heap_bytes": 2223100,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 623,
+    "requests": 4,
+    "bytes": 9216,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 391.2000000476837,
+    "requests": 6,
+    "bytes": 24576,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 page of 50 members",
+    "ms": 326.2999999523163,
+    "requests": 5,
+    "bytes": 28672,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4 corpora of a function",
+    "ms": 323.30000001192093,
+    "requests": 5,
+    "bytes": 28672,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q4b function by member hash",
+    "ms": 191.69999998807907,
+    "requests": 3,
+    "bytes": 12288,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5 count with an invariant key",
+    "ms": 1055.2000000476837,
+    "requests": 10,
+    "bytes": 1052672,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q5b members with an invariant key",
+    "ms": 1,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 member by (corpus, idx)",
+    "ms": 0.6000000238418579,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87",
+     "hex(lut_sha256)": "A22E794A6B939E2DB93B38349064B9ACBF648AE500612C71ADDE6AA6630E1085",
+     "hex(sigma)": "6BC1EB4566F2C85D6B0F3CCE242790C2AF1456EF823B761BBAE4A9E48FFECF98"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 page of 50 members",
+    "ms": 1.100000023841858,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(lut_sha256)": "8F6562E70C5FAC50C022B8E22B5112425C59499669C15B5CA517A1A4ACB639BF"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4 corpora of a function",
+    "ms": 0.3999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 2,
+    "first": {
+     "name": "edelpott2009_n8",
+     "idx": 1
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q4b function by member hash",
+    "ms": 0.3999999761581421,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "name": "beierle2025_n8",
+     "idx": 123456
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5 count with an invariant key",
+    "ms": 3.5,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "k": 12794
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q5b members with an invariant key",
+    "ms": 0.7999999523162842,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "corpus_id": 2,
+     "idx": 12673
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "wasmhttp",
+  "db": "catalog_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 1498,
+  "renderer_rss_bytes": 171024384,
+  "page_js_heap_bytes": 1962368,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 553.3999999761581,
+    "requests": 3,
+    "bytes": 5120,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 928.1000000238419,
+    "requests": 14,
+    "bytes": 106496,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q3 filtered functions + bibliography",
+    "ms": 1.300000011920929,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 7,
+    "first": {
+     "canonical_name": "n8_Gold_i5",
+     "algebraic_degree": 2,
+     "linearity": 32,
+     "year": 1968,
+     "doi": "10.1109/TIT.1968.1054106"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "wasmhttp",
+  "db": "members_p4096.sqlite",
+  "pageSize": 4096,
+  "wall_ms": 1109,
+  "renderer_rss_bytes": 292388864,
+  "page_js_heap_bytes": 2040064,
+  "rows": [
+   {
+    "label": "open",
+    "ms": 559.5999999642372,
+    "requests": 3,
+    "bytes": 5120,
+    "rows": 0,
+    "first": null
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 264.39999997615814,
+    "requests": 4,
+    "bytes": 20480,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q2 raw page of 50",
+    "ms": 261.39999997615814,
+    "requests": 4,
+    "bytes": 20480,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 raw member by (corpus, idx)",
+    "ms": 0.6000000238418579,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 1,
+    "first": {
+     "idx": 123456,
+     "hex(coeffs)": "004E41334DA5D973845DAF9F37B97B14251764C41A1C053154DD957867EA5447B212C4CF87"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q2 raw page of 50",
+    "ms": 1.300000011920929,
+    "requests": 0,
+    "bytes": 0,
+    "rows": 50,
+    "first": {
+     "idx": 2000001,
+     "hex(coeffs)": "009C8871140172A005EF4BD5324567B410F0AD1E7C14ACCFAA48400F28A7C288444741DCDC"
+    }
+   }
+  ]
+ },
+ {
+  "profile": "remote",
+  "lib": "wasmhttp",
+  "db": "query_full_p1024.sqlite",
+  "pageSize": 1024,
+  "wall_ms": 120004,
+  "renderer_rss_bytes": 395837440,
+  "page_js_heap_bytes": 1275756,
+  "error": "Error: timeout"
+ },
+ {
+  "profile": "remote",
+  "lib": "binary",
+  "db": "members_beierle2025_n8.bin",
+  "wall_ms": 407,
+  "renderer_rss_bytes": 146038784,
+  "page_js_heap_bytes": 1970804,
+  "rows": [
+   {
+    "pass": "cold",
+    "label": "Q1 idx=123456",
+    "ms": 64.29999995231628,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "004e41334da5d973845daf9f37b97b14251764c41a1c053154dd957867ea5447b212c4cf87"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 idx=1",
+    "ms": 63.799999952316284,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "00fefb2cde69674802ded88cc103339bc63f98ca0a3bf37f4c829e414c74d4eccb0e739270"
+    }
+   },
+   {
+    "pass": "cold",
+    "label": "Q1 idx=3775599",
+    "ms": 63.30000001192093,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "00d98e2ad40d81ba1fb953629af903aa680b021e5feb87ac7f0a4a4a92775fb4c0389c98a5"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 idx=123456",
+    "ms": 63.39999997615814,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "004e41334da5d973845daf9f37b97b14251764c41a1c053154dd957867ea5447b212c4cf87"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 idx=1",
+    "ms": 64.10000002384186,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "00fefb2cde69674802ded88cc103339bc63f98ca0a3bf37f4c829e414c74d4eccb0e739270"
+    }
+   },
+   {
+    "pass": "warm",
+    "label": "Q1 idx=3775599",
+    "ms": 63.80000001192093,
+    "requests": 1,
+    "bytes": 37,
+    "rows": 1,
+    "first": {
+     "coeffs": "00d98e2ad40d81ba1fb953629af903aa680b021e5feb87ac7f0a4a4a92775fb4c0389c98a5"
+    }
+   }
+  ]
+ }
+]

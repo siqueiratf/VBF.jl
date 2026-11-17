@@ -1,0 +1,9 @@
+member_corpus = "beierle2025_n8"
+member_idx = 123456
+member_coeffs = "004e41334da5d973845daf9f37b97b14251764c41a1c053154dd957867ea5447b212c4cf87"
+member_lut = "a22e794a6b939e2db93b38349064b9acbf648ae500612c71adde6aa6630e1085"
+function_name = "reprs8_0"
+function_lut = "f723b6e13a85a8c79c721ee8361b7b574ec3dbaa9da9e91048bf2ec25215374e"
+function_corpora = 2
+sigma = "6c41c36a082bd10bee6eba19eebb949739433ef17d361be9482eccad7a45e46b"
+sigma_members = 12794

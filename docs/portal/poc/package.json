@@ -1,0 +1,17 @@
+{
+  "name": "vbf-portal-catalog-poc",
+  "private": true,
+  "description": "Stage S0: browser measurements of SQLite over HTTP Range for the VBF.jl catalog",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "measure": "node measure.mjs"
+  },
+  "devDependencies": {
+    "@sqlite.org/sqlite-wasm": "^3.54.1-build1",
+    "esbuild": "^0.28.2",
+    "playwright": "^1.65.1",
+    "sql.js-httpvfs": "^0.8.12",
+    "sqlite-wasm-http": "^1.2.0"
+  }
+}
