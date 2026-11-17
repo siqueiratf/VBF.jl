@@ -1,7 +1,7 @@
 # Command-line interface of bin/vbfrepro: help per command, paper lookup by a
 # unique part of the ID or bib key, and shell completion scripts.
 
-const COMMANDS = ["list", "info", "run", "test", "scaffold", "check", "completions", "help"]
+const COMMANDS = ["list", "info", "run", "test", "scaffold", "check", "evidence", "archive", "completions", "help"]
 
 const USAGE = Dict(
     "list" => """
@@ -27,13 +27,17 @@ const USAGE = Dict(
           --param KEY=VALUE     Makefile parameter, for example --param limit=1000
           --timeout-seconds N   stop the run after N seconds
           --output DIR          write the evidence to DIR
+          --evidence            also write a reproduction record (record.toml) next to run.toml
           --list                show the targets and parameters of PAPER
 
         Example: bin/vbfrepro run yu-qam --target small_searches --timeout-seconds 600""",
     "test" => """
         Usage: bin/vbfrepro test PAPER [--timeout-seconds N] [--output DIR]
+               bin/vbfrepro test PAPER --evidence DIR [--reuse DIR2] [--timeout-seconds N]
 
-        Run the tests of a paper and record the evidence like run.
+        Run the tests of a paper and record the evidence like run. With --evidence, write
+        a regression record to DIR/PAPER/RUN-ID/ (record.toml, output.log) with the result
+        of each test file and the claims whose tests these files are.
 
         Example: bin/vbfrepro test 202211-yu-qam --timeout-seconds 300""",
     "scaffold" => """
@@ -49,6 +53,17 @@ const USAGE = Dict(
         Check paper.toml of one paper, or of all papers that have one. Errors (schema,
         missing files, targets or tests) give exit status 1; review items (pending
         candidates, files in no claim) are listed but do not fail.""",
+    "evidence" => """
+        Usage: bin/vbfrepro evidence DIR
+
+        Check every record.toml under DIR (schema, log SHA-256) and show whether it is
+        compatible with this checkout, or which fingerprint components changed.""",
+    "archive" => """
+        Usage: bin/vbfrepro archive RUN_DIR [--log-url URL]
+
+        Keep the reproduction record of an expensive run (made with run --evidence) in
+        packages/VBFRepro/evidence/PAPER/RUN-ID/, to commit. The log is copied if it is at
+        most 1 MiB; a larger log needs --log-url, a permanent copy with the same SHA-256.""",
     "completions" => """
         Usage: bin/vbfrepro completions bash|zsh|fish
 
@@ -74,6 +89,8 @@ const OVERVIEW = """
       test PAPER           run the tests of a paper
       scaffold PAPER       write candidate portal metadata (paper.toml)
       check [PAPER]        check the portal metadata
+      evidence DIR         check evidence records and their compatibility
+      archive RUN_DIR      keep the record of an expensive run in the repository
       completions SHELL    print a completion script for bash, zsh or fish
       help [COMMAND]       show this help, or the help of a command
 
@@ -156,7 +173,7 @@ _vbfrepro() {
     root=$(cd -- "$(dirname -- "$(command -v "${COMP_WORDS[0]}" 2>/dev/null || echo "${COMP_WORDS[0]}")")/.." 2>/dev/null && pwd)
     papers=$(ls "$root/packages/VBFRepro/src" 2>/dev/null | grep -E '^[0-9]{6}-')
     if [ "$COMP_CWORD" -eq 1 ]; then
-        COMPREPLY=($(compgen -W "list info run test scaffold check completions help" -- "$cur")); return
+        COMPREPLY=($(compgen -W "list info run test scaffold check evidence completions help" -- "$cur")); return
     fi
     case "$prev" in
         info|run|test|scaffold|check) COMPREPLY=($(compgen -W "$papers" -- "$cur")); return;;
@@ -168,8 +185,9 @@ _vbfrepro() {
         --timeout-seconds) return;;
     esac
     case "${COMP_WORDS[1]}" in
-        run) COMPREPLY=($(compgen -W "--target --param --timeout-seconds --output --list --help" -- "$cur"));;
-        test) COMPREPLY=($(compgen -W "--timeout-seconds --output --help" -- "$cur"));;
+        run) COMPREPLY=($(compgen -W "--target --param --timeout-seconds --output --evidence --list --help" -- "$cur"));;
+        test) COMPREPLY=($(compgen -W "--timeout-seconds --output --evidence --help" -- "$cur"));;
+        evidence) COMPREPLY=($(compgen -d -- "$cur"));;
     esac
 }
 complete -F _vbfrepro vbfrepro bin/vbfrepro ./bin/vbfrepro
@@ -199,6 +217,7 @@ for c in vbfrepro bin/vbfrepro ./bin/vbfrepro
     complete -c $c -n __fish_use_subcommand -a test -d 'run the tests of a paper'
     complete -c $c -n __fish_use_subcommand -a scaffold -d 'write candidate portal metadata'
     complete -c $c -n __fish_use_subcommand -a check -d 'check the portal metadata'
+    complete -c $c -n __fish_use_subcommand -a evidence -d 'check evidence records'
     complete -c $c -n __fish_use_subcommand -a completions -d 'print a completion script'
     complete -c $c -n __fish_use_subcommand -a help -d 'show the help'
     complete -c $c -n '__fish_seen_subcommand_from info run test scaffold check; and test (count (commandline -opc)) -eq 2' -a '(__vbfrepro_papers)'
@@ -209,6 +228,7 @@ for c in vbfrepro bin/vbfrepro ./bin/vbfrepro
     complete -c $c -n '__fish_seen_subcommand_from run' -l list -d 'targets and parameters'
     complete -c $c -n '__fish_seen_subcommand_from run test' -l timeout-seconds -r
     complete -c $c -n '__fish_seen_subcommand_from run test' -l output -r -F
+    complete -c $c -n '__fish_seen_subcommand_from run test' -l evidence -d 'write an evidence record'
     complete -c $c -l help -d 'show the help'
 end
 """
@@ -240,6 +260,31 @@ function main(args=ARGS)
         shells = Dict("bash" => COMPLETION_BASH, "zsh" => COMPLETION_ZSH, "fish" => COMPLETION_FISH)
         haskey(shells, only(rest)) || throw(UsageError("unknown shell '$(only(rest))'; use bash, zsh or fish", command))
         print(shells[only(rest)])
+        return 0
+    end
+    if command == "evidence"
+        length(rest) == 1 && isdir(only(rest)) || throw(UsageError("evidence needs an existing DIR", command))
+        bad = 0
+        for (d, _, files) in walkdir(only(rest)), f in files
+            f == "record.toml" || continue
+            r = TOML.parsefile(joinpath(d, f))
+            problems = validate_evidence(r; dir = d)
+            changed = isempty(problems) ? evidence_changes(r) : String[]
+            state = !isempty(problems) ? "INVALID: " * join(problems, "; ") :
+                    isempty(changed) ? "compatible" : "historical (changed: " * join(changed, ", ") * ")"
+            println(get(r, "paper", "?"), " ", get(r, "kind", "?"), " ", get(r, "outcome", "?"), " ",
+                    get(get(r, "provenance", Dict()), "commit", "")[1:min(end, 12)], " — ", state)
+            bad += !isempty(problems)
+        end
+        return bad == 0 ? 0 : 1
+    end
+    if command == "archive"
+        isempty(rest) && throw(UsageError("archive needs a RUN_DIR", command))
+        url = nothing
+        length(rest) == 3 && rest[2] == "--log-url" && (url = rest[3])
+        length(rest) in (1, 3) && (length(rest) == 1 || url !== nothing) ||
+            throw(UsageError("archive accepts RUN_DIR [--log-url URL]", command))
+        println("archived: ", archive_evidence(first(rest); log_url = url))
         return 0
     end
     if command == "check"
@@ -278,6 +323,12 @@ function main(args=ARGS)
     parameters = Dict{String,String}()
     timeout = nothing
     output = nothing
+    evidence = nothing
+    reuse = nothing
+    if command == "run" && "--evidence" in rest
+        evidence = true
+        rest = filter(!=("--evidence"), rest)
+    end
     index = 2
     while index <= length(rest)
         option = rest[index]
@@ -296,13 +347,37 @@ function main(args=ARGS)
             timeout === nothing && throw(UsageError("--timeout-seconds needs a number", command))
         elseif option == "--output"
             output = value
+        elseif option == "--evidence" && command == "test"
+            evidence = value
+        elseif option == "--reuse" && command == "test"
+            reuse = value
         else
             throw(UsageError("unsupported option '$option' for $command", command))
         end
         index += 2
     end
+    if command == "test" && evidence isa AbstractString
+        output === nothing || throw(UsageError("--evidence and --output cannot be used together", command))
+        if reuse !== nothing
+            dest = reuse_evidence(id, reuse; evidence_dir = evidence)
+            if dest !== nothing
+                println("$id tests: reused compatible record $(joinpath(dest, "record.toml"))")
+                return 0
+            end
+        end
+        r = test_with_evidence(id; evidence_dir = evidence, timeout_seconds = timeout)
+        claims = r.record["claims"]
+        println("$id tests: $(r.outcome) ($(length(r.record["testsets"])) file(s), claims: ",
+                isempty(claims) ? "none in paper.toml" : join(claims, ", "), ")\nRecord: $(joinpath(r.dir, "record.toml"))")
+        return r.outcome == "passed" ? 0 : 1
+    end
     result = run_paper(id; target, parameters, timeout_seconds=timeout, output)
     println("$(result.paper) $(result.target): $(result.status)\nEvidence: $(result.output)")
+    if evidence === true
+        rec = reproduction_evidence(result)
+        println("Reproduction record: $(joinpath(result.output, "record.toml")) (claims: ",
+                isempty(rec["claims"]) ? "none" : join(rec["claims"], ", "), ")")
+    end
     return result.status == "passed" ? 0 : 1
 end
 

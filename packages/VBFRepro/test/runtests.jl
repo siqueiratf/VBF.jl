@@ -262,3 +262,95 @@ end
         @test any(c -> c["id"] == "lemma5" && c["review"] == "pending", meta2["claims"])
     end
 end
+
+@testset "evidence: records, fingerprint, compatibility, reuse" begin
+    mktempdir() do project
+        # A self-contained project: a paper folder, paper.mk, a git history.
+        root = joinpath(project, "packages", "VBFRepro", "src")
+        paper = joinpath(root, "202601-fixture-evidence")
+        mkpath(joinpath(paper, "test"))
+        mkpath(joinpath(project, "packages", "VBF", "src"))
+        write(joinpath(project, "packages", "VBF", "src", "VBF.jl"), "module VBF end\n")
+        write(joinpath(project, "packages", "VBF", "Project.toml"), "name = \"VBF\"\n")
+        write(joinpath(project, "Project.toml"), "[deps]\n")
+        write(joinpath(root, "paper.mk"), "JULIA ?= julia\n")
+        write(joinpath(paper, "Makefile"), "test:\n\techo t\nlemma1:\n\techo l\n")
+        write(joinpath(paper, "lemma1.jl"), "# Implements Lemma 1\nlemma1_value() = 2\n")
+        write(joinpath(paper, "README.md"), "notes\n")
+        write(joinpath(paper, "test", "runtests.jl"), """
+            using Test
+            include("test_lemma1.jl")
+            include("test_failing.jl")
+            @testset "inline" begin @test true end
+            """)
+        write(joinpath(paper, "test", "test_lemma1.jl"),
+              "include(joinpath(@__DIR__, \"..\", \"lemma1.jl\"))\n@testset \"lemma1\" begin @test lemma1_value() == 2; @test true end\n")
+        write(joinpath(paper, "test", "test_failing.jl"), "@testset \"failing\" begin @test 1 == 2 end\n")
+        write(joinpath(paper, "paper.toml"), """
+            schema = "vbf-paper-1"
+            [[publications]]
+            key = "Fixture_202601"
+            role = "primary"
+            [[claims]]
+            id = "lemma1"
+            label = "Lemma 1"
+            files = ["lemma1.jl"]
+            targets = ["lemma1"]
+            tests = ["test/test_lemma1.jl"]
+            review = "pending"
+            """)
+        git(args...) = run(pipeline(Cmd(`git -C $project $args`); stdout = devnull, stderr = devnull))
+        git("init", "-q"); git("-c", "user.email=t@t", "-c", "user.name=t", "add", ".")
+        git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "fixture")
+
+        id = "202601-fixture-evidence"
+        fp = evidence_fingerprint(id; root, project)
+        @test Set(keys(fp)) == Set(["julia", "project", "paper_mk", "paper", "VBF", "parameters"])
+        # Prose and metadata are not executable: they do not change the fingerprint.
+        write(joinpath(paper, "README.md"), "other notes\n")
+        write(joinpath(paper, "paper.toml"), read(joinpath(paper, "paper.toml"), String) * "# comment\n")
+        @test evidence_fingerprint(id; root, project) == fp
+        # Code does.
+        write(joinpath(paper, "lemma1.jl"), "# Implements Lemma 1\nlemma1_value() = 2 # same value\n")
+        @test evidence_fingerprint(id; root, project)["paper"] != fp["paper"]
+        write(joinpath(paper, "lemma1.jl"), "# Implements Lemma 1\nlemma1_value() = 2\n")
+        @test evidence_fingerprint(id; root, project, parameters = Dict("limit" => "5"))["parameters"] != fp["parameters"]
+
+        ev = mktempdir()
+        r = test_with_evidence(id; evidence_dir = ev, root, project)
+        @test r.outcome == "failed"
+        files = Dict(t["file"] => t for t in r.record["testsets"])
+        @test files["test/test_lemma1.jl"]["pass"] == 2 && files["test/test_lemma1.jl"]["claims"] == ["lemma1"]
+        @test files["test/test_failing.jl"]["fail"] == 1 && files["test/test_failing.jl"]["outcome"] == "failed"
+        @test files["test/runtests.jl"]["pass"] == 1                       # the inline test set
+        @test r.record["command"] == "bin/vbfrepro test $id --evidence DIR"   # the test command, not a claim command
+        @test !any(contains(project), r.record["argv"])                     # portable
+        @test isempty(validate_evidence(r.record; dir = r.dir))
+        @test isempty(evidence_changes(r.record; root, project))
+
+        # Validation catches tampering; reuse needs a passing CI record from a clean checkout.
+        bad = deepcopy(r.record); bad["fingerprint"]["paper"] = "0"^64
+        @test any(contains("fingerprint_sha256 does not match"), validate_evidence(bad))
+        ok, reasons = reusable(r.record; dir = r.dir, root, project)
+        @test !ok && any(contains("outcome is not passed"), reasons) && any(contains("not made by CI"), reasons)
+
+        write(joinpath(paper, "test", "runtests.jl"), "using Test\ninclude(\"test_lemma1.jl\")\n")
+        git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-am", "drop the failing test")
+        withenv("GITHUB_REPOSITORY" => "siqueiratf/VBF.jl", "GITHUB_RUN_ID" => "1") do
+            r2 = test_with_evidence(id; evidence_dir = ev, root, project)
+            @test r2.outcome == "passed"
+            @test reusable(r2.record; dir = r2.dir, root, project)[1]
+            dest = VBFRepro.reuse_evidence(id, ev; evidence_dir = mktempdir(), root, project)
+            @test dest !== nothing && haskey(TOML.parsefile(joinpath(dest, "record.toml")), "reused_by")
+            arch = mktempdir()
+            kept = archive_evidence(r2.dir; archive = arch)
+            @test isfile(joinpath(kept, "record.toml")) && isfile(joinpath(kept, "output.log"))
+            @test isempty(validate_evidence(TOML.parsefile(joinpath(kept, "record.toml")); dir = kept))
+            @test_throws ArgumentError archive_evidence(r2.dir; archive = arch)    # never overwritten
+            # A change of code makes the record historical: no reuse, and the reason names it.
+            write(joinpath(paper, "lemma1.jl"), "# Implements Lemma 1\nlemma1_value() = 1 + 1\n")
+            ok2, reasons2 = reusable(r2.record; dir = r2.dir, root, project)
+            @test !ok2 && any(contains("changed since the run: paper"), reasons2)
+        end
+    end
+end
