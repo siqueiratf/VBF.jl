@@ -1,0 +1,36 @@
+argv = ["make", "--no-print-directory", "-C", "/home/ts/20261116/VBF.jl/packages/VBFRepro/src/200900-edel-switching", "theorem7", "JULIA=/usr/bin/julia", "ROOT=/home/ts/20261116/VBF.jl/", "full_search=true"]
+claims = ["theorem7", "corollary8"]
+command = "bin/vbfrepro run 200900-edel-switching --target theorem7 --param full_search=true"
+elapsed_seconds = 3.49033653
+exit_code = 0
+fingerprint_sha256 = "e692eed777498146d60f65ea4ca04ebfa72c02c6c142d82141fb817964286806"
+kind = "reproduction"
+outcome = "passed"
+paper = "200900-edel-switching"
+run_id = "20261117T160015-99b0b013-f74f-4cf5-8a6f-16f15edf6696"
+schema = "vbf-evidence-1"
+testsets = []
+
+[fingerprint]
+VBF = "42c6a6bf95fbee1f5b5a756174e8e36b367b6399edb0f57ae6af90fc4bfb1753"
+julia = "a38a1050d45a66fa375ba4ec097f4511d36d53d91f11c0aed3a5c622027a3a7f"
+paper = "b73c8c350b7d13e449dceb1c6fc37069fe0e392958f0e84756591469693cf7d4"
+paper_mk = "8922cd0f7d9b29bb57e37127396dc489b59341c62fdd90ab6e03d609d81ac81b"
+parameters = "624208a623bb27b3d56e9b772fa855a1f0256efcb07db4eb64f785ba9e9ad9cf"
+project = "7e9439a4733728e8db97372b0d1c1aee62e00bb23fb6a1227971afe73e668ba5"
+
+[log]
+file = "output.log"
+sha256 = "f9d3141f10efa3048a388fc7e6bb2c8498a2c10eb2c778e9f3444fc91e3be435"
+
+[parameters]
+full_search = "true"
+
+[provenance]
+commit = "647d911b934f1febfd26f64b8688d5e1e5d64184"
+created_utc = "2026-11-17T16:00:20.137"
+dirty = false
+julia = "julia version 1.13.1"
+orchestrator_julia = "1.13.1"
+
+    [provenance.ci]

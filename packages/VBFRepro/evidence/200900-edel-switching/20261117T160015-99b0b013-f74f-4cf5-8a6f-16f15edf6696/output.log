@@ -1,0 +1,18 @@
+/usr/bin/julia --project="/home/ts/20261116/VBF.jl/" -e \
+  'include(joinpath("/home/ts/20261116/VBF.jl/packages/VBFRepro/src/200900-edel-switching/", "theorem7.jl")); \
+   print_header(); theorem7_report(; full_search=true, save_results=false)'
+========================================================================
+Edel, Pott (2009): A new almost perfect nonlinear function
+which is not quadratic — Adv. Math. Commun. 3(1):59-81
+Field GF(2^6): p(x)=x^6+x^4+x^3+x+1 (modulus 91), u=x, ord(u)=63
+Julia 1.13.1  ·  scope: exact n=6 (Tables 5,6; Thm 7,9,11; Prop 2)
+========================================================================
+
+## Theorem 7 — Δ-rank ≤ 2^(n+1) is necessary for crooked
+  [PASS] F2.11: Δ-rank 152 > 128 ⇒ NOT crooked ⇒ not CCZ-quadratic
+  [PASS] all quadratic reps satisfy Δ-rank ≤ 128 (consistent with Theorem 7)
+  2.11 Δ-rank: 152 > 128 (the non-crooked / non-quadratic witness)
+
+## Corollary 8 — Kasami x^13, x^57 on GF(2^7) (opt-in, heavy)
+  [PASS] Kasami x^13: APN=true, Δ-rank=338 (paper 338), 338 > 256 ⇒ not crooked
+  [PASS] Kasami x^57: APN=true, Δ-rank=436 (paper 436), 436 > 256 ⇒ not crooked
