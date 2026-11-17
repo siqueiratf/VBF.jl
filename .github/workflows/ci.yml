@@ -221,19 +221,57 @@ jobs:
         if: steps.need.outputs.publish == 'true'
         run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL
 
-      - name: Cache the Beierle et al. 2025 original
+      # The expensive parts are cached by the digests of their own inputs, so a change that
+      # does not touch them (for example a bibliography entry) does not rebuild them.
+      - name: Corpus digests of the rebuilt catalog
         if: steps.need.outputs.publish == 'true'
+        id: digests
+        run: |
+          d=$(julia --startup-file=no --project=packages/VBFCatalog/src/import -e '
+            using VBFCatalog, SQLite, DBInterface
+            db = load_catalog()
+            print(join(sort(["$(r.name):$(r.store_sha256)" for r in DBInterface.execute(db, "SELECT name, store_sha256 FROM bulk_corpora")]), ","))' | sha256sum | cut -c1-64)
+          echo "corpora=$d" >> "$GITHUB_OUTPUT"
+
+      # members.sqlite depends only on the pinned Beierle file (sources.toml) and its converter.
+      - name: Cache the Beierle et al. 2025 members
+        if: steps.need.outputs.publish == 'true'
+        id: members
+        uses: actions/cache@v4
+        with:
+          path: .cache/vbfcatalog/members.sqlite
+          key: members-${{ hashFiles('packages/VBFCatalog/src/data/sources.toml', 'packages/VBFCatalog/src/import/convert.jl', 'packages/VBFCatalog/src/import/convert_beierle2025.jl', 'packages/VBFCatalog/src/corpus.jl') }}
+
+      # The corpus rows of the signature index depend on the corpus digests and the signature
+      # code; the rows of the curated functions are recomputed on every run.
+      - name: Cache the signature index
+        if: steps.need.outputs.publish == 'true'
+        id: index
+        uses: actions/cache@v4
+        with:
+          path: .cache/vbfcatalog/ccz_sigma_index.sqlite
+          key: sigma-${{ steps.digests.outputs.corpora }}-${{ hashFiles('packages/VBF/src/**/*.jl', 'packages/VBFCatalog/src/sigma.jl', 'packages/VBFCatalog/src/corpus.jl') }}
+
+      - name: Cache the Beierle et al. 2025 original
+        if: steps.need.outputs.publish == 'true' && steps.members.outputs.cache-hit != 'true'
         uses: actions/cache@v4
         with:
           path: .cache/vbfcatalog/raw/beierle2025
           key: beierle2025-dd6ae0655ba8a299a3d668cfc6cf10bf
 
-      - name: Build members and signature index
-        if: steps.need.outputs.publish == 'true'
+      - name: Build the members
+        if: steps.need.outputs.publish == 'true' && steps.members.outputs.cache-hit != 'true'
         run: |
           make -C packages/VBFCatalog/src/import fetch SOURCE=beierle2025
           make -C packages/VBFCatalog/src/import convert SOURCE=beierle2025 threads=4
-          make -C packages/VBFCatalog/src/import index threads=4
+
+      - name: Build the signature index
+        if: steps.need.outputs.publish == 'true' && steps.index.outputs.cache-hit != 'true'
+        run: make -C packages/VBFCatalog/src/import index threads=4
+
+      - name: Refresh the curated rows of the cached signature index
+        if: steps.need.outputs.publish == 'true' && steps.index.outputs.cache-hit == 'true'
+        run: julia --startup-file=no --project=packages/VBFCatalog/src/import -e 'using VBFCatalog; db = load_catalog(); println(refresh_curated_sigma_index!(db), " curated rows"); close(db)'
 
       - name: Publish to Zenodo
         if: steps.need.outputs.publish == 'true'
