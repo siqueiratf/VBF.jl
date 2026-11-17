@@ -119,7 +119,9 @@ function render_portal(model, out)
     # Catalog pages of S3: the corpora and the publications that cite them. S4 adds the query layer.
     corpora = sort(collect(values(model["corpora"])); by = c -> c["name"])
     users(name) = [r for r in repros if any(c -> c["name"] == name, r["corpora"])]
-    body = "<p>Snapshot <code>$(esc(model["snapshot"].prebuilt_key))</code>.</p><ul>" *
+    body = "<p>Snapshot <code>$(esc(model["snapshot"].prebuilt_key))</code>.</p>" *
+        "<p><a href=\"functions/\">Curated functions</a>: the named functions of the catalog, with their properties.</p>" *
+        "<h2>Corpora</h2><ul>" *
         join(["<li><a href=\"corpora/$(c["name"])/\">$(esc(c["name"]))</a>: $(c["member_count"]) functions, n = $(c["n"])</li>" for c in corpora]) * "</ul>"
     push!(written, write_page(out, "catalog/index.html", "Catalog",
         Mustache.render(template("page"), Dict("title" => "Catalog", "body" => body)); nav = "catalog"))

@@ -19,6 +19,8 @@ evidence = [joinpath(dirname(VBFRepro.papers_root()), "evidence")]
 for (i, a) in enumerate(args)
     a == "--evidence" && push!(evidence, abspath(args[i + 1]))
 end
+qi = findfirst(==("--query"), args)
+query = qi === nothing ? nothing : abspath(args[qi + 1])
 
 isdir(OUT) && rm(OUT; recursive = true)
 mkpath(OUT)
@@ -74,6 +76,7 @@ model = build_model(db; evidence_dirs = evidence)
 mkpath(joinpath(OUT, "assets"))
 cp(joinpath(@__DIR__, "assets"), joinpath(OUT, "assets", "portal"); force = true)   # beside Documenter's assets
 pages = render_portal(model, OUT)
+append!(pages, render_catalog_functions(model, OUT, db; query_db = query))
 unresolved = write_redirects(OUT)
 problems = check_links(OUT)
 close(db)

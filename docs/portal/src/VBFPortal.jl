@@ -19,7 +19,7 @@ export FunctionKey, function_key, key_string, display_key, parse_key, MemberRef,
     CatalogSnapshot, catalog_snapshot, resolve_member, current_member,
     EquivalenceRecord, EQUIVALENCE_LEVELS, proves_equivalence, proves_inequivalence,
     CheckContext, check_paper, check_all,
-    load_references, build_model, render_portal, write_redirects, check_links, build_query_db
+    load_references, build_model, render_portal, write_redirects, check_links, build_query_db, render_catalog_functions
 
 include("identity.jl")
 include("snapshots.jl")
@@ -29,6 +29,7 @@ include("model.jl")
 include("render.jl")
 include("linkcheck.jl")
 include("querydb.jl")
+include("catalog_pages.jl")
 
 """Check every paper that has a `paper.toml`; return (errors, review) over all of them."""
 function check_all(db = load_catalog())
