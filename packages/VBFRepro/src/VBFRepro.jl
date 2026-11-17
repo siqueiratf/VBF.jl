@@ -2,7 +2,7 @@ module VBFRepro
 
 using Dates, SHA, TOML, UUIDs
 
-export paper_bib_key, publications_path, repo_root, papers_root, discover_papers, paper_path, run_paper, test_paper, main
+export paper_bib_key, publications_path, repo_root, papers_root, discover_papers, paper_path, run_paper, test_paper, main, cli
 
 """Root of the VBF workspace containing the reproducible execution environment."""
 repo_root() = normpath(joinpath(@__DIR__, "..", "..", ".."))
@@ -217,51 +217,6 @@ end
 """Run the selected paper's test target through the same isolated evidence runner."""
 test_paper(id::AbstractString; kwargs...) = run_paper(id; target="test", kwargs...)
 
-"""Command-line entry for `list`, `run PAPER`, and `test PAPER`; return an exit code."""
-function main(args=ARGS)
-    if isempty(args) || first(args) in ("help", "--help", "-h")
-        println("vbfrepro list")
-        println("vbfrepro run PAPER [--target TARGET] [--param key=value] [--timeout-seconds N] [--output DIR]")
-        println("vbfrepro test PAPER [--timeout-seconds N] [--output DIR]")
-        return 0
-    end
-    if first(args) == "list"
-        length(args) == 1 || throw(ArgumentError("list accepts no arguments"))
-        foreach(p -> println(p.id), discover_papers())
-        return 0
-    end
-    command = first(args)
-    command in ("run", "test") || throw(ArgumentError("unknown command '$command'"))
-    length(args) >= 2 || throw(ArgumentError("missing paper ID"))
-    id = args[2]
-    target = command == "test" ? "test" : "report"
-    parameters = Dict{String,String}()
-    timeout = nothing
-    output = nothing
-    index = 3
-    while index <= length(args)
-        option = args[index]
-        index < length(args) || throw(ArgumentError("missing value for '$option'"))
-        value = args[index+1]
-        if option == "--target" && command == "run"
-            target = value
-        elseif option == "--param" && command == "run"
-            pieces = split(value, '='; limit=2)
-            length(pieces) == 2 || throw(ArgumentError("parameter must be key=value"))
-            haskey(parameters, pieces[1]) && throw(ArgumentError("duplicate parameter '$(pieces[1])'"))
-            parameters[pieces[1]] = pieces[2]
-        elseif option == "--timeout-seconds"
-            timeout = parse(Float64, value)
-        elseif option == "--output"
-            output = value
-        else
-            throw(ArgumentError("unsupported option '$option'"))
-        end
-        index += 2
-    end
-    result = run_paper(id; target, parameters, timeout_seconds=timeout, output)
-    println("$(result.paper) $(result.target): $(result.status)\nEvidence: $(result.output)")
-    return result.status == "passed" ? 0 : 1
-end
+include("cli.jl")
 
 end

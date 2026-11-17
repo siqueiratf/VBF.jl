@@ -77,13 +77,33 @@ end
         @test metadata["paper"] == "202211-yu-qam"
         @test metadata["parameters"]["limit"] == "17"
         @test metadata["timeout_seconds"] == 10
-        @test_throws ArgumentError main(["run"])
-        @test_throws ArgumentError main(["absent"])
-        @test_throws ArgumentError main(["list", "extra"])
-        @test_throws ArgumentError main(["run", "202211-yu-qam", "--param", "x"])
-        @test_throws ArgumentError main(["run", "202211-yu-qam", "--param", "x=1", "--param", "x=2"])
-        @test_throws ArgumentError main(["test", "202211-yu-qam", "--target", "report"])
+        @test_throws VBFRepro.UsageError main(["run"])
+        @test_throws VBFRepro.UsageError main(["absent"])
+        @test_throws VBFRepro.UsageError main(["list", "a", "b"])
+        @test_throws VBFRepro.UsageError main(["run", "202211-yu-qam", "--param", "x"])
+        @test_throws VBFRepro.UsageError main(["run", "202211-yu-qam", "--param", "x=1", "--param", "x=2"])
+        @test_throws VBFRepro.UsageError main(["test", "202211-yu-qam", "--target", "report"])
+        @test_throws VBFRepro.UsageError main(["run", "yu"])            # ambiguous part of an ID
+        @test_throws VBFRepro.UsageError main(["run", "no-such-paper"])
     end
+end
+
+@testset "command-line help and lookup" begin
+    @test VBFRepro.resolve_command("te") == "test"
+    @test VBFRepro.resolve_command("li") == "list"
+    @test_throws VBFRepro.UsageError VBFRepro.resolve_command("x")
+    @test VBFRepro.resolve_paper("202211-yu-qam"; io=devnull) == "202211-yu-qam"
+    @test VBFRepro.resolve_paper("Yu_202211"; io=devnull) == "202211-yu-qam"
+    @test VBFRepro.resolve_paper("yu-qam"; io=devnull) == "202211-yu-qam"
+    @test ("limit" => "2147483647") in VBFRepro.paper_parameters(paper_path("202211-yu-qam"))
+    for args in (String[], ["help"], ["help", "run"], ["run", "--help"], ["test", "-h"])
+        @test redirect_stdout(() -> main(args), devnull) == 0
+    end
+    @test redirect_stdout(() -> main(["list", "qam"]), devnull) == 0
+    for shell in ("bash", "zsh", "fish")
+        @test redirect_stdout(() -> main(["completions", shell]), devnull) == 0
+    end
+    @test redirect_stderr(() -> VBFRepro.cli(["run"]), devnull) == 2
 end
 
 @testset "isolated execution and durable evidence" begin

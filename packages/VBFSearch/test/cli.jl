@@ -5,12 +5,12 @@ const APNCommand=VBFSearch.CLI
 @testset "search command parsing and frozen resume configuration" begin
     @test APNCommand.duration("8h")=="28800.0"
     @test APNCommand.duration("1.5m")=="90.0"
-    @test_throws ErrorException APNCommand.duration("Inf")
-    @test_throws ErrorException APNCommand.duration("0h")
-    @test_throws ErrorException APNCommand.search_configuration("search",["--output","x","--typo","1"])
+    @test_throws APNCommand.UsageError APNCommand.duration("Inf")
+    @test_throws APNCommand.UsageError APNCommand.duration("0h")
+    @test_throws APNCommand.UsageError APNCommand.search_configuration("search",["--output","x","--typo","1"])
     @test_throws ArgumentError APNCommand.search_configuration("search",["--output","x","--threads","0"])
-    @test_throws ErrorException APNCommand.search_configuration("search",["--output","x","--duration"])
-    @test_throws ErrorException APNCommand.search_configuration("search",["--output","x","--duration","1h","--duration","2h"])
+    @test_throws APNCommand.UsageError APNCommand.search_configuration("search",["--output","x","--duration"])
+    @test_throws APNCommand.UsageError APNCommand.search_configuration("search",["--output","x","--duration","1h","--duration","2h"])
     @test_throws ArgumentError APNCommand.search_configuration("search",["--output","x","--method","unknown"])
     mktempdir() do dir
         output=joinpath(dir,"run")
@@ -33,7 +33,20 @@ const APNCommand=VBFSearch.CLI
         @test cfg["baseline"]=="/reference" && cfg["supplement"]=="/supplement"
         @test cfg["resume"]=="true" && cfg["wall-seconds"]=="7200.0"
         @test isfile(joinpath(output,"STOP"))
-        @test_throws ErrorException APNCommand.search_configuration("resume",[output,"--method","switching"])
-        @test_throws ErrorException APNCommand.search_configuration("search",["--output",output])
+        @test_throws APNCommand.UsageError APNCommand.search_configuration("resume",[output,"--method","switching"])
+        @test_throws APNCommand.UsageError APNCommand.search_configuration("search",["--output",output])
     end
+end
+
+@testset "command-line help, prefixes and completion" begin
+    @test APNCommand.resolve_command("stat") == "status"
+    @test APNCommand.resolve_command("verify") == "verify"
+    @test_throws APNCommand.UsageError APNCommand.resolve_command("c")
+    @test_throws APNCommand.UsageError APNCommand.resolve_command("frob")
+    for args in (String[], ["help"], ["help", "compare"], ["search", "--help"], ["completions", "bash"],
+                 ["completions", "zsh"], ["completions", "fish"])
+        @test redirect_stdout(() -> APNCommand.cli(args), devnull) == 0
+    end
+    @test redirect_stderr(() -> APNCommand.cli(["search"]), devnull) == 2
+    @test redirect_stderr(() -> APNCommand.cli(["completions", "tcsh"]), devnull) == 2
 end
