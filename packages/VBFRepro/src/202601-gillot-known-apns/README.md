@@ -1,6 +1,6 @@
 # Gillot and Langevin (2026): Observation of known APNs
 
-Independent Julia experiments for [Valérie Gillot and Philippe Langevin, *Observation of known APNs*, arXiv:2601.11247v1](https://arxiv.org/abs/2601.11247v1), submitted 16 January 2026. The ignored TeX source is the mathematical ground truth. [EXPERIMENTS.md](EXPERIMENTS.md) inventories every claim; [TEST_REPORT.md](TEST_REPORT.md) records validation and [REVIEW.md](REVIEW.md) records independent review.
+Independent Julia experiments for [Valérie Gillot and Philippe Langevin, *On Known APNs*, arXiv:2601.11247v1](https://arxiv.org/abs/2601.11247v1), submitted 16 January 2026. The ignored TeX source is the mathematical ground truth. [EXPERIMENTS.md](EXPERIMENTS.md) inventories every claim; [TEST_REPORT.md](TEST_REPORT.md) records validation and [REVIEW.md](REVIEW.md) records independent review.
 
 The practical six-bit component and one-coordinate switching computations are complete. Two-coordinate, bihomogeneous and bent-extension searches were run with measured limits. This is a reproduction of those completed computations and an implementation of the remaining bounded searches; it does not reproduce every published table or prove either global conjecture.
 

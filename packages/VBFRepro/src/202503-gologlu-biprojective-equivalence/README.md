@@ -1,7 +1,7 @@
 # Gologlu_202503 — Equivalences of Biprojective Almost Perfect Nonlinear Functions
 
 **Paper**: Göloğlu, Kölsch. "Equivalences of biprojective almost perfect nonlinear
-functions." *Electronic Journal of Combinatorics*, 2025.
+functions." *Combinatorial Theory* 5(3), 2025, doi:10.5070/C65365555.
 
 **Reproduction path**: `packages/VBFRepro/src/202503-gologlu-biprojective-equivalence/`
 
