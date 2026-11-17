@@ -79,6 +79,32 @@ open(joinpath(API_DIR, "reproduction.md"), "w") do io
 end
 push!(api_pages, "api/reproduction.md")
 
+# One page per paper reproduction and one for the searches, generated from the READMEs so
+# that the site never drifts from them. Relative links point to the files on GitHub.
+const REPO = "https://github.com/siqueiratf/VBF.jl/blob/main/"
+const GENERATED = joinpath(@__DIR__, "src", "generated")
+isdir(GENERATED) && rm(GENERATED; recursive = true)
+mkpath(GENERATED)
+
+"""Copy a README into the site; rewrite its relative links to GitHub URLs."""
+function readme_page(source, target)
+    dir = relpath(dirname(source), normpath(joinpath(@__DIR__, "..")))
+    text = replace(read(source, String), r"\]\((?!https?:|mailto:|#)([^)\s]+)\)" =>
+        s -> "](" * REPO * normpath(joinpath(dir, match(r"\]\((.*)\)", s)[1])) * ")")
+    # "Edit on GitHub" opens the README, not the generated copy.
+    write(target, "```@meta\nEditURL = \"" * REPO * relpath(source, normpath(joinpath(@__DIR__, ".."))) * "\"\n```\n\n" * text)
+    relpath(target, joinpath(@__DIR__, "src"))
+end
+
+paper_pages = Pair{String,String}[]
+for paper in VBFRepro.discover_papers()
+    readme = joinpath(paper.path, "README.md")
+    isfile(readme) || continue
+    push!(paper_pages, paper.id => readme_page(readme, joinpath(GENERATED, paper.id * ".md")))
+end
+search_page = readme_page(normpath(joinpath(@__DIR__, "..", "packages", "VBFSearch", "README.md")),
+    joinpath(GENERATED, "search.md"))
+
 makedocs(
     sitename = "VBF",
     authors = "Gustavo Zambonin",
@@ -89,8 +115,12 @@ makedocs(
     plugins = [bib],
     pages = [
         "Home" => "index.md",
+        "Getting started" => "getting_started.md",
+        "Command-line tools" => "cli.md",
+        "Prebuilt catalog data" => "data.md",
         "APN inspector" => "inspector.md",
-        "Reproductions and performance" => "reproductions.md",
+        "Paper reproductions" => ["Overview and performance" => "reproductions.md"; paper_pages],
+        "Searches" => search_page,
         "2026/940 algorithm conformance" => "partition_refinement_conformance.md",
         "API reference" => api_pages,
         "References" => "references.md",
@@ -102,4 +132,4 @@ makedocs(
     ),
 )
 
-# The docs are built locally only (`make -C docs build` or `make -C docs serve`); nothing deploys them to a hosted site.
+# CI publishes docs/build to GitHub Pages after each push to main (the docs-pages job of ci.yml).

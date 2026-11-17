@@ -216,7 +216,7 @@ snapshot = report_snapshot(config.output)
 
 ```sh
 # Search and register newly separating classes with one command.
-bin/vbf discover --name b52-next --corpus legacy20261009_n8 --parents 1000 \
+bin/vbf discover --name b52-next --corpus beierle2025_n8 --parents 1000 \
     --method v5 --target-b6 52 --bent max \
     --duration 8h --threads 30 --chunk-size 32768
 # Or register the current snapshot of a stopped, stopped run.

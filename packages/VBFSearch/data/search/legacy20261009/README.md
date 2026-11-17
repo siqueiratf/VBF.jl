@@ -5,9 +5,10 @@ validation counts, retention decisions and executable search/resume commands.
 [parents.tsv](parents.tsv) supplies all 11,405 recovered historical parent LUTs,
 in completion-ledger order. It is scientific input data, not a second catalog.
 
-The catalog contains corpus `legacy20261009_n8`: 111,009 verified quadratic APN
-representatives with distinct separating signatures, absent from the expanded
-public baseline before registration. The full recovered archive validation checked
+Until 2026-10-17, the catalog held these discoveries as corpus `legacy20261009_n8`:
+111,009 verified quadratic APN representatives with distinct separating signatures,
+absent from the expanded public baseline before registration. The default catalog
+no longer holds them (see `../../../DATASETS.md`). The full recovered archive validation checked
 114,062 records and retained 111,835 exact LUTs, including matching-signature
 candidates whose equivalence is unresolved. Literature-wide novelty is unresolved.
 

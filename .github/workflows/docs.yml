@@ -1,8 +1,6 @@
 name: Docs
 
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -10,7 +8,8 @@ concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
-# This workflow only builds the docs to catch broken doctests and cross-references. Nothing deploys them: build them locally with `make -C docs build`.
+# This workflow builds the docs of a pull request to catch broken doctests and cross-references.
+# The docs-pages job of ci.yml publishes the site after each push to main.
 permissions:
   contents: read
 

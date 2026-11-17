@@ -26,10 +26,11 @@ absolute path:
 make -C docs serve run=/absolute/path/to/experiment
 ```
 
-The published documentation is static: it displays the interface, but full
-DDT checks, reference database queries and equivalence searches require the
-local Julia server. Its connection status appears below. Open the local docs
-after launching the command; the published page does not connect to localhost.
+!!! note "The inspector needs a local server"
+    This site is static. It shows the interface below, but the checks, the
+    database queries and the equivalence searches run in the local Julia server.
+    On this site, the interface shows "Julia backend unavailable". Run
+    `make -C docs serve-inspector` in a clone and open <http://127.0.0.1:8088/>.
 All inputs and evidence stay on the server you run.
 
 [Open the inspector in a separate tab](assets/apn-inspector.html)
@@ -76,7 +77,7 @@ All inputs and evidence stay on the server you run.
 | Absent signature in a reference | Inequivalent to that documented quadratic corpus; does not establish literature-wide novelty |
 
 Every verdict retains its reference scope and provenance. See the
-[Search guarantees](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFSearch/README.md)
+[Search guarantees](https://github.com/siqueiratf/VBF.jl/blob/main/packages/VBFSearch/README.md)
 for outstanding coverage gaps. Check a downloaded certificate through VBF:
 
 ```sh
@@ -84,6 +85,6 @@ bin/vbf verify comparison.toml
 ```
 
 Publication tables and standalone figures come from `bin/vbf report`.
-See the [inspector guide](https://github.com/zambonin/VBF.jl/blob/main/docs/inspector/README.md)
-for API routes and the [search guide](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFSearch/README.md)
+See the [inspector guide](https://github.com/siqueiratf/VBF.jl/blob/main/docs/inspector/README.md)
+for API routes and the [search guide](https://github.com/siqueiratf/VBF.jl/blob/main/packages/VBFSearch/README.md)
 for checkpointing, classification and reports.

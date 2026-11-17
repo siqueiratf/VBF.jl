@@ -24,12 +24,11 @@ Original paths in historical manifests describe the experiment as it was run.
 The public `crosscheck_raw/raw_only_546.tsv` moved to the canonical catalog input
 `../../../VBFCatalog/src/data/luts/langevin_may2025_extra.tsv`; its byte-identical archive copy was removed.
 
-The recovered discoveries are registered as corpus `legacy20261009_n8` in the
-main catalog. Their complete validation run, input hashes, inventory and replay
+Until 2026-10-17, the recovered discoveries were the catalog corpus
+`legacy20261009_n8`. The default catalog no longer holds them (see
+`../DATASETS.md`). Their complete validation run, input hashes, inventory and replay
 plan are under `../search/legacy20261009/`; the tracked `replay.toml` records the
-assessment and executable recipe. The immutable normalized input lives in
-`../../../VBFCatalog/src/data/luts/legacy20261009.coeffs.gz`; rebuilds do not need the old run.
-Coefficient records reconstruct LUTs through the VBF APIs.
+assessment and executable recipe. Coefficient records reconstruct LUTs through the VBF APIs.
 
 New searches belong under `../search/<experiment>/`. See
 [VBFSearch](../../../VBFSearch/README.md) for `bin/vbf discover`, which searches,

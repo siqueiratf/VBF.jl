@@ -24,7 +24,7 @@ On Unix, a timeout stops the process group, including its Julia subprocess.
 A passing target establishes what its assertions check; a stopped computation
 does not establish exhaustion or a negative mathematical result.
 
-See the [runner guide](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFRepro/README.md)
+See the [runner guide](https://github.com/siqueiratf/VBF.jl/blob/main/packages/VBFRepro/README.md)
 for dependencies, source identity and external-data limitations.
 
 ## Measure public APIs
@@ -66,5 +66,5 @@ retain their original protocol and provenance; the analysis keeps them separate
 from BenchmarkTools trials. Publication-specific configurations and templates
 live under `packages/VBFPaper/doc/`.
 
-See the [analysis guide](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFPaper/README.md)
+See the [analysis guide](https://github.com/siqueiratf/VBF.jl/blob/main/packages/VBFPaper/README.md)
 for the input/output options and documented statistical limits.

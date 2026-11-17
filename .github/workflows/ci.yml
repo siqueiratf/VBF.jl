@@ -231,6 +231,58 @@ jobs:
           ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
         run: julia --startup-file=no --project=packages/VBFCatalog/src/import packages/VBFCatalog/src/import/prebuilt.jl publish $([ "$CREATE" = true ] && echo --create)
 
+  # Builds the Documenter site with the rebuilt catalog and publishes it to GitHub Pages
+  # (https://siqueiratf.github.io/VBF.jl/). The site is a GitHub Actions artifact; there is
+  # no gh-pages branch. docs.yml builds the same site for pull requests without publishing it.
+  docs-pages:
+    name: Publish documentation
+    needs: catalog-check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Install Julia 1.12
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+
+      - name: Cache Julia depot
+        uses: julia-actions/cache@v2
+
+      - name: Download rebuilt catalog
+        uses: actions/download-artifact@v4
+        with:
+          name: catalog
+          path: .cache/vbfcatalog
+
+      - name: Instantiate docs environment
+        run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Build
+        run: julia --project=docs docs/make.jl
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+
   test:
     name: Test • ${{ matrix.package }} • Julia ${{ matrix.julia }} • ${{ matrix.os }}
     needs: [paper-tests, catalog-check]

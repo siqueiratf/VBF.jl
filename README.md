@@ -1,5 +1,9 @@
 # VBF.jl
 
+[Documentation](https://siqueiratf.github.io/VBF.jl/) ·
+[Getting started](https://siqueiratf.github.io/VBF.jl/getting_started/) ·
+[Prebuilt data on Zenodo](https://doi.org/10.5281/zenodo.24297661)
+
 Julia >= 1.12 workspace for vectorial Boolean functions. `packages/VBF` contains
 mathematical algorithms; `packages/VBFCatalog` provides the catalog and corpora
 from pinned heterogeneous inputs under `src/data/`;
@@ -49,9 +53,10 @@ catalog sources, CI publishes a new version of the Zenodo record named in
 `julia --project=packages/VBFCatalog/src/import packages/VBFCatalog/src/import/prebuilt.jl key`
 prints the key of your checkout.
 
-The repository has one branch, `main`. Build the documentation locally with
-`make -C docs build`; nothing publishes it to GitHub Pages.
-See the [API documentation sources](docs/src).
+The documentation, with tutorials, one page per paper reproduction and the API
+reference, is at <https://siqueiratf.github.io/VBF.jl/>. CI publishes it after
+each push to `main`. Build it locally with `make -C docs build` (output in
+`docs/build/`). The repository has one long-lived branch, `main`.
 
 ## Paper reproductions and performance
 
@@ -61,15 +66,35 @@ lists and runs selected papers in isolated processes, recording configurations,
 logs, exit status and source identities under `packages/VBFRepro/src/results/runs/`:
 
 ```sh
-bin/vbfrepro list
-bin/vbfrepro test Yu_202211d --timeout-seconds 300
+bin/vbfrepro list                                     # paper IDs and bib keys
+bin/vbfrepro info yu-qam                              # targets and parameters of one paper
+bin/vbfrepro test 202211-yu-qam --timeout-seconds 300
 ```
+
+A paper can be named by its ID, its bib key (`Yu_202211`) or a unique part of
+them (`yu-qam`).
 
 Cross-paper metrics and performance analysis share
 [VBFPaper](packages/VBFPaper/README.md).
 Each package owns optional BenchmarkTools workloads in its `perf/` folder.
 Performance environments are separate from runtime dependencies, and measurements
 are stored under `packages/VBFPaper/bench/data/`; benchmark execution leaves the catalog unchanged.
+
+## Command-line help
+
+`bin/vbfrepro` runs the paper reproductions and `bin/vbf` runs the searches.
+Each one prints its commands with `help`, and the options of one command with
+`COMMAND --help`. A unique prefix of a command also works (`bin/vbfrepro te`).
+Load tab completion for commands, paper IDs, targets and options in your shell:
+
+```sh
+source <(bin/vbfrepro completions bash); source <(bin/vbf completions bash)   # bash
+source <(bin/vbfrepro completions zsh);  source <(bin/vbf completions zsh)    # zsh
+bin/vbfrepro completions fish | source; bin/vbf completions fish | source    # fish
+```
+
+To keep it, put the same lines, with the absolute path of `bin/`, in your shell
+startup file (`~/.bashrc`, `~/.zshrc` or `~/.config/fish/config.fish`).
 
 ## Reproducible APN searches
 
@@ -87,10 +112,12 @@ The default construction is checkpointed V5 extension of quadratic eight-bit
 APNs; `--method switching` selects switching. Each experiment freezes a finite
 parent plan. Discoveries are not automatically promoted to parents in that run.
 Corpus absence is scoped evidence, not a literature-wide novelty guarantee.
-Use `--corpus legacy20261009_n8 --parents 1000` to continue from the recovered
-discovery corpus; `--seed` makes selection repeatable. The
+`--corpus NAME` samples parents from a catalog corpus (list them with
+`list_corpora(load_catalog())`), and `--seed` makes the selection repeatable. The
 [historical replay recipe](packages/VBFSearch/data/search/legacy20261009/replay.toml)
-supplies the exact recovered 11,405-parent construction plan.
+supplies the exact recovered 11,405-parent construction plan; pass its parents with
+`--input packages/VBFSearch/data/search/legacy20261009/parents.tsv`. The recovered
+discoveries are not a catalog corpus (see [DATASETS.md](packages/VBFSearch/DATASETS.md)).
 `discover` registers one verified representative per separating signature in
 VBFCatalog. For repeated stop/resume cycles before registration, use `search`,
 then `publish RUN --name SLUG`. New corpora do not change a run's frozen reference
