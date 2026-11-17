@@ -239,6 +239,21 @@ end
         @test isempty(errors)
         @test count(contains("candidate, not reviewed"), review) == 2
 
+        # A reviewed tool goes to `support` and leaves the review list; parameters must exist.
+        write(joinpath(paper, "Makefile"), read(joinpath(paper, "Makefile"), String) * "limit ?= 10\n")
+        meta["support"] = ["extra.jl"]
+        c["parameters"] = Dict("limit" => "100")
+        write(file, VBFRepro.render_paper_metadata(meta))
+        errors, review = check_paper_metadata("202601-fixture-claims"; root)
+        @test isempty(errors)
+        @test !any(contains("extra.jl"), review)
+        c["parameters"] = Dict("no_such" => "1")
+        write(file, VBFRepro.render_paper_metadata(meta))
+        errors, _ = check_paper_metadata("202601-fixture-claims"; root)
+        @test any(contains("'no_such' is not a Makefile parameter"), errors)
+        c["parameters"] = Dict("limit" => "100")
+        write(file, VBFRepro.render_paper_metadata(meta))
+
         # --update appends new candidates only; the reviewed claim stays as it is.
         write(joinpath(paper, "lemma5.jl"), "# Implements Lemma 5\n")
         scaffold_paper("202601-fixture-claims"; root, update = true)

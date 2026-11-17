@@ -11,9 +11,11 @@ const PUBLICATION_ROLES = ("primary", "dataset", "related")
 const VERIFICATIONS = ("computational-check", "replication", "transcription")
 const COMPLETENESS = ("complete", "partial", "not-reproduced")
 const REVIEW = ("pending", "done")
-const CLAIM_KEYS = ("id", "label", "summary", "files", "targets", "tests", "verification",
+const CLAIM_KEYS = ("id", "label", "summary", "files", "targets", "parameters", "tests", "verification",
                     "completeness", "scope", "functions", "api", "review", "note")
-const TOP_KEYS = ("schema", "code", "corpora", "functions", "publications", "claims", "unassigned")
+# `support`: files or `target:NAME` items that a person reviewed and found to be tools,
+# diagnostics or helpers, not results of the publication.
+const TOP_KEYS = ("schema", "code", "corpora", "functions", "support", "publications", "claims", "unassigned")
 # Make targets that run tools, not results of the publication.
 const TOOL_TARGETS = ("help", "test", "report", "clean_results", "instantiate", "default", "clean", "all")
 # Files that support the claims; they are never claims themselves.
@@ -117,6 +119,7 @@ end
 
 _toml_value(v::AbstractString) = repr(String(v))
 _toml_value(v::AbstractVector) = "[" * join(_toml_value.(v), ", ") * "]"
+_toml_value(v::AbstractDict) = "{ " * join(["$k = $(_toml_value(v[k]))" for k in sort!(collect(keys(v)))], ", ") * " }"
 _toml_value(v) = string(v)
 
 """Write `paper.toml` text with the schema's key order and short comments."""
@@ -126,7 +129,7 @@ function render_paper_metadata(meta::AbstractDict)
     println(io, "# `bin/vbfrepro scaffold` writes candidates with review = \"pending\"; a person reviews")
     println(io, "# each claim against the paper and the code, then sets review = \"done\".")
     println(io, "schema = ", _toml_value(PAPER_SCHEMA))
-    for k in ("code", "corpora", "functions", "unassigned")
+    for k in ("code", "corpora", "functions", "support", "unassigned")
         haskey(meta, k) && println(io, k, " = ", _toml_value(meta[k]))
     end
     for p in get(meta, "publications", [])
@@ -215,6 +218,11 @@ function check_paper_metadata(id::AbstractString; root=papers_root())
         for t in get(c, "targets", [])
             t in make.rules || push!(errors, "$tag: no Make target '$t'")
         end
+        known = first.(paper_parameters(path))
+        for (k, v) in get(c, "parameters", Dict())
+            k in known || push!(errors, "$tag: '$k' is not a Makefile parameter (?=) of this paper")
+            v isa AbstractString || push!(errors, "$tag: parameter $k must be a string, as on the make command line")
+        end
         for t in get(c, "tests", [])
             isfile(joinpath(path, t)) || push!(errors, "$tag: missing test $t")
         end
@@ -229,13 +237,18 @@ function check_paper_metadata(id::AbstractString; root=papers_root())
             push!(review, "$tag: candidate, not reviewed")
         end
     end
+    support = Set(get(meta, "support", String[]))
+    for f in support
+        startswith(f, "target:") ? (f[8:end] in make.rules || push!(errors, "$id: support target $f does not exist")) :
+            (isfile(joinpath(path, f)) || push!(errors, "$id: support file $f does not exist"))
+    end
     claimed = Set(f for c in get(meta, "claims", []) for f in get(c, "files", []))
     for f in readdir(path)
-        endswith(f, ".jl") && !(f in SUPPORT_FILES) && !(f in claimed) &&
+        endswith(f, ".jl") && !(f in SUPPORT_FILES) && !(f in claimed) && !(f in support) &&
             push!(review, "$id: $f is in no claim")
     end
     for f in get(meta, "unassigned", [])
-        push!(review, "$id: unassigned $f (no result named in its header or help)")
+        f in support || f in claimed || push!(review, "$id: unassigned $f (no result named in its header or help)")
     end
     key = isfile(publications_path()) ? get(TOML.parsefile(publications_path()), String(id), nothing) : nothing
     primary = [p["key"] for p in pubs if get(p, "role", "") == "primary" && haskey(p, "key")]
