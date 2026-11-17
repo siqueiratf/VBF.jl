@@ -83,7 +83,14 @@ page it read) and 433 MiB (sqlite-wasm-http has a bounded page cache).
   133 requests per minute per IP, so it suits occasional historical references, not the
   current catalog.
 
-## 5. Open decision: hosting of the query database
+## 5. Decision (2026-11-17)
 
-The query database with full hashes is 759 MiB. GitHub Pages allows 1 GB per site. See the
-question to the user in the S0 report; the options are listed there with these numbers.
+- **Format:** SQLite over HTTP Range, page size 4096; no custom binary format.
+- **Library:** sqlite-wasm-http, behind one small module of the portal.
+- **Hosting:** the query database of the current snapshot is served from GitHub Pages
+  (759 MiB with full hashes; about 200 MiB of headroom under the 1 GB limit). Each Zenodo
+  data version also stores its query database uncompressed, so a historical snapshot can be
+  queried online from Zenodo (slower: about 0.8 s per request, 133 requests per minute).
+  When the current database outgrows Pages, it moves to an external host with Range and CORS.
+- **Limits of the online interface:** indexed queries only; aggregates over a whole corpus
+  are computed at build time.
