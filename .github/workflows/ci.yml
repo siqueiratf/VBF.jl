@@ -6,6 +6,11 @@ on:
     tags: ['*']
   pull_request:
   workflow_dispatch:
+    inputs:
+      create_record:
+        description: 'Create the Zenodo record of the prebuilt catalog data (first publication only; permanent)'
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -151,6 +156,80 @@ jobs:
           path: .cache/vbfcatalog/catalog.sqlite
           include-hidden-files: true
           if-no-files-found: error
+
+  # Publishes the prebuilt catalog data (catalog, Beierle members, signature index) as a new
+  # version of the Zenodo record in packages/VBFCatalog/src/import/prebuilt.toml, so that
+  # `make -C docs data` can download it instead of building it. A version is permanent, so
+  # only a push to main publishes, and only when Zenodo has no version for the prebuilt key.
+  catalog-data:
+    name: Publish prebuilt catalog data
+    needs: [catalog-check, test]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    # Two quick merges must not open two Zenodo drafts at the same time.
+    concurrency:
+      group: zenodo-catalog-data
+      cancel-in-progress: false
+    env:
+      CREATE: ${{ github.event_name == 'workflow_dispatch' && inputs.create_record }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Install Julia 1.12
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+
+      - name: Cache Julia depot
+        uses: julia-actions/cache@v2
+
+      - name: Download rebuilt catalog
+        uses: actions/download-artifact@v4
+        with:
+          name: catalog
+          path: .cache/vbfcatalog
+
+      - name: Instantiate import environment
+        run: julia --startup-file=no --project=packages/VBFCatalog/src/import -e 'using Pkg; Pkg.instantiate(); Pkg.activate("packages/VBFCatalog"); Pkg.instantiate()'
+
+      - name: Find the Zenodo version of this prebuilt key
+        id: need
+        run: |
+          if grep -q '^concept_recid = ""' packages/VBFCatalog/src/import/prebuilt.toml && [ "$CREATE" != true ]; then
+            echo "No Zenodo record yet: run this workflow by hand with create_record to make it."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          elif julia --startup-file=no --project=packages/VBFCatalog/src/import packages/VBFCatalog/src/import/prebuilt.jl published; then
+            echo "Zenodo already has the data of this prebuilt key."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Free disk space
+        if: steps.need.outputs.publish == 'true'
+        run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL
+
+      - name: Cache the Beierle et al. 2025 original
+        if: steps.need.outputs.publish == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .cache/vbfcatalog/raw/beierle2025
+          key: beierle2025-dd6ae0655ba8a299a3d668cfc6cf10bf
+
+      - name: Build members and signature index
+        if: steps.need.outputs.publish == 'true'
+        run: |
+          make -C packages/VBFCatalog/src/import fetch SOURCE=beierle2025
+          make -C packages/VBFCatalog/src/import convert SOURCE=beierle2025 threads=4
+          make -C packages/VBFCatalog/src/import index threads=4
+
+      - name: Publish to Zenodo
+        if: steps.need.outputs.publish == 'true'
+        env:
+          ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
+        run: julia --startup-file=no --project=packages/VBFCatalog/src/import packages/VBFCatalog/src/import/prebuilt.jl publish $([ "$CREATE" = true ] && echo --create)
 
   test:
     name: Test • ${{ matrix.package }} • Julia ${{ matrix.julia }} • ${{ matrix.os }}

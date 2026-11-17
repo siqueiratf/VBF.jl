@@ -15,6 +15,40 @@ The core package never depends on the catalog.
 | `packages/VBFSearch` | our own searches and optimizations, including the GPU toolkit in `gpu/` |
 | `packages/VBFPaper` | the manuscript, its studies and the benchmark evidence in `bench/` |
 
+## Run the APN inspector
+
+The [APN inspector](docs/src/inspector.md) is a local web page. It validates an
+(8,8)-function, shows its invariants and compares it with the catalog corpus.
+You need Julia >= 1.12 ([install](https://julialang.org/install/)), `git`, `curl`, `gzip` and
+about 1.5 GB of free disk (4.5 GB to build the data from the originals). Run these commands:
+
+```sh
+git clone https://github.com/siqueiratf/VBF.jl.git
+cd VBF.jl
+make -C docs serve-inspector
+```
+
+Open <http://127.0.0.1:8088/>. Stop the server with Ctrl-C.
+The first run gets the catalog data. If Zenodo has the prebuilt data of your
+commit, it downloads about 490 MB (`catalog.sqlite`, `members.sqlite` and
+`ccz_sigma_index.sqlite`). Otherwise it builds the catalog from the originals:
+it downloads the Beierle et al. 2025 corpus (3.16 GB, Zenodo 16752428), checks
+all 3,775,599 functions and indexes their signatures. On a 12-thread machine,
+this build took about 45 minutes, 11 of them for the download at about 5 MB/s. Use `prebuilt=0` to always build, `threads=N`
+to set the build threads and `port=8090` to change the port.
+After the first run, the server starts in about 40 seconds.
+`make -C docs data` gets the data and does not start the server.
+
+### Prebuilt catalog data
+
+To use the catalog in your own research without a rebuild, run `make -C docs data`
+in a clone. It installs the data in `.cache/vbfcatalog/`. After each merge that changes the
+catalog sources, CI publishes a new version of the Zenodo record named in
+[`prebuilt.toml`](packages/VBFCatalog/src/import/prebuilt.toml).
+`manifest.toml` of each version gives the commit, the prebuilt key and the SHA-256 of each file.
+`julia --project=packages/VBFCatalog/src/import packages/VBFCatalog/src/import/prebuilt.jl key`
+prints the key of your checkout.
+
 The repository has one branch, `main`. Build the documentation locally with
 `make -C docs build`; nothing publishes it to GitHub Pages.
 See the [API documentation sources](docs/src).

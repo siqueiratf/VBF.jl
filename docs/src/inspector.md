@@ -6,16 +6,19 @@ invariants and run bounded EA or CCZ comparisons. The page uses the same
 
 ## Launch the interactive documentation
 
-From a checkout with the [reference data prepared](https://github.com/zambonin/VBF.jl/blob/main/packages/VBFCatalog/data/research/README.md),
-run this command from the repository root:
+You need Julia >= 1.12, `git`, `curl` and `gzip`. From a fresh clone, run this
+command from the repository root:
 
 ```sh
 make -C docs serve
 ```
 
 Open <http://127.0.0.1:8088/docs/> and select **APN inspector** in the sidebar.
-The command installs the documentation and app environments, builds the docs
-without deploying them, then starts the Julia backend. Stop it with Ctrl-C.
+The command installs the environments and builds the missing reference data
+(`make -C docs data`). It builds the docs without deploying them, then starts the
+Julia backend. Stop it with Ctrl-C. The first run downloads the Beierle et al. 2025
+corpus (3.16 GB) once. `make -C docs serve-inspector` starts only the inspector,
+at <http://127.0.0.1:8088/>, and does not build the docs.
 Use `port=8090` to change the port. To browse a saved experiment, provide an
 absolute path:
 

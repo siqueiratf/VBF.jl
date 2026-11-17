@@ -68,6 +68,16 @@ make -C packages/VBFCatalog/src/import convert SOURCE=beierle2025 threads=30
 make -C packages/VBFCatalog/src/import index threads=30
 ```
 
+To skip these builds, run `make -C docs data` from the repository root. It installs
+the prebuilt `catalog.sqlite`, `members.sqlite` and `ccz_sigma_index.sqlite` of this
+checkout from Zenodo, and builds them only when Zenodo has no version for the checkout.
+`src/import/prebuilt.jl` finds the version through a prebuilt key: a digest of the
+declarations, the `.jl`/`.sql` files of `src/` and `Project.toml` (the paths that the gate
+watches). After a merge to `main` that changes this key, the CI job `catalog-data`
+publishes a new version of the record named in `src/import/prebuilt.toml`. The
+first version needs a manual run of the CI workflow with `create_record`. Then
+commit the printed `concept_recid` in `prebuilt.toml`.
+
 Members use VBF's 37-byte quadratic coefficients, sufficient to reconstruct an
 8-bit LUT. Counts and ordered coefficient digests bind each corpus independently
 of SQLite's page layout. `with_corpus_rows` streams members; `corpus_digest`

@@ -96,12 +96,28 @@ function finalize_catalog!(path;refresh_inputs=true)
     nothing
 end
 
-"""Digest the build implementation and Julia/SQLite toolchain, independent of Git HEAD."""
-function _implementation_digest()
-    roots=[joinpath(pkgdir(VBF),"src"),joinpath(pkgdir(VBFCatalog),"src")]
+"""One `path:sha256` line per `.jl`/`.sql` file under `roots`."""
+function _implementation_files(roots=[joinpath(pkgdir(VBF),"src"),joinpath(pkgdir(VBFCatalog),"src")])
     paths=sort!([joinpath(dir,file) for root in roots for (dir,_,files) in walkdir(root)
         for file in files if endswith(file,".jl") || endswith(file,".sql")])
-    digest=join([relpath(path,dirname(pkgdir(VBF)))*":"*bytes2hex(open(SHA.sha256,path)) for path in paths],"\n")
+    join([relpath(path,dirname(pkgdir(VBF)))*":"*bytes2hex(open(SHA.sha256,path)) for path in paths],"\n")
+end
+
+"""Key of the prebuilt data for this checkout.
+
+It covers the paths that the catalog gate watches: the declarations, the
+VBFCatalog code and `Project.toml`. It excludes VBF and the Julia/SQLite
+toolchain, so a change to VBF alone does not publish a new Zenodo version.
+"""
+function _prebuilt_key()
+    project=bytes2hex(open(SHA.sha256,joinpath(pkgdir(VBFCatalog),"Project.toml")))
+    bytes2hex(SHA.sha256(string(_inputs_digest(_declaration_inputs()),"\n",
+        _implementation_files([joinpath(pkgdir(VBFCatalog),"src")]),"\nProject.toml:",project)))
+end
+
+"""Digest the build implementation and Julia/SQLite toolchain, independent of Git HEAD."""
+function _implementation_digest()
+    digest=_implementation_files()
     db=SQLite.DB()
     try
         engine=only(String(row.version) for row in DBInterface.execute(db,"SELECT sqlite_version() version"))

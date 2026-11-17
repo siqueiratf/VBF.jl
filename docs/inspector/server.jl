@@ -105,7 +105,10 @@ Open the sigma index and the catalog once. The connections are read only
 """
 function init!()
     STATE[] === nothing || return STATE[]
-    idx = SQLite.DB(sigma_index_path())
+    # Open read-only: SQLite.DB(path) creates an empty file when the index is absent.
+    isfile(sigma_index_path()) ||
+        error("missing σ-index at $(sigma_index_path()); run `make -C docs data` from the repository root")
+    idx = SQLite.DB("file:" * sigma_index_path() * "?mode=ro")
     DBInterface.execute(idx, "PRAGMA query_only = ON")
     cat = load_catalog()
     DBInterface.execute(cat, "PRAGMA query_only = ON")

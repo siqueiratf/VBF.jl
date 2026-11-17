@@ -1,0 +1,5 @@
+# Zenodo record of the prebuilt catalog data (catalog, Beierle members, signature index).
+# `concept_recid` is empty until the first publication; prebuilt.jl prints it then.
+api = "https://zenodo.org/api"
+concept_recid = ""
+title = "VBF.jl catalog database: prebuilt SQLite files"

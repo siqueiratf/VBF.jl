@@ -10,13 +10,12 @@ It does not label a signature hit “KNOWN” or corpus absence “literature-ne
 To use the inspector inside the documentation, run `make -C docs serve` and
 open `http://127.0.0.1:8088/docs/`. Select **APN inspector** in the sidebar.
 See the [documentation page](../src/inspector.md) for the walkthrough.
-The published site shows the same interface; validation requires the local
-Julia backend. The browser contacts only the origin serving the page.
+Validation requires the local Julia backend. The browser contacts only the
+origin serving the page.
 
-From the repository root:
+From the repository root of a fresh clone:
 
 ```sh
-make -C docs inspector-instantiate
 make -C docs serve-inspector
 # Browse a search or validated import:
 make -C docs serve-inspector \
@@ -27,7 +26,10 @@ Open `http://127.0.0.1:8088/`. The server uses one default thread for queued
 comparisons and one interactive thread for HTTP (`--threads=1,1`). It needs the
 catalog and signature index to retrieve named reference functions, using
 VBFCatalog's own signature index and corpus stores (see the
-[catalog guide](../../packages/VBFCatalog/README.md)). The index supplies record pointers; the
+[catalog guide](../../packages/VBFCatalog/README.md)). The serve targets depend on
+`make -C docs data`. It builds each absent file of `.cache/vbfcatalog/` in this order:
+`catalog.sqlite`, then `members.sqlite` (fetch and convert of the Beierle et al. 2025
+corpus), then `ccz_sigma_index.sqlite`. A newer catalog rebuilds the index. The index supplies record pointers; the
 digest-checked catalog reference controls corpus-absence conclusions. Missing
 or changed provenance stops initialization rather than silently using an old
 baseline. Package/environment setup is local to `docs/inspector/`.
