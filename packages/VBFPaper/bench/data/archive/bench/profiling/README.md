@@ -3,7 +3,7 @@
 Raw flame graphs are diagnostic artifacts, not the main thesis visualization.
 `make -C bench consolidate` reconstructs these saved profiles with FlameGraphs
 and persists normalized owner/subsystem/operation summaries in the separate
-analysis database. See [the analysis workflow](../analysis/README.md).
+analysis database. See [the analysis workflow](../../../../analysis/README.md).
 New artifacts include approach, case parameters, seed, source hash, CPU and
 thread count for guarded joins to benchmark data. Older artifacts remain usable
 for standalone summaries but are not automatically joined to timings.

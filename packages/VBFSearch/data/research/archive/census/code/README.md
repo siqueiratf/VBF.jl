@@ -4,13 +4,13 @@
 
 **Status**: The estimator is validated against exact values for n ≤ 7. The census
 numbers below come from 4,012,000 samples. The 553 novelty claims are **verified**
-against all 10 indexed sources ([reports/verification/REPORT.md](reports/verification/REPORT.md)).
+against all 10 indexed sources ([reports/verification/REPORT.md](../reports/verification/REPORT.md)).
 The two items that were open are now closed:
 
 - The x^57 Kasami class (three non-quadratic catalog rows) has no quadratic
-  member: its CCZ class is equal to its EA class ([kasami_x57/REPORT.md](kasami_x57/REPORT.md)).
+  member: its CCZ class is equal to its EA class ([kasami_x57/REPORT.md](../kasami_x57/REPORT.md)).
 - All 31,390,363 records of the authors' raw files were checked. None has the σ of
-  one of the 553 ([crosscheck_raw/REPORT.md](crosscheck_raw/REPORT.md)). The raw file
+  one of the 553 ([crosscheck_raw/REPORT.md](../crosscheck_raw/REPORT.md)). The raw file
   holds 546 more public classes that are absent from the published list and from the
   index (`crosscheck_raw/raw_only_546.tsv`).
 
@@ -23,7 +23,7 @@ The long run is for a larger machine ([search_b52/README.md](search_b52/README.m
 **Hyperplane scan.** Restricting known and new functions to all 255 hyperplanes and
 extending them again (APN codimension-1 changes) found **463 more new classes**
 (`theory/hyperplane_scan/new_classes_hyperplane.tsv`; theory in
-[theory/HYPERPLANE.md](theory/HYPERPLANE.md)).
+[theory/HYPERPLANE.md](../theory/HYPERPLANE.md)).
 
 **Framework run (2026-10-09).** An 8-hour run of the B6 = 52 search on the Framework
 desktop (30 threads; about 10 hours in total) found **109,943 verified search-new classes**.
@@ -38,11 +38,11 @@ about 1.6 M, and the search has found about 6–7 % of them
 and the 546 raw-only public classes, 3,919,905 classes are now known.
 
 Also: 0 of the 553 new functions are CCZ-equivalent to a permutation
-([permutation/REPORT.md](permutation/REPORT.md)). One more new class came from the
-theory experiment (`new_classes_extra.tsv`, see [theory/UNIQUENESS.md](theory/UNIQUENESS.md)).
+([permutation/REPORT.md](../permutation/REPORT.md)). One more new class came from the
+theory experiment (`new_classes_extra.tsv`, see [theory/UNIQUENESS.md](../theory/UNIQUENESS.md)).
 
 A fresh clone runs `make test` and `make analyze` with the committed data in `data/`.
-[SETUP.md](SETUP.md) tells how to set up another machine.
+[SETUP.md](../SETUP.md) tells how to set up another machine.
 
 ---
 
@@ -213,7 +213,7 @@ classes. The 553 new σ are in `new_classes_553.tsv` (`sigma_hash<TAB>coeffs`, s
 hash). `make analyze` writes the same list to `results/new_sigma.tsv` and compares the two
 files. Each line certifies a CCZ class that is absent from the indexed corpora.
 
-The verification ([reports/verification/REPORT.md](reports/verification/REPORT.md)) found:
+The verification ([reports/verification/REPORT.md](../reports/verification/REPORT.md)) found:
 
 - The σ index is complete and consistent: 4,005,445 members of 10 sources, all APN,
   3,808,491 distinct σ (equal to Theorem 5.1 of Beierle et al.).
@@ -221,8 +221,8 @@ The verification ([reports/verification/REPORT.md](reports/verification/REPORT.m
 - The 553 functions are quadratic APN and pairwise CCZ-inequivalent.
 
 Novelty is relative to the 10 indexed sources, to the x^57 class
-([kasami_x57/REPORT.md](kasami_x57/REPORT.md)) and to all public raw files of the
-authors ([crosscheck_raw/REPORT.md](crosscheck_raw/REPORT.md)). Classes that were never
+([kasami_x57/REPORT.md](../kasami_x57/REPORT.md)) and to all public raw files of the
+authors ([crosscheck_raw/REPORT.md](../crosscheck_raw/REPORT.md)). Classes that were never
 published (for example, in a talk) are not covered.
 
 **Known classes and the coverage estimate.** The public data holds at least
@@ -232,12 +232,12 @@ estimate uses the mass of the 3,808,491 indexed classes.
 
 **Note on e.** In this run, every hit had e = 128 (one coset). This is not a theorem.
 Hyperplane restrictions of known functions sometimes give e = 256 or 512
-([theory/UNIQUENESS.md](theory/UNIQUENESS.md)). The estimator uses the exact value of e,
+([theory/UNIQUENESS.md](../theory/UNIQUENESS.md)). The estimator uses the exact value of e,
 so the census numbers do not depend on this observation.
 
 ### Where the new classes are
 
-The properties report ([reports/properties/REPORT.md](reports/properties/REPORT.md))
+The properties report ([reports/properties/REPORT.md](../reports/properties/REPORT.md))
 compares the component profiles of the new and the known hits. **The new classes are
 concentrated in the branch B6 = 52**, which Algorithm 3.1 of Beierle et al. does not search
 (it needs B6 ≥ 54):
@@ -308,16 +308,16 @@ adds more.
 
 | Report | Content |
 |---|---|
-| [reports/verification/REPORT.md](reports/verification/REPORT.md) | Verification of the 553 novelty claims and of the σ index |
-| [reports/properties/REPORT.md](reports/properties/REPORT.md) | Component profiles of new and known hits (B6 = 52 branch) |
+| [reports/verification/REPORT.md](../reports/verification/REPORT.md) | Verification of the 553 novelty claims and of the σ index |
+| [reports/properties/REPORT.md](../reports/properties/REPORT.md) | Component profiles of new and known hits (B6 = 52 branch) |
 | [reports/literature/LITERATURE.md](reports/literature/LITERATURE.md) | Survey of public sources of quadratic APN functions on F_2^8 |
-| [theory/METHOD.md](theory/METHOD.md) | The mathematics of the census, with proofs |
-| [theory/UNIQUENESS.md](theory/UNIQUENESS.md) | Number of APN completions e: what is proved, what is false (e = 128 is not general) |
-| [theory/HYPERPLANE.md](theory/HYPERPLANE.md) | Hyperplane changes (TPPA 2025), admissible selections, the neighbour graph, and the hyperplane scan |
-| [theory/hyperplane_scan/README.md](theory/hyperplane_scan/README.md) | Scan of all hyperplanes of 11,684 functions: rates, structure, 463 new classes |
-| [kasami_x57/REPORT.md](kasami_x57/REPORT.md) | The x^57 class has no quadratic member (gap closed) |
-| [permutation/REPORT.md](permutation/REPORT.md) | 0 of 553 new functions are CCZ-equivalent to a permutation |
-| [crosscheck_raw/REPORT.md](crosscheck_raw/REPORT.md) | All raw files of the authors: 0 coincidences with the 553; 546 raw-only classes |
+| [theory/METHOD.md](../theory/METHOD.md) | The mathematics of the census, with proofs |
+| [theory/UNIQUENESS.md](../theory/UNIQUENESS.md) | Number of APN completions e: what is proved, what is false (e = 128 is not general) |
+| [theory/HYPERPLANE.md](../theory/HYPERPLANE.md) | Hyperplane changes (TPPA 2025), admissible selections, the neighbour graph, and the hyperplane scan |
+| [theory/hyperplane_scan/README.md](../theory/hyperplane_scan/README.md) | Scan of all hyperplanes of 11,684 functions: rates, structure, 463 new classes |
+| [kasami_x57/REPORT.md](../kasami_x57/REPORT.md) | The x^57 class has no quadratic member (gap closed) |
+| [permutation/REPORT.md](../permutation/REPORT.md) | 0 of 553 new functions are CCZ-equivalent to a permutation |
+| [crosscheck_raw/REPORT.md](../crosscheck_raw/REPORT.md) | All raw files of the authors: 0 coincidences with the 553; 546 raw-only classes |
 | [web/README.md](web/README.md) | Local web page: is a function new or known? |
 | [search_b52/RUN_20261009_FRAMEWORK.md](search_b52/RUN_20261009_FRAMEWORK.md) | Framework run: 109,943 verified classes, yield, composition, capture–recapture |
 | [search_b52/README.md](search_b52/README.md) | Targeted search in the B6 = 52 branch: method, validation, trial (773 new classes), run steps for a larger machine |
@@ -354,5 +354,5 @@ Git ignores all of them except `results/report.toml`.
 `VBF` (SBox, differential_uniformity, is_quadratic_apn, automorphisms_from_ortho_derivative,
 absolute_walsh_spectrum, is_ccz_equivalent_to_permutation) and `VBFCatalog` (catalog,
 `sigma_hash`, the `ccz_sigma_index` side store). `make analyze` needs the side store
-`packages/VBFCatalog/corpora/ccz_sigma_index.sqlite`. Git ignores it; [SETUP.md](SETUP.md)
+`packages/VBFCatalog/corpora/ccz_sigma_index.sqlite`. Git ignores it; [SETUP.md](../SETUP.md)
 tells how to copy or rebuild it. The sampler and the tests do not need it.

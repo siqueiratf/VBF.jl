@@ -146,7 +146,7 @@ Default summaries retain case, dimension, mode, run, configuration, and source
 provenance. Use `runtime_statistics(...; by=[...])` to explicitly choose other
 grouping keys. Large raw JSON payloads stay in SQLite by default; row IDs preserve
 traceability, and `load_benchmarks(include_raw=true)` retrieves the full payloads.
-See [analysis/README.md](analysis/README.md) for detailed APIs and examples.
+See [analysis/README.md](../../../analysis/README.md) for detailed APIs and examples.
 
 ## Structured profiling
 

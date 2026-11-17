@@ -81,7 +81,7 @@ Profiling saves `profile_raw.jls` and a source/configuration manifest under
 `packages/VBFPaper/bench/data/<package>/profiles/`. Julia's stdlib profiler samples a separate
 execution; its duration is metadata, never a benchmark statistic. Attribution
 and figure tooling live in
-[shared perf analysis](analysis/README.md).
+[shared perf analysis](../../VBFPaper/bench/analysis/README.md).
 A very short operation can produce no samples; select a sufficiently long
 workload. Profiles and timings are joined only when their identity is explicit.
 
@@ -101,9 +101,9 @@ and measurements remain in the archived original benchmark files.
 
 ## Historical evidence
 
-[historical/benchmark_notes.md](historical/benchmark_notes.md) links to the
+[historical/benchmark_notes.md](../../VBFPaper/bench/historical/benchmark_notes.md) links to the
 original archived measurements, machine context and caveats, retained verbatim.
-[historical/calibration.toml](historical/calibration.toml) preserves the original
+[historical/calibration.toml](../../VBFPaper/bench/historical/calibration.toml) preserves the original
 calibration. Their old command paths identify historical procedures; current
 commands are above. Original retired tooling and all locally present artifacts
 were copied byte-for-byte to `packages/VBFPaper/bench/data/archive/bench/`, with a SHA-256 inventory.
