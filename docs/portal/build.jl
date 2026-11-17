@@ -73,6 +73,8 @@ end
 
 db = load_catalog()
 model = build_model(db; evidence_dirs = evidence)
+isfile(joinpath(@__DIR__, "assets", "js", "members.js")) ||
+    error("the browser code is not bundled: run `npm ci && node build.mjs` in docs/portal/js")
 mkpath(joinpath(OUT, "assets"))
 cp(joinpath(@__DIR__, "assets"), joinpath(OUT, "assets", "portal"); force = true)   # beside Documenter's assets
 # The query database of this snapshot, at catalog/data/<prebuilt key>/query.sqlite. A local

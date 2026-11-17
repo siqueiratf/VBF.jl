@@ -370,6 +370,16 @@ jobs:
       - name: Instantiate portal environment
         run: julia --startup-file=no --project=docs/portal -e 'using Pkg; Pkg.instantiate()'
 
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # The member view (sqlite-wasm-http) is bundled from the locked npm packages.
+      - name: Bundle the browser code
+        working-directory: docs/portal/js
+        run: npm ci --no-fund --no-audit && node build.mjs
+
       - name: Build and check the portal
         run: julia --startup-file=no --project=docs/portal docs/portal/build.jl --evidence evidence
 
