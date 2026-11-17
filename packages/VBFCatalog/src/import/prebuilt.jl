@@ -21,6 +21,9 @@ const CONFIG = TOML.parsefile(joinpath(@__DIR__, "prebuilt.toml"))
 const API = get(ENV, "ZENODO_API", CONFIG["api"])
 const ROOT = normpath(joinpath(@__DIR__, "..", "..", "..", ".."))
 const MANIFEST = "manifest.toml"
+const QUERY = "query.sqlite"
+"Path of the browser query database (built by docs/portal before the publication)."
+query_path() = joinpath(catalog_data_dir(), QUERY)
 
 "Installed path of each published file, in install order (the index last)."
 data_files() = ["catalog.sqlite" => catalog_path(),
@@ -115,14 +118,38 @@ function fetch_data(key)
     true
 end
 
+"""
+    fetch_query(key, dest) -> Bool
+
+Download the browser query database of the Zenodo version of `key` to `dest` and check its
+SHA-256. Returns false if Zenodo has no such version or the version has no query database.
+"""
+function fetch_query(key, dest)
+    found = find_version(key)
+    found === nothing && (println(stderr, "prebuilt: Zenodo has no data for key $(short(key))"); return false)
+    entry = get(found.manifest["files"], QUERY, nothing)
+    entry === nothing && (println(stderr, "prebuilt: this version has no $QUERY"); return false)
+    if !(isfile(dest) && filehash(dest) == entry["sha256"])
+        partial = dest * ".partial"
+        run(`curl --fail --location --retry 5 --continue-at - --output $partial $(found.files[QUERY])`)
+        filehash(partial) == entry["sha256"] || (rm(partial); error("$QUERY: checksum mismatch, deleted"))
+        mv(partial, dest; force = true)
+    end
+    println("prebuilt: $QUERY of key $(short(key)) at $dest")
+    true
+end
+
 "Manifest of the local files: the prebuilt key, the catalog digests and one entry per file."
 function local_manifest(key, gz)
     db = load_catalog()
     meta = try only(NamedTuple(r) for r in DBInterface.execute(db, "SELECT * FROM schema_meta")) finally close(db) end
     commit = get(ENV, "GITHUB_SHA", readchomp(`git -C $ROOT rev-parse HEAD`))
-    files = Dict(name => Dict("sha256" => filehash(path), "bytes" => filesize(path),
+    files = Dict{String,Any}(name => Dict("sha256" => filehash(path), "bytes" => filesize(path),
                               "gz_sha256" => filehash(gz[name]), "gz_bytes" => filesize(gz[name]))
                  for (name, path) in data_files())
+    # The browser query database (docs/portal), uncompressed so that HTTP Range requests work.
+    q = query_path()
+    isfile(q) && (files[QUERY] = Dict("sha256" => filehash(q), "bytes" => filesize(q), "uncompressed" => true))
     Dict("key" => key, "commit" => commit, "julia" => string(VERSION),
          "schema_version" => meta.schema_version, "inputs_sha256" => meta.inputs_sha256,
          "implementation_sha256" => meta.implementation_sha256,
@@ -187,6 +214,10 @@ function publish(key; draft = false, create = false)
             println("prebuilt: uploading $name")
             zenodo("PUT", "$(dep.links.bucket)/$name"; token, upload = joinpath(work, name))
         end
+        if isfile(query_path())
+            println("prebuilt: uploading $QUERY (uncompressed, for HTTP Range queries)")
+            zenodo("PUT", "$(dep.links.bucket)/$QUERY"; token, upload = query_path())
+        end
         zenodo("PUT", "$API/deposit/depositions/$(dep.id)"; token, body = Dict("metadata" => metadata(version, manifest)))
         if draft
             println("prebuilt: draft $(dep.links.html) is ready; publish or delete it on Zenodo")
@@ -207,12 +238,15 @@ function main(args)
         println(key)
     elseif command == "fetch"
         fetch_data(key) || exit(1)
+    elseif command == "fetch-query"
+        length(args) == 2 || error("usage: prebuilt.jl fetch-query DEST")
+        fetch_query(key, args[2]) || exit(1)
     elseif command == "published"
         find_version(key) === nothing && exit(1)
     elseif command == "publish"
         publish(key; draft = "--draft" in args, create = "--create" in args)
     else
-        error("unknown command $command (use key, fetch, published or publish)")
+        error("unknown command $command (use key, fetch, fetch-query, published or publish)")
     end
 end
 

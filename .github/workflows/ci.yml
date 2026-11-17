@@ -273,6 +273,18 @@ jobs:
         if: steps.need.outputs.publish == 'true' && steps.index.outputs.cache-hit == 'true'
         run: julia --startup-file=no --project=packages/VBFCatalog/src/import -e 'using VBFCatalog; db = load_catalog(); println(refresh_curated_sigma_index!(db), " curated rows"); close(db)'
 
+      # The browser query database of the portal (docs/portal/POC.md); it is published
+      # uncompressed with the other files, so that a snapshot can be queried from Zenodo.
+      - name: Build the query database
+        if: steps.need.outputs.publish == 'true'
+        run: |
+          julia --startup-file=no --project=docs/portal -e 'using Pkg; Pkg.instantiate()'
+          julia -t 4 --startup-file=no --project=docs/portal -e '
+            using VBFPortal, VBFCatalog
+            db = load_catalog()
+            println(build_query_db(joinpath(VBFCatalog.catalog_data_dir(), "query.sqlite"), db))
+            close(db)'
+
       - name: Publish to Zenodo
         if: steps.need.outputs.publish == 'true'
         env:
