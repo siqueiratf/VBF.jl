@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}} · VBF.jl</title>
+<link rel="stylesheet" href="{{{root}}}assets/portal/portal.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-title" href="{{{root}}}">VBF.jl</a>
+  <nav class="site-nav" aria-label="Main">
+    <a href="{{{root}}}reproductions/"{{#nav_reproductions}} aria-current="page"{{/nav_reproductions}}>Reproductions</a>
+    <a href="{{{root}}}catalog/"{{#nav_catalog}} aria-current="page"{{/nav_catalog}}>Catalog</a>
+    <a href="{{{root}}}library/"{{#nav_library}} aria-current="page"{{/nav_library}}>Library</a>
+    <a href="{{{root}}}about/"{{#nav_about}} aria-current="page"{{/nav_about}}>About</a>
+  </nav>
+</header>
+<main class="page-content">
+{{{content}}}
+</main>
+<footer class="site-footer">
+  <a href="https://github.com/siqueiratf/VBF.jl">Sources</a> ·
+  Catalog snapshot <code title="{{snapshot_key}}">{{snapshot_short}}</code> ·
+  Design after <a href="https://rescience.github.io/">ReScience C</a>
+</footer>
+<script src="{{{root}}}assets/portal/portal.js"></script>
+</body>
+</html>

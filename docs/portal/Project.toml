@@ -3,7 +3,12 @@ uuid = "5d3c1b8e-7a2f-4c6e-9b1d-3f8a2e6c4d71"
 version = "0.1.0"
 
 [deps]
+Bibliography = "f1be7e48-bf82-45af-a471-ae754a193061"
 DBInterface = "a10d1c49-ce27-4219-8d33-6db1a4562965"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
+Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
+Mustache = "ffc61752-8dc7-55ee-8c37-f3e9cdd09e70"
 SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 SQLite = "0aa819cd-b072-5ff4-a722-6bc24af294d9"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
@@ -17,7 +22,12 @@ VBFCatalog = {path = "../../packages/VBFCatalog"}
 VBFRepro = {path = "../../packages/VBFRepro"}
 
 [compat]
+Bibliography = "0.4.0"
 DBInterface = "2"
+Documenter = "1.20.0"
+DocumenterCitations = "1.5.0"
+Markdown = "1.11.0"
+Mustache = "1.1.0"
 SHA = "0.7, 1"
 SQLite = "1.6"
 TOML = "1"

@@ -1,0 +1,11 @@
+<h1>Reproductions</h1>
+<p>{{count}} publications. A publication links to its claims, the code that checks them and the
+evidence of their runs.</p>
+{{#years}}
+<h2 id="y{{year}}">{{year}}</h2>
+<ol class="publications">
+{{#items}}
+<li>{{{linkline}}}<a href="{{{root}}}reproductions/{{id}}/">{{{reference}}}</a></li>
+{{/items}}
+</ol>
+{{/years}}

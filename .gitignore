@@ -28,6 +28,8 @@ LocalPreferences.toml
 docs/src/api/
 docs/src/generated/
 # Catalog PoC tooling: npm packages and esbuild output.
+docs/portal/build/
+docs/portal/library-src/
 docs/portal/poc/node_modules/
 docs/portal/poc/public/
 !docs/portal/poc/package.json

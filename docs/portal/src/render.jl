@@ -1,0 +1,170 @@
+# HTML rendering of the portal pages from the model (templates in docs/portal/templates).
+# Every internal link is relative to the page, so the site works under any base path
+# (for example /VBF.jl/ on GitHub Pages) and from a local folder.
+
+const TEMPLATES = joinpath(@__DIR__, "..", "templates")
+template(name) = Mustache.load(joinpath(TEMPLATES, name * ".html"))
+
+"Escape text for HTML."
+esc(s) = replace(string(s), "&" => "&amp;", "<" => "&lt;", ">" => "&gt;", "\"" => "&quot;")
+
+"Prefix from a page path (\"reproductions/x/index.html\") to the site root (\"../../\")."
+root_prefix(path) = (d = count(==('/'), path); d == 0 ? "./" : "../"^d)
+
+"Reference in the list format: authors. year. title. venue."
+reference_html(r) = string(esc(r["author_line"]), ". ", r["year"], ". <i>", esc(r["title"]), "</i>.",
+    isempty(r["venue"]) ? "" : " " * esc(r["venue"]) * ".")
+
+const VERIFICATION_TEXT = Dict(
+    "computational-check" => "Computational check for the stated scope; not a general proof.",
+    "replication" => "The published experiment, run again.",
+    "transcription" => "Published values, transcribed and checked for consistency; not recomputed.")
+
+"""Links of a reproduction: DOI, Paper, Code, Data, Catalog (no empty link)."""
+function repro_links(r, root)
+    ref = r["ref"]; links = Dict{String,String}[]
+    isempty(ref["doi_url"]) || push!(links, Dict("label" => "DOI", "url" => ref["doi_url"]))
+    !isempty(ref["url"]) && ref["url"] != ref["doi_url"] && push!(links, Dict("label" => "Paper", "url" => ref["url"]))
+    for c in r["code"]
+        push!(links, Dict("label" => "Code", "url" => c))
+    end
+    for d in r["data"]
+        isempty(d["url"]) || push!(links, Dict("label" => "Data", "url" => d["url"]))
+    end
+    isempty(r["corpora"]) || push!(links, Dict("label" => "Catalog",
+        "url" => root * "catalog/corpora/" * first(r["corpora"])["name"] * "/"))
+    links
+end
+
+linkline(r, root) = Mustache.render(template("linkline"), Dict("links" => repro_links(r, root), "bibtex" => r["ref"]["bibtex"]))
+
+"""One sentence about one evidence record, for one claim."""
+function evidence_text(rec, claim_id)
+    prov = rec["provenance"]
+    date = first(get(prov, "created_utc", "unknown date"), 10)
+    commit = first(get(prov, "commit", ""), 7)
+    where = haskey(get(prov, "ci", Dict()), "run_id") ? "CI run $(prov["ci"]["run_id"])" : "local run"
+    if rec["kind"] == "regression"
+        files = [t for t in get(rec, "testsets", []) if claim_id in get(t, "claims", [])]
+        outcome = isempty(files) ? rec["outcome"] :
+            any(t -> t["outcome"] == "error", files) ? "error" : any(t -> t["outcome"] == "failed", files) ? "failed" : "passed"
+        what = "Regression test " * outcome * " (" * join([t["file"] for t in files], ", ") * ")"
+    else
+        what = "Reproduction run " * rec["outcome"] * " (" * rec["command"] * ")"
+    end
+    state = !rec["valid"] ? "Invalid record: " * join(rec["problems"], "; ") * "." :
+            rec["current"] ? "Current for this build." :
+            "Historical: made at commit $commit; changed since: " * join(rec["changed"], ", ") * "."
+    "$what, $where, commit $commit, $date. $state"
+end
+
+"""Render one page into `out/path` with the base layout."""
+function write_page(out, path, title, content; nav = "")
+    root = root_prefix(path)
+    view = Dict("title" => title, "root" => root, "content" => content,
+                "snapshot_key" => SNAPSHOT_KEY[], "snapshot_short" => first(SNAPSHOT_KEY[], 12),
+                "nav_" * nav => true)
+    file = joinpath(out, path)
+    mkpath(dirname(file))
+    write(file, Mustache.render(template("base"), view))
+    file
+end
+
+const SNAPSHOT_KEY = Ref("")
+
+"""Text of `site.md` (Markdown) as HTML, or empty when the paper has none."""
+function site_text(repro)
+    f = joinpath(ROOT, repro["path"], "site.md")
+    isfile(f) ? Markdown.html(Markdown.parse(read(f, String))) : ""
+end
+
+"""
+    render_portal(model, out) -> Vector{String}
+
+Write Home, Reproductions, the reproduction pages, the catalog pages of S3 and About into
+`out`. Returns the written page paths.
+"""
+function render_portal(model, out)
+    SNAPSHOT_KEY[] = model["snapshot"].prebuilt_key
+    written = String[]
+    repros = model["reproductions"]
+    item(r, root) = Dict("id" => r["id"], "reference" => reference_html(r["ref"]), "linkline" => linkline(r, root))
+
+    latest = sort(repros; by = r -> r["updated"], rev = true)[1:min(3, end)]
+    push!(written, write_page(out, "index.html", "Home",
+        Mustache.render(template("home"), Dict("root" => "./", "latest" => [item(r, "./") for r in latest]))))
+
+    root = root_prefix("reproductions/index.html")
+    years = [Dict("year" => y, "items" => [item(r, root) for r in repros if r["year"] == y])
+             for y in unique(r["year"] for r in repros)]
+    push!(written, write_page(out, "reproductions/index.html", "Reproductions",
+        Mustache.render(template("reproductions"), Dict("root" => root, "count" => length(repros), "years" => years));
+        nav = "reproductions"))
+
+    for r in repros
+        path = "reproductions/$(r["id"])/index.html"; root = root_prefix(path)
+        claims = [merge(c, Dict(
+            "verification_text" => get(VERIFICATION_TEXT, c["verification"], c["verification"]),
+            "evidence_items" => [Dict("text" => evidence_text(e, c["id"])) for e in c["evidence"]],
+            "api_text" => join(get(c, "api", String[]), ", "))) for c in r["claims"]]
+        view = merge(r["ref"], Dict("root" => root, "linkline" => linkline(r, root), "claims" => claims,
+            "has_claims" => r["has_claims"], "other_files" => r["other_files"],
+            "other_files_any" => !isempty(r["other_files"]), "corpora" => r["corpora"],
+            "corpora_any" => !isempty(r["corpora"]), "site_text" => site_text(r),
+            "url" => r["url"], "path" => r["path"]))
+        push!(written, write_page(out, path, r["ref"]["title"], Mustache.render(template("reproduction"), view);
+            nav = "reproductions"))
+    end
+
+    # Catalog pages of S3: the corpora and the publications that cite them. S4 adds the query layer.
+    corpora = sort(collect(values(model["corpora"])); by = c -> c["name"])
+    users(name) = [r for r in repros if any(c -> c["name"] == name, r["corpora"])]
+    body = "<p>Snapshot <code>$(esc(model["snapshot"].prebuilt_key))</code>.</p><ul>" *
+        join(["<li><a href=\"corpora/$(c["name"])/\">$(esc(c["name"]))</a>: $(c["member_count"]) functions, n = $(c["n"])</li>" for c in corpora]) * "</ul>"
+    push!(written, write_page(out, "catalog/index.html", "Catalog",
+        Mustache.render(template("page"), Dict("title" => "Catalog", "body" => body)); nav = "catalog"))
+    for c in corpora
+        path = "catalog/corpora/$(c["name"])/index.html"; root = root_prefix(path)
+        pubs = join(["<li><a href=\"$(root)reproductions/$(r["id"])/\">$(reference_html(r["ref"]))</a></li>" for r in users(c["name"])])
+        body = "<dl><dt>Functions</dt><dd>$(c["member_count"])</dd><dt>Dimensions</dt><dd>n = $(c["n"]), m = $(c["m"])</dd>" *
+               "<dt>Corpus digest</dt><dd><code>$(esc(c["digest"]))</code></dd><dt>Source</dt><dd>$(esc(c["source_repo"]))</dd></dl>" *
+               (isempty(pubs) ? "" : "<h2>Publications</h2><ol>$pubs</ol>")
+        push!(written, write_page(out, path, c["name"],
+            Mustache.render(template("page"), Dict("title" => c["name"], "body" => body)); nav = "catalog"))
+    end
+
+    about = """
+        <p>VBF.jl is developed by Tiago Faustino de Siqueira and Gustavo Zambonin
+        (<a href="https://orcid.org/0000-0002-6962-9347">ORCID</a>), Universidade Federal de Santa Catarina.</p>
+        <p>Cite the software with <a href="https://github.com/siqueiratf/VBF.jl/blob/main/CITATION.cff">CITATION.cff</a>,
+        and the prebuilt catalog data with <a href="https://doi.org/10.5281/zenodo.24297661">doi:10.5281/zenodo.24297661</a>.
+        The code is under the MIT license. The design follows <a href="https://rescience.github.io/">ReScience C</a>.</p>
+        """
+    push!(written, write_page(out, "about/index.html", "About",
+        Mustache.render(template("page"), Dict("title" => "About", "body" => about)); nav = "about"))
+    written
+end
+
+"""
+    write_redirects(out, legacy) -> Vector{String}
+
+For each path of the previous site that the new build does not serve, write a redirect page.
+`generated/<paper-id>/` goes to `reproductions/<paper-id>/`. Returns the paths with no target.
+"""
+function write_redirects(out, legacy_file = joinpath(@__DIR__, "..", "legacy_urls.txt"))
+    missing_ = String[]
+    for line in eachline(legacy_file)
+        p = strip(line)
+        (isempty(p) || startswith(p, "#")) && continue
+        isfile(joinpath(out, p, "index.html")) && continue
+        m = match(r"^generated/(\d{6}-[a-z0-9-]+)/$", p)
+        target = m === nothing ? nothing : "reproductions/$(m[1])/"
+        if target === nothing || !isfile(joinpath(out, target, "index.html"))
+            push!(missing_, p); continue
+        end
+        rel = root_prefix(p * "index.html") * target
+        mkpath(joinpath(out, p))
+        write(joinpath(out, p, "index.html"), Mustache.render(template("redirect"), Dict("target" => rel)))
+    end
+    missing_
+end
