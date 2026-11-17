@@ -29,6 +29,9 @@ if !skip_library
     src = joinpath(@__DIR__, "library-src")
     isdir(src) && rm(src; recursive = true)
     cp(joinpath(DOCS, "src"), src)
+    # The closure-monitor pages work only behind docs/inspector/closure_monitor.jl (absolute
+    # links to its own routes); no static page links to them, so the static build omits them.
+    foreach(f -> startswith(f, "apn-closure") && rm(joinpath(src, "assets", f)), readdir(joinpath(src, "assets")))
     for (dir, _, files) in walkdir(src), f in files
         endswith(f, ".md") || continue
         p = joinpath(dir, f)
