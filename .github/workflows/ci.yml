@@ -93,10 +93,20 @@ jobs:
           name: catalog
           path: .cache/vbfcatalog
 
-      - name: Run paper tests
+      - name: Run paper tests with evidence
         run: |
           julia --startup-file=no --project=. -e 'using Pkg; Pkg.instantiate()'
-          make -C packages/VBFRepro/src/${{ matrix.paper }} test
+          bin/vbfrepro test ${{ matrix.paper }} --evidence evidence
+
+      # One regression record per paper (record.toml, output.log). The docs build collects them;
+      # failed runs are kept too, because a failure is evidence as well.
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ matrix.paper }}
+          path: evidence/
+          if-no-files-found: warn
 
   perf-smoke:
     name: Performance tooling • ${{ matrix.package }}
