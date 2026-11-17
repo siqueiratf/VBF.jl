@@ -1,7 +1,7 @@
 # Command-line interface of bin/vbfrepro: help per command, paper lookup by a
 # unique part of the ID or bib key, and shell completion scripts.
 
-const COMMANDS = ["list", "info", "run", "test", "completions", "help"]
+const COMMANDS = ["list", "info", "run", "test", "scaffold", "check", "completions", "help"]
 
 const USAGE = Dict(
     "list" => """
@@ -36,6 +36,19 @@ const USAGE = Dict(
         Run the tests of a paper and record the evidence like run.
 
         Example: bin/vbfrepro test 202211-yu-qam --timeout-seconds 300""",
+    "scaffold" => """
+        Usage: bin/vbfrepro scaffold PAPER [--update]
+
+        Write PAPER/paper.toml with candidate claims found in the file headers, the
+        Makefile help and the tests. Every candidate has review = "pending": a person
+        reviews it against the paper and the code. An existing file is not replaced;
+        --update only appends new candidates and refreshes the unassigned list.""",
+    "check" => """
+        Usage: bin/vbfrepro check [PAPER]
+
+        Check paper.toml of one paper, or of all papers that have one. Errors (schema,
+        missing files, targets or tests) give exit status 1; review items (pending
+        candidates, files in no claim) are listed but do not fail.""",
     "completions" => """
         Usage: bin/vbfrepro completions bash|zsh|fish
 
@@ -59,6 +72,8 @@ const OVERVIEW = """
       info PAPER           show the targets and parameters of a paper
       run PAPER            run a target of a paper (default: report)
       test PAPER           run the tests of a paper
+      scaffold PAPER       write candidate portal metadata (paper.toml)
+      check [PAPER]        check the portal metadata
       completions SHELL    print a completion script for bash, zsh or fish
       help [COMMAND]       show this help, or the help of a command
 
@@ -141,12 +156,12 @@ _vbfrepro() {
     root=$(cd -- "$(dirname -- "$(command -v "${COMP_WORDS[0]}" 2>/dev/null || echo "${COMP_WORDS[0]}")")/.." 2>/dev/null && pwd)
     papers=$(ls "$root/packages/VBFRepro/src" 2>/dev/null | grep -E '^[0-9]{6}-')
     if [ "$COMP_CWORD" -eq 1 ]; then
-        COMPREPLY=($(compgen -W "list info run test completions help" -- "$cur")); return
+        COMPREPLY=($(compgen -W "list info run test scaffold check completions help" -- "$cur")); return
     fi
     case "$prev" in
-        info|run|test) COMPREPLY=($(compgen -W "$papers" -- "$cur")); return;;
+        info|run|test|scaffold|check) COMPREPLY=($(compgen -W "$papers" -- "$cur")); return;;
         completions) COMPREPLY=($(compgen -W "bash zsh fish" -- "$cur")); return;;
-        help) COMPREPLY=($(compgen -W "list info run test completions" -- "$cur")); return;;
+        help) COMPREPLY=($(compgen -W "list info run test scaffold check completions" -- "$cur")); return;;
         --output) COMPREPLY=($(compgen -d -- "$cur")); return;;
         --target) COMPREPLY=($(compgen -W "$(grep -oE '^[a-z0-9_]+:' "$root/packages/VBFRepro/src/${COMP_WORDS[2]}/Makefile" 2>/dev/null | tr -d :)" -- "$cur")); return;;
         --param) COMPREPLY=($(compgen -W "$(sed -nE 's/^([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*\?=.*/\1=/p' "$root/packages/VBFRepro/src/${COMP_WORDS[2]}/Makefile" 2>/dev/null)" -- "$cur")); compopt -o nospace 2>/dev/null; return;;
@@ -182,11 +197,13 @@ for c in vbfrepro bin/vbfrepro ./bin/vbfrepro
     complete -c $c -n __fish_use_subcommand -a info -d 'targets and parameters of a paper'
     complete -c $c -n __fish_use_subcommand -a run -d 'run a target of a paper'
     complete -c $c -n __fish_use_subcommand -a test -d 'run the tests of a paper'
+    complete -c $c -n __fish_use_subcommand -a scaffold -d 'write candidate portal metadata'
+    complete -c $c -n __fish_use_subcommand -a check -d 'check the portal metadata'
     complete -c $c -n __fish_use_subcommand -a completions -d 'print a completion script'
     complete -c $c -n __fish_use_subcommand -a help -d 'show the help'
-    complete -c $c -n '__fish_seen_subcommand_from info run test; and test (count (commandline -opc)) -eq 2' -a '(__vbfrepro_papers)'
+    complete -c $c -n '__fish_seen_subcommand_from info run test scaffold check; and test (count (commandline -opc)) -eq 2' -a '(__vbfrepro_papers)'
     complete -c $c -n '__fish_seen_subcommand_from completions' -a 'bash zsh fish'
-    complete -c $c -n '__fish_seen_subcommand_from help' -a 'list info run test completions'
+    complete -c $c -n '__fish_seen_subcommand_from help' -a 'list info run test scaffold check completions'
     complete -c $c -n '__fish_seen_subcommand_from run' -l target -x -d 'Makefile target' -a '(string match -rg "^([a-z0-9_]+):" < (__vbfrepro_makefile) 2>/dev/null)'
     complete -c $c -n '__fish_seen_subcommand_from run' -l param -x -d 'KEY=VALUE' -a '(string match -rg "^([A-Za-z_][A-Za-z0-9_]*)\\s*\\?=" < (__vbfrepro_makefile) 2>/dev/null | string replace -r \'$\' =)'
     complete -c $c -n '__fish_seen_subcommand_from run' -l list -d 'targets and parameters'
@@ -225,11 +242,33 @@ function main(args=ARGS)
         print(shells[only(rest)])
         return 0
     end
+    if command == "check"
+        length(rest) <= 1 || throw(UsageError("check accepts at most one PAPER", command))
+        ids = isempty(rest) ? [p.id for p in discover_papers() if isfile(joinpath(p.path, PAPER_FILE))] :
+            [resolve_paper(only(rest))]
+        nerr = 0
+        for id in ids
+            errors, review = check_paper_metadata(id)
+            foreach(e -> println("error: ", e), errors)
+            foreach(r -> println("review: ", r), review)
+            nerr += length(errors)
+        end
+        println("checked $(length(ids)) paper(s): $nerr error(s)")
+        return nerr == 0 ? 0 : 1
+    end
     if isempty(rest) || startswith(first(rest), "--")
         "--list" in rest && (main(["list"]); return 0)
         throw(UsageError("$command needs a PAPER; run bin/vbfrepro list to see the IDs", command))
     end
     id = resolve_paper(first(rest))
+    if command == "scaffold"
+        all(a -> a == "--update", rest[2:end]) || throw(UsageError("scaffold accepts only --update", command))
+        file = scaffold_paper(id; update = "--update" in rest)
+        claims, unassigned = discover_candidates(id)
+        println("wrote $(relpath(file, repo_root())): $(length(claims)) candidate claim(s), $(length(unassigned)) unassigned item(s)")
+        println("Review each claim, then run bin/vbfrepro check $id")
+        return 0
+    end
     if command == "info" || "--list" in rest
         command == "info" && length(rest) > 1 && throw(UsageError("info accepts one PAPER", command))
         print_info(id)

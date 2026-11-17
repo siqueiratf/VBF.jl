@@ -2,7 +2,8 @@ module VBFRepro
 
 using Dates, SHA, TOML, UUIDs
 
-export paper_bib_key, publications_path, repo_root, papers_root, discover_papers, paper_path, run_paper, test_paper, main, cli
+export paper_bib_key, publications_path, repo_root, papers_root, discover_papers, paper_path, run_paper, test_paper, main, cli,
+    discover_candidates, scaffold_paper, load_paper_metadata, check_paper_metadata, paper_metadata_path
 
 """Root of the VBF workspace containing the reproducible execution environment."""
 repo_root() = normpath(joinpath(@__DIR__, "..", "..", ".."))
@@ -217,6 +218,7 @@ end
 """Run the selected paper's test target through the same isolated evidence runner."""
 test_paper(id::AbstractString; kwargs...) = run_paper(id; target="test", kwargs...)
 
+include("metadata.jl")
 include("cli.jl")
 
 end

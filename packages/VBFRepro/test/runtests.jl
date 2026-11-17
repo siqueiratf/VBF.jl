@@ -181,3 +181,69 @@ slow:
         @test TOML.parsefile(joinpath(errored,"run.toml"))["status"] == "error"
     end
 end
+
+@testset "portal metadata: discovery, scaffold, checks" begin
+    mktempdir() do root
+        paper = joinpath(root, "202601-fixture-claims")
+        mkpath(joinpath(paper, "test"))
+        write(joinpath(paper, "Makefile"), """
+            include ../paper.mk
+            help:
+            \t@echo '  theorem3        Thm 3: main result'
+            \t@echo '  sweep           Check Lemma 2.1 and Table 4 counts'
+            \t@echo '  extra           Bounded diagnostics'
+            theorem3:
+            \techo 3
+            sweep:
+            \techo s
+            extra:
+            \techo e
+            """)
+        write(joinpath(paper, "theorem3.jl"), "# Implements Theorem 3 — the main result\n# VBF API used: SBox, differential_uniformity\n")
+        write(joinpath(paper, "sweep.jl"), "# Implements Lemma 2.1 and Table 4 checks\n# VBF API used: none\n")
+        write(joinpath(paper, "extra.jl"), "# Implements bounded diagnostics\n")
+        write(joinpath(paper, "helpers.jl"), "# Implements shared helpers\n")
+        write(joinpath(paper, "test", "test_theorem3.jl"), "")
+        claims, unassigned = discover_candidates("202601-fixture-claims"; root)
+        ids = [c["id"] for c in claims]
+        @test ids == ["lemma2_1", "table4", "theorem3"]                  # one file, two results
+        @test all(c -> c["review"] == "pending", claims)                 # never reviewed by discovery
+        @test only(c for c in claims if c["id"] == "table4")["files"] == ["sweep.jl"]
+        @test only(c for c in claims if c["id"] == "theorem3")["tests"] == ["test/test_theorem3.jl"]
+        @test only(c for c in claims if c["id"] == "theorem3")["api"] == ["SBox", "differential_uniformity"]
+        @test unassigned == ["extra.jl"]                                  # no result named: for review
+        @test VBFRepro.stem_label("table4_1") == "Table 4.1"
+        @test VBFRepro.stem_label("sweep") === nothing
+
+        file = scaffold_paper("202601-fixture-claims"; root)
+        @test isfile(file)
+        @test_throws ArgumentError scaffold_paper("202601-fixture-claims"; root)   # never replaced
+        errors, review = check_paper_metadata("202601-fixture-claims"; root)
+        @test any(contains("no publication with role \"primary\""), errors)
+        @test count(contains("candidate, not reviewed"), review) == 3
+        @test any(contains("extra.jl is in no claim"), review)
+
+        meta = TOML.parsefile(file)
+        meta["publications"] = [Dict("key" => "Fixture_202601", "role" => "primary")]
+        c = only(c for c in meta["claims"] if c["id"] == "theorem3")
+        c["review"] = "done"; c["targets"] = ["theorem3", "missing_target"]
+        write(file, VBFRepro.render_paper_metadata(meta))
+        errors, _ = check_paper_metadata("202601-fixture-claims"; root)
+        @test any(contains("no Make target 'missing_target'"), errors)
+        @test any(contains("a reviewed claim needs 'verification'"), errors)
+
+        c["targets"] = ["theorem3"]; c["summary"] = "Main result."; c["verification"] = "computational-check"
+        c["completeness"] = "complete"; c["scope"] = "n = 4"
+        write(file, VBFRepro.render_paper_metadata(meta))
+        errors, review = check_paper_metadata("202601-fixture-claims"; root)
+        @test isempty(errors)
+        @test count(contains("candidate, not reviewed"), review) == 2
+
+        # --update appends new candidates only; the reviewed claim stays as it is.
+        write(joinpath(paper, "lemma5.jl"), "# Implements Lemma 5\n")
+        scaffold_paper("202601-fixture-claims"; root, update = true)
+        meta2 = TOML.parsefile(file)
+        @test only(c for c in meta2["claims"] if c["id"] == "theorem3")["review"] == "done"
+        @test any(c -> c["id"] == "lemma5" && c["review"] == "pending", meta2["claims"])
+    end
+end
