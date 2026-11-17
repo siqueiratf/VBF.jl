@@ -1,7 +1,7 @@
 name = "VBF"
 uuid = "569852b5-053e-4203-a2e2-8ddd9b8bc7af"
 version = "0.1.0-DEV"
-authors = ["Gustavo Zambonin"]
+authors = ["Tiago Faustino de Siqueira", "Gustavo Zambonin"]
 
 [deps]
 SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"

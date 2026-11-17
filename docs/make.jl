@@ -107,7 +107,7 @@ search_page = readme_page(normpath(joinpath(@__DIR__, "..", "packages", "VBFSear
 
 makedocs(
     sitename = "VBF",
-    authors = "Gustavo Zambonin",
+    authors = "Tiago Faustino de Siqueira, Gustavo Zambonin",
     modules = [VBF, VBFCatalog, VBFRepro],
     warnonly = true,
     # Run `DOCS_FIX=true julia --project=docs docs/make.jl` to rewrite drifted jldoctest blocks in the source to their actual output.

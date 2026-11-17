@@ -6,6 +6,8 @@ authors:
   - family-names: Siqueira
     given-names: Tiago Faustino de
     affiliation: "Universidade Federal de Santa Catarina"
+  - family-names: Zambonin
+    given-names: Gustavo
 repository-code: "https://github.com/siqueiratf/VBF.jl"
 license: MIT
 version: 0.1.0
