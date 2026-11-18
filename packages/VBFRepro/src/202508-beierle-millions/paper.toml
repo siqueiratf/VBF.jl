@@ -25,34 +25,34 @@ targets = ["component_profiles"]
 tests = ["test/test_component_profiles.jl"]
 verification = "computational-check"
 completeness = "partial"
-scope = "the Gold function x^3 on F_{2^4}: the sum of the alpha values is 30 = 2^5 - 2"
+scope = 'the Gold function $x^3$ on $\mathbb{F}_{2^4}$: the sum of the $\alpha$ values is $30 = 2^5 - 2$'
 api = ["SBox", "anf", "rank_f2", "gold_apn", "differential_uniformity"]
 review = "done"
 
 [[claims]]
 id = "table4_1"
 label = "Table 4.1"
-summary = "Distribution of the profiles P_k of the known quadratic APN functions in eight variables."
+summary = 'Distribution of the profiles $P_k$ of the known quadratic APN functions in eight variables.'
 files = ["paper_counts.jl", "table4_1.jl"]
 targets = ["paper_counts", "table4_1"]
 tests = ["test/test_paper_counts.jl", "test/test_table4_1.jl"]
 verification = "transcription"
 completeness = "partial"
-scope = "the 14 published rows and their sum 32,892; profile prefixes of length 3 for sampled members, under a node budget"
-note = "The full profiles P_k of Definition 4.1 are not computed; an estimate of the cost is 1.6 s per function, about 15 hours for the whole distribution."
+scope = 'the 14 published rows and their sum 32,892; profile prefixes of length 3 for sampled members, under a node budget'
+note = 'The full profiles $P_k$ of Definition 4.1 are not computed; an estimate of the cost is 1.6 s per function, about 15 hours for the whole distribution.'
 review = "done"
 
 [[claims]]
 id = "lemma4_6"
 label = "Lemma 4.6"
-summary = "A function with differential uniformity above 2^(n-m+1) has no APN extension."
+summary = 'A function with differential uniformity above $2^{n-m+1}$ has no APN extension.'
 files = ["extension_criteria.jl"]
 targets = ["extension_criteria"]
 tests = ["test/test_extension_criteria.jl"]
 verification = "computational-check"
 completeness = "partial"
-scope = "(n, m) = (4, 4) only: the Gold function x^3 and the zero function"
-note = "With m = n the bound is 2, so the check reduces to 'APN or not'. The case m < n, which carries the content of the lemma, is not checked."
+scope = '$(n, m) = (4, 4)$ only: the Gold function $x^3$ and the zero function'
+note = 'With $m = n$ the bound is 2, so the check reduces to "APN or not". The case $m < n$, which carries the content of the lemma, is not checked.'
 api = ["SBox", "differential_uniformity"]
 review = "done"
 
@@ -65,7 +65,7 @@ targets = ["extension_criteria"]
 tests = ["test/test_extension_criteria.jl"]
 verification = "computational-check"
 completeness = "partial"
-scope = "n = 4, exhaustive over the 35 rank-2 forms, for the Gold function x^3 and the zero function"
+scope = '$n = 4$, exhaustive over the 35 rank-2 forms, for the Gold function $x^3$ and the zero function'
 api = ["SBox", "anf", "rank_f2", "gold_apn", "differential_uniformity"]
 review = "done"
 
@@ -78,7 +78,7 @@ targets = ["extension_criteria"]
 tests = ["test/test_extension_criteria.jl"]
 verification = "computational-check"
 completeness = "partial"
-scope = "(n, m) = (2, 3), exhaustive over all 64 linear maps: the condition holds for 24 and exactly these give APN extensions"
+scope = '$(n, m) = (2, 3)$, exhaustive over all 64 linear maps: the condition holds for 24 and exactly these give APN extensions'
 api = ["SBox", "differential_uniformity"]
 review = "done"
 
