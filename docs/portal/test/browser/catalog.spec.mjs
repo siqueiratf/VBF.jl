@@ -134,3 +134,14 @@ test("a member link with another corpus digest is not resolved", async ({ page, 
   await page.goto(`catalog/corpora/edelpott2009_n8/?digest=${"0".repeat(64)}&idx=5`);
   await expect(page.locator(".member-result")).toContainText("This link names corpus digest");
 });
+
+test("equal values keep the natural order of the names", async ({ page }) => {
+  await open(page, "catalog/functions/?n=8&is_apn=1&sort=linearity&dir=asc&size=all");
+  const rows = await page.locator("#function-table tbody tr").evaluateAll((trs) => trs.filter((tr) => !tr.hidden)
+    .map((tr) => [Number(tr.dataset.linearity), tr.dataset.name]));
+  for (let i = 1; i < rows.length; i++) {
+    const [[l0, n0], [l1, n1]] = [rows[i - 1], rows[i]];
+    expect(l0 <= l1, `linearity order at ${n1}`).toBe(true);
+    if (l0 === l1) expect(n0.localeCompare(n1, "en", { numeric: true }), `${n0} before ${n1}`).toBeLessThanOrEqual(0);
+  }
+});

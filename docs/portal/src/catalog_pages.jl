@@ -222,6 +222,8 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
             "<p>The ANF has $(thousands(length(anfl))) monomials. Compute it in Julia with <code>anf(F)</code>.</p>" :
             "<details><summary>Algebraic normal form ($(length(anfl)) monomials, computed by <code>anf</code>)</summary><pre>$(join(anfl, "\n"))</pre></details>"
         prov = Tuple{String,String}[]
+        # A missing reference stays missing: no provenance is inferred.
+        ref === nothing && push!(prov, ("Publication", "<span class=\"note\">Not recorded in the catalog.</span>"))
         ref === nothing || push!(prov, ("Publication", reference_html(ref) * (haskey(repro_of, ref["key"]) ?
             " <a href=\"$(root)reproductions/$(repro_of[ref["key"]]["id"])/\">Reproduction</a>" :
             isempty(ref["url"]) ? "" : " <a href=\"$(esc(ref["url"]))\">Paper</a>")))

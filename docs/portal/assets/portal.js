@@ -90,7 +90,9 @@ function glueMath(root) {
     if (sort) {
       const k = dir === "desc" ? -1 : 1;
       shown = shown.slice().sort((a, b) => { const x = value(a, sort), y = value(b, sort);
-        return k * (typeof x === "string" ? x.localeCompare(y, "en", { numeric: true }) : x < y ? -1 : x > y ? 1 : 0); });
+        const c = typeof x === "string" ? x.localeCompare(y, "en", { numeric: true }) : x < y ? -1 : x > y ? 1 : 0;
+        // Equal values: the natural order of the names (reprs8_2 before reprs8_10), ascending.
+        return c !== 0 ? k * c : a.dataset.name.localeCompare(b.dataset.name, "en", { numeric: true }); });
     }
     const PAGE = pageSize();
     const pages = Math.max(1, Math.ceil(shown.length / PAGE));

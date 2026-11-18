@@ -2,6 +2,7 @@
 // (keyboard and touch) and the redirects of the previous site.
 import { test, expect } from "@playwright/test";
 import { open, expectNoOverflow } from "./helpers.mjs";
+import fs from "node:fs";
 
 const nested = [
   "reproductions/200900-edel-switching/",
@@ -101,4 +102,25 @@ test("a formula and the punctuation after it stay on one line", async ({ page })
   const glue = page.locator("#proposition2 .math-glue").last();
   await expect(glue).toHaveText(/\.$/);
   expect(await glue.evaluate((e) => getComputedStyle(e).whiteSpace)).toBe("nowrap");
+});
+
+test("every address of the previous site resolves under the base path", async ({ request }, info) => {
+  test.skip(info.project.name !== "desktop", "checked once");
+  const paths = fs.readFileSync("../../legacy_urls.txt", "utf8").split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+  expect(paths.length).toBeGreaterThan(10);
+  for (const p of paths) {
+    const r = await request.get(p);
+    expect(r.status(), p).toBe(200);
+    const html = await r.text();
+    const target = html.match(/http-equiv="refresh" content="0; url=([^"]+)"/);
+    if (target) expect((await request.get(new URL(target[1], r.url()).href)).status(), `${p} -> ${target[1]}`).toBe(200);
+  }
+});
+
+test("snapshot references resolve under the base path", async ({ request }, info) => {
+  test.skip(info.project.name !== "desktop", "checked once");
+  const snap = await (await request.get("catalog/snapshots.json")).json();
+  const head = await request.head(`catalog/data/${snap.current}/query.sqlite`);
+  expect(head.status()).toBe(200);
+  for (const v of snap.versions) expect(v.key).toMatch(/^[0-9a-f]{64}$/);
 });
