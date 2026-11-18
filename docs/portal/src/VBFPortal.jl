@@ -7,6 +7,7 @@ cross-checks of `paper.toml`, the site model, the HTML rendering and the link ch
 module VBFPortal
 
 using DBInterface, SHA, SQLite, TOML, Markdown, Dates
+import JSON
 using Bibliography, Mustache
 using VBF
 using VBFCatalog
@@ -27,6 +28,7 @@ include("equivalence.jl")
 include("crosscheck.jl")
 include("model.jl")
 include("render.jl")
+include("catalog_meta.jl")
 include("linkcheck.jl")
 include("querydb.jl")
 include("catalog_pages.jl")

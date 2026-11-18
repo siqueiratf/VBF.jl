@@ -32,6 +32,24 @@ end
     @test_throws ArgumentError EquivalenceRecord(a, b, :linear, :candidate)
 end
 
+@testset "catalog text and source links" begin
+    u = VBFPortal.source_upstreams()
+    s = VBFPortal.source_html("sboxu@7066b825c979ceefa901e7be3b2afcc63f587bcf", u)
+    @test occursin("https://github.com/lpp-crypto/sboxU/tree/7066b825c979ceefa901e7be3b2afcc63f587bcf", s)
+    @test occursin(">lpp-crypto/sboxU<", s) && !occursin("sboxu@", s)
+    @test occursin("https://doi.org/10.5281/zenodo.16752428", VBFPortal.source_html("zenodo:16752428#sha256=00", u))
+    @test VBFPortal.source_html("https://example.org/file/123#page=8", u) ==
+          "<a href=\"https://example.org/file/123#page=8\">example.org, page 8</a>"
+    @test VBFPortal.source_html("free text <x>", u) == "free text &lt;x&gt;"
+    text = Dict("families" => Dict("APN" => "x"), "corpora" => Dict("a" => Dict()))
+    @test VBFPortal.catalog_text_gaps(text, ["APN"], ["a"]) == String[]
+    @test length(VBFPortal.catalog_text_gaps(text, ["APN", "new"], ["a", "b"])) == 2
+    @test VBFPortal.short_cite(Dict("lastnames" => ["A", "B", "C"], "year" => "2025", "title" => "t")) == "A et al. (2025)"
+    @test VBFPortal.short_cite(Dict("lastnames" => ["A", "B"], "year" => "2009", "title" => "t")) == "A and B (2009)"
+    @test VBFPortal.clean_tex("Gr\\\"{o}bner -- Erd\\H{o}s") == "Gröbner – Erdős"
+    @test VBFPortal.monomial(0, 4) == "1" && VBFPortal.monomial(0b1010, 4) == "x1·x3"
+end
+
 @testset "member references and snapshots" begin
     d1 = "a"^64; d2 = "b"^64
     s = CatalogSnapshot("c"^64, "i", "m", Dict("demo_n8" => d1), nothing)

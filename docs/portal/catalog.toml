@@ -1,0 +1,57 @@
+# Site text of the catalog pages: readable names of the function families and the corpora.
+#
+# This file holds presentation text only. Identity, counts, references and sources come from
+# the catalog (VBFCatalog), so a change here does not change the catalog snapshot. The
+# portal build fails when a family or a corpus of the catalog has no entry here.
+
+[families]
+"APN" = "Declared APN functions"
+"APN-rep" = "APN representatives (sboxU)"
+"CCZ-rep-GF4" = "CCZ-class representatives with GF(4) coefficients"
+"Literature" = "S-boxes from the literature"
+"known-family" = "Known APN families"
+"known-sporadic" = "Known sporadic APN functions"
+
+[corpora.beierle2025_n8]
+title = "Quadratic APN functions of Beierle et al. (2025)"
+summary = "The quadratic APN functions in eight variables that Beierle, Langevin, Leander, Polujan and Rasoolzadeh published with their paper, as a Zenodo dataset."
+
+[corpora.beierleleander2022_n8]
+title = "Quadratic APN functions from the recursive tree search (2022)"
+summary = "Quadratic APN functions in eight variables from the recursive tree search of Beierle and Leander, as distributed in sboxU."
+
+[corpora.beierleleanderperrin2022_n8]
+title = "Quadratic APN functions from trims and extensions (2022)"
+summary = "Quadratic APN functions in eight variables from the trims and extensions of Beierle, Leander and Perrin, as distributed in sboxU."
+
+[corpora.edelpott2009_n8]
+title = "Quadratic APN functions of Edel and Pott (2009)"
+summary = "The quadratic APN functions in eight variables of Table 9 of Edel and Pott, as distributed in sboxU."
+
+[corpora.galissant2026_n8]
+title = "A quadratic APN function from Galissant (JC2 2026)"
+summary = "One public quadratic APN lookup table in eight variables, from page 88 of the JC2 2026 slides of Pierre Galissant. The catalog makes no claim of novelty for it."
+
+[corpora.langevin_may2025_extra_n8]
+title = "Langevin's May 2025 list: functions outside the published dataset"
+summary = "Quadratic APN functions in eight variables from Langevin's public list of May 2025 whose signatures are not in the dataset of Beierle et al. (2025)."
+
+[corpora.simonberg_gf4_n8]
+title = "Quadratic APN functions with GF(4) coefficients (Simon Berg)"
+summary = "All CCZ classes of quadratic APN functions over GF(2^8) with coefficients in GF(4), from the thesis repository of Simon Berg."
+
+[corpora.taniguchi2019_n8]
+title = "Quadratic APN functions of Taniguchi (2019)"
+summary = "The two new CCZ classes of Theorem 3 of Taniguchi, in eight variables."
+
+[corpora.wengtangong2013_n8]
+title = "Quadratic APN functions of Weng, Tan and Gong (2013)"
+summary = "Quadratic APN functions in eight variables of Weng, Tan and Gong, as distributed in sboxU."
+
+[corpora.yuperrin2022_qam_n8]
+title = "Quadratic APN functions from the QAM method of Yu and Perrin (2022)"
+summary = "Quadratic APN functions in eight variables that Yu and Perrin found with quadratic APN matrices (QAM), as distributed in sboxU."
+
+[corpora.yuwangli2014_qam_n8]
+title = "Quadratic APN functions from the QAM method of Yu, Wang and Li (2014)"
+summary = "Quadratic APN functions in eight variables that Yu, Wang and Li found with quadratic APN matrices (QAM), as distributed in sboxU."

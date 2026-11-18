@@ -64,6 +64,7 @@ function load_references(path = joinpath(ROOT, "packages", "VBFCatalog", "src", 
         authors = [short_name(a.first, a.last) for a in e.authors]
         doi = strip(e.access.doi); url = strip(e.access.url)
         refs[k] = Dict{String,Any}("key" => k, "title" => clean_tex(e.title), "authors" => authors,
+            "lastnames" => [clean_tex(a.last) for a in e.authors],
             "author_line" => join_names(authors), "year" => String(e.date.year),
             "venue" => venue * detail, "doi" => doi, "doi_url" => isempty(doi) ? "" : "https://doi.org/$doi",
             "url" => isempty(url) ? (isempty(doi) ? "" : "https://doi.org/$doi") : url,
