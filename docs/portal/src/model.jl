@@ -11,8 +11,13 @@ const REPO_URL = "https://github.com/siqueiratf/VBF.jl"
 const BLOB = REPO_URL * "/blob/main/"
 const ROOT = normpath(joinpath(@__DIR__, "..", "..", ".."))
 
+# TeX accents as Unicode combining marks: \"o, \"{o} and {\"o} become ö.
+const TEX_ACCENTS = Dict('"' => '\u0308', '\'' => '\u0301', '`' => '\u0300', '^' => '\u0302', '~' => '\u0303',
+                         '=' => '\u0304', '.' => '\u0307', 'c' => '\u0327', 'v' => '\u030c', 'u' => '\u0306', 'H' => '\u030b')
+tex_accents(s) = Base.Unicode.normalize(replace(s, r"\\([\"'`^~=.]|[cvuH](?=[{\s]))\s*\{?([A-Za-z])\}?" =>
+    m -> (c = match(r"\\([\"'`^~=.]|[cvuH])\s*\{?([A-Za-z])", m); string(c[2], TEX_ACCENTS[c[1][1]]))), :NFC)
 "Plain text of a BibTeX field: no protecting braces, en dash for `--`."
-clean_tex(s) = replace(replace(strip(String(s)), r"[{}]" => ""), "--" => "–", r"\s+" => " ")
+clean_tex(s) = replace(replace(tex_accents(strip(String(s))), r"[{}]" => ""), "--" => "–", r"\s+" => " ")
 
 "Raw BibTeX entries of a .bib file, by key (for the BibTeX toggle)."
 function raw_bibtex(path)
@@ -49,7 +54,8 @@ function load_references(path = joinpath(ROOT, "packages", "VBFCatalog", "src", 
     for (k, e) in bib
         venue = clean_tex(e.in.journal)
         isempty(venue) && (venue = clean_tex(e.booktitle))
-        isempty(venue) && (venue = clean_tex(get(e.fields, "howpublished", e.in.publisher)))
+        isempty(venue) && (venue = clean_tex(e.access.howpublished))
+        isempty(venue) && (venue = clean_tex(e.in.publisher))
         vol = clean_tex(e.in.volume); num = clean_tex(e.in.number); pages = clean_tex(e.in.pages)
         # A preprint number that repeats the publisher ("arXiv" + "arXiv:2601.11247") is the venue.
         !isempty(venue) && startswith(num, venue) && (venue = num; num = "")
