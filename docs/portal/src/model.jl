@@ -118,7 +118,8 @@ function build_model(db; evidence_dirs = [joinpath(dirname(VBFRepro.papers_root(
     refs = load_references()
     corpora = Dict(String(r.name) => Dict{String,Any}("name" => String(r.name), "bib_key" => coalesce(r.bib_key, ""),
         "member_count" => r.member_count, "n" => r.n, "m" => r.m, "digest" => String(r.store_sha256),
-        "source_repo" => String(r.source_repo)) for r in DBInterface.execute(db, "SELECT * FROM bulk_corpora"))
+        "source_repo" => String(r.source_repo), "encoding" => String(r.encoding))
+        for r in DBInterface.execute(db, "SELECT * FROM bulk_corpora"))
     evidence = load_evidence(evidence_dirs)
     pubs_toml = TOML.parsefile(VBFRepro.publications_path())
     repros = Dict{String,Any}[]

@@ -79,7 +79,7 @@ end
 const ANF_LINES_MAX = 300
 
 """Write the catalog home, the corpus pages, the function list and the function pages."""
-function render_catalog_functions(model, out, db; query_db = nothing, versions = Dict{String,Any}[])
+function render_catalog_functions(model, out, db; query_db = nothing, versions = Dict{String,Any}[], versions_origin = "none")
     text = catalog_text()
     fs = catalog_functions(db)
     corpora = sort(collect(values(model["corpora"])); by = c -> c["name"])
@@ -91,6 +91,11 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
     upstreams = source_upstreams(); decls = corpus_declarations()
     snapshot = model["snapshot"]
     title(c) = text["corpora"][c]["title"]
+    lib = library_anchors(out)
+    # A property name links to the Library symbol that computes it (CATALOG_PROPERTIES).
+    sym_of = Dict(l => (occursin('.', b) ? b : "VBF." * b) for (b, l, _) in CATALOG_PROPERTIES)
+    plabel(l, root) = (b = get(sym_of, l, nothing); b !== nothing && haskey(lib, b) ?
+        "<a href=\"$(root)$(lib[b])\" title=\"Computed by $(esc(display_binding(b)))\">$(esc(l))</a>" : esc(l))
     written = String[]
     page(path, t, body; crumbs) = push!(written, write_page(out, path, t,
         breadcrumbs(crumbs, root_prefix(path)) * Mustache.render(template("page"), Dict("title" => t, "body" => body)); nav = "catalog"))
@@ -102,10 +107,19 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
     crows = join(["<tr><td><a href=\"corpora/$(c["name"])/\">$(esc(title(c["name"])))</a></td>" *
                   "<td>$(haskey(refs, c["bib_key"]) ? ref_link(refs[c["bib_key"]], root, repro_of) : "–")</td>" *
                   "<td>$(c["n"])</td><td class=\"num\">$(thousands(c["member_count"]))</td></tr>" for c in corpora])
+    # The local snapshot is always the first row: from its Zenodo version when one has its key,
+    # else from the catalog itself ("not on Zenodo yet").
     current = findfirst(v -> v["key"] == snapshot.prebuilt_key, versions)
-    vrows = join(["<tr><td><a href=\"https://doi.org/$(v["doi"])\">$(esc(v["date"]))</a>$(i == current ? " (this site)" : "")</td>" *
-                  "<td>$(isempty(v["key"]) ? "–" : short_hash(v["key"]; what = "the snapshot key"))</td>" *
-                  "<td>$(v["query"] ? "yes" : "no")</td></tr>" for (i, v) in enumerate(versions)])
+    local_row = Dict{String,Any}("key" => snapshot.prebuilt_key, "date" => "", "doi" => something(snapshot.zenodo_doi, ""), "query" => false)
+    rows_v = current === nothing ? vcat([local_row], versions) : versions
+    vcell(v) = isempty(v["doi"]) ? "This build (not on Zenodo yet)" :
+        "<a href=\"https://doi.org/$(v["doi"])\">$(esc(isempty(v["date"]) ? v["doi"] : v["date"]))</a>" *
+        (v["key"] == snapshot.prebuilt_key ? " (this site)" : "")
+    vrows = join(["<tr><td>$(vcell(v))</td><td>$(short_hash(v["key"]; what = "the snapshot key"))</td>" *
+                  "<td>$(isempty(v["doi"]) ? "–" : v["query"] ? "yes" : "no")</td></tr>" for v in rows_v if !isempty(v["key"])])
+    origin_note = versions_origin == "zenodo" ? "" : versions_origin == "none" ?
+        "<p class=\"note\">The build had no access to Zenodo and no cached list, so the table shows only this snapshot.</p>" :
+        "<p class=\"note\">The build had no access to Zenodo; the list of earlier versions comes from the $(esc(versions_origin)).</p>"
     body = """
         <p>The catalog holds vectorial Boolean functions from the literature and from published datasets:
         $(thousands(length(fs))) curated functions with their properties, and $(thousands(total)) functions in
@@ -125,7 +139,8 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
         <p>Each catalog snapshot is archived on Zenodo with its query database.
         <a href="https://doi.org/10.5281/zenodo.$(ZENODO_CONCEPT)">All versions</a> (concept DOI 10.5281/zenodo.$(ZENODO_CONCEPT)).
         A historical version holds the member order of its date.</p>
-        $(isempty(versions) ? "" : "<div class=\"table-wrap\"><table class=\"versions\"><thead><tr><th scope=\"col\">Version</th><th scope=\"col\">Snapshot key</th><th scope=\"col\">Query database</th></tr></thead><tbody>$vrows</tbody></table></div>")
+        <div class="table-wrap"><table class="versions"><thead><tr><th scope="col">Version</th><th scope="col">Snapshot key</th><th scope="col">Query database</th></tr></thead><tbody>$vrows</tbody></table></div>
+        $origin_note
         <details class="technical"><summary>Technical identifiers of this snapshot</summary>
         <table class="properties">
         <tr><th scope="row">Snapshot key</th><td><code>$(snapshot.prebuilt_key)</code> $(copy_button(snapshot.prebuilt_key; what = "the snapshot key"))</td></tr>
@@ -136,13 +151,15 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
         """
     page("catalog/index.html", "Catalog", body; crumbs = [("Home", ""), ("Catalog", "")])
     write(joinpath(out, "catalog", "snapshots.json"), JSON.json(Dict("current" => snapshot.prebuilt_key,
-        "concept_doi" => "10.5281/zenodo.$(ZENODO_CONCEPT)", "versions" => versions), 2))
+        "concept_doi" => "10.5281/zenodo.$(ZENODO_CONCEPT)", "versions_origin" => versions_origin,
+        "inputs_sha256" => snapshot.inputs_sha256, "versions" => versions), 2))
 
     # Corpus pages -------------------------------------------------------------------------
     users(name) = [r for r in model["reproductions"] if any(c -> c["name"] == name, r["corpora"])]
     for c in corpora
         path = corpus_path(c["name"]); root = root_prefix(path)
         ref = get(refs, c["bib_key"], nothing)
+        decl = get(decls, c["name"], Dict())
         pub = ref === nothing ? "<p>The catalog names no publication for this corpus.</p>" :
             "<p>$(reference_html(ref))</p>" * (isempty(ref["doi_url"]) ? "" : "<p class=\"links\"><a href=\"$(esc(ref["doi_url"]))\">$(esc(ref["doi"]))</a></p>")
         rs = users(c["name"])
@@ -156,7 +173,10 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
             <p class="lead">$(esc(text["corpora"][c["name"]]["summary"]))</p>
             <p>$(thousands(c["member_count"])) functions, \$n = $(c["n"])\$, \$m = $(c["m"])\$.</p>
             <h2>Publication</h2>$pub$repro
-            <h2>Source</h2><p>$(corpus_source_html(c, get(decls, c["name"], Dict()), upstreams))</p>
+            <h2>Original dataset</h2>$(something(dataset_html(decl), "<p>The catalog records no separate published dataset for this corpus.</p>"))
+            <h2>Imported source</h2><p>$(corpus_source_html(c, decl, upstreams))</p>
+            <p class="note">The catalog stores the members in the encoding <code>$(esc(c["encoding"]))</code>. The corpus digest
+            below identifies this stored list; the catalog snapshot identifies the whole catalog.</p>
             $(member_view(c, root, snapshot.prebuilt_key))
             <h2>Technical identifiers</h2>
             <table class="properties technical">$(join(["<tr><th scope=\"row\">$a</th><td>$b</td></tr>" for (a, b) in tech]))</table>
@@ -181,7 +201,7 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
         anfl = anf_lines(F)
         anf_html = length(anfl) > ANF_LINES_MAX ?
             "<p>The ANF has $(thousands(length(anfl))) monomials. Compute it in Julia with <code>anf(F)</code>.</p>" :
-            "<details><summary>Algebraic normal form ($(length(anfl)) monomials)</summary><pre>$(join(anfl, "\n"))</pre></details>"
+            "<details><summary>Algebraic normal form ($(length(anfl)) monomials, computed by <code>anf</code>)</summary><pre>$(join(anfl, "\n"))</pre></details>"
         prov = Tuple{String,String}[]
         ref === nothing || push!(prov, ("Publication", reference_html(ref) * (haskey(repro_of, ref["key"]) ?
             " <a href=\"$(root)reproductions/$(repro_of[ref["key"]]["id"])/\">Reproduction</a>" :
@@ -200,7 +220,7 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
         else
             same = [g for g in by_sig[f["sigma"]] if g["key"] != k]
             inc = get(facts.by_sigma, f["sigma"], Tuple{String,Int}[])
-            """<p>Signature (a CCZ invariant): $(short_hash(f["sigma"]; what = "the signature")).</p>
+            """<p>$(plabel("Signature", root)) (a CCZ invariant): $(short_hash(f["sigma"]; what = "the signature")).</p>
             <ul>
             <li>Curated functions with the same signature: $(isempty(same) ? "none" :
                 join(["<a href=\"$(root)catalog/functions/$(key_string(g["key"]))/\">$(esc(fname(g)))</a>" for g in same[1:min(end, 10)]], ", ") *
@@ -228,8 +248,9 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
             $(isempty(f["form"]) ? "" : "Definition: $(esc(f["form"])).")</p>
             $names
             <h2>Properties</h2>
-            <table class="properties">$(join(["<tr><th scope=\"row\">$a</th><td>$b</td></tr>" for (a, b) in
+            <table class="properties">$(join(["<tr><th scope=\"row\">$(a == "Dimensions" ? a : plabel(a, root))</th><td>$b</td></tr>" for (a, b) in
                 vcat([("Dimensions", "\$n = $(f["n"])\$, \$m = $(f["m"])\$")], props)]))</table>
+            <p class="note">Each property name links to the Library function that computes it.</p>
             <h2>Representations</h2>
             <details><summary>Lookup table ($(thousands(length(lut))) values, input order)</summary>
             <p>$(copy_button("[" * join(lut, ", ") * "]"; what = "the lookup table")) Copy as a Julia vector.</p>
