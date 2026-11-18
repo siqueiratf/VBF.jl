@@ -6,10 +6,20 @@
 yesno(x) = x === missing || x === nothing ? "–" : Bool(x) ? "yes" : "no"
 val(x) = x === missing || x === nothing ? "–" : string(x)
 
-"""Curated functions with their properties, keys, signatures and LUT bytes."""
-function catalog_functions(db; index_path = sigma_index_path())
+"""
+Curated functions with their properties, keys and signatures. The signatures come from the
+query database when the build has one (its `functions.sigma` column; CI has no signature
+index), else from the signature index.
+"""
+function catalog_functions(db; index_path = sigma_index_path(), query_db = nothing)
     sig = Dict{Int,String}()
-    if isfile(index_path)
+    if query_db !== nothing
+        q = SQLite.DB("file:" * query_db * "?mode=ro")
+        for r in DBInterface.execute(q, "SELECT id, lower(hex(sigma)) AS s FROM functions WHERE sigma IS NOT NULL")
+            sig[Int(r.id)] = String(r.s)
+        end
+        close(q)
+    elseif isfile(index_path)
         idx = SQLite.DB("file:" * index_path * "?mode=ro")
         for r in DBInterface.execute(idx, "SELECT member_idx, sigma_hash FROM ccz_sigma_index WHERE source = 'functions'")
             sig[Int(r.member_idx)] = lowercase(String(r.sigma_hash))
@@ -81,7 +91,7 @@ const ANF_LINES_MAX = 300
 """Write the catalog home, the corpus pages, the function list and the function pages."""
 function render_catalog_functions(model, out, db; query_db = nothing, versions = Dict{String,Any}[], versions_origin = "none")
     text = catalog_text()
-    fs = catalog_functions(db)
+    fs = catalog_functions(db; query_db)
     corpora = sort(collect(values(model["corpora"])); by = c -> c["name"])
     gaps = catalog_text_gaps(text, unique(f["family"] for f in fs), [c["name"] for c in corpora])
     isempty(gaps) || error(join(gaps, "\n"))
