@@ -12,31 +12,33 @@ esc(s) = replace(string(s), "&" => "&amp;", "<" => "&lt;", ">" => "&gt;", "\"" =
 root_prefix(path) = (d = count(==('/'), path); d == 0 ? "./" : "../"^d)
 
 "Reference in the list format: authors. year. title. venue."
-reference_html(r) = string(esc(r["author_line"]), ". ", r["year"], ". <i>", esc(r["title"]), "</i>.",
-    isempty(r["venue"]) ? "" : " " * esc(r["venue"]) * ".")
+reference_html(r) = string("<span class=\"authors-sc\">", esc(r["author_line"]), "</span>. ", r["year"], ". ", esc(r["title"]), ". <i>",
+    isempty(r["venue"]) ? "" : esc(r["venue"]), "</i>.")
 
 const VERIFICATION_TEXT = Dict(
     "computational-check" => "Computational check for the stated scope; not a general proof.",
     "replication" => "The published experiment, run again.",
     "transcription" => "Published values, transcribed and checked for consistency; not recomputed.")
 
-"""Links of a reproduction: DOI, Paper, Code, Data, Catalog (no empty link)."""
-function repro_links(r, root)
-    ref = r["ref"]; links = Dict{String,String}[]
-    isempty(ref["doi_url"]) || push!(links, Dict("label" => "DOI", "url" => ref["doi_url"]))
-    !isempty(ref["url"]) && ref["url"] != ref["doi_url"] && push!(links, Dict("label" => "Paper", "url" => ref["url"]))
-    for c in r["code"]
-        push!(links, Dict("label" => "Code", "url" => c))
-    end
+"""
+The meta line above a reference, as in ReScience: DOI | Paper | Code | Data | Catalog | BibTeX.
+Paper and Code are small solid tags; absent items are left out, never shown empty.
+"""
+function linkline(r, root)
+    ref = r["ref"]; items = String[]
+    a(url, text; tag = false) = "<a href=\"$(esc(url))\"$(tag ? " class=\"tag\"" : "")>$(esc(text))</a>"
+    isempty(ref["doi"]) || push!(items, a(ref["doi_url"], ref["doi"]))
+    paper = isempty(ref["url"]) ? ref["doi_url"] : ref["url"]
+    isempty(paper) || push!(items, a(paper, "Paper"; tag = true))
+    foreach(c -> push!(items, a(c, "Code"; tag = true)), r["code"])
     for d in r["data"]
-        isempty(d["url"]) || push!(links, Dict("label" => "Data", "url" => d["url"]))
+        isempty(d["url"]) || push!(items, a(d["url"], "Data"))
     end
-    isempty(r["corpora"]) || push!(links, Dict("label" => "Catalog",
-        "url" => root * "catalog/corpora/" * first(r["corpora"])["name"] * "/"))
-    links
+    isempty(r["corpora"]) || push!(items, a(root * "catalog/corpora/" * first(r["corpora"])["name"] * "/", "Catalog"))
+    isempty(ref["bibtex"]) || push!(items, "<details class=\"bibtex\"><summary>BibTeX</summary><pre>$(esc(ref["bibtex"]))</pre></details>")
+    # A div, not a p: a p cannot hold the <details> of the BibTeX toggle.
+    "<div class=\"links\">" * join(items, "<span class=\"sep\">|</span>") * "</div>"
 end
-
-linkline(r, root) = Mustache.render(template("linkline"), Dict("links" => repro_links(r, root), "bibtex" => r["ref"]["bibtex"]))
 
 """One sentence about one evidence record, for one claim."""
 function evidence_text(rec, claim_id)
@@ -59,11 +61,11 @@ function evidence_text(rec, claim_id)
 end
 
 """Render one page into `out/path` with the base layout."""
-function write_page(out, path, title, content; nav = "")
+function write_page(out, path, title, content; nav = "", home = false)
     root = root_prefix(path)
     view = Dict("title" => title, "root" => root, "content" => content,
                 "snapshot_key" => SNAPSHOT_KEY[], "snapshot_short" => first(SNAPSHOT_KEY[], 12),
-                "nav_" * nav => true)
+                "nav_" * nav => true, "home" => home)
     file = joinpath(out, path)
     mkpath(dirname(file))
     write(file, Mustache.render(template("base"), view))
@@ -92,7 +94,7 @@ function render_portal(model, out)
 
     latest = sort(repros; by = r -> r["updated"], rev = true)[1:min(3, end)]
     push!(written, write_page(out, "index.html", "Home",
-        Mustache.render(template("home"), Dict("root" => "./", "latest" => [item(r, "./") for r in latest]))))
+        Mustache.render(template("home"), Dict("root" => "./", "latest" => [item(r, "./") for r in latest])); home = true))
 
     root = root_prefix("reproductions/index.html")
     years = [Dict("year" => y, "items" => [item(r, root) for r in repros if r["year"] == y])
@@ -128,8 +130,11 @@ function render_portal(model, out)
     for c in corpora
         path = "catalog/corpora/$(c["name"])/index.html"; root = root_prefix(path)
         pubs = join(["<li><a href=\"$(root)reproductions/$(r["id"])/\">$(reference_html(r["ref"]))</a></li>" for r in users(c["name"])])
-        body = "<dl><dt>Functions</dt><dd>$(c["member_count"])</dd><dt>Dimensions</dt><dd>n = $(c["n"]), m = $(c["m"])</dd>" *
-               "<dt>Corpus digest</dt><dd><code>$(esc(c["digest"]))</code></dd><dt>Source</dt><dd>$(esc(c["source_repo"]))</dd></dl>" *
+        body = "<table class=\"properties\">" *
+               "<tr><th scope=\"row\">Functions</th><td>$(c["member_count"])</td></tr>" *
+               "<tr><th scope=\"row\">Dimensions</th><td>\$n = $(c["n"])\$, \$m = $(c["m"])\$</td></tr>" *
+               "<tr><th scope=\"row\">Corpus digest</th><td><code>$(esc(c["digest"]))</code></td></tr>" *
+               "<tr><th scope=\"row\">Source</th><td><code>$(esc(c["source_repo"]))</code></td></tr></table>" *
                (isempty(pubs) ? "" : "<h2>Publications</h2><ol>$pubs</ol>") *
                member_view(c, root, model["snapshot"].prebuilt_key)
         push!(written, write_page(out, path, c["name"],

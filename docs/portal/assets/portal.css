@@ -1,1 +1,155 @@
-/* Styles come in stage S5 (ReScience C design). */
+/* VBF.jl portal: design system (stage S5.1).
+ *
+ * The values follow the ReScience C site (https://rescience.github.io/), measured on
+ * 2026-11-17: Helvetica/Arial 16px, weight 300, line height 1.35; text #111 on #fdfdfd;
+ * a 800px column with 30px side padding; title 26px weight 100 with 0.25em letter spacing;
+ * headings weight 500 at 32/20/16px; blue links #2a7ae2; a 13.3px meta line above each
+ * reference with small solid tags. This file is our own implementation of those values; the
+ * one accent colour (#1f6f78) is VBF.jl's own.
+ */
+:root {
+  --text: #111;
+  --bg: #fdfdfd;
+  --accent: #1f6f78;
+  --link: #2a7ae2;
+  --link-visited: #1756a9;
+  --grey: #828282;
+  --grey-light: #e8e8e8;
+  --tint: #eef5f6;           /* the accent at about 7%: code and BibTeX blocks */
+  --space: 30px;
+  --column: 800px;
+  --small: 13.333px;
+}
+
+/* Base */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font: 300 16px/1.35 Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+h1, h2, h3, h4, p, ul, ol, dl, pre, table, figure { margin: 0 0 calc(var(--space) / 2); }
+h1, h2, h3, h4 { color: var(--accent); font-weight: 500; }
+h1 { font-size: 32px; line-height: 1.35; padding-top: 1em; }
+h2 { font-size: 20px; padding-top: 1em; }
+h3 { font-size: 16px; padding-top: 1em; }
+ul, ol { padding-left: var(--space); }
+a { color: var(--link); text-decoration: none; }
+a:visited { color: var(--link-visited); }
+a:hover { color: var(--text); text-decoration: underline; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+code, pre { font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace; font-size: 14.4px; }
+code { overflow-wrap: anywhere; }
+pre { background: var(--tint); border: 1px solid var(--text); padding: 8px 12px; overflow-x: auto; line-height: 1.4; }
+small, .small { font-size: var(--small); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Layout */
+.wrapper, .site-header, .page-content, .site-footer {
+  max-width: var(--column); margin: 0 auto; padding-left: var(--space); padding-right: var(--space);
+}
+.page-content { padding-bottom: var(--space); }
+
+/* Header: 200px band on the home page, 110px elsewhere */
+.site-header { display: flex; align-items: center; justify-content: space-between; min-height: 110px; gap: 1em; }
+.site-header.home { min-height: 200px; }
+.site-title { font-size: 26px; font-weight: 100; color: var(--accent); letter-spacing: 0.02em; }
+.site-title:visited { color: var(--accent); }
+.site-title:hover { color: var(--accent); text-decoration: none; }
+.site-nav a { font-size: 14px; font-weight: 400; text-transform: uppercase; color: var(--text); margin-left: 20px; }
+.site-nav a:visited { color: var(--text); }
+.site-nav a[aria-current="page"] { color: var(--accent); }
+
+/* Footer */
+.site-footer {
+  font-size: 12px; color: var(--grey); text-align: center;
+  border-top: 1px solid var(--grey-light); padding-top: 10px; padding-bottom: 20px;
+}
+.site-footer a, .site-footer a:visited { color: var(--grey); }
+.site-footer code { font-size: 11px; }
+
+/* Publications: the meta line and the reference, as in ReScience's bibliography */
+ol.publications { padding-left: var(--space); }
+ol.publications > li { margin-bottom: 1.4em; line-height: 1.25; }
+.links { font-size: var(--small); margin: 0 0 0.2em; line-height: 1.5; }
+.links .sep { color: var(--grey); margin: 0 0.3em; }
+.tag, .tag:visited {
+  background: var(--accent); color: #fff; border-radius: 2px; padding: 0.15em 0.5em 0.05em;
+}
+.tag:hover { color: #fff; text-decoration: none; opacity: 0.85; }
+.authors-sc { font-variant: small-caps; }
+.bibtex { display: inline; }
+.bibtex summary { display: inline; cursor: pointer; color: var(--link); list-style: none; }
+.bibtex summary::-webkit-details-marker { display: none; }
+.bibtex[open] pre { margin-top: 0.5em; font-size: 12.5px; }
+
+/* Publication page */
+.publication .authors { font-size: 18px; margin-bottom: 0.2em; }
+.publication .venue { color: var(--grey); margin-bottom: 0.4em; }
+
+/* Tables: rules between rows only; no vertical borders, no backgrounds */
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; vertical-align: top; padding: 0.45em 0.6em 0.45em 0; }
+thead th { font-weight: 500; font-size: 14px; color: var(--grey); border-bottom: 1px solid var(--text); }
+tbody tr { border-bottom: 1px solid var(--grey-light); }
+table.claims td:first-child { white-space: nowrap; }
+table.claims td:last-child, table.claims th:last-child { text-align: right; padding-right: 0; }
+table.claims tr:target { background: var(--tint); }
+table.properties th { font-weight: 400; color: var(--grey); width: 32%; }
+table.properties { width: 100%; }
+table.properties td { overflow-wrap: anywhere; }
+
+/* Details (claim evidence, LUTs): a small grey toggle, never a box */
+details summary { cursor: pointer; }
+.claim-details { margin-top: 0.3em; }
+.claim-details > summary { font-size: var(--small); color: var(--grey); }
+.claim-details dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25em 1em;
+  font-size: 14px; margin: 0.5em 0 0.4em; }
+.claim-details dt { color: var(--grey); }
+.claim-details dd { margin: 0; }
+.claim-details dd p { margin: 0 0 0.3em; }
+
+/* Copy button: an icon; the command shows on hover and focus (title) and is announced */
+button.copy {
+  border: 0; background: none; padding: 2px; cursor: pointer; color: var(--grey);
+  line-height: 0; vertical-align: middle;
+}
+button.copy:hover { color: var(--accent); }
+button.copy svg { width: 16px; height: 16px; }
+button.copy.copied { color: var(--accent); }
+.copy-note { color: var(--accent); }
+
+/* Forms (catalog filters, member view) */
+form.filters, #member-view form { display: flex; flex-wrap: wrap; gap: 0.6em 1.2em; align-items: end;
+  font-size: 14px; margin-bottom: 0.8em; }
+label { display: inline-flex; flex-direction: column; gap: 0.2em; color: var(--grey); }
+input, select, button[type="submit"] {
+  font: 300 15px Helvetica, Arial, sans-serif; color: var(--text); background: #fff;
+  border: 1px solid #cfcfcf; border-radius: 2px; padding: 0.3em 0.45em;
+}
+button[type="submit"] { cursor: pointer; color: var(--accent); border-color: var(--accent); }
+.note { color: var(--grey); font-size: 14px; }
+
+/* Mathematics (KaTeX): same size as the text */
+.katex { font-size: 1.05em; }
+
+/* Narrow screens: the navigation goes under the title; no menu icon */
+@media (max-width: 600px) {
+  :root { --space: 16px; }
+  .site-header, .site-header.home { flex-direction: column; align-items: flex-start; justify-content: center;
+    min-height: 0; padding-top: 28px; padding-bottom: 12px; gap: 0.4em; }
+  .site-header.home { padding-top: 60px; padding-bottom: 40px; }
+  .site-nav a { margin: 0 14px 0 0; }
+  h1 { font-size: 26px; }
+  table.claims thead { display: none; }
+  table.claims tr { display: grid; grid-template-columns: 1fr auto; padding: 0.4em 0; }
+  table.claims td { padding: 0.15em 0; }
+  table.claims td:nth-child(2) { grid-column: 1 / -1; }
+  table.claims td:nth-child(3) { grid-column: 1; }
+  table.claims td:last-child { grid-column: 2; grid-row: 1; }
+  table.properties th { width: auto; }
+}

@@ -1,17 +1,31 @@
-// Copy buttons: copy the command in data-command and say "Copied" for a moment.
+// Copy buttons: copy data-command; a short "Copied" note follows the icon for a moment.
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("button.copy");
   if (!button) return;
   const text = button.dataset.command;
+  let note = button.nextElementSibling;
+  if (!note || !note.classList.contains("copy-note")) {
+    note = document.createElement("span");
+    note.className = "copy-note small";
+    note.setAttribute("role", "status");
+    button.after(note);
+  }
   try {
     await navigator.clipboard.writeText(text);
-    button.textContent = "Copied";
+    note.textContent = " Copied";
+    button.classList.add("copied");
   } catch {
-    button.textContent = "Select and copy";
-    window.prompt("Command", text);
+    window.prompt("Copy the command:", text);
   }
-  button.setAttribute("aria-live", "polite");
-  setTimeout(() => { button.textContent = "Copy"; }, 1500);
+  setTimeout(() => { note.textContent = ""; button.classList.remove("copied"); }, 1500);
+});
+
+// Mathematics in $...$ (KaTeX); code and pre blocks are left as they are.
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.querySelector("main"), {
+      delimiters: [{ left: "$", right: "$", display: false }], throwOnError: false });
+  }
 });
 
 // Function list: filters in the URL (?n=8&is_apn=1&family=...), so a filtered list can be

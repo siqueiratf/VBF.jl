@@ -12,4 +12,10 @@ await esbuild.build({ ...shared, format: "iife", define: { "import.meta.url": "s
   entryPoints: ["node_modules/sqlite-wasm-http/dist/sqlite-worker.js",
                 "node_modules/sqlite-wasm-http/dist/vfs-http-worker.js"] });
 fs.copyFileSync("node_modules/sqlite-wasm-http/deps/dist/sqlite3.wasm", `${out}/sqlite3.wasm`);
+// KaTeX (math in $...$): the distribution files, unchanged.
+fs.mkdirSync(`${out}/katex/contrib`, { recursive: true });
+for (const f of ["katex.min.css", "katex.min.js", "contrib/auto-render.min.js"]) {
+  fs.copyFileSync(`node_modules/katex/dist/${f}`, `${out}/katex/${f}`);
+}
+fs.cpSync("node_modules/katex/dist/fonts", `${out}/katex/fonts`, { recursive: true });
 console.log("built", fs.readdirSync(out).join(" "));

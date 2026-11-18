@@ -15,40 +15,40 @@ role = "primary"
 [[claims]]
 id = "proposition2"
 label = "Proposition 2"
-summary = "The function x^3 + tr(x^9) is APN on F_{2^n} for every n."
+summary = 'The function $x^3 + \mathrm{tr}(x^9)$ is APN on $\mathbb{F}_{2^n}$ for every $n$.'
 files = ["proposition2.jl"]
 targets = ["proposition2"]
 tests = ["test/test_proposition2.jl"]
 verification = "computational-check"
 completeness = "partial"
-scope = "n = 2, ..., 8 (parameter max_n); the statement is for every n"
+scope = '$n = 2, \dots, 8$ (parameter max_n); the statement is for every $n$'
 api = ["gf_pow", "gf_trace", "primitive_polynomial", "differential_uniformity", "SBox"]
 review = "done"
 
 [[claims]]
 id = "theorem7"
 label = "Theorem 7"
-summary = "A CCZ-crooked APN function has Delta-rank at most 2^(n+1)."
+summary = 'A CCZ-crooked APN function has $\Delta$-rank at most $2^{n+1}$.'
 files = ["theorem7.jl"]
 targets = ["theorem7"]
 tests = ["test/test_theorem7.jl"]
 verification = "computational-check"
 completeness = "partial"
-scope = "the 14 functions of Table 5 (n = 6): the 13 quadratic ones satisfy the bound; 2.11 (Delta-rank 152) does not"
+scope = 'the 14 functions of Table 5 ($n = 6$): the 13 quadratic ones satisfy the bound; 2.11 ($\Delta$-rank 152) does not'
 api = ["delta_rank", "differential_uniformity", "SBox"]
 review = "done"
 
 [[claims]]
 id = "corollary8"
 label = "Corollary 8"
-summary = "The Kasami functions x^13 and x^57 on F_{2^7} are not CCZ-crooked."
+summary = 'The Kasami functions $x^{13}$ and $x^{57}$ on $\mathbb{F}_{2^7}$ are not CCZ-crooked.'
 files = ["theorem7.jl"]
 targets = ["theorem7"]
 parameters = { full_search = "true" }
 tests = ["test/test_theorem7.jl"]
 verification = "computational-check"
 completeness = "complete"
-scope = "n = 7: Delta-ranks 338 (x^13) and 436 (x^57), both above 2^8"
+scope = '$n = 7$: $\Delta$-ranks 338 ($x^{13}$) and 436 ($x^{57}$), both above $2^8$'
 api = ["delta_rank", "gf_monomial_lut", "differential_uniformity", "SBox"]
 note = "Runs only with full_search=true. The default test checks that it was not run."
 review = "done"
@@ -56,13 +56,13 @@ review = "done"
 [[claims]]
 id = "theorem9"
 label = "Theorem 9"
-summary = "Switching criterion: v -> F(v) + f(v)u is APN if and only if f satisfies the four-point condition of F."
+summary = 'Switching criterion: $v \mapsto F(v) + f(v)u$ is APN if and only if $f$ satisfies the four-point condition of $F$.'
 files = ["theorem9.jl"]
 targets = ["theorem9"]
 tests = ["test/test_theorem9.jl"]
 verification = "computational-check"
 completeness = "partial"
-scope = "one switch at n = 6: Table 5 entry 2.3 to 2.11 (u = 46), in both directions"
+scope = 'one switch at $n = 6$: Table 5 entry 2.3 to 2.11 ($u = 46$), in both directions'
 api = ["differential_uniformity"]
 review = "done"
 
@@ -82,7 +82,7 @@ review = "done"
 [[claims]]
 id = "theorem11"
 label = "Theorem 11"
-summary = "A non-quadratic APN function on F_{2^6} (equation 9)."
+summary = 'A non-quadratic APN function on $\mathbb{F}_{2^6}$ (equation 9).'
 files = ["theorem11.jl"]
 targets = ["theorem11"]
 tests = ["test/test_theorem11.jl"]
@@ -96,7 +96,7 @@ review = "done"
 [[claims]]
 id = "table5"
 label = "Table 5"
-summary = "The 14 APN functions on F_{2^6} obtained by switching, with their algebraic degrees."
+summary = 'The 14 APN functions on $\mathbb{F}_{2^6}$ obtained by switching, with their algebraic degrees.'
 files = ["table5.jl"]
 targets = ["table5"]
 tests = ["test/test_table5.jl"]
@@ -109,7 +109,7 @@ review = "done"
 [[claims]]
 id = "table6"
 label = "Table 6"
-summary = "Gamma-rank, Delta-rank and Walsh spectrum class of the 14 functions of Table 5."
+summary = '$\Gamma$-rank, $\Delta$-rank and Walsh spectrum class of the 14 functions of Table 5.'
 files = ["table6.jl"]
 targets = ["table6"]
 tests = ["test/test_table6.jl"]
@@ -122,7 +122,7 @@ review = "done"
 [[claims]]
 id = "table7"
 label = "Table 7"
-summary = "APN functions on F_{2^7} obtained by switching."
+summary = 'APN functions on $\mathbb{F}_{2^7}$ obtained by switching.'
 files = ["table7.jl"]
 targets = ["table7"]
 tests = ["test/test_table7.jl"]

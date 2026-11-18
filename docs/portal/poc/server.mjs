@@ -11,7 +11,8 @@ import path from "node:path";
 
 const [port, root, latency = "0", rate = "0"] = process.argv.slice(2);
 const types = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript",
-  ".wasm": "application/wasm", ".json": "application/json" };
+  ".wasm": "application/wasm", ".json": "application/json", ".css": "text/css", ".svg": "image/svg+xml",
+  ".png": "image/png", ".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf", ".toml": "text/plain" };
 let stats = { requests: 0, bytes: 0 };
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));

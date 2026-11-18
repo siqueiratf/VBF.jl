@@ -60,7 +60,7 @@ async function main() {
           ` = <a href="${root}catalog/functions/${esc(key)}/">${esc(curated[0].canonical_name)}</a>` : ""}</td></tr>
         <tr><th scope="row">Signature</th><td>${r.sigma ? `<code>${esc(r.sigma)}</code>` : "not indexed"}</td></tr>
         <tr><th scope="row">Coefficients</th><td><code>${esc(r.coeffs.toLowerCase())}</code></td></tr></table>
-        ${r.sigma ? `<p>${count} members share this signature. Equal signatures are an invariant match, not a proof of
+        ${r.sigma ? `<p>${count} ${count === 1 ? "member has" : "members share"} this signature. Equal signatures are an invariant match, not a proof of
           equivalence.</p><ul>${same.filter((s) => !(s.name === corpus && s.idx === idx)).slice(0, 20).map((s) =>
           `<li><a href="${root}catalog/corpora/${esc(s.name)}/?idx=${s.idx}">${esc(s.name)} #${s.idx}</a></li>`).join("")}</ul>` : ""}
         <p>In Julia: <code>corpus_function(load_catalog(), "${esc(corpus)}", ${idx})</code></p>`;
