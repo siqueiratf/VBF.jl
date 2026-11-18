@@ -169,12 +169,18 @@ function decorate_library!(out, model)
         # keeps the primary theme for any stored or system preference).
         html = replace(html, r"<link class=\"docs-theme-link\"[^>]*data-theme-name=\"(?!documenter-light\")[^\"]*\"[^>]*/>" => "")
         html = replace(html, r"<option value=\"(?!documenter-light\")[^\"]*\">[^<]*</option>" => "")
+        # siteinfo.js and versions.js exist only on a multi-version deployment (none here).
+        html = replace(html, r"<script src=\"[./]*siteinfo\.js\"></script>" => "", r"<script src=\"[./]*versions\.js\"></script>" => "")
         html = replace(html, "</head>" => "<link rel=\"stylesheet\" type=\"text/css\" href=\"$(root)assets/portal/library.css\"/></head>"; count = 1)
         html = replace(html, r"<body([^>]*)>" => s -> s * library_header(root); count = 1)
         # The footer goes after the Documenter frame, at the end of the body.
         i = findlast("</body>", html)
         i === nothing || (html = html[1:first(i) - 1] * library_footer(root) *
             "<script defer src=\"$(root)assets/portal/portal.js\"></script>" * html[first(i):end])
+        # A code block that scrolls must take the keyboard focus (WCAG 2.1.1).
+        html = replace(html, "<pre>" => "<pre tabindex=\"0\">")
+        # Documenter's sidebar button is an icon link without text.
+        html = replace(html, "id=\"documenter-sidebar-button\"" => "id=\"documenter-sidebar-button\" aria-label=\"Library contents\"")
         # Cross-references under the first docstring of each binding on the page.
         seen = Set{String}(); inserts = Tuple{Int,String}[]
         for (b, _, z) in docstrings(html)

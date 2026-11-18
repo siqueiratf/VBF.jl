@@ -126,7 +126,7 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
         $(length(corpora)) corpora. A function is identified by its content key: \$n\$, \$m\$ and the SHA-256 of its lookup table.</p>
         <form class="search-main" action="functions/" method="get" role="search">
         <label>Find a function <input name="q" type="search" placeholder="Name or key, for example Gold" size="28"></label>
-        <label>\$n\$ <select name="n"><option value="">any</option>$(join(["<option>$n</option>" for n in ns]))</select></label>
+        <label><i>n</i> <select name="n"><option value="">any</option>$(join(["<option>$n</option>" for n in ns]))</select></label>
         <label>APN <select name="is_apn"><option value="">any</option><option value="1">yes</option><option value="0">no</option></select></label>
         <button type="submit">Search</button>
         </form>
@@ -134,7 +134,7 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
         <h2 id="corpora">Corpora</h2>
         <p>A corpus is a published list of functions, kept in its original order. Each corpus page shows the members.</p>
         <div class="table-wrap"><table class="corpora"><thead><tr><th scope="col">Corpus</th><th scope="col">Publication</th>
-        <th scope="col">\$n\$</th><th scope="col" class="num">Functions</th></tr></thead><tbody>$crows</tbody></table></div>
+        <th scope="col"><i>n</i></th><th scope="col" class="num">Functions</th></tr></thead><tbody>$crows</tbody></table></div>
         <h2 id="snapshots">Versions</h2>
         <p>Each catalog snapshot is archived on Zenodo with its query database.
         <a href="https://doi.org/10.5281/zenodo.$(ZENODO_CONCEPT)">All versions</a> (concept DOI 10.5281/zenodo.$(ZENODO_CONCEPT)).
@@ -281,7 +281,7 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
     # Function list: a static table (it works without JavaScript); portal.js filters, sorts and
     # pages it, and keeps the state in the URL.
     path = "catalog/functions/index.html"; root = root_prefix(path)
-    cols = [("name", "Name"), ("n", "\$n\$"), ("m", "\$m\$"), ("is_apn", "APN"), ("algebraic_degree", "Degree"),
+    cols = [("name", "Name"), ("n", "<i>n</i>"), ("m", "<i>m</i>"), ("is_apn", "APN"), ("algebraic_degree", "Degree"),
             ("differential_uniformity", "Diff. unif."), ("linearity", "Linearity"), ("ref", "Reference")]
     head = "<tr>" * join(["<th scope=\"col\" data-col=\"$c\"><button type=\"button\" class=\"sort\">$l</button></th>" for (c, l) in cols]) * "</tr>"
     sortval(x) = x === missing ? "" : string(x)
@@ -304,8 +304,8 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
     form = """
         <form class="filters" id="function-filters" role="search" aria-label="Filters">
         <label>Name or key <input name="q" type="search" size="18"></label>
-        <label>\$n\$ <select name="n"><option value="">any</option>$(opts(num("n")))</select></label>
-        <label>\$m\$ <select name="m"><option value="">any</option>$(opts(num("m")))</select></label>
+        <label><i>n</i> <select name="n"><option value="">any</option>$(opts(num("n")))</select></label>
+        <label><i>m</i> <select name="m"><option value="">any</option>$(opts(num("m")))</select></label>
         <label>Family <select name="family"><option value="">any</option>$(opts(sort([(x, text["families"][x]) for x in unique(f["family"] for f in fs)]; by = last)))</select></label>
         <label>APN <select name="is_apn"><option value="">any</option><option value="1">yes</option><option value="0">no</option></select></label>
         <label>Permutation <select name="is_permutation"><option value="">any</option><option value="1">yes</option><option value="0">no</option></select></label>

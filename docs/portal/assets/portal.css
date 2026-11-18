@@ -5,15 +5,17 @@
  * a 800px column with 30px side padding; title 26px weight 100 with 0.25em letter spacing;
  * headings weight 500 at 32/20/16px; blue links #2a7ae2; a 13.3px meta line above each
  * reference with small solid tags. This file is our own implementation of those values; the
- * one accent colour (#1f6f78) is VBF.jl's own.
+ * one accent colour (#1f6f78) is VBF.jl's own. Two values are darker than ReScience's for
+ * WCAG AA contrast on #fdfdfd (stage S5.5): grey #6e6e6e (5.0:1, not #828282) and links
+ * #1f6bd0 (5.1:1, not #2a7ae2).
  */
 :root {
   --text: #111;
   --bg: #fdfdfd;
   --accent: #1f6f78;
-  --link: #2a7ae2;
+  --link: #1f6bd0;
   --link-visited: #1756a9;
-  --grey: #828282;
+  --grey: #6e6e6e;
   --grey-light: #e8e8e8;
   --tint: #eef5f6;           /* the accent at about 7%: code and BibTeX blocks */
   --space: 30px;
@@ -267,3 +269,8 @@ table.versions td { padding-right: 2em; }
 }
 table.technical code { word-break: break-all; }
 form.search-main label:first-child { flex: 0 1 22em; }
+
+/* S5.5: accessibility */
+.note a, .copy-note a { text-decoration: underline; }   /* not by colour only on grey text */
+.page-content pre { white-space: pre-wrap; overflow-wrap: anywhere; }   /* no scroll region */
+.page-content pre.lut { white-space: pre; overflow-x: auto; }

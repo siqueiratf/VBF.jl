@@ -8,8 +8,8 @@
  * repeated here because a Documenter page does not load portal.css.
  */
 :root {
-  --text: #111; --bg: #fdfdfd; --accent: #1f6f78; --link: #2a7ae2; --link-visited: #1756a9;
-  --grey: #828282; --grey-light: #e8e8e8; --tint: #eef5f6; --frame: 1180px; --side: 16rem;
+  --text: #111; --bg: #fdfdfd; --accent: #1f6f78; --link: #1f6bd0; --link-visited: #1756a9;
+  --grey: #6e6e6e; --grey-light: #e8e8e8; --tint: #eef5f6; --frame: 1180px; --side: 16rem;
 }
 html { font-size: 16px; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 300 16px/1.35 Helvetica, Arial, sans-serif; }
@@ -133,3 +133,16 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 300 16px/1.35
   .site-header .site-nav a { margin: 0; }
   #documenter .content h1 { font-size: 26px; }
 }
+
+/* S5.5: accessibility. Documenter's grey labels use the portal grey (AA contrast). */
+#documenter .is-disabled, #documenter .docs-navbar .is-hidden-touch, #documenter .docs-sidebar .tocitem span { color: var(--grey); }
+#documenter .portal-xref a { text-decoration: underline; }
+/* The pre (with tabindex) scrolls, not the code inside it, so the keyboard reaches it. */
+#documenter .content pre code.hljs { overflow: visible; display: block; }
+#documenter .content pre { overflow-x: auto; }
+/* Syntax colours with AA contrast on the code background (#eef5f6) */
+#documenter .hljs-keyword, #documenter .hljs-meta, #documenter .hljs-built_in { color: #6b2b8a; }
+#documenter .hljs-string { color: #8a1c1c; }
+#documenter .hljs-number, #documenter .hljs-literal { color: #1d6629; }
+#documenter .hljs-comment { color: #5c5c5c; }
+#documenter .hljs-type, #documenter .hljs-title { color: #1f6f78; }
