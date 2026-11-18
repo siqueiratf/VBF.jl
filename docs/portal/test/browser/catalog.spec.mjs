@@ -107,11 +107,19 @@ test("the member view lists, shows and searches members", async ({ page, request
   await expect(view.locator("table.members tbody tr")).toHaveCount(22);
   await view.locator("table.members tbody tr").nth(4).locator("a").click();
   await expect(page).toHaveURL(/\?digest=[0-9a-f]{64}&idx=5$/);
-  await expect(view.locator("h3")).toHaveText("Member 5");
-  await view.getByRole("link", { name: "Next member" }).click();
-  await expect(view.locator("h3")).toHaveText("Member 6");
+  await expect(view.locator("h3")).toHaveText("Entry 5");
+  await view.getByRole("link", { name: "Next entry" }).click();
+  await expect(view.locator("h3")).toHaveText("Entry 6");
   await page.goBack();
-  await expect(view.locator("h3")).toHaveText("Member 5");
+  await expect(view.locator("h3")).toHaveText("Entry 5");
+  // The permanent link names the full corpus digest and the index; the Julia command checks
+  // the digest before it reads the index.
+  const digest = await view.getAttribute("data-digest");
+  const permanent = await view.locator("tr", { hasText: "Permanent link" }).locator("button.copy").getAttribute("data-command");
+  expect(permanent).toBe(new URL(`?digest=${digest}&idx=5`, page.url()).href);
+  expect(permanent).toMatch(/\/VBF\.jl\/catalog\/corpora\/edelpott2009_n8\/\?digest=[0-9a-f]{64}&idx=5$/);
+  await expect(view.locator("pre", { hasText: "corpus_function" })).toContainText(`corpus_digest(db, "edelpott2009_n8") == "${digest}"`);
+  await expect(view.locator("pre", { hasText: "corpus_function" })).toContainText(`corpus_function(db, "edelpott2009_n8", 5)`);
   const key = await view.locator("tr", { hasText: "Function key" }).locator("button.copy").getAttribute("data-command");
   await view.locator("select[name=by]").selectOption("key");
   await view.locator("input[name=value]").fill(key);

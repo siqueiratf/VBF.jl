@@ -81,3 +81,24 @@ test("a folder address without the final slash works", async ({ page }) => {
   await page.goto("catalog");
   await expect(page).toHaveURL(/\/catalog\/$/);
 });
+
+test("the title and the navigation keep their place in every section", async ({ page }) => {
+  // The home page has a taller header band (200px, an approved design choice); every other
+  // page, Library pages included, must put the title and the links at the same pixels.
+  const where = async (path) => {
+    await open(page, path);
+    return page.evaluate(() => [".site-title", ...[...document.querySelectorAll("#site-nav a")].map((_, i) => `#site-nav a:nth-child(${i + 1})`)]
+      .map((s) => { const r = document.querySelector(s).getBoundingClientRect(); return [s, Math.round(r.x), Math.round(r.y)]; }));
+  };
+  const first = await where("reproductions/");
+  for (const path of ["catalog/functions/", "catalog/names/n10_Gold_x3/", "api/spectra/", "references/", "about/"]) {
+    expect(await where(path), path).toEqual(first);
+  }
+});
+
+test("a formula and the punctuation after it stay on one line", async ({ page }) => {
+  await open(page, "reproductions/200900-edel-switching/");
+  const glue = page.locator("#proposition2 .math-glue").last();
+  await expect(glue).toHaveText(/\.$/);
+  expect(await glue.evaluate((e) => getComputedStyle(e).whiteSpace)).toBe("nowrap");
+});

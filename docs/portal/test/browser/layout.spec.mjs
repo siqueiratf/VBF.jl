@@ -30,12 +30,19 @@ for (const [name, path, act] of pages) {
     expect(wide, "claims tables that scroll inside their column").toBe(0);
     const axe = new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]);
     // Documenter's own widgets (search modal, settings) are outside the portal design.
-    if (path.startsWith("api/") || path.startsWith("library/") || path.startsWith("references/")) {
-      // A docstring <summary> holds the link of its binding (nested-interactive): Documenter's markup.
-      axe.exclude("#documenter-settings").exclude(".search-modal").disableRules(["nested-interactive"]);
-    }
+    const library = path.startsWith("api/") || path.startsWith("library/") || path.startsWith("references/");
+    if (library) axe.exclude("#documenter-settings").exclude(".search-modal").disableRules(["nested-interactive"]);
     const result = await axe.analyze();
-    const serious = result.violations.filter((v) => ["serious", "critical"].includes(v.impact));
+    const violations = [...result.violations];
+    if (library) {
+      // The one exception: a Documenter docstring <summary> holds the link of its binding
+      // (nested-interactive). The rule runs on the rest of the page; library.spec.mjs checks
+      // that the keyboard still opens, closes and follows these summaries.
+      const nested = await new AxeBuilder({ page }).withRules(["nested-interactive"])
+        .exclude("details.docstring > summary").exclude("#documenter-settings").exclude(".search-modal").analyze();
+      violations.push(...nested.violations);
+    }
+    const serious = violations.filter((v) => ["serious", "critical"].includes(v.impact));
     expect(serious.map((v) => `${v.id} (${v.impact}): ${v.nodes.length} × ${v.nodes[0].target.join(" ")} — ${v.help}`)).toEqual([]);
   });
 }

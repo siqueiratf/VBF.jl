@@ -50,3 +50,22 @@ test("mathematics in docstrings is rendered", async ({ page }) => {
   await open(page, "api/spectra/");
   await expect(page.locator("#documenter .katex").first()).toBeAttached();
 });
+
+test("the keyboard opens, closes and follows a docstring", async ({ page }) => {
+  await open(page, "api/spectra/");
+  const details = page.locator("details.docstring").first();
+  const summary = details.locator("summary");
+  await summary.focus();
+  await expect(summary).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(details).not.toHaveAttribute("open", /.*/);
+  await page.keyboard.press("Enter");
+  await expect(details).toHaveAttribute("open", /.*/);
+  // The binding link inside the summary is the next stop of the Tab key, and Enter follows it.
+  await page.keyboard.press("Tab");
+  const link = summary.locator("a.docstring-binding");
+  await expect(link).toBeFocused();
+  const href = await link.getAttribute("href");
+  await page.keyboard.press("Enter");
+  await expect.poll(() => decodeURIComponent(page.url())).toContain(decodeURIComponent(href));
+});

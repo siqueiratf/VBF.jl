@@ -345,6 +345,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # full history: the portal dates each reproduction by its last commit
 
       - name: Install Julia 1.12
         uses: julia-actions/setup-julia@v2
