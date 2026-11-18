@@ -68,7 +68,7 @@ function main() {
     p = Math.min(Math.max(1, p), pages);
     const rows = await query(`SELECT ${COLS} FROM members WHERE corpus_id = $c AND idx BETWEEN $a AND $b ORDER BY idx`,
       { $c: await cid(), $a: (p - 1) * PAGE + 1, $b: p * PAGE });
-    out.innerHTML = `<p>Members ${fmt((p - 1) * PAGE + 1)}–${fmt(Math.min(p * PAGE, count))} of ${fmt(count)}.</p>
+    out.innerHTML = `<p>Entries ${fmt((p - 1) * PAGE + 1)}–${fmt(Math.min(p * PAGE, count))} of ${fmt(count)}.</p>
       ${pager(p)}${rowsTable(rows)}${pager(p)}`;
   };
 
@@ -84,24 +84,31 @@ function main() {
     let same = 0;
     if (r.sigma) {
       const [slo, shi] = range(r.sigma);
-      same = (await query(`SELECT count(*) AS k FROM members WHERE sigma BETWEEN ${slo} AND ${shi}`))[0].k;
+      same = (await query(`SELECT count(*) AS k FROM members INDEXED BY members_sigma WHERE sigma BETWEEN ${slo} AND ${shi}`))[0].k;
     }
     const page = Math.ceil(idx / PAGE);
-    const julia = `corpus_function(load_catalog(), "${corpus}", ${idx})`;
+    // The index has a meaning only for this corpus digest: the command checks it first, so it
+    // never loads another function from another snapshot of the corpus.
+    const julia = `using VBFCatalog
+db = load_catalog()
+corpus_digest(db, "${corpus}") == "${digest}" ||
+    error("the installed catalog has another snapshot of ${corpus}")
+F = corpus_function(db, "${corpus}", ${idx})`;
     out.innerHTML = `<nav class="pager" aria-label="Neighbour members">
-        ${idx > 1 ? link({ digest, idx: idx - 1 }, "Previous member", "prev") : ""}
+        ${idx > 1 ? link({ digest, idx: idx - 1 }, "Previous entry", "prev") : ""}
         ${link({ page }, `Page ${fmt(page)} of the list`)}
-        ${idx < count ? link({ digest, idx: idx + 1 }, "Next member", "next") : ""}</nav>
-      <h3>Member ${fmt(idx)}</h3>
+        ${idx < count ? link({ digest, idx: idx + 1 }, "Next entry", "next") : ""}</nav>
+      <h3>Entry ${fmt(idx)}</h3>
       <table class="properties">
       <tr><th scope="row">Function key</th><td>${short(key, "the function key")}${curated.length ?
         ` This is the curated function <a href="${root}catalog/functions/${esc(key)}/">${esc(curated[0].canonical_name || key)}</a>.` : ""}</td></tr>
       <tr><th scope="row">Signature</th><td>${r.sigma ? short(r.sigma, "the signature") +
-        ` ${link({ sigma: r.sigma }, `${fmt(same)} ${same === 1 ? "member has" : "members have"} it`)}` : "not in the index"}</td></tr>
+        ` ${link({ sigma: r.sigma }, `${fmt(same)} ${same === 1 ? "entry has" : "entries have"} it (all corpora)`)}` : "not in the index"}</td></tr>
       <tr><th scope="row">Permanent link</th><td>${short(location.origin + location.pathname + href({ digest, idx }), "the permanent link")}</td></tr>
       </table>
       <details><summary>Stored coefficients (hex)</summary><pre>${esc(r.coeffs.toLowerCase())}</pre></details>
-      <p>In Julia: <code>${esc(julia)}</code> ${copy(julia, "the Julia command")}</p>
+      <p>Load this entry in Julia; the command checks the corpus digest first: ${copy(julia, "the Julia commands")}</p>
+      <pre>${esc(julia)}</pre>
       <p class="note">An equal signature is an invariant match, not a proof of equivalence.</p>`;
   };
 
@@ -112,10 +119,13 @@ function main() {
     const r = range(h);
     if (!r) { out.innerHTML = "<p>Give 16 to 64 hex digits, or a function key such as <code>8-8-…</code>.</p>"; return; }
     const what = column === "sigma" ? "signature" : "lookup table";
-    const all = await query(`SELECT count(*) AS k FROM members WHERE ${column} BETWEEN ${r[0]} AND ${r[1]}`);
-    const rows = await query(`SELECT ${COLS} FROM members WHERE ${column} BETWEEN ${r[0]} AND ${r[1]} AND corpus_id = $c
+    // INDEXED BY: without it, SQLite can scan the whole corpus in index order (41 MB for a
+    // signature of simonberg_gf4_n8) instead of reading the few matching index entries.
+    const index = column === "sigma" ? "members_sigma" : "members_lut";
+    const all = await query(`SELECT count(*) AS k FROM members INDEXED BY ${index} WHERE ${column} BETWEEN ${r[0]} AND ${r[1]}`);
+    const rows = await query(`SELECT ${COLS} FROM members INDEXED BY ${index} WHERE ${column} BETWEEN ${r[0]} AND ${r[1]} AND corpus_id = $c
       ORDER BY idx LIMIT ${PAGE}`, { $c: await cid() });
-    out.innerHTML = `<p>${fmt(rows.length)}${rows.length === PAGE ? "+" : ""} ${rows.length === 1 ? "member" : "members"} of this corpus
+    out.innerHTML = `<p>${fmt(rows.length)}${rows.length === PAGE ? "+" : ""} ${rows.length === 1 ? "entry" : "entries"} of this corpus
       with this ${what} (${fmt(all[0].k)} in all corpora). ${link({ page: 1 }, "Back to the list")}</p>
       ${rows.length ? rowsTable(rows) : ""}`;
   };

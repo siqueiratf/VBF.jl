@@ -22,11 +22,42 @@ document.addEventListener("click", async (event) => {
 
 // Mathematics in $...$ (KaTeX); code and pre blocks are left as they are.
 document.addEventListener("DOMContentLoaded", () => {
-  if (window.renderMathInElement) {
+  if (window.renderMathInElement && document.querySelector("main")) {
     renderMathInElement(document.querySelector("main"), {
       delimiters: [{ left: "$", right: "$", display: false }], throwOnError: false });
   }
+  glueMath(document.body);
+  // Documenter renders the Library mathematics later: glue it when it appears.
+  if (document.getElementById("documenter")) {
+    let pending = false;
+    new MutationObserver(() => {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(() => { pending = false; glueMath(document.body); });
+    }).observe(document.getElementById("documenter"), { childList: true, subtree: true });
+  }
 });
+
+// An inline formula and the punctuation right after it ("$n$." or "$x^9$),") stay on one line:
+// both go into a span that does not wrap.
+function glueMath(root) {
+  for (const k of root.querySelectorAll(".katex")) {
+    if (k.closest(".katex-display, .math-glue")) continue;
+    // The formula's outermost wrapper: auto-render and Documenter put each formula in a span
+    // that holds only it.
+    let el = k;
+    while (el.parentElement && el.parentElement.tagName === "SPAN" && el.parentElement.childNodes.length === 1) el = el.parentElement;
+    const next = el.nextSibling;
+    if (!next || next.nodeType !== Node.TEXT_NODE) continue;
+    const m = next.textContent.match(/^[.,;:!?)\]]+/);
+    if (!m) continue;
+    const glue = document.createElement("span");
+    glue.className = "math-glue";
+    el.before(glue);
+    glue.append(el, document.createTextNode(m[0]));
+    next.textContent = next.textContent.slice(m[0].length);
+  }
+}
 
 // Function list: filters, sort and page in the URL (?n=8&is_apn=1&sort=linearity&dir=desc&page=2),
 // so a view can be shared and linked. The filter names are the column names of the catalog's
@@ -35,15 +66,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("function-filters");
   const table = document.getElementById("function-table");
   if (!form || !table) return;
-  const PAGE = 50;
+  const sizeSelect = document.getElementById("function-size");
   const fields = [...form.elements].filter((e) => e.name);
   const rows = [...table.tBodies[0].rows];
-  const pager = document.getElementById("function-pager");
+  const pagers = [document.getElementById("function-pager-top"), document.getElementById("function-pager")].filter(Boolean);
   const fmt = (n) => n.toLocaleString("en-US");
   const params = new URLSearchParams(location.search);
   for (const f of fields) if (params.has(f.name)) f.value = params.get(f.name);
   let sort = params.get("sort") || "", dir = params.get("dir") === "desc" ? "desc" : "asc";
   let page = Number(params.get("page")) || 1;
+  if (sizeSelect && params.has("size")) sizeSelect.value = params.get("size");
+  const pageSize = () => (sizeSelect && sizeSelect.value === "all" ? Infinity : Number(sizeSelect ? sizeSelect.value : 50));
   const numeric = new Set(["n", "m", "is_apn", "algebraic_degree", "differential_uniformity", "linearity"]);
   const value = (row, col) => {
     const v = row.dataset[col] ?? "";
@@ -59,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
       shown = shown.slice().sort((a, b) => { const x = value(a, sort), y = value(b, sort);
         return k * (typeof x === "string" ? x.localeCompare(y, "en", { numeric: true }) : x < y ? -1 : x > y ? 1 : 0); });
     }
+    const PAGE = pageSize();
     const pages = Math.max(1, Math.ceil(shown.length / PAGE));
     if (!keepPage) page = 1;
     page = Math.min(Math.max(1, page), pages);
@@ -73,11 +107,13 @@ document.addEventListener("DOMContentLoaded", () => {
       : `Functions ${fmt(first)}–${fmt(last)} of ${fmt(shown.length)}`;
     const state = new URLSearchParams(want.map((f) => [f.name, f.value.trim()]));
     if (sort) { state.set("sort", sort); state.set("dir", dir); }
+    if (sizeSelect && sizeSelect.value !== "50") state.set("size", sizeSelect.value);
     if (page > 1) state.set("page", page);
     const link = (p, text, rel) => `<a href="?${(s => (s.set("page", p), s))(new URLSearchParams(state))}" data-page="${p}"${rel ? ` rel="${rel}"` : ""}>${text}</a>`;
-    pager.innerHTML = pages === 1 ? "" : `${page > 1 ? link(1, "First") + " " + link(page - 1, "Previous", "prev") : ""}
+    const pagerHtml = pages === 1 ? "" : `${page > 1 ? link(1, "First") + " " + link(page - 1, "Previous", "prev") : ""}
       <span>Page ${fmt(page)} of ${fmt(pages)}</span>
       ${page < pages ? link(page + 1, "Next", "next") + " " + link(pages, "Last") : ""}`;
+    for (const p of pagers) p.innerHTML = pagerHtml;
     history.replaceState(null, "", state.toString() ? `?${state}` : location.pathname);
   };
   form.addEventListener("input", () => apply());
@@ -90,14 +126,15 @@ document.addEventListener("DOMContentLoaded", () => {
     sort = th.dataset.col;
     apply();
   });
-  pager.addEventListener("click", (e) => {
+  for (const pager of pagers) pager.addEventListener("click", (e) => {
     const a = e.target.closest("a[data-page]");
     if (!a) return;
     e.preventDefault();
     page = Number(a.dataset.page);
     apply(true);
-    table.scrollIntoView({ block: "start" });
+    if (pager.id === "function-pager") table.scrollIntoView({ block: "start" });
   });
+  if (sizeSelect) sizeSelect.addEventListener("change", () => apply());
   apply(true);
 })();
 

@@ -107,7 +107,7 @@ end
 
 "The portal header for a Library page (the same links as base.html, with Library current)."
 library_header(root) = """
-    <header class="site-header library">
+    <header class="site-header">
       <a class="site-title" href="$(root)">VBF.jl</a>
       <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Menu">
         <svg viewBox="0 0 18 15" aria-hidden="true" focusable="false"><path d="M0 1.5h18M0 7.5h18M0 13.5h18" stroke="currentColor" stroke-width="2"/></svg>
@@ -121,7 +121,7 @@ library_header(root) = """
     </header>"""
 
 library_footer(root) = """
-    <footer class="site-footer library">
+    <footer class="site-footer">
       <a href="https://github.com/siqueiratf/VBF.jl">Sources</a> ·
       <a href="$(root)catalog/#snapshots">Catalog snapshot</a> ·
       Library built with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> ·
@@ -171,7 +171,7 @@ function decorate_library!(out, model)
         html = replace(html, r"<option value=\"(?!documenter-light\")[^\"]*\">[^<]*</option>" => "")
         # siteinfo.js and versions.js exist only on a multi-version deployment (none here).
         html = replace(html, r"<script src=\"[./]*siteinfo\.js\"></script>" => "", r"<script src=\"[./]*versions\.js\"></script>" => "")
-        html = replace(html, "</head>" => "<link rel=\"stylesheet\" type=\"text/css\" href=\"$(root)assets/portal/library.css\"/></head>"; count = 1)
+        html = replace(html, "</head>" => "<link rel=\"stylesheet\" type=\"text/css\" href=\"$(root)assets/portal/library.css\"/><link rel=\"stylesheet\" type=\"text/css\" href=\"$(root)assets/portal/frame.css\"/></head>"; count = 1)
         html = replace(html, r"<body([^>]*)>" => s -> s * library_header(root); count = 1)
         # The footer goes after the Documenter frame, at the end of the body.
         i = findlast("</body>", html)
@@ -179,6 +179,8 @@ function decorate_library!(out, model)
             "<script defer src=\"$(root)assets/portal/portal.js\"></script>" * html[first(i):end])
         # A code block that scrolls must take the keyboard focus (WCAG 2.1.1).
         html = replace(html, "<pre>" => "<pre tabindex=\"0\">")
+        # The header already names VBF.jl: the sidebar heading says "Library" only.
+        html = replace(html, r"(<div class=\"docs-package-name\"><span class=\"docs-autofit\"><a [^>]*>)VBF\.jl Library(</a>)" => s"\1Library\2")
         # Documenter's sidebar button is an icon link without text.
         html = replace(html, "id=\"documenter-sidebar-button\"" => "id=\"documenter-sidebar-button\" aria-label=\"Library contents\"")
         # Cross-references under the first docstring of each binding on the page.

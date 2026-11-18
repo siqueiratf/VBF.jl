@@ -2,13 +2,30 @@
 <p>VBF.jl is a Julia library for vectorial Boolean functions, with a focus on APN functions and the
 EA and CCZ equivalence relations. It reproduces the computational results of published papers,
 keeps a catalog of known functions with their provenance, and documents the algorithms it uses.</p>
-<p>Each reproduction lists the results of a paper, the code that checks each result, the command
-that runs it and the evidence of its last runs. The catalog and the library link to the same
-records.</p>
-<h2>Latest reproductions</h2>
+<h2>Research resources</h2>
+<dl class="resources">
+<dt><a href="{{{root}}}reproductions/">Reproductions</a></dt>
+<dd>{{count}} publications. For each one: the reviewed results, the code and the command that check
+each result, and the evidence of the runs.</dd>
+<dt><a href="{{{root}}}catalog/">Catalog</a></dt>
+<dd>{{n_functions}} curated functions and {{n_corpora}} corpora, identified by content key, with their
+provenance. Each catalog snapshot is archived on Zenodo.</dd>
+<dt><a href="{{{root}}}library/">Library</a></dt>
+<dd>The guides and the API reference of the Julia packages VBF, VBFCatalog and VBFRepro.</dd>
+</dl>
+<h2>Recently updated reproductions</h2>
+<p class="note">Ordered by the date of the last change to the reproduction, newest first.</p>
 <ol class="publications">
 {{#latest}}
-<li>{{{linkline}}}<a href="{{{root}}}reproductions/{{id}}/">{{{reference}}}</a></li>
+<li>{{{linkline}}}{{{reference}}} <span class="note">Updated {{updated}}.</span></li>
 {{/latest}}
 </ol>
 <p><a href="{{{root}}}reproductions/">All reproductions</a></p>
+<h2>Software</h2>
+<ul class="software">
+<li>Source code: <a href="{{repo}}">github.com/siqueiratf/VBF.jl</a></li>
+<li>Version: VBF {{version}}, commit <a href="{{repo}}/commit/{{commit}}"><code>{{commit_short}}</code></a></li>
+<li>Citation: <a href="{{repo}}/blob/main/CITATION.cff">CITATION.cff</a> for the software;
+<a href="https://doi.org/10.5281/zenodo.24297661">doi:10.5281/zenodo.24297661</a> for the catalog data
+(see <a href="{{{root}}}about/">About</a>)</li>
+</ul>

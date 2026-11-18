@@ -43,7 +43,7 @@ if !skip_library
     end
     mv(joinpath(src, "index.md"), joinpath(src, "library.md"))
     mv(joinpath(src, "reproductions.md"), joinpath(src, "performance.md"))
-    api_pages = write_api_pages(src)
+    api_pages = write_api_pages(src; public_only = true)   # exported names only
     _, search_page = write_generated_pages(src; papers = false)
     DocMeta.setdocmeta!(VBF, :DocTestSetup, :(using VBF, VBFCatalog); recursive = true)
     DocMeta.setdocmeta!(VBFCatalog, :DocTestSetup, :(using VBF, VBFCatalog); recursive = true)

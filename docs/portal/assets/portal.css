@@ -51,28 +51,12 @@ small, .small { font-size: var(--small); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* Layout */
-.wrapper, .site-header, .page-content, .site-footer {
+.wrapper, .page-content {
   max-width: var(--column); margin: 0 auto; padding-left: var(--space); padding-right: var(--space);
 }
 .page-content { padding-bottom: var(--space); overflow-wrap: break-word; }
 
-/* Header: 200px band on the home page, 110px elsewhere */
-.site-header { display: flex; align-items: center; justify-content: space-between; min-height: 110px; gap: 1em; }
-.site-header.home { min-height: 200px; }
-.site-title { font-size: 26px; font-weight: 100; color: var(--accent); letter-spacing: 0.02em; }
-.site-title:visited { color: var(--accent); }
-.site-title:hover { color: var(--accent); text-decoration: none; }
-.site-nav a { font-size: 14px; font-weight: 400; text-transform: uppercase; color: var(--text); margin-left: 20px; }
-.site-nav a:visited { color: var(--text); }
-.site-nav a[aria-current="page"] { color: var(--accent); }
-
-/* Footer */
-.site-footer {
-  font-size: 12px; color: var(--grey); text-align: center;
-  border-top: 1px solid var(--grey-light); padding-top: 10px; padding-bottom: 20px;
-}
-.site-footer a, .site-footer a:visited { color: var(--grey); }
-.site-footer code { font-size: 11px; }
+/* Header and footer: frame.css (shared with the Library pages). */
 
 /* Publications: the meta line and the reference, as in ReScience's bibliography */
 ol.publications { padding-left: var(--space); }
@@ -143,10 +127,6 @@ button[type="submit"] { cursor: pointer; color: var(--accent); border-color: var
 /* Narrow screens: the navigation goes under the title; no menu icon */
 @media (max-width: 600px) {
   :root { --space: 16px; }
-  .site-header, .site-header.home { flex-direction: column; align-items: flex-start; justify-content: center;
-    min-height: 0; padding-top: 28px; padding-bottom: 12px; gap: 0.4em; }
-  .site-header.home { padding-top: 60px; padding-bottom: 40px; }
-  .site-nav a { margin: 0 14px 0 0; }
   h1 { font-size: 26px; }
   table.claims thead { display: none; }
   table.claims tr { display: grid; grid-template-columns: 1fr auto; padding: 0.4em 0; }
@@ -164,9 +144,6 @@ button[type="submit"] { cursor: pointer; color: var(--accent); border-color: var
 .table-wrap { overflow-x: auto; max-width: 100%; }
 ul.contents { columns: 2; max-width: 30em; }
 .search input { width: 18em; max-width: 100%; }
-.menu-toggle { display: none; border: 1px solid var(--grey-light); border-radius: 5px; background: var(--bg);
-  color: var(--text); padding: 7px 9px; line-height: 0; cursor: pointer; }
-.menu-toggle svg { width: 18px; height: 15px; }
 code.hash { white-space: nowrap; }
 .cmd { display: block; white-space: nowrap; }
 .cmd code { font-size: 12.5px; color: var(--grey); }
@@ -180,13 +157,6 @@ table.evidence td, table.evidence th { padding-top: 0.15em; padding-bottom: 0.15
 table.evidence tr { border-bottom: 0; }
 p.source { margin-top: var(--space); font-size: 14px; }
 @media (max-width: 600px) {
-  .site-header, .site-header.home { flex-direction: row; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; padding-top: 20px; padding-bottom: 10px; }
-  .site-header.home { padding-top: 40px; padding-bottom: 30px; }
-  .menu-toggle { display: inline-block; }
-  .site-nav { display: none; flex-basis: 100%; }
-  .site-nav.open { display: flex; flex-direction: column; gap: 0.6em; padding: 0.6em 0; }
-  .site-nav a { margin: 0; }
   ul.contents { columns: 1; }
   table.claims tr.claim-details-row { display: block; }
   table.claims tr.claim-details-row td { display: block; }
@@ -274,3 +244,20 @@ form.search-main label:first-child { flex: 0 1 22em; }
 .note a, .copy-note a { text-decoration: underline; }   /* not by colour only on grey text */
 .page-content pre { white-space: pre-wrap; overflow-wrap: anywhere; }   /* no scroll region */
 .page-content pre.lut { white-space: pre; overflow-x: auto; }
+
+/* An inline formula and its punctuation do not wrap apart (portal.js, glueMath). */
+.math-glue { white-space: nowrap; }
+
+/* Final review: the listing (title as the link, venue in grey) and the home resources */
+ol.publications .authors-sc { color: var(--text); }
+ol.publications .venue { color: var(--grey); }
+dl.resources dt { font-weight: 400; margin-top: 0.6em; }
+dl.resources dd { margin: 0.1em 0 0 0; }
+ul.software { list-style: none; padding-left: 0; }
+.results-bar { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4em 1.4em; margin-bottom: 0.4em; }
+.results-bar p { margin: 0; }
+.results-bar .pager { margin: 0; }
+label.inline { flex-direction: row; align-items: baseline; gap: 0.4em; font-size: 14px; }
+button.copy.copy-text { font: 300 15px Helvetica, Arial, sans-serif; line-height: inherit; color: var(--link);
+  padding: 0; vertical-align: baseline; text-decoration: underline; }
+button.copy.copy-text:hover { color: var(--text); }

@@ -14,20 +14,7 @@
 html { font-size: 16px; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 300 16px/1.35 Helvetica, Arial, sans-serif; }
 
-/* Portal header and footer (as in portal.css) */
-.site-header.library { display: flex; align-items: center; justify-content: space-between; gap: 1em;
-  min-height: 110px; max-width: var(--frame); margin: 0 auto; padding: 0 30px; box-sizing: border-box; }
-.site-header .site-title { font-size: 26px; font-weight: 100; color: var(--accent); letter-spacing: 0.02em; text-decoration: none; }
-.site-header .site-title:hover { color: var(--accent); text-decoration: none; }
-.site-header .site-nav a { font-size: 14px; font-weight: 400; text-transform: uppercase; color: var(--text); margin-left: 20px; text-decoration: none; }
-.site-header .site-nav a:hover { text-decoration: underline; }
-.site-header .site-nav a[aria-current="page"] { color: var(--accent); }
-.site-header .menu-toggle { display: none; border: 1px solid var(--grey-light); border-radius: 5px; background: var(--bg);
-  color: var(--text); padding: 7px 9px; line-height: 0; cursor: pointer; }
-.site-header .menu-toggle svg { width: 18px; height: 15px; }
-.site-footer.library { max-width: var(--frame); margin: 0 auto; padding: 10px 30px 20px; box-sizing: border-box;
-  font-size: 12px; color: var(--grey); text-align: center; border-top: 1px solid var(--grey-light); }
-.site-footer.library a { color: var(--grey); }
+/* The portal header and footer: frame.css. */
 
 /* Frame: on wide screens the sidebar and the content sit in one centred frame under the
    header; the sidebar is sticky instead of fixed. */
@@ -53,13 +40,13 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 300 16px/1.35
 #documenter .content h2 { font-size: 20px; border: 0; margin-top: 1.6em; }
 #documenter .content h3 { font-size: 16px; }
 #documenter .content h1 a, #documenter .content h2 a, #documenter .content h3 a { color: inherit; }
-#documenter a:focus-visible, #documenter button:focus-visible, #documenter input:focus-visible, .site-header a:focus-visible {
+#documenter a:focus-visible, #documenter button:focus-visible, #documenter input:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Code: the portal monospace stack; blocks on the tint with a thin dark border */
 #documenter code, #documenter pre, #documenter kbd { font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace; }
 #documenter .content code { font-size: 14.4px; background: none; color: inherit; padding: 0; }
-#documenter .content pre { background: var(--tint); border: 1px solid var(--text); border-radius: 0; padding: 8px 12px; font-size: 14.4px; }
+#documenter .content pre { background: var(--tint); border: 1px solid #c9d6d8; border-radius: 0; padding: 8px 12px; font-size: 14.4px; }
 #documenter .content pre code { font-size: inherit; }
 #documenter .content pre code.hljs { background: none; padding: 0; }
 
@@ -122,15 +109,7 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 300 16px/1.35
 #documenter .portal-xref code { font-size: 12.5px; }
 
 /* Narrow screens: the portal header with its menu button; Documenter keeps its own sidebar drawer */
-@media (max-width: 1055px) {
-  .site-header.library { padding: 0 16px; min-height: 0; padding-top: 20px; padding-bottom: 10px; }
-}
 @media (max-width: 600px) {
-  .site-header.library { flex-wrap: wrap; }
-  .site-header .menu-toggle { display: inline-block; }
-  .site-header .site-nav { display: none; flex-basis: 100%; }
-  .site-header .site-nav.open { display: flex; flex-direction: column; gap: 0.6em; padding: 0.6em 0; }
-  .site-header .site-nav a { margin: 0; }
   #documenter .content h1 { font-size: 26px; }
 }
 
@@ -146,3 +125,6 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 300 16px/1.35
 #documenter .hljs-number, #documenter .hljs-literal { color: #1d6629; }
 #documenter .hljs-comment { color: #5c5c5c; }
 #documenter .hljs-type, #documenter .hljs-title { color: #1f6f78; }
+
+/* An inline formula and its punctuation do not wrap apart (portal.js, glueMath). */
+.math-glue { white-space: nowrap; }

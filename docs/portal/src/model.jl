@@ -165,6 +165,7 @@ function build_model(db; evidence_dirs = [joinpath(dirname(VBFRepro.papers_root(
             "year" => ref["year"]))
     end
     sort!(repros; by = r -> (r["year"], r["id"]), rev = true)
-    Dict{String,Any}("references" => refs, "reproductions" => repros, "corpora" => corpora,
+    n_functions = only(r[1] for r in DBInterface.execute(db, "SELECT count(*) FROM functions"))
+    Dict{String,Any}("references" => refs, "reproductions" => repros, "corpora" => corpora, "n_functions" => n_functions,
                      "snapshot" => catalog_snapshot(db), "errors" => errors)
 end

@@ -15,6 +15,21 @@ root_prefix(path) = (d = count(==('/'), path); d == 0 ? "./" : "../"^d)
 reference_html(r) = string("<span class=\"authors-sc\">", esc(r["author_line"]), "</span>. ", r["year"], ". ", esc(r["title"]), ". <i>",
     isempty(r["venue"]) ? "" : esc(r["venue"]), "</i>.")
 
+"""
+A reference in a list, with its title as the link to `href`: authors (small capitals, text
+colour). year. title (the link). venue (grey, italic). The same order as `reference_html`.
+"""
+listing_reference(r, href) = string("<span class=\"authors-sc\">", esc(r["author_line"]), "</span>. ", r["year"], ". ",
+    "<a class=\"ref-title\" href=\"", href, "\">", esc(r["title"]), "</a>.",
+    isempty(r["venue"]) ? "" : " <i class=\"venue\">" * esc(r["venue"]) * "</i>.")
+
+"The version of the VBF package (Project.toml) and the commit of the build."
+function software_version()
+    v = TOML.parsefile(joinpath(ROOT, "packages", "VBF", "Project.toml"))["version"]
+    commit = try readchomp(`git -C $ROOT rev-parse HEAD`) catch; "" end
+    (; version = v, commit)
+end
+
 const VERIFICATION_TEXT = Dict(
     "computational-check" => "Computational check for the stated scope; not a general proof.",
     "replication" => "The published experiment, run again.",
@@ -113,6 +128,10 @@ const COPY_ICON = """<svg viewBox="0 0 16 16" aria-hidden="true" focusable="fals
 copy_button(text; what = "the command") =
     "<button type=\"button\" class=\"copy\" data-command=\"$(esc(text))\" title=\"$(esc(text))\" aria-label=\"Copy $(esc(what)): $(esc(text))\">$COPY_ICON</button>"
 
+"A copy button with a text label (for a choice of formats); `what` names it for screen readers."
+copy_text_button(text, label; what = label) =
+    "<button type=\"button\" class=\"copy copy-text\" data-command=\"$(esc(text))\" aria-label=\"Copy $(esc(what))\">$(esc(label))</button>"
+
 "A long identifier shown short (12 characters), with a copy button for the full value."
 short_hash(h; what = "the full identifier") =
     "<code class=\"hash\" title=\"$(esc(h))\">$(esc(first(h, 12)))…</code>" * copy_button(h; what)
@@ -179,12 +198,19 @@ function render_portal(model, out)
     SNAPSHOT_KEY[] = model["snapshot"].prebuilt_key
     written = String[]
     repros = model["reproductions"]
-    item(r, root) = Dict("id" => r["id"], "reference" => reference_html(r["ref"]), "linkline" => linkline(r, root),
+    item(r, root) = Dict("id" => r["id"], "reference" => listing_reference(r["ref"], "$(root)reproductions/$(r["id"])/"),
+        "linkline" => linkline(r, root), "updated" => r["updated"],
         "search" => lowercase(r["ref"]["title"] * " " * join(r["ref"]["authors"], " ") * " " * r["ref"]["year"]))
 
-    latest = sort(repros; by = r -> r["updated"], rev = true)[1:min(3, end)]
+    # The most recently updated reproductions: date of the last commit to the reproduction
+    # folder, newest first; equal dates by year of the publication (newest first), then by id.
+    latest = sort(repros; by = r -> (r["updated"], r["year"], r["id"]), rev = true)[1:min(3, end)]
+    sw = software_version()
     push!(written, write_page(out, "index.html", "Home",
-        Mustache.render(template("home"), Dict("root" => "./", "latest" => [item(r, "./") for r in latest])); home = true))
+        Mustache.render(template("home"), Dict("root" => "./", "latest" => [item(r, "./") for r in latest],
+            "count" => length(repros), "version" => sw.version, "commit" => sw.commit, "commit_short" => first(sw.commit, 7),
+            "repo" => REPO_URL, "n_functions" => thousands(model["n_functions"]), "n_corpora" => length(model["corpora"])));
+        home = true))
 
     root = root_prefix("reproductions/index.html")
     years = [(items = [item(r, root) for r in repros if r["year"] == y];
