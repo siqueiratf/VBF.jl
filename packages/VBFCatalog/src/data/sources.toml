@@ -77,6 +77,9 @@ required = true
 [[corpus]]
 bib_key = "Beierle_202500"
 count = 3775599
+# The original published dataset; the importer reads this file (source beierle2025).
+dataset_doi = "10.5281/zenodo.16752428"
+dataset_file = "new_apns.txt"
 family = "quadratic-apn-8bit"
 name = "beierle2025_n8"
 notes = "Beierle, Langevin, Leander, Polujan, Rasoolzadeh (2025), arXiv:2508.04644 / Zenodo 16752428: 3,775,599 quadratic APN functions; compact members are a regenerable local store."
@@ -96,8 +99,14 @@ reader = "literal"
 source = "quadratic_apn_8bit"
 
 [[corpus]]
-bib_key = "Beierle_202201"
+bib_key = "Beierle_202200"
 count = 6368
+# The original published dataset. The importer reads the sboxU copy (file below); on
+# 2026-11-18 the 6,368 lookup tables of apn_8bit.txt were equal to the members, in order.
+dataset_doi = "10.5281/zenodo.5821018"
+dataset_file = "apn_8bit.txt"
+dataset_md5 = "eb1defee28d5f394ed902222ac509df1"
+dataset_check = "2026-11-18: the 6,368 lookup tables of apn_8bit.txt equal the members of this corpus, in the same order."
 file = "apn_8bit_BLP22.py"
 name = "beierleleanderperrin2022_n8"
 notes = "6,368 APN functions from trims/extensions."
