@@ -128,8 +128,9 @@ function breadcrumbs(items, root)
 end
 
 """
-Library anchors from the Documenter build in `out`: VBF name => path of its API entry
-(`api/<concept>/#VBF.name...`). Empty when Library is not built.
+Library anchors from the Documenter build in `out`: binding => path of its API entry
+(`api/<concept>/#VBF.name...`). Each binding has the key "Module.name"; a VBF binding also has
+the key "name". Empty when Library is not built.
 """
 function library_anchors(out)
     d = Dict{String,String}()
@@ -138,8 +139,11 @@ function library_anchors(out)
     for (dir, _, files) in walkdir(api), f in files
         f == "index.html" || continue
         page = relpath(dir, out)
-        for m in eachmatch(r"id=\"(VBF\.([A-Za-z_][A-Za-z0-9_!]*)[^\"]*)\"", read(joinpath(dir, f), String))
-            get!(d, m[2], page * "/#" * m[1])
+        for m in eachmatch(r"<summary id=\"([^\"]+)\"", read(joinpath(dir, f), String))
+            b = docstring_binding(unescape_html(m[1]))
+            b === nothing && continue
+            get!(d, b, page * "/#" * m[1])
+            startswith(b, "VBF.") && get!(d, b[5:end], page * "/#" * m[1])
         end
     end
     d
@@ -192,15 +196,21 @@ function render_portal(model, out)
         nav = "reproductions"))
 
     lib = library_anchors(out)
+    citing = citing_symbols(library_citations(out))
+    ctitle = catalog_text()["corpora"]
     for r in repros
         path = "reproductions/$(r["id"])/index.html"; root = root_prefix(path)
+        syms = sort(unique(vcat([get(citing, x["key"], String[]) for x in r["publications"]]...)))
         view = merge(r["ref"], Dict("root" => root, "linkline" => linkline(r, root),
             "breadcrumbs" => breadcrumbs([("Home", ""), ("Reproductions", "reproductions/"), (r["ref"]["title"], "")], root),
             "claims_html" => r["has_claims"] ? claims_section(r, root, lib) : "",
             "has_claims" => r["has_claims"], "other_files" => [merge(f, Dict("copy" => isempty(f["command"]) ? "" :
                 copy_button(f["command"]; what = "the command of $(f["name"])"))) for f in r["other_files"]],
             "other_files_any" => !isempty(r["other_files"]),
-            "corpora" => [merge(c, Dict("count" => thousands(c["member_count"]))) for c in r["corpora"]],
+            "corpora" => [merge(c, Dict("count" => thousands(c["member_count"]), "title" => get(get(ctitle, c["name"], Dict()), "title", c["name"])))
+                          for c in r["corpora"]],
+            "library_html" => isempty(syms) ? "" : "<h2 id=\"library\">Library</h2><p>Library functions whose documentation cites this publication: " *
+                join([lib_link(b, lib, root) for b in syms], ", ") * ".</p>",
             "corpora_any" => !isempty(r["corpora"]), "site_text" => site_text(r), "url" => r["url"]))
         push!(written, write_page(out, path, r["ref"]["title"], Mustache.render(template("reproduction"), view);
             nav = "reproductions"))

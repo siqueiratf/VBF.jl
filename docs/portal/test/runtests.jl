@@ -50,6 +50,28 @@ end
     @test VBFPortal.monomial(0, 4) == "1" && VBFPortal.monomial(0b1010, 4) == "x1·x3"
 end
 
+@testset "library cross-references" begin
+    @test VBFPortal.docstring_binding("VBF.algebraic_degree-Union{Tuple{SBox{N}}} where N") == "VBF.algebraic_degree"
+    @test VBFPortal.docstring_binding("VBFCatalog.sigma_hash") == "VBFCatalog.sigma_hash"
+    @test VBFPortal.docstring_binding("Base.show-Tuple{IO}") === nothing
+    @test VBFPortal.display_binding("VBF.anf") == "anf" && VBFPortal.display_binding("VBFCatalog.sigma_hash") == "VBFCatalog.sigma_hash"
+    @test VBFPortal.citing_symbols(Dict("VBF.a" => ["K1", "K2"], "VBF.b" => ["K1"])) == Dict("K1" => ["VBF.a", "VBF.b"], "K2" => ["VBF.a"])
+    html = """<details class="docstring" open="true"><summary id="VBF.f-Tuple{Int}">f</summary><section><p>x</p></section></details>
+              <details class="docstring" open="true"><summary id="VBF.f-Tuple{Float64}">f</summary><section></section></details>"""
+    ds = VBFPortal.docstrings(html)
+    @test length(ds) == 2 && all(d -> d[1] == "VBF.f", ds)
+    ref = Dict("key" => "K", "lastnames" => ["A", "B"], "year" => "2009", "title" => "t")
+    r = Dict("id" => "200900-a-b", "ref" => ref)
+    c = Dict("anchor" => "theorem7", "label" => "Theorem 7")
+    model = Dict{String,Any}()
+    block = VBFPortal.xref_block("VBF.differential_uniformity", "../../", model, Dict("VBF.differential_uniformity" => [(r, c)]),
+        Dict("VBF.differential_uniformity" => ["K"]), Dict("K" => r), Dict("K" => ref))
+    @test occursin("catalog/functions/?sort=differential_uniformity", block)
+    @test occursin("reproductions/200900-a-b/#theorem7\">A and B (2009), Theorem 7", block)
+    @test occursin("Cited publications with a reproduction", block)
+    @test VBFPortal.xref_block("VBF.other", "./", model, Dict(), Dict(), Dict(), Dict()) == ""
+end
+
 @testset "member references and snapshots" begin
     d1 = "a"^64; d2 = "b"^64
     s = CatalogSnapshot("c"^64, "i", "m", Dict("demo_n8" => d1), nothing)

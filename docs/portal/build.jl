@@ -85,10 +85,12 @@ if query !== nothing
     "--copy-query" in args ? cp(query, joinpath(qdir, "query.sqlite")) : symlink(query, joinpath(qdir, "query.sqlite"))
 end
 pages = render_portal(model, OUT)
-# The Zenodo versions of the catalog data (empty when offline: the page then links to the
-# concept record only).
-versions = "--offline" in args ? Dict{String,Any}[] : VBFPortal.zenodo_versions()
-append!(pages, render_catalog_functions(model, OUT, db; query_db = query, versions))
+# The Zenodo versions of the catalog data: read now, or from the local cache when the build
+# is offline or Zenodo does not answer. The local snapshot is always on the page.
+versions, versions_origin = VBFPortal.zenodo_versions(; offline = "--offline" in args)
+append!(pages, render_catalog_functions(model, OUT, db; query_db = query, versions, versions_origin))
+# The Library pages get the portal header, footer and style, and the cross-references.
+skip_library || println("library: ", decorate_library!(OUT, model), " Documenter pages decorated")
 unresolved = write_redirects(OUT)
 problems = check_links(OUT)
 close(db)

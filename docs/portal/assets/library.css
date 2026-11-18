@@ -1,0 +1,135 @@
+/* VBF.jl portal: the Library (Documenter) in the portal design (stage S5.4).
+ *
+ * Documenter keeps its function: search, docstrings, KaTeX, citations, the sidebar and the
+ * navbar. This file changes only the look, with the values of portal.css: Helvetica/Arial
+ * 16px weight 300, text #111 on #fdfdfd, headings in the accent #1f6f78, links #2a7ae2,
+ * rules between table rows only, code blocks on the accent tint with a thin dark border.
+ * The portal header and footer (inserted by decorate_library!) use the rules of portal.css,
+ * repeated here because a Documenter page does not load portal.css.
+ */
+:root {
+  --text: #111; --bg: #fdfdfd; --accent: #1f6f78; --link: #2a7ae2; --link-visited: #1756a9;
+  --grey: #828282; --grey-light: #e8e8e8; --tint: #eef5f6; --frame: 1180px; --side: 16rem;
+}
+html { font-size: 16px; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 300 16px/1.35 Helvetica, Arial, sans-serif; }
+
+/* Portal header and footer (as in portal.css) */
+.site-header.library { display: flex; align-items: center; justify-content: space-between; gap: 1em;
+  min-height: 110px; max-width: var(--frame); margin: 0 auto; padding: 0 30px; box-sizing: border-box; }
+.site-header .site-title { font-size: 26px; font-weight: 100; color: var(--accent); letter-spacing: 0.02em; text-decoration: none; }
+.site-header .site-title:hover { color: var(--accent); text-decoration: none; }
+.site-header .site-nav a { font-size: 14px; font-weight: 400; text-transform: uppercase; color: var(--text); margin-left: 20px; text-decoration: none; }
+.site-header .site-nav a:hover { text-decoration: underline; }
+.site-header .site-nav a[aria-current="page"] { color: var(--accent); }
+.site-header .menu-toggle { display: none; border: 1px solid var(--grey-light); border-radius: 5px; background: var(--bg);
+  color: var(--text); padding: 7px 9px; line-height: 0; cursor: pointer; }
+.site-header .menu-toggle svg { width: 18px; height: 15px; }
+.site-footer.library { max-width: var(--frame); margin: 0 auto; padding: 10px 30px 20px; box-sizing: border-box;
+  font-size: 12px; color: var(--grey); text-align: center; border-top: 1px solid var(--grey-light); }
+.site-footer.library a { color: var(--grey); }
+
+/* Frame: on wide screens the sidebar and the content sit in one centred frame under the
+   header; the sidebar is sticky instead of fixed. */
+@media screen and (min-width: 1056px) {
+  #documenter { display: flex; max-width: var(--frame); margin: 0 auto; padding: 0 30px; box-sizing: border-box; }
+  #documenter .docs-sidebar { position: sticky; top: 0; left: auto; height: 100vh; flex: 0 0 var(--side); width: var(--side);
+    border-right: 1px solid var(--grey-light); }
+  #documenter .docs-main { margin-left: 0; padding-right: 0; max-width: none; flex: 1 1 auto; min-width: 0; }
+  #documenter .docs-main > article { max-width: 800px; margin-left: 2rem; margin-right: 0; padding: 0; }
+  #documenter .docs-main header.docs-navbar, #documenter .docs-main .docs-footer { margin-left: 2rem; width: auto; max-width: 800px; }
+}
+
+/* Typography and colours */
+#documenter, #documenter .docs-main, #documenter .content, #documenter .docs-sidebar { font-family: Helvetica, Arial, sans-serif; font-weight: 300; }
+#documenter .content { font-size: 16px; line-height: 1.35; color: var(--text); }
+#documenter .content p, #documenter .content li { line-height: 1.35; }
+#documenter strong, #documenter b { font-weight: 500; color: inherit; }
+#documenter a { color: var(--link); }
+#documenter a:visited { color: var(--link-visited); }
+#documenter a:hover { color: var(--text); text-decoration: underline; }
+#documenter .content h1, #documenter .content h2, #documenter .content h3, #documenter .content h4 { color: var(--accent); font-weight: 500; }
+#documenter .content h1 { font-size: 32px; line-height: 1.35; border: 0; }
+#documenter .content h2 { font-size: 20px; border: 0; margin-top: 1.6em; }
+#documenter .content h3 { font-size: 16px; }
+#documenter .content h1 a, #documenter .content h2 a, #documenter .content h3 a { color: inherit; }
+#documenter a:focus-visible, #documenter button:focus-visible, #documenter input:focus-visible, .site-header a:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Code: the portal monospace stack; blocks on the tint with a thin dark border */
+#documenter code, #documenter pre, #documenter kbd { font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace; }
+#documenter .content code { font-size: 14.4px; background: none; color: inherit; padding: 0; }
+#documenter .content pre { background: var(--tint); border: 1px solid var(--text); border-radius: 0; padding: 8px 12px; font-size: 14.4px; }
+#documenter .content pre code { font-size: inherit; }
+#documenter .content pre code.hljs { background: none; padding: 0; }
+
+/* Tables: rules between rows only */
+#documenter .content table { border-collapse: collapse; width: auto; }
+#documenter .content table th, #documenter .content table td { border: 0; border-bottom: 1px solid var(--grey-light); padding: 0.45em 0.8em 0.45em 0; text-align: left; vertical-align: top; }
+#documenter .content table thead th { font-weight: 500; font-size: 14px; color: var(--grey); border-bottom: 1px solid var(--text); }
+#documenter .content table tr:nth-child(even) { background: none; }
+
+/* Docstrings: a rule and a heading line, no box */
+#documenter .docstring { border: 0; border-top: 1px solid var(--text); border-radius: 0; box-shadow: none; margin: 1.6em 0 1em; background: none; }
+#documenter .docstring > summary, #documenter .docstring > header { background: none; border: 0; padding: 0.5em 0 0.3em; }
+#documenter .docstring > summary .docstring-binding, #documenter .docstring > summary .docstring-binding code { color: var(--accent); font-weight: 500; font-size: 16px; }
+#documenter .docstring > summary .docstring-category { color: var(--grey); font-style: normal; font-size: 13.3px; }
+#documenter .docstring > section { border: 0; padding: 0.4em 0 0; }
+#documenter .docstring > section > a.docs-sourcelink { position: static; float: right; opacity: 1; font-size: 13.3px;
+  color: var(--grey); background: none; padding: 0; }
+
+/* Admonitions: a left rule in the accent, no coloured box */
+#documenter .admonition { border: 0; border-left: 3px solid var(--accent); border-radius: 0; background: none; box-shadow: none; }
+#documenter .admonition-header { background: none; color: var(--accent); font-weight: 500; padding: 0.3em 0 0.3em 0.8em; }
+#documenter .admonition-header::before { display: none; }
+#documenter .admonition-body { background: none; border: 0; padding: 0.2em 0 0.4em 0.8em; color: var(--text); }
+#documenter .admonition.is-warning, #documenter .admonition.is-danger { border-left-color: #b54708; }
+#documenter .admonition.is-warning .admonition-header, #documenter .admonition.is-danger .admonition-header { color: #b54708; }
+
+/* Sidebar: the portal background; the Library name as a small heading; the search box plain */
+#documenter .docs-sidebar { background: var(--bg); color: var(--text); }
+#documenter .docs-sidebar .docs-package-name { font-size: 18px; font-weight: 300; text-transform: none; margin: 1.2rem 0 0.6rem; text-align: left; padding-left: 1rem; }
+#documenter .docs-sidebar .docs-package-name a, #documenter .docs-sidebar .docs-package-name a:hover { color: var(--accent); text-decoration: none; }
+#documenter .docs-sidebar #documenter-search-query { font: 300 15px Helvetica, Arial, sans-serif; color: var(--text); background: #fff;
+  border: 1px solid #cfcfcf; border-radius: 2px; box-shadow: none; }
+#documenter .docs-sidebar ul.docs-menu { border-top: 1px solid var(--grey-light); font-size: 14.5px; }
+#documenter .docs-sidebar ul.docs-menu a.tocitem, #documenter .docs-sidebar ul.docs-menu .tocitem { color: var(--text); background: none; font-weight: 400; }
+#documenter .docs-sidebar ul.docs-menu ul .tocitem { font-weight: 300; }
+#documenter .docs-sidebar ul.docs-menu a.tocitem:hover, #documenter .docs-sidebar ul.docs-menu label.tocitem:hover { color: var(--accent); background: none; text-decoration: none; }
+#documenter .docs-sidebar ul.docs-menu li.is-active > .tocitem { color: var(--accent); font-weight: 500; background: none; }
+#documenter .docs-sidebar ul.docs-menu li.is-active { border-top: 0; border-bottom: 0; }
+#documenter .docs-sidebar ul.docs-menu li.is-active ul.internal .tocitem { color: var(--grey); font-weight: 300; }
+#documenter .docs-sidebar ul.docs-menu li.is-active ul.internal { border-top: 0; }
+
+/* Navbar: breadcrumbs of the Library in the grey meta style */
+#documenter .docs-main header.docs-navbar { background: var(--bg); border-bottom: 1px solid var(--grey-light); min-height: 3rem; }
+#documenter .docs-main header.docs-navbar.headroom--not-top { box-shadow: none; }
+#documenter .docs-main header.docs-navbar .breadcrumb, #documenter .docs-main header.docs-navbar .breadcrumb a { font-size: 13.3px; color: var(--grey); }
+#documenter .docs-main header.docs-navbar .breadcrumb li.is-active a { color: var(--text); }
+#documenter .docs-main header.docs-navbar .docs-right a, #documenter .docs-main header.docs-navbar .docs-right .docs-label { color: var(--grey); font-size: 13.3px; }
+/* One colour scheme: the theme picker is hidden (its options are removed at build time) */
+#documenter-settings .select, #documenter-settings label.label { display: none; }
+
+/* Footer of a Library page: previous and next page */
+#documenter .docs-main .docs-footer { border-top: 1px solid var(--grey-light); font-size: 14px; }
+#documenter .docs-main .docs-footer .footer-message { display: none; }
+
+/* Cross-references added by the portal under the docstrings and on the References page */
+#documenter .portal-xref { font-size: 14px; color: var(--text); border-top: 1px dotted var(--grey-light); margin-top: 0.8em; padding-top: 0.4em; }
+#documenter .portal-xref ul { list-style: none; margin: 0; padding: 0; }
+#documenter .portal-xref li { margin: 0.15em 0; }
+#documenter .portal-xref.ref { border: 0; margin: 0.15em 0 0.6em; padding: 0 0 0 2.25rem; color: var(--grey); font-size: 13.3px; }
+#documenter .portal-xref code { font-size: 12.5px; }
+
+/* Narrow screens: the portal header with its menu button; Documenter keeps its own sidebar drawer */
+@media (max-width: 1055px) {
+  .site-header.library { padding: 0 16px; min-height: 0; padding-top: 20px; padding-bottom: 10px; }
+}
+@media (max-width: 600px) {
+  .site-header.library { flex-wrap: wrap; }
+  .site-header .menu-toggle { display: inline-block; }
+  .site-header .site-nav { display: none; flex-basis: 100%; }
+  .site-header .site-nav.open { display: flex; flex-direction: column; gap: 0.6em; padding: 0.6em 0; }
+  .site-header .site-nav a { margin: 0; }
+  #documenter .content h1 { font-size: 26px; }
+}

@@ -23,6 +23,10 @@ const pages = [
     await p.waitForSelector(".member-result table", { timeout: 30000 }); }],
   ["corpus-member", "catalog/corpora/beierle2025_n8/?idx=123456", async (p) => {
     await p.waitForSelector(".member-result table", { timeout: 30000 }); }],
+  ["library", "library/"],
+  ["library-api", "api/spectra/"],
+  ["library-references", "references/"],
+  ["library-catalog-api", "api/catalog/"],
   ["corpus-small", "catalog/corpora/edelpott2009_n8/", async (p) => {
     await p.waitForSelector(".member-result table", { timeout: 30000 }); }],
 ];
