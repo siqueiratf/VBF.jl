@@ -33,8 +33,12 @@ data_files() = ["catalog.sqlite" => catalog_path(),
 filehash(path) = bytes2hex(open(SHA.sha256, path))
 short(key) = key[1:12]
 
-"Run curl and parse the JSON reply; `--fail-with-body` puts the Zenodo error in the exception."
-function zenodo(method, url; token = "", body = nothing, upload = nothing)
+"""
+Run curl and parse the JSON reply; `--fail-with-body` puts the Zenodo error in the exception.
+With `gone_ok`, a 404 reply counts as success: curl retries a request after a server error,
+and a DELETE that the first try completed then finds no file (seen on 2026-11-18).
+"""
+function zenodo(method, url; token = "", body = nothing, upload = nothing, gone_ok = false)
     cmd = `curl -sS --fail-with-body --retry 3 -X $method`
     isempty(token) || (cmd = `$cmd -H "Authorization: Bearer $token"`)
     body === nothing || (cmd = `$cmd -H "Content-Type: application/json" --data-binary $(JSON3.write(body))`)
@@ -42,7 +46,12 @@ function zenodo(method, url; token = "", body = nothing, upload = nothing)
     out = IOBuffer(); err = IOBuffer()
     ok = success(pipeline(`$cmd $url`; stdout = out, stderr = err))
     text = String(take!(out))
-    ok || error("Zenodo $method $url failed: ", String(take!(err)), text)
+    message = String(take!(err))
+    if !ok && gone_ok && occursin("error: 404", message)
+        println("prebuilt: $method $url: already done (404)")
+        return nothing
+    end
+    ok || error("Zenodo $method $url failed: ", message, text)
     isempty(strip(text)) ? nothing : JSON3.read(text)
 end
 
@@ -207,8 +216,11 @@ function publish(key; draft = false, create = false)
             dep = zenodo("GET", String(draft_link); token)
             # A new version starts with the files of the previous one.
             for f in dep.files
-                zenodo("DELETE", "$API/deposit/depositions/$(dep.id)/files/$(f.id)"; token)
+                zenodo("DELETE", "$API/deposit/depositions/$(dep.id)/files/$(f.id)"; token, gone_ok = true)
             end
+            # A failed earlier run can leave this draft; it must hold no file before the upload.
+            left = zenodo("GET", "$API/deposit/depositions/$(dep.id)"; token).files
+            isempty(left) || error("the draft $(dep.id) still holds $(length(left)) files")
         end
         for name in [MANIFEST; [n * ".gz" for (n, _) in data_files()]]
             println("prebuilt: uploading $name")
