@@ -428,12 +428,18 @@ jobs:
   # Builds the Documenter site with the rebuilt catalog and publishes it to GitHub Pages
   # (https://siqueiratf.github.io/VBF.jl/). The site is a GitHub Actions artifact; there is
   # no gh-pages branch. docs.yml builds the same site for pull requests without publishing it.
+  # Builds the portal (Reproductions, Catalog, Library) and publishes it to GitHub Pages
+  # (https://siqueiratf.github.io/VBF.jl/). The site is a GitHub Actions artifact; there is no
+  # gh-pages branch. The query database of the catalog is the Zenodo copy of this snapshot, so
+  # the job waits for catalog-data; the browser tests run on it before the deployment.
   docs-pages:
-    name: Publish documentation
-    needs: catalog-check
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    name: Publish the portal
+    needs: [catalog-check, paper-tests, catalog-data]
+    if: >-
+      always() && github.ref == 'refs/heads/main' && github.event_name == 'push' &&
+      needs.catalog-check.result == 'success' && needs.catalog-data.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     permissions:
       contents: read
       pages: write
@@ -447,6 +453,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # full history: the portal dates each reproduction by its last commit
 
       - name: Install Julia 1.12
         uses: julia-actions/setup-julia@v2
@@ -462,16 +470,52 @@ jobs:
           name: catalog
           path: .cache/vbfcatalog
 
-      - name: Instantiate docs environment
-        run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'
+      - name: Download the evidence of the paper jobs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: evidence-*
+          path: evidence
+          merge-multiple: true
 
-      - name: Build
-        run: julia --project=docs docs/make.jl
+      - name: Instantiate the portal and import environments
+        run: |
+          julia --startup-file=no --project=docs/portal -e 'using Pkg; Pkg.instantiate()'
+          julia --startup-file=no --project=packages/VBFCatalog/src/import -e 'using Pkg; Pkg.instantiate(); Pkg.activate("packages/VBFCatalog"); Pkg.instantiate()'
+
+      # The query database of this snapshot (759 MiB), checked against its SHA-256 in the
+      # Zenodo manifest. catalog-data has published it before this job starts.
+      - name: Get the production query database
+        run: julia --startup-file=no --project=packages/VBFCatalog/src/import packages/VBFCatalog/src/import/prebuilt.jl fetch-query query.sqlite
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Bundle the browser code
+        working-directory: docs/portal/js
+        run: npm ci --no-fund --no-audit && node build.mjs
+
+      - name: Build and check the portal
+        run: julia --startup-file=no --project=docs/portal docs/portal/build.jl --evidence evidence --query query.sqlite --copy-query
+
+      - name: Browser tests with the production database
+        working-directory: docs/portal/test/browser
+        run: npm ci --no-fund --no-audit && npx playwright install --with-deps chromium && PORTAL_FULL_DB=1 npx playwright test
+
+      - name: Upload the browser test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-deploy-browser-report
+          path: |
+            docs/portal/test/browser/report
+            docs/portal/test/browser/test-results
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/build
+          path: docs/portal/build
 
       - name: Deploy to GitHub Pages
         id: deploy
