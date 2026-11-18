@@ -1,3 +1,4 @@
+{{{breadcrumbs}}}
 <article class="publication">
 <h1>{{title}}</h1>
 <p class="authors">{{author_line}}</p>
@@ -6,36 +7,14 @@
 
 {{#has_claims}}
 <h2 id="reproduction">Reproduction</h2>
-<table class="claims">
-<thead><tr><th scope="col">Result</th><th scope="col">Description</th><th scope="col">Implementation</th><th scope="col">Command</th></tr></thead>
-<tbody>
-{{#claims}}
-<tr id="{{anchor}}">
-<td><a href="#{{anchor}}">{{label}}</a></td>
-<td>{{summary}}
-<details class="claim-details"><summary>Details</summary>
-<dl>
-<dt>Verification</dt><dd>{{verification_text}}</dd>
-<dt>Completeness</dt><dd>{{completeness}}</dd>
-<dt>Scope</dt><dd>{{scope}}</dd>
-{{#note}}<dt>Note</dt><dd>{{note}}</dd>{{/note}}
-<dt>Evidence</dt><dd>{{#evidence_items}}<p>{{text}}</p>{{/evidence_items}}{{^evidence_items}}No recorded run yet. The command reproduces it.{{/evidence_items}}</dd>
-{{#api_text}}<dt>Library functions</dt><dd>{{api_text}}</dd>{{/api_text}}
-</dl>
-</details></td>
-<td>{{#file_links}}<a href="{{url}}">{{name}}</a> {{/file_links}}</td>
-<td>{{#commands}}<button type="button" class="copy" data-command="{{.}}" title="{{.}}" aria-label="Copy the command: {{.}}"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="5" y="5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3 11V3a1 1 0 0 1 1-1h7" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>{{/commands}}</td>
-</tr>
-{{/claims}}
-</tbody>
-</table>
+{{{claims_html}}}
 {{/has_claims}}
 
 {{#other_files_any}}
 <h2 id="implementation">{{#has_claims}}Other implementation files{{/has_claims}}{{^has_claims}}Implementation{{/has_claims}}</h2>
-{{^has_claims}}<p>The claims of this reproduction are not reviewed yet. These files implement it.</p>{{/has_claims}}
+{{^has_claims}}<p>The claims of this reproduction are not reviewed yet. These files implement it; the commands run them.</p>{{/has_claims}}
 <ul class="files">
-{{#other_files}}<li><a href="{{url}}">{{name}}</a>{{#command}} <button type="button" class="copy" data-command="{{command}}" title="{{command}}" aria-label="Copy the command: {{command}}"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="5" y="5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3 11V3a1 1 0 0 1 1-1h7" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>{{/command}}</li>
+{{#other_files}}<li><a href="{{url}}">{{name}}</a> {{{copy}}}</li>
 {{/other_files}}
 </ul>
 {{/other_files_any}}
@@ -43,12 +22,12 @@
 {{#corpora_any}}
 <h2 id="data">Associated data</h2>
 <ul>
-{{#corpora}}<li><a href="{{{root}}}catalog/corpora/{{name}}/">{{name}}</a>: {{member_count}} functions, n = {{n}}</li>
+{{#corpora}}<li><a href="{{{root}}}catalog/corpora/{{name}}/">{{name}}</a>: {{count}} functions, $n = {{n}}$</li>
 {{/corpora}}
 </ul>
 {{/corpora_any}}
 
 {{{site_text}}}
 
-<p class="source">Implementation: <a href="{{url}}">{{path}}</a></p>
+<p class="source"><a href="{{url}}">Source code of this reproduction</a> (GitHub)</p>
 </article>

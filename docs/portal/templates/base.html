@@ -10,7 +10,10 @@
 <body>
 <header class="site-header{{#home}} home{{/home}}">
   <a class="site-title" href="{{{root}}}">VBF.jl</a>
-  <nav class="site-nav" aria-label="Main">
+  <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Menu">
+    <svg viewBox="0 0 18 15" aria-hidden="true" focusable="false"><path d="M0 1.5h18M0 7.5h18M0 13.5h18" stroke="currentColor" stroke-width="2"/></svg>
+  </button>
+  <nav class="site-nav" id="site-nav" aria-label="Main">
     <a href="{{{root}}}reproductions/"{{#nav_reproductions}} aria-current="page"{{/nav_reproductions}}>Reproductions</a>
     <a href="{{{root}}}catalog/"{{#nav_catalog}} aria-current="page"{{/nav_catalog}}>Catalog</a>
     <a href="{{{root}}}library/"{{#nav_library}} aria-current="page"{{/nav_library}}>Library</a>
@@ -22,7 +25,7 @@
 </main>
 <footer class="site-footer">
   <a href="https://github.com/siqueiratf/VBF.jl">Sources</a> ·
-  Catalog snapshot <code title="{{snapshot_key}}">{{snapshot_short}}</code> ·
+  <a href="{{{root}}}catalog/#snapshots">Catalog snapshot</a> ·
   Design after <a href="https://rescience.github.io/">ReScience C</a>
 </footer>
 <script defer src="{{{root}}}assets/portal/js/katex/katex.min.js"></script>

@@ -53,3 +53,39 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", (e) => e.preventDefault());
   apply();
 })();
+
+// Mobile menu: a button that shows or hides the navigation (keyboard and touch).
+(() => {
+  const button = document.querySelector(".menu-toggle");
+  const nav = document.getElementById("site-nav");
+  if (!button || !nav) return;
+  button.addEventListener("click", () => {
+    const open = button.getAttribute("aria-expanded") === "true";
+    button.setAttribute("aria-expanded", String(!open));
+    nav.classList.toggle("open", !open);
+  });
+})();
+
+// Publication search: keep the items whose title, authors or year contain every word.
+(() => {
+  const input = document.getElementById("publication-search");
+  if (!input) return;
+  const items = [...document.querySelectorAll("ol.publications > li[data-search]")];
+  const count = document.getElementById("publication-count");
+  const apply = () => {
+    const words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    for (const li of items) {
+      const ok = words.every((w) => li.dataset.search.includes(w));
+      li.hidden = !ok;
+      if (ok) shown += 1;
+    }
+    for (const ol of document.querySelectorAll("ol.publications")) {
+      const visible = [...ol.children].some((li) => !li.hidden);
+      ol.hidden = !visible;
+      ol.previousElementSibling.hidden = !visible;           // the year heading
+    }
+    count.textContent = words.length ? `${shown} of ${items.length} publications` : "";
+  };
+  input.addEventListener("input", apply);
+})();

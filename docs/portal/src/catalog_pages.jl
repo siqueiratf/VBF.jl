@@ -112,7 +112,7 @@ function render_catalog_functions(model, out, db; query_db = nothing)
         </form>
         <p id="function-count" aria-live="polite">$(length(fs)) functions</p>
         """
-    body = form * "<table class=\"functions\" id=\"function-table\"><thead>$head</thead><tbody>$trs</tbody></table>"
+    body = form * "<div class=\"table-wrap\"><table class=\"functions\" id=\"function-table\"><thead>$head</thead><tbody>$trs</tbody></table></div>"
     push!(written, write_page(out, path, "Functions",
         Mustache.render(template("page"), Dict("title" => "Functions", "body" => body)); nav = "catalog"))
     written

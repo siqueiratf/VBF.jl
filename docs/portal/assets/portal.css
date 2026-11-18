@@ -52,7 +52,7 @@ small, .small { font-size: var(--small); }
 .wrapper, .site-header, .page-content, .site-footer {
   max-width: var(--column); margin: 0 auto; padding-left: var(--space); padding-right: var(--space);
 }
-.page-content { padding-bottom: var(--space); }
+.page-content { padding-bottom: var(--space); overflow-wrap: break-word; }
 
 /* Header: 200px band on the home page, 110px elsewhere */
 .site-header { display: flex; align-items: center; justify-content: space-between; min-height: 110px; gap: 1em; }
@@ -82,7 +82,8 @@ ol.publications > li { margin-bottom: 1.4em; line-height: 1.25; }
 }
 .tag:hover { color: #fff; text-decoration: none; opacity: 0.85; }
 .authors-sc { font-variant: small-caps; }
-.bibtex { display: inline; }
+.bibtex { display: inline-block; max-width: 100%; }
+.bibtex[open] { display: block; }
 .bibtex summary { display: inline; cursor: pointer; color: var(--link); list-style: none; }
 .bibtex summary::-webkit-details-marker { display: none; }
 .bibtex[open] pre { margin-top: 0.5em; font-size: 12.5px; }
@@ -152,4 +153,70 @@ button[type="submit"] { cursor: pointer; color: var(--accent); border-color: var
   table.claims td:nth-child(3) { grid-column: 1; }
   table.claims td:last-child { grid-column: 2; grid-row: 1; }
   table.properties th { width: auto; }
+}
+
+/* S5.2 additions */
+.breadcrumbs { font-size: var(--small); color: var(--grey); margin: 0 0 -0.6em; }
+.breadcrumbs a, .breadcrumbs a:visited { color: var(--grey); }
+.breadcrumbs .sep { margin: 0 0.25em; }
+.table-wrap { overflow-x: auto; max-width: 100%; }
+ul.contents { columns: 2; max-width: 30em; }
+.search input { width: 18em; max-width: 100%; }
+.menu-toggle { display: none; border: 1px solid var(--grey-light); border-radius: 5px; background: var(--bg);
+  color: var(--text); padding: 7px 9px; line-height: 0; cursor: pointer; }
+.menu-toggle svg { width: 18px; height: 15px; }
+code.hash { white-space: nowrap; }
+.cmd { display: block; white-space: nowrap; }
+.cmd code { font-size: 12.5px; color: var(--grey); }
+.claim-details-row td { padding-top: 0; }
+tbody tr.claim { border-bottom: 0; }
+.claim-details > summary { margin-bottom: 0.2em; }
+.claim-details dl { grid-template-columns: 9em 1fr; }
+table.evidence { width: auto; font-size: 13.5px; margin: 0 0 0.5em; }
+table.evidence th { font-weight: 400; color: var(--grey); padding-right: 1em; white-space: nowrap; }
+table.evidence td, table.evidence th { padding-top: 0.15em; padding-bottom: 0.15em; }
+table.evidence tr { border-bottom: 0; }
+p.source { margin-top: var(--space); font-size: 14px; }
+@media (max-width: 600px) {
+  .site-header, .site-header.home { flex-direction: row; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; padding-top: 20px; padding-bottom: 10px; }
+  .site-header.home { padding-top: 40px; padding-bottom: 30px; }
+  .menu-toggle { display: inline-block; }
+  .site-nav { display: none; flex-basis: 100%; }
+  .site-nav.open { display: flex; flex-direction: column; gap: 0.6em; padding: 0.6em 0; }
+  .site-nav a { margin: 0; }
+  ul.contents { columns: 1; }
+  table.claims tr.claim-details-row { display: block; }
+  table.claims tr.claim-details-row td { display: block; }
+  .claim-details dl { grid-template-columns: 1fr; gap: 0 0; }
+  .claim-details dd { margin-bottom: 0.4em; }
+  table.evidence { display: block; overflow-x: auto; }
+  .cmd { display: inline-block; margin-right: 0.6em; }
+}
+/* The claims table keeps the column width: the details row never widens it */
+table.claims { table-layout: fixed; }
+table.claims col.c-result { width: 17%; }
+table.claims col.c-desc { width: 43%; }
+table.claims col.c-impl { width: 24%; }
+table.claims col.c-cmd { width: 16%; }
+table.claims td { overflow-wrap: anywhere; }
+table.claims tr.claim-details-row td { text-align: left; white-space: normal; }
+.claim-details dd { min-width: 0; }
+table.evidence { max-width: 100%; }
+@media (max-width: 600px) {
+  table.claims colgroup { display: none; }
+  table.claims { table-layout: auto; }
+}
+table.claims col.c-result { width: 15%; }
+table.claims col.c-desc { width: 40%; }
+table.claims col.c-impl { width: 23%; }
+table.claims col.c-cmd { width: 22%; }
+.cmd { white-space: normal; }
+.cmd code { overflow-wrap: anywhere; }
+table.evidence td > code { overflow-wrap: normal; font-size: 13px; }
+table.claims table.evidence td { text-align: left; padding-right: 0.6em; }
+@media (max-width: 600px) {
+  table.claims table.evidence tr { display: table-row; padding: 0; }
+  table.claims table.evidence td, table.claims table.evidence th { display: table-cell; grid-column: auto; grid-row: auto;
+    padding: 0.15em 0.8em 0.15em 0; }
 }
