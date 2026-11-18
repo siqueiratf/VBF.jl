@@ -13,7 +13,7 @@ IMPORT := $(ROOT)/packages/VBFCatalog/src/import
 DATA := $(abspath $(or $(BFA_DATA_DIR),$(ROOT)/.cache/vbfcatalog))
 threads ?= $(shell nproc 2>/dev/null || echo 4)
 
-.PHONY: check-julia data data-build import-instantiate instantiate inspector-instantiate build serve serve-built serve-inspector serve-search test test-search
+.PHONY: check-julia data data-build import-instantiate instantiate inspector-instantiate build serve serve-built serve-inspector serve-search test test-search portal-query portal-js portal serve-portal test-portal
 
 check-julia:
 	@command -v $(JULIA) >/dev/null || { echo "julia not found: install Julia >= 1.12 (https://julialang.org/install/)" >&2; exit 1; }
@@ -95,3 +95,32 @@ test: inspector-instantiate
 test-search: inspector-instantiate
 	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)test/closure_monitor.jl"
 	$(JULIA) --threads=1,1 --project="$(INSPECTOR)" "$(INSPECTOR)test/closure_graph.jl"
+
+# The new portal (docs/portal): the production query database, the browser code, the build,
+# a local server under /VBF.jl/ (as on GitHub Pages) and the browser tests.
+# The query database has the snapshot key in its name, so a new snapshot gets a new file.
+# It is the Zenodo copy of this snapshot when one exists; else it is built here from the
+# catalog, members.sqlite and the signature index (all corpora, 759 MiB).
+PORTAL := $(DOCS)portal/
+portal_port ?= 8430
+QUERYKEY = $$($(JULIA) --startup-file=no --project="$(IMPORT)" "$(IMPORT)/prebuilt.jl" key)
+portal-query: data
+	@q="$(DATA)/query-$(QUERYKEY).sqlite"; \
+	if [ -f "$$q" ]; then echo "make: $$q is present"; \
+	elif $(JULIA) --startup-file=no --project="$(IMPORT)" "$(IMPORT)/prebuilt.jl" fetch-query "$$q"; then echo "make: $$q from Zenodo"; \
+	else echo "make: no Zenodo copy for this snapshot; building $$q"; \
+		$(JULIA) --startup-file=no --threads=$(threads) --project="$(PORTAL)" -e 'using Pkg; Pkg.instantiate(); using VBFPortal, VBFCatalog; println(build_query_db(ARGS[1], load_catalog()))' "$$q"; fi
+
+portal-js:
+	cd "$(PORTAL)js" && npm ci --no-fund --no-audit && node build.mjs
+
+portal: portal-query portal-js
+	$(JULIA) --startup-file=no --project="$(PORTAL)" -e 'using Pkg; Pkg.instantiate()'
+	$(JULIA) --startup-file=no --project="$(PORTAL)" "$(PORTAL)build.jl" --query "$(DATA)/query-$(QUERYKEY).sqlite"
+
+serve-portal:
+	@echo "make: open http://127.0.0.1:$(portal_port)/VBF.jl/"
+	node "$(PORTAL)review/serve.mjs" $(portal_port) "$(PORTAL)build"
+
+test-portal:
+	cd "$(PORTAL)test/browser" && npm ci --no-fund --no-audit && npx playwright install chromium && PORTAL_FULL_DB=1 npx playwright test

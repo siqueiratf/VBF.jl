@@ -176,7 +176,8 @@ function render_catalog_functions(model, out, db; query_db = nothing, versions =
         pub = paper === nothing ? "<p>The catalog names no publication for this corpus.</p>" : cite(paper)
         dataset = dataset_html(decl)
         dataset = dataset_ref === nothing ? dataset :
-            "<p>Dataset citation:</p>" * cite(dataset_ref) * something(dataset, "")
+            "<p>Dataset citation:</p><p>$(reference_html(dataset_ref))</p>" *
+            something(dataset, isempty(dataset_ref["doi_url"]) ? "" : "<p><a href=\"$(esc(dataset_ref["doi_url"]))\">$(esc(dataset_ref["doi"]))</a>.</p>")
         rs = users(c["name"])
         repro = isempty(rs) ? "" : "<p>Reproduced in: " * join(["<a href=\"$(root)reproductions/$(r["id"])/\">$(esc(short_cite(r["ref"])))</a>" for r in rs], ", ") * ".</p>"
         tech = [("Corpus name", "<code>$(esc(c["name"]))</code> " * copy_button(c["name"]; what = "the corpus name")),
