@@ -1,0 +1,13 @@
+{
+  "name": "vbf-portal-browser-tests",
+  "private": true,
+  "description": "Browser tests of the built VBF.jl portal (Playwright Test, axe-core), served under /VBF.jl/",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@playwright/test": "^1.56.0"
+  }
+}

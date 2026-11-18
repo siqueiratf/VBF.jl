@@ -1,8 +1,8 @@
 // Screenshots of the built portal for design review (stage S5).
-//   node screenshots.mjs OUT_DIR [BASE_URL]
-// BASE_URL defaults to http://127.0.0.1:8430/VBF.jl/ (docs/portal/poc/server.mjs over a folder
-// that links VBF.jl -> docs/portal/build).
-import { chromium } from "playwright";
+//   node docs/portal/review/serve.mjs 8430 &        (serves docs/portal/build under /VBF.jl/)
+//   node docs/portal/test/browser/screenshots.mjs OUT_DIR [BASE_URL]
+// It uses the Playwright package of this folder (npm ci) and its Chromium.
+import { chromium } from "@playwright/test";
 import fs from "node:fs";
 
 const [out, base = "http://127.0.0.1:8430/VBF.jl/"] = process.argv.slice(2);
@@ -31,7 +31,7 @@ const pages = [
     await p.waitForSelector(".member-result table", { timeout: 30000 }); }],
 ];
 const overflow = [];
-const browser = await chromium.launch({ channel: process.env.CHANNEL || "chrome" });
+const browser = await chromium.launch(process.env.CHANNEL ? { channel: process.env.CHANNEL } : {});
 for (const [vw, vh, tag] of [[1280, 900, "desktop"], [390, 844, "mobile"]]) {
   const ctx = await browser.newContext({ viewport: { width: vw, height: vh }, deviceScaleFactor: 1 });
   const p = await ctx.newPage();

@@ -380,14 +380,41 @@ jobs:
         working-directory: docs/portal/js
         run: npm ci --no-fund --no-audit && node build.mjs
 
+      # The browser tests read members over HTTP Range. The full query database is 759 MiB and
+      # needs members.sqlite; a small one with corpora stored in catalog.sqlite is enough.
+      - name: Build a small query database for the browser tests
+        run: |
+          julia --startup-file=no --project=docs/portal -e '
+            using VBFPortal, VBFCatalog
+            r = build_query_db("query-test.sqlite", load_catalog(); corpora = ["edelpott2009_n8", "taniguchi2019_n8", "galissant2026_n8"])
+            println(r)'
+
       - name: Build and check the portal
-        run: julia --startup-file=no --project=docs/portal docs/portal/build.jl --evidence evidence
+        run: julia --startup-file=no --project=docs/portal docs/portal/build.jl --evidence evidence --query query-test.sqlite --copy-query
 
       - name: Upload the preview
         uses: actions/upload-artifact@v4
         with:
           name: portal-preview
           path: docs/portal/build
+
+      # Browser tests (Playwright, axe-core) against the build served under /VBF.jl/.
+      - name: Install the browser tests
+        working-directory: docs/portal/test/browser
+        run: npm ci --no-fund --no-audit && npx playwright install --with-deps chromium
+
+      - name: Run the browser tests
+        working-directory: docs/portal/test/browser
+        run: npx playwright test
+
+      - name: Upload the browser test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-browser-report
+          path: |
+            docs/portal/test/browser/report
+            docs/portal/test/browser/test-results
 
   # Builds the Documenter site with the rebuilt catalog and publishes it to GitHub Pages
   # (https://siqueiratf.github.io/VBF.jl/). The site is a GitHub Actions artifact; there is
