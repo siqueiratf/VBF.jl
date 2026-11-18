@@ -220,3 +220,50 @@ table.claims table.evidence td { text-align: left; padding-right: 0.6em; }
   table.claims table.evidence td, table.claims table.evidence th { display: table-cell; grid-column: auto; grid-row: auto;
     padding: 0.15em 0.8em 0.15em 0; }
 }
+
+/* S5.3: catalog pages */
+.lead { font-size: 17px; }
+.num { text-align: right; }
+th.num { text-align: right; }
+form.search-main { display: flex; flex-wrap: wrap; gap: 0.6em 1em; align-items: end; margin: 1.2em 0 0.6em; }
+form.search-main input[type="search"] { font-size: 17px; padding: 0.4em 0.5em; width: 22em; max-width: 100%; }
+form.search-main label:first-child { color: var(--text); font-weight: 400; flex: 1 1 16em; }
+form.search-main button { font: 400 15px Helvetica, Arial, sans-serif; cursor: pointer; color: #fff; background: var(--accent);
+  border: 1px solid var(--accent); border-radius: 2px; padding: 0.45em 1em; }
+form.search-main button:hover { opacity: 0.85; }
+button.reset { font: 300 14px Helvetica, Arial, sans-serif; background: none; border: 0; color: var(--link); cursor: pointer; padding: 0.3em 0; }
+button.reset:hover { color: var(--text); text-decoration: underline; }
+/* Sortable column titles: the button looks like the title; an arrow shows the order */
+th button.sort { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+th button.sort:hover { color: var(--text); }
+th[aria-sort="ascending"] button.sort::after { content: " ▲"; font-size: 0.75em; }
+th[aria-sort="descending"] button.sort::after { content: " ▼"; font-size: 0.75em; }
+th[aria-sort="ascending"], th[aria-sort="descending"] { color: var(--text); }
+.pager { font-size: 14px; margin: 0.6em 0; display: flex; flex-wrap: wrap; gap: 0.3em 1em; align-items: baseline; }
+.pager span { color: var(--grey); }
+details.technical > summary { color: var(--grey); font-size: 14px; }
+details.technical[open] > summary { margin-bottom: 0.5em; }
+table.technical { font-size: 14px; }
+table.technical th { color: var(--grey); font-weight: 400; }
+table.technical code, table.properties td > code { font-size: 12.5px; overflow-wrap: anywhere; }
+table.functions td, table.members td { white-space: nowrap; }
+table.functions td:first-child, table.functions td:last-child { white-space: normal; }
+table.versions { width: auto; }
+table.versions td { padding-right: 2em; }
+#member-view h3 { padding-top: 0.6em; }
+@media (max-width: 600px) {
+  /* The function list: one block per function, the labels before the values */
+  table.functions thead tr { display: flex; flex-wrap: wrap; gap: 0.2em 0.9em; border-bottom: 1px solid var(--text); }
+  table.functions thead th { border: 0; padding: 0.2em 0; }
+  table.functions tbody tr { display: block; padding: 0.4em 0; }
+  table.functions tbody tr[hidden] { display: none; }
+  table.functions td { display: inline; padding: 0; white-space: nowrap; font-size: 14px; color: var(--grey); }
+  table.functions td + td::after { content: " · "; }
+  table.functions td:last-child::after, table.functions td:first-child::after { content: ""; }
+  table.functions td:first-child { display: block; font-size: 16px; }
+  table.functions td:not(:first-child):not(:last-child)::before { content: attr(data-label) " "; }
+  table.functions td:last-child { display: block; white-space: normal; }
+  form.search-main input[type="search"] { width: 100%; }
+}
+table.technical code { word-break: break-all; }
+form.search-main label:first-child { flex: 0 1 22em; }

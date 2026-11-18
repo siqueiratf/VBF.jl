@@ -15,9 +15,15 @@ const pages = [
   ["beierle", "reproductions/202508-beierle-millions/", async (p) => {
     await p.click("#table4_1 + tr summary"); }],
   ["catalog", "catalog/"],
-  ["functions", "catalog/functions/?n=8&is_apn=1&family=known-family"],
+  ["functions", "catalog/functions/?n=8&is_apn=1&sort=linearity&dir=asc"],
+  ["functions-all", "catalog/functions/"],
   ["function", "catalog/names/reprs8_0/"],
-  ["corpus", "catalog/corpora/beierle2025_n8/?idx=123456", async (p) => {
+  ["function-gold", "catalog/names/n10_Gold_x3/"],
+  ["corpus", "catalog/corpora/beierle2025_n8/", async (p) => {
+    await p.waitForSelector(".member-result table", { timeout: 30000 }); }],
+  ["corpus-member", "catalog/corpora/beierle2025_n8/?idx=123456", async (p) => {
+    await p.waitForSelector(".member-result table", { timeout: 30000 }); }],
+  ["corpus-small", "catalog/corpora/edelpott2009_n8/", async (p) => {
     await p.waitForSelector(".member-result table", { timeout: 30000 }); }],
 ];
 const overflow = [];

@@ -28,30 +28,77 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Function list: filters in the URL (?n=8&is_apn=1&family=...), so a filtered list can be
-// shared and linked. The names are the column names of the catalog's functions table.
+// Function list: filters, sort and page in the URL (?n=8&is_apn=1&sort=linearity&dir=desc&page=2),
+// so a view can be shared and linked. The filter names are the column names of the catalog's
+// functions table; q matches the name or the function key.
 (() => {
   const form = document.getElementById("function-filters");
   const table = document.getElementById("function-table");
   if (!form || !table) return;
+  const PAGE = 50;
   const fields = [...form.elements].filter((e) => e.name);
+  const rows = [...table.tBodies[0].rows];
+  const pager = document.getElementById("function-pager");
+  const fmt = (n) => n.toLocaleString("en-US");
   const params = new URLSearchParams(location.search);
   for (const f of fields) if (params.has(f.name)) f.value = params.get(f.name);
-  const apply = () => {
-    const want = fields.filter((f) => f.value.trim() !== "");
-    let shown = 0;
-    for (const row of table.tBodies[0].rows) {
-      const ok = want.every((f) => (row.dataset[f.name] || "") === f.value.trim());
-      row.hidden = !ok;
-      if (ok) shown += 1;
-    }
-    document.getElementById("function-count").textContent = `${shown} functions`;
-    const q = new URLSearchParams(want.map((f) => [f.name, f.value.trim()]));
-    history.replaceState(null, "", q.toString() ? `?${q}` : location.pathname);
+  let sort = params.get("sort") || "", dir = params.get("dir") === "desc" ? "desc" : "asc";
+  let page = Number(params.get("page")) || 1;
+  const numeric = new Set(["n", "m", "is_apn", "algebraic_degree", "differential_uniformity", "linearity"]);
+  const value = (row, col) => {
+    const v = row.dataset[col] ?? "";
+    return numeric.has(col) ? (v === "" ? Infinity : Number(v)) : v.toLowerCase();
   };
-  form.addEventListener("input", apply);
+  const apply = (keepPage = false) => {
+    const want = fields.filter((f) => f.value.trim() !== "");
+    const q = form.elements.q ? form.elements.q.value.trim().toLowerCase() : "";
+    let shown = rows.filter((row) => want.every((f) => f.name === "q" ? row.dataset.q.includes(q)
+      : (row.dataset[f.name] || "") === f.value.trim()));
+    if (sort) {
+      const k = dir === "desc" ? -1 : 1;
+      shown = shown.slice().sort((a, b) => { const x = value(a, sort), y = value(b, sort);
+        return k * (typeof x === "string" ? x.localeCompare(y, "en", { numeric: true }) : x < y ? -1 : x > y ? 1 : 0); });
+    }
+    const pages = Math.max(1, Math.ceil(shown.length / PAGE));
+    if (!keepPage) page = 1;
+    page = Math.min(Math.max(1, page), pages);
+    const body = table.tBodies[0];
+    for (const row of rows) row.hidden = true;
+    shown.forEach((row, i) => { body.appendChild(row); row.hidden = i < (page - 1) * PAGE || i >= page * PAGE; });
+    for (const th of table.tHead.rows[0].cells) {
+      th.setAttribute("aria-sort", th.dataset.col === sort ? (dir === "desc" ? "descending" : "ascending") : "none");
+    }
+    const first = shown.length ? (page - 1) * PAGE + 1 : 0, last = Math.min(page * PAGE, shown.length);
+    document.getElementById("function-count").textContent = shown.length <= PAGE ? `${fmt(shown.length)} functions`
+      : `Functions ${fmt(first)}–${fmt(last)} of ${fmt(shown.length)}`;
+    const state = new URLSearchParams(want.map((f) => [f.name, f.value.trim()]));
+    if (sort) { state.set("sort", sort); state.set("dir", dir); }
+    if (page > 1) state.set("page", page);
+    const link = (p, text, rel) => `<a href="?${(s => (s.set("page", p), s))(new URLSearchParams(state))}" data-page="${p}"${rel ? ` rel="${rel}"` : ""}>${text}</a>`;
+    pager.innerHTML = pages === 1 ? "" : `${page > 1 ? link(1, "First") + " " + link(page - 1, "Previous", "prev") : ""}
+      <span>Page ${fmt(page)} of ${fmt(pages)}</span>
+      ${page < pages ? link(page + 1, "Next", "next") + " " + link(pages, "Last") : ""}`;
+    history.replaceState(null, "", state.toString() ? `?${state}` : location.pathname);
+  };
+  form.addEventListener("input", () => apply());
   form.addEventListener("submit", (e) => e.preventDefault());
-  apply();
+  form.addEventListener("reset", () => setTimeout(() => { sort = ""; apply(); }));
+  table.tHead.addEventListener("click", (e) => {
+    const th = e.target.closest("th[data-col]");
+    if (!th) return;
+    dir = sort === th.dataset.col && dir === "asc" ? "desc" : "asc";
+    sort = th.dataset.col;
+    apply();
+  });
+  pager.addEventListener("click", (e) => {
+    const a = e.target.closest("a[data-page]");
+    if (!a) return;
+    e.preventDefault();
+    page = Number(a.dataset.page);
+    apply(true);
+    table.scrollIntoView({ block: "start" });
+  });
+  apply(true);
 })();
 
 // Mobile menu: a button that shows or hides the navigation (keyboard and touch).

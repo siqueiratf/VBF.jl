@@ -206,32 +206,6 @@ function render_portal(model, out)
             nav = "reproductions"))
     end
 
-    # Catalog pages of S3: the corpora and the publications that cite them. S4 adds the query layer.
-    corpora = sort(collect(values(model["corpora"])); by = c -> c["name"])
-    users(name) = [r for r in repros if any(c -> c["name"] == name, r["corpora"])]
-    body =
-        "<p><a href=\"functions/\">Curated functions</a>: the named functions of the catalog, with their properties.</p>" *
-        "<h2>Corpora</h2><ul>" *
-        join(["<li><a href=\"corpora/$(c["name"])/\">$(esc(c["name"]))</a>: $(thousands(c["member_count"])) functions, n = $(c["n"])</li>" for c in corpora]) * "</ul>" *
-        "<h2 id=\"snapshots\">Snapshots</h2><p>This site shows the catalog snapshot " *
-        short_hash(model["snapshot"].prebuilt_key; what = "the snapshot key") * ". Each snapshot, with its query database, " *
-        "is archived on <a href=\"https://doi.org/10.5281/zenodo.24297661\">Zenodo</a>.</p>"
-    push!(written, write_page(out, "catalog/index.html", "Catalog",
-        Mustache.render(template("page"), Dict("title" => "Catalog", "body" => body)); nav = "catalog"))
-    for c in corpora
-        path = "catalog/corpora/$(c["name"])/index.html"; root = root_prefix(path)
-        pubs = join(["<li><a href=\"$(root)reproductions/$(r["id"])/\">$(reference_html(r["ref"]))</a></li>" for r in users(c["name"])])
-        body = "<table class=\"properties\">" *
-               "<tr><th scope=\"row\">Functions</th><td>$(thousands(c["member_count"]))</td></tr>" *
-               "<tr><th scope=\"row\">Dimensions</th><td>\$n = $(c["n"])\$, \$m = $(c["m"])\$</td></tr>" *
-               "<tr><th scope=\"row\">Corpus digest</th><td><code>$(esc(c["digest"]))</code></td></tr>" *
-               "<tr><th scope=\"row\">Source</th><td><code>$(esc(c["source_repo"]))</code></td></tr></table>" *
-               (isempty(pubs) ? "" : "<h2>Publications</h2><ol>$pubs</ol>") *
-               member_view(c, root, model["snapshot"].prebuilt_key)
-        push!(written, write_page(out, path, c["name"],
-            Mustache.render(template("page"), Dict("title" => c["name"], "body" => body)); nav = "catalog"))
-    end
-
     about = """
         <p>VBF.jl is developed by Tiago Faustino de Siqueira and Gustavo Zambonin
         (<a href="https://orcid.org/0000-0002-6962-9347">ORCID</a>), Universidade Federal de Santa Catarina.</p>
@@ -243,19 +217,6 @@ function render_portal(model, out)
         Mustache.render(template("page"), Dict("title" => "About", "body" => about)); nav = "about"))
     written
 end
-
-"""Member view of a corpus page: a form, read by assets/portal/js/members.js."""
-member_view(c, root, key) = """
-    <h2 id="members">Members</h2>
-    <section id="member-view" data-db="$(root)catalog/data/$(key)/query.sqlite" data-corpus="$(esc(c["name"]))"
-             data-digest="$(esc(c["digest"]))" data-root="$(root)">
-    <form><label>Member index <input name="idx" type="number" min="1" max="$(c["member_count"])" required></label>
-    <button type="submit">Show</button></form>
-    <div class="member-result" aria-live="polite"></div>
-    <noscript>The member view needs JavaScript. In Julia: corpus_function(load_catalog(), "$(esc(c["name"]))", i).</noscript>
-    </section>
-    <script type="module" src="$(root)assets/portal/js/members.js"></script>
-    """
 
 """
     write_redirects(out, legacy) -> Vector{String}

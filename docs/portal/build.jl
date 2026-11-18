@@ -1,6 +1,6 @@
 # Build the portal: Library (Documenter) and the portal pages, in docs/portal/build/.
 #
-#   julia --project=docs/portal docs/portal/build.jl [--evidence DIR ...] [--skip-library]
+#   julia --project=docs/portal docs/portal/build.jl [--evidence DIR ...] [--query PATH] [--skip-library] [--offline]
 #
 # Until the switch of stage S5, the live site is still built by docs/make.jl. This build
 # leaves docs/src unchanged: it copies it to a temporary folder, moves the Documenter home
@@ -85,7 +85,10 @@ if query !== nothing
     "--copy-query" in args ? cp(query, joinpath(qdir, "query.sqlite")) : symlink(query, joinpath(qdir, "query.sqlite"))
 end
 pages = render_portal(model, OUT)
-append!(pages, render_catalog_functions(model, OUT, db; query_db = query))
+# The Zenodo versions of the catalog data (empty when offline: the page then links to the
+# concept record only).
+versions = "--offline" in args ? Dict{String,Any}[] : VBFPortal.zenodo_versions()
+append!(pages, render_catalog_functions(model, OUT, db; query_db = query, versions))
 unresolved = write_redirects(OUT)
 problems = check_links(OUT)
 close(db)
