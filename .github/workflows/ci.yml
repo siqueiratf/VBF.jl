@@ -285,6 +285,13 @@ jobs:
             println(build_query_db(joinpath(VBFCatalog.catalog_data_dir(), "query.sqlite"), db))
             close(db)'
 
+      # A failed publication can leave a draft that blocks the next new version.
+      - name: Discard unpublished Zenodo drafts
+        if: steps.need.outputs.publish == 'true'
+        env:
+          ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
+        run: julia --startup-file=no --project=packages/VBFCatalog/src/import .github/scripts/zenodo_drafts.jl
+
       - name: Publish to Zenodo
         if: steps.need.outputs.publish == 'true'
         env:
