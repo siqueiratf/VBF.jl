@@ -14,6 +14,7 @@
 #                                     (8) is the default per worker; WORKER_GC (threads/2)
 #                                     and WORKER_HEAP (8G) set its GC threads and heap hint;
 #                                     WORKER_DEPTH (2) packets per worker thread are queued.
+#                                     EA_THREADS (THREADS/2): coordinator threads for EA packets.
 #                                     With WORKERS, THREADS is the coordinator's own thread
 #                                     count (EA and IO only, e.g. 8) and CPUS pins it.
 #   ./run.sh stop    STATE            ask the controller to drain and stop
@@ -70,7 +71,9 @@ start)
     depth=${WORKER_DEPTH:-2}
     [[ $depth =~ ^[1-8]$ ]] || { echo "start: invalid WORKER_DEPTH '$depth'"; exit 2; }
     # Top-level keys must precede the [[worker_processes]] tables.
-    sed -i "s|^concurrency = .*|concurrency = $((total * depth))\nworker_queue_depth = $depth|" "$config"
+    ea=${EA_THREADS:-$((threads / 2))}
+    [[ $ea =~ ^[1-9][0-9]*$ ]] || { echo "start: invalid EA_THREADS '$ea'"; exit 2; }
+    sed -i "s|^concurrency = .*|concurrency = $((total * depth))\nworker_queue_depth = $depth\ncoordinator_ea_concurrency = $ea|" "$config"
   fi
   pin=()
   [ -n "${CPUS:-}" ] && pin=(taskset -c "$CPUS")
