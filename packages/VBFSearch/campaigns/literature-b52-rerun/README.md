@@ -36,5 +36,26 @@ export JULIA_DEPOT_PATH=/persistent/julia-depot
 ```
 
 A session stops when `STOP` exists, and a new `start` resumes from the ledger.
+
+### Worker processes (optional)
+
+Inside one Julia process more threads do not help (GC and allocation contention).
+With `WORKERS`, the construction packets (`prepare_v5`, `v5`, `switching`) run in
+separate worker processes, each pinned with `taskset`; the coordinator process
+keeps the ledger, EA and the ordered application (`controller/closure_workers.jl`).
+The recorded science is identical to the threaded controller.
+
+```sh
+# 6 workers x 8 threads on socket 1, coordinator (8 threads) on the other 8 cores
+CPUS=104-111 WORKERS="56-63 64-71 72-79 80-87 88-95 96-103" \
+  ./run.sh start /persistent/b52-rerun 8
+```
+
+`WORKER_THREADS` (8), `WORKER_GC` (threads/2) and `WORKER_HEAP` (8G) set the
+defaults per worker; `CPUS:THREADS` sets the threads of one worker, e.g.
+`56-63,168-175:16` for 8 cores with their SMT siblings. Without `WORKERS`
+nothing changes. If a worker dies the session fails: the applied prefix stays,
+unapplied jobs return to `paused`, and the next `start` resumes them.
+
 The state folder must not go into git. Keep a second copy of the ledger
 outside the machine, with its SHA-256.
