@@ -5,6 +5,8 @@
   const canvas = $('graph'), message = $('message');
   const gl = canvas.getContext('webgl2', {antialias:false, alpha:false, powerPreference:'low-power'});
   if (!gl) { message.textContent = 'This graph needs WebGL 2. Enable hardware acceleration or use a browser with WebGL support.'; return; }
+  // The drawing page reuses this renderer: <body data-api="/api/drawing" data-data="/drawing-data/">.
+  const API = document.body.dataset.api || '/api/graph', DATA = document.body.dataset.data || '/graph-data/';
   const mask = 0x3fffffff;
   let manifest, positions, edges, flags, width, textureHeight, positionTexture, flagTexture;
   let pointProgram, edgeProgram, arrowProgram, edgeVAO, localVAO, localBuffer;
@@ -120,10 +122,12 @@
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,positionTexture);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,flagTexture);
-    const local=$('local').checked;
-    if(Number($('opacity').value)>0){
-      setUniforms(edgeProgram,colors);gl.bindVertexArray(local?localVAO:edgeVAO);
-      gl.drawArraysInstanced(gl.LINES,0,2,(local?localEdges.length:edges.length)/2);
+    const local=$('local').checked, onlySelected=$('selected-edges')?.checked;
+    if(onlySelected?selected>=0:Number($('opacity').value)>0){
+      // "Edges of the selected class only" draws the neighbourhood edges, never the full edge set.
+      const subset=local||onlySelected;
+      setUniforms(edgeProgram,colors);gl.bindVertexArray(subset?localVAO:edgeVAO);
+      gl.drawArraysInstanced(gl.LINES,0,2,(subset?localEdges.length:edges.length)/2);
       if(selected>=0){setUniforms(arrowProgram,colors);gl.bindVertexArray(localVAO);gl.drawArraysInstanced(gl.TRIANGLES,0,3,localEdges.length/2);}
     }
     setUniforms(pointProgram,colors);gl.bindVertexArray(null);gl.drawArrays(gl.POINTS,0,manifest.nodes);
@@ -170,7 +174,7 @@
     if(focus) fit([id,...neighbors]);else scheduleDraw();
     try{
       const chunk=Math.floor(id/manifest.metadata_chunk_size);
-      if(!metadata.has(chunk))metadata.set(chunk,await requestJSON('/graph-data/'+manifest.version+'/nodes-'+chunk+'.json'));
+      if(!metadata.has(chunk))metadata.set(chunk,await requestJSON(DATA+manifest.version+'/nodes-'+chunk+'.json'));
       if(selected!==id)return;
       const info=metadata.get(chunk)[id%manifest.metadata_chunk_size];
       $('node-info').replaceChildren();
@@ -182,10 +186,10 @@
     }catch(error){$('node-info').textContent='Class details unavailable. A newer snapshot may be ready; reload the graph.';}
   }
   async function requestJSON(url){const response=await fetch(url,{cache:'no-store'});if(!response.ok)throw new Error('HTTP '+response.status);return response.json();}
-  async function binary(name){const response=await fetch('/graph-data/'+manifest.version+'/'+name);if(!response.ok)throw new Error('Graph data unavailable; reload the page.');return response.arrayBuffer();}
+  async function binary(name){const response=await fetch(DATA+manifest.version+'/'+name);if(!response.ok)throw new Error('Graph data unavailable; reload the page.');return response.arrayBuffer();}
   async function load() {
     try{
-      manifest=await requestJSON('/api/graph');if(manifest.schema!=='vbfsearch-class-graph-v1')throw new Error('Unsupported graph snapshot.');
+      manifest=await requestJSON(API);if(manifest.schema!=='vbfsearch-class-graph-v1')throw new Error('Unsupported graph snapshot.');
       $('summary').textContent=number(manifest.nodes)+' classes · '+number(manifest.seeds)+' published seeds · '+number(manifest.v5_edges)+' V5 + '+number(manifest.switching_edges)+' neighbour edges';
       $('snapshot').textContent='Snapshot '+new Date(manifest.snapshot_utc).toLocaleString();
       $('refresh-policy').textContent='A new snapshot is built after '+number(manifest.refresh_every_completions)+' completed seeds or parents, with at least '+number(manifest.minimum_refresh_seconds/60)+' minutes between builds. This view stays fixed while you explore.';
@@ -231,12 +235,12 @@
   },{passive:false});
   $('fit').onclick=()=>fit();$('zoom-in').onclick=()=>{zoom*=1.5;scheduleDraw();};$('zoom-out').onclick=()=>{zoom/=1.5;scheduleDraw();};
   $('fit-neighbors').onclick=()=>fit([selected,...neighbors]);
-  for(const id of ['v5','switching','opacity','local'])$(id).addEventListener('input',scheduleDraw);
+  for(const id of ['v5','switching','opacity','local','selected-edges'])$(id)?.addEventListener('input',scheduleDraw);
   $('find').onclick=()=>select(Number($('find-id').value)-1,true);
   $('find-id').addEventListener('keydown',event=>{if(event.key==='Enter')$('find').click();});
   $('new-snapshot').onclick=()=>location.reload();
   new ResizeObserver(scheduleDraw).observe(canvas);matchMedia('(prefers-color-scheme: dark)').addEventListener('change',scheduleDraw);
   canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();ready=false;message.hidden=false;message.textContent='The graphics context was lost. Reload to restore the cached graph.';});
-  setInterval(async()=>{try{const current=await requestJSON('/api/graph');$('new-snapshot').hidden=!manifest||current.version===manifest.version;}catch{}},30000);
+  setInterval(async()=>{try{const current=await requestJSON(API);$('new-snapshot').hidden=!manifest||current.version===manifest.version;}catch{}},30000);
   load();
 })();

@@ -11,7 +11,10 @@ pub const SCHEMA: &str = "vbfsearch-class-graph-v1";
 pub const CHUNK: usize = 2048;
 const KEEP_SNAPSHOTS: usize = 3;
 
+#[derive(Clone)]
 pub enum J {
+    /// Already-serialized JSON value.
+    Raw(String),
     Bool(bool),
     Int(i64),
     Float(f64),
@@ -32,14 +35,11 @@ pub struct Node {
 }
 
 pub struct Snapshot {
-    pub version: String,
     pub positions: Vec<[f32; 2]>,
     /// Pairs (source, target | bit 30 both methods | bit 31 switching).
     pub edges: Vec<u32>,
     pub flags: Vec<u8>,
     pub nodes: Vec<Node>,
-    /// manifest.json fields in closure_graph.jl's order.
-    pub manifest: Vec<(&'static str, J)>,
 }
 
 /// Version names that the monitor accepts: ^\d{8}T\d{6}-\d+-\d+$
@@ -71,19 +71,20 @@ pub fn escape(out: &mut String, s: &str) {
     out.push('"');
 }
 
-pub fn object(fields: &[(&str, J)]) -> String {
+pub fn object<K: AsRef<str>>(fields: &[(K, J)]) -> String {
     let mut s = String::from("{");
     for (i, (k, v)) in fields.iter().enumerate() {
         if i > 0 {
             s.push(',');
         }
-        escape(&mut s, k);
+        escape(&mut s, k.as_ref());
         s.push(':');
         match v {
             J::Bool(x) => write!(s, "{x}").unwrap(),
             J::Int(x) => write!(s, "{x}").unwrap(),
             J::Float(x) => write!(s, "{x:?}").unwrap(),
             J::Str(x) => escape(&mut s, x),
+            J::Raw(x) => s.push_str(x),
         }
     }
     s.push('}');
@@ -139,55 +140,81 @@ fn le<T: Copy, const W: usize>(values: &[T], f: fn(T) -> [u8; W]) -> Vec<u8> {
     values.iter().flat_map(|&v| f(v)).collect()
 }
 
-/// Stage, publish atomically, update current.json, keep the newest 3 snapshots.
-/// current.json adds payload_bytes and compute_seconds at closure_graph.jl's positions.
-pub fn write(graph: &Path, s: &Snapshot, compute_seconds: f64) -> Result<String, String> {
-    if !valid_version(&s.version) {
-        return Err(format!("version {} does not match ^\\d{{8}}T\\d{{6}}-\\d+-\\d+$", s.version));
+impl Snapshot {
+    /// Write positions, edges, flags and node chunks; return the payload bytes.
+    pub fn stage(&self, dir: &Path) -> Result<u64, String> {
+        let n = self.nodes.len();
+        if self.positions.len() != n || self.flags.len() != n || self.edges.len() % 2 != 0 {
+            return Err("snapshot arrays have different lengths".into());
+        }
+        let payload = [
+            ("positions.bin", positions_bytes(&self.positions)),
+            ("edges.bin", le(&self.edges, u32::to_le_bytes)),
+            ("flags.bin", self.flags.clone()),
+        ];
+        for (name, bytes) in &payload {
+            write_file(&dir.join(name), bytes)?;
+        }
+        let with_class_id = self.nodes.iter().enumerate().any(|(i, p)| p.class_id as usize != i + 1);
+        for (k, chunk) in self.nodes.chunks(CHUNK).enumerate() {
+            atomic(&dir.join(format!("nodes-{k}.json")), node_chunk(chunk, k * CHUNK, with_class_id).as_bytes())?;
+        }
+        Ok(payload.iter().map(|p| p.1.len() as u64).sum())
     }
-    let n = s.nodes.len();
-    if s.positions.len() != n || s.flags.len() != n || s.edges.len() % 2 != 0 {
-        return Err("snapshot arrays have different lengths".into());
+}
+
+pub fn positions_bytes(positions: &[[f32; 2]]) -> Vec<u8> {
+    let flat: Vec<f32> = positions.iter().flatten().copied().collect();
+    le(&flat, f32::to_le_bytes)
+}
+
+pub fn write_positions(dir: &Path, positions: &[[f32; 2]]) -> Result<u64, String> {
+    let bytes = positions_bytes(positions);
+    write_file(&dir.join("positions.bin"), &bytes)?;
+    Ok(bytes.len() as u64)
+}
+
+/// Hard-link (or copy) an immutable file of another snapshot.
+pub fn link(from: &Path, to: &Path) -> Result<u64, String> {
+    if std::fs::hard_link(from, to).is_err() {
+        std::fs::copy(from, to).map_err(|e| format!("{}: {e}", from.display()))?;
+    }
+    Ok(std::fs::metadata(to).map_err(|e| e.to_string())?.len())
+}
+
+/// Stage with `stage`, publish atomically, update current.json, keep the
+/// newest 3 snapshots. current.json adds payload_bytes and compute_seconds
+/// at closure_graph.jl's positions.
+pub fn publish(
+    graph: &Path,
+    version: &str,
+    manifest: &[(String, J)],
+    stage: impl FnOnce(&Path) -> Result<u64, String>,
+    compute_seconds: f64,
+) -> Result<String, String> {
+    if !valid_version(version) {
+        return Err(format!("version {version} does not match ^\\d{{8}}T\\d{{6}}-\\d+-\\d+$"));
     }
     std::fs::create_dir_all(graph).map_err(|e| e.to_string())?;
-    let final_dir = graph.join(&s.version);
+    let final_dir = graph.join(version);
     if final_dir.exists() {
         return Err(format!("{} exists; choose another --version-tag", final_dir.display()));
     }
-    let staging = graph.join(format!(".building-{}", s.version));
+    let staging = graph.join(format!(".building-{version}"));
     if staging.exists() {
         std::fs::remove_dir_all(&staging).map_err(|e| e.to_string())?;
     }
     std::fs::create_dir_all(&staging).map_err(|e| e.to_string())?;
-    let flat: Vec<f32> = s.positions.iter().flatten().copied().collect();
-    let payload = [
-        ("positions.bin", le(&flat, f32::to_le_bytes)),
-        ("edges.bin", le(&s.edges, u32::to_le_bytes)),
-        ("flags.bin", s.flags.clone()),
-    ];
-    for (name, bytes) in &payload {
-        write_file(&staging.join(name), bytes)?;
-    }
-    let with_class_id = s.nodes.iter().enumerate().any(|(i, p)| p.class_id as usize != i + 1);
-    for (k, chunk) in s.nodes.chunks(CHUNK).enumerate() {
-        atomic(&staging.join(format!("nodes-{k}.json")), node_chunk(chunk, k * CHUNK, with_class_id).as_bytes())?;
-    }
-    atomic(&staging.join("manifest.json"), object(&s.manifest).as_bytes())?;
+    let payload_bytes = stage(&staging)?;
+    atomic(&staging.join("manifest.json"), object(manifest).as_bytes())?;
     std::fs::rename(&staging, &final_dir).map_err(|e| e.to_string())?;
 
-    let payload_bytes: usize = payload.iter().map(|p| p.1.len()).sum();
-    let mut current: Vec<(&str, J)> = Vec::new();
-    for (k, v) in &s.manifest {
-        let copy = match v {
-            J::Bool(x) => J::Bool(*x),
-            J::Int(x) => J::Int(*x),
-            J::Float(x) => J::Float(*x),
-            J::Str(x) => J::Str(x.clone()),
-        };
-        current.push((k, copy));
-        match *k {
-            "sql_seconds" => current.push(("payload_bytes", J::Int(payload_bytes as i64))),
-            "switching_edges" => current.push(("compute_seconds", J::Float(compute_seconds))),
+    let mut current: Vec<(String, J)> = Vec::new();
+    for (k, v) in manifest {
+        current.push((k.clone(), v.clone()));
+        match k.as_str() {
+            "sql_seconds" => current.push(("payload_bytes".into(), J::Int(payload_bytes as i64))),
+            "switching_edges" => current.push(("compute_seconds".into(), J::Float(compute_seconds))),
             _ => {}
         }
     }
@@ -207,6 +234,7 @@ pub fn write(graph: &Path, s: &Snapshot, compute_seconds: f64) -> Result<String,
     }
     Ok(text)
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -238,20 +266,19 @@ mod tests {
         };
         let nodes: Vec<Node> = (0..2050).map(|i| node(i, i == 0)).collect();
         let snap = Snapshot {
-            version: "20260101T000000-5-2050".into(),
             positions: (0..2050).map(|i| [i as f32 / 2050.0, -0.5]).collect(),
             edges: vec![0, 1 | 0x4000_0000, 0, 1 | 0xC000_0000, 1, 2],
             flags: (0..2050).map(|i| (i == 0) as u8).collect(),
             nodes,
-            manifest: vec![
+        };
+        let manifest: Vec<(String, J)> = vec![
                 ("sql_seconds", J::Float(0.0)),
                 ("switching_edges", J::Int(1)),
                 ("version", J::Str("20260101T000000-5-2050".into())),
                 ("nodes", J::Int(2050)),
                 ("schema", J::Str(SCHEMA.into())),
-            ],
-        };
-        let text = write(&dir, &snap, 1.5).unwrap();
+        ].into_iter().map(|(k, v)| (k.to_string(), v)).collect();
+        let text = publish(&dir, "20260101T000000-5-2050", &manifest, |d| snap.stage(d), 1.5).unwrap();
         let cur: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join("current.json")).unwrap()).unwrap();
         assert_eq!(text, std::fs::read_to_string(dir.join("current.json")).unwrap());
         assert_eq!(cur["payload_bytes"], 2050 * 8 + 24 + 2050);

@@ -9,7 +9,9 @@ Run from the repository root:
 The controller owns closure.sqlite and progress.toml. This server only reads
 VBFSearch.closure_progress, verifies the pinned initial-root file, and serves the
 approved figures. With --structure JSON it also serves that precomputed report
-at /structure. A completed parent has exhausted both construction methods.
+at /structure. With --drawing DIR (default <run>/drawing) it serves the
+invariant drawing that apn-layout writes there at /drawing. A completed parent
+has exhausted both construction methods.
 
 With --frozen true it serves a run from its last progress.toml alone, without
 closure.sqlite: an archived run, or a copy of a run on another machine. It keeps
@@ -24,6 +26,8 @@ import VBFSearch
 const PAGE = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-monitor.html")
 const GRAPH_PAGE = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-graph.html")
 const GRAPH_SCRIPT = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-graph.js")
+const DRAWING_PAGE = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-drawing.html")
+const DRAWING_SCRIPT = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-drawing.js")
 const STRUCTURE_PAGE = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-structure.html")
 const STRUCTURE_SCRIPT = joinpath(@__DIR__, "..", "src", "assets", "apn-closure-structure.js")
 const CONTENT_TYPES = Dict(
@@ -39,6 +43,7 @@ mutable struct Monitor
     upstream::String
     comparison::String
     graph::String
+    drawing::String
     structure::String
     frozen::Bool
     read_run::Function
@@ -92,12 +97,12 @@ end
 
 function Monitor(campaign; run=joinpath(campaign, "run"),
                  figures=joinpath(campaign, "diagrams", "gallery"), read_run=controller_snapshot, upstream="",comparison="",
-                 graph=joinpath(run,"graph"),structure="",frozen=false)
+                 graph=joinpath(run,"graph"),drawing=joinpath(run,"drawing"),structure="",frozen=false)
     campaign = abspath(campaign)
     isfile(joinpath(campaign, "campaign.toml")) || error("missing campaign.toml")
     frozen && !isempty(upstream) && error("--frozen and --upstream are exclusive")
     reader = !isempty(upstream) ? _ -> upstream_snapshot(upstream) : frozen ? frozen_snapshot : read_run
-    Monitor(campaign, abspath(run), abspath(figures), upstream, comparison, abspath(graph),
+    Monitor(campaign, abspath(run), abspath(figures), upstream, comparison, abspath(graph), abspath(drawing),
             isempty(structure) ? "" : abspath(structure), frozen, reader, ReentrantLock(), nothing,
             Dict{String,Any}(), 0.0, Dict{String,Any}(), Tuple{Float64,Int,Int}[], Tuple{Float64,Int,Float64}[])
 end
@@ -397,15 +402,16 @@ function figure_response(monitor, path)
     HTTP.Response(200, ["Content-Type" => mime, "Cache-Control" => "no-cache"], read(file))
 end
 
-"""Serve only published graph files, never querying the live search ledger."""
-function graph_response(monitor,path)
+"""Serve only published graph files, never querying the live search ledger.
+The same rules serve the graph (`root=monitor.graph`) and the drawing."""
+function graph_response(monitor,path;root=monitor.graph)
     parts=String.(split(HTTP.unescapeuri(path),'/';keepempty=false))
     length(parts)==2 || return response(400,Dict("error"=>"invalid graph path"))
     occursin(r"^\d{8}T\d{6}-\d+-\d+$",parts[1]) || return response(400,Dict("error"=>"invalid graph snapshot"))
     occursin(r"^(positions\.bin|edges\.bin|flags\.bin|nodes-\d+\.json)$",parts[2]) || return response(400,Dict("error"=>"invalid graph asset"))
-    file=joinpath(monitor.graph,parts...)
+    file=joinpath(root,parts...)
     isfile(file) || return response(404,Dict("error"=>"graph snapshot expired; reload the graph"))
-    relative=relpath(realpath(file),realpath(monitor.graph))
+    relative=relpath(realpath(file),realpath(root))
     (relative==".." || startswith(relative,"../")) && return response(400,Dict("error"=>"invalid graph path"))
     mime=endswith(file,".json") ? "application/json; charset=utf-8" : "application/octet-stream"
     HTTP.Response(200,["Content-Type"=>mime,"Cache-Control"=>"public, max-age=86400, immutable"],read(file))
@@ -428,6 +434,16 @@ function handle(monitor, request)
                 response(503,Dict("state"=>"preparing","error"=>"The first graph snapshot is being prepared."))
         end
         startswith(path,"/graph-data/") && return graph_response(monitor,path[length("/graph-data/")+1:end])
+        path in ("/drawing","/drawing/","/drawing.html") && return HTTP.Response(200,
+            ["Content-Type"=>"text/html; charset=utf-8","Cache-Control"=>"no-cache"],read(DRAWING_PAGE))
+        path == "/drawing.js" && return HTTP.Response(200,
+            ["Content-Type"=>"application/javascript; charset=utf-8","Cache-Control"=>"no-cache"],read(DRAWING_SCRIPT))
+        if path == "/api/drawing"
+            file=joinpath(monitor.drawing,"current.json")
+            return isfile(file) ? HTTP.Response(200,["Content-Type"=>"application/json; charset=utf-8","Cache-Control"=>"no-store"],read(file)) :
+                response(503,Dict("state"=>"preparing","error"=>"No drawing yet."))
+        end
+        startswith(path,"/drawing-data/") && return graph_response(monitor,path[length("/drawing-data/")+1:end];root=monitor.drawing)
         path in ("/structure","/structure/","/structure.html") && return HTTP.Response(200,
             ["Content-Type"=>"text/html; charset=utf-8","Cache-Control"=>"no-cache"],read(STRUCTURE_PAGE))
         path == "/structure.js" && return HTTP.Response(200,
@@ -449,14 +465,15 @@ end
 
 function main(args=ARGS)
     options = Dict("--host" => "127.0.0.1", "--port" => "8766")
-    iseven(length(args)) || error("expected --campaign PATH [--run PATH] [--structure JSON] [--frozen true] [--host HOST] [--port PORT]")
+    iseven(length(args)) || error("expected --campaign PATH [--run PATH] [--structure JSON] [--drawing DIR] [--frozen true] [--host HOST] [--port PORT]")
     for i in 1:2:length(args)
-        args[i] in ("--campaign", "--run", "--host", "--port", "--figures", "--upstream", "--comparison", "--structure", "--frozen") || error("unknown option: $(args[i])")
+        args[i] in ("--campaign", "--run", "--host", "--port", "--figures", "--upstream", "--comparison", "--structure", "--drawing", "--frozen") || error("unknown option: $(args[i])")
         options[args[i]] = args[i+1]
     end
     haskey(options, "--campaign") || error("--campaign PATH is required")
     campaign = abspath(options["--campaign"])
-    monitor = Monitor(campaign; run=get(options, "--run", joinpath(campaign,"run")),
+    run = get(options, "--run", joinpath(campaign,"run"))
+    monitor = Monitor(campaign; run, drawing=get(options, "--drawing", joinpath(run,"drawing")),
         figures=get(options, "--figures", joinpath(campaign,"diagrams","gallery")),
         upstream=get(options, "--upstream", ""),comparison=get(options,"--comparison",""),
         structure=get(options,"--structure",""),
