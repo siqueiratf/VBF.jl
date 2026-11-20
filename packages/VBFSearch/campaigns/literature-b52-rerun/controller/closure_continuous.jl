@@ -17,6 +17,7 @@ include("closure_baseline.jl")
 include("closure_refill.jl")
 include("closure_batches.jl")
 include("closure_operations.jl")
+include("closure_workers.jl")
 using .ClosureOperations: validate_resources
 const _closure_rows=FP._closure_rows
 const _closure_count=FP._closure_count
@@ -203,7 +204,8 @@ function run(config)
     for (source,name) in ((@__FILE__,"controller.jl"),(joinpath(@__DIR__,"closure_baseline.jl"),"baseline-controller.jl"),
             (joinpath(@__DIR__,"closure_refill.jl"),"refill-controller.jl"),
             (joinpath(@__DIR__,"closure_batches.jl"),"batches-controller.jl"),
-            (joinpath(@__DIR__,"closure_operations.jl"),"operations-controller.jl"),(helper,"seed-progress-helper.jl"))
+            (joinpath(@__DIR__,"closure_operations.jl"),"operations-controller.jl"),(helper,"seed-progress-helper.jl"),
+            (joinpath(@__DIR__,"closure_workers.jl"),"closure_workers.jl"))
         cp(source,joinpath(out,name))
         # Preserve the literal include filenames as well as historical evidence
         # aliases, so the copied controller can resolve every sibling helper.
@@ -215,7 +217,13 @@ function run(config)
     FP.DiscoveryStore.atomic_toml(joinpath(out,"progress-before.toml"),base)
     ids="0";window_origin="root";window_kind="construction";windows_completed=0;window_active=true;completed_this_session=0
     windows_started=0;cohorts=Vector{Vector{Int}}()
-    context_setup=worker_contexts(concurrency;precompute_rank_table=get(config,"precompute_rank_table",true),
+    # Optional worker processes own the construction scratch (and its rank
+    # table); local contexts then serve EA packets only and need no table.
+    worker_specs=ClosureWorkers.parse_specs(config);remote=nothing;worker_summary=nothing
+    # With worker processes, EA packets run here on few threads. Bound them so
+    # they never starve the socket readers; each EA budget starts after the permit.
+    ea_permits=Base.Semaphore(Int(get(config,"coordinator_ea_concurrency",max(1,Threads.nthreads(:default)÷2))))
+    context_setup=worker_contexts(concurrency;precompute_rank_table=isempty(worker_specs) && get(config,"precompute_rank_table",true),
         packed_rank_table=get(config,"packed_rank_table",true),
         shared_property_cache_entries=Int(get(config,"shared_property_cache_entries",8192)))
     started=time();active_started=0.0;deadline=started+Float64(get(config,"duration_seconds",Inf))
@@ -390,6 +398,7 @@ function run(config)
         report["seed_statistics"]=seed_statistics(history,completion_events,active_started;now=time(),completed_this_session,parent_scope)
         report["runtime_metrics"]=ClosureOperations.runtime_snapshot(runtime,resources)
         report["runtime_metrics"]["property_cache"]=property_cache_statistics(contexts)
+        remote===nothing || (report["runtime_metrics"]["worker_processes"]=ClosureWorkers.summary(remote))
         report["storage_policy"]=merge(copy(storage.snapshot),Dict("stop_reason"=>storage.reason))
         report["checkpoint_error"]=checkpoint_error
         report["telemetry"]=Dict("enabled"=>isempty(telemetry_error),"error"=>telemetry_error,
@@ -419,10 +428,14 @@ function run(config)
     end
     function compute_item(item,slot,pool_stopped)
         if item.equivalence
-            FP._closure_equivalence_compute(item.packet;
+            equivalence()=FP._closure_equivalence_compute(item.packet;
                 seconds=min(300.0,Float64(get(config,"equivalence_seconds",30.0))*4^item.level),
                 nodes=min(1_000_000,Int(get(config,"equivalence_nodes",100_000))*4^item.level),
                 context=contexts[slot],solver_session=s.solver_session)
+            remote===nothing ? equivalence() : Base.acquire(equivalence,ea_permits)
+        elseif remote!==nothing
+            ClosureWorkers.remote_compute(remote,slot,item.packet;
+                seconds=max(0.0,min(300.0,deadline-time())),evaluations=256,stop_requested=pool_stopped)
         else
             FP._closure_compute(item.packet;context=contexts[slot],
                 seconds=max(0.0,min(300.0,deadline-time())),evaluations=256,stop_requested=pool_stopped)
@@ -602,6 +615,13 @@ function run(config)
         export_checkpoint!()
     end
     try
+        if !isempty(worker_specs)
+            # Workers load and build their contexts while the store opens.
+            remote=ClosureWorkers.start_pool(worker_specs;log_directory=joinpath(out,"workers"),depth=ClosureWorkers.queue_depth(config),
+                options=Dict{String,Any}("precompute_rank_table"=>get(config,"precompute_rank_table",true),
+                    "packed_rank_table"=>get(config,"packed_rank_table",true),
+                    "shared_property_cache_entries"=>Int(get(config,"shared_property_cache_entries",8192))))
+        end
         println("Opening the archived checkpoint once for continuous seed expansion");flush(stdout)
         opened=time();s=FP._closure_open(directory);validated=time()
         active_environment=ClosureOperations.bind_active_environment!(s)
@@ -612,7 +632,7 @@ function run(config)
         bound_cold=FP._closure_rows(s,"SELECT value FROM metadata WHERE key='closure_segment_root'")
         isempty(bound_cold) || push!(storage.paths,FP._closure_segment_root(s.db,directory))
         sources=String[@__FILE__,helper]
-        append!(sources,[joinpath(@__DIR__,name) for name in ("closure_baseline.jl","closure_refill.jl","closure_batches.jl","closure_operations.jl","closure_run.jl","closure_supervise.py")])
+        append!(sources,[joinpath(@__DIR__,name) for name in ("closure_baseline.jl","closure_refill.jl","closure_batches.jl","closure_operations.jl","closure_run.jl","closure_supervise.py","closure_workers.jl")])
         digests=Dict(basename(path)=>FP.DiscoveryEvidence.filehash(path) for path in sources if isfile(path))
         bundle_digest=bytes2hex(SHA.sha256(FP._closure_text(digests)))
         controller_archive=joinpath(directory,"execution","controllers",bundle_digest);mkpath(controller_archive)
@@ -638,6 +658,12 @@ function run(config)
         if haskey(config,"timing_history")
             prior=FP.JSON3.read(read(config["timing_history"],String),Dict{String,Any})
             append!(history,[Dict{String,Any}(t) for t in prior["timings"]])
+        end
+        if remote!==nothing
+            ClosureWorkers.await_pool!(remote;timeout=Float64(get(config,"worker_startup_seconds",900.0)))
+            ClosureWorkers.slot_count(remote)==concurrency || error("worker-process slots differ from the concurrency")
+            println(FP.JSON3.write(Dict("event"=>"workers_ready","workers"=>length(remote.workers),"slots"=>concurrency,
+                "seconds"=>remote.ready_seconds)));flush(stdout)
         end
         select_window!() || error("closure checkpoint contains no parent")
         active_started=time()
@@ -667,6 +693,14 @@ function run(config)
             "resources"=>resources,
             "active_environment"=>active_environment,
             "validation_seconds"=>validated-opened,"baseline_and_setup_seconds"=>active_started-validated,"descendant_expansion"=>true)
+        if remote!==nothing
+            budgets["compute_backend"]="worker_processes"
+            budgets["worker_processes"]=[Dict("cpus"=>w.spec.cpus,"threads"=>w.spec.threads,"gc_threads"=>w.spec.gc_threads,
+                "heap_size_hint"=>w.spec.heap_size_hint,"pid"=>get(w.hello,"pid",0),"setup_seconds"=>get(w.hello,"setup_seconds",0.0),
+                "rank_table_build_seconds"=>get(w.hello,"rank_table_build_seconds",0.0)) for w in remote.workers]
+            budgets["worker_ready_seconds"]=remote.ready_seconds
+            budgets["worker_queue_depth"]=ClosureWorkers.queue_depth(config)
+        end
         FP._closure_exec(s,"INSERT INTO sessions(started,heartbeat,pid,host,state,budgets) VALUES(?,?,?,?,?,?)",(FP._closure_now(),FP._closure_now(),getpid(),get(ENV,"HOSTNAME","localhost"),"running",FP._closure_text(budgets)))
         s.session=Int(only(FP._closure_rows(s,"SELECT last_insert_rowid() id"))["id"])
         FP.DiscoveryStore.atomic_toml(joinpath(directory,"execution","session-$(s.session).toml"),
@@ -724,6 +758,14 @@ function run(config)
         primary_failure=(exception=error,backtrace=catch_backtrace())
         state="failed";rethrow()
     finally
+        if remote!==nothing
+            try
+                worker_summary=ClosureWorkers.close_pool!(remote)
+                write(joinpath(out,"workers.json"),FP.JSON3.write(worker_summary))
+            catch error
+                println(stderr,"Closing the worker processes failed: ",sprint(showerror,error))
+            end
+        end
         if s!==nothing
             cleanup_failure=nothing
             try
@@ -790,6 +832,7 @@ function run(config)
         "elapsed_seconds"=>time()-started,"active_seconds"=>active_started>0 ? time()-active_started : 0.0,
         "seed_statistics"=>seed_statistics(history,completion_events,active_started;now=time(),completed_this_session,parent_scope),"window_origin"=>window_origin)
     result["runtime_metrics"]["property_cache"]=property_cache_statistics(contexts)
+    worker_summary===nothing || (result["runtime_metrics"]["worker_processes"]=worker_summary)
     try
         write(joinpath(out,"result.json"),FP.JSON3.write(result))
     catch error

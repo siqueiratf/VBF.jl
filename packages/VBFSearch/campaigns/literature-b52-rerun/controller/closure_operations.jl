@@ -11,8 +11,20 @@ const FP=VBFSearch
 function validate_resources(config;default_threads=Threads.nthreads(:default),
     interactive_threads=Threads.nthreads(:interactive),gc_threads=Threads.ngcthreads(),env=ENV,
     heap_size_hint=Int(Base.JLOptions().heap_size_hint))
-    concurrency=Int(get(config,"concurrency",default_threads))
-    concurrency>0 && concurrency<=default_threads || throw(ArgumentError("concurrency must be between 1 and Julia's $default_threads default threads"))
+    # Optional worker processes (closure_workers.jl): construction slots are
+    # remote, one per worker thread; the coordinator threads only wait on IO
+    # and run EA packets, so its own pools do not bound the concurrency.
+    remote=get(config,"worker_processes",Any[])
+    remote isa AbstractVector || throw(ArgumentError("worker_processes must be an array of tables"))
+    # Each worker thread serves `worker_queue_depth` (default 2) slots.
+    remote_slots=Int(get(config,"worker_queue_depth",2))*sum((Int(get(w,"threads",0)) for w in remote);init=0)
+    if remote_slots>0
+        concurrency=Int(get(config,"concurrency",remote_slots))
+        concurrency==remote_slots || throw(ArgumentError("concurrency must equal the $remote_slots worker-process slots (threads × worker_queue_depth)"))
+    else
+        concurrency=Int(get(config,"concurrency",default_threads))
+        concurrency>0 && concurrency<=default_threads || throw(ArgumentError("concurrency must be between 1 and Julia's $default_threads default threads"))
+    end
     explicit=Int(get(config,"cpu_allocation",0))
     scheduler=haskey(env,"SLURM_CPUS_PER_TASK") ? parse(Int,env["SLURM_CPUS_PER_TASK"]) : 0
     explicit>=0 && scheduler>=0 || throw(ArgumentError("CPU allocations must be nonnegative"))
@@ -22,12 +34,12 @@ function validate_resources(config;default_threads=Threads.nthreads(:default),
     # V5Work owns 2^23 Int32 counts and Int16 transform entries per
     # slot at n=8. This is a lower bound, excluding DU7/EA/result allocations.
     rank_bytes=get(config,"precompute_rank_table",true) ? (get(config,"packed_rank_table",true) ? 1<<26 : 1<<28) : 0
-    work_bytes=concurrency*(6*(1<<23)+256*sizeof(Int))+rank_bytes
+    work_bytes=remote_slots>0 ? 0 : concurrency*(6*(1<<23)+256*sizeof(Int))+rank_bytes
     heap_size_hint>=0 || throw(ArgumentError("heap size hint must be nonnegative"))
     warnings=String[]
     heap_size_hint>0 && heap_size_hint<2work_bytes && push!(warnings,
         "Julia heap-size-hint $(heap_size_hint) bytes leaves limited headroom above V5 work buffers ($work_bytes bytes minimum); measure a larger hint within the job memory allocation to reduce GC")
-    Dict{String,Any}("concurrency"=>concurrency,"default_threads"=>default_threads,
+    resources=Dict{String,Any}("concurrency"=>concurrency,"default_threads"=>default_threads,
         "interactive_threads"=>interactive_threads,"gc_threads"=>gc_threads,
         "runtime_threads"=>runtime_threads,"cpu_allocation"=>allocation,
         "concurrency_source"=>haskey(config,"concurrency") ? "explicit" : "all default-pool threads",
@@ -36,6 +48,12 @@ function validate_resources(config;default_threads=Threads.nthreads(:default),
         "warnings"=>warnings,
         "host"=>get(env,"HOSTNAME",Base.Libc.gethostname()),"pid"=>getpid(),
         "job_id"=>get(env,"SLURM_JOB_ID","none"))
+    if remote_slots>0
+        resources["compute_backend"]="worker_processes"
+        resources["worker_processes"]=length(remote);resources["remote_slots"]=remote_slots
+        resources["memory_estimate_scope"]="construction buffers live in the worker processes; coordinator holds EA scratch only"
+    end
+    resources
 end
 
 const REPORT_COUNTER_FIELDS=("total_parents","promoted_parents","exact_luts","quadratic_apn_luts",

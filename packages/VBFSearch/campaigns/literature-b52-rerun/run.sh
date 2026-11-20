@@ -6,6 +6,15 @@
 #   ./run.sh start   STATE THREADS    start a session in the background
 #                                     env: HEAP (16G), GC_THREADS (8), CPUS (taskset list,
 #                                     e.g. 0-55; default all), ROLLING (false), WINDOW (100)
+#                                     Worker processes (default off): WORKERS is a space-
+#                                     separated list of taskset CPU lists, one per worker,
+#                                     each optionally followed by :THREADS, e.g.
+#                                     WORKERS="56-63 64-71 72-79,184-191:16". WORKER_THREADS
+#                                     (8) is the default per worker; WORKER_GC (threads/2)
+#                                     and WORKER_HEAP (8G) set its GC threads and heap hint;
+#                                     WORKER_DEPTH (2) packets per worker thread are queued.
+#                                     With WORKERS, THREADS is the coordinator's own thread
+#                                     count (EA and IO only, e.g. 8) and CPUS pins it.
 #   ./run.sh stop    STATE            ask the controller to drain and stop
 #   ./run.sh status  STATE            print the last progress counters
 #   ./run.sh graph   STATE [SECONDS]  keep a graph builder running: a new snapshot of
@@ -42,6 +51,23 @@ start)
     -e "s|^rolling_windows = .*|rolling_windows = ${ROLLING:-false}|" \
     -e "s|^window_size = .*|window_size = ${WINDOW:-100}|" \
     "$here/controller/config.template.toml" > "$config"
+  if [ -n "${WORKERS:-}" ]; then
+    # Construction slots move to worker processes: concurrency = threads x depth.
+    total=0
+    for w in $WORKERS; do
+      cpus=${w%%:*}; t=${WORKER_THREADS:-8}
+      [[ $w == *:* ]] && t=${w##*:}
+      [[ $cpus =~ ^[0-9,-]+$ && $t =~ ^[1-9][0-9]*$ ]] || { echo "start: invalid worker '$w'"; exit 2; }
+      total=$((total + t))
+      printf '\n[[worker_processes]]\ncpus = "%s"\nthreads = %d\n' "$cpus" "$t" >> "$config"
+      [ -n "${WORKER_GC:-}" ] && printf 'gc_threads = %d\n' "$WORKER_GC" >> "$config"
+      [ -n "${WORKER_HEAP:-}" ] && printf 'heap_size_hint = "%s"\n' "$WORKER_HEAP" >> "$config"
+    done
+    depth=${WORKER_DEPTH:-2}
+    [[ $depth =~ ^[1-8]$ ]] || { echo "start: invalid WORKER_DEPTH '$depth'"; exit 2; }
+    # Top-level keys must precede the [[worker_processes]] tables.
+    sed -i "s|^concurrency = .*|concurrency = $((total * depth))\nworker_queue_depth = $depth|" "$config"
+  fi
   pin=()
   [ -n "${CPUS:-}" ] && pin=(taskset -c "$CPUS")
   mkdir -p "$state/tmp" "$state/logs"
