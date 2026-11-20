@@ -4,7 +4,8 @@
 #   ./run.sh setup   STATE            check inputs, unpack the code, install packages
 #   ./run.sh init    STATE            create the empty closure ledger from the roots
 #   ./run.sh start   STATE THREADS    start a session in the background
-#                                     (env HEAP, default 16G; GC_THREADS, default 8)
+#                                     env: HEAP (16G), GC_THREADS (8), CPUS (taskset list,
+#                                     e.g. 0-55; default all), ROLLING (false), WINDOW (100)
 #   ./run.sh stop    STATE            ask the controller to drain and stop
 #   ./run.sh status  STATE            print the last progress counters
 #   ./run.sh graph   STATE [SECONDS]  keep a graph builder running: a new snapshot of
@@ -37,12 +38,16 @@ start)
   stamp=$(date -u +%Y%m%dT%H%M%SZ)
   config=$state/config-$stamp.toml
   sed -e "s|@EVIDENCE@|evidence-$stamp|" -e "s|@THREADS@|$threads|" \
+    -e "s|^rolling_windows = .*|rolling_windows = ${ROLLING:-false}|" \
+    -e "s|^window_size = .*|window_size = ${WINDOW:-100}|" \
     "$here/controller/config.template.toml" > "$config"
+  pin=()
+  [ -n "${CPUS:-}" ] && pin=(taskset -c "$CPUS")
   mkdir -p "$state/tmp" "$state/logs"
   rm -f "$state/run/STOP"
   cd "$ws"
   OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 SQLITE_TMPDIR=$state/tmp \
-    setsid nohup julia "${julia_flags[@]}" --threads="$threads",1 --gcthreads="${GC_THREADS:-8}",1 --heap-size-hint="${HEAP:-16G}" \
+    setsid nohup "${pin[@]}" julia "${julia_flags[@]}" --threads="$threads",1 --gcthreads="${GC_THREADS:-8}",1 --heap-size-hint="${HEAP:-16G}" \
       --project="$project" "$here/controller/closure_run.jl" "$config" \
       > "$state/logs/session-$stamp.log" 2>&1 < /dev/null &
   echo $! > "$state/controller.pid"
