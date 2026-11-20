@@ -10,6 +10,7 @@
 #   ./run.sh status  STATE            print the last progress counters
 #   ./run.sh graph   STATE [SECONDS]  keep a graph builder running: a new snapshot of
 #                                     run/graph every SECONDS (default 1800), low priority
+#   ./run.sh graph-now STATE          build one graph snapshot now, then restart the builder
 #
 # STATE holds the code, ledger, evidence and logs. Put it on persistent storage
 # with at least 200 GB free. JULIA_DEPOT_PATH must be set (persistent too).
@@ -64,6 +65,23 @@ graph)
     --every-seeds 1 --min-seconds "$every" >> "$state/logs/graph.log" 2>&1 < /dev/null &
   echo $! > "$state/graph.pid"
   echo "graph: pid $(cat "$state/graph.pid"), every $every s, log $state/logs/graph.log";;
+graph-now)
+  # Stop the periodic builder first, so that two builds never share run/graph.
+  if [ -f "$state/graph.pid" ]; then
+    pid=$(cat "$state/graph.pid")
+    if kill -0 "$pid" 2>/dev/null; then
+      kill -- -"$pid" 2>/dev/null || kill "$pid"
+      while kill -0 "$pid" 2>/dev/null; do sleep 1; done
+    fi
+  fi
+  rm -rf "$state"/run/graph/.building-*
+  (cd "$ws" && nice -n 10 ionice -c3 julia "${julia_flags[@]}" --project="$project" \
+    "$here/../../../../docs/inspector/closure_graph.jl" --run "$state/run" --once) \
+    >> "$state/logs/graph.log" 2>&1
+  status=$?
+  "$0" graph "$state" "${3:-1800}" > /dev/null
+  [ $status -eq 0 ] && echo "graph-now: $(sed -n 's/.*"version":"\([^"]*\)".*/\1/p' "$state/run/graph/current.json")"
+  exit $status;;
 stop)
   # The controller polls RUN/STOP (and EVIDENCE/STOP), not STATE/STOP.
   touch "$state/run/STOP"; echo "stop: run/STOP written; the controller drains its work first";;
