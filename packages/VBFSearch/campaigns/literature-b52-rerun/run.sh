@@ -79,6 +79,15 @@ reports)
   fi
   # The structure report reads reports/classes.sqlite, which the catalog report creates.
   for _ in $(seq 120); do [ -f "$state/run/reports/classes.sqlite" ] && break; sleep 5; done
+  # A new run has no features cache yet; create the schema of the first campaign.
+  python3 - "$state/run/reports/features.sqlite" <<'PY'
+import sqlite3, sys
+db = sqlite3.connect(sys.argv[1])
+db.execute("CREATE TABLE IF NOT EXISTS features(sha TEXT PRIMARY KEY,bent INTEGER,c6 INTEGER,c4 INTEGER,"
+           "c2 INTEGER,degree INTEGER,du INTEGER,two INTEGER,three INTEGER,four INTEGER,identity_ok INTEGER) WITHOUT ROWID")
+db.execute("CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
+db.commit()
+PY
   if ! { [ -f "$state/structure-report.pid" ] && kill -0 "$(cat "$state/structure-report.pid")" 2>/dev/null; }; then
     (cd "$ws" && setsid nohup "${pin[@]}" nice -n 10 ionice -c3 julia "${julia_flags[@]}" --threads="$n" \
       --project="$project" "$tools/live_structure_report.jl" "$state/run" "$here/reports/structure-template.json" \
