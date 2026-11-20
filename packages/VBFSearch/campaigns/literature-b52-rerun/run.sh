@@ -11,6 +11,8 @@
 #   ./run.sh graph   STATE [SECONDS]  keep a graph builder running: a new snapshot of
 #                                     run/graph every SECONDS (default 1800), low priority
 #   ./run.sh graph-now STATE          build one graph snapshot now, then restart the builder
+#   ./run.sh reports STATE REF [N]    keep the catalog report (needs the published reference
+#                                     folder REF) and the structure report (N threads) running
 #
 # STATE holds the code, ledger, evidence and logs. Put it on persistent storage
 # with at least 200 GB free. JULIA_DEPOT_PATH must be set (persistent too).
@@ -65,6 +67,25 @@ graph)
     --every-seeds 1 --min-seconds "$every" >> "$state/logs/graph.log" 2>&1 < /dev/null &
   echo $! > "$state/graph.pid"
   echo "graph: pid $(cat "$state/graph.pid"), every $every s, log $state/logs/graph.log";;
+reports)
+  ref=${3:?REF: published reference folder}; n=${4:-8}
+  tools=$here/../../tools/analysis
+  pin=(); [ -n "${CPUS:-}" ] && pin=(taskset -c "$CPUS")
+  mkdir -p "$state/logs" "$state/run/reports"
+  if ! { [ -f "$state/catalog-report.pid" ] && kill -0 "$(cat "$state/catalog-report.pid")" 2>/dev/null; }; then
+    setsid nohup "${pin[@]}" nice -n 10 ionice -c3 python3 "$tools/live_catalog_report.py" "$state/run" "$ref" \
+      >> "$state/logs/catalog-report.log" 2>&1 < /dev/null &
+    echo $! > "$state/catalog-report.pid"
+  fi
+  # The structure report reads reports/classes.sqlite, which the catalog report creates.
+  for _ in $(seq 120); do [ -f "$state/run/reports/classes.sqlite" ] && break; sleep 5; done
+  if ! { [ -f "$state/structure-report.pid" ] && kill -0 "$(cat "$state/structure-report.pid")" 2>/dev/null; }; then
+    (cd "$ws" && setsid nohup "${pin[@]}" nice -n 10 ionice -c3 julia "${julia_flags[@]}" --threads="$n" \
+      --project="$project" "$tools/live_structure_report.jl" "$state/run" "$here/reports/structure-template.json" \
+      >> "$state/logs/structure-report.log" 2>&1 < /dev/null &
+     echo $! > "$state/structure-report.pid")
+  fi
+  echo "reports: catalog pid $(cat "$state/catalog-report.pid"), structure pid $(cat "$state/structure-report.pid")";;
 graph-now)
   # Stop the periodic builder first, so that two builds never share run/graph.
   if [ -f "$state/graph.pid" ]; then
