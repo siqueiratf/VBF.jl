@@ -29,8 +29,12 @@ function publish(db,run,out,template)
     try
         metadata=only([(n=Int(r.n),cutoff=Int(r.cutoff)) for r in SQL.execute(db,"SELECT COUNT(*) n,MAX(id) cutoff FROM current.classes")])
         total,cutoff=metadata.n,metadata.cutoff
-        for r in SQL.execute(db,"SELECT c.origin,c.absent,f.bent,f.c6,f.c4,f.c2,f.degree,f.du,f.two,f.three,f.four,f.identity_ok FROM current.classes c JOIN features f ON f.sha=c.sha")
-            group=String(r.origin)=="root" ? "seeds" : r.absent==1 ? "new" : "known"
+        # Read all rows before COMMIT: an unfinished result set keeps a statement open.
+        rows=[(origin=String(r.origin),absent=r.absent,bent=r.bent,c6=r.c6,c4=r.c4,c2=r.c2,degree=r.degree,
+                du=r.du,two=r.two,three=r.three,four=r.four,identity_ok=r.identity_ok) for r in
+            SQL.execute(db,"SELECT c.origin,c.absent,f.bent,f.c6,f.c4,f.c2,f.degree,f.du,f.two,f.three,f.four,f.identity_ok FROM current.classes c JOIN features f ON f.sha=c.sha")]
+        for r in rows
+            group=r.origin=="root" ? "seeds" : r.absent==1 ? "new" : "known"
             totals[group]+=1;analyzed+=1;holds&=r.identity_ok==1
             for (name,key) in (("bent",(group,Int(r.bent),Int(r.c6),Int(r.c4),Int(r.c2))),
                     ("du",(group,Int(r.du))),("degree",(group,Int(r.degree))),
@@ -67,8 +71,10 @@ end
 function watch(run,template_path;batch_size=2048,refresh_seconds=60)
     run=abspath(run);out=joinpath(run,"reports");template=JSON3.read(read(template_path,String),Dict{String,Any})
     db=SQLite.DB(joinpath(out,"features.sqlite"))
-    SQL.execute(db,"PRAGMA journal_mode=WAL");SQL.execute(db,"PRAGMA synchronous=NORMAL");SQL.execute(db,"PRAGMA busy_timeout=10000")
-    SQL.execute(db,"PRAGMA cache_size=-131072")
+    # A PRAGMA can return a row; read it, or its statement stays open and blocks COMMIT.
+    for pragma in ("journal_mode=WAL","synchronous=NORMAL","busy_timeout=10000","cache_size=-131072")
+        collect(SQL.execute(db,"PRAGMA "*pragma))
+    end
     SQL.execute(db,"ATTACH DATABASE ? AS current",("file:"*joinpath(out,"classes.sqlite")*"?mode=ro",))
     last_publish=0.0
     try
