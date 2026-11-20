@@ -1,0 +1,89 @@
+schema = "vbfsearch-literature-closure-plan-v2"
+state = "Published initial roots profile-qualified and EA-deduplicated; execution controller not yet implemented."
+objective = "Reproducibly enumerate the quadratic APN closure reachable from published P6 bminK b6=52 roots by the specified extension and switching operations."
+all_eight_bit_apns = false
+all_profile_b6_52_apns = false
+historical_recovery_guaranteed = false
+
+[roots]
+role = "construction input"
+n = 8
+m = 8
+algebraic_degree = 2
+selection = "Only published quadratic eight-bit members whose depth-six P6 profile has final bent count 52, using the historical bminK convention; include both b5=28 and b5=30 branches."
+sources = ["beierle2025_n8", "beierleleander2022_n8", "beierleleanderperrin2022_n8", "edelpott2009_n8", "galissant2026_n8", "langevin_may2025_extra_n8", "simonberg_gf4_n8", "taniguchi2019_n8", "wengtangong2013_n8", "yuperrin2022_qam_n8", "yuwangli2014_qam_n8"]
+source_inventory = "published_pool.toml"
+source_inventory_role = "Eligible published corpus pool; member intervals are not scheduled root lists."
+qualified_root_count = 24294
+qualified_root_file = "seed_count/verified_roots.tsv"
+qualified_records_before_deduplication = 49605
+qualified_distinct_luts_before_ea_deduplication = 49601
+qualified_b5_28_classes = 3177
+qualified_b5_30_classes = 21117
+qualification_evidence = "seed_count/result.toml"
+equivalence_evidence = "seed_count/equivalence_result.toml"
+qualification_replay_inputs = "seed_count/replay/"
+profile_depth = 6
+profile_order = "bminK"
+profile_b6 = 52
+profile_definition = "Greatest nested flag under maximize b, then minimize K; last profile pair must have b=52. This is not the unrestricted maximum over every six-dimensional component space."
+profile_failure_policy = "Keep as unresolved; do not admit or exclude from the qualified root set until resolved."
+excluded_corpora = ["legacy20261009_n8"]
+historical_discoveries_as_roots = false
+duplicate_policy = "Exact LUT equality or replayed positive EA witnesses; signature equality alone never merges parents."
+
+[reference]
+role = "comparison only"
+sources = ["beierle2025_n8", "beierleleander2022_n8", "beierleleanderperrin2022_n8", "edelpott2009_n8", "functions", "galissant2026_n8", "langevin_may2025_extra_n8", "simonberg_gf4_n8", "taniguchi2019_n8", "wengtangong2013_n8", "yuperrin2022_qam_n8", "yuwangli2014_qam_n8"]
+literature_complete = false
+
+[recovery]
+role = "comparison only; never construction input"
+expected_distinct_signature_targets = 190638
+freeze_manifest = "packages/VBFSearch/data/research/freezes/apn-20261014-190454/freeze.json"
+earlier_targets = "packages/VBFSearch/data/research/freezes/apn-20261014-190454/representatives.tsv"
+pilot_targets = ["packages/VBFSearch/data/search/b50-pilot-20261014/additional_b50.tsv", "packages/VBFSearch/data/search/b50-pilot-20261014/additional_b52.tsv"]
+statuses = ["not_recovered", "signature_match_pending_equivalence", "recovered_with_verified_equivalence"]
+recovery_certificate = "A verified construction path from a published root, followed by exact LUT equality or a replayed positive EA witness to the target."
+
+[methods.v5]
+target_b6 = 52
+target_meaning = "Exact bent count in the selected six-dimensional extension space; no restriction on the child's global maximum or P6 profile."
+bent = "max"
+coverage = "All maximizing five-dimensional spaces of each parent, all eligible cosets, and all allowed APN completions."
+max_kernel = 23
+heuristic_histogram_pruning = false
+scope_limit = "Maximal-five-space selection is a restricted construction, not a global classification."
+
+[methods.switching]
+coverage = "All 255 nonzero output directions and all nonzero combinations in every complete switching quotient."
+quadratic_children = "Admit to the shared parent frontier without a b6/profile filter."
+nonquadratic_children = "Retain as terminal observations for separate CCZ analysis; not parents in this quadratic closure."
+
+[promotion]
+eligible = "Every independently verified quadratic eight-bit APN class reached by either method."
+require_literature_absence = false
+global_b6_filter = "none"
+p6_profile_filter = "none"
+unresolved_signature_collisions = "Retain distinct LUTs and unresolved comparisons; never silently discard them."
+historical_target_match = "Do not substitute the historical LUT as a construction input; retain the newly derived LUT and its provenance."
+
+[provenance]
+root_evidence = ["public source/member identity", "pinned original and compact-source digests", "decoding convention", "root LUT digest", "VBF validation"]
+construction_evidence = ["parent LUT digest", "method and scientific parameters", "unit or quotient cursor", "construction witness", "child LUT digest", "fresh APN validation", "archived implementation identity"]
+equivalence_evidence = ["both endpoint LUT digests", "invertible maps", "affine drift", "verified equations on all 256 inputs"]
+retain_alternative_paths = true
+
+[scheduling]
+logical_job_identity = "Verified parent EA class plus method and scientific parameter identity."
+feed_roots_and_descendants_fairly = true
+interleave_methods = true
+freeze_each_batch = true
+resume_indivisible_search_chunks = true
+exact_partial_space_reuse = "Allowed only for identical canonical V5, target, and algorithm scope; never by equal histograms alone."
+
+[completion]
+scope = "Quadratic parent closure under these operations from the published roots satisfying the declared initial P6 profile predicate."
+requirements = ["Published-pool profile qualification complete with no unresolved members", "All profile-qualified initial roots covered", "No pending or running construction jobs", "All complete cursors verified", "No unresolved parent equivalence decisions", "No truncated kernels", "No missing construction edges"]
+budget_stop = "Paused with saved coverage; never exhausted."
+missing_recovery_target = "Not recovered; no reachability claim until the declared closure is actually exhausted."

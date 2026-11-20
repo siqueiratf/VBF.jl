@@ -1,0 +1,45 @@
+# Session-11 settings of the literature b6=52 closure (config.toml of
+# controller-cpu-optimized-20261020, SHA-256 2095cde4...), with two changes for
+# a fresh campaign:
+#   - parent_scope = "all": expand the 24,294 published roots first, then the
+#     admitted classes (session 11 resumed with the roots already complete).
+#   - Paths are relative to the generated config in STATE/, and the storage
+#     limits fit the shared VLab volume.
+# run.sh fills @EVIDENCE@ with a new directory for each session.
+run = "run"
+evidence = "@EVIDENCE@"
+concurrency = @THREADS@
+window_size = 100
+equivalence_seconds = 1.0
+equivalence_nodes = 100000
+precompute_rank_table = true
+packed_rank_table = true
+parent_scope = "all"
+baseline_policy = "summary"
+reservation_horizon = 1024
+indexed_ea_queue = true
+storage_paths = ["."]
+storage_max_bytes = 214748364800
+min_free_bytes = 107374182400
+storage_reserve_bytes = 8589934592
+storage_check_seconds = 15.0
+telemetry_segment_bytes = 16777216
+telemetry_keep_segments = 4
+measure_result_bytes = false
+shutdown_grace_seconds = 3600.0
+checkpoint_directory = "snapshots"
+checkpoint_interval_seconds = 7200.0
+checkpoint_keep = 1
+checkpoint_on_stop = true
+evidence_segment_directory = "run/cold"
+evidence_segment_interval_seconds = 60.0
+evidence_segment_rows = 256
+evidence_segment_bytes = 16777216
+timing_history = "run/execution/seed-timing-history.json"
+report_interval_seconds = 15.0
+global_count_interval_seconds = 60.0
+shared_property_cache_entries = 8192
+rolling_windows = false
+reservation_refill_batch = 16
+max_apply_per_step = 32
+cached_global_counts = true
