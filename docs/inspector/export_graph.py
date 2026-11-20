@@ -6,6 +6,7 @@
 """Export a class-graph snapshot (closure_graph.jl output) as compact CSR files.
 
   export_graph.py SNAPSHOT OUT [--reports DIR] [--subsets 1000,10000,100000]
+                  [--only COLUMN]
 
 SNAPSHOT is a folder with edges.bin, flags.bin and nodes-*.json. --reports adds
 the columns of classes.sqlite and features.sqlite; each row is matched by class
@@ -17,7 +18,12 @@ id and must have the same LUT SHA-256. OUT gets:
   edges.parquet   src, dst, methods (portable edge list)
   manifest.json   counts, formats, provenance and SHA-256 of each file
   subsets/<N>/    induced subgraphs of N vertices (breadth-first, undirected,
-                  from vertex 0), same layout
+                  from the first vertex of the largest weak component), same layout
+
+--only COLUMN keeps the vertices where that boolean column of nodes.parquet is
+true (for example outside_published_catalog, with --reports) and their induced
+edges. nodes.parquet then adds external_in_degree and external_out_degree: the
+edges to or from the vertices that were removed.
 
 All binary files are little-endian. methods: bit 0 = V5, bit 1 = switching.
 Self-loops are not edges; nodes.parquet keeps their counts.
@@ -153,6 +159,7 @@ def main():
     ap.add_argument("snapshot"); ap.add_argument("out")
     ap.add_argument("--reports", help="folder with classes.sqlite and features.sqlite")
     ap.add_argument("--subsets", default="1000,10000,100000")
+    ap.add_argument("--only", help="keep only vertices where this boolean column is true")
     a = ap.parse_args()
     t0 = time.time()
     n, src, dst, methods, flags, nodes = read_snapshot(a.snapshot)
@@ -189,12 +196,38 @@ def main():
         provenance["reports_note"] = ("classes.sqlite comes from a later run of the same campaign; every row "
                                       "matched this snapshot by class id and LUT SHA-256")
     table = pa.table(cols)
+    if a.only:
+        keep = np.asarray(table[a.only].to_numpy(zero_copy_only=False), dtype=bool)
+        index = np.full(n, -1, dtype=np.int64)
+        index[keep] = np.arange(keep.sum())
+        inside = (index[src] >= 0) & (index[dst] >= 0)
+        ext_out = np.bincount(src[(index[src] >= 0) & (index[dst] < 0)], minlength=n)[keep]
+        ext_in = np.bincount(dst[(index[dst] >= 0) & (index[src] < 0)], minlength=n)[keep]
+        table = table.filter(pa.array(keep))
+        n = int(keep.sum())
+        src, dst, methods = index[src[inside]].astype(np.uint32), index[dst[inside]].astype(np.uint32), methods[inside]
+        wcc, wcc_sizes = weak_components(n, src, dst)
+        for name, values in (("vertex", np.arange(n, dtype=np.uint32)),
+                             ("out_degree", np.bincount(src, minlength=n).astype(np.uint32)),
+                             ("in_degree", np.bincount(dst, minlength=n).astype(np.uint32)),
+                             ("weak_component", wcc)):
+            table = table.set_column(table.schema.get_field_index(name), name, pa.array(values))
+        table = table.append_column("external_out_degree", pa.array(ext_out.astype(np.uint32)))
+        table = table.append_column("external_in_degree", pa.array(ext_in.astype(np.uint32)))
+        provenance["filter"] = {"column": a.only, "kept_vertices": n,
+                                "rule": "induced subgraph; vertex renumbered; class_id kept",
+                                "weak_component_sizes_top10": [int(x) for x in wcc_sizes[:10]],
+                                "weak_components": int(len(wcc_sizes))}
     m = write_graph(a.out, n, src, dst, methods, table, provenance)
     print(f"full graph: {m['vertices']} vertices, {m['edges']} edges, "
-          f"{len(wcc_sizes)} weak components ({time.time()-t0:.1f} s)", flush=True)
+          f"{len(wcc_sizes)} weak components, largest {int(wcc_sizes[0])} ({time.time()-t0:.1f} s)", flush=True)
+    start = int(np.flatnonzero(wcc == 0)[0])  # first vertex of the largest weak component
 
     for size in [int(s) for s in a.subsets.split(",") if s]:
-        keep = subset(n, src, dst, size)
+        if size > int(wcc_sizes[0]):
+            print(f"subset {size}: skipped, larger than the largest weak component", flush=True)
+            continue
+        keep = subset(n, src, dst, size, start)
         index = np.full(n, -1, dtype=np.int64)
         index[keep] = np.arange(len(keep))
         mask = (index[src] >= 0) & (index[dst] >= 0)
@@ -204,7 +237,7 @@ def main():
                              pa.array(np.bincount(index[src[mask]], minlength=len(keep)).astype(np.uint32)))
         sub = sub.set_column(sub.schema.get_field_index("in_degree"), "in_degree",
                              pa.array(np.bincount(index[dst[mask]], minlength=len(keep)).astype(np.uint32)))
-        sp = dict(provenance, subset={"method": "breadth-first ball on the undirected graph from vertex 0, "
+        sp = dict(provenance, subset={"method": f"breadth-first ball on the undirected graph from vertex {start}, "
                                       "induced subgraph; vertex renumbered, class_id kept", "size": int(len(keep))})
         sm = write_graph(os.path.join(a.out, "subsets", str(size)), len(keep),
                          index[src[mask]].astype(np.uint32), index[dst[mask]].astype(np.uint32), methods[mask], sub, sp)
