@@ -5,7 +5,8 @@
 #   ./run.sh init    STATE            create the empty closure ledger from the roots
 #   ./run.sh start   STATE THREADS    start a session in the background
 #                                     env: HEAP (16G), GC_THREADS (8), CPUS (taskset list,
-#                                     e.g. 0-55; default all), ROLLING (false), WINDOW (100)
+#                                     e.g. 0-55; default all), ROLLING (false), WINDOW (100),
+#                                     APPLY_STEP (32: applies per synchronous commit)
 #                                     Worker processes (default off): WORKERS is a space-
 #                                     separated list of taskset CPU lists, one per worker,
 #                                     each optionally followed by :THREADS, e.g.
@@ -52,6 +53,7 @@ start)
   sed -e "s|@EVIDENCE@|evidence-$stamp|" -e "s|@THREADS@|$threads|" \
     -e "s|^rolling_windows = .*|rolling_windows = ${ROLLING:-false}|" \
     -e "s|^window_size = .*|window_size = ${WINDOW:-100}|" \
+    -e "s|^max_apply_per_step = .*|max_apply_per_step = ${APPLY_STEP:-32}|" \
     "$here/controller/config.template.toml" > "$config"
   if [ -n "${WORKERS:-}" ]; then
     # Construction slots move to worker processes: concurrency = threads x depth.
