@@ -24,12 +24,14 @@ os.makedirs(os.path.join(dest, "dashboard"), exist_ok=True)
 db = sqlite3.connect(f"file:{run}/closure.sqlite?mode=ro", uri=True)
 db.execute("BEGIN")  # one read snapshot for all queries
 query = """
+WITH first(child_id, id) AS (SELECT child_id, MIN(id) FROM paths GROUP BY child_id)
 SELECT p.id, p.candidate_id, p.sigma, p.origin, p.source, p.admitted_utc,
        c.lut, c.lut_text,
        f.parent_id, f.method, f.cursor, f.witness
 FROM parents p
 JOIN closure_candidates c ON c.id = p.candidate_id
-LEFT JOIN paths f ON f.id = (SELECT MIN(id) FROM paths WHERE child_id = p.candidate_id)
+LEFT JOIN first ON first.child_id = p.candidate_id
+LEFT JOIN paths f ON f.id = first.id
 ORDER BY p.id
 """
 path = os.path.join(dest, "classes.tsv.zst")
