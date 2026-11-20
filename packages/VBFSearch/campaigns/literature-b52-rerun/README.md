@@ -38,3 +38,19 @@ export JULIA_DEPOT_PATH=/persistent/julia-depot
 A session stops when `STOP` exists, and a new `start` resumes from the ledger.
 The state folder must not go into git. Keep a second copy of the ledger
 outside the machine, with its SHA-256.
+
+## CCZ-to-permutation watcher
+
+`./run.sh ccz STATE [THREADS]` starts a low-priority process (nice 15, idle
+I/O class; `CCZ_CPUS` pins it with taskset) that tests every admitted class
+for a permutation in its CCZ class (Canteaut–Perrin criterion,
+`VBF.ccz_permutation_search`). It reads `run/closure.sqlite` read-only in short
+transactions, in parent id order (the roots first), and writes
+`run/reports/ccz_permutation.sqlite` (one row per class) and
+`run/reports/ccz_permutation.json` (counts for the dashboard). A restart
+resumes. `./run.sh ccz-stop STATE` or SIGTERM to the pid in `STATE/ccz.pid`
+stops it after the current class. Any witness is replayed at once by an
+independent path and listed in the JSON (`witnesses`, `witness_sha256`). The
+test source comes from this checkout (`packages/VBF/src/equivalence/ccz/
+permutation_witness.jl`), not from the pinned workspace; its SHA-256 is
+stored in every row.

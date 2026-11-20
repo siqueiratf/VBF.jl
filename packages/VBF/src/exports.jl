@@ -69,6 +69,8 @@ export code_weight_enumerator
 export binary_code_equivalence, verify_code_equivalence, are_codes_equivalent
 export walsh_zeroes, walsh_zeroes_size
 export thickness, thickness_spectrum, enumerate_ccz_class
+export CCZPermutationSearch, ccz_permutation_search, ccz_permutation_witness
+export ccz_permutation_from_witness
 export is_ccz_equivalent_to_permutation
 export TUDecomposition, tu_decomposition_from_space_basis, get_tu_decompositions
 export apply_tu, core, twist

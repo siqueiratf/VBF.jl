@@ -11,6 +11,12 @@
 #   ./run.sh graph   STATE [SECONDS]  keep a graph builder running: a new snapshot of
 #                                     run/graph every SECONDS (default 1800), low priority
 #   ./run.sh graph-now STATE          build one graph snapshot now, then restart the builder
+#   ./run.sh ccz     STATE [THREADS]  keep the CCZ-to-permutation watcher running (default 2
+#                                     threads, low priority; env CCZ_CPUS: taskset list,
+#                                     CCZ_EVERY: poll seconds, default 60). It reads run/
+#                                     closure.sqlite read-only and writes run/reports/
+#                                     ccz_permutation.{sqlite,json}
+#   ./run.sh ccz-stop STATE           stop the watcher after its current class
 #
 # STATE holds the code, ledger, evidence and logs. Put it on persistent storage
 # with at least 200 GB free. JULIA_DEPOT_PATH must be set (persistent too).
@@ -82,6 +88,28 @@ graph-now)
   "$0" graph "$state" "${3:-1800}" > /dev/null
   [ $status -eq 0 ] && echo "graph-now: $(sed -n 's/.*"version":"\([^"]*\)".*/\1/p' "$state/run/graph/current.json")"
   exit $status;;
+ccz)
+  threads=${3:-2}
+  if [ -f "$state/ccz.pid" ] && kill -0 "$(cat "$state/ccz.pid")" 2>/dev/null; then
+    echo "ccz: watcher already running (pid $(cat "$state/ccz.pid"))"; exit 0
+  fi
+  mkdir -p "$state/logs" "$state/run/reports"
+  stopf=$state/run/reports/ccz_permutation.STOP
+  rm -f "$stopf"
+  pin=()
+  [ -n "${CCZ_CPUS:-}" ] && pin=(taskset -c "$CCZ_CPUS")
+  cd "$ws"
+  # The wrapper turns SIGTERM into the STOP file: the watcher finishes its class.
+  OPENBLAS_NUM_THREADS=1 setsid nohup bash -c \
+    'f=$1; shift; trap "touch \"$f\"" TERM INT; "$@" & c=$!; while kill -0 $c 2>/dev/null; do wait $c; done' \
+    ccz "$stopf" "${pin[@]}" nice -n 15 ionice -c3 julia "${julia_flags[@]}" --threads="$threads" \
+    --project="$project" "$here/../../tools/ccz_permutation_batch.jl" --watch "$state/run" \
+    --every "${CCZ_EVERY:-60}" >> "$state/logs/ccz.log" 2>&1 < /dev/null &
+  echo $! > "$state/ccz.pid"
+  echo "ccz: pid $(cat "$state/ccz.pid"), $threads threads, log $state/logs/ccz.log";;
+ccz-stop)
+  touch "$state/run/reports/ccz_permutation.STOP"
+  echo "ccz-stop: STOP written; the watcher stops after its current class";;
 stop)
   # The controller polls RUN/STOP (and EVIDENCE/STOP), not STATE/STOP.
   touch "$state/run/STOP"; echo "stop: run/STOP written; the controller drains its work first";;
