@@ -6,6 +6,8 @@
 #   ./run.sh start   STATE THREADS    start a session in the background
 #                                     env: HEAP (16G), GC_THREADS (8), CPUS (taskset list,
 #                                     e.g. 0-55; default all), ROLLING (false), WINDOW (100)
+#                                     STEERING (none | region; see STEERING.md),
+#                                     STEERING_FIFO_SHARE (0.5), STEERING_SCORE (ratio | expanded)
 #   ./run.sh stop    STATE            ask the controller to drain and stop
 #   ./run.sh status  STATE            print the last progress counters
 #   ./run.sh graph   STATE [SECONDS]  keep a graph builder running: a new snapshot of
@@ -41,6 +43,9 @@ start)
   sed -e "s|@EVIDENCE@|evidence-$stamp|" -e "s|@THREADS@|$threads|" \
     -e "s|^rolling_windows = .*|rolling_windows = ${ROLLING:-false}|" \
     -e "s|^window_size = .*|window_size = ${WINDOW:-100}|" \
+    -e "s|^steering = .*|steering = \"${STEERING:-none}\"|" \
+    -e "s|^steering_fifo_share = .*|steering_fifo_share = ${STEERING_FIFO_SHARE:-0.5}|" \
+    -e "s|^steering_score = .*|steering_score = \"${STEERING_SCORE:-ratio}\"|" \
     "$here/controller/config.template.toml" > "$config"
   pin=()
   [ -n "${CPUS:-}" ] && pin=(taskset -c "$CPUS")

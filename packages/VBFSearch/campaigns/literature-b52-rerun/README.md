@@ -18,6 +18,7 @@ old class IDs or counts, because the admission order depends on the machine
 | `reports/structure-template.json` | The template of the structure report. |
 | `SHA256SUMS` | Digests of the files above. |
 | `run.sh` | Setup, initialization, start, stop and status. |
+| `STEERING.md` | Optional region steering of the expansion order (off by default; `STEERING=region`). |
 
 The newer search code of `feat/apn-closure-campaign` (branch `search-v2`) has
 speed changes that did not run at scale with this controller.

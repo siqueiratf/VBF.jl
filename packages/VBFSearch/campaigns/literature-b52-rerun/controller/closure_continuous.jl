@@ -17,6 +17,7 @@ include("closure_baseline.jl")
 include("closure_refill.jl")
 include("closure_batches.jl")
 include("closure_operations.jl")
+include("closure_steering.jl")
 using .ClosureOperations: validate_resources
 const _closure_rows=FP._closure_rows
 const _closure_count=FP._closure_count
@@ -62,8 +63,10 @@ end
 
 Fallback owners may lie outside the construction scope; their selection kind
 instructs the controller to dispatch only global EA work and no constructions.
+With `steering` options (see closure_steering.jl and STEERING.md) the
+construction window of an origin comes from the region rule instead of FIFO.
 """
-function select_parents(db,window_size;parent_scope="all",fallback=false,excluded_parents=Int[],only_origin=nothing)
+function select_parents(db,window_size;parent_scope="all",fallback=false,excluded_parents=Int[],only_origin=nothing,steering=nothing)
     window_size>0 || throw(ArgumentError("invalid window size"))
     parent_scope in ("all","discovered") || throw(ArgumentError("invalid parent scope"))
     excluded=isempty(excluded_parents) ? "0" : join(sort!(unique(Int.(excluded_parents))),",")
@@ -71,7 +74,8 @@ function select_parents(db,window_size;parent_scope="all",fallback=false,exclude
     origins=parent_scope=="discovered" ? ("discovered",) : ("root","discovered")
     for origin in origins
         only_origin===nothing || origin==only_origin || continue
-        rows=FP._closure_rows(db,"SELECT id,source,origin FROM parents p WHERE p.origin=? AND $unfinished ORDER BY id LIMIT ?",(origin,window_size))
+        rows=steering!==nothing ? ClosureSteering.steered_rows(db,window_size,origin,Set{Int}(Int.(excluded_parents)),steering) :
+            FP._closure_rows(db,"SELECT id,source,origin FROM parents p WHERE p.origin=? AND $unfinished ORDER BY id LIMIT ?",(origin,window_size))
         isempty(rows) || return rows
     end
     if fallback
@@ -157,6 +161,7 @@ function run(config)
     max_windows>0 || throw(ArgumentError("invalid window limit"))
     parent_scope=String(get(config,"parent_scope","all"))
     parent_scope in ("all","discovered") || throw(ArgumentError("invalid parent scope"))
+    steering=ClosureSteering.steering_options(config)
     execution_scope=parent_scope=="discovered" ? "recursively expand discovered quadratic classes only; published roots retained as completed provenance" : "finish remaining published roots, then recursively expand admitted quadratic classes"
     ispath(out) && error("evidence directory must be new")
     mkpath(out)
@@ -203,7 +208,8 @@ function run(config)
     for (source,name) in ((@__FILE__,"controller.jl"),(joinpath(@__DIR__,"closure_baseline.jl"),"baseline-controller.jl"),
             (joinpath(@__DIR__,"closure_refill.jl"),"refill-controller.jl"),
             (joinpath(@__DIR__,"closure_batches.jl"),"batches-controller.jl"),
-            (joinpath(@__DIR__,"closure_operations.jl"),"operations-controller.jl"),(helper,"seed-progress-helper.jl"))
+            (joinpath(@__DIR__,"closure_operations.jl"),"operations-controller.jl"),(helper,"seed-progress-helper.jl"),
+            (joinpath(@__DIR__,"closure_steering.jl"),"closure_steering.jl"))
         cp(source,joinpath(out,name))
         # Preserve the literal include filenames as well as historical evidence
         # aliases, so the copied controller can resolve every sibling helper.
@@ -234,7 +240,7 @@ function run(config)
     cosets(rows)=sum(max(0,Int(j["direction"])-1) for j in rows if j["kind"]=="v5";init=0)
     count_status(rows,kinds,status)=count(j->j["kind"] in kinds && j["status"]==status,rows)
     function select_window!()
-        roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true)
+        roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true,steering)
         isempty(roots) && return false
         for p in parents
             haskey(timings,p) && haskey(timings[p],"completed_utc") && delete!(timings,p)
@@ -487,7 +493,7 @@ function run(config)
         end
         if length(cohorts)<2 && windows_started<max_windows && !stopped()
             roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,
-                excluded_parents=parents,only_origin=window_origin)
+                excluded_parents=parents,only_origin=window_origin,steering)
             if !isempty(roots)
                 # Fold existing deltas once before adding potentially resumed
                 # parents, whose previous work is already included in base.
@@ -612,7 +618,7 @@ function run(config)
         bound_cold=FP._closure_rows(s,"SELECT value FROM metadata WHERE key='closure_segment_root'")
         isempty(bound_cold) || push!(storage.paths,FP._closure_segment_root(s.db,directory))
         sources=String[@__FILE__,helper]
-        append!(sources,[joinpath(@__DIR__,name) for name in ("closure_baseline.jl","closure_refill.jl","closure_batches.jl","closure_operations.jl","closure_run.jl","closure_supervise.py")])
+        append!(sources,[joinpath(@__DIR__,name) for name in ("closure_baseline.jl","closure_refill.jl","closure_batches.jl","closure_operations.jl","closure_steering.jl","closure_run.jl","closure_supervise.py")])
         digests=Dict(basename(path)=>FP.DiscoveryEvidence.filehash(path) for path in sources if isfile(path))
         bundle_digest=bytes2hex(SHA.sha256(FP._closure_text(digests)))
         controller_archive=joinpath(directory,"execution","controllers",bundle_digest);mkpath(controller_archive)
@@ -628,6 +634,7 @@ function run(config)
         end
         FP.DiscoveryStore.atomic_toml(joinpath(controller_archive,"files.toml"),digests)
         FP._closure_count(s,"SELECT COUNT(*) n FROM sessions WHERE finished='' ")==0 || error("source session unfinished")
+        steering===nothing || ClosureSteering.ensure_table!(s)
         if indexed_ea_queue
             FP._closure_exec(s,"CREATE INDEX IF NOT EXISTS jobs_pending_ea ON jobs(id,last_session) WHERE kind='deduplicate' AND status IN ('pending','paused')")
         end
@@ -656,6 +663,7 @@ function run(config)
             "scheduler"=>"bounded reserved FIFO; continuous slot refill; ordered durable apply",
             "scheduler_determinism"=>"FIFO reservation and application for a fixed eligible frontier; retry cooldowns and wall-clock budgets retained",
             "reservation_horizon"=>max_pending,"reservation_refill_batch"=>reservation_refill_batch,"rolling_windows"=>rolling_windows,"max_overlapping_windows"=>rolling_windows ? 2 : 1,
+            "steering"=>ClosureSteering.steering_record(steering),
             "report_interval_seconds"=>report_interval,"global_count_interval_seconds"=>global_count_interval,"cached_global_counts"=>cached_global_counts,
             "coordinator_transactions"=>"bounded steps, per-application savepoints, FULL synchronous commit",
             "max_apply_per_step"=>max_apply_per_step,"cached_control_statements"=>true,

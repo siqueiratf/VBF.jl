@@ -7,6 +7,8 @@
 #   - Paths are relative to the generated config in STATE/, and the storage
 #     limits fit the shared VLab volume.
 # run.sh fills @EVIDENCE@ with a new directory for each session.
+# steering = "none" keeps the FIFO order of session 11. "region" is the optional
+# method of STEERING.md: it changes the order in which classes are expanded.
 run = "run"
 evidence = "@EVIDENCE@"
 concurrency = @THREADS@
@@ -43,3 +45,6 @@ rolling_windows = false
 reservation_refill_batch = 16
 max_apply_per_step = 32
 cached_global_counts = true
+steering = "none"
+steering_fifo_share = 0.5
+steering_score = "ratio"
