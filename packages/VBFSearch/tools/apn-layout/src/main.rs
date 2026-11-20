@@ -5,9 +5,12 @@
 //!   apn-layout --export DIR --out RUN [--graph-dir DIR] [--version-tag V] [--fixed-time]
 //!   writes RUN/graph/<version> (or --graph-dir DIR/<version>).
 //! Snapshot mode (a closure_graph.jl snapshot and reports/features.sqlite):
-//!   apn-layout --snapshot GRAPH/VERSION --features FILE --out DRAWING [--version-tag V] [--fixed-time]
+//!   apn-layout --snapshot GRAPH/VERSION --features FILE [--classes FILE] --out DRAWING
+//!     [--version-tag V] [--fixed-time]
 //!   writes DRAWING/current.json and DRAWING/<version>. Edges, flags and node
 //!   chunks are linked (or copied) from the snapshot; only positions change.
+//!   --classes (reports/classes.sqlite) adds status.bin (0 unknown, 1 catalog-
+//!   matching, 2 new), cells.json and ellipses.json (see status.rs).
 //!
 //! --fixed-time takes all timestamps from the input and writes 0.0 for the
 //! timings, so two runs give byte-identical files.
@@ -17,6 +20,7 @@ mod graph;
 mod input;
 mod layout;
 mod snapshot;
+mod status;
 
 use sha2::{Digest, Sha256};
 use snapshot::{Node, Snapshot, J};
@@ -24,7 +28,8 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-const SOURCES: [&[u8]; 6] = [
+const SOURCES: [&[u8]; 7] = [
+    include_bytes!("status.rs"),
     include_bytes!("main.rs"),
     include_bytes!("layout.rs"),
     include_bytes!("input.rs"),
@@ -34,7 +39,7 @@ const SOURCES: [&[u8]; 6] = [
 ];
 const SEMANTICS: &str = "Observed construction graph of quadratic APN CCZ/EA classes; incomplete coverage.";
 const USAGE: &str = "apn-layout --export DIR --out RUN [--graph-dir DIR] [--version-tag V] [--fixed-time]\n\
-apn-layout --snapshot GRAPH/VERSION --features FEATURES.sqlite --out DRAWING [--version-tag V] [--fixed-time]";
+apn-layout --snapshot GRAPH/VERSION --features FEATURES.sqlite [--classes CLASSES.sqlite] --out DRAWING [--version-tag V] [--fixed-time]";
 
 /// "2026-10-19T20:25:04.634Z" for a UNIX time in milliseconds.
 fn utc(ms: u64) -> String {
@@ -78,6 +83,7 @@ struct Options {
     export: Option<PathBuf>,
     snapshot: Option<PathBuf>,
     features: Option<PathBuf>,
+    classes: Option<PathBuf>,
     out: Option<PathBuf>,
     graph_dir: Option<PathBuf>,
     tag: Option<String>,
@@ -86,7 +92,7 @@ struct Options {
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let mut o = Options { export: None, snapshot: None, features: None, out: None, graph_dir: None, tag: None, fixed: false };
+    let mut o = Options { export: None, snapshot: None, features: None, classes: None, out: None, graph_dir: None, tag: None, fixed: false };
     let mut i = 0;
     while i < args.len() {
         let value = || args.get(i + 1).cloned().unwrap_or_else(|| fail(format!("{} needs a value", args[i])));
@@ -94,6 +100,7 @@ fn main() {
             "--export" => o.export = Some(PathBuf::from(value())),
             "--snapshot" => o.snapshot = Some(PathBuf::from(value())),
             "--features" => o.features = Some(PathBuf::from(value())),
+            "--classes" => o.classes = Some(PathBuf::from(value())),
             "--out" => o.out = Some(PathBuf::from(value())),
             "--graph-dir" => o.graph_dir = Some(PathBuf::from(value())),
             "--version-tag" => o.tag = Some(value()),
@@ -146,6 +153,15 @@ fn run_snapshot(source: &Path, features_db: &Path, graph: &Path, o: &Options) {
     let started = Instant::now();
     let snap = closure::read(source).unwrap_or_else(|e| fail(e));
     let features = closure::features(features_db, &snap.sha).unwrap_or_else(|e| fail(e));
+    // Optional catalog status: status.bin, cells.json and ellipses.json.
+    let extra = o.classes.as_deref().map(|path| {
+        let status = status::classes(path, &snap.sha).unwrap_or_else(|e| fail(e));
+        let flags = std::fs::read(source.join("flags.bin")).unwrap_or_else(|e| fail(format!("flags.bin: {e}")));
+        let seed: Vec<bool> = flags.iter().map(|&f| f & 1 != 0).collect();
+        let cells = status::cells(&features, &status, &seed);
+        let ellipses = status::ellipses_json(&features, &status, &seed, &cells);
+        (status, status::cells_json(&cells), ellipses)
+    });
     let read_seconds = started.elapsed().as_secs_f64();
     let (positions, clamped) = place(&features, &snap.sha);
     let m = &snap.manifest;
@@ -177,9 +193,17 @@ fn run_snapshot(source: &Path, features_db: &Path, graph: &Path, o: &Options) {
     manifest.push(("source_version".into(), J::Str(source_version.clone())));
     manifest.push(("source_builder_sha256".into(), J::Str(text("builder_sha256"))));
     manifest.push(("features_measured".into(), J::Int(measured as i64)));
+    if extra.is_some() {
+        manifest.push(("status_assets".into(), J::Raw("[\"status.bin\",\"cells.json\",\"ellipses.json\"]".into())));
+    }
     let chunks = snap.chunks;
     let stage = |dir: &Path| -> Result<u64, String> {
         let mut bytes = snapshot::write_positions(dir, &positions)?;
+        if let Some((status, cells, ellipses)) = &extra {
+            snapshot::write_file(&dir.join("status.bin"), status)?;
+            snapshot::write_file(&dir.join("cells.json"), cells.as_bytes())?;
+            snapshot::write_file(&dir.join("ellipses.json"), ellipses.as_bytes())?;
+        }
         for name in ["edges.bin", "flags.bin"] {
             bytes += snapshot::link(&source.join(name), &dir.join(name))?;
         }

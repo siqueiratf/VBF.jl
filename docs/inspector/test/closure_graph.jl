@@ -66,6 +66,10 @@ isdefined(Main,:APNClosureMonitor) || include(joinpath(@__DIR__,"..","closure_mo
         @test call("/api/drawing").status==200
         @test call("/drawing-data/$(current.version)/positions.bin").body==read(joinpath(snapshot,"positions.bin"))
         @test call("/drawing-data/$(current.version)/%2e%2e/current.json").status==400
+        write(joinpath(drawing,current.version,"cells.json"),"[]")
+        @test call("/drawing-data/$(current.version)/cells.json").status==200
+        @test call("/graph-data/$(current.version)/cells.json").status==400
+        @test call("/drawing-data/$(current.version)/status.bin").status==404
         @test APNClosureMonitor.handle(monitor,HTTP.Request("POST","/control/refresh")).status==405
         outside=joinpath(directory,"private.bin");write(outside,"private")
         rm(joinpath(snapshot,"flags.bin"));symlink(outside,joinpath(snapshot,"flags.bin"))

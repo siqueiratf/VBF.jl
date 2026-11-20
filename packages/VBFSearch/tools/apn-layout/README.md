@@ -20,6 +20,15 @@ reserved cell. `edges.bin`, `flags.bin` and `nodes-*.json` are hard-linked (or
 copied) from the snapshot; only `positions.bin` and the manifest are new. The
 version is `<now>-<suffix of the snapshot version>`.
 
+With `--classes RUN/reports/classes.sqlite`, snapshot mode also writes
+`status.bin` (u8 per vertex: 0 unknown, 1 catalog-matching, 2 new, from
+`classes.absent` by LUT SHA-256), `cells.json` (one record per occupied
+(two, three) cell with counts and `all_new`) and `ellipses.json` (status
+counts and the 95% covariance ellipses of the raw (two, three) values of new,
+catalog-matching and seed classes: mean, sample covariance, semi-axes and angle
+in data and page coordinates, and how much of each ellipse lies inside the
+others). Sums run in vertex order in f64. Positions do not change.
+
 Export mode writes `RUN_DIR/graph/<version>/` and `RUN_DIR/graph/current.json`
 (or `--graph-dir DIR`). The default version is
 `<export created_utc>-<completed_parents>-<vertices>`. Both modes take

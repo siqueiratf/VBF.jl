@@ -404,11 +404,11 @@ end
 
 """Serve only published graph files, never querying the live search ledger.
 The same rules serve the graph (`root=monitor.graph`) and the drawing."""
-function graph_response(monitor,path;root=monitor.graph)
+function graph_response(monitor,path;root=monitor.graph,assets=r"^(positions\.bin|edges\.bin|flags\.bin|nodes-\d+\.json)$")
     parts=String.(split(HTTP.unescapeuri(path),'/';keepempty=false))
     length(parts)==2 || return response(400,Dict("error"=>"invalid graph path"))
     occursin(r"^\d{8}T\d{6}-\d+-\d+$",parts[1]) || return response(400,Dict("error"=>"invalid graph snapshot"))
-    occursin(r"^(positions\.bin|edges\.bin|flags\.bin|nodes-\d+\.json)$",parts[2]) || return response(400,Dict("error"=>"invalid graph asset"))
+    occursin(assets,parts[2]) || return response(400,Dict("error"=>"invalid graph asset"))
     file=joinpath(root,parts...)
     isfile(file) || return response(404,Dict("error"=>"graph snapshot expired; reload the graph"))
     relative=relpath(realpath(file),realpath(root))
@@ -443,7 +443,8 @@ function handle(monitor, request)
             return isfile(file) ? HTTP.Response(200,["Content-Type"=>"application/json; charset=utf-8","Cache-Control"=>"no-store"],read(file)) :
                 response(503,Dict("state"=>"preparing","error"=>"No drawing yet."))
         end
-        startswith(path,"/drawing-data/") && return graph_response(monitor,path[length("/drawing-data/")+1:end];root=monitor.drawing)
+        startswith(path,"/drawing-data/") && return graph_response(monitor,path[length("/drawing-data/")+1:end];root=monitor.drawing,
+            assets=r"^(positions\.bin|edges\.bin|flags\.bin|status\.bin|cells\.json|ellipses\.json|nodes-\d+\.json)$")
         path in ("/structure","/structure/","/structure.html") && return HTTP.Response(200,
             ["Content-Type"=>"text/html; charset=utf-8","Cache-Control"=>"no-cache"],read(STRUCTURE_PAGE))
         path == "/structure.js" && return HTTP.Response(200,
