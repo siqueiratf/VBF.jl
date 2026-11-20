@@ -125,7 +125,7 @@ fn node_chunk(nodes: &[Node], first: usize, with_class_id: bool) -> String {
     s
 }
 
-fn write_file(path: &Path, bytes: &[u8]) -> Result<(), String> {
+pub fn write_file(path: &Path, bytes: &[u8]) -> Result<(), String> {
     let mut f = std::io::BufWriter::new(std::fs::File::create(path).map_err(|e| format!("{}: {e}", path.display()))?);
     f.write_all(bytes).and_then(|_| f.flush()).map_err(|e| format!("{}: {e}", path.display()))
 }

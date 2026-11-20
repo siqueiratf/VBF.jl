@@ -12,10 +12,10 @@
   let pointProgram, edgeProgram, arrowProgram, edgeVAO, localVAO, localBuffer;
   let selected = -1, neighbors = [], localEdges = new Uint32Array(), metadata = new Map();
   let center = [0,0], zoom = 0.85, ready = false, framePending = false, drag = null;
-  let drawMilliseconds = 0;
+  let drawMilliseconds = 0, hasStatus = false;
   const palette = () => matchMedia('(prefers-color-scheme: dark)').matches
-    ? {background:[0.067,0.098,0.09], seed:[1,0.765,0.416], found:[0.412,0.725,0.8], edge:[0.48,0.65,0.62], switching:[0.79,0.64,0.96]}
-    : {background:[0.957,0.961,0.949], seed:[0.64,0.36,0], found:[0.14,0.46,0.6], edge:[0.18,0.35,0.28], switching:[0.47,0.26,0.7]};
+    ? {background:[0.067,0.098,0.09], seed:[1,0.765,0.416], found:[0.412,0.725,0.8], fresh:[0.94,0.48,0.75], catalog:[0.412,0.725,0.8], unknown:[0.6,0.62,0.61], edge:[0.48,0.65,0.62], switching:[0.79,0.64,0.96]}
+    : {background:[0.957,0.961,0.949], seed:[0.64,0.36,0], found:[0.14,0.46,0.6], fresh:[0.69,0.16,0.48], catalog:[0.14,0.46,0.6], unknown:[0.54,0.56,0.55], edge:[0.18,0.35,0.28], switching:[0.47,0.26,0.7]};
   const common = `
     precision highp float; precision highp int;
     uniform highp sampler2D uPositions;
@@ -78,7 +78,8 @@
   function initializePrograms() {
     pointProgram = program(`#version 300 es
       ${common}
-      uniform vec3 uSeedColor; uniform vec3 uFoundColor; out vec3 vColor; out float vAlpha;
+      uniform vec3 uSeedColor; uniform vec3 uFoundColor; uniform bool uStatus;
+      uniform vec3 uNewColor; uniform vec3 uCatalogColor; uniform vec3 uUnknownColor; out vec3 vColor; out float vAlpha;
       void main() {
         uint id=uint(gl_VertexID),f=flag(id); bool near=(f&6u)!=0u;
         vec2 p=project(id); gl_Position=uLocal&&!near?vec4(3.,3.,0.,1.):vec4(p,0.,1.);
@@ -86,6 +87,8 @@
         if(near) radius=4.; if((f&4u)!=0u) radius=8.;
         gl_PointSize=min(12.,radius+max(0.,log2(uZoom))*.2)*uDPR;
         vColor=(f&1u)!=0u?uSeedColor:uFoundColor;
+        // Optional catalog status in flag bits 3-4 (drawing page): 2 new, 1 catalog-matching, 0 unknown.
+        if(uStatus&&(f&1u)==0u){uint s=(f>>3)&3u;vColor=s==2u?uNewColor:(s==1u?uCatalogColor:uUnknownColor);}
         if((f&4u)!=0u) vColor=vec3(1.,.35,.3);
         vAlpha=near?1.:((f&1u)!=0u?.95:.66);
       }`, `#version 300 es
@@ -110,6 +113,8 @@
     gl.uniform1i(uniform('uV5'),$('v5').checked); gl.uniform1i(uniform('uSwitching'),$('switching').checked);
     gl.uniform1i(uniform('uSelected'),selected); gl.uniform1f(uniform('uOpacity'),Number($('opacity').value)/100);
     gl.uniform3fv(uniform('uSeedColor'),colors.seed); gl.uniform3fv(uniform('uFoundColor'),colors.found);
+    gl.uniform1i(uniform('uStatus'),hasStatus); gl.uniform3fv(uniform('uNewColor'),colors.fresh);
+    gl.uniform3fv(uniform('uCatalogColor'),colors.catalog); gl.uniform3fv(uniform('uUnknownColor'),colors.unknown);
     gl.uniform3fv(uniform('uEdgeColor'),colors.edge); gl.uniform3fv(uniform('uSwitchColor'),colors.switching);
   }
   function draw() {
@@ -132,6 +137,7 @@
     }
     setUniforms(pointProgram,colors);gl.bindVertexArray(null);gl.drawArrays(gl.POINTS,0,manifest.nodes);
     drawMilliseconds=performance.now()-started;
+    if(window.apnGraphHooks&&window.apnGraphHooks.draw)window.apnGraphHooks.draw({center,zoom,width:w,height:h,dpr:devicePixelRatio,manifest});
     window.apnGraphState={ready:true,nodes:manifest.nodes,edges:edges.length/2,selected:selected+1,zoom,drawMilliseconds,localEdges:localEdges.length/2,webglError:gl.getError()};
   }
   function scheduleDraw(){if(!framePending){framePending=true;requestAnimationFrame(draw);}}
@@ -152,7 +158,7 @@
   async function select(id, focus=false) {
     if(!ready||!Number.isInteger(id)||id<0||id>=manifest.nodes) return;
     selected=id;const related=new Map();
-    for(let i=0;i<flags.length;i++) flags[i]&=1;
+    for(let i=0;i<flags.length;i++) flags[i]&=~6;
     flags[id]|=4;
     for(let i=0;i<edges.length;i+=2){
       const a=edges[i],b=edges[i+1]&mask,kind=edges[i+1]>>>31;
@@ -197,6 +203,10 @@
       message.textContent='Downloading '+(manifest.payload_bytes/1048576).toFixed(1)+' MB of cached graph data…';
       const data=await Promise.all([binary('positions.bin'),binary('edges.bin'),binary('flags.bin')]);
       positions=new Float32Array(data[0]);edges=new Uint32Array(data[1]);flags=new Uint8Array(data[2]);
+      if((manifest.status_assets||[]).includes('status.bin')){
+        const status=new Uint8Array(await binary('status.bin'));
+        if(status.length===flags.length){for(let i=0;i<flags.length;i++)flags[i]|=(status[i]&3)<<3;hasStatus=true;}
+      }
       if(positions.length!==manifest.nodes*2||flags.length!==manifest.nodes||edges.length!==(manifest.v5_edges+manifest.switching_edges)*2)throw new Error('Incomplete graph data.');
       initializePrograms();width=2**Math.ceil(Math.log2(Math.sqrt(manifest.nodes)));textureHeight=Math.ceil(manifest.nodes/width);
       if(Math.max(width,textureHeight)>gl.getParameter(gl.MAX_TEXTURE_SIZE))throw new Error('This graph exceeds your GPU texture limit.');
@@ -208,7 +218,7 @@
       edgeVAO=edgeArray(edges).vao;const local=edgeArray(new Uint32Array(),true);localVAO=local.vao;localBuffer=local.buffer;
       ready=true;fit();message.hidden=true;$('find-id').max=manifest.nodes;
       const initial=Number(new URLSearchParams(location.search).get('id'));if(Number.isInteger(initial)&&initial>0)await select(initial-1,true);
-      window.apnGraph={select:id=>select(id-1,true),fit,manifest};
+      window.apnGraph={select:id=>select(id-1,true),fit,manifest,hasStatus,data:DATA,redraw:scheduleDraw,setView:(c,z)=>{center=c;zoom=z;scheduleDraw();}};
     }catch(error){console.error(error);message.textContent=error.message.startsWith('HTTP')?'The first cached graph is being prepared. This page will retry shortly.':error.message;if(!ready)setTimeout(load,15000);}
   }
   canvas.addEventListener('pointerdown',event=>{if(!ready)return;canvas.setPointerCapture(event.pointerId);drag={x:event.clientX,y:event.clientY,center:[...center],moved:false};canvas.classList.add('dragging');});
