@@ -10,6 +10,10 @@ The controller owns closure.sqlite and progress.toml. This server only reads
 VBFSearch.closure_progress, verifies the pinned initial-root file, and serves the
 approved figures. With --structure JSON it also serves that precomputed report
 at /structure. A completed parent has exhausted both construction methods.
+
+With --frozen true it serves an archived run from its last progress.toml alone,
+without closure.sqlite, keeping the recorded run directory so that saved
+reports bound to that path stay current.
 """
 module APNClosureMonitor
 
@@ -35,6 +39,7 @@ mutable struct Monitor
     comparison::String
     graph::String
     structure::String
+    frozen::Bool
     read_run::Function
     guard::ReentrantLock
     root_stamp::Any
@@ -60,6 +65,15 @@ function controller_snapshot(directory)
     result
 end
 
+"""Read an archived run's last published counters; the ledger may be absent."""
+function frozen_snapshot(directory)
+    result=VBFSearch.closure_progress(directory)
+    result["directory"]=TOML.parsefile(joinpath(directory,"progress.toml"))["directory"]
+    result["running"]=false
+    result["frozen"]=true
+    result
+end
+
 """Relay a remote monitor's committed snapshot without sharing its SQLite files."""
 function upstream_snapshot(url)
     startswith(url, "http://") || startswith(url, "https://") || error("upstream must be an HTTP URL")
@@ -74,12 +88,13 @@ end
 
 function Monitor(campaign; run=joinpath(campaign, "run"),
                  figures=joinpath(campaign, "diagrams", "gallery"), read_run=controller_snapshot, upstream="",comparison="",
-                 graph=joinpath(run,"graph"),structure="")
+                 graph=joinpath(run,"graph"),structure="",frozen=false)
     campaign = abspath(campaign)
     isfile(joinpath(campaign, "campaign.toml")) || error("missing campaign.toml")
-    reader = isempty(upstream) ? read_run : _ -> upstream_snapshot(upstream)
+    frozen && !isempty(upstream) && error("--frozen and --upstream are exclusive")
+    reader = !isempty(upstream) ? _ -> upstream_snapshot(upstream) : frozen ? frozen_snapshot : read_run
     Monitor(campaign, abspath(run), abspath(figures), upstream, comparison, abspath(graph),
-            isempty(structure) ? "" : abspath(structure), reader, ReentrantLock(), nothing,
+            isempty(structure) ? "" : abspath(structure), frozen, reader, ReentrantLock(), nothing,
             Dict{String,Any}(), 0.0, Dict{String,Any}(), Tuple{Float64,Int,Int}[], Tuple{Float64,Int,Float64}[])
 end
 
@@ -301,7 +316,8 @@ function snapshot(monitor; force=false, now_seconds=time())
             return monitor.snapshot
         roots = root_summary!(monitor)
         database_exists = isfile(joinpath(monitor.run, "closure.sqlite"))
-        attached = !isempty(monitor.upstream) || (database_exists && isfile(joinpath(monitor.run, "progress.toml")))
+        attached = !isempty(monitor.upstream) ||
+            ((database_exists || monitor.frozen) && isfile(joinpath(monitor.run, "progress.toml")))
         execution = if attached
             result = Dict{String,Any}(monitor.read_run(monitor.run))
             result["roots_sha256"] == roots["sha256"] || error("runner uses a different initial-root set")
@@ -340,7 +356,7 @@ function snapshot(monitor; force=false, now_seconds=time())
         monitor.snapshot = Dict{String,Any}(
             "schema" => "vbfsearch-closure-monitor-v1",
             "checked_utc" => string(Dates.now(Dates.UTC)) * "Z",
-            "campaign" => basename(monitor.campaign), "roots" => roots,
+            "campaign" => basename(monitor.campaign), "roots" => roots, "frozen" => monitor.frozen,
             "execution" => execution, "rates" => rates,
             "discoveries" => discovery_summary(execution,monitor.comparison),
             "catalog_comparison" => isfile(joinpath(monitor.run,"reports","catalog.json")) ?
@@ -429,9 +445,9 @@ end
 
 function main(args=ARGS)
     options = Dict("--host" => "127.0.0.1", "--port" => "8766")
-    iseven(length(args)) || error("expected --campaign PATH [--run PATH] [--structure JSON] [--host HOST] [--port PORT]")
+    iseven(length(args)) || error("expected --campaign PATH [--run PATH] [--structure JSON] [--frozen true] [--host HOST] [--port PORT]")
     for i in 1:2:length(args)
-        args[i] in ("--campaign", "--run", "--host", "--port", "--figures", "--upstream", "--comparison", "--structure") || error("unknown option: $(args[i])")
+        args[i] in ("--campaign", "--run", "--host", "--port", "--figures", "--upstream", "--comparison", "--structure", "--frozen") || error("unknown option: $(args[i])")
         options[args[i]] = args[i+1]
     end
     haskey(options, "--campaign") || error("--campaign PATH is required")
@@ -439,7 +455,8 @@ function main(args=ARGS)
     monitor = Monitor(campaign; run=get(options, "--run", joinpath(campaign,"run")),
         figures=get(options, "--figures", joinpath(campaign,"diagrams","gallery")),
         upstream=get(options, "--upstream", ""),comparison=get(options,"--comparison",""),
-        structure=get(options,"--structure",""))
+        structure=get(options,"--structure",""),
+        frozen=parse(Bool,get(options,"--frozen","false")))
     snapshot(monitor; force=true)
     @info "Read-only APN closure monitor" host=options["--host"] port=options["--port"] campaign run=monitor.run
     HTTP.serve(request -> handle(monitor, request), options["--host"], parse(Int, options["--port"]))
