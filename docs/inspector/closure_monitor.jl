@@ -11,9 +11,10 @@ VBFSearch.closure_progress, verifies the pinned initial-root file, and serves th
 approved figures. With --structure JSON it also serves that precomputed report
 at /structure. A completed parent has exhausted both construction methods.
 
-With --frozen true it serves an archived run from its last progress.toml alone,
-without closure.sqlite, keeping the recorded run directory so that saved
-reports bound to that path stay current.
+With --frozen true it serves a run from its last progress.toml alone, without
+closure.sqlite: an archived run, or a copy of a run on another machine. It keeps
+the recorded run directory and state, so that saved reports bound to that path
+stay current.
 """
 module APNClosureMonitor
 
@@ -68,7 +69,10 @@ end
 """Read an archived run's last published counters; the ledger may be absent."""
 function frozen_snapshot(directory)
     result=VBFSearch.closure_progress(directory)
-    result["directory"]=TOML.parsefile(joinpath(directory,"progress.toml"))["directory"]
+    saved=TOML.parsefile(joinpath(directory,"progress.toml"))
+    # A copied progress.toml has no local writer; keep the state it recorded.
+    result["directory"]=saved["directory"]
+    result["state"]=saved["state"]
     result["running"]=false
     result["frozen"]=true
     result
