@@ -7,6 +7,8 @@
 #                                     (env HEAP, default 16G; GC_THREADS, default 8)
 #   ./run.sh stop    STATE            ask the controller to drain and stop
 #   ./run.sh status  STATE            print the last progress counters
+#   ./run.sh graph   STATE [SECONDS]  keep a graph builder running: a new snapshot of
+#                                     run/graph every SECONDS (default 1800), low priority
 #
 # STATE holds the code, ledger, evidence and logs. Put it on persistent storage
 # with at least 200 GB free. JULIA_DEPOT_PATH must be set (persistent too).
@@ -45,6 +47,18 @@ start)
       > "$state/logs/session-$stamp.log" 2>&1 < /dev/null &
   echo $! > "$state/controller.pid"
   echo "start: pid $(cat "$state/controller.pid"), log $state/logs/session-$stamp.log";;
+graph)
+  every=${3:-1800}
+  if [ -f "$state/graph.pid" ] && kill -0 "$(cat "$state/graph.pid")" 2>/dev/null; then
+    echo "graph: builder already running (pid $(cat "$state/graph.pid"))"; exit 0
+  fi
+  mkdir -p "$state/logs"
+  cd "$ws"
+  setsid nohup nice -n 10 ionice -c3 julia "${julia_flags[@]}" --project="$project" \
+    "$here/../../../../docs/inspector/closure_graph.jl" --run "$state/run" \
+    --every-seeds 1 --min-seconds "$every" >> "$state/logs/graph.log" 2>&1 < /dev/null &
+  echo $! > "$state/graph.pid"
+  echo "graph: pid $(cat "$state/graph.pid"), every $every s, log $state/logs/graph.log";;
 stop)
   # The controller polls RUN/STOP (and EVIDENCE/STOP), not STATE/STOP.
   touch "$state/run/STOP"; echo "stop: run/STOP written; the controller drains its work first";;
