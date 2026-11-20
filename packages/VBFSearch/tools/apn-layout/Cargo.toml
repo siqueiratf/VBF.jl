@@ -1,0 +1,11 @@
+[package]
+name = "apn-layout"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+parquet = { version = "60.1.0", default-features = false, features = ["zstd"] }
+rusqlite = { version = "0.43.0", features = ["bundled"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["preserve_order"] }
+sha2 = "0.11.1"
