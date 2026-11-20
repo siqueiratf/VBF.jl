@@ -39,9 +39,9 @@ start)
   rm -f "$state/STOP"
   cd "$ws"
   OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 SQLITE_TMPDIR=$state/tmp VBF_CLOSURE_STOP_FILE=$state/STOP \
-    nohup julia "${julia_flags[@]}" --threads="$threads",1 --gcthreads=8,1 --heap-size-hint=16G \
+    setsid nohup julia "${julia_flags[@]}" --threads="$threads",1 --gcthreads=8,1 --heap-size-hint=16G \
       --project="$project" "$here/controller/closure_run.jl" "$config" \
-      > "$state/logs/session-$stamp.log" 2>&1 &
+      > "$state/logs/session-$stamp.log" 2>&1 < /dev/null &
   echo $! > "$state/controller.pid"
   echo "start: pid $(cat "$state/controller.pid"), log $state/logs/session-$stamp.log";;
 stop)
