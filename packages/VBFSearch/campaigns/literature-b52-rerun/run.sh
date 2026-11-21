@@ -9,7 +9,8 @@
 #                                     APPLY_STEP (32: applies per synchronous commit),
 #                                     SQLITE_SYNC (FULL; NORMAL skips the sync per commit),
 #                                     SQLITE_CACHE_MB, SQLITE_MMAP_MB (0 = SQLite defaults),
-#                                     STORAGE_MAX_GB (200 GiB: state folder limit, checkpoints included)
+#                                     STORAGE_MAX_GB (200 GiB: state folder limit, checkpoints included),
+#                                     CHECKPOINT_HOURS (2: hours between checkpoint exports)
 #                                     Worker processes (default off): WORKERS is a space-
 #                                     separated list of taskset CPU lists, one per worker,
 #                                     each optionally followed by :THREADS, e.g.
@@ -59,6 +60,7 @@ start)
     -e "s|^window_size = .*|window_size = ${WINDOW:-100}|" \
     -e "s|^max_apply_per_step = .*|max_apply_per_step = ${APPLY_STEP:-32}|" \
     -e "s|^storage_max_bytes = .*|storage_max_bytes = $(( ${STORAGE_MAX_GB:-200} * 1073741824 ))|" \
+    -e "s|^checkpoint_interval_seconds = .*|checkpoint_interval_seconds = $(( ${CHECKPOINT_HOURS:-2} * 3600 )).0|" \
     -e "\$a sqlite_synchronous = \"${SQLITE_SYNC:-FULL}\"\nsqlite_cache_mb = ${SQLITE_CACHE_MB:-0}\nsqlite_mmap_mb = ${SQLITE_MMAP_MB:-0}" \
     "$here/controller/config.template.toml" > "$config"
   if [ -n "${WORKERS:-}" ]; then
