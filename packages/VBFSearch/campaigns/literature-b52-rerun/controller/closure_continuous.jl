@@ -64,11 +64,14 @@ end
 Fallback owners may lie outside the construction scope; their selection kind
 instructs the controller to dispatch only global EA work and no constructions.
 """
-function select_parents(db,window_size;parent_scope="all",fallback=false,excluded_parents=Int[],only_origin=nothing)
+function select_parents(db,window_size;parent_scope="all",fallback=false,excluded_parents=Int[],only_origin=nothing,max_v5_spaces=0)
     window_size>0 || throw(ArgumentError("invalid window size"))
     parent_scope in ("all","discovered") || throw(ArgumentError("invalid parent scope"))
     excluded=isempty(excluded_parents) ? "0" : join(sort!(unique(Int.(excluded_parents))),",")
     unfinished="p.id NOT IN ($excluded) AND EXISTS(SELECT 1 FROM jobs j WHERE j.parent_id=p.id AND j.kind IN ('prepare_v5','v5','switching') AND j.status!='done')"
+    # A heavy parent (more maximizing 5-spaces than the bound) is deferred: no
+    # new window selects it while the bound is active. Unprepared parents pass.
+    max_v5_spaces>0 && (unfinished*=" AND (SELECT COUNT(*) FROM jobs j WHERE j.parent_id=p.id AND j.kind='v5')<=$max_v5_spaces")
     origins=parent_scope=="discovered" ? ("discovered",) : ("root","discovered")
     for origin in origins
         only_origin===nothing || origin==only_origin || continue
@@ -99,8 +102,11 @@ function _reservation_ea_sql(indexed)
     index=indexed ? " INDEXED BY jobs_pending_ea" : ""
     "SELECT * FROM jobs$index WHERE kind='deduplicate' AND status IN ('pending','paused') AND (last_session!=? OR id IN (SELECT value FROM json_each(?))) AND id NOT IN (SELECT value FROM json_each(?)) ORDER BY id LIMIT ?"
 end
-_reservation_construction_sql(ids)=
-    "SELECT * FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('pending','paused') AND id NOT IN (SELECT value FROM json_each(?)) ORDER BY parent_id,id LIMIT ?"
+_heavy_parents_sql(ids,max_v5_spaces)=
+    "SELECT parent_id FROM jobs WHERE parent_id IN ($ids) AND kind='v5' GROUP BY parent_id HAVING COUNT(*)>$max_v5_spaces"
+_reservation_construction_sql(ids,max_v5_spaces=0)=
+    "SELECT * FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('pending','paused') AND id NOT IN (SELECT value FROM json_each(?))"*
+    (max_v5_spaces>0 ? " AND NOT (kind='v5' AND parent_id IN ($(_heavy_parents_sql(ids,max_v5_spaces))))" : "")*" ORDER BY parent_id,id LIMIT ?"
 
 """Rolling completion latency and throughput, excluding checkpoint startup.
 
@@ -154,6 +160,9 @@ function run(config)
     Int(get(config,"window_size",100))>0 || error("invalid window size")
     rolling_windows=get(config,"rolling_windows",false)
     rolling_windows isa Bool || throw(ArgumentError("rolling_windows must be Boolean"))
+    max_v5_spaces=Int(get(config,"heavy_v5_threshold",0))
+    max_v5_spaces>=0 || throw(ArgumentError("invalid heavy parent threshold"))
+    max_v5_spaces==0 || rolling_windows || throw(ArgumentError("heavy parent deferral needs rolling windows"))
     max_windows=Int(get(config,"max_windows",typemax(Int)))
     max_windows>0 || throw(ArgumentError("invalid window limit"))
     parent_scope=String(get(config,"parent_scope","all"))
@@ -216,7 +225,7 @@ function run(config)
     base["directory"]=directory
     FP.DiscoveryStore.atomic_toml(joinpath(out,"progress-before.toml"),base)
     ids="0";window_origin="root";window_kind="construction";windows_completed=0;window_active=true;completed_this_session=0
-    windows_started=0;cohorts=Vector{Vector{Int}}()
+    windows_started=0;cohorts=Vector{Vector{Int}}();deferred_heavy=0
     # Optional worker processes own the construction scratch (and its rank
     # table); local contexts then serve EA packets only and need no table.
     worker_specs=ClosureWorkers.parse_specs(config);remote=nothing;worker_summary=nothing
@@ -242,7 +251,7 @@ function run(config)
     cosets(rows)=sum(max(0,Int(j["direction"])-1) for j in rows if j["kind"]=="v5";init=0)
     count_status(rows,kinds,status)=count(j->j["kind"] in kinds && j["status"]==status,rows)
     function select_window!()
-        roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true)
+        roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true,max_v5_spaces)
         isempty(roots) && return false
         for p in parents
             haskey(timings,p) && haskey(timings[p],"completed_utc") && delete!(timings,p)
@@ -267,6 +276,7 @@ function run(config)
     function record_completed!(jobs;selected_parents=parents)
         window_kind=="construction" || return
         for parent in selected_parents
+            haskey(timings,parent) || continue
             t=timings[parent];haskey(t,"completed_utc") && continue
             own=filter(j->j["parent_id"]==parent,jobs)
             all(j->j["status"]=="done",own) || continue
@@ -394,7 +404,7 @@ function run(config)
             "elapsed_seconds"=>time()-started,"active_seconds"=>active_started>0 ? time()-active_started : 0.0,
             "scope"=>execution_scope*"; both constructions; EA admission before recursion")
         report["root_batch"]=batch
-        report["continuous_search"]=merge(batch,Dict("window_origin"=>window_origin,"windows_completed"=>windows_completed,"windows_started"=>windows_started,"rolling_windows"=>rolling_windows,"active_windows"=>window_active ? length(cohorts) : 0,"duration_policy"=>"until STOP","parent_scope"=>parent_scope))
+        report["continuous_search"]=merge(batch,Dict("window_origin"=>window_origin,"windows_completed"=>windows_completed,"windows_started"=>windows_started,"deferred_heavy_parents"=>deferred_heavy,"heavy_v5_threshold"=>max_v5_spaces,"rolling_windows"=>rolling_windows,"active_windows"=>window_active ? length(cohorts) : 0,"duration_policy"=>"until STOP","parent_scope"=>parent_scope))
         report["seed_statistics"]=seed_statistics(history,completion_events,active_started;now=time(),completed_this_session,parent_scope)
         report["runtime_metrics"]=ClosureOperations.runtime_snapshot(runtime,resources)
         report["runtime_metrics"]["property_cache"]=property_cache_statistics(contexts)
@@ -419,7 +429,7 @@ function run(config)
         job=item.job;equivalence=item.equivalence
         FP._closure_exec(s,"UPDATE jobs SET status='running',last_session=?,error='' WHERE id=?",(s.session,job["id"]))
         if !equivalence
-            t=timings[Int(job["parent_id"])]
+            t=get(timings,Int(job["parent_id"]),Dict{String,Any}())
             get!(t,"first_dispatch_epoch",time());get!(t,"first_dispatch_utc",FP._closure_now())
         end
         packet=equivalence ? FP._closure_equivalence_packet(s,job;native=true) : FP._closure_work_packet(s,job)
@@ -484,8 +494,20 @@ function run(config)
         changed=false
         while !isempty(cohorts)
             cohort=first(cohorts);selected=join(cohort,",")
-            unfinished=FP._closure_count(s,"SELECT EXISTS(SELECT 1 FROM jobs WHERE parent_id IN ($selected) AND kind IN ('prepare_v5','v5','switching') AND status!='done') n")
+            heavy_filter=max_v5_spaces>0 ? " AND NOT (kind='v5' AND parent_id IN ($(_heavy_parents_sql(selected,max_v5_spaces))))" : ""
+            unfinished=FP._closure_count(s,"SELECT EXISTS(SELECT 1 FROM jobs WHERE parent_id IN ($selected) AND kind IN ('prepare_v5','v5','switching') AND status!='done'$heavy_filter) n")
             unfinished==0 || break
+            if max_v5_spaces>0
+                heavy=FP._closure_rows(s,"SELECT parent_id,COUNT(*) spaces,SUM(status='done') done FROM jobs WHERE parent_id IN ($selected) AND kind='v5' GROUP BY parent_id HAVING COUNT(*)>$max_v5_spaces AND SUM(status!='done')>0")
+                for row in heavy
+                    p=Int(row["parent_id"])
+                    emit!("deferred-parents.jsonl",Dict("parent_id"=>p,"maximizing_five_spaces"=>Int(row["spaces"]),
+                        "completed_spaces"=>Int(row["done"]),"threshold"=>max_v5_spaces,"deferred_utc"=>FP._closure_now(),
+                        "origin"=>get(get(timings,p,Dict()),"origin",""),"source"=>get(get(timings,p,Dict()),"source","")))
+                    delete!(timings,p)
+                end
+                isempty(heavy) || (deferred_heavy+=length(heavy))
+            end
             record_completed!(construction();selected_parents=cohort)
             windows_completed+=1
             publish!(;force=true,fresh_counts=true)
@@ -500,7 +522,7 @@ function run(config)
         end
         if length(cohorts)<2 && windows_started<max_windows && !stopped()
             roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,
-                excluded_parents=parents,only_origin=window_origin)
+                excluded_parents=parents,only_origin=window_origin,max_v5_spaces)
             if !isempty(roots)
                 # Fold existing deltas once before adding potentially resumed
                 # parents, whose previous work is already included in base.
@@ -534,14 +556,14 @@ function run(config)
         length(items)==limit && return items
         failed=FP._closure_count(s,"SELECT EXISTS(SELECT 1 FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('failed','blocked') LIMIT 1) n")
         failed==0 || error("parent coverage requires recovery")
-        pending=FP._closure_rows(s,_reservation_construction_sql(ids),(excluded_json,limit-length(items)))
+        pending=FP._closure_rows(s,_reservation_construction_sql(ids,max_v5_spaces),(excluded_json,limit-length(items)))
         append!(items,[(job=j,equivalence=false) for j in pending])
         if length(items)<limit && advance_rolling_window!()
             # Requery after the bounded frontier changes. Existing descriptors
             # remain in the FIFO, and exclusions preserve unique reservations.
             used=union(excluded,Set(Int[item.job["id"] for item in items]))
             used_json=_reservation_ids_json(used)
-            extra=FP._closure_rows(s,_reservation_construction_sql(ids),(used_json,limit-length(items)))
+            extra=FP._closure_rows(s,_reservation_construction_sql(ids,max_v5_spaces),(used_json,limit-length(items)))
             append!(items,[(job=j,equivalence=false) for j in extra])
         end
         items
