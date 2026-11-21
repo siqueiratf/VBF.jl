@@ -76,8 +76,16 @@
     summary { cursor: pointer; color: var(--muted); }
     details p { margin-top: 10px; }
     .offline .value { color: var(--detail); }
+    .backup-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .backup-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 14px 0 12px; }
+    .backup-grid .stage { display: block; margin: 3px 0 2px; font-weight: 600; }
+    .backup-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+    .backup-actions button { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--pill-border); border-radius: 7px; padding: 6px 11px; cursor: pointer; }
+    .backup-actions button:hover { background: var(--pill-background); } .backup-actions button:disabled { opacity: .55; cursor: not-allowed; }
+    .backup-actions button:focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
+    #backup-panel.warn { border-color: var(--warning-border); }
     [hidden] { display: none !important; }
-    @media (max-width: 850px) { .metrics, .result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 850px) { .metrics, .result-grid, .backup-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 600px) {
       main { padding: 20px 12px 28px; }
       .page-header { grid-template-columns: 1fr; gap: 12px; }
@@ -116,6 +124,17 @@
         <div><div class="stage" id="focus-v5"></div><progress id="focus-v5-progress" max="1" value="0" aria-label="Completed five-spaces"></progress><p class="small" id="focus-cosets"></p></div>
         <div><div class="stage" id="focus-switching"></div><progress id="focus-switching-progress" max="255" value="0" aria-label="Completed switching directions"></progress></div>
       </div>
+    </section>
+    <section class="panel focus" id="backup-panel" aria-label="Checkpoint and backup" hidden>
+      <div class="backup-head"><h2>Checkpoint / backup</h2><span class="small" id="backup-updated"></span></div>
+      <div class="backup-grid">
+        <div><span class="label">Last checkpoint</span><span class="stage" id="backup-last">—</span><span class="detail" id="backup-last-detail"></span></div>
+        <div><span class="label">Next scheduled export</span><span class="stage" id="backup-next">—</span><span class="detail" id="backup-next-detail"></span></div>
+        <div><span class="label">Offsite archive</span><span class="stage" id="backup-offsite">—</span><span class="detail" id="backup-offsite-detail"></span></div>
+        <div><span class="label">Results export</span><span class="stage" id="backup-results">—</span><span class="detail" id="backup-results-detail"></span></div>
+      </div>
+      <div id="backup-export" hidden><div class="stage" id="backup-export-text"></div><progress id="backup-export-progress" max="100" value="0" aria-label="Checkpoint export progress"></progress><p class="small" id="backup-export-detail"></p></div>
+      <div class="backup-actions"><button id="skip-checkpoint" type="button">Skip next checkpoint</button><button id="cancel-skip" type="button" hidden>Cancel skip</button><span class="small" id="backup-message" role="status"></span></div>
     </section>
     <section class="panel" aria-label="Search pipeline figure">
       <div class="panel-heading"><h2>The search pipeline</h2><a class="small" href="/diagram.svg" target="_blank" rel="noopener">Open full size</a></div>
@@ -226,6 +245,69 @@
         $('notice').hidden = false;
       } finally { setTimeout(poll, 5000); }
     }
+    // Checkpoint / backup panel. Needs the `vlab dashboard` proxy (/control/backup);
+    // a monitor alone answers 404 and the panel stays hidden.
+    const when = utc => {
+      if (!utc) return '—';
+      const d = new Date(utc);
+      return d.toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'}) + ' (' + d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC)';
+    };
+    const until = utc => {
+      const s = (new Date(utc) - Date.now()) / 1000;
+      if (!utc || !Number.isFinite(s)) return '';
+      const m = Math.round(Math.abs(s) / 60), h = Math.floor(m / 60), text = (h ? h + ' h ' : '') + m % 60 + ' min';
+      return s >= 0 ? 'in ' + text : text + ' ago';
+    };
+    const gb = bytes => number(bytes / 1e9, bytes < 1e10 ? 1 : 0) + ' GB';
+    let backupPending = false;
+    function renderBackup(data) {
+      $('backup-panel').hidden = false;
+      const s = data.status || {}, last = s.last_checkpoint, exp = s.export_in_progress, next = s.next_export;
+      const off = s.offsite_archive, res = s.results_export;
+      text('backup-updated', (s.updated_utc ? 'Status of ' + when(s.updated_utc) : 'No status yet') + (data.offline ? ' · offline test' : ''));
+      text('backup-last', last ? when(last.created_utc) : 'none yet');
+      text('backup-last-detail', last ? number(last.completed_parents) + ' parents completed · ' + last.name : '');
+      $('backup-export').hidden = !exp;
+      if (exp) {
+        text('backup-export-text', 'Export in progress: ' + (exp.percent == null ? '…' : number(exp.percent, 0) + '%') + ' (' + gb(exp.bytes_written) + ' of ' + gb(exp.bytes_expected) + ')' + (exp.eta_utc ? ', ETA ' + new Date(exp.eta_utc).toLocaleTimeString(undefined, {timeStyle:'short'}) + ' (' + until(exp.eta_utc) + ')' : ''));
+        $('backup-export-progress').value = exp.percent || 0;
+        text('backup-export-detail', 'Started ' + when(exp.started_utc) + '. The search dispatches no new work during the export.');
+      }
+      backupPending = !!data.skip_pending;
+      text('backup-next', exp ? 'now (export running)' : next && next.next_utc ? when(next.next_utc) : '—');
+      text('backup-next-detail', (next && next.next_utc ? until(next.next_utc) + ' · every ' + number(next.interval_seconds / 3600, 1) + ' h' : '') + (backupPending ? ' · will be skipped' : ''));
+      text('backup-offsite', off ? when(off.mtime_utc) : 'none yet');
+      text('backup-offsite-detail', off ? off.name + ' · ' + gb(off.bytes) + (off.sha256_file ? ' · SHA-256 file present' : ' · no SHA-256 file yet') : '');
+      text('backup-results', res ? when(res.created_utc) : 'none yet');
+      text('backup-results-detail', res ? number(res.class_rows) + ' class rows' : '');
+      $('skip-checkpoint').hidden = backupPending; $('cancel-skip').hidden = !backupPending;
+      $('backup-panel').classList.toggle('warn', !!data.error);
+      text('backup-message', data.error ? data.error + '; showing the last status.' : backupPending ? 'The next checkpoint export will be skipped.' : '');
+    }
+    async function pollBackup() {
+      try {
+        const response = await fetch('/control/backup', {cache:'no-store', signal:AbortSignal.timeout(15000)});
+        if (response.status === 404) { $('backup-panel').hidden = true; return; }
+        const data = await response.json();
+        if (!data.status && data.error) { $('backup-panel').hidden = false; text('backup-message', data.error); $('backup-panel').classList.add('warn'); }
+        else renderBackup(data);
+      } catch (error) { if (!$('backup-panel').hidden) text('backup-message', 'Backup status unavailable: ' + error.message); }
+      setTimeout(pollBackup, 30000);
+    }
+    async function skip(cancel) {
+      if (!cancel && !confirm('Skip the next checkpoint export?\n\nThe search keeps running and dispatches work during that time. The newest safe copy stays the previous checkpoint until the export after it.')) return;
+      for (const id of ['skip-checkpoint', 'cancel-skip']) $(id).disabled = true;
+      try {
+        const response = await fetch('/control/skip-checkpoint', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({cancel})});
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 202) renderBackup(data);
+        else text('backup-message', (data.error || 'HTTP ' + response.status) + (response.status === 409 ? '' : '; nothing changed.'));
+      } catch (error) { text('backup-message', 'Request failed: ' + error.message); }
+      for (const id of ['skip-checkpoint', 'cancel-skip']) $(id).disabled = false;
+    }
+    $('skip-checkpoint').onclick = () => skip(false);
+    $('cancel-skip').onclick = () => skip(true);
+    pollBackup();
     loadDiagram();
     poll();
   </script>
