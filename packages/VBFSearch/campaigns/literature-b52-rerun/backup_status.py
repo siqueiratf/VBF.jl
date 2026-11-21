@@ -157,7 +157,11 @@ def results_export(offsite):
     try:
         with open(os.path.join(offsite, "export", "latest", "MANIFEST.json")) as f:
             m = json.load(f)
-        return {"created_utc": m.get("created_utc"), "class_rows": m.get("class_rows")}
+        stamp = m.get("created_utc") or ""
+        # export_results.py writes a compact stamp (20261121T155027Z); browsers need ISO 8601.
+        if len(stamp) == 16 and stamp[8] == "T":
+            stamp = f"{stamp[:4]}-{stamp[4:6]}-{stamp[6:8]}T{stamp[9:11]}:{stamp[11:13]}:{stamp[13:15]}Z"
+        return {"created_utc": stamp or None, "class_rows": m.get("class_rows")}
     except (OSError, ValueError):
         return None
 
