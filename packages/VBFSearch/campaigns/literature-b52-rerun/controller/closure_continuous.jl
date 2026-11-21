@@ -619,7 +619,12 @@ function run(config)
         excluded_json=_reservation_ids_json(excluded)
         if _deferral_on(heavy) && time()-heavy_owners_refreshed>=60
             owner_rows=FP._closure_rows(s,"SELECT parent_id FROM jobs WHERE kind IN ('v5','deduplicate') AND parent_id IN (SELECT DISTINCT parent_id FROM jobs WHERE status IN ('pending','paused') AND kind='deduplicate') GROUP BY parent_id HAVING $(_heavy_having(heavy))")
-            heavy_owners=_reservation_ids_json(Int(r["parent_id"]) for r in owner_rows);heavy_owners_refreshed=time()
+            owner_ids=Int[Int(r["parent_id"]) for r in owner_rows]
+            heavy_owners=_reservation_ids_json(owner_ids);heavy_owners_refreshed=time()
+            # Park these EA jobs outside the partial EA index (status 'deferred'),
+            # so that the EA reservation does not scan them on each call. A
+            # session with both bounds at 0 sets them back to 'pending'.
+            isempty(owner_ids) || FP._closure_exec(s,"UPDATE jobs SET status='deferred' WHERE kind='deduplicate' AND status IN ('pending','paused') AND parent_id IN ($(join(owner_ids,",")))")
         end
         ea=FP._closure_rows(s,ea_queue_sql,(s.session,retries_json,excluded_json,heavy_owners,limit))
         items=Any[(job=j,equivalence=true) for j in ea]
@@ -736,6 +741,7 @@ function run(config)
         cache_mb>=0 && mmap_mb>=0 || throw(ArgumentError("sqlite_cache_mb and sqlite_mmap_mb must be nonnegative"))
         cache_mb>0 && FP._closure_exec(s,"PRAGMA cache_size=-$(cache_mb*1024)")
         mmap_mb>0 && collect(FP.SQLite.DBInterface.execute(s.db,"PRAGMA mmap_size=$(mmap_mb*1024*1024)"))
+        _deferral_on(heavy) || FP._closure_exec(s,"UPDATE jobs SET status='pending' WHERE status='deferred'")
         active_environment=ClosureOperations.bind_active_environment!(s)
         if !isempty(checkpoint_root)
             checkpoint_exports=ClosureOperations.checkpoint_generations(checkpoint_root,
