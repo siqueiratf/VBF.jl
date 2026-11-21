@@ -630,6 +630,12 @@ function run(config)
         sync_mode=uppercase(String(get(config,"sqlite_synchronous","FULL")))
         sync_mode in ("FULL","NORMAL") || throw(ArgumentError("sqlite_synchronous must be FULL or NORMAL"))
         sync_mode=="FULL" || FP._closure_exec(s,"PRAGMA synchronous=$sync_mode")
+        # Optional: a larger page cache and memory-mapped reads for the coordinator
+        # connection. The SQLite default cache is about 2 MB, small for a ledger of tens of GB.
+        cache_mb=Int(get(config,"sqlite_cache_mb",0));mmap_mb=Int(get(config,"sqlite_mmap_mb",0))
+        cache_mb>=0 && mmap_mb>=0 || throw(ArgumentError("sqlite_cache_mb and sqlite_mmap_mb must be nonnegative"))
+        cache_mb>0 && FP._closure_exec(s,"PRAGMA cache_size=-$(cache_mb*1024)")
+        mmap_mb>0 && collect(FP.SQLite.DBInterface.execute(s.db,"PRAGMA mmap_size=$(mmap_mb*1024*1024)"))
         active_environment=ClosureOperations.bind_active_environment!(s)
         if !isempty(checkpoint_root)
             checkpoint_exports=ClosureOperations.checkpoint_generations(checkpoint_root,
