@@ -624,6 +624,12 @@ function run(config)
         end
         println("Opening the archived checkpoint once for continuous seed expansion");flush(stdout)
         opened=time();s=FP._closure_open(directory);validated=time()
+        # Optional: WAL with synchronous=NORMAL skips the sync on each commit. The ledger
+        # stays consistent; an operating-system crash can lose the last commits, which a
+        # restart recomputes. Default FULL keeps the session-11 behaviour.
+        sync_mode=uppercase(String(get(config,"sqlite_synchronous","FULL")))
+        sync_mode in ("FULL","NORMAL") || throw(ArgumentError("sqlite_synchronous must be FULL or NORMAL"))
+        sync_mode=="FULL" || FP._closure_exec(s,"PRAGMA synchronous=$sync_mode")
         active_environment=ClosureOperations.bind_active_environment!(s)
         if !isempty(checkpoint_root)
             checkpoint_exports=ClosureOperations.checkpoint_generations(checkpoint_root,
