@@ -557,6 +557,14 @@ function run(config)
     function export_checkpoint!(;force=false)
         isempty(checkpoint_root) && return
         !force && (checkpoint_interval==0 || time()-last_checkpoint<checkpoint_interval) && return
+        # Operator control: RUN/CHECKPOINT_SKIP skips this one export (scheduled or on stop).
+        skip_file=joinpath(directory,"CHECKPOINT_SKIP")
+        if isfile(skip_file)
+            rm(skip_file;force=true);last_checkpoint=time()
+            emit!("checkpoint-metrics.jsonl",Dict("utc"=>FP._closure_now(),"skipped"=>true,"on_stop"=>force))
+            println(FP.JSON3.write(Dict("event"=>"checkpoint_skipped","on_stop"=>force)));flush(stdout)
+            return
+        end
         ClosureOperations.check_storage!(storage;force=true)
         storage.stopped[] && return
         SQLite.intransaction(s.db) && error("checkpoint export requires a committed boundary")
