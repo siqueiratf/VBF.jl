@@ -296,7 +296,21 @@ function run(config)
     function select_window!()
         roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true,heavy)
         isempty(roots) && return false
-        get(first(roots),"selection_kind","construction")=="construction" && lineage_filter(roots)
+        if lineage_siblings>0 && get(first(roots),"selection_kind","construction")=="construction"
+            # Seed the sibling counts from heavy parents just before the window.
+            local lo=max(1,Int(first(roots)["id"])-2000);local hi=Int(first(roots)["id"])-1
+            local seeded=[Int(r["parent_id"]) for r in FP._closure_rows(s,"SELECT parent_id FROM jobs WHERE parent_id BETWEEN $lo AND $hi AND kind IN ('v5','deduplicate') GROUP BY parent_id HAVING $(_heavy_having(heavy))")]
+            for (child,gp) in grandparents(seeded)
+                lineage_heavy[gp]=get(lineage_heavy,gp,0)+1;lineage_seen[gp]=get(lineage_seen,gp,0)+1;lineage_of[child]=gp
+            end
+            roots=lineage_filter(roots)
+            while isempty(roots)
+                local found=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true,heavy,excluded_parents=lineage_deferred)
+                isempty(found) && return false
+                get(first(found),"selection_kind","construction")=="construction" || (roots=found;break)
+                roots=lineage_filter(found)
+            end
+        end
         for p in parents
             haskey(timings,p) && haskey(timings[p],"completed_utc") && delete!(timings,p)
         end
