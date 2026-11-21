@@ -64,14 +64,15 @@ end
 Fallback owners may lie outside the construction scope; their selection kind
 instructs the controller to dispatch only global EA work and no constructions.
 """
-function select_parents(db,window_size;parent_scope="all",fallback=false,excluded_parents=Int[],only_origin=nothing,max_v5_spaces=0)
+function select_parents(db,window_size;parent_scope="all",fallback=false,excluded_parents=Int[],only_origin=nothing,heavy=(v5=0,ea=0))
     window_size>0 || throw(ArgumentError("invalid window size"))
     parent_scope in ("all","discovered") || throw(ArgumentError("invalid parent scope"))
     excluded=isempty(excluded_parents) ? "0" : join(sort!(unique(Int.(excluded_parents))),",")
     unfinished="p.id NOT IN ($excluded) AND EXISTS(SELECT 1 FROM jobs j WHERE j.parent_id=p.id AND j.kind IN ('prepare_v5','v5','switching') AND j.status!='done')"
-    # A heavy parent (more maximizing 5-spaces than the bound) is deferred: no
-    # new window selects it while the bound is active. Unprepared parents pass.
-    max_v5_spaces>0 && (unfinished*=" AND (SELECT COUNT(*) FROM jobs j WHERE j.parent_id=p.id AND j.kind='v5')<=$max_v5_spaces")
+    # A heavy parent (more maximizing 5-spaces or more EA jobs than a bound) is
+    # deferred: no new window selects it while the bound is active.
+    heavy.v5>0 && (unfinished*=" AND (SELECT COUNT(*) FROM jobs j WHERE j.parent_id=p.id AND j.kind='v5')<=$(heavy.v5)")
+    heavy.ea>0 && (unfinished*=" AND (SELECT COUNT(*) FROM jobs j WHERE j.parent_id=p.id AND j.kind='deduplicate')<=$(heavy.ea)")
     origins=parent_scope=="discovered" ? ("discovered",) : ("root","discovered")
     for origin in origins
         only_origin===nothing || origin==only_origin || continue
@@ -100,13 +101,15 @@ The partial queue index and deterministic ordering match the literal queries.
 _reservation_ids_json(ids)=String(FP.JSON3.write(sort!(Int[id for id in ids])))
 function _reservation_ea_sql(indexed)
     index=indexed ? " INDEXED BY jobs_pending_ea" : ""
-    "SELECT * FROM jobs$index WHERE kind='deduplicate' AND status IN ('pending','paused') AND (last_session!=? OR id IN (SELECT value FROM json_each(?))) AND id NOT IN (SELECT value FROM json_each(?)) ORDER BY id LIMIT ?"
+    "SELECT * FROM jobs$index WHERE kind='deduplicate' AND status IN ('pending','paused') AND (last_session!=? OR id IN (SELECT value FROM json_each(?))) AND id NOT IN (SELECT value FROM json_each(?)) AND parent_id NOT IN (SELECT value FROM json_each(?)) ORDER BY id LIMIT ?"
 end
-_heavy_parents_sql(ids,max_v5_spaces)=
-    "SELECT parent_id FROM jobs WHERE parent_id IN ($ids) AND kind='v5' GROUP BY parent_id HAVING COUNT(*)>$max_v5_spaces"
-_reservation_construction_sql(ids,max_v5_spaces=0)=
+_deferral_on(heavy)=heavy.v5>0 || heavy.ea>0
+_heavy_having(heavy)=join([c for c in (heavy.v5>0 ? "SUM(kind='v5')>$(heavy.v5)" : "",heavy.ea>0 ? "SUM(kind='deduplicate')>$(heavy.ea)" : "") if !isempty(c)]," OR ")
+_heavy_parents_sql(ids,heavy)=
+    "SELECT parent_id FROM jobs WHERE parent_id IN ($ids) AND kind IN ('v5','deduplicate') GROUP BY parent_id HAVING $(_heavy_having(heavy))"
+_reservation_construction_sql(ids,heavy=(v5=0,ea=0))=
     "SELECT * FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('pending','paused') AND id NOT IN (SELECT value FROM json_each(?))"*
-    (max_v5_spaces>0 ? " AND NOT (kind='v5' AND parent_id IN ($(_heavy_parents_sql(ids,max_v5_spaces))))" : "")*" ORDER BY parent_id,id LIMIT ?"
+    (_deferral_on(heavy) ? " AND NOT (kind='v5' AND parent_id IN ($(_heavy_parents_sql(ids,heavy))))" : "")*" ORDER BY parent_id,id LIMIT ?"
 
 """Rolling completion latency and throughput, excluding checkpoint startup.
 
@@ -160,9 +163,12 @@ function run(config)
     Int(get(config,"window_size",100))>0 || error("invalid window size")
     rolling_windows=get(config,"rolling_windows",false)
     rolling_windows isa Bool || throw(ArgumentError("rolling_windows must be Boolean"))
-    max_v5_spaces=Int(get(config,"heavy_v5_threshold",0))
-    max_v5_spaces>=0 || throw(ArgumentError("invalid heavy parent threshold"))
-    max_v5_spaces==0 || rolling_windows || throw(ArgumentError("heavy parent deferral needs rolling windows"))
+    heavy=(v5=Int(get(config,"heavy_v5_threshold",0)),ea=Int(get(config,"heavy_ea_threshold",0)))
+    heavy.v5>=0 && heavy.ea>=0 || throw(ArgumentError("invalid heavy parent threshold"))
+    _deferral_on(heavy) && !rolling_windows && throw(ArgumentError("heavy parent deferral needs rolling windows"))
+    # EA jobs owned by heavy parents wait as well; the set is refreshed from the
+    # pending EA queue at most once per minute.
+    heavy_owners="[]";heavy_owners_refreshed=-Inf
     max_windows=Int(get(config,"max_windows",typemax(Int)))
     max_windows>0 || throw(ArgumentError("invalid window limit"))
     parent_scope=String(get(config,"parent_scope","all"))
@@ -251,7 +257,7 @@ function run(config)
     cosets(rows)=sum(max(0,Int(j["direction"])-1) for j in rows if j["kind"]=="v5";init=0)
     count_status(rows,kinds,status)=count(j->j["kind"] in kinds && j["status"]==status,rows)
     function select_window!()
-        roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true,max_v5_spaces)
+        roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true,heavy)
         isempty(roots) && return false
         for p in parents
             haskey(timings,p) && haskey(timings[p],"completed_utc") && delete!(timings,p)
@@ -404,7 +410,7 @@ function run(config)
             "elapsed_seconds"=>time()-started,"active_seconds"=>active_started>0 ? time()-active_started : 0.0,
             "scope"=>execution_scope*"; both constructions; EA admission before recursion")
         report["root_batch"]=batch
-        report["continuous_search"]=merge(batch,Dict("window_origin"=>window_origin,"windows_completed"=>windows_completed,"windows_started"=>windows_started,"deferred_heavy_parents"=>deferred_heavy,"heavy_v5_threshold"=>max_v5_spaces,"rolling_windows"=>rolling_windows,"active_windows"=>window_active ? length(cohorts) : 0,"duration_policy"=>"until STOP","parent_scope"=>parent_scope))
+        report["continuous_search"]=merge(batch,Dict("window_origin"=>window_origin,"windows_completed"=>windows_completed,"windows_started"=>windows_started,"deferred_heavy_parents"=>deferred_heavy,"heavy_v5_threshold"=>heavy.v5,"heavy_ea_threshold"=>heavy.ea,"rolling_windows"=>rolling_windows,"active_windows"=>window_active ? length(cohorts) : 0,"duration_policy"=>"until STOP","parent_scope"=>parent_scope))
         report["seed_statistics"]=seed_statistics(history,completion_events,active_started;now=time(),completed_this_session,parent_scope)
         report["runtime_metrics"]=ClosureOperations.runtime_snapshot(runtime,resources)
         report["runtime_metrics"]["property_cache"]=property_cache_statistics(contexts)
@@ -494,19 +500,20 @@ function run(config)
         changed=false
         while !isempty(cohorts)
             cohort=first(cohorts);selected=join(cohort,",")
-            heavy_filter=max_v5_spaces>0 ? " AND NOT (kind='v5' AND parent_id IN ($(_heavy_parents_sql(selected,max_v5_spaces))))" : ""
+            heavy_filter=_deferral_on(heavy) ? " AND NOT (kind='v5' AND parent_id IN ($(_heavy_parents_sql(selected,heavy))))" : ""
             unfinished=FP._closure_count(s,"SELECT EXISTS(SELECT 1 FROM jobs WHERE parent_id IN ($selected) AND kind IN ('prepare_v5','v5','switching') AND status!='done'$heavy_filter) n")
             unfinished==0 || break
-            if max_v5_spaces>0
-                heavy=FP._closure_rows(s,"SELECT parent_id,COUNT(*) spaces,SUM(status='done') done FROM jobs WHERE parent_id IN ($selected) AND kind='v5' GROUP BY parent_id HAVING COUNT(*)>$max_v5_spaces AND SUM(status!='done')>0")
-                for row in heavy
+            if _deferral_on(heavy)
+                heavy_rows=FP._closure_rows(s,"SELECT parent_id,SUM(kind='v5') spaces,SUM(kind='v5' AND status='done') done,SUM(kind='deduplicate') ea,SUM(kind='deduplicate' AND status='done') ea_done FROM jobs WHERE parent_id IN ($selected) AND kind IN ('v5','deduplicate') GROUP BY parent_id HAVING $(_heavy_having(heavy))")
+                for row in heavy_rows
                     p=Int(row["parent_id"])
                     emit!("deferred-parents.jsonl",Dict("parent_id"=>p,"maximizing_five_spaces"=>Int(row["spaces"]),
-                        "completed_spaces"=>Int(row["done"]),"threshold"=>max_v5_spaces,"deferred_utc"=>FP._closure_now(),
+                        "completed_spaces"=>Int(row["done"]),"ea_jobs"=>Int(row["ea"]),"completed_ea_jobs"=>Int(row["ea_done"]),
+                        "heavy_v5_threshold"=>heavy.v5,"heavy_ea_threshold"=>heavy.ea,"deferred_utc"=>FP._closure_now(),
                         "origin"=>get(get(timings,p,Dict()),"origin",""),"source"=>get(get(timings,p,Dict()),"source","")))
                     delete!(timings,p)
                 end
-                isempty(heavy) || (deferred_heavy+=length(heavy))
+                deferred_heavy+=length(heavy_rows)
             end
             record_completed!(construction();selected_parents=cohort)
             windows_completed+=1
@@ -522,7 +529,7 @@ function run(config)
         end
         if length(cohorts)<2 && windows_started<max_windows && !stopped()
             roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,
-                excluded_parents=parents,only_origin=window_origin,max_v5_spaces)
+                excluded_parents=parents,only_origin=window_origin,heavy)
             if !isempty(roots)
                 # Fold existing deltas once before adding potentially resumed
                 # parents, whose previous work is already included in base.
@@ -551,19 +558,23 @@ function run(config)
     function reserve_items(limit,excluded)
         retries_json=_reservation_ids_json(id for (id,when) in deferred if when<=time())
         excluded_json=_reservation_ids_json(excluded)
-        ea=FP._closure_rows(s,ea_queue_sql,(s.session,retries_json,excluded_json,limit))
+        if _deferral_on(heavy) && time()-heavy_owners_refreshed>=60
+            owner_rows=FP._closure_rows(s,"SELECT parent_id FROM jobs WHERE kind IN ('v5','deduplicate') AND parent_id IN (SELECT DISTINCT parent_id FROM jobs WHERE status IN ('pending','paused') AND kind='deduplicate') GROUP BY parent_id HAVING $(_heavy_having(heavy))")
+            heavy_owners=_reservation_ids_json(Int(r["parent_id"]) for r in owner_rows);heavy_owners_refreshed=time()
+        end
+        ea=FP._closure_rows(s,ea_queue_sql,(s.session,retries_json,excluded_json,heavy_owners,limit))
         items=Any[(job=j,equivalence=true) for j in ea]
         length(items)==limit && return items
         failed=FP._closure_count(s,"SELECT EXISTS(SELECT 1 FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('failed','blocked') LIMIT 1) n")
         failed==0 || error("parent coverage requires recovery")
-        pending=FP._closure_rows(s,_reservation_construction_sql(ids,max_v5_spaces),(excluded_json,limit-length(items)))
+        pending=FP._closure_rows(s,_reservation_construction_sql(ids,heavy),(excluded_json,limit-length(items)))
         append!(items,[(job=j,equivalence=false) for j in pending])
         if length(items)<limit && advance_rolling_window!()
             # Requery after the bounded frontier changes. Existing descriptors
             # remain in the FIFO, and exclusions preserve unique reservations.
             used=union(excluded,Set(Int[item.job["id"] for item in items]))
             used_json=_reservation_ids_json(used)
-            extra=FP._closure_rows(s,_reservation_construction_sql(ids,max_v5_spaces),(used_json,limit-length(items)))
+            extra=FP._closure_rows(s,_reservation_construction_sql(ids,heavy),(used_json,limit-length(items)))
             append!(items,[(job=j,equivalence=false) for j in extra])
         end
         items

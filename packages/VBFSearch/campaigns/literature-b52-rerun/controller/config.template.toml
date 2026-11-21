@@ -18,8 +18,10 @@ packed_rank_table = true
 parent_scope = "all"
 baseline_policy = "summary"
 reservation_horizon = 1024
-# Defer parents with more maximizing 5-spaces than this (0 = off; needs rolling_windows).
+# Defer parents with more maximizing 5-spaces, or more EA jobs, than these bounds
+# (0 = off; needs rolling_windows). Their EA jobs wait as well.
 heavy_v5_threshold = 0
+heavy_ea_threshold = 0
 indexed_ea_queue = true
 storage_paths = ["."]
 storage_max_bytes = 214748364800
