@@ -169,6 +169,14 @@ function run(config)
     # EA jobs owned by heavy parents wait as well; the set is refreshed from the
     # pending EA queue at most once per minute.
     heavy_owners="[]";heavy_owners_refreshed=-Inf
+    # Siblings (children of one grandparent) of heavy parents are heavy as
+    # well. Once a grandparent has `heavy_lineage_siblings` deferred children,
+    # and they are at least 80% of its examined children, a new window defers
+    # its other children without construction work (0 = off).
+    lineage_siblings=Int(get(config,"heavy_lineage_siblings",0))
+    lineage_siblings>=0 || throw(ArgumentError("invalid lineage bound"))
+    lineage_siblings==0 || _deferral_on(heavy) || throw(ArgumentError("lineage deferral needs a heavy parent bound"))
+    lineage_seen=Dict{Int,Int}();lineage_heavy=Dict{Int,Int}();lineage_of=Dict{Int,Int}();lineage_deferred=Int[]
     max_windows=Int(get(config,"max_windows",typemax(Int)))
     max_windows>0 || throw(ArgumentError("invalid window limit"))
     parent_scope=String(get(config,"parent_scope","all"))
@@ -256,9 +264,39 @@ function run(config)
     kernels()=FP._closure_count(s,"SELECT COUNT(*) n FROM kernels WHERE job_id IN (SELECT id FROM jobs WHERE parent_id IN ($ids) AND kind='switching') AND dimension>0")
     cosets(rows)=sum(max(0,Int(j["direction"])-1) for j in rows if j["kind"]=="v5";init=0)
     count_status(rows,kinds,status)=count(j->j["kind"] in kinds && j["status"]==status,rows)
+    # The EA job that admitted a parent belongs to the grandparent.
+    function grandparents(parent_ids)
+        local found=Dict{Int,Int}()
+        isempty(parent_ids) && return found
+        for row in FP._closure_rows(s,"SELECT q.id,j.parent_id FROM parents q JOIN jobs j ON j.job_key='deduplicate:'||q.candidate_id WHERE q.id IN ($(join(parent_ids,",")))")
+            row["parent_id"] isa Integer && (found[Int(row["id"])]=Int(row["parent_id"]))
+        end
+        found
+    end
+    function lineage_filter(roots)
+        lineage_siblings>0 || return roots
+        local found=grandparents([Int(r["id"]) for r in roots])
+        local kept=Any[]
+        for r in roots
+            local pid=Int(r["id"])
+            local gp=get(found,pid,0)
+            local h=get(lineage_heavy,gp,0)
+            local seen=get(lineage_seen,gp,0)
+            if gp>0 && h>=lineage_siblings && h>=0.8*seen
+                push!(lineage_deferred,pid);deferred_heavy+=1
+                emit!("deferred-parents.jsonl",Dict("parent_id"=>pid,"reason"=>"lineage","grandparent"=>gp,"heavy_siblings"=>h,
+                    "examined_siblings"=>seen,"deferred_utc"=>FP._closure_now(),"origin"=>r["origin"],"source"=>r["source"]))
+            else
+                gp>0 && (lineage_seen[gp]=seen+1;lineage_of[pid]=gp)
+                push!(kept,r)
+            end
+        end
+        kept
+    end
     function select_window!()
         roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true,heavy)
         isempty(roots) && return false
+        get(first(roots),"selection_kind","construction")=="construction" && lineage_filter(roots)
         for p in parents
             haskey(timings,p) && haskey(timings[p],"completed_utc") && delete!(timings,p)
         end
@@ -410,7 +448,7 @@ function run(config)
             "elapsed_seconds"=>time()-started,"active_seconds"=>active_started>0 ? time()-active_started : 0.0,
             "scope"=>execution_scope*"; both constructions; EA admission before recursion")
         report["root_batch"]=batch
-        report["continuous_search"]=merge(batch,Dict("window_origin"=>window_origin,"windows_completed"=>windows_completed,"windows_started"=>windows_started,"deferred_heavy_parents"=>deferred_heavy,"heavy_v5_threshold"=>heavy.v5,"heavy_ea_threshold"=>heavy.ea,"rolling_windows"=>rolling_windows,"active_windows"=>window_active ? length(cohorts) : 0,"duration_policy"=>"until STOP","parent_scope"=>parent_scope))
+        report["continuous_search"]=merge(batch,Dict("window_origin"=>window_origin,"windows_completed"=>windows_completed,"windows_started"=>windows_started,"deferred_heavy_parents"=>deferred_heavy,"heavy_v5_threshold"=>heavy.v5,"heavy_ea_threshold"=>heavy.ea,"heavy_lineage_siblings"=>lineage_siblings,"lineage_deferred_parents"=>length(lineage_deferred),"rolling_windows"=>rolling_windows,"active_windows"=>window_active ? length(cohorts) : 0,"duration_policy"=>"until STOP","parent_scope"=>parent_scope))
         report["seed_statistics"]=seed_statistics(history,completion_events,active_started;now=time(),completed_this_session,parent_scope)
         report["runtime_metrics"]=ClosureOperations.runtime_snapshot(runtime,resources)
         report["runtime_metrics"]["property_cache"]=property_cache_statistics(contexts)
@@ -507,6 +545,7 @@ function run(config)
                 heavy_rows=FP._closure_rows(s,"SELECT parent_id,SUM(kind='v5') spaces,SUM(kind='v5' AND status='done') done,SUM(kind='deduplicate') ea,SUM(kind='deduplicate' AND status='done') ea_done FROM jobs WHERE parent_id IN ($selected) AND kind IN ('v5','deduplicate') GROUP BY parent_id HAVING $(_heavy_having(heavy))")
                 for row in heavy_rows
                     p=Int(row["parent_id"])
+                    haskey(lineage_of,p) && (lineage_heavy[lineage_of[p]]=get(lineage_heavy,lineage_of[p],0)+1)
                     emit!("deferred-parents.jsonl",Dict("parent_id"=>p,"maximizing_five_spaces"=>Int(row["spaces"]),
                         "completed_spaces"=>Int(row["done"]),"ea_jobs"=>Int(row["ea"]),"completed_ea_jobs"=>Int(row["ea_done"]),
                         "heavy_v5_threshold"=>heavy.v5,"heavy_ea_threshold"=>heavy.ea,"deferred_utc"=>FP._closure_now(),
@@ -528,8 +567,14 @@ function run(config)
             changed=true
         end
         if length(cohorts)<2 && windows_started<max_windows && !stopped()
-            roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,
-                excluded_parents=parents,only_origin=window_origin,heavy)
+            roots=Any[]
+            while true
+                local found=select_parents(s,Int(get(config,"window_size",100));parent_scope,
+                    excluded_parents=vcat(parents,lineage_deferred),only_origin=window_origin,heavy)
+                isempty(found) && break
+                roots=lineage_filter(found)
+                isempty(roots) || break
+            end
             if !isempty(roots)
                 # Fold existing deltas once before adding potentially resumed
                 # parents, whose previous work is already included in base.

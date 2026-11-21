@@ -14,6 +14,8 @@
 #                                     HORIZON (1024: packets reserved ahead of the ordered apply)
 #                                     HEAVY_V5 (0 = off): defer parents with more maximizing
 #                                     5-spaces than this, HEAVY_EA (0 = off) with more EA jobs;
+#                                     LINEAGE (0 = off): after this many deferred siblings (>=80%),
+#                                     defer the other children of that grandparent at once;
 #                                     evidence-*/deferred-parents.jsonl lists them
 #                                     Worker processes (default off): WORKERS is a space-
 #                                     separated list of taskset CPU lists, one per worker,
@@ -68,6 +70,7 @@ start)
     -e "s|^reservation_horizon = .*|reservation_horizon = ${HORIZON:-1024}|" \
     -e "s|^heavy_v5_threshold = .*|heavy_v5_threshold = ${HEAVY_V5:-0}|" \
     -e "s|^heavy_ea_threshold = .*|heavy_ea_threshold = ${HEAVY_EA:-0}|" \
+    -e "s|^heavy_lineage_siblings = .*|heavy_lineage_siblings = ${LINEAGE:-0}|" \
     -e "\$a sqlite_synchronous = \"${SQLITE_SYNC:-FULL}\"\nsqlite_cache_mb = ${SQLITE_CACHE_MB:-0}\nsqlite_mmap_mb = ${SQLITE_MMAP_MB:-0}" \
     "$here/controller/config.template.toml" > "$config"
   if [ -n "${WORKERS:-}" ]; then
