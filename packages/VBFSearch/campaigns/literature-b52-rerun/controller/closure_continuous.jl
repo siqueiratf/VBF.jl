@@ -180,6 +180,10 @@ function run(config)
     # Heavy parents already counted for their grandparent, and lineage-deferred
     # parents inside the active cohorts (their v5 jobs and EA jobs wait too).
     lineage_counted=Set{Int}();lineage_active=Int[]
+    # A grandparent is flagged (heavy family) when it has at least
+    # `heavy_lineage_siblings` heavy children and they are at least 80% of its
+    # prepared children. Prepared children are counted once.
+    lineage_prepared=Dict{Int,Int}();lineage_prepared_seen=Set{Int}();lineage_flagged=Set{Int}()
     max_windows=Int(get(config,"max_windows",typemax(Int)))
     max_windows>0 || throw(ArgumentError("invalid window limit"))
     parent_scope=String(get(config,"parent_scope","all"))
@@ -285,7 +289,7 @@ function run(config)
             local gp=get(found,pid,0)
             local h=get(lineage_heavy,gp,0)
             local seen=get(lineage_seen,gp,0)
-            if gp>0 && h>=lineage_siblings && h>=0.8*seen
+            if gp in lineage_flagged
                 push!(lineage_deferred,pid);deferred_heavy+=1
                 emit!("deferred-parents.jsonl",Dict("parent_id"=>pid,"reason"=>"lineage","grandparent"=>gp,"heavy_siblings"=>h,
                     "examined_siblings"=>seen,"deferred_utc"=>FP._closure_now(),"origin"=>r["origin"],"source"=>r["source"]))
@@ -302,38 +306,54 @@ function run(config)
     end
     # Count heavy parents of the active cohorts as soon as they are known, and
     # defer the unfinished siblings in the active cohorts when the rule holds.
+    # Count prepared and heavy children per grandparent, then flag families.
+    function lineage_count!(parent_ids,gps)
+        isempty(parent_ids) && return
+        for chunk in Iterators.partition(parent_ids,2000)
+            for row in FP._closure_rows(s,"SELECT parent_id,MAX(kind='prepare_v5' AND status='done') prepared,CASE WHEN $(_heavy_having(heavy)) THEN 1 ELSE 0 END heavy FROM jobs WHERE parent_id IN ($(join(chunk,","))) AND kind IN ('prepare_v5','v5','deduplicate') GROUP BY parent_id")
+                local pid=Int(row["parent_id"]);local gp=get(gps,pid,0)
+                gp>0 || continue
+                if Int(row["prepared"])==1 && !(pid in lineage_prepared_seen)
+                    push!(lineage_prepared_seen,pid);lineage_prepared[gp]=get(lineage_prepared,gp,0)+1
+                end
+                if Int(row["heavy"])==1 && !(pid in lineage_counted)
+                    push!(lineage_counted,pid);lineage_heavy[gp]=get(lineage_heavy,gp,0)+1
+                end
+            end
+        end
+        for (gp,h) in lineage_heavy
+            h>=lineage_siblings && h>=0.8*get(lineage_prepared,gp,0) && push!(lineage_flagged,gp)
+        end
+    end
+    # Each minute: count the active cohorts, and defer the unfinished children
+    # of flagged grandparents inside them.
     function lineage_scan!()
         lineage_siblings>0 && !isempty(parents) || return
-        for row in FP._closure_rows(s,_heavy_parents_sql(ids,heavy))
-            local pid=Int(row["parent_id"])
-            (pid in lineage_counted || !haskey(lineage_of,pid)) && continue
-            push!(lineage_counted,pid);lineage_heavy[lineage_of[pid]]=get(lineage_heavy,lineage_of[pid],0)+1
-        end
+        lineage_count!(parents,lineage_of)
         local candidates=Int[]
         for pid in parents
             local gp=get(lineage_of,pid,0)
-            gp>0 && !(pid in lineage_counted) && !(pid in lineage_active) || continue
-            local h=get(lineage_heavy,gp,0)
-            h>=lineage_siblings && h>=0.8*get(lineage_seen,gp,0) && push!(candidates,pid)
+            gp in lineage_flagged && !(pid in lineage_counted) && !(pid in lineage_active) && push!(candidates,pid)
         end
         isempty(candidates) && return
-        for row in FP._closure_rows(s,"SELECT parent_id,SUM(kind='v5') spaces,SUM(kind='deduplicate') ea FROM jobs WHERE parent_id IN ($(join(candidates,","))) AND kind IN ('v5','deduplicate') GROUP BY parent_id HAVING SUM(kind='v5' AND status!='done')>0")
+        for row in FP._closure_rows(s,"SELECT parent_id,SUM(kind='v5') spaces,SUM(kind='deduplicate') ea FROM jobs WHERE parent_id IN ($(join(candidates,","))) AND kind IN ('prepare_v5','v5','deduplicate') GROUP BY parent_id HAVING SUM(kind IN ('prepare_v5','v5') AND status!='done')>0")
             local pid=Int(row["parent_id"]);local gp=lineage_of[pid]
             push!(lineage_active,pid);push!(lineage_deferred,pid);deferred_heavy+=1
             emit!("deferred-parents.jsonl",Dict("parent_id"=>pid,"reason"=>"lineage_active","grandparent"=>gp,"heavy_siblings"=>lineage_heavy[gp],
-                "examined_siblings"=>get(lineage_seen,gp,0),"maximizing_five_spaces"=>Int(row["spaces"]),"ea_jobs"=>Int(row["ea"]),"deferred_utc"=>FP._closure_now()))
+                "prepared_siblings"=>get(lineage_prepared,gp,0),"maximizing_five_spaces"=>Int(row["spaces"]),"ea_jobs"=>Int(row["ea"]),"deferred_utc"=>FP._closure_now()))
         end
     end
     function select_window!()
         roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true,heavy)
         isempty(roots) && return false
         if lineage_siblings>0 && get(first(roots),"selection_kind","construction")=="construction"
-            # Seed the sibling counts from heavy parents just before the window.
-            local lo=max(1,Int(first(roots)["id"])-2000);local hi=Int(first(roots)["id"])-1
-            local seeded=[Int(r["parent_id"]) for r in FP._closure_rows(s,"SELECT parent_id FROM jobs WHERE parent_id BETWEEN $lo AND $hi AND kind IN ('v5','deduplicate') GROUP BY parent_id HAVING $(_heavy_having(heavy))")]
-            for (child,gp) in grandparents(seeded)
-                lineage_heavy[gp]=get(lineage_heavy,gp,0)+1;lineage_seen[gp]=get(lineage_seen,gp,0)+1;lineage_of[child]=gp;push!(lineage_counted,child)
-            end
+            # Seed the family counts from the parents from 2,000 ids before the
+            # window up to its last parent.
+            local lo=max(1,Int(first(roots)["id"])-2000);local hi=Int(last(roots)["id"])
+            local seeded=collect(lo:hi)
+            local gps=grandparents(seeded)
+            merge!(lineage_of,gps)
+            lineage_count!(seeded,gps)
             roots=lineage_filter(roots)
             while isempty(roots)
                 local found=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true,heavy,excluded_parents=lineage_deferred)
