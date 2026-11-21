@@ -107,9 +107,9 @@ _deferral_on(heavy)=heavy.v5>0 || heavy.ea>0
 _heavy_having(heavy)=join([c for c in (heavy.v5>0 ? "SUM(kind='v5')>$(heavy.v5)" : "",heavy.ea>0 ? "SUM(kind='deduplicate')>$(heavy.ea)" : "") if !isempty(c)]," OR ")
 _heavy_parents_sql(ids,heavy)=
     "SELECT parent_id FROM jobs WHERE parent_id IN ($ids) AND kind IN ('v5','deduplicate') GROUP BY parent_id HAVING $(_heavy_having(heavy))"
-_reservation_construction_sql(ids,heavy=(v5=0,ea=0))=
+_reservation_construction_sql(ids,heavy=(v5=0,ea=0),heavy_sql=_heavy_parents_sql(ids,heavy))=
     "SELECT * FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('pending','paused') AND id NOT IN (SELECT value FROM json_each(?))"*
-    (_deferral_on(heavy) ? " AND NOT (kind='v5' AND parent_id IN ($(_heavy_parents_sql(ids,heavy))))" : "")*" ORDER BY parent_id,id LIMIT ?"
+    (_deferral_on(heavy) ? " AND NOT (kind='v5' AND parent_id IN ($heavy_sql))" : "")*" ORDER BY parent_id,id LIMIT ?"
 
 """Rolling completion latency and throughput, excluding checkpoint startup.
 
@@ -177,6 +177,9 @@ function run(config)
     lineage_siblings>=0 || throw(ArgumentError("invalid lineage bound"))
     lineage_siblings==0 || _deferral_on(heavy) || throw(ArgumentError("lineage deferral needs a heavy parent bound"))
     lineage_seen=Dict{Int,Int}();lineage_heavy=Dict{Int,Int}();lineage_of=Dict{Int,Int}();lineage_deferred=Int[]
+    # Heavy parents already counted for their grandparent, and lineage-deferred
+    # parents inside the active cohorts (their v5 jobs and EA jobs wait too).
+    lineage_counted=Set{Int}();lineage_active=Int[]
     max_windows=Int(get(config,"max_windows",typemax(Int)))
     max_windows>0 || throw(ArgumentError("invalid window limit"))
     parent_scope=String(get(config,"parent_scope","all"))
@@ -293,6 +296,34 @@ function run(config)
         end
         kept
     end
+    function heavy_subquery(idlist)
+        q=_heavy_parents_sql(idlist,heavy)
+        isempty(lineage_active) ? q : q*" UNION SELECT value FROM json_each('$(_reservation_ids_json(lineage_active))')"
+    end
+    # Count heavy parents of the active cohorts as soon as they are known, and
+    # defer the unfinished siblings in the active cohorts when the rule holds.
+    function lineage_scan!()
+        lineage_siblings>0 && !isempty(parents) || return
+        for row in FP._closure_rows(s,_heavy_parents_sql(ids,heavy))
+            local pid=Int(row["parent_id"])
+            (pid in lineage_counted || !haskey(lineage_of,pid)) && continue
+            push!(lineage_counted,pid);lineage_heavy[lineage_of[pid]]=get(lineage_heavy,lineage_of[pid],0)+1
+        end
+        local candidates=Int[]
+        for pid in parents
+            local gp=get(lineage_of,pid,0)
+            gp>0 && !(pid in lineage_counted) && !(pid in lineage_active) || continue
+            local h=get(lineage_heavy,gp,0)
+            h>=lineage_siblings && h>=0.8*get(lineage_seen,gp,0) && push!(candidates,pid)
+        end
+        isempty(candidates) && return
+        for row in FP._closure_rows(s,"SELECT parent_id,SUM(kind='v5') spaces,SUM(kind='deduplicate') ea FROM jobs WHERE parent_id IN ($(join(candidates,","))) AND kind IN ('v5','deduplicate') GROUP BY parent_id HAVING SUM(kind='v5' AND status!='done')>0")
+            local pid=Int(row["parent_id"]);local gp=lineage_of[pid]
+            push!(lineage_active,pid);push!(lineage_deferred,pid);deferred_heavy+=1
+            emit!("deferred-parents.jsonl",Dict("parent_id"=>pid,"reason"=>"lineage_active","grandparent"=>gp,"heavy_siblings"=>lineage_heavy[gp],
+                "examined_siblings"=>get(lineage_seen,gp,0),"maximizing_five_spaces"=>Int(row["spaces"]),"ea_jobs"=>Int(row["ea"]),"deferred_utc"=>FP._closure_now()))
+        end
+    end
     function select_window!()
         roots=select_parents(s,Int(get(config,"window_size",100));parent_scope,fallback=true,heavy)
         isempty(roots) && return false
@@ -301,7 +332,7 @@ function run(config)
             local lo=max(1,Int(first(roots)["id"])-2000);local hi=Int(first(roots)["id"])-1
             local seeded=[Int(r["parent_id"]) for r in FP._closure_rows(s,"SELECT parent_id FROM jobs WHERE parent_id BETWEEN $lo AND $hi AND kind IN ('v5','deduplicate') GROUP BY parent_id HAVING $(_heavy_having(heavy))")]
             for (child,gp) in grandparents(seeded)
-                lineage_heavy[gp]=get(lineage_heavy,gp,0)+1;lineage_seen[gp]=get(lineage_seen,gp,0)+1;lineage_of[child]=gp
+                lineage_heavy[gp]=get(lineage_heavy,gp,0)+1;lineage_seen[gp]=get(lineage_seen,gp,0)+1;lineage_of[child]=gp;push!(lineage_counted,child)
             end
             roots=lineage_filter(roots)
             while isempty(roots)
@@ -552,14 +583,14 @@ function run(config)
         changed=false
         while !isempty(cohorts)
             cohort=first(cohorts);selected=join(cohort,",")
-            heavy_filter=_deferral_on(heavy) ? " AND NOT (kind='v5' AND parent_id IN ($(_heavy_parents_sql(selected,heavy))))" : ""
+            heavy_filter=_deferral_on(heavy) ? " AND NOT (kind='v5' AND parent_id IN ($(heavy_subquery(selected))))" : ""
             unfinished=FP._closure_count(s,"SELECT EXISTS(SELECT 1 FROM jobs WHERE parent_id IN ($selected) AND kind IN ('prepare_v5','v5','switching') AND status!='done'$heavy_filter) n")
             unfinished==0 || break
             if _deferral_on(heavy)
                 heavy_rows=FP._closure_rows(s,"SELECT parent_id,SUM(kind='v5') spaces,SUM(kind='v5' AND status='done') done,SUM(kind='deduplicate') ea,SUM(kind='deduplicate' AND status='done') ea_done FROM jobs WHERE parent_id IN ($selected) AND kind IN ('v5','deduplicate') GROUP BY parent_id HAVING $(_heavy_having(heavy))")
                 for row in heavy_rows
                     p=Int(row["parent_id"])
-                    haskey(lineage_of,p) && (lineage_heavy[lineage_of[p]]=get(lineage_heavy,lineage_of[p],0)+1)
+                    haskey(lineage_of,p) && !(p in lineage_counted) && (push!(lineage_counted,p);lineage_heavy[lineage_of[p]]=get(lineage_heavy,lineage_of[p],0)+1)
                     emit!("deferred-parents.jsonl",Dict("parent_id"=>p,"maximizing_five_spaces"=>Int(row["spaces"]),
                         "completed_spaces"=>Int(row["done"]),"ea_jobs"=>Int(row["ea"]),"completed_ea_jobs"=>Int(row["ea_done"]),
                         "heavy_v5_threshold"=>heavy.v5,"heavy_ea_threshold"=>heavy.ea,"deferred_utc"=>FP._closure_now(),
@@ -573,6 +604,10 @@ function run(config)
             publish!(;force=true,fresh_counts=true)
             base=TOML.parsefile(joinpath(directory,"progress.toml"))
             popfirst!(cohorts);filter!(p->!(p in cohort),parents)
+            for p in intersect(lineage_active,cohort)
+                delete!(timings,p)
+            end
+            filter!(p->!(p in cohort),lineage_active)
             for p in cohort
                 haskey(timings,p) && haskey(timings[p],"completed_utc") && delete!(timings,p)
             end
@@ -619,7 +654,8 @@ function run(config)
         excluded_json=_reservation_ids_json(excluded)
         if _deferral_on(heavy) && time()-heavy_owners_refreshed>=60
             owner_rows=FP._closure_rows(s,"SELECT parent_id FROM jobs WHERE kind IN ('v5','deduplicate') AND parent_id IN (SELECT DISTINCT parent_id FROM jobs WHERE status IN ('pending','paused') AND kind='deduplicate') GROUP BY parent_id HAVING $(_heavy_having(heavy))")
-            owner_ids=Int[Int(r["parent_id"]) for r in owner_rows]
+            lineage_scan!()
+            owner_ids=union(Int[Int(r["parent_id"]) for r in owner_rows],lineage_active)
             heavy_owners=_reservation_ids_json(owner_ids);heavy_owners_refreshed=time()
             # Park these EA jobs outside the partial EA index (status 'deferred'),
             # so that the EA reservation does not scan them on each call. A
@@ -631,14 +667,14 @@ function run(config)
         length(items)==limit && return items
         failed=FP._closure_count(s,"SELECT EXISTS(SELECT 1 FROM jobs WHERE parent_id IN ($ids) AND kind IN ('prepare_v5','v5','switching') AND status IN ('failed','blocked') LIMIT 1) n")
         failed==0 || error("parent coverage requires recovery")
-        pending=FP._closure_rows(s,_reservation_construction_sql(ids,heavy),(excluded_json,limit-length(items)))
+        pending=FP._closure_rows(s,_reservation_construction_sql(ids,heavy,heavy_subquery(ids)),(excluded_json,limit-length(items)))
         append!(items,[(job=j,equivalence=false) for j in pending])
         if length(items)<limit && advance_rolling_window!()
             # Requery after the bounded frontier changes. Existing descriptors
             # remain in the FIFO, and exclusions preserve unique reservations.
             used=union(excluded,Set(Int[item.job["id"] for item in items]))
             used_json=_reservation_ids_json(used)
-            extra=FP._closure_rows(s,_reservation_construction_sql(ids,heavy),(used_json,limit-length(items)))
+            extra=FP._closure_rows(s,_reservation_construction_sql(ids,heavy,heavy_subquery(ids)),(used_json,limit-length(items)))
             append!(items,[(job=j,equivalence=false) for j in extra])
         end
         items
