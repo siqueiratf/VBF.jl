@@ -180,9 +180,12 @@ function live_catalog_summary(execution,path)
         get(saved,"initial_roots",-1)==execution["initial_roots"] &&
         get(saved,"catalog_snapshot_validated",false) || return merge(unavailable,Dict("status"=>"outdated"))
     checked=Int(saved["classes_checked"]);absent=Int(saved["confirmed_absent_classes"])
-    0<=absent<=checked<=execution["total_parents"] &&
-        absent+saved["matching_signature_classes"]==checked && saved["parent_cutoff"]==checked ||
+    0<=absent<=checked && absent+saved["matching_signature_classes"]==checked && saved["parent_cutoff"]==checked ||
         error("inconsistent live catalog comparison")
+    # The report reads the ledger directly; after a restart it can be ahead of the
+    # controller's last published progress. That is a lag, not an inconsistency.
+    checked<=execution["total_parents"] || return merge(saved,Dict("status"=>"ahead_of_progress",
+        "audited_current_classes"=>checked,"unaudited_classes"=>0))
     merge(saved,Dict("status"=>"snapshot","audited_current_classes"=>checked,
         "unaudited_classes"=>execution["total_parents"]-checked))
 end
