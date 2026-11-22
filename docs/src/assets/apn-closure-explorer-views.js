@@ -335,8 +335,26 @@
     $('ainfo-note').textContent = g.notes;
   }
 
+  // ---------- Features 5 and 6: communities and the condensed community graph ----------
+  let cmSel = null;
+  async function communitiesView() {
+    const c0 = await analysis('communities'); canvasSetup(); $('alegend').innerHTML = '';
+    if (!cmSel) {
+      const A = c0.algorithms, row = (l, f) => '<tr><td>' + l + '</td><td>' + f(A.louvain) + '</td><td>' + f(A.leiden) + '</td></tr>';
+      const labels = Object.keys(A.leiden.nmi_with);
+      $('ainfo').innerHTML = '<table class="gn-table"><tr><td></td><td>Louvain</td><td>Leiden</td></tr>' +
+        row('communities', a => num(a.communities)) + row('modularity Q', a => a.modularity.toFixed(4)) + row('disconnected communities', a => num(a.disconnected_communities)) +
+        row('time', a => a.seconds.toFixed(1) + ' s') + row('well-separated (conductance < 0.1)', a => a.well_separated_communities === undefined ? '—' : num(a.well_separated_communities)) +
+        labels.map(l => row('NMI with ' + l, a => a.nmi_with[l].toFixed(3))).join('') + '</table>' +
+        (A.null_configuration_model ? 'Null model (random graph with the same degrees, Leiden): ' + num(A.null_configuration_model.communities) + ' communities, Q = ' +
+          A.null_configuration_model.modularity.toFixed(4) + ', ' + num(A.null_configuration_model.well_separated_communities) + ' well separated. ' : '') +
+        'Graph: ' + num(c0.graph.nodes) + ' classes, ' + num(c0.graph.edges) + ' undirected edges.';
+    }
+    $('ainfo-note').textContent = c0.notes;
+  }
+
   // ---------- view switching ----------
-  const RENDER = {heatmap: heatmapView, transitions: transitionsView, distributions: distributionsView, generations: generationsView};
+  const RENDER = {heatmap: heatmapView, transitions: transitionsView, distributions: distributionsView, generations: generationsView, communities: communitiesView};
   function showView(v) {
     view = v;
     document.querySelectorAll('#view-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
@@ -354,7 +372,7 @@
     for (const id of ['ds-metric', 'ds-by', 'ds-norm']) $(id).oninput = () => distributionsView();
     $('gn-show').oninput = () => generationsView();
     $('filter-map').onclick = () => showView('map');
-    $('filter-clear').onclick = () => { X().setFilter(null, ''); hmSel = trSel = null; if (view !== 'map') showView(view); };
+    $('filter-clear').onclick = () => { X().setFilter(null, ''); hmSel = trSel = cmSel = null; if (view !== 'map') showView(view); };
     document.addEventListener('apn-show-map', () => showView('map'));
     window.addEventListener('resize', () => { if (view !== 'map') showView(view); });
   }

@@ -42,6 +42,7 @@
   const VS = `#version 300 es
   in float a_two, a_three, a_gen, a_time, a_found, a_finders; in vec2 a_jit;
   in vec4 a_cat;  // status, method, family, linked-filter mask (packed: WebGL has 16 attribute slots)
+  in float a_comm; // community (Leiden), loaded on demand
   in float a_exp, a_spaces, a_cosets, a_rnew; in vec4 a_inv;
   uniform int u_x, u_y, u_colour, u_show, u_onlyExp; uniform vec4 u_view; uniform float u_cut, u_window, u_point, u_alpha;
   uniform float u_genMax, u_timeMax, u_foundMax, u_spacesMax, u_rnewMax, u_rateMax; uniform vec3 u_pal[4]; uniform vec3 u_meth[3]; uniform int u_sel, u_filter;
@@ -69,7 +70,7 @@
   void main() {
     float a_status = a_cat.x, a_method = a_cat.y, a_family = a_cat.z;
     int st = int(a_status + 0.5);
-    bool needsInv = u_x <= 1 || u_y <= 1 || u_x >= 9 || u_y >= 9 || u_colour >= 9;
+    bool needsInv = u_x <= 1 || u_y <= 1 || u_x >= 9 || u_y >= 9 || u_colour == 9 || u_colour == 10;
     if (((u_show >> st) & 1) == 0 || (u_filter == 1 && a_cat.w < 0.5) || (u_onlyExp == 1 && a_exp < 0.5) || (needsInv && a_two < 0.0) || (u_x == 4 || u_y == 4) && a_gen > 65000.0) { gl_Position = vec4(2.0, 2.0, 0.0, 1.0); gl_PointSize = 0.0; v_colour = vec4(0.0); return; }
     vec2 p = vec2(axis(u_x), axis(u_y));
     gl_Position = vec4((p.x - u_view.x) / (u_view.y - u_view.x) * 2.0 - 1.0, (p.y - u_view.z) / (u_view.w - u_view.z) * 2.0 - 1.0, 0.0, 1.0);
@@ -85,6 +86,7 @@
     else if (u_colour == 7) c = a_exp > 0.5 ? ramp(log2(1.0 + a_rnew) / log2(1.0 + u_rnewMax)) : u_pal[3] * 0.6;
     else if (u_colour == 8) c = a_exp > 0.5 ? ramp(1e6 * a_rnew / max(a_cosets, 1.0) / u_rateMax) : u_pal[3] * 0.6;
     else if (u_colour == 9) c = ramp((a_inv.x - 8.0) / 20.0);
+    else if (u_colour == 11) c = hue(fract(a_comm * 0.6180339887) );
     else if (u_colour == 10) c = a_inv.y < 0.5 ? u_pal[0] : a_inv.y < 1.5 ? u_pal[2] : a_inv.y < 2.5 ? u_pal[1] : vec3(0.1);
     else c = ramp(1.0 - clamp(age / max(u_window, 1.0), 0.0, 1.0));
     float a = u_alpha;
@@ -305,6 +307,7 @@
     if (mode === 0) L.innerHTML = dot(css('--seed'), 'seeds') + dot(css('--found'), 'catalog-matching') + dot(css('--fresh'), 'new') + dot(css('--unknown'), 'unknown');
     else if (mode === 2) L.innerHTML = dot(css('--seed'), 'seed') + dot(css('--found'), 'v5') + dot(css('--fresh'), 'switching');
     else if (mode === 4) L.innerHTML = '<span class="small">24 colours, one per group of seed lineages</span>';
+    else if (mode === 11) L.innerHTML = '<span class="small">one colour per community (Leiden); see the Communities view</span>';
     else if (mode === 10) L.innerHTML = dot(css('--found'), 'c4 = 0') + dot(css('--seed'), 'c4 = 1') + dot(css('--fresh'), 'c4 = 2') + dot('#1a1a1a', 'c4 ≥ 3');
     else if (mode === 9) { L.innerHTML = ''; G.hidden = false; G.style.background = 'linear-gradient(90deg,#2e268c,#21928c,#fde026)'; GL.textContent = 'du 8 … 28 and more'; }
     else if (mode === 7 || mode === 8) {
@@ -363,7 +366,22 @@
     draw(); stats();
     document.dispatchEvent(new CustomEvent('apn-filter'));
   }
+  // Community of every class (Leiden), for the colour mode 'Community'.
+  let commLoaded = false;
+  async function loadCommunities() {
+    if (commLoaded) return true;
+    const r = await fetch('/explorer-data/' + meta.version + '/analysis/community_leiden.u32');
+    if (!r.ok) return false;
+    const c = new Uint32Array(await r.arrayBuffer()), f = new Float32Array(n);
+    for (let i = 0; i < n; i++) f[i] = c[i];
+    D.community = c;
+    gl.bindVertexArray(vao);
+    const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, f, gl.STATIC_DRAW);
+    const l = gl.getAttribLocation(program, 'a_comm'); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, 1, gl.FLOAT, false, 0, 0);
+    commLoaded = true; return true;
+  }
   window.apnExplorer = {
+    loadCommunities,
     get D() { return D; }, get meta() { return meta; }, get n() { return n; }, number, css,
     select: id => select(id), setFilter, get filter() { return filterMask && {mask: filterMask, label: filterLabel}; },
     showMap: () => { document.dispatchEvent(new CustomEvent('apn-show-map')); draw(); },
@@ -543,7 +561,10 @@
     for (const [code, text] of AXES) { $('x-axis').add(new Option(text, code)); $('y-axis').add(new Option(text, code)); }
     $('x-axis').value = 0; $('y-axis').value = 1;
     $('x-axis').onchange = $('y-axis').onchange = fit; $('fit').onclick = fit;
-    $('colour').onchange = () => { legend(); draw(); };
+    $('colour').onchange = async () => {
+      if ($('colour').value === '11' && !(await loadCommunities())) { $('colour').value = '0'; alert('No community data yet: use "Update the data".'); }
+      legend(); draw();
+    };
     for (const id of ['point', 'alpha', 'drift', 'drift-cell', 'drift-min', 'drift-scale']) $(id).oninput = () => { driftCache = id === 'drift-cell' ? null : driftCache; draw(); };
     for (const id of ['trail-on', 'trail', 'drift-trail']) $(id).oninput = () => { driftCache = null; draw(); stats(); };
     document.querySelectorAll('.show').forEach(c => { c.onchange = draw; });

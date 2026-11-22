@@ -73,7 +73,7 @@
     <span id="export-state" class="small"></span>
   </div>
   <div id="view-bar">
-    <div id="view-tabs" role="tablist"><button data-view="map" class="active">Map</button><button data-view="heatmap">Heatmap</button><button data-view="transitions">Transitions</button><button data-view="distributions">Distributions</button><button data-view="generations">Generations</button></div>
+    <div id="view-tabs" role="tablist"><button data-view="map" class="active">Map</button><button data-view="heatmap">Heatmap</button><button data-view="transitions">Transitions</button><button data-view="distributions">Distributions</button><button data-view="generations">Generations</button><button data-view="communities">Communities</button></div>
     <div id="filter-bar" hidden><span id="filter-text"></span> <button id="filter-map">Show in map</button><button id="filter-clear">Clear the filter</button></div>
   </div>
   <div id="layout">
@@ -116,7 +116,7 @@
       <div class="row"><label>Colour <select id="colour">
         <option value="0">Catalog status</option><option value="1">Generation</option><option value="2">Method (first path)</option>
         <option value="3">Admission time</option><option value="4">Seed family</option><option value="5">Rediscoveries</option><option value="6">Recency (trail)</option>
-        <option value="7">New classes reached (as a parent)</option><option value="8">New per million cosets (as a parent)</option><option value="9">du (ortho-derivative)</option><option value="10">c4: rank profile (components of rank 4)</option></select></label></div>
+        <option value="7">New classes reached (as a parent)</option><option value="8">New per million cosets (as a parent)</option><option value="9">du (ortho-derivative)</option><option value="10">c4: rank profile (components of rank 4)</option><option value="11">Community (Leiden)</option></select></label></div>
       <div id="legend"></div><div id="gradient" hidden></div><div id="gradient-labels" class="small"></div>
       <div class="row"><label>Point <input id="point" type="range" min="1" max="6" value="1" style="width:70px"></label><label>Opacity <input id="alpha" type="range" min="5" max="100" value="70" style="width:70px"></label><label><input id="grid" type="checkbox">Grid</label></div>
       <div class="row"><label>Show</label><label><input type="checkbox" class="show" value="0" checked>catalog</label><label><input type="checkbox" class="show" value="1" checked>new</label><label><input type="checkbox" class="show" value="2" checked>seeds</label><label><input type="checkbox" class="show" value="3" checked>unknown</label></div>
