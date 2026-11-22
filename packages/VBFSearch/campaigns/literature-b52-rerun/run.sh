@@ -165,6 +165,7 @@ graph-now)
     "$here/../../../../docs/inspector/closure_graph.jl" --run "$state/run" --once) \
     >> "$state/logs/graph.log" 2>&1
   status=$?
+  rm -f "$state/graph-now.pid"  # before the restart, which waits while this file is alive
   "$0" graph "$state" "${3:-1800}" > /dev/null
   [ $status -eq 0 ] && echo "graph-now: $(sed -n 's/.*"version":"\([^"]*\)".*/\1/p' "$state/run/graph/current.json")"
   exit $status;;
