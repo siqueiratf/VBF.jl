@@ -385,6 +385,68 @@
       1000 * Math.max(0, Number($('hold').value) || 0));
   }
 
+  // ---------- view state (link, templates) ----------
+  // Keys: x y colour point alpha show expanded trail drift dtrail dcell dmin dscale step sec from to cut id view play
+  const FIELDS = {x: 'x-axis', y: 'y-axis', colour: 'colour', point: 'point', alpha: 'alpha', dcell: 'drift-cell',
+    dmin: 'drift-min', dscale: 'drift-scale', step: 'per-step', sec: 'seconds', from: 'from', to: 'to'};
+  const CHECKS = {expanded: 'only-expanded', drift: 'drift', dtrail: 'drift-trail'};
+  function currentState() {
+    const h = new URLSearchParams();
+    for (const [k, id] of Object.entries(FIELDS)) if ($(id).value !== '') h.set(k, $(id).value);
+    for (const [k, id] of Object.entries(CHECKS)) if ($(id).checked) h.set(k, '1');
+    if ($('trail-on').checked) h.set('trail', $('trail').value);
+    if (showMask() !== 15) h.set('show', String(showMask()));
+    h.set('cut', String(cut));
+    if (selected) h.set('id', String(selected));
+    h.set('view', view.map(v => +v.toPrecision(6)).join(','));
+    return h;
+  }
+  function applyState(h) {
+    stopPlay();
+    for (const [k, id] of Object.entries(FIELDS)) if (h.has(k)) $(id).value = h.get(k);
+    for (const [k, id] of Object.entries(CHECKS)) $(id).checked = h.get(k) === '1';
+    $('trail-on').checked = h.has('trail'); if (h.has('trail')) $('trail').value = h.get('trail');
+    const mask = h.has('show') ? Number(h.get('show')) : 15;
+    document.querySelectorAll('.show').forEach(c => { c.checked = ((mask >> Number(c.value)) & 1) === 1; });
+    if (!h.has('to')) $('to').value = n;
+    legend(); driftCache = null;
+    if (h.has('view')) { const v = h.get('view').split(',').map(Number); if (v.length === 4 && v.every(Number.isFinite)) view = v; else fit(); } else fit();
+    cut = h.has('cut') ? Math.max(0, Math.min(n, Number(h.get('cut')))) : n; $('cut').value = cut;
+    if (h.has('id')) select(Number(h.get('id'))); else { selected = 0; children = []; }
+    draw(); stats();
+    if (h.get('play') === '1') play(true);
+  }
+
+  // ---------- templates ----------
+  async function templates() {
+    const list = $('tpl-list'); list.replaceChildren();
+    const add = (t, user) => {
+      const div = document.createElement('div'); div.className = 'tpl';
+      const b = document.createElement('button'); b.textContent = 'Apply'; b.onclick = () => { applyState(new URLSearchParams(t.params)); location.hash = t.params; };
+      const title = document.createElement('strong'); title.textContent = ' ' + t.title + (user ? ' (yours)' : '');
+      const p = document.createElement('p'); p.className = 'small'; p.textContent = t.notes || '';
+      div.append(b, title, p);
+      if (user) {
+        const d = document.createElement('button'); d.textContent = 'Delete'; d.className = 'tpl-del';
+        d.onclick = async () => { await fetch('/control/explorer/templates', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({delete: t.id})}); templates(); };
+        div.append(d);
+      }
+      list.append(div);
+    };
+    try { for (const t of await (await fetch('/explorer-templates.json', {cache: 'no-store'})).json()) add(t, false); } catch (e) { /* none */ }
+    try {
+      const r = await fetch('/control/explorer/templates', {cache: 'no-store'});
+      if (r.ok) { for (const t of await r.json()) add(t, true); $('tpl-save-row').hidden = false; $('tpl-save').hidden = false; }
+    } catch (e) { /* read-only monitor: no saving */ }
+  }
+  async function saveTemplate() {
+    const title = $('tpl-title').value.trim(); if (!title) { $('tpl-state').textContent = 'Give the template a title.'; return; }
+    const r = await fetch('/control/explorer/templates', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({title, notes: $('tpl-notes').value.trim(), params: currentState().toString()})});
+    $('tpl-state').textContent = r.ok ? 'Saved.' : ((await r.json().catch(() => ({}))).error || 'HTTP ' + r.status);
+    if (r.ok) { $('tpl-title').value = ''; $('tpl-notes').value = ''; templates(); }
+  }
+
   // ---------- experiments (order_experiments.py report) ----------
   async function experiments() {
     try {
@@ -454,17 +516,14 @@
   (async () => {
     try {
       await load(); setupGL(); wire();
-      // View settings in the link: #x=0&y=1&colour=8&expanded=1&drift=1&trail=50000&cut=1000000&id=123
-      const h = new URLSearchParams(location.hash.slice(1));
-      if (h.has('x')) $('x-axis').value = h.get('x'); if (h.has('y')) $('y-axis').value = h.get('y');
-      if (h.has('colour')) $('colour').value = h.get('colour');
-      $('only-expanded').checked = h.get('expanded') === '1'; $('drift').checked = h.get('drift') === '1';
-      if (h.has('trail')) { $('trail-on').checked = true; $('trail').value = h.get('trail'); }
-      legend();
-      cut = h.has('cut') ? Math.min(n, Number(h.get('cut'))) : n; $('cut').value = cut; fit(); stats();
-      if (h.has('id')) select(Number(h.get('id')));
+      applyState(new URLSearchParams(location.hash.slice(1)));
       $('message').hidden = true;
-      experiments();
+      experiments(); templates();
+      $('tpl-save').onclick = saveTemplate;
+      $('tpl-link').onclick = async () => {
+        const url = location.origin + location.pathname + '#' + currentState().toString(); history.replaceState(null, '', url);
+        try { await navigator.clipboard.writeText(url); $('tpl-state').textContent = 'Link copied.'; } catch (e) { $('tpl-state').textContent = 'Link in the address bar.'; }
+      };
     } catch (error) {
       $('message').textContent = 'The explorer data is not available: ' + error.message + '. Use "Update the data" above.';
       $('message').classList.add('error');

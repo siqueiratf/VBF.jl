@@ -1,0 +1,67 @@
+[
+ {
+  "title": "1. Two lobes: the rank profile",
+  "notes": "Colour = c4 (components of rank 4). The two × three map has two separate lobes: c4 = 0 (blue) and c4 ≥ 1 (orange, pink). Almost all new classes are in the c4 = 0 lobe.",
+  "params": "x=0&y=1&colour=10&alpha=70"
+ },
+ {
+  "title": "2. Where the new classes are",
+  "notes": "Only new classes and seeds are shown. Compare with the full map (template 1): the new classes fill the high-two side of each lobe; the low-two side is almost all in the catalog.",
+  "params": "x=0&y=1&colour=0&show=6&alpha=60"
+ },
+ {
+  "title": "3. Discovery order × two",
+  "notes": "x = admission order, y = two. New classes (pink) stay at the top of two for the whole run; the lower band is the c4 ≥ 1 lobe. Look at the change at about id 1.24 million, where generation 2 starts.",
+  "params": "x=2&y=0&colour=0&alpha=50"
+ },
+ {
+  "title": "4. The frontier moves (playback with a trail)",
+  "notes": "Plays the admissions from the start; the last 150,000 classes are bright (yellow = newest). Look how the bright part moves to high two and three later in the run.",
+  "params": "x=0&y=1&colour=6&trail=150000&step=25000&sec=0.15&from=0&play=1"
+ },
+ {
+  "title": "5. Children fall back to the centre (drift field)",
+  "notes": "Arrows go from each parent cell to the mean cell of its children. From every side they point to the same centre (two ≈ 380, three ≈ 32): a child does not inherit the position of its parent.",
+  "params": "x=0&y=1&colour=0&alpha=25&drift=1&dcell=10&dmin=30&dscale=1"
+ },
+ {
+  "title": "6. Drift of the recent trail only",
+  "notes": "The same arrows, but only for the last 300,000 admissions. Compare with template 5 to see whether the late search behaves differently.",
+  "params": "x=0&y=1&colour=6&trail=300000&alpha=40&drift=1&dtrail=1&dcell=10&dmin=20&dscale=1"
+ },
+ {
+  "title": "7. Productive parents (new per million cosets)",
+  "notes": "Only expanded parents, coloured by new classes per million cosets. Yellow parents are the most efficient; they lie more at high two and high three, but they are few.",
+  "params": "x=0&y=1&colour=8&expanded=1&point=2&alpha=80"
+ },
+ {
+  "title": "8. Yield against 5-spaces",
+  "notes": "x = maximizing 5-spaces (log), y = new classes reached, for expanded parents. The yield grows with the number of 5-spaces (the work); colour = new per million cosets shows that the efficiency does not.",
+  "params": "x=7&y=8&colour=8&expanded=1&point=2&alpha=60"
+ },
+ {
+  "title": "9. Rediscoveries against two (hubs and open regions)",
+  "notes": "y = how many paths found each class (log). Classes found many times (hubs) are mostly in the catalog; classes found once or twice are at high two and are more often new.",
+  "params": "x=0&y=5&colour=0&alpha=40"
+ },
+ {
+  "title": "10. Generations over the order",
+  "notes": "x = admission order, y = three, colour = generation. Generation 1 (children of the seeds) fills the first 1.24 million ids, then generation 2 starts. The search is breadth-first.",
+  "params": "x=2&y=1&colour=1&alpha=50"
+ },
+ {
+  "title": "11. du of the ortho-derivative against two",
+  "notes": "du does not separate new from catalog classes (AUC 0.47), but du = 8 marks a small group of hubs (median 445 rediscoveries). Select one of them to see its lineage.",
+  "params": "x=0&y=9&colour=0&alpha=60&point=2"
+ },
+ {
+  "title": "12. Rare classes: entry four > 0",
+  "notes": "y = four (entry 4 of the nonbent signature). The 10,319 classes with four > 0 are 49% new and are found less often; they sit at high two and three.",
+  "params": "x=0&y=11&colour=0&point=2&alpha=80"
+ },
+ {
+  "title": "13. Seed families",
+  "notes": "Colour = the lineage group of the root seed (24 colours). Look whether a family keeps to a region of its own or spreads over the whole map; the drift result suggests that it spreads.",
+  "params": "x=0&y=1&colour=4&alpha=50"
+ }
+]

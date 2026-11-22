@@ -30,6 +30,9 @@
     details { margin-top:10px; } summary { cursor:pointer; font-weight:600; }
     .error { color:#b3261e; } @media(prefers-color-scheme:dark) { .error { color:#ffb4ab; } }
     [hidden] { display:none !important; }
+    .tpl { border-top:1px solid var(--border); padding:6px 0; } .tpl p { margin:2px 0 0; } .tpl button { font-size:12px; padding:2px 7px; } .tpl-del { float:right; }
+    #templates textarea, #templates input[type=text] { font:inherit; color:var(--ink); background:var(--panel); border:1px solid var(--border); border-radius:5px; padding:4px; }
+    #templates { margin-top:0; }
     @media(max-width:860px) { #layout { grid-template-columns:1fr; height:auto; } #viewport { height:65dvh; } aside { border-left:0; border-top:1px solid var(--border); } #cut-label { min-width:0; } }
   </style>
 </head>
@@ -47,6 +50,15 @@
   <div id="layout">
     <div id="viewport"><canvas id="gl" aria-label="Classes in admission order. Drag to pan, scroll to zoom, click a class to inspect it."></canvas><canvas id="overlay" aria-hidden="true"></canvas><div id="message" role="status">Loading the data…</div></div>
     <aside>
+      <details id="templates" open><summary>Templates: views to try</summary>
+        <div id="tpl-list"></div>
+        <div id="tpl-save-row" hidden>
+          <h2>Save the current view</h2>
+          <div class="row"><input id="tpl-title" type="text" placeholder="Title" style="width:100%"></div>
+          <div class="row"><textarea id="tpl-notes" rows="2" placeholder="What to look for (optional)" style="width:100%"></textarea></div>
+        </div>
+        <div class="row"><button id="tpl-save" hidden>Save as a template</button><button id="tpl-link">Copy the link of this view</button><span id="tpl-state" class="small"></span></div>
+      </details>
       <div class="row"><label>X <select id="x-axis"></select></label><label>Y <select id="y-axis"></select></label><button id="fit">Fit</button></div>
       <div class="row"><label>Colour <select id="colour">
         <option value="0">Catalog status</option><option value="1">Generation</option><option value="2">Method (first path)</option>
