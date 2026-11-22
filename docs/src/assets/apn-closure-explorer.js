@@ -462,6 +462,14 @@
         ' new. Rank correlation of new classes reached with 5-spaces: ' + e1.spearman_with_reached_new['5-spaces'].toFixed(2) +
         '; of new classes per coset with any feature: at most ' + Math.max(...Object.values(e1.spearman_with_new_per_coset).map(Math.abs)).toFixed(2) + '.';
       $('experiments').hidden = false;
+      const c = await (await fetch('/explorer-data/experiments/catalog_compare.json', {cache: 'no-store'})).json();
+      let rows = '<tr><td>c4</td><td>two</td><td>catalog</td><td>search</td><td>new</td><td>estimate</td><td>known</td></tr>';
+      for (const e of c.coarse_strata) if (e.catalog + e.search >= 2000)
+        rows += '<tr><td>' + e.c4 + '</td><td>' + e.two + '</td><td>' + number(e.catalog) + '</td><td>' + number(e.search) + '</td><td>' + number(e.new) +
+          '</td><td>' + number(e.chapman_estimate) + '</td><td>' + (100 * e.known_share_of_estimate).toFixed(1) + '%</td></tr>';
+      $('cat-table').innerHTML = rows;
+      $('cat-total').textContent = 'Known signatures ' + number(c.known_total) + '; estimate over the strata ' + number(c.coarse_estimate_total) +
+        ' (fine strata ' + number(c.fine_estimate_total) + ', unstratified ' + number(c.unstratified_estimate) + ').';
     } catch (e) { /* no report yet */ }
   }
 
