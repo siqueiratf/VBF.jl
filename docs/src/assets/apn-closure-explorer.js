@@ -123,21 +123,24 @@
 
   // ---------- view ----------
   const axisCode = id => Number($(id).value);
+  // Fit range of an axis. The margin is always larger than the jitter that spreads the
+  // points around a value (see axis() in the shader), so no band is cut at the edges.
+  const JITTER = {0: 0.8, 1: 0.4, 4: 0.4, 5: 0.08, 6: 0.08, 7: 0.08, 8: 0.4, 9: 0.8, 10: 0.35, 11: 0.35, 12: 0.35};
   function range(code) {
-    const pad = (a, b, f) => { const d = (b - a) * f || 1; return [a - d, b + d]; };
+    const pad = (a, b, f) => { const d = Math.max((b - a) * f, (JITTER[code] || 0) * 1.3, 1e-9); return [a - d, b + d]; };
     if (code === 0) return pad(meta.two_range[0], meta.two_range[1], 0.03);
     if (code === 1) return pad(meta.three_range[0], meta.three_range[1], 0.04);
     if (code === 2) return pad(0, n, 0.01);
     if (code === 3) return pad(0, meta.time_span_seconds / 3600, 0.01);
     if (code === 4) return pad(0, meta.generation_max, 0.03);
     if (code === 5) return pad(0, Math.log2(1 + meta.found_max), 0.03);
+    if (code === 6) return pad(0, 8, 0.03);
     if (code === 7) return pad(0, Math.log2(1 + (meta.spaces_max || 1)), 0.03);
-    if (code === 8) return pad(0, Math.min(meta.reached_new_max || 1, 400), 0.03);
+    if (code === 8) return pad(0, meta.reached_new_max || 1, 0.03);
     if (code === 9) return pad((meta.du_range || [8, 62])[0], (meta.du_range || [8, 62])[1], 0.04);
-    if (code === 10) return pad(0, 4, 0.08);
-    if (code === 11) return pad(0, 2, 0.1);
-    if (code === 12) return pad(0, 1, 0.15);
-    return pad(0, 8, 0.03);
+    if (code === 10) return pad(0, 4, 0.03);
+    if (code === 11) return pad(0, 2, 0.03);
+    return pad(0, 1, 0.03);
   }
   function fitView() { const x = range(axisCode('x-axis')), y = range(axisCode('y-axis')); return [x[0], x[1], y[0], y[1]]; }
   function fit() { view = fitView(); draw(); }

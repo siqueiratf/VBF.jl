@@ -112,13 +112,18 @@ def main():
                 7: np.log2(1 + spaces) + jit[:, 1] * 0.08, 8: rnew + jit[:, 1] * 0.4, 9: inv[:, 0] + jit[:, 1] * 0.8,
                 10: inv[:, 1] + jit[:, 1] * 0.35, 11: inv[:, 3] + jit[:, 1] * 0.35}.get(c, inv[:, 2] + jit[:, 1] * 0.35)
 
+    # Fit range, as range() in the page: the margin is larger than the jitter of the axis.
+    JITTER = {0: 0.8, 1: 0.4, 4: 0.4, 5: 0.08, 6: 0.08, 7: 0.08, 8: 0.4, 9: 0.8, 10: 0.35, 11: 0.35, 12: 0.35}
+
     def rng(c):
-        pad = lambda lo, hi, f: (lo - (hi - lo) * f or lo - 1, hi + (hi - lo) * f or hi + 1)
+        def pad(lo, hi, f):
+            d = max((hi - lo) * f, JITTER.get(c, 0) * 1.3, 1e-9); return lo - d, hi + d
         return {0: pad(*meta["two_range"], 0.03), 1: pad(*meta["three_range"], 0.04), 2: pad(0, n, 0.01),
                 3: pad(0, meta["time_span_seconds"] / 3600, 0.01), 4: pad(0, meta["generation_max"], 0.03),
-                5: pad(0, np.log2(1 + meta["found_max"]), 0.03), 7: pad(0, np.log2(1 + meta.get("spaces_max", 1)), 0.03),
-                8: pad(0, min(meta.get("reached_new_max", 1), 400), 0.03), 9: pad(*meta.get("du_range", [8, 62]), 0.04),
-                10: pad(0, 4, 0.08), 11: pad(0, 2, 0.1), 12: pad(0, 1, 0.15)}.get(c, pad(0, 8, 0.03))
+                5: pad(0, np.log2(1 + meta["found_max"]), 0.03), 6: pad(0, 8, 0.03),
+                7: pad(0, np.log2(1 + meta.get("spaces_max", 1)), 0.03),
+                8: pad(0, meta.get("reached_new_max", 1), 0.03), 9: pad(*meta.get("du_range", [8, 62]), 0.04),
+                10: pad(0, 4, 0.03), 11: pad(0, 2, 0.03)}.get(c, pad(0, 1, 0.03))
 
     X, Y = axis(xc), axis(yc)
     (x0, x1), (y0, y1) = rng(xc), rng(yc)
