@@ -8,6 +8,7 @@
 
 mod data;
 mod heatmap;
+mod transitions;
 
 use data::Data;
 use std::path::PathBuf;
@@ -53,5 +54,18 @@ fn main() {
         let v = heatmap::run(&d, cat.as_deref());
         write_json(&a.out, "heatmaps.json", &v);
         eprintln!("heatmaps in {:.2}s, peak {:.0} MiB", t.elapsed().as_secs_f64(), data::peak_rss_mib());
+    }
+    let edges = if want("transitions") || want("communities") || want("distributions") {
+        let t = Instant::now();
+        let p = a.pairs.as_ref().expect("--pairs is needed");
+        let e = transitions::distinct_edges(&data::load_pairs(p, d.n));
+        eprintln!("{} distinct edges in {:.2}s, peak {:.0} MiB", e.len(), t.elapsed().as_secs_f64(), data::peak_rss_mib());
+        e
+    } else { Vec::new() };
+    if want("transitions") {
+        let t = Instant::now();
+        let v = transitions::run(&d, &edges, 12);
+        write_json(&a.out, "transitions.json", &v);
+        eprintln!("transitions in {:.2}s, peak {:.0} MiB", t.elapsed().as_secs_f64(), data::peak_rss_mib());
     }
 }

@@ -150,8 +150,58 @@
     $('ainfo').querySelectorAll('button[data-id]').forEach(b => { b.onclick = () => { showView('map'); X().select(Number(b.dataset.id)); }; });
   }
 
+  // ---------- Feature 2: parent-to-child transitions ----------
+  let trSel = null;
+  async function transitionsView() {
+    const t = await analysis('transitions'), field = $('tr-field').value, set = $('tr-set').value, mode = $('tr-mode').value;
+    const F = t.fields[field], S = F[set], vals = F.values, k = vals.length, M = S.matrix;
+    const rows = vals.map((_, i) => M.slice(i * k, (i + 1) * k).reduce((a, b) => a + b, 0));
+    const cols = vals.map((_, j) => vals.reduce((a, _, i) => a + M[i * k + j], 0)), N = rows.reduce((a, b) => a + b, 0);
+    const cells = [];
+    let maxAbs = 0; const lifts = [];
+    for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) {
+      const c = M[i * k + j], e = rows[i] * cols[j] / (N || 1);
+      const lift = c > 0 && e > 0 ? Math.log2(c / e) : null; lifts.push(lift);
+      if (lift !== null && rows[i] >= 200 && cols[j] >= 200) maxAbs = Math.max(maxAbs, Math.abs(lift));
+    }
+    maxAbs = Math.min(maxAbs || 1, 3);
+    const pmax = Math.max(...vals.map((_, i) => Math.max(...vals.map((_, j) => rows[i] ? M[i * k + j] / rows[i] : 0))));
+    const cmax = Math.log10(Math.max(1, ...M));
+    for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) {
+      const c = M[i * k + j]; if (!c) continue;
+      const lift = lifts[i * k + j], p = rows[i] ? c / rows[i] : 0;
+      // Rows or columns with few edges give large random lifts: show them neutral.
+      const thin = rows[i] < 200 || cols[j] < 200;
+      const colour = mode === 'lift' ? (thin ? 'rgba(128,128,128,0.25)' : diverging((lift || 0) / maxAbs)) : mode === 'cond' ? ramp(p / (pmax || 1)) : ramp(Math.log10(c) / cmax);
+      const tip = '<b>parent ' + field + ' ' + vals[i] + ' → child ' + vals[j] + '</b><br>' + num(c) + ' edges · P(child | parent) ' + (100 * p).toFixed(1) +
+        '%<br>expected if independent ' + num(Math.round(rows[i] * cols[j] / N)) + ' · lift ' + (lift === null ? '—' : (2 ** lift).toFixed(2) + '×') +
+        (thin ? '<br><i>fewer than 200 edges in this row or column: not coloured</i>' : '');
+      cells.push({xi: j, yi: i, colour, tip, onClick: () => {
+        trSel = {field, set, xi: j, yi: i};
+        const D = X().D, pv = vals[i], cv = vals[j];
+        X().setFilter(maskOf(x => { const d = D.discoverer[x]; return d > 0 && binned(field, x) === cv && binned(field, d - 1) === pv; }),
+          'discoverer ' + field + ' ' + pv + ' → class ' + field + ' ' + cv);
+        transitionsView();
+      }});
+    }
+    if (mode === 'lift') legendBar('×' + (2 ** -maxAbs).toFixed(2), '×' + (2 ** maxAbs).toFixed(2), 'lift = observed / expected if independent (log scale)', true);
+    else if (mode === 'cond') legendBar('0%', (100 * pmax).toFixed(0) + '%', 'P(child value | parent value), per row', false);
+    else legendBar('1', num(Math.round(10 ** cmax)), 'edges (log)', false);
+    grid({xs: vals, ys: vals, cells, xlabel: 'child ' + field + (field === 'two' ? ' (bands of 10)' : field === 'three' ? ' (bands of 5)' : ''),
+      ylabel: 'parent ' + field, selected: trSel && trSel.field === field && trSel.set === set ? trSel : null});
+    const q = S.mi_by_expansion_quarter.map(v => v.toFixed(4)).join(' / ');
+    $('ainfo').innerHTML = '<b>' + field + ', ' + (set === 'first' ? 'discoverer → class (depends on the search order)' : 'all parent → class construction pairs (independent of the order)') + '</b><br>' +
+      num(S.edges) + ' edges · MI ' + S.mi_bits.toFixed(4) + ' bits · NMI ' + S.nmi.toFixed(4) + ' · Cramér\'s V ' + S.cramers_v.toFixed(3) +
+      ' · same value ' + (100 * S.same_value_rate).toFixed(1) + '% (independent: ' + (100 * S.same_value_rate_if_independent).toFixed(1) + '%)<br>' +
+      'Null model (parents shuffled): MI ' + S.null_mi_mean.toExponential(2) + ' ± ' + S.null_mi_sd.toExponential(1) + ' → z = ' + S.z.toFixed(0) +
+      '. With this many edges any dependence is "significant"; read the effect size (NMI, V). MI per quarter of the expansion order: ' + q +
+      ' (a change over time points to the search order, not to structure).' +
+      (trSel ? '<br>The filter uses the discoverer of each class (first edges).' : '');
+    $('ainfo-note').textContent = '';
+  }
+
   // ---------- view switching ----------
-  const RENDER = {heatmap: heatmapView};
+  const RENDER = {heatmap: heatmapView, transitions: transitionsView};
   function showView(v) {
     view = v;
     document.querySelectorAll('#view-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
@@ -165,8 +215,9 @@
     if (!X() || !X().D || !X().D.two) { setTimeout(init, 300); return; }
     document.querySelectorAll('#view-tabs button').forEach(b => { b.onclick = () => showView(b.dataset.view); });
     for (const id of ['hm-pair', 'hm-metric', 'hm-min']) $(id).oninput = () => heatmapView();
+    for (const id of ['tr-field', 'tr-set', 'tr-mode']) $(id).oninput = () => transitionsView();
     $('filter-map').onclick = () => showView('map');
-    $('filter-clear').onclick = () => { X().setFilter(null, ''); hmSel = null; if (view !== 'map') showView(view); };
+    $('filter-clear').onclick = () => { X().setFilter(null, ''); hmSel = trSel = null; if (view !== 'map') showView(view); };
     document.addEventListener('apn-show-map', () => showView('map'));
     window.addEventListener('resize', () => { if (view !== 'map') showView(view); });
   }

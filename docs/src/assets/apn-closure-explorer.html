@@ -73,7 +73,7 @@
     <span id="export-state" class="small"></span>
   </div>
   <div id="view-bar">
-    <div id="view-tabs" role="tablist"><button data-view="map" class="active">Map</button><button data-view="heatmap">Heatmap</button></div>
+    <div id="view-tabs" role="tablist"><button data-view="map" class="active">Map</button><button data-view="heatmap">Heatmap</button><button data-view="transitions">Transitions</button></div>
     <div id="filter-bar" hidden><span id="filter-text"></span> <button id="filter-map">Show in map</button><button id="filter-clear">Clear the filter</button></div>
   </div>
   <div id="layout">
@@ -83,6 +83,11 @@
           <label>Pair <select id="hm-pair"><option value="two|three">two × three</option><option value="two|du">two × du</option><option value="three|du">three × du</option><option value="two|c4">two × c4</option><option value="three|c4">three × c4</option><option value="du|c4">du × c4</option><option value="two|four">two × four</option><option value="three|four">three × four</option></select></label>
           <label>Metric <select id="hm-metric"><option value="classes">Classes</option><option value="novelty">% new</option><option value="new">New classes</option><option value="catalog_only">Catalog classes not reached (unexplored)</option><option value="catalog">Catalog classes</option><option value="found">Mean rediscoveries</option><option value="singletons">% found only once</option><option value="expanded">% expanded as a parent</option><option value="rate">New per million cosets</option><option value="id">Mean admission order</option><option value="gen2">% generation 2</option></select></label>
           <label>Min classes per cell <input id="hm-min" type="number" min="0" value="20" style="width:64px"></label>
+        </div>
+        <div class="aview-controls row" data-view="transitions" hidden>
+          <label>Invariant <select id="tr-field"><option value="three">three (bands of 5)</option><option value="two">two (bands of 10)</option><option value="du">du</option><option value="c4">c4</option><option value="four">four</option><option value="status">status (0 catalog, 1 new, 2 seed)</option><option value="generation">generation</option></select></label>
+          <label>Edges <select id="tr-set"><option value="all">all construction pairs (order-independent)</option><option value="first">discoverer only (depends on the order)</option></select></label>
+          <label>Show <select id="tr-mode"><option value="lift">lift (observed / independent)</option><option value="cond">P(child | parent)</option><option value="count">counts</option></select></label>
         </div>
         <canvas id="acanvas"></canvas>
         <div id="alegend"></div>
