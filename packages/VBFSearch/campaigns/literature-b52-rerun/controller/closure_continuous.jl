@@ -739,7 +739,11 @@ function run(config)
         over_limit=storage.maximum>0 && Int128(storage.snapshot["bytes"])+needed+storage.reserve>=storage.maximum
         quota_free=get(storage.snapshot,"quota_available_bytes",typemax(Int))
         if over_limit || Int128(quota_free)<needed+storage.reserve+storage.minimum_free
-            storage.reason=over_limit ? "checkpoint_storage_max_bytes" : "checkpoint_quota_available_bytes";storage.stopped[]=true
+            # Not enough space for a copy of the ledger: skip this checkpoint and
+            # keep the search running; the next interval tries again.
+            last_checkpoint=time();checkpoint_generation-=1
+            println(FP.JSON3.write(Dict("event"=>"checkpoint_skipped","reason"=>over_limit ? "checkpoint_storage_max_bytes" : "checkpoint_quota_available_bytes",
+                "needed_bytes"=>needed,"on_stop"=>force)));flush(stdout)
             return
         end
         stage="progress"
@@ -758,9 +762,13 @@ function run(config)
         end
         emit!("checkpoint-metrics.jsonl",Dict("utc"=>FP._closure_now(),"path"=>target,"seconds"=>last_checkpoint-t))
         catch error
-            checkpoint_error=sprint(showerror,error);storage.reason="checkpoint_$(stage)_failed";storage.stopped[]=true
+            # A failed export does not stop the search; the ledger is unchanged.
+            last_checkpoint=time()
+            local message=sprint(showerror,error)
+            println(stderr,"Checkpoint export failed at stage $stage; the search continues: ",message)
+            ispath(target) && stage=="export" && rm(target;recursive=true,force=true)
             try
-                FP.DiscoveryStore.atomic_toml(joinpath(out,"checkpoint-export-error.toml"),Dict("target"=>target,"stage"=>stage,"error"=>checkpoint_error,"previous_generations_preserved"=>true))
+                FP.DiscoveryStore.atomic_toml(joinpath(out,"checkpoint-export-error.toml"),Dict("target"=>target,"stage"=>stage,"error"=>message,"previous_generations_preserved"=>true,"search_continued"=>true))
             catch
             end
         end

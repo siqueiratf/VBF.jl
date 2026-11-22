@@ -10,6 +10,8 @@
 #                                     SQLITE_SYNC (FULL; NORMAL skips the sync per commit),
 #                                     SQLITE_CACHE_MB, SQLITE_MMAP_MB (0 = SQLite defaults),
 #                                     STORAGE_MAX_GB (200 GiB: state folder limit, checkpoints included),
+#                                     MIN_FREE_GB (100 GiB: the search stops below this free space;
+#                                     a checkpoint without space is skipped, never a stop),
 #                                     CHECKPOINT_HOURS (2: hours between checkpoint exports),
 #                                     HORIZON (1024: packets reserved ahead of the ordered apply)
 #                                     HEAVY_V5 (0 = off): defer parents with more maximizing
@@ -66,6 +68,7 @@ start)
     -e "s|^window_size = .*|window_size = ${WINDOW:-100}|" \
     -e "s|^max_apply_per_step = .*|max_apply_per_step = ${APPLY_STEP:-32}|" \
     -e "s|^storage_max_bytes = .*|storage_max_bytes = $(( ${STORAGE_MAX_GB:-200} * 1073741824 ))|" \
+    -e "s|^min_free_bytes = .*|min_free_bytes = $(( ${MIN_FREE_GB:-100} * 1073741824 ))|" \
     -e "s|^checkpoint_interval_seconds = .*|checkpoint_interval_seconds = $(( ${CHECKPOINT_HOURS:-2} * 3600 )).0|" \
     -e "s|^reservation_horizon = .*|reservation_horizon = ${HORIZON:-1024}|" \
     -e "s|^heavy_v5_threshold = .*|heavy_v5_threshold = ${HEAVY_V5:-0}|" \
