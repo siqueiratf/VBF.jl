@@ -42,7 +42,8 @@ def summary(state, history):
            "keepalive_off": (state / "KEEPALIVE_OFF").exists() or (run / "STOP").exists(),
            "catalog_report_running": alive_pid(state / "catalog-report.pid"),
            "structure_report_running": alive_pid(state / "structure-report.pid"),
-           "graph_running": alive_pid(state / "graph.pid")}
+           # run.sh graph-now stops the periodic builder during its own build.
+           "graph_running": alive_pid(state / "graph.pid") or alive_pid(state / "graph-now.pid")}
     try:
         progress = tomllib.loads((run / "progress.toml").read_text())
         out.update(state=progress.get("state"), completed_parents=progress.get("completed_parents"),

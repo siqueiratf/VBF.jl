@@ -108,6 +108,10 @@ start)
   echo "start: pid $(cat "$state/controller.pid"), log $state/logs/session-$stamp.log";;
 graph)
   every=${3:-1800}
+  # graph-now stops the periodic builder and starts it again after its own build.
+  if [ -f "$state/graph-now.pid" ] && kill -0 "$(cat "$state/graph-now.pid")" 2>/dev/null; then
+    echo "graph: a graph-now build is running (pid $(cat "$state/graph-now.pid")); it restarts the builder"; exit 0
+  fi
   if [ -f "$state/graph.pid" ] && kill -0 "$(cat "$state/graph.pid")" 2>/dev/null; then
     echo "graph: builder already running (pid $(cat "$state/graph.pid"))"; exit 0
   fi
@@ -147,6 +151,7 @@ PY
   fi
   echo "reports: catalog pid $(cat "$state/catalog-report.pid"), structure pid $(cat "$state/structure-report.pid")";;
 graph-now)
+  echo $$ > "$state/graph-now.pid"; trap 'rm -f "$state/graph-now.pid"' EXIT
   # Stop the periodic builder first, so that two builds never share run/graph.
   if [ -f "$state/graph.pid" ]; then
     pid=$(cat "$state/graph.pid")
