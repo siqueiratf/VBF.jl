@@ -40,7 +40,7 @@
     #analysis-view { position:absolute; inset:0; z-index:2; display:flex; flex-direction:column; background:var(--bg); padding:6px 10px; gap:4px; }
     #acanvas { position:relative; flex:1; min-height:200px; width:100%; cursor:pointer; }
     #alegend { display:flex; align-items:center; gap:6px; font-size:12px; } #alegend i { display:inline-block; width:180px; height:10px; border-radius:3px; }
-    #ainfo { line-height:1.45; } #ainfo button { font-size:11px; padding:1px 5px; margin:1px; }
+    #ainfo { line-height:1.45; max-height:38%; overflow:auto; } .gn-table td { padding:1px 8px 1px 0; } .gn-table tr:first-child td { font-weight:600; } #ainfo button { font-size:11px; padding:1px 5px; margin:1px; }
     #atip { position:absolute; z-index:3; background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:12px; pointer-events:none; max-width:340px; line-height:1.4; }
     button.primary { background:var(--link); color:var(--panel); border-color:var(--link); font-weight:600; } button.primary.recording { background:#b3261e; border-color:#b3261e; }
     #export-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px; padding:6px 18px; border-bottom:1px solid var(--border); background:var(--panel); font-size:13px; }
@@ -73,7 +73,7 @@
     <span id="export-state" class="small"></span>
   </div>
   <div id="view-bar">
-    <div id="view-tabs" role="tablist"><button data-view="map" class="active">Map</button><button data-view="heatmap">Heatmap</button><button data-view="transitions">Transitions</button></div>
+    <div id="view-tabs" role="tablist"><button data-view="map" class="active">Map</button><button data-view="heatmap">Heatmap</button><button data-view="transitions">Transitions</button><button data-view="distributions">Distributions</button></div>
     <div id="filter-bar" hidden><span id="filter-text"></span> <button id="filter-map">Show in map</button><button id="filter-clear">Clear the filter</button></div>
   </div>
   <div id="layout">
@@ -88,6 +88,11 @@
           <label>Invariant <select id="tr-field"><option value="three">three (bands of 5)</option><option value="two">two (bands of 10)</option><option value="du">du</option><option value="c4">c4</option><option value="four">four</option><option value="status">status (0 catalog, 1 new, 2 seed)</option><option value="generation">generation</option></select></label>
           <label>Edges <select id="tr-set"><option value="all">all construction pairs (order-independent)</option><option value="first">discoverer only (depends on the order)</option></select></label>
           <label>Show <select id="tr-mode"><option value="lift">lift (observed / independent)</option><option value="cond">P(child | parent)</option><option value="count">counts</option></select></label>
+        </div>
+        <div class="aview-controls row" data-view="distributions" hidden>
+          <label>Quantity <select id="ds-metric"><option value="in_degree">in-degree (distinct finders)</option><option value="found">rediscoveries (all paths)</option><option value="out_degree">out-degree (classes reached)</option><option value="reached_new">new classes reached</option><option value="spaces">maximizing 5-spaces</option><option value="cosets">cosets</option></select></label>
+          <label>Groups <select id="ds-by"><option value="all">all</option><option value="status">by status</option><option value="generation">by generation</option></select></label>
+          <label>Scale <select id="ds-norm"><option value="count">counts</option><option value="share">share of each group</option></select></label>
         </div>
         <canvas id="acanvas"></canvas>
         <div id="alegend"></div>

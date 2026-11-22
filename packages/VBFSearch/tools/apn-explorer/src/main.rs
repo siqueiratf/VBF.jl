@@ -9,6 +9,7 @@
 mod data;
 mod heatmap;
 mod transitions;
+mod distributions;
 
 use data::Data;
 use std::path::PathBuf;
@@ -55,10 +56,13 @@ fn main() {
         write_json(&a.out, "heatmaps.json", &v);
         eprintln!("heatmaps in {:.2}s, peak {:.0} MiB", t.elapsed().as_secs_f64(), data::peak_rss_mib());
     }
-    let edges = if want("transitions") || want("communities") || want("distributions") {
+    let need_edges = want("transitions") || want("communities") || want("distributions") || want("generations");
+    let mut path_pairs: Vec<(u32, u32)> = Vec::new();
+    let edges = if need_edges {
         let t = Instant::now();
         let p = a.pairs.as_ref().expect("--pairs is needed");
-        let e = transitions::distinct_edges(&data::load_pairs(p, d.n));
+        path_pairs = data::load_pairs(p, d.n);
+        let e = transitions::distinct_edges(&path_pairs);
         eprintln!("{} distinct edges in {:.2}s, peak {:.0} MiB", e.len(), t.elapsed().as_secs_f64(), data::peak_rss_mib());
         e
     } else { Vec::new() };
@@ -67,5 +71,17 @@ fn main() {
         let v = transitions::run(&d, &edges, 12);
         write_json(&a.out, "transitions.json", &v);
         eprintln!("transitions in {:.2}s, peak {:.0} MiB", t.elapsed().as_secs_f64(), data::peak_rss_mib());
+    }
+    let mut indegree: Vec<u32> = Vec::new();
+    if want("distributions") || want("generations") {
+        let t = Instant::now();
+        let (v, ind) = distributions::run(&d, &edges, &path_pairs);
+        if want("distributions") {
+            write_json(&a.out, "distributions.json", &v);
+            let bytes: Vec<u8> = ind.iter().flat_map(|x| x.to_le_bytes()).collect();
+            std::fs::write(a.out.join("in_degree.u32"), bytes).unwrap();
+        }
+        indegree = ind;
+        eprintln!("distributions in {:.2}s, peak {:.0} MiB", t.elapsed().as_secs_f64(), data::peak_rss_mib());
     }
 }

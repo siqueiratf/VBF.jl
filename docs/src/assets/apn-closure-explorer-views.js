@@ -200,8 +200,105 @@
     $('ainfo-note').textContent = '';
   }
 
+  // ---------- simple charts on the analysis canvas ----------
+  // series: [{name, colour, points: [[x, y], ...], bars?: bool}], region: [x0, y0, w, h] in canvas pixels
+  function chart(ctx, region, series, opt) {
+    const css = X().css, dpr = window.devicePixelRatio || 1, [rx, ry, rw, rh] = region;
+    const L = 58 * dpr, B = 30 * dpr, T = 20 * dpr, x0 = rx + L, y0 = ry + T, w = rw - L - 10 * dpr, h = rh - T - B;
+    const all = series.flatMap(s => s.points).filter(p => isFinite(p[0]) && isFinite(p[1]) && (!opt.logy || p[1] > 0));
+    if (!all.length) return null;
+    const ty = v => opt.logy ? Math.log10(v) : v;
+    const xmin = opt.xmin ?? Math.min(...all.map(p => p[0])), xmax = opt.xmax ?? Math.max(...all.map(p => p[0]));
+    const ylo = opt.ymin !== undefined ? ty(opt.ymin) : Math.min(...all.map(p => ty(p[1]))), yhi = opt.ymax !== undefined ? ty(opt.ymax) : Math.max(...all.map(p => ty(p[1])));
+    const X_ = v => x0 + (v - xmin) / ((xmax - xmin) || 1) * w, Y_ = v => y0 + h - (ty(v) - ylo) / ((yhi - ylo) || 1) * h;
+    ctx.strokeStyle = css('--border'); ctx.lineWidth = dpr; ctx.strokeRect(x0, y0, w, h);
+    ctx.fillStyle = css('--muted'); ctx.font = (11 * dpr) + 'px system-ui,sans-serif';
+    ctx.fillText(opt.title || '', x0, ry + 13 * dpr);
+    ctx.textAlign = 'right';
+    for (let k = 0; k <= 4; k++) { const v = ylo + (yhi - ylo) * k / 4; ctx.fillText(opt.logy ? (10 ** v >= 1 ? num(Math.round(10 ** v)) : (10 ** v).toPrecision(2)) : (opt.yfmt || (z => num(+z.toPrecision(3))))(v), x0 - 4 * dpr, y0 + h - k / 4 * h + 4 * dpr); }
+    ctx.textAlign = 'center';
+    for (let k = 0; k <= 5; k++) { const v = xmin + (xmax - xmin) * k / 5; ctx.fillText((opt.xfmt || (z => num(+z.toPrecision(3))))(v), x0 + k / 5 * w, y0 + h + 14 * dpr); }
+    ctx.fillText(opt.xlabel || '', x0 + w / 2, ry + rh - 2 * dpr); ctx.textAlign = 'left';
+    const hits = [];
+    let lx = x0 + w - 4 * dpr;
+    for (const s of series) {
+      ctx.strokeStyle = ctx.fillStyle = s.colour; ctx.lineWidth = 2 * dpr; ctx.setLineDash(s.dash ? [5 * dpr, 4 * dpr] : []);
+      if (s.bars) {
+        const bw = Math.max(2 * dpr, w / Math.max(1, (xmax - xmin + 1)) * 0.8 / (opt.groups || 1));
+        s.points.forEach(p => { if (p[1] > 0 || !opt.logy) { const x = X_(p[0]) + (s.offset || 0) * bw - bw * (opt.groups || 1) / 2; const y = Math.min(y0 + h, Math.max(y0, Y_(Math.max(p[1], opt.logy ? 1e-12 : 0))));
+          ctx.globalAlpha = 0.85; ctx.fillRect(x, y, bw, y0 + h - y); ctx.globalAlpha = 1; hits.push({x, y, w: bw, h: y0 + h - y, p, s}); } });
+      } else {
+        ctx.beginPath(); let first = true;
+        for (const p of s.points) { if (opt.logy && p[1] <= 0) continue; const x = X_(p[0]), y = Y_(p[1]); first ? ctx.moveTo(x, y) : ctx.lineTo(x, y); first = false; hits.push({x: x - 4 * dpr, y: y - 4 * dpr, w: 8 * dpr, h: 8 * dpr, p, s}); }
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      ctx.textAlign = 'right'; ctx.fillText(s.name, lx, y0 + 12 * dpr + 13 * dpr * series.indexOf(s)); ctx.textAlign = 'left';
+    }
+    return hits;
+  }
+  function canvasSetup() {
+    const c = $('acanvas'), ctx = c.getContext('2d'), dpr = window.devicePixelRatio || 1;
+    c.width = Math.round(c.clientWidth * dpr); c.height = Math.round(c.clientHeight * dpr);
+    ctx.fillStyle = X().css('--bg'); ctx.fillRect(0, 0, c.width, c.height);
+    return {c, ctx, dpr};
+  }
+  function hover(c, hits, tip, click) {
+    const dpr = window.devicePixelRatio || 1;
+    const at = e => { const r = c.getBoundingClientRect(), x = (e.clientX - r.left) * dpr, y = (e.clientY - r.top) * dpr;
+      return hits.find(k => x >= k.x && x <= k.x + k.w && y >= k.y && y <= k.y + k.h) || null; };
+    c.onmousemove = e => { const k = at(e); $('atip').hidden = !k; if (k) { $('atip').innerHTML = tip(k); $('atip').style.left = (e.offsetX + 14) + 'px'; $('atip').style.top = (e.offsetY + 10) + 'px'; } };
+    c.onmouseleave = () => { $('atip').hidden = true; };
+    c.onclick = e => { const k = at(e); if (k && click) click(k); };
+  }
+  const GROUP_COLOURS = () => ({all: X().css('--ink'), 'status:catalog': X().css('--found'), 'status:new': X().css('--fresh'), 'status:seed': X().css('--seed'),
+    'generation:0': '#e3a72f', 'generation:1': '#3aa8a0', 'generation:2': '#9b6bd6'});
+  const binRange = b => b === 0 ? [0, 0] : [2 ** (b - 1), 2 ** b - 1];
+  const binText = b => { const [lo, hi] = binRange(b); return lo === hi ? String(lo) : num(lo) + '–' + num(hi); };
+
+  // ---------- Feature 3: degree and rediscovery distributions ----------
+  let inDegree = null;
+  async function perClass(metric) {
+    const D = X().D;
+    if (metric === 'in_degree') {
+      if (!inDegree) inDegree = new Uint32Array(await (await fetch('/explorer-data/' + X().meta.version + '/analysis/in_degree.u32')).arrayBuffer());
+      return i => inDegree[i];
+    }
+    return {found: i => D.found[i], out_degree: i => D.reached[i], reached_new: i => D.reached_new[i], spaces: i => D.spaces[i], cosets: i => D.cosets[i]}[metric];
+  }
+  async function distributionsView() {
+    const d = await analysis('distributions'), metric = $('ds-metric').value, by = $('ds-by').value, norm = $('ds-norm').value === 'share';
+    const M = d.metrics[metric], groups = by === 'all' ? ['all'] : Object.keys(M.groups).filter(g => g.startsWith(by + ':'));
+    const colours = GROUP_COLOURS(), {c, ctx, dpr} = canvasSetup();
+    const top = [0, 0, c.width, c.height * 0.62], bl = [0, c.height * 0.62, c.width / 2, c.height * 0.38], br = [c.width / 2, c.height * 0.62, c.width / 2, c.height * 0.38];
+    const series = groups.map((g, k) => { const h = M.groups[g], tot = h.reduce((a, b) => a + b, 0) || 1;
+      return {name: g.replace(':', ' ') + ' (' + num(tot) + ')', colour: colours[g] || '#888', bars: true, offset: k, group: g,
+        points: h.map((v, b) => [b, norm ? v / tot : v])}; });
+    const pl = M.powerlaw;
+    const hits = chart(ctx, top, series, {logy: true, groups: series.length, title: metric.replace('_', ' ') + (M.parents_only ? ' (expanded parents only)' : '') + ' · log2 bins' +
+      (pl ? ' · power-law tail from ' + num(pl.xmin) + ': α = ' + pl.alpha.toFixed(2) + ', KS ' + pl.ks.toFixed(3) + ', ' + (100 * pl.share_in_tail).toFixed(1) + '% in the tail' : ''),
+      xlabel: 'bin (values ' + binText(0) + ', ' + binText(1) + ', ' + binText(2) + ', ' + binText(3) + ', …)', xfmt: v => binText(Math.round(v)), xmin: -0.5, xmax: Math.max(...series.map(s => s.points.length)) - 0.5,
+      ymin: norm ? 1e-6 : 0.5});
+    const ex = d.exposure_by_admission_decile, sat = d.saturation_by_expansion_decile;
+    chart(ctx, bl, [{name: 'mean in-degree', colour: colours.all, points: ex.map((e, k) => [k + 1, e.mean_in_degree])},
+                    {name: '% singletons / 10', colour: colours['status:new'], dash: true, points: ex.map((e, k) => [k + 1, 10 * e.singletons])}],
+      {title: 'Exposure: in-degree by admission decile (search effect)', xlabel: 'admission decile (1 = earliest)', ymin: 0});
+    chart(ctx, br, [{name: '% already known', colour: colours.all, points: sat.map(e => [e.expansion_decile + 1, 100 * e.already_known])}],
+      {title: 'Saturation: reached classes already known, by expansion decile', xlabel: 'expansion decile of the parent', ymin: 0, ymax: 100});
+    hover(c, hits || [], k => '<b>' + k.s.name + '</b><br>values ' + binText(k.p[0]) + ': ' + (norm ? (100 * k.p[1]).toFixed(2) + '%' : num(k.p[1]) + ' classes') + '<br><i>click: filter these classes</i>',
+      async k => {
+        const get = await perClass(metric), [lo, hi] = binRange(k.p[0]), D = X().D, g = k.s.group;
+        const inGroup = g === 'all' ? () => true : g.startsWith('status:') ? i => D.status[i] === ['catalog', 'new', 'seed'].indexOf(g.slice(7)) : i => D.generation[i] === Number(g.slice(11));
+        X().setFilter(maskOf(i => (!M.parents_only || D.expanded[i]) && inGroup(i) && get(i) >= lo && get(i) <= hi), metric + ' ' + binText(k.p[0]) + (g === 'all' ? '' : ', ' + g.replace(':', ' ')));
+      });
+    const s = M.summary;
+    $('ainfo').innerHTML = '<b>' + metric + '</b>: ' + num(s.count) + ' values · mean ' + (+s.mean.toPrecision(4)) + ' · median ' + num(s.median) + ' · p90 ' + num(s.p90) + ' · p99 ' + num(s.p99) + ' · max ' + num(s.max) +
+      '<br>Spearman correlation of in-degree with admission order: ' + d.spearman_in_degree_vs_admission_order.toFixed(3) + ' (negative: earlier classes were found more often, a search effect).';
+    $('ainfo-note').textContent = d.notes;
+  }
+
   // ---------- view switching ----------
-  const RENDER = {heatmap: heatmapView, transitions: transitionsView};
+  const RENDER = {heatmap: heatmapView, transitions: transitionsView, distributions: distributionsView};
   function showView(v) {
     view = v;
     document.querySelectorAll('#view-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
@@ -216,6 +313,7 @@
     document.querySelectorAll('#view-tabs button').forEach(b => { b.onclick = () => showView(b.dataset.view); });
     for (const id of ['hm-pair', 'hm-metric', 'hm-min']) $(id).oninput = () => heatmapView();
     for (const id of ['tr-field', 'tr-set', 'tr-mode']) $(id).oninput = () => transitionsView();
+    for (const id of ['ds-metric', 'ds-by', 'ds-norm']) $(id).oninput = () => distributionsView();
     $('filter-map').onclick = () => showView('map');
     $('filter-clear').onclick = () => { X().setFilter(null, ''); hmSel = trSel = null; if (view !== 'map') showView(view); };
     document.addEventListener('apn-show-map', () => showView('map'));
