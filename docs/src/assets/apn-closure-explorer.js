@@ -11,7 +11,8 @@
   const AXES = [  // code, label, unit
     [0, 'two: 2-dim subspaces (nonbent set)'], [1, 'three: 3-dim nonbent subspaces'], [2, 'admission order (class id)'],
     [3, 'admission time (hours since the start)'], [4, 'generation (distance from a seed)'],
-    [5, 'rediscoveries, log2(1 + paths)'], [6, 'distinct finders, log2(1 + parents)']];
+    [5, 'rediscoveries, log2(1 + paths)'], [6, 'distinct finders, log2(1 + parents)'],
+    [7, 'maximizing 5-spaces as a parent, log2(1 + n)'], [8, 'new classes reached as a parent']];
   let meta, D = {}, n = 0, gl, program, vao, loc = {}, view = null, cut = 1, playing = false, timer = null;
   let selected = 0, children = [], driftCache = null, recording = null;
 
@@ -36,8 +37,9 @@
   // ---------- WebGL ----------
   const VS = `#version 300 es
   in float a_two, a_three, a_status, a_method, a_gen, a_family, a_time, a_found, a_finders; in vec2 a_jit;
-  uniform int u_x, u_y, u_colour, u_show; uniform vec4 u_view; uniform float u_cut, u_window, u_point, u_alpha;
-  uniform float u_genMax, u_timeMax, u_foundMax; uniform vec3 u_pal[4]; uniform vec3 u_meth[3]; uniform int u_sel;
+  in float a_exp, a_spaces, a_cosets, a_rnew;
+  uniform int u_x, u_y, u_colour, u_show, u_onlyExp; uniform vec4 u_view; uniform float u_cut, u_window, u_point, u_alpha;
+  uniform float u_genMax, u_timeMax, u_foundMax, u_spacesMax, u_rnewMax, u_rateMax; uniform vec3 u_pal[4]; uniform vec3 u_meth[3]; uniform int u_sel;
   out vec4 v_colour;
   float axis(int c) {
     if (c == 0) return a_two + a_jit.x * 0.8;
@@ -46,7 +48,9 @@
     if (c == 3) return a_time / 3600.0;
     if (c == 4) return a_gen + a_jit.y * 0.4;
     if (c == 5) return log2(1.0 + a_found) + a_jit.y * 0.08;
-    return log2(1.0 + a_finders) + a_jit.y * 0.08;
+    if (c == 6) return log2(1.0 + a_finders) + a_jit.y * 0.08;
+    if (c == 7) return log2(1.0 + a_spaces) + a_jit.y * 0.08;
+    return a_rnew + a_jit.y * 0.4;
   }
   vec3 ramp(float t) {  // perceptual-ish blue -> green -> yellow
     t = clamp(t, 0.0, 1.0);
@@ -56,7 +60,7 @@
   void main() {
     int st = int(a_status + 0.5);
     bool needsInv = u_x <= 1 || u_y <= 1;
-    if (((u_show >> st) & 1) == 0 || (needsInv && a_two < 0.0) || (u_x == 4 || u_y == 4) && a_gen > 65000.0) { gl_Position = vec4(2.0, 2.0, 0.0, 1.0); gl_PointSize = 0.0; v_colour = vec4(0.0); return; }
+    if (((u_show >> st) & 1) == 0 || (u_onlyExp == 1 && a_exp < 0.5) || (needsInv && a_two < 0.0) || (u_x == 4 || u_y == 4) && a_gen > 65000.0) { gl_Position = vec4(2.0, 2.0, 0.0, 1.0); gl_PointSize = 0.0; v_colour = vec4(0.0); return; }
     vec2 p = vec2(axis(u_x), axis(u_y));
     gl_Position = vec4((p.x - u_view.x) / (u_view.y - u_view.x) * 2.0 - 1.0, (p.y - u_view.z) / (u_view.w - u_view.z) * 2.0 - 1.0, 0.0, 1.0);
     gl_PointSize = u_point;
@@ -68,6 +72,8 @@
     else if (u_colour == 3) c = ramp(a_time / u_timeMax);
     else if (u_colour == 4) c = hue(a_family / 24.0 + 0.03);
     else if (u_colour == 5) c = ramp(log2(1.0 + a_found) / log2(1.0 + u_foundMax));
+    else if (u_colour == 7) c = a_exp > 0.5 ? ramp(log2(1.0 + a_rnew) / log2(1.0 + u_rnewMax)) : u_pal[3] * 0.6;
+    else if (u_colour == 8) c = a_exp > 0.5 ? ramp(1e6 * a_rnew / max(a_cosets, 1.0) / u_rateMax) : u_pal[3] * 0.6;
     else c = ramp(1.0 - clamp(age / max(u_window, 1.0), 0.0, 1.0));
     float a = u_alpha;
     if (u_window > 0.0) a *= age <= u_window ? 1.0 : 0.12;
@@ -98,8 +104,12 @@
     attr('a_method', D.method, gl.UNSIGNED_BYTE, 1, false); attr('a_gen', D.generation, gl.UNSIGNED_SHORT, 1, false);
     attr('a_family', D.family, gl.UNSIGNED_BYTE, 1, false); attr('a_time', D.time, gl.FLOAT, 1, false);
     attr('a_found', D.found, gl.UNSIGNED_SHORT, 1, false); attr('a_finders', D.finders, gl.UNSIGNED_BYTE, 1, false);
+    if (D.expanded) {
+      attr('a_exp', D.expanded, gl.UNSIGNED_BYTE, 1, false); attr('a_spaces', D.spaces, gl.UNSIGNED_SHORT, 1, false);
+      attr('a_cosets', D.cosets, gl.FLOAT, 1, false); attr('a_rnew', D.reached_new, gl.UNSIGNED_SHORT, 1, false);
+    }
     for (const u of ['u_x', 'u_y', 'u_colour', 'u_show', 'u_view', 'u_cut', 'u_window', 'u_point', 'u_alpha', 'u_genMax',
-      'u_timeMax', 'u_foundMax', 'u_pal', 'u_meth', 'u_sel']) loc[u] = gl.getUniformLocation(program, u);
+      'u_timeMax', 'u_foundMax', 'u_pal', 'u_meth', 'u_sel', 'u_onlyExp', 'u_spacesMax', 'u_rnewMax', 'u_rateMax']) loc[u] = gl.getUniformLocation(program, u);
   }
 
   // ---------- view ----------
@@ -112,6 +122,8 @@
     if (code === 3) return pad(0, meta.time_span_seconds / 3600, 0.01);
     if (code === 4) return pad(0, meta.generation_max, 0.03);
     if (code === 5) return pad(0, Math.log2(1 + meta.found_max), 0.03);
+    if (code === 7) return pad(0, Math.log2(1 + (meta.spaces_max || 1)), 0.03);
+    if (code === 8) return pad(0, Math.min(meta.reached_new_max || 1, 400), 0.03);
     return pad(0, 8, 0.03);
   }
   function fit() { const x = range(axisCode('x-axis')), y = range(axisCode('y-axis')); view = [x[0], x[1], y[0], y[1]]; draw(); }
@@ -143,6 +155,8 @@
     gl.uniform1f(loc.u_point, Number($('point').value) * dpr); gl.uniform1f(loc.u_alpha, Number($('alpha').value) / 100);
     gl.uniform1f(loc.u_genMax, Math.max(1, meta.generation_max)); gl.uniform1f(loc.u_timeMax, Math.max(1, meta.time_span_seconds));
     gl.uniform1f(loc.u_foundMax, Math.max(1, meta.found_max)); gl.uniform1i(loc.u_sel, selected);
+    gl.uniform1i(loc.u_onlyExp, $('only-expanded').checked ? 1 : 0); gl.uniform1f(loc.u_spacesMax, Math.max(1, meta.spaces_max || 1));
+    gl.uniform1f(loc.u_rnewMax, Math.max(1, meta.reached_new_max || 1)); gl.uniform1f(loc.u_rateMax, Math.max(1, meta.new_per_mcoset_p99 || 1));
     gl.uniform3fv(loc.u_pal, [...hexRGB(css('--found')), ...hexRGB(css('--fresh')), ...hexRGB(css('--seed')), ...hexRGB(css('--unknown'))]);
     gl.uniform3fv(loc.u_meth, [...hexRGB(css('--seed')), ...hexRGB(css('--found')), ...hexRGB(css('--fresh'))]);
     gl.drawArrays(gl.POINTS, 0, Math.max(0, Math.min(cut, n)));
@@ -168,7 +182,8 @@
   function position(id) {
     const i = id - 1, x = axisCode('x-axis'), y = axisCode('y-axis');
     const v = c => c === 0 ? D.two[i] + D.jitter[2 * i] / 127 * 0.8 : c === 1 ? D.three[i] + D.jitter[2 * i + 1] / 127 * 0.4 :
-      c === 2 ? id : c === 3 ? D.time[i] / 3600 : c === 4 ? D.generation[i] : c === 5 ? Math.log2(1 + D.found[i]) : Math.log2(1 + D.finders[i]);
+      c === 2 ? id : c === 3 ? D.time[i] / 3600 : c === 4 ? D.generation[i] : c === 5 ? Math.log2(1 + D.found[i]) :
+      c === 6 ? Math.log2(1 + D.finders[i]) : c === 7 ? Math.log2(1 + (D.spaces ? D.spaces[i] : 0)) : (D.reached_new ? D.reached_new[i] : 0);
     if ((x <= 1 || y <= 1) && D.two[i] < 0) return null;
     return toScreen(v(x), v(y));
   }
@@ -231,14 +246,18 @@
     clearTimeout(statsTimer);
     statsTimer = setTimeout(() => {
       const w = trail(), start = w ? Math.max(0, cut - w) : 0;
-      const s = [0, 0, 0, 0], m = [0, 0, 0]; let gsum = 0, gk = 0, f1 = 0;
-      for (let i = start; i < cut; i++) { s[D.status[i]]++; m[D.method[i]]++; if (D.generation[i] < 65535) { gsum += D.generation[i]; gk++; } if (D.found[i] === 1) f1++; }
+      const s = [0, 0, 0, 0], m = [0, 0, 0]; let gsum = 0, gk = 0, f1 = 0, ex = 0, rn = 0, co = 0;
+      for (let i = start; i < cut; i++) {
+        s[D.status[i]]++; m[D.method[i]]++; if (D.generation[i] < 65535) { gsum += D.generation[i]; gk++; } if (D.found[i] === 1) f1++;
+        if (D.expanded && D.expanded[i]) { ex++; rn += D.reached_new[i]; co += D.cosets[i]; }
+      }
       const tot = cut - start || 1, pct = v => (100 * v / tot).toFixed(1) + '%';
       $('stats').innerHTML = '<tr><td>' + (w ? 'Trail (last ' + number(cut - start) + ')' : 'All shown') + '</td><td>' + number(cut - start) + '</td></tr>' +
         '<tr><td>new</td><td>' + pct(s[1]) + '</td></tr><tr><td>catalog-matching</td><td>' + pct(s[0]) + '</td></tr>' +
         '<tr><td>found by v5 / switching</td><td>' + pct(m[1]) + ' / ' + pct(m[2]) + '</td></tr>' +
         '<tr><td>mean generation</td><td>' + (gsum / (gk || 1)).toFixed(2) + '</td></tr>' +
-        '<tr><td>found only once (singletons)</td><td>' + pct(f1) + '</td></tr>';
+        '<tr><td>found only once (singletons)</td><td>' + pct(f1) + '</td></tr>' +
+        (D.expanded ? '<tr><td>expanded parents</td><td>' + number(ex) + '</td></tr><tr><td>their new classes per million cosets</td><td>' + (co ? (1e6 * rn / co).toFixed(0) : '—') + '</td></tr>' : '');
     }, 120);
   }
   function legend() {
@@ -248,6 +267,10 @@
     if (mode === 0) L.innerHTML = dot(css('--seed'), 'seeds') + dot(css('--found'), 'catalog-matching') + dot(css('--fresh'), 'new') + dot(css('--unknown'), 'unknown');
     else if (mode === 2) L.innerHTML = dot(css('--seed'), 'seed') + dot(css('--found'), 'v5') + dot(css('--fresh'), 'switching');
     else if (mode === 4) L.innerHTML = '<span class="small">24 colours, one per group of seed lineages</span>';
+    else if (mode === 7 || mode === 8) {
+      L.innerHTML = dot(css('--unknown'), 'not an expanded parent'); G.hidden = false; G.style.background = 'linear-gradient(90deg,#2e268c,#21928c,#fde026)';
+      GL.textContent = mode === 7 ? '0 … ' + number(meta.reached_new_max) + ' new classes reached (log)' : '0 … ' + Math.round(meta.new_per_mcoset_p99) + ' new per million cosets (99th percentile)';
+    }
     else {
       L.innerHTML = ''; G.hidden = false; G.style.background = 'linear-gradient(90deg,#2e268c,#21928c,#fde026)';
       GL.textContent = mode === 1 ? '0 … ' + meta.generation_max + ' generations' : mode === 3 ? 'start … ' + (meta.time_span_seconds / 3600).toFixed(0) + ' h' :
@@ -270,7 +293,10 @@
       '<tr><td>found first by</td><td>' + link(D.discoverer[i]) + ' (' + me + ')</td></tr><tr><td>seed of the lineage</td><td>' + link(D.root[i]) + '</td></tr>' +
       '<tr><td>ancestors</td><td>' + (chain.length ? chain.map(link).join(' ') : '—') + '</td></tr>' +
       '<tr><td>rediscoveries</td><td>' + number(D.found[i]) + ' paths, ' + D.finders[i] + ' parents</td></tr>' +
-      '<tr><td>children found first</td><td>' + number(children.length) + '</td></tr></table>' +
+      '<tr><td>children found first</td><td>' + number(children.length) + '</td></tr>' +
+      (D.expanded ? '<tr><td>as a parent</td><td>' + (D.expanded[i] ? 'expanded' : 'not expanded yet') + ', ' + number(D.spaces[i]) + ' 5-spaces, ' +
+        number(Math.round(D.cosets[i])) + ' cosets, ' + number(D.reached[i]) + ' classes reached, ' + number(D.reached_new[i]) + ' new' +
+        (D.expanded[i] && D.cosets[i] > 0 ? ' (' + (1e6 * D.reached_new[i] / D.cosets[i]).toFixed(0) + ' per million cosets)' : '') + '</td></tr>' : '') + '</table>' +
       '<div class="row"><input id="find-id" type="number" min="1" value="' + id + '"><button id="find">Select</button><button id="clear">Clear</button></div>';
     $('info').querySelectorAll('button[data-id]').forEach(b => { b.onclick = () => select(Number(b.dataset.id)); });
     $('find').onclick = () => select(Number($('find-id').value)); $('clear').onclick = () => { selected = 0; children = []; $('info-title').textContent = 'Selected class'; draw(); };
@@ -342,6 +368,24 @@
       1000 * Math.max(0, Number($('hold').value) || 0));
   }
 
+  // ---------- experiments (order_experiments.py report) ----------
+  async function experiments() {
+    try {
+      const r = await fetch('/explorer-data/experiments/report.json', {cache: 'no-store'}); if (!r.ok) return;
+      const rep = await r.json(), e2 = rep.E2_replay, e1 = rep.E1_yield;
+      let html = '<tr><td>order</td><td>10% cosets</td><td>25%</td><td>50%</td><td>10% parents</td></tr>';
+      for (const [name, v] of Object.entries(e2)) {
+        const c = v.new_found_after_x_percent_of_cosets || {}, p = v.new_found_after_x_percent_of_parents;
+        html += '<tr><td>' + name + '</td><td>' + number(c['10%'] || 0) + '</td><td>' + number(c['25%'] || 0) + '</td><td>' + number(c['50%'] || 0) + '</td><td>' + number(p['10%']) + '</td></tr>';
+      }
+      $('exp-table').innerHTML = html;
+      $('exp-e1').textContent = number(e1.parents) + ' expanded parents; mean ' + e1.mean_reached.toFixed(0) + ' classes reached, ' + e1.mean_reached_new.toFixed(1) +
+        ' new. Rank correlation of new classes reached with 5-spaces: ' + e1.spearman_with_reached_new['5-spaces'].toFixed(2) +
+        '; of new classes per coset with any feature: at most ' + Math.max(...Object.values(e1.spearman_with_new_per_coset).map(Math.abs)).toFixed(2) + '.';
+      $('experiments').hidden = false;
+    } catch (e) { /* no report yet */ }
+  }
+
   // ---------- data update (vlab dashboard proxy) ----------
   async function rebuildStatus() {
     try {
@@ -367,6 +411,7 @@
     for (const id of ['point', 'alpha', 'drift', 'drift-cell', 'drift-min', 'drift-scale']) $(id).oninput = () => { driftCache = id === 'drift-cell' ? null : driftCache; draw(); };
     for (const id of ['trail-on', 'trail', 'drift-trail']) $(id).oninput = () => { driftCache = null; draw(); stats(); };
     document.querySelectorAll('.show').forEach(c => { c.onchange = draw; });
+    $('only-expanded').onchange = () => { draw(); };
     $('cut').max = n; $('to').value = n; $('to').max = n; $('from').max = n;
     $('cut').oninput = () => { stopPlay(); setCut(Number($('cut').value)); };
     $('play').onclick = () => play(false); $('step-back').onclick = () => { stopPlay(); step(-1); }; $('step-fwd').onclick = () => { stopPlay(); step(1); };
@@ -391,9 +436,18 @@
 
   (async () => {
     try {
-      await load(); setupGL(); wire(); legend();
-      cut = n; $('cut').value = n; fit(); stats();
+      await load(); setupGL(); wire();
+      // View settings in the link: #x=0&y=1&colour=8&expanded=1&drift=1&trail=50000&cut=1000000&id=123
+      const h = new URLSearchParams(location.hash.slice(1));
+      if (h.has('x')) $('x-axis').value = h.get('x'); if (h.has('y')) $('y-axis').value = h.get('y');
+      if (h.has('colour')) $('colour').value = h.get('colour');
+      $('only-expanded').checked = h.get('expanded') === '1'; $('drift').checked = h.get('drift') === '1';
+      if (h.has('trail')) { $('trail-on').checked = true; $('trail').value = h.get('trail'); }
+      legend();
+      cut = h.has('cut') ? Math.min(n, Number(h.get('cut'))) : n; $('cut').value = cut; fit(); stats();
+      if (h.has('id')) select(Number(h.get('id')));
       $('message').hidden = true;
+      experiments();
     } catch (error) {
       $('message').textContent = 'The explorer data is not available: ' + error.message + '. Use "Update the data" above.';
       $('message').classList.add('error');

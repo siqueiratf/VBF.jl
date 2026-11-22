@@ -50,10 +50,12 @@
       <div class="row"><label>X <select id="x-axis"></select></label><label>Y <select id="y-axis"></select></label><button id="fit">Fit</button></div>
       <div class="row"><label>Colour <select id="colour">
         <option value="0">Catalog status</option><option value="1">Generation</option><option value="2">Method (first path)</option>
-        <option value="3">Admission time</option><option value="4">Seed family</option><option value="5">Rediscoveries</option><option value="6">Recency (trail)</option></select></label></div>
+        <option value="3">Admission time</option><option value="4">Seed family</option><option value="5">Rediscoveries</option><option value="6">Recency (trail)</option>
+        <option value="7">New classes reached (as a parent)</option><option value="8">New per million cosets (as a parent)</option></select></label></div>
       <div id="legend"></div><div id="gradient" hidden></div><div id="gradient-labels" class="small"></div>
       <div class="row"><label>Point <input id="point" type="range" min="1" max="6" value="1" style="width:70px"></label><label>Opacity <input id="alpha" type="range" min="5" max="100" value="70" style="width:70px"></label></div>
       <div class="row"><label>Show</label><label><input type="checkbox" class="show" value="0" checked>catalog</label><label><input type="checkbox" class="show" value="1" checked>new</label><label><input type="checkbox" class="show" value="2" checked>seeds</label><label><input type="checkbox" class="show" value="3" checked>unknown</label></div>
+      <div class="row"><label><input id="only-expanded" type="checkbox">Only expanded parents (their yield and cost are known)</label></div>
       <div class="row"><label><input id="trail-on" type="checkbox">Trail: fade classes older than</label><input id="trail" type="number" min="100" step="1000" value="50000"><span class="small">classes</span></div>
 
       <h2>Playback</h2>
@@ -65,7 +67,7 @@
         <p class="small">In the two × three view: an arrow from each parent cell to the mean cell of the children that its classes found, over the shown classes (or only the trail). Thick arrows have many children.</p>
         <div class="row"><label><input id="drift" type="checkbox">Show arrows</label><label><input id="drift-trail" type="checkbox">only the trail</label></div>
         <div class="row"><label>Cell size <select id="drift-cell"><option value="4">4 × 2</option><option value="10" selected>10 × 5</option><option value="20">20 × 10</option><option value="40">40 × 20</option></select></label><label>Min children <input id="drift-min" type="number" min="1" value="30" style="width:64px"></label></div>
-        <div class="row"><label>Arrow scale <input id="drift-scale" type="range" min="1" max="20" value="4" style="width:90px"></label></div>
+        <div class="row"><label>Arrow scale <input id="drift-scale" type="range" min="1" max="20" value="1" style="width:90px"></label></div>
         <table id="drift-summary" class="small"></table>
       </details>
 
@@ -81,6 +83,12 @@
         <div class="row"><label>Size <select id="rec-size"><option value="view">as on screen</option><option value="1280x800">1280 × 800</option><option value="1920x1080">1920 × 1080</option><option value="1920x1200" selected>1920 × 1200</option></select></label></div>
         <div class="row"><button id="record">Record</button><button id="record-stop" hidden>Stop</button><span id="record-state" class="small"></span></div>
         <div id="record-link"></div>
+      </details>
+      <details id="experiments" hidden><summary>Experiments on the order (replay)</summary>
+        <p class="small">Only expanded parents can be replayed, because their reached classes are known. A parent becomes available when a seed or an earlier replayed expansion reaches it, as in the real search. The table gives the new classes found after a share of the compute (v5 cosets) and of the parents.</p>
+        <table id="exp-table" class="small"></table>
+        <p class="small" id="exp-e1"></p>
+        <p><a href="/explorer-data/experiments/E2_replay.png" target="_blank">Replay figure ↗</a> · <a href="/explorer-data/experiments/E1_yield.png" target="_blank">Yield figure ↗</a> · <a href="/explorer-data/experiments/report.json" target="_blank">report.json ↗</a></p>
       </details>
       <details><summary>About this page</summary>
         <p class="small">Each point is an admitted quadratic APN class; the ids are the admission order. Generation is the distance from a published seed along the first construction path that reached the class; its discoverer is the parent of that path. Rediscoveries count every construction path that reached a candidate of the class. Positions in the two × three map use the cell offset of the drawing page, so a class has the same place on both pages.</p>
