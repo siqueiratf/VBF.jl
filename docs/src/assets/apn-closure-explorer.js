@@ -139,7 +139,9 @@
     if (code === 12) return pad(0, 1, 0.15);
     return pad(0, 8, 0.03);
   }
-  function fit() { const x = range(axisCode('x-axis')), y = range(axisCode('y-axis')); view = [x[0], x[1], y[0], y[1]]; draw(); }
+  function fitView() { const x = range(axisCode('x-axis')), y = range(axisCode('y-axis')); return [x[0], x[1], y[0], y[1]]; }
+  function fit() { view = fitView(); draw(); }
+  let textScale = 1;  // larger text in exported videos
   function size() {
     const dpr = window.devicePixelRatio || 1;
     for (const c of [$('gl'), $('overlay')]) {
@@ -183,12 +185,20 @@
     const out = []; for (let v = Math.ceil(a / m) * m; v <= b; v += m) out.push(+v.toPrecision(12)); return out;
   }
   function overlay() {
-    const c = $('overlay'), ctx = c.getContext('2d'), dpr = window.devicePixelRatio || 1;
+    const c = $('overlay'), ctx = c.getContext('2d'), dpr = window.devicePixelRatio || 1, k = dpr * textScale;
     ctx.clearRect(0, 0, c.width, c.height);
-    ctx.font = (11 * dpr) + 'px system-ui,sans-serif'; ctx.fillStyle = css('--muted'); ctx.strokeStyle = css('--border');
-    for (const v of ticks(view[0], view[1], 8)) { const [x] = toScreen(v, 0); ctx.fillRect(x, c.height - 6 * dpr, 1, 6 * dpr); ctx.fillText(number(v), x + 3, c.height - 8 * dpr); }
-    for (const v of ticks(view[2], view[3], 6)) { const [, y] = toScreen(0, v); ctx.fillRect(0, y, 6 * dpr, 1); ctx.fillText(number(v), 8 * dpr, y - 3); }
-    ctx.fillText('x: ' + AXES[axisCode('x-axis')][1] + '   ·   y: ' + AXES[axisCode('y-axis')][1], 8 * dpr, 14 * dpr);
+    const xt = ticks(view[0], view[1], 8), yt = ticks(view[2], view[3], 6);
+    if ($('grid').checked) {  // reference lines at the axis ticks
+      ctx.save(); ctx.strokeStyle = css('--muted'); ctx.globalAlpha = 0.28; ctx.lineWidth = Math.max(1, dpr * Math.sqrt(textScale));
+      ctx.beginPath();
+      for (const v of xt) { const [x] = toScreen(v, 0); ctx.moveTo(Math.round(x) + 0.5, 0); ctx.lineTo(Math.round(x) + 0.5, c.height); }
+      for (const v of yt) { const [, y] = toScreen(0, v); ctx.moveTo(0, Math.round(y) + 0.5); ctx.lineTo(c.width, Math.round(y) + 0.5); }
+      ctx.stroke(); ctx.restore();
+    }
+    ctx.font = (11 * k) + 'px system-ui,sans-serif'; ctx.fillStyle = css('--muted'); ctx.strokeStyle = css('--border');
+    for (const v of xt) { const [x] = toScreen(v, 0); ctx.fillRect(x, c.height - 6 * k, Math.max(1, textScale), 6 * k); ctx.fillText(number(v), x + 3 * k, c.height - 8 * k); }
+    for (const v of yt) { const [, y] = toScreen(0, v); ctx.fillRect(0, y, 6 * k, Math.max(1, textScale)); ctx.fillText(number(v), 8 * k, y - 3 * k); }
+    ctx.fillText('x: ' + AXES[axisCode('x-axis')][1] + '   ·   y: ' + AXES[axisCode('y-axis')][1], 8 * k, 14 * k);
     if ($('drift').checked) arrows(ctx, dpr);
     if (selected) lineage(ctx, dpr);
   }
@@ -362,6 +372,31 @@
     $('seconds').value = +sec.toFixed(3); $('seconds-range').value = Math.min(1, sec);
   }
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
+  // Colour key of the current mode, in one row under the axis description and the caption.
+  function videoLegend(ctx, k, W) {
+    const mode = Number($('colour').value), items = [];
+    if (mode === 0) items.push([css('--seed'), 'published seeds'], [css('--found'), 'catalog-matching'], [css('--fresh'), 'new']);
+    else if (mode === 2) items.push([css('--seed'), 'seed'], [css('--found'), 'found first by v5'], [css('--fresh'), 'found first by switching']);
+    else if (mode === 10) items.push([css('--found'), 'c4 = 0'], [css('--seed'), 'c4 = 1'], [css('--fresh'), 'c4 = 2'], ['#1a1a1a', 'c4 ≥ 3']);
+    ctx.font = (15 * k) + 'px system-ui,sans-serif'; ctx.textAlign = 'left';
+    let x = 8 * k; const y = 66 * k;
+    if (items.length) {
+      for (const [colour, text] of items) {
+        ctx.fillStyle = colour; ctx.beginPath(); ctx.arc(x + 6 * k, y - 5 * k, 6 * k, 0, 2 * Math.PI); ctx.fill();
+        ctx.fillStyle = css('--ink'); ctx.fillText(text, x + 17 * k, y);
+        x += 17 * k + ctx.measureText(text).width + 18 * k;
+      }
+    } else if (mode === 4) {
+      ctx.fillStyle = css('--ink'); ctx.fillText('colour = group of the seed lineage (24 colours)', x, y);
+    } else {
+      const g = ctx.createLinearGradient(x, 0, x + 200 * k, 0);
+      g.addColorStop(0, '#2e268c'); g.addColorStop(0.5, '#21928c'); g.addColorStop(1, '#fde026');
+      ctx.fillStyle = g; ctx.fillRect(x, y - 11 * k, 200 * k, 12 * k);
+      ctx.fillStyle = css('--ink');
+      ctx.fillText($('colour').selectedOptions[0].text + ': ' + $('gradient-labels').textContent, x + 212 * k, y);
+    }
+  }
+
   async function exportMP4() {
     if (exporting) { exporting.cancel = true; return; }
     if (!('VideoEncoder' in window) || !window.Mp4Muxer) {
@@ -373,6 +408,8 @@
     if (recSize !== 'view') { const [w, h] = recSize.split('x').map(Number); $('viewport').style.width = w / dpr + 'px'; $('viewport').style.height = h / dpr + 'px'; }
     await nextFrame(); size();
     const W = $('gl').width & ~1, H = $('gl').height & ~1;
+    const screenView = view; view = fitView();           // the video always uses the Fit view
+    textScale = Math.max(1, H / (560 * dpr));             // and larger text than the screen
     const out = document.createElement('canvas'); out.width = W; out.height = H; const ctx = out.getContext('2d');
     let config = null;
     for (const codec of ['avc1.640034', 'avc1.640033', 'avc1.640028', 'avc1.4d0034', 'avc1.4d0028', 'avc1.42003e', 'avc1.42001f']) {
@@ -380,6 +417,7 @@
       try { const r = await VideoEncoder.isConfigSupported(c); if (r.supported) { config = r.config; break; } } catch (e) { /* next */ }
     }
     const restore = () => { $('viewport').style.width = ''; $('viewport').style.height = ''; exporting = null;
+      view = screenView; textScale = 1;
       $('export-video').textContent = '⬇ Download MP4'; $('export-video').classList.remove('recording'); setCut(keep); };
     if (!config) { $('export-state').textContent = 'No H.264 encoder for ' + W + ' × ' + H + ' in this browser; try a smaller size.'; restore(); return; }
     const muxer = new Mp4Muxer.Muxer({target: new Mp4Muxer.ArrayBufferTarget(), video: {codec: 'avc', width: W, height: H},
@@ -393,8 +431,10 @@
     const emit = async (t, d, key) => {
       ctx.fillStyle = css('--bg'); ctx.fillRect(0, 0, W, H);
       ctx.drawImage($('gl'), 0, 0); ctx.drawImage($('overlay'), 0, 0);
-      ctx.font = (14 * dpr) + 'px system-ui,sans-serif'; ctx.fillStyle = css('--ink');
-      ctx.fillText(number(cut) + ' classes · ' + (cut ? when(cut) : ''), 8 * dpr, 34 * dpr);
+      const k = dpr * textScale;
+      ctx.font = '600 ' + (18 * k) + 'px system-ui,sans-serif'; ctx.fillStyle = css('--ink');
+      ctx.fillText(number(cut) + ' classes · ' + (cut ? when(cut) : ''), 8 * k, 42 * k);
+      videoLegend(ctx, k, W);
       const f = new VideoFrame(out, {timestamp: Math.round(t * 1e6), duration: Math.round(d * 1e6)});
       encoder.encode(f, {keyFrame: key}); f.close();
       while (encoder.encodeQueueSize > 6 && !failure) await new Promise(r => setTimeout(r, 4));
@@ -410,9 +450,13 @@
           await nextFrame();
         }
       }
-      // Hold: the last frame again every half second, so every player shows it.
+      // Hold: the last frame again every half second, so every player shows it, and one
+      // more copy just before the end: an MP4 gives its last frame the length of the
+      // step before it, so this copy makes the total length exact.
+      const total = frames * s.sec + s.hold;
       for (let h = 0; !exporting.cancel && !failure && h < Math.ceil(s.hold / 0.5); h++)
         await emit(frames * s.sec + h * 0.5, Math.min(0.5, s.hold - h * 0.5), h === 0);
+      if (s.hold > 0.04 && !exporting.cancel && !failure) await emit(total - 0.02, 0.02, false);
       if (failure) throw failure;
       if (exporting.cancel) { encoder.close(); $('export-state').textContent = 'Cancelled.'; restore(); return; }
       await encoder.flush(); muxer.finalize();
@@ -434,7 +478,7 @@
   // Keys: x y colour point alpha show expanded trail drift dtrail dcell dmin dscale step sec from to cut id view play
   const FIELDS = {x: 'x-axis', y: 'y-axis', colour: 'colour', point: 'point', alpha: 'alpha', dcell: 'drift-cell',
     dmin: 'drift-min', dscale: 'drift-scale', step: 'per-step', sec: 'seconds', from: 'from', to: 'to', hold: 'hold', bg: 'theme', size: 'rec-size'};
-  const CHECKS = {expanded: 'only-expanded', drift: 'drift', dtrail: 'drift-trail'};
+  const CHECKS = {expanded: 'only-expanded', drift: 'drift', dtrail: 'drift-trail', grid: 'grid'};
   function currentState() {
     const h = new URLSearchParams();
     for (const [k, id] of Object.entries(FIELDS)) if ($(id).value !== '') h.set(k, $(id).value);
@@ -546,6 +590,7 @@
     for (const id of ['trail-on', 'trail', 'drift-trail']) $(id).oninput = () => { driftCache = null; draw(); stats(); };
     document.querySelectorAll('.show').forEach(c => { c.onchange = draw; });
     $('only-expanded').onchange = () => { draw(); };
+    $('grid').onchange = () => { draw(); };
     $('cut').max = n; $('to').value = n; $('to').max = n; $('from').max = n;
     $('cut').oninput = () => { stopPlay(); setCut(Number($('cut').value)); };
     $('play').onclick = () => play(false); $('step-back').onclick = () => { stopPlay(); step(-1); }; $('step-fwd').onclick = () => { stopPlay(); step(1); };
