@@ -372,14 +372,14 @@
     $('seconds').value = +sec.toFixed(3); $('seconds-range').value = Math.min(1, sec);
   }
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
-  // Colour key of the current mode, in one row under the axis description and the caption.
+  // Colour key of the current mode, in one row under the axis description.
   function videoLegend(ctx, k, W) {
     const mode = Number($('colour').value), items = [];
     if (mode === 0) items.push([css('--seed'), 'published seeds'], [css('--found'), 'catalog-matching'], [css('--fresh'), 'new']);
     else if (mode === 2) items.push([css('--seed'), 'seed'], [css('--found'), 'found first by v5'], [css('--fresh'), 'found first by switching']);
     else if (mode === 10) items.push([css('--found'), 'c4 = 0'], [css('--seed'), 'c4 = 1'], [css('--fresh'), 'c4 = 2'], ['#1a1a1a', 'c4 ≥ 3']);
     ctx.font = (15 * k) + 'px system-ui,sans-serif'; ctx.textAlign = 'left';
-    let x = 8 * k; const y = 66 * k;
+    let x = 8 * k; const y = 40 * k;
     if (items.length) {
       for (const [colour, text] of items) {
         ctx.fillStyle = colour; ctx.beginPath(); ctx.arc(x + 6 * k, y - 5 * k, 6 * k, 0, 2 * Math.PI); ctx.fill();
@@ -431,10 +431,7 @@
     const emit = async (t, d, key) => {
       ctx.fillStyle = css('--bg'); ctx.fillRect(0, 0, W, H);
       ctx.drawImage($('gl'), 0, 0); ctx.drawImage($('overlay'), 0, 0);
-      const k = dpr * textScale;
-      ctx.font = '600 ' + (18 * k) + 'px system-ui,sans-serif'; ctx.fillStyle = css('--ink');
-      ctx.fillText(number(cut) + ' classes · ' + (cut ? when(cut) : ''), 8 * k, 42 * k);
-      videoLegend(ctx, k, W);
+      videoLegend(ctx, dpr * textScale, W);
       const f = new VideoFrame(out, {timestamp: Math.round(t * 1e6), duration: Math.round(d * 1e6)});
       encoder.encode(f, {keyFrame: key}); f.close();
       while (encoder.encodeQueueSize > 6 && !failure) await new Promise(r => setTimeout(r, 4));
