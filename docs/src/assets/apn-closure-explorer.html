@@ -18,7 +18,7 @@
     button { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:5px 9px; cursor:pointer; } button:hover { border-color:var(--link); } button:disabled { opacity:.55; cursor:not-allowed; }
     select,input[type=number] { background:var(--panel); border:1px solid var(--border); border-radius:5px; padding:3px 5px; }
     input[type=number] { width:84px; }
-    #layout { display:grid; grid-template-columns:minmax(0,1fr) 320px; height:calc(100dvh - 190px); }
+    #layout { display:grid; grid-template-columns:minmax(0,1fr) 320px; height:calc(100dvh - 222px); }
     #viewport { position:relative; overflow:hidden; } #viewport canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
     #gl { cursor:grab; touch-action:none; } #gl.dragging { cursor:grabbing; } #overlay { pointer-events:none; }
     #message { position:absolute; top:14px; left:14px; right:14px; padding:9px 12px; background:var(--panel); border:1px solid var(--border); border-radius:6px; pointer-events:none; }
@@ -33,6 +33,15 @@
     details { margin-top:10px; } summary { cursor:pointer; font-weight:600; }
     .error { color:#b3261e; } @media(prefers-color-scheme:dark) { .error { color:#ffb4ab; } }
     [hidden] { display:none !important; }
+    #view-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 18px; padding:4px 18px; border-bottom:1px solid var(--border); background:var(--panel); font-size:13px; }
+    #view-tabs button { border-radius:0; margin-right:-1px; padding:4px 12px; } #view-tabs button:first-child { border-radius:6px 0 0 6px; } #view-tabs button:last-child { border-radius:0 6px 6px 0; }
+    #view-tabs button.active { background:var(--link); color:var(--panel); border-color:var(--link); }
+    #filter-bar { display:flex; align-items:center; gap:8px; } #filter-text { font-weight:600; }
+    #analysis-view { position:absolute; inset:0; z-index:2; display:flex; flex-direction:column; background:var(--bg); padding:6px 10px; gap:4px; }
+    #acanvas { position:relative; flex:1; min-height:200px; width:100%; cursor:pointer; }
+    #alegend { display:flex; align-items:center; gap:6px; font-size:12px; } #alegend i { display:inline-block; width:180px; height:10px; border-radius:3px; }
+    #ainfo { line-height:1.45; } #ainfo button { font-size:11px; padding:1px 5px; margin:1px; }
+    #atip { position:absolute; z-index:3; background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:12px; pointer-events:none; max-width:340px; line-height:1.4; }
     button.primary { background:var(--link); color:var(--panel); border-color:var(--link); font-weight:600; } button.primary.recording { background:#b3261e; border-color:#b3261e; }
     #export-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px; padding:6px 18px; border-bottom:1px solid var(--border); background:var(--panel); font-size:13px; }
     #export-bar input[type=number] { width:72px; } #export-bar input[type=range] { width:90px; } #export-state { flex-basis:100%; min-height:16px; }
@@ -63,8 +72,23 @@
     <button id="export-video" class="primary">⬇ Download MP4</button>
     <span id="export-state" class="small"></span>
   </div>
+  <div id="view-bar">
+    <div id="view-tabs" role="tablist"><button data-view="map" class="active">Map</button><button data-view="heatmap">Heatmap</button></div>
+    <div id="filter-bar" hidden><span id="filter-text"></span> <button id="filter-map">Show in map</button><button id="filter-clear">Clear the filter</button></div>
+  </div>
   <div id="layout">
-    <div id="viewport"><canvas id="gl" aria-label="Classes in admission order. Drag to pan, scroll to zoom, click a class to inspect it."></canvas><canvas id="overlay" aria-hidden="true"></canvas><div id="message" role="status">Loading the data…</div></div>
+    <div id="viewport">
+      <div id="analysis-view" hidden>
+        <div class="aview-controls row" data-view="heatmap">
+          <label>Pair <select id="hm-pair"><option value="two|three">two × three</option><option value="two|du">two × du</option><option value="three|du">three × du</option><option value="two|c4">two × c4</option><option value="three|c4">three × c4</option><option value="du|c4">du × c4</option><option value="two|four">two × four</option><option value="three|four">three × four</option></select></label>
+          <label>Metric <select id="hm-metric"><option value="classes">Classes</option><option value="novelty">% new</option><option value="new">New classes</option><option value="catalog_only">Catalog classes not reached (unexplored)</option><option value="catalog">Catalog classes</option><option value="found">Mean rediscoveries</option><option value="singletons">% found only once</option><option value="expanded">% expanded as a parent</option><option value="rate">New per million cosets</option><option value="id">Mean admission order</option><option value="gen2">% generation 2</option></select></label>
+          <label>Min classes per cell <input id="hm-min" type="number" min="0" value="20" style="width:64px"></label>
+        </div>
+        <canvas id="acanvas"></canvas>
+        <div id="alegend"></div>
+        <div id="ainfo" class="small"></div><div id="ainfo-note" class="small"></div>
+        <div id="atip" hidden></div>
+      </div><canvas id="gl" aria-label="Classes in admission order. Drag to pan, scroll to zoom, click a class to inspect it."></canvas><canvas id="overlay" aria-hidden="true"></canvas><div id="message" role="status">Loading the data…</div></div>
     <aside>
       <details id="templates" open><summary>Templates: views to try</summary>
         <div id="tpl-list"></div>
@@ -120,5 +144,6 @@
     </aside>
   </div>
   <script src="/explorer.js" defer></script>
+  <script src="/explorer-views.js" defer></script>
 </body>
 </html>

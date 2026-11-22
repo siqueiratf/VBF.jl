@@ -17,6 +17,8 @@
     [11, 'four: entry 4 of the nonbent signature'], [12, 'c2: components of rank 2']];
   let meta, D = {}, n = 0, gl, program, vao, loc = {}, view = null, cut = 1, playing = false, timer = null;
   let selected = 0, children = [], driftCache = null;
+  // Linked filter: filterMask[i] = 1 keeps class i (null = no filter); set by the analysis views.
+  let cat = null, catBuffer = null, filterMask = null, filterLabel = '';
 
   // ---------- data ----------
   async function load() {
@@ -38,10 +40,11 @@
 
   // ---------- WebGL ----------
   const VS = `#version 300 es
-  in float a_two, a_three, a_status, a_method, a_gen, a_family, a_time, a_found, a_finders; in vec2 a_jit;
+  in float a_two, a_three, a_gen, a_time, a_found, a_finders; in vec2 a_jit;
+  in vec4 a_cat;  // status, method, family, linked-filter mask (packed: WebGL has 16 attribute slots)
   in float a_exp, a_spaces, a_cosets, a_rnew; in vec4 a_inv;
   uniform int u_x, u_y, u_colour, u_show, u_onlyExp; uniform vec4 u_view; uniform float u_cut, u_window, u_point, u_alpha;
-  uniform float u_genMax, u_timeMax, u_foundMax, u_spacesMax, u_rnewMax, u_rateMax; uniform vec3 u_pal[4]; uniform vec3 u_meth[3]; uniform int u_sel;
+  uniform float u_genMax, u_timeMax, u_foundMax, u_spacesMax, u_rnewMax, u_rateMax; uniform vec3 u_pal[4]; uniform vec3 u_meth[3]; uniform int u_sel, u_filter;
   out vec4 v_colour;
   float axis(int c) {
     if (c == 0) return a_two + a_jit.x * 0.8;
@@ -64,9 +67,10 @@
   }
   vec3 hue(float h) { vec3 k = abs(fract(h + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return 0.15 + 0.7 * clamp(k - 1.0, 0.0, 1.0); }
   void main() {
+    float a_status = a_cat.x, a_method = a_cat.y, a_family = a_cat.z;
     int st = int(a_status + 0.5);
     bool needsInv = u_x <= 1 || u_y <= 1 || u_x >= 9 || u_y >= 9 || u_colour >= 9;
-    if (((u_show >> st) & 1) == 0 || (u_onlyExp == 1 && a_exp < 0.5) || (needsInv && a_two < 0.0) || (u_x == 4 || u_y == 4) && a_gen > 65000.0) { gl_Position = vec4(2.0, 2.0, 0.0, 1.0); gl_PointSize = 0.0; v_colour = vec4(0.0); return; }
+    if (((u_show >> st) & 1) == 0 || (u_filter == 1 && a_cat.w < 0.5) || (u_onlyExp == 1 && a_exp < 0.5) || (needsInv && a_two < 0.0) || (u_x == 4 || u_y == 4) && a_gen > 65000.0) { gl_Position = vec4(2.0, 2.0, 0.0, 1.0); gl_PointSize = 0.0; v_colour = vec4(0.0); return; }
     vec2 p = vec2(axis(u_x), axis(u_y));
     gl_Position = vec4((p.x - u_view.x) / (u_view.y - u_view.x) * 2.0 - 1.0, (p.y - u_view.z) / (u_view.w - u_view.z) * 2.0 - 1.0, 0.0, 1.0);
     gl_PointSize = u_point;
@@ -108,9 +112,12 @@
       gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, type, normalized, 0, 0);
     };
     attr('a_two', D.two, gl.SHORT, 1, false); attr('a_three', D.three, gl.SHORT, 1, false);
-    attr('a_jit', D.jitter, gl.BYTE, 2, true); attr('a_status', D.status, gl.UNSIGNED_BYTE, 1, false);
-    attr('a_method', D.method, gl.UNSIGNED_BYTE, 1, false); attr('a_gen', D.generation, gl.UNSIGNED_SHORT, 1, false);
-    attr('a_family', D.family, gl.UNSIGNED_BYTE, 1, false); attr('a_time', D.time, gl.FLOAT, 1, false);
+    attr('a_jit', D.jitter, gl.BYTE, 2, true); attr('a_gen', D.generation, gl.UNSIGNED_SHORT, 1, false);
+    attr('a_time', D.time, gl.FLOAT, 1, false);
+    cat = new Uint8Array(4 * n);
+    for (let i = 0; i < n; i++) { cat[4 * i] = D.status[i]; cat[4 * i + 1] = D.method[i]; cat[4 * i + 2] = D.family[i]; cat[4 * i + 3] = 1; }
+    catBuffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, catBuffer); gl.bufferData(gl.ARRAY_BUFFER, cat, gl.DYNAMIC_DRAW);
+    { const l = gl.getAttribLocation(program, 'a_cat'); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, 4, gl.UNSIGNED_BYTE, false, 0, 0); }
     attr('a_found', D.found, gl.UNSIGNED_SHORT, 1, false); attr('a_finders', D.finders, gl.UNSIGNED_BYTE, 1, false);
     if (D.expanded) {
       attr('a_exp', D.expanded, gl.UNSIGNED_BYTE, 1, false); attr('a_spaces', D.spaces, gl.UNSIGNED_SHORT, 1, false);
@@ -118,7 +125,7 @@
     }
     if (D.inv) attr('a_inv', D.inv, gl.UNSIGNED_BYTE, 4, false);
     for (const u of ['u_x', 'u_y', 'u_colour', 'u_show', 'u_view', 'u_cut', 'u_window', 'u_point', 'u_alpha', 'u_genMax',
-      'u_timeMax', 'u_foundMax', 'u_pal', 'u_meth', 'u_sel', 'u_onlyExp', 'u_spacesMax', 'u_rnewMax', 'u_rateMax']) loc[u] = gl.getUniformLocation(program, u);
+      'u_timeMax', 'u_foundMax', 'u_pal', 'u_meth', 'u_sel', 'u_filter', 'u_onlyExp', 'u_spacesMax', 'u_rnewMax', 'u_rateMax']) loc[u] = gl.getUniformLocation(program, u);
   }
 
   // ---------- view ----------
@@ -173,6 +180,7 @@
     gl.uniform1f(loc.u_point, Number($('point').value) * dpr); gl.uniform1f(loc.u_alpha, Number($('alpha').value) / 100);
     gl.uniform1f(loc.u_genMax, Math.max(1, meta.generation_max)); gl.uniform1f(loc.u_timeMax, Math.max(1, meta.time_span_seconds));
     gl.uniform1f(loc.u_foundMax, Math.max(1, meta.found_max)); gl.uniform1i(loc.u_sel, selected);
+    gl.uniform1i(loc.u_filter, filterMask ? 1 : 0);
     gl.uniform1i(loc.u_onlyExp, $('only-expanded').checked ? 1 : 0); gl.uniform1f(loc.u_spacesMax, Math.max(1, meta.spaces_max || 1));
     gl.uniform1f(loc.u_rnewMax, Math.max(1, meta.reached_new_max || 1)); gl.uniform1f(loc.u_rateMax, Math.max(1, meta.new_per_mcoset_p99 || 1));
     gl.uniform3fv(loc.u_pal, [...hexRGB(css('--found')), ...hexRGB(css('--fresh')), ...hexRGB(css('--seed')), ...hexRGB(css('--unknown'))]);
@@ -274,12 +282,15 @@
     statsTimer = setTimeout(() => {
       const w = trail(), start = w ? Math.max(0, cut - w) : 0;
       const s = [0, 0, 0, 0], m = [0, 0, 0]; let gsum = 0, gk = 0, f1 = 0, ex = 0, rn = 0, co = 0;
+      let shown = 0;
       for (let i = start; i < cut; i++) {
+        if (filterMask && !filterMask[i]) continue;
+        shown++;
         s[D.status[i]]++; m[D.method[i]]++; if (D.generation[i] < 65535) { gsum += D.generation[i]; gk++; } if (D.found[i] === 1) f1++;
         if (D.expanded && D.expanded[i]) { ex++; rn += D.reached_new[i]; co += D.cosets[i]; }
       }
-      const tot = cut - start || 1, pct = v => (100 * v / tot).toFixed(1) + '%';
-      $('stats').innerHTML = '<tr><td>' + (w ? 'Trail (last ' + number(cut - start) + ')' : 'All shown') + '</td><td>' + number(cut - start) + '</td></tr>' +
+      const tot = shown || 1, pct = v => (100 * v / tot).toFixed(1) + '%';
+      $('stats').innerHTML = '<tr><td>' + (filterMask ? 'Filter: ' + filterLabel : w ? 'Trail (last ' + number(cut - start) + ')' : 'All shown') + '</td><td>' + number(shown) + '</td></tr>' +
         '<tr><td>new</td><td>' + pct(s[1]) + '</td></tr><tr><td>catalog-matching</td><td>' + pct(s[0]) + '</td></tr>' +
         '<tr><td>found by v5 / switching</td><td>' + pct(m[1]) + ' / ' + pct(m[2]) + '</td></tr>' +
         '<tr><td>mean generation</td><td>' + (gsum / (gk || 1)).toFixed(2) + '</td></tr>' +
@@ -335,12 +346,30 @@
   function pick(sx, sy) {
     const dpr = window.devicePixelRatio || 1, mask = showMask(); let best = 0, bestD = (8 * dpr) ** 2;
     for (let id = 1; id <= cut; id++) {
-      if (!((mask >> D.status[id - 1]) & 1)) continue;
+      if (!((mask >> D.status[id - 1]) & 1) || (filterMask && !filterMask[id - 1])) continue;
       const p = position(id); if (!p) continue;
       const d = (p[0] - sx) ** 2 + (p[1] - sy) ** 2; if (d < bestD) { bestD = d; best = id; }
     }
     if (best) select(best);
   }
+
+  // ---------- linked filter and interface for the analysis views ----------
+  function setFilter(mask, label) {
+    filterMask = mask; filterLabel = label || '';
+    for (let i = 0; i < n; i++) cat[4 * i + 3] = mask ? mask[i] : 1;
+    gl.bindBuffer(gl.ARRAY_BUFFER, catBuffer); gl.bufferSubData(gl.ARRAY_BUFFER, 0, cat);
+    $('filter-bar').hidden = !mask;
+    if (mask) { let k = 0; for (let i = 0; i < n; i++) k += mask[i]; $('filter-text').textContent = 'Filter: ' + filterLabel + ' · ' + number(k) + ' classes'; }
+    draw(); stats();
+    document.dispatchEvent(new CustomEvent('apn-filter'));
+  }
+  window.apnExplorer = {
+    get D() { return D; }, get meta() { return meta; }, get n() { return n; }, number, css,
+    select: id => select(id), setFilter, get filter() { return filterMask && {mask: filterMask, label: filterLabel}; },
+    showMap: () => { document.dispatchEvent(new CustomEvent('apn-show-map')); draw(); },
+    setAxes: (x, y) => { $('x-axis').value = x; $('y-axis').value = y; fit(); },
+    redraw: () => draw()
+  };
 
   // ---------- time ----------
   function setCut(v) { cut = Math.max(0, Math.min(n, Math.round(v))); $('cut').value = cut; driftCache = null; draw(); stats(); }
