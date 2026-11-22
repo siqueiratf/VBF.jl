@@ -78,8 +78,11 @@ def catch_up(cache, run, signatures, *, batch_size=10000, max_batches=8, after_r
         try:
             campaign.execute("BEGIN")
             actual = campaign.execute("SELECT COALESCE(MAX(id),0) FROM parents").fetchone()[0]
+            # progress.toml can count parents of a write transaction that is not
+            # committed yet. Check only the committed rows in this pass; the next
+            # pass resumes from the watermark.
             if maximum > actual:
-                raise ValueError("published parent cutoff exceeds the campaign")
+                maximum = actual
             upper = min(maximum, state["last"] + batch_size)
             rows = campaign.execute(
                 "SELECT id,candidate_id,sigma,origin,source FROM parents "
