@@ -32,6 +32,10 @@
     .dot.fresh { background:var(--fresh); } .dot.unknown { background:var(--unknown); } .ring { display:inline-block; width:14px; height:9px; border:2px solid var(--fresh); border-radius:50%; margin-right:5px; vertical-align:middle; } .ring.catalog { border-color:var(--found); } .ring.seed { border-color:var(--seed); } .box { display:inline-block; width:9px; height:9px; border:2px solid var(--fresh); margin-right:5px; vertical-align:middle; }
     #new-cells div { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; } #new-cells button { font-size:11px; padding:3px 6px; }
     [hidden] { display:none !important; }
+    #timelapse { color:var(--ink); } .tl-grid { display:grid; grid-template-columns:auto 1fr; gap:6px 8px; align-items:center; margin:10px 0; }
+    .tl-grid > span { display:flex; align-items:center; gap:4px; } .tl-grid input[type=number] { width:70px; padding:4px; } .tl-grid input[type=range] { width:62px; } .tl-grid select { max-width:140px; }
+    #tl-progress { width:150px; vertical-align:middle; } .tl-error { color:#b3261e; } @media(prefers-color-scheme:dark) { .tl-error { color:#ffb4ab; } }
+    #tl-files a { display:block; margin-top:4px; }
     @media(max-width:800px) { #layout { grid-template-columns:1fr; } #viewport { height:65dvh; min-height:400px; } aside { border-left:0; border-top:1px solid var(--border); max-height:none; } header,.toolbar { padding:12px 14px; } }
   </style>
 </head>
@@ -59,6 +63,26 @@
       <h2 id="node-title">Explore the graph</h2><div id="node-info"><p class="small">Click a class, or enter its ID, to inspect its recorded relations.</p></div>
       <button id="fit-neighbors" hidden>Fit this neighbourhood</button><div id="neighbors"></div>
       <details id="new-cells" class="status-only" hidden><summary id="new-cells-title">Cells with only new classes</summary><div></div></details>
+      <details id="timelapse" hidden><summary>Export a timelapse (video of the discovery order)</summary>
+        <p>The classes appear in admission order on this same map, one frame for each group of classes.</p>
+        <div class="tl-grid">
+          <label for="tl-per-frame">Classes per frame</label><span><input id="tl-per-frame-range" type="range" min="1000" max="200000" step="1000" value="10000" aria-label="Classes per frame"><input id="tl-per-frame" type="number" min="100" max="10000000" step="100" value="10000"></span>
+          <label for="tl-seconds">Seconds per frame</label><span><input id="tl-seconds-range" type="range" min="0.02" max="1" step="0.02" value="0.2" aria-label="Seconds per frame"><input id="tl-seconds" type="number" min="0.02" max="10" step="0.02" value="0.2"></span>
+          <label for="tl-hold">Hold the last frame (s)</label><input id="tl-hold" type="number" min="0" max="60" step="0.5" value="2">
+          <label for="tl-size">Size</label><select id="tl-size"><option value="1280x800">1280 × 800</option><option value="1920x1200" selected>1920 × 1200</option><option value="1920x1080">1920 × 1080</option><option value="2560x1600">2560 × 1600</option><option value="3840x2160">3840 × 2160</option><option value="custom">Custom</option></select>
+          <label for="tl-width" class="tl-custom" hidden>Width × height</label><span class="tl-custom" hidden><input id="tl-width" type="number" min="160" max="3840" value="1920"> × <input id="tl-height" type="number" min="120" max="2160" value="1200"></span>
+          <label for="tl-point">Point size (px)</label><span><input id="tl-point-range" type="range" min="1" max="6" step="1" value="1" aria-label="Point size"><input id="tl-point" type="number" min="1" max="6" value="1"></span>
+          <label for="tl-first">Class ids</label><span><input id="tl-first" type="number" min="1" placeholder="first"> to <input id="tl-last" type="number" min="1" placeholder="last"></span>
+          <label for="tl-format">Format</label><select id="tl-format"><option value="mp4">MP4 (small file)</option><option value="gif">GIF (large file)</option></select>
+          <label for="tl-theme">Colours</label><select id="tl-theme"><option value="light">Light</option><option value="dark">Dark</option></select>
+        </div>
+        <label><input id="tl-labels" type="checkbox" checked>Axes, date and counts on each frame</label><br>
+        <label><input id="tl-fresh" type="checkbox">Copy fresh data from the search first (about 1 min)</label>
+        <p id="tl-estimate"></p>
+        <button id="tl-start">Export</button> <progress id="tl-progress" max="1" value="0" hidden></progress>
+        <p id="tl-state" role="status" aria-live="polite"></p><p id="tl-error" class="tl-error"></p>
+        <div id="tl-files"></div>
+      </details>
       <details><summary>About this drawing</summary><p>Each node is an admitted quadratic APN class, drawn by its invariants and not by the search order. x is the number of 2-dimensional subspaces in the nonbent component set; y is the number of 3-dimensional nonbent subspaces: the axes of the structure report. A fixed affine map places them: x = (two − 320)/140, y = (three − 80)/100. Classes with the same pair share a cell; inside it, each class has an offset taken only from its LUT SHA-256.</p><p>So a class has the same position in every snapshot, subset or superset, and a redraw of the same data gives the same picture. Positions show invariants; nearby classes are not claimed to be equivalent. Edges are the observed V5 (solid) and switching (dashed) constructions; by default only the selected class's edges are drawn.</p><div id="status-about" hidden><p>Colours: new classes have an invariant signature absent from the pinned published catalog; catalog-matching classes have a signature in the catalog (this does not prove equivalence); unknown classes have no catalog row. Seeds keep the seed colour.</p><p id="ellipse-about"></p></div><p id="refresh-policy" hidden></p><p id="compute-cost"></p></details>
     </aside>
   </div>

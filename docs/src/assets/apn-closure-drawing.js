@@ -145,3 +145,81 @@
   }
   load().catch(error => console.error('status overlay', error));
 })();
+
+// Timelapse export: the `vlab dashboard` proxy answers /control/timelapse and
+// renders the video; the read-only monitor alone returns 404 and the panel stays hidden.
+(() => {
+  const $ = id => document.getElementById(id);
+  const number = value => Number(value).toLocaleString();
+  let total = null, timer = null, wasBusy = false;
+  const pairs = [['tl-per-frame-range', 'tl-per-frame'], ['tl-seconds-range', 'tl-seconds'], ['tl-point-range', 'tl-point']];
+  for (const [range, box] of pairs) {
+    $(range).oninput = () => { $(box).value = $(range).value; estimate(); };
+    $(box).oninput = () => { $(range).value = $(box).value; estimate(); };
+  }
+  for (const id of ['tl-hold', 'tl-first', 'tl-last', 'tl-format', 'tl-width', 'tl-height']) $(id).oninput = estimate;
+  $('tl-size').onchange = () => {
+    const custom = $('tl-size').value === 'custom';
+    document.querySelectorAll('.tl-custom').forEach(e => { e.hidden = !custom; });
+    if (!custom) { const [w, h] = $('tl-size').value.split('x'); $('tl-width').value = w; $('tl-height').value = h; }
+    estimate();
+  };
+  function params() {
+    const value = id => $(id).value === '' ? null : Number($(id).value);
+    return {per_frame: value('tl-per-frame'), frame_seconds: value('tl-seconds'), hold: value('tl-hold'),
+      width: value('tl-width'), height: value('tl-height'), point: value('tl-point'),
+      first: value('tl-first'), last: value('tl-last'), format: $('tl-format').value, theme: $('tl-theme').value,
+      labels: $('tl-labels').checked, fresh: $('tl-fresh').checked};
+  }
+  function estimate() {
+    const p = params();
+    if (!total || !p.per_frame || !p.frame_seconds) { $('tl-estimate').textContent = ''; return; }
+    const classes = Math.max(0, Math.min(p.last || total, total) - (p.first || 1) + 1);
+    const frames = Math.ceil(classes / p.per_frame);
+    const seconds = frames * p.frame_seconds + (p.hold || 0);
+    $('tl-estimate').textContent = 'About ' + number(classes) + ' classes, ' + number(frames) + ' frames, ' +
+      seconds.toFixed(1) + ' s of video' + (p.format === 'gif' && frames > 300 ? ' (a GIF this long can be over 100 MB)' : '') + '.';
+  }
+  function render(s) {
+    if ($('timelapse').hidden && location.hash === '#timelapse') $('timelapse').open = true;  // direct link
+    $('timelapse').hidden = false;
+    $('tl-start').disabled = s.busy;
+    $('tl-progress').hidden = !s.busy;
+    if (s.busy) { $('tl-progress').max = s.frames || 1; $('tl-progress').value = s.frame || 0; }
+    const frames = s.frames ? ' (frame ' + number(s.frame) + ' of ' + number(s.frames) + ')' : '';
+    $('tl-state').textContent = (s.busy ? 'Working: ' + (s.phase || '') + frames :
+      s.file ? 'Last export: ' + s.file + ', ' + (s.bytes / 1e6).toFixed(1) + ' MB, ' + s.video_seconds + ' s, ' + number(s.classes) + ' classes.' : '') +
+      (s.inputs_utc ? ' Data copied ' + new Date(s.inputs_utc).toLocaleString() + '.' : ' No data copied yet: the first export copies it.');
+    $('tl-error').textContent = s.last_error ? 'Last error: ' + s.last_error : '';
+    $('tl-files').replaceChildren(...(s.files || []).map(name => {
+      const a = document.createElement('a');
+      a.href = '/control/timelapse/file?name=' + encodeURIComponent(name); a.textContent = 'Download ' + name; a.download = name;
+      return a;
+    }));
+  }
+  async function poll() {
+    clearTimeout(timer);
+    try {
+      const response = await fetch('/control/timelapse', {cache: 'no-store'});
+      if (response.status === 404) return;
+      const s = await response.json();
+      render(s);
+      wasBusy = s.busy;
+      timer = setTimeout(poll, s.busy ? 1500 : 20000);
+    } catch (error) {
+      timer = setTimeout(poll, 20000);
+    }
+  }
+  $('tl-start').onclick = async () => {
+    $('tl-error').textContent = '';
+    const response = await fetch('/control/timelapse', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(params())});
+    const data = await response.json().catch(() => ({}));
+    if (response.status >= 400) $('tl-error').textContent = data.error || 'HTTP ' + response.status;
+    poll();
+  };
+  fetch('/api/progress', {cache: 'no-store'}).then(r => r.json()).then(p => {
+    total = p.discoveries && p.discoveries.total_classes; estimate();
+  }).catch(() => {});
+  poll();
+})();

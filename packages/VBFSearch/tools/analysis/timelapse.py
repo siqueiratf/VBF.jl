@@ -187,7 +187,7 @@ def main():
         if admitted:
             i = bisect.bisect_right(admitted[0], last_id) - 1
             when = "  ·  " + admitted[1][max(i, 0)][:16].replace("T", " ") + " UTC"
-        title = f"{hi:,} classes (ids {int(ids[0]):,}–{last_id:,}){when}"
+        title = f"{hi:,} classes (ids {int(ids[0]):,} to {last_id:,}){when}"
         legend = [(f"published seeds {counts[2]:,}", "seed"), (f"catalog-matching {counts[0]:,}", "found"),
                   (f"new {counts[1]:,}", "fresh")]
         if unmeasured:
