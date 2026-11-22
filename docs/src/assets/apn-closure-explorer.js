@@ -357,10 +357,7 @@
   }
   function stopPlay() { playing = false; clearTimeout(timer); $('play').textContent = '▶'; }
 
-  // ---------- video export (WebCodecs H.264 + mp4-muxer, no screen recording) ----------
-  // Each frame is drawn at once and encoded with an exact timestamp, so the export
-  // is as fast as the GPU allows and the timing in the file is exact.
-  let exporting = null;
+  // ---------- video settings and server-side MP4 ----------
   const settings = () => ({per: Math.max(1, Number($('per-step').value) || 1), sec: Math.min(10, Math.max(0.02, Number($('seconds').value) || 0.2)),
     hold: Math.min(60, Math.max(0, Number($('hold').value) || 0))});
   function frameCount() { const [a0, b0] = bounds(); return Math.max(1, Math.ceil((b0 - a0) / settings().per)); }
@@ -371,104 +368,36 @@
     const sec = Math.min(10, Math.max(0.02, (len - s.hold) / frameCount()));
     $('seconds').value = +sec.toFixed(3); $('seconds-range').value = Math.min(1, sec);
   }
-  const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
-  // Colour key of the current mode, in one row under the axis description.
-  function videoLegend(ctx, k, W) {
-    const mode = Number($('colour').value), items = [];
-    if (mode === 0) items.push([css('--seed'), 'published seeds'], [css('--found'), 'catalog-matching'], [css('--fresh'), 'new']);
-    else if (mode === 2) items.push([css('--seed'), 'seed'], [css('--found'), 'found first by v5'], [css('--fresh'), 'found first by switching']);
-    else if (mode === 10) items.push([css('--found'), 'c4 = 0'], [css('--seed'), 'c4 = 1'], [css('--fresh'), 'c4 = 2'], ['#1a1a1a', 'c4 ≥ 3']);
-    ctx.font = (15 * k) + 'px system-ui,sans-serif'; ctx.textAlign = 'left';
-    let x = 8 * k; const y = 40 * k;
-    if (items.length) {
-      for (const [colour, text] of items) {
-        ctx.fillStyle = colour; ctx.beginPath(); ctx.arc(x + 6 * k, y - 5 * k, 6 * k, 0, 2 * Math.PI); ctx.fill();
-        ctx.fillStyle = css('--ink'); ctx.fillText(text, x + 17 * k, y);
-        x += 17 * k + ctx.measureText(text).width + 18 * k;
-      }
-    } else if (mode === 4) {
-      ctx.fillStyle = css('--ink'); ctx.fillText('colour = group of the seed lineage (24 colours)', x, y);
-    } else {
-      const g = ctx.createLinearGradient(x, 0, x + 200 * k, 0);
-      g.addColorStop(0, '#2e268c'); g.addColorStop(0.5, '#21928c'); g.addColorStop(1, '#fde026');
-      ctx.fillStyle = g; ctx.fillRect(x, y - 11 * k, 200 * k, 12 * k);
-      ctx.fillStyle = css('--ink');
-      ctx.fillText($('colour').selectedOptions[0].text + ': ' + $('gradient-labels').textContent, x + 212 * k, y);
-    }
-  }
-
+  // The video is made on the server (explorer_video.py through the vlab dashboard):
+  // every frame is computed at the chosen size in the Fit view, independent of the screen.
+  let videoBusy = false;
   async function exportMP4() {
-    if (exporting) { exporting.cancel = true; return; }
-    if (!('VideoEncoder' in window) || !window.Mp4Muxer) {
-      $('export-state').textContent = 'This browser has no WebCodecs video encoder. Use Chrome, Edge or Firefox 130 or newer.'; return;
+    if (videoBusy) {
+      await fetch('/control/explorer/video', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({cancel: true})});
+      $('export-state').textContent = 'Cancelling…'; return;
     }
-    stopPlay();
-    const [a0, b0] = bounds(), s = settings(), frames = Math.max(1, Math.ceil((b0 - a0) / s.per)), keep = cut;
-    const recSize = $('rec-size').value, dpr = window.devicePixelRatio || 1;
-    if (recSize !== 'view') { const [w, h] = recSize.split('x').map(Number); $('viewport').style.width = w / dpr + 'px'; $('viewport').style.height = h / dpr + 'px'; }
-    await nextFrame(); size();
-    const W = $('gl').width & ~1, H = $('gl').height & ~1;
-    const screenView = view; view = fitView();           // the video always uses the Fit view
-    textScale = Math.max(1, H / (560 * dpr));             // and larger text than the screen
-    const out = document.createElement('canvas'); out.width = W; out.height = H; const ctx = out.getContext('2d');
-    let config = null;
-    for (const codec of ['avc1.640034', 'avc1.640033', 'avc1.640028', 'avc1.4d0034', 'avc1.4d0028', 'avc1.42003e', 'avc1.42001f']) {
-      const c = {codec, width: W, height: H, bitrate: Math.min(40e6, Math.round(W * H * 4)), framerate: Math.min(60, Math.max(1, 1 / s.sec))};
-      try { const r = await VideoEncoder.isConfigSupported(c); if (r.supported) { config = r.config; break; } } catch (e) { /* next */ }
-    }
-    const restore = () => { $('viewport').style.width = ''; $('viewport').style.height = ''; exporting = null;
-      view = screenView; textScale = 1;
-      $('export-video').textContent = '⬇ Download MP4'; $('export-video').classList.remove('recording'); setCut(keep); };
-    if (!config) { $('export-state').textContent = 'No H.264 encoder for ' + W + ' × ' + H + ' in this browser; try a smaller size.'; restore(); return; }
-    const muxer = new Mp4Muxer.Muxer({target: new Mp4Muxer.ArrayBufferTarget(), video: {codec: 'avc', width: W, height: H},
-      fastStart: 'in-memory', firstTimestampBehavior: 'offset'});
-    let failure = null;
-    const encoder = new VideoEncoder({output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: e => { failure = e; }});
-    encoder.configure(config);
-    exporting = {cancel: false};
-    $('export-video').textContent = '■ Cancel'; $('export-video').classList.add('recording');
+    const r = await fetch('/control/explorer/video', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({params: currentState().toString()})});
+    if (r.status === 404) { $('export-state').textContent = 'The video export needs the vlab dashboard (it renders on the server).'; return; }
+    if (r.status >= 400) { $('export-state').textContent = ((await r.json().catch(() => ({}))).error) || 'HTTP ' + r.status; return; }
+    videoBusy = true; $('export-video').textContent = '■ Cancel'; $('export-video').classList.add('recording');
     const started = performance.now();
-    const emit = async (t, d, key) => {
-      ctx.fillStyle = css('--bg'); ctx.fillRect(0, 0, W, H);
-      ctx.drawImage($('gl'), 0, 0); ctx.drawImage($('overlay'), 0, 0);
-      videoLegend(ctx, dpr * textScale, W);
-      const f = new VideoFrame(out, {timestamp: Math.round(t * 1e6), duration: Math.round(d * 1e6)});
-      encoder.encode(f, {keyFrame: key}); f.close();
-      while (encoder.encodeQueueSize > 6 && !failure) await new Promise(r => setTimeout(r, 4));
-    };
-    try {
-      for (let k = 0; k < frames; k++) {
-        if (exporting.cancel || failure) break;
-        cut = Math.min(b0, a0 + (k + 1) * s.per); $('cut').value = cut; driftCache = null;
-        render();
-        await emit(k * s.sec, s.sec, k % 50 === 0);
-        if (k % 5 === 0) {
-          $('export-state').textContent = 'Encoding frame ' + (k + 1) + ' of ' + frames + ' (' + Math.round(100 * (k + 1) / frames) + '%)…';
-          await nextFrame();
-        }
+    const poll = async () => {
+      let s;
+      try { s = await (await fetch('/control/explorer/video', {cache: 'no-store'})).json(); } catch (e) { setTimeout(poll, 1500); return; }
+      if (s.busy) {
+        $('export-state').textContent = s.frames ? 'Rendering frame ' + number(s.frame) + ' of ' + number(s.frames) + ' (' + Math.round(100 * s.frame / s.frames) + '%)…' : 'Preparing (' + (s.phase || '') + ')…';
+        setTimeout(poll, 700); return;
       }
-      // Hold: the last frame again every half second, so every player shows it, and one
-      // more copy just before the end: an MP4 gives its last frame the length of the
-      // step before it, so this copy makes the total length exact.
-      const total = frames * s.sec + s.hold;
-      for (let h = 0; !exporting.cancel && !failure && h < Math.ceil(s.hold / 0.5); h++)
-        await emit(frames * s.sec + h * 0.5, Math.min(0.5, s.hold - h * 0.5), h === 0);
-      if (s.hold > 0.04 && !exporting.cancel && !failure) await emit(total - 0.02, 0.02, false);
-      if (failure) throw failure;
-      if (exporting.cancel) { encoder.close(); $('export-state').textContent = 'Cancelled.'; restore(); return; }
-      await encoder.flush(); muxer.finalize();
-      const blob = new Blob([muxer.target.buffer], {type: 'video/mp4'}), url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url;
-      a.download = 'apn-explorer-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '') + '.mp4'; a.click();
-      $('export-state').textContent = 'Saved ' + a.download + ': ' + (blob.size / 1e6).toFixed(1) + ' MB, ' + (frames * s.sec + s.hold).toFixed(1) +
-        ' s, ' + W + ' × ' + H + ', made in ' + ((performance.now() - started) / 1000).toFixed(0) + ' s. ';
-      const again = document.createElement('a'); again.href = url; again.download = a.download; again.textContent = 'Download again';
+      videoBusy = false; $('export-video').textContent = '⬇ Download MP4'; $('export-video').classList.remove('recording');
+      if (s.phase !== 'done' || !s.file) { $('export-state').textContent = s.last_error === 'cancelled' ? 'Cancelled.' : 'Video failed: ' + (s.last_error || s.phase); return; }
+      const a = document.createElement('a'); a.href = '/control/explorer/video/file?name=' + encodeURIComponent(s.file); a.download = s.file; a.click();
+      $('export-state').textContent = 'Saved ' + s.file + ': ' + (s.bytes / 1e6).toFixed(1) + ' MB, ' + s.video_seconds + ' s, ' + s.width + ' × ' + s.height +
+        ', made in ' + ((performance.now() - started) / 1000).toFixed(0) + ' s. ';
+      const again = document.createElement('a'); again.href = a.href; again.download = s.file; again.textContent = 'Download again';
       $('export-state').append(again);
-    } catch (e) {
-      $('export-state').textContent = 'Export failed: ' + (e && e.message || e);
-      try { encoder.close(); } catch (x) { /* closed */ }
-    }
-    restore();
+    };
+    poll();
   }
 
   // ---------- view state (link, templates) ----------
