@@ -73,7 +73,7 @@
     <span id="export-state" class="small"></span>
   </div>
   <div id="view-bar">
-    <div id="view-tabs" role="tablist"><button data-view="map" class="active">Map</button><button data-view="heatmap">Heatmap</button><button data-view="transitions">Transitions</button><button data-view="distributions">Distributions</button></div>
+    <div id="view-tabs" role="tablist"><button data-view="map" class="active">Map</button><button data-view="heatmap">Heatmap</button><button data-view="transitions">Transitions</button><button data-view="distributions">Distributions</button><button data-view="generations">Generations</button></div>
     <div id="filter-bar" hidden><span id="filter-text"></span> <button id="filter-map">Show in map</button><button id="filter-clear">Clear the filter</button></div>
   </div>
   <div id="layout">
@@ -93,6 +93,9 @@
           <label>Quantity <select id="ds-metric"><option value="in_degree">in-degree (distinct finders)</option><option value="found">rediscoveries (all paths)</option><option value="out_degree">out-degree (classes reached)</option><option value="reached_new">new classes reached</option><option value="spaces">maximizing 5-spaces</option><option value="cosets">cosets</option></select></label>
           <label>Groups <select id="ds-by"><option value="all">all</option><option value="status">by status</option><option value="generation">by generation</option></select></label>
           <label>Scale <select id="ds-norm"><option value="count">counts</option><option value="share">share of each group</option></select></label>
+        </div>
+        <div class="aview-controls row" data-view="generations" hidden>
+          <label>Chart <select id="gn-show"><option value="curve">share of each generation over the admission order</option><option value="newcurve">% new per generation over the admission order</option><option value="matrix">where the constructions of each generation lead</option></select></label>
         </div>
         <canvas id="acanvas"></canvas>
         <div id="alegend"></div>

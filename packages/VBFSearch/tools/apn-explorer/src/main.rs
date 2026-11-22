@@ -10,6 +10,7 @@ mod data;
 mod heatmap;
 mod transitions;
 mod distributions;
+mod generations;
 
 use data::Data;
 use std::path::PathBuf;
@@ -83,5 +84,11 @@ fn main() {
         }
         indegree = ind;
         eprintln!("distributions in {:.2}s, peak {:.0} MiB", t.elapsed().as_secs_f64(), data::peak_rss_mib());
+    }
+    if want("generations") {
+        let t = Instant::now();
+        let v = generations::run(&d, &edges, &indegree);
+        write_json(&a.out, "generations.json", &v);
+        eprintln!("generations in {:.2}s, peak {:.0} MiB", t.elapsed().as_secs_f64(), data::peak_rss_mib());
     }
 }

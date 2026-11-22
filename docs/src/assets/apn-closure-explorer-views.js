@@ -297,8 +297,46 @@
     $('ainfo-note').textContent = d.notes;
   }
 
+  // ---------- Feature 4: discovery statistics per generation ----------
+  async function generationsView() {
+    const g = await analysis('generations'), show = $('gn-show').value, {c, ctx, dpr} = canvasSetup(), colours = GROUP_COLOURS();
+    const rows = g.rows, labels = g.labels, k = labels.length;
+    const gc = gi => colours['generation:' + gi] || '#888';
+    const half = [0, 0, c.width, c.height * 0.55];
+    let hits;
+    if (show === 'curve' || show === 'newcurve') {
+      const series = labels.slice(0, -1).map((l, gi) => ({name: 'generation ' + l, colour: gc(gi), generation: gi,
+        points: g.admission_curve.map(b => { const tot = b.per_generation.reduce((a, x) => a + x, 0) || 1;
+          return [b.first_id, show === 'curve' ? b.per_generation[gi] / tot * 100 : (b.per_generation[gi] ? 100 * b.new_per_generation[gi] / b.per_generation[gi] : NaN)]; })
+          .filter(p => isFinite(p[1]) && (show === 'curve' || p[1] > 0))}));
+      hits = chart(ctx, half, series, {title: show === 'curve' ? 'Share of each generation in blocks of ' + num(g.block_ids) + ' admissions (%)' : '% new among the classes of each generation, per block',
+        xlabel: 'class id (admission order)', ymin: 0, ymax: 100});
+    } else {
+      const M = g.parent_child_generation_matrix, rowsum = labels.map((_, i) => M.slice(i * k, (i + 1) * k).reduce((a, b) => a + b, 0));
+      const series = labels.slice(0, -1).map((l, gi) => ({name: 'parent generation ' + l, colour: gc(gi), bars: true, offset: gi, generation: gi,
+        points: labels.slice(0, -1).map((_, cj) => [cj, rowsum[gi] ? 100 * M[gi * k + cj] / rowsum[gi] : 0])}));
+      hits = chart(ctx, half, series, {groups: series.length, title: 'Where the construction pairs of each parent generation lead (% of its edges), all pairs', xlabel: 'child generation',
+        xmin: -0.5, xmax: labels.length - 1.5, ymin: 0, ymax: 100, xfmt: v => String(Math.round(v))});
+    }
+    hover(c, hits || [], h => '<b>' + h.s.name + '</b><br>' + num(Math.round(h.p[0])) + ': ' + h.p[1].toFixed(1) + '%<br><i>click: filter this generation</i>',
+      h => X().setFilter(maskOf(i => X().D.generation[i] === h.s.generation), 'generation ' + h.s.generation));
+    // Table below the chart.
+    const pct = v => (100 * v).toFixed(1) + '%';
+    let html = '<table class="gn-table"><tr><td>generation</td><td>classes</td><td>% new</td><td>expanded (frontier)</td><td>new per M cosets</td><td>children first per parent</td><td>mean two, three</td><td>c4 > 0</td><td>median in-degree</td><td>singletons</td><td>ids</td><td></td></tr>';
+    rows.forEach((r, gi) => {
+      const kids = g.children_per_parent.find(x => String(x.parent_generation) === String(gi));
+      html += '<tr><td><b>' + r.generation + '</b></td><td>' + num(r.classes) + '</td><td>' + pct(r.new / Math.max(1, r.new + r.catalog_matching)) + '</td><td>' + num(r.expanded) + ' (' + pct(r.expanded_share) +
+        ')</td><td>' + (r.new_per_million_cosets ? r.new_per_million_cosets.toFixed(0) : '—') + '</td><td>' + (kids && kids.expanded_parents ? kids.mean_children_first.toFixed(1) : '—') +
+        '</td><td>' + r.mean_two.toFixed(1) + ', ' + r.mean_three.toFixed(1) + '</td><td>' + pct(r.c4_positive) + '</td><td>' + r.median_in_degree + '</td><td>' + pct(r.singletons) +
+        '</td><td>' + num(r.first_id) + '–' + num(r.last_id) + '</td><td><button data-g="' + r.generation + '">filter</button></td></tr>';
+    });
+    $('ainfo').innerHTML = html + '</table>';
+    $('ainfo').querySelectorAll('button[data-g]').forEach(b => { b.onclick = () => X().setFilter(maskOf(i => String(X().D.generation[i]) === b.dataset.g), 'generation ' + b.dataset.g); });
+    $('ainfo-note').textContent = g.notes;
+  }
+
   // ---------- view switching ----------
-  const RENDER = {heatmap: heatmapView, transitions: transitionsView, distributions: distributionsView};
+  const RENDER = {heatmap: heatmapView, transitions: transitionsView, distributions: distributionsView, generations: generationsView};
   function showView(v) {
     view = v;
     document.querySelectorAll('#view-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
@@ -314,6 +352,7 @@
     for (const id of ['hm-pair', 'hm-metric', 'hm-min']) $(id).oninput = () => heatmapView();
     for (const id of ['tr-field', 'tr-set', 'tr-mode']) $(id).oninput = () => transitionsView();
     for (const id of ['ds-metric', 'ds-by', 'ds-norm']) $(id).oninput = () => distributionsView();
+    $('gn-show').oninput = () => generationsView();
     $('filter-map').onclick = () => showView('map');
     $('filter-clear').onclick = () => { X().setFilter(null, ''); hmSel = trSel = null; if (view !== 'map') showView(view); };
     document.addEventListener('apn-show-map', () => showView('map'));
