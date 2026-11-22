@@ -12,7 +12,9 @@
     [0, 'two: 2-dim subspaces (nonbent set)'], [1, 'three: 3-dim nonbent subspaces'], [2, 'admission order (class id)'],
     [3, 'admission time (hours since the start)'], [4, 'generation (distance from a seed)'],
     [5, 'rediscoveries, log2(1 + paths)'], [6, 'distinct finders, log2(1 + parents)'],
-    [7, 'maximizing 5-spaces as a parent, log2(1 + n)'], [8, 'new classes reached as a parent']];
+    [7, 'maximizing 5-spaces as a parent, log2(1 + n)'], [8, 'new classes reached as a parent'],
+    [9, 'du: differential uniformity of the ortho-derivative'], [10, 'c4: components of rank 4'],
+    [11, 'four: entry 4 of the nonbent signature'], [12, 'c2: components of rank 2']];
   let meta, D = {}, n = 0, gl, program, vao, loc = {}, view = null, cut = 1, playing = false, timer = null;
   let selected = 0, children = [], driftCache = null, recording = null;
 
@@ -37,7 +39,7 @@
   // ---------- WebGL ----------
   const VS = `#version 300 es
   in float a_two, a_three, a_status, a_method, a_gen, a_family, a_time, a_found, a_finders; in vec2 a_jit;
-  in float a_exp, a_spaces, a_cosets, a_rnew;
+  in float a_exp, a_spaces, a_cosets, a_rnew; in vec4 a_inv;
   uniform int u_x, u_y, u_colour, u_show, u_onlyExp; uniform vec4 u_view; uniform float u_cut, u_window, u_point, u_alpha;
   uniform float u_genMax, u_timeMax, u_foundMax, u_spacesMax, u_rnewMax, u_rateMax; uniform vec3 u_pal[4]; uniform vec3 u_meth[3]; uniform int u_sel;
   out vec4 v_colour;
@@ -50,7 +52,11 @@
     if (c == 5) return log2(1.0 + a_found) + a_jit.y * 0.08;
     if (c == 6) return log2(1.0 + a_finders) + a_jit.y * 0.08;
     if (c == 7) return log2(1.0 + a_spaces) + a_jit.y * 0.08;
-    return a_rnew + a_jit.y * 0.4;
+    if (c == 8) return a_rnew + a_jit.y * 0.4;
+    if (c == 9) return a_inv.x + a_jit.y * 0.8;
+    if (c == 10) return a_inv.y + a_jit.y * 0.35;
+    if (c == 11) return a_inv.w + a_jit.y * 0.35;
+    return a_inv.z + a_jit.y * 0.35;
   }
   vec3 ramp(float t) {  // perceptual-ish blue -> green -> yellow
     t = clamp(t, 0.0, 1.0);
@@ -59,7 +65,7 @@
   vec3 hue(float h) { vec3 k = abs(fract(h + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return 0.15 + 0.7 * clamp(k - 1.0, 0.0, 1.0); }
   void main() {
     int st = int(a_status + 0.5);
-    bool needsInv = u_x <= 1 || u_y <= 1;
+    bool needsInv = u_x <= 1 || u_y <= 1 || u_x >= 9 || u_y >= 9 || u_colour >= 9;
     if (((u_show >> st) & 1) == 0 || (u_onlyExp == 1 && a_exp < 0.5) || (needsInv && a_two < 0.0) || (u_x == 4 || u_y == 4) && a_gen > 65000.0) { gl_Position = vec4(2.0, 2.0, 0.0, 1.0); gl_PointSize = 0.0; v_colour = vec4(0.0); return; }
     vec2 p = vec2(axis(u_x), axis(u_y));
     gl_Position = vec4((p.x - u_view.x) / (u_view.y - u_view.x) * 2.0 - 1.0, (p.y - u_view.z) / (u_view.w - u_view.z) * 2.0 - 1.0, 0.0, 1.0);
@@ -74,6 +80,8 @@
     else if (u_colour == 5) c = ramp(log2(1.0 + a_found) / log2(1.0 + u_foundMax));
     else if (u_colour == 7) c = a_exp > 0.5 ? ramp(log2(1.0 + a_rnew) / log2(1.0 + u_rnewMax)) : u_pal[3] * 0.6;
     else if (u_colour == 8) c = a_exp > 0.5 ? ramp(1e6 * a_rnew / max(a_cosets, 1.0) / u_rateMax) : u_pal[3] * 0.6;
+    else if (u_colour == 9) c = ramp((a_inv.x - 8.0) / 20.0);
+    else if (u_colour == 10) c = a_inv.y < 0.5 ? u_pal[0] : a_inv.y < 1.5 ? u_pal[2] : a_inv.y < 2.5 ? u_pal[1] : vec3(0.1);
     else c = ramp(1.0 - clamp(age / max(u_window, 1.0), 0.0, 1.0));
     float a = u_alpha;
     if (u_window > 0.0) a *= age <= u_window ? 1.0 : 0.12;
@@ -108,6 +116,7 @@
       attr('a_exp', D.expanded, gl.UNSIGNED_BYTE, 1, false); attr('a_spaces', D.spaces, gl.UNSIGNED_SHORT, 1, false);
       attr('a_cosets', D.cosets, gl.FLOAT, 1, false); attr('a_rnew', D.reached_new, gl.UNSIGNED_SHORT, 1, false);
     }
+    if (D.inv) attr('a_inv', D.inv, gl.UNSIGNED_BYTE, 4, false);
     for (const u of ['u_x', 'u_y', 'u_colour', 'u_show', 'u_view', 'u_cut', 'u_window', 'u_point', 'u_alpha', 'u_genMax',
       'u_timeMax', 'u_foundMax', 'u_pal', 'u_meth', 'u_sel', 'u_onlyExp', 'u_spacesMax', 'u_rnewMax', 'u_rateMax']) loc[u] = gl.getUniformLocation(program, u);
   }
@@ -124,6 +133,10 @@
     if (code === 5) return pad(0, Math.log2(1 + meta.found_max), 0.03);
     if (code === 7) return pad(0, Math.log2(1 + (meta.spaces_max || 1)), 0.03);
     if (code === 8) return pad(0, Math.min(meta.reached_new_max || 1, 400), 0.03);
+    if (code === 9) return pad((meta.du_range || [8, 62])[0], (meta.du_range || [8, 62])[1], 0.04);
+    if (code === 10) return pad(0, 4, 0.08);
+    if (code === 11) return pad(0, 2, 0.1);
+    if (code === 12) return pad(0, 1, 0.15);
     return pad(0, 8, 0.03);
   }
   function fit() { const x = range(axisCode('x-axis')), y = range(axisCode('y-axis')); view = [x[0], x[1], y[0], y[1]]; draw(); }
@@ -183,8 +196,9 @@
     const i = id - 1, x = axisCode('x-axis'), y = axisCode('y-axis');
     const v = c => c === 0 ? D.two[i] + D.jitter[2 * i] / 127 * 0.8 : c === 1 ? D.three[i] + D.jitter[2 * i + 1] / 127 * 0.4 :
       c === 2 ? id : c === 3 ? D.time[i] / 3600 : c === 4 ? D.generation[i] : c === 5 ? Math.log2(1 + D.found[i]) :
-      c === 6 ? Math.log2(1 + D.finders[i]) : c === 7 ? Math.log2(1 + (D.spaces ? D.spaces[i] : 0)) : (D.reached_new ? D.reached_new[i] : 0);
-    if ((x <= 1 || y <= 1) && D.two[i] < 0) return null;
+      c === 6 ? Math.log2(1 + D.finders[i]) : c === 7 ? Math.log2(1 + (D.spaces ? D.spaces[i] : 0)) :
+      c === 8 ? (D.reached_new ? D.reached_new[i] : 0) : c === 9 ? D.inv[4 * i] : c === 10 ? D.inv[4 * i + 1] : c === 11 ? D.inv[4 * i + 3] : D.inv[4 * i + 2];
+    if ((x <= 1 || y <= 1 || x >= 9 || y >= 9) && D.two[i] < 0) return null;
     return toScreen(v(x), v(y));
   }
   function lineage(ctx, dpr) {
@@ -267,6 +281,8 @@
     if (mode === 0) L.innerHTML = dot(css('--seed'), 'seeds') + dot(css('--found'), 'catalog-matching') + dot(css('--fresh'), 'new') + dot(css('--unknown'), 'unknown');
     else if (mode === 2) L.innerHTML = dot(css('--seed'), 'seed') + dot(css('--found'), 'v5') + dot(css('--fresh'), 'switching');
     else if (mode === 4) L.innerHTML = '<span class="small">24 colours, one per group of seed lineages</span>';
+    else if (mode === 10) L.innerHTML = dot(css('--found'), 'c4 = 0') + dot(css('--seed'), 'c4 = 1') + dot(css('--fresh'), 'c4 = 2') + dot('#1a1a1a', 'c4 ≥ 3');
+    else if (mode === 9) { L.innerHTML = ''; G.hidden = false; G.style.background = 'linear-gradient(90deg,#2e268c,#21928c,#fde026)'; GL.textContent = 'du 8 … 28 and more'; }
     else if (mode === 7 || mode === 8) {
       L.innerHTML = dot(css('--unknown'), 'not an expanded parent'); G.hidden = false; G.style.background = 'linear-gradient(90deg,#2e268c,#21928c,#fde026)';
       GL.textContent = mode === 7 ? '0 … ' + number(meta.reached_new_max) + ' new classes reached (log)' : '0 … ' + Math.round(meta.new_per_mcoset_p99) + ' new per million cosets (99th percentile)';
@@ -288,7 +304,8 @@
     let chain = [], a = D.discoverer[i], guard = 0; while (a && guard++ < 6) { chain.push(a); a = D.discoverer[a - 1]; }
     $('info-title').textContent = 'Class #' + number(id);
     $('info').innerHTML = '<table class="small">' +
-      '<tr><td>status</td><td>' + st + '</td></tr><tr><td>two, three</td><td>' + (D.two[i] >= 0 ? D.two[i] + ', ' + D.three[i] : 'not measured') + '</td></tr>' +
+      '<tr><td>status</td><td>' + st + '</td></tr><tr><td>two, three, four</td><td>' + (D.two[i] >= 0 ? D.two[i] + ', ' + D.three[i] + (D.inv ? ', ' + D.inv[4 * i + 3] : '') : 'not measured') + '</td></tr>' +
+      (D.inv && D.two[i] >= 0 ? '<tr><td>du, c4, c2</td><td>' + D.inv[4 * i] + ', ' + D.inv[4 * i + 1] + ', ' + D.inv[4 * i + 2] + '</td></tr>' : '') +
       '<tr><td>admitted</td><td>' + when(id) + '</td></tr><tr><td>generation</td><td>' + (D.generation[i] < 65535 ? D.generation[i] : 'unknown') + '</td></tr>' +
       '<tr><td>found first by</td><td>' + link(D.discoverer[i]) + ' (' + me + ')</td></tr><tr><td>seed of the lineage</td><td>' + link(D.root[i]) + '</td></tr>' +
       '<tr><td>ancestors</td><td>' + (chain.length ? chain.map(link).join(' ') : '—') + '</td></tr>' +

@@ -51,7 +51,7 @@
       <div class="row"><label>Colour <select id="colour">
         <option value="0">Catalog status</option><option value="1">Generation</option><option value="2">Method (first path)</option>
         <option value="3">Admission time</option><option value="4">Seed family</option><option value="5">Rediscoveries</option><option value="6">Recency (trail)</option>
-        <option value="7">New classes reached (as a parent)</option><option value="8">New per million cosets (as a parent)</option></select></label></div>
+        <option value="7">New classes reached (as a parent)</option><option value="8">New per million cosets (as a parent)</option><option value="9">du (ortho-derivative)</option><option value="10">c4: rank profile (components of rank 4)</option></select></label></div>
       <div id="legend"></div><div id="gradient" hidden></div><div id="gradient-labels" class="small"></div>
       <div class="row"><label>Point <input id="point" type="range" min="1" max="6" value="1" style="width:70px"></label><label>Opacity <input id="alpha" type="range" min="5" max="100" value="70" style="width:70px"></label></div>
       <div class="row"><label>Show</label><label><input type="checkbox" class="show" value="0" checked>catalog</label><label><input type="checkbox" class="show" value="1" checked>new</label><label><input type="checkbox" class="show" value="2" checked>seeds</label><label><input type="checkbox" class="show" value="3" checked>unknown</label></div>
@@ -89,6 +89,7 @@
         <table id="exp-table" class="small"></table>
         <p class="small" id="exp-e1"></p>
         <p><a href="/explorer-data/experiments/E2_replay.png" target="_blank">Replay figure ↗</a> · <a href="/explorer-data/experiments/E1_yield.png" target="_blank">Yield figure ↗</a> · <a href="/explorer-data/experiments/report.json" target="_blank">report.json ↗</a></p>
+        <p><a href="/explorer-data/experiments/structure_maps.png" target="_blank">Structure maps (% new) ↗</a> · <a href="/explorer-data/experiments/structure_drift.png" target="_blank">Drift over time ↗</a> · <a href="/explorer-data/experiments/summary.json" target="_blank">summary.json ↗</a></p>
       </details>
       <details><summary>About this page</summary>
         <p class="small">Each point is an admitted quadratic APN class; the ids are the admission order. Generation is the distance from a published seed along the first construction path that reached the class; its discoverer is the parent of that path. Rediscoveries count every construction path that reached a candidate of the class. Positions in the two × three map use the cell offset of the drawing page, so a class has the same place on both pages.</p>

@@ -24,6 +24,9 @@ DIR/<version>/ gets one little-endian array per field, index i = class id - 1
   cosets.f32           v5 cosets checked as a parent
   reached.u16          distinct classes its paths reached (with --pairs; capped)
   reached_new.u16      the new ones among them (signature absent from the catalog)
+  inv.u8               four values per class: du (differential uniformity of the
+                       ortho-derivative), c4 and c2 (components of rank 4 and 2),
+                       four (entry 4 of the nonbent signature); 255 = not measured
 
 meta.json gives the count, the time origin, the ranges and the provenance.
 """
@@ -74,14 +77,17 @@ def main():
     c.execute("ATTACH ? AS f", (f"file:{a.features}?mode=ro",))
     shas = [""] * n; status = np.full(n, 3, dtype=np.uint8)
     two = np.full(n, -1, dtype=np.int16); three = np.full(n, -1, dtype=np.int16)
-    for cid, sha, absent, origin, t2, t3 in c.execute(
-            "SELECT c.id, c.sha, c.absent, c.origin, f.two, f.three FROM classes c LEFT JOIN f.features f ON f.sha=c.sha"):
+    inv = np.full((n, 4), 255, dtype=np.uint8)
+    for cid, sha, absent, origin, t2, t3, du, c4, c2, four in c.execute(
+            "SELECT c.id, c.sha, c.absent, c.origin, f.two, f.three, f.du, f.c4, f.c2, f.four "
+            "FROM classes c LEFT JOIN f.features f ON f.sha=c.sha"):
         if cid > n:
             continue
         shas[cid - 1] = sha
         status[cid - 1] = 2 if origin == "root" else (1 if absent else 0)
         if t2 is not None and t3 is not None:
             two[cid - 1], three[cid - 1] = t2, t3
+            inv[cid - 1] = (du, c4, c2, four)
     c.close()
     missing = [i for i, s in enumerate(shas) if not s]
     for i in missing:  # classes admitted after the report copy: no sha yet
@@ -105,7 +111,7 @@ def main():
               "discoverer.u32": disc.astype(np.uint32), "root.u32": root[1:].astype(np.uint32),
               "time.f32": (admitted - origin_time).astype(np.float32), "found.u16": found, "finders.u8": finders,
               "expanded.u8": expanded, "spaces.u16": spaces, "cosets.f32": cosets,
-              "reached.u16": reached, "reached_new.u16": reached_new}
+              "reached.u16": reached, "reached_new.u16": reached_new, "inv.u8": inv}
     version = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + f"-{n}"
     out = Path(a.out); target = out / version; target.mkdir(parents=True, exist_ok=True)
     for name, array in fields.items():
@@ -118,6 +124,7 @@ def main():
             "unknown": int((status == 3).sum()), "generation_max": int(generation[1:][known].max()),
             "found_max": int(found.max()), "expanded": int(expanded.sum()), "spaces_max": int(spaces.max()),
             "reached_new_max": int(reached_new.max()),
+            "du_range": [int(inv[measured, 0].min()), int(inv[measured, 0].max())] if measured.any() else [0, 1],
             "new_per_mcoset_p99": float(np.percentile((1e6 * reached_new / np.maximum(cosets, 1))[expanded > 0], 99)) if expanded.any() else 1.0, "two_range": [int(two[measured].min()), int(two[measured].max())],
             "three_range": [int(three[measured].min()), int(three[measured].max())],
             "fields": {k: str(v.dtype) for k, v in fields.items()},
