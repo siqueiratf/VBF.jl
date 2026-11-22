@@ -1,7 +1,7 @@
 'use strict';
 // Class explorer: admitted classes in admission order with a time slider,
 // free axes and colours, a parent -> child drift field and in-browser video
-// recording. Data: /explorer-data/<version>/*.{i16,i8,u8,u16,u32,f32} from
+// MP4 export. Data: /explorer-data/<version>/*.{i16,i8,u8,u16,u32,f32} from
 // tools/analysis/explorer_data.py (index = class id - 1).
 (() => {
   const $ = id => document.getElementById(id);
@@ -16,7 +16,7 @@
     [9, 'du: differential uniformity of the ortho-derivative'], [10, 'c4: components of rank 4'],
     [11, 'four: entry 4 of the nonbent signature'], [12, 'c2: components of rank 2']];
   let meta, D = {}, n = 0, gl, program, vao, loc = {}, view = null, cut = 1, playing = false, timer = null;
-  let selected = 0, children = [], driftCache = null, recording = null;
+  let selected = 0, children = [], driftCache = null;
 
   // ---------- data ----------
   async function load() {
@@ -339,7 +339,7 @@
     playing = true; $('play').textContent = '⏸';
     const tick = () => {
       if (!playing) return;
-      if (cut >= b) { stopPlay(); if (recording) finishRecording(); return; }
+      if (cut >= b) { stopPlay(); return; }
       setCut(Math.min(b, cut + Math.max(1, Number($('per-step').value) || 1)));
       timer = setTimeout(tick, 1000 * Math.max(0.02, Number($('seconds').value) || 0.2));
     };
@@ -347,73 +347,93 @@
   }
   function stopPlay() { playing = false; clearTimeout(timer); $('play').textContent = '▶'; }
 
-  // ---------- recording ----------
-  function startRecording() {
-    const recSize = $('rec-size').value;  // not "size": that name is the canvas resize function
-    if (recSize !== 'view') { const [w, h] = recSize.split('x').map(Number); $('viewport').style.width = w / (window.devicePixelRatio || 1) + 'px'; $('viewport').style.height = h / (window.devicePixelRatio || 1) + 'px'; }
-    // The recording canvas must be in the document (outside the view): Chrome stops
-    // taking frames from a detached canvas once the page stops repainting.
-    const out = document.createElement('canvas'); size_now();
-    out.style.cssText = 'position:fixed;left:-100000px;top:0;pointer-events:none'; document.body.append(out);
-    function size_now() { out.width = $('gl').width; out.height = $('gl').height; }
-    requestAnimationFrame(() => {
-      size(); size_now(); fit_keep();
-      const ctx = out.getContext('2d'), stream = out.captureStream(0), track = stream.getVideoTracks()[0];
-      const type = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t));
-      const rec = new MediaRecorder(stream, {mimeType: type, videoBitsPerSecond: 12e6}), chunks = [];
-      rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-      rec.onstop = () => {
-        const blob = new Blob(chunks, {type}), url = URL.createObjectURL(blob), ext = type.startsWith('video/mp4') ? 'mp4' : 'webm';
-        const a = document.createElement('a'); a.href = url; a.download = 'apn-explorer-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '') + '.' + ext;
-        a.textContent = 'Download the video (' + (blob.size / 1e6).toFixed(1) + ' MB, ' + ext.toUpperCase() + ')';
-        $('record-link').replaceChildren(a); $('record-state').textContent = 'Done.';
-        $('viewport').style.width = ''; $('viewport').style.height = ''; draw(); out.remove();
-        a.click();  // download at once
-        $('export-video').textContent = '⏺ Export video'; $('export-video').classList.remove('recording');
-        $('export-state').textContent = 'Saved ' + a.download + ' (' + (blob.size / 1e6).toFixed(1) + ' MB). ';
-        const again = document.createElement('a'); again.href = url; again.download = a.download; again.textContent = 'Download again';
-        $('export-state').append(again);
-      };
-      // A timer, not requestAnimationFrame: frames keep coming in a background tab,
-      // and requestFrame() adds each copy to the stream explicitly.
-      const copy = () => {
-        if (!recording) { clearInterval(frameTimer); return; }
-        ctx.drawImage($('gl'), 0, 0); ctx.drawImage($('overlay'), 0, 0);
-        const dpr = window.devicePixelRatio || 1; ctx.font = (14 * dpr) + 'px system-ui,sans-serif'; ctx.fillStyle = css('--ink');
-        ctx.fillText(number(cut) + ' classes · ' + (cut ? when(cut) : ''), 8 * dpr, out.height - 24 * dpr);
-        const [a0, b0] = bounds(), sec = Math.max(0.02, Number($('seconds').value) || 0.2), per = Math.max(1, Number($('per-step').value) || 1);
-        const left = Math.max(0, Math.ceil((b0 - cut) / per)) * sec + (Number($('hold').value) || 0);
-        $('export-state').textContent = 'Recording: ' + Math.round(100 * (cut - a0) / Math.max(1, b0 - a0)) + '%, about ' + Math.ceil(left) + ' s left. The file downloads at the end.';
-        // Chrome adds a frame only when the canvas changes clearly: a small clock of the
-        // video time in the corner keeps the held last frame in the video.
-        const secs = (performance.now() - recordStart) / 1000, clock = Math.floor(secs / 60) + ':' + (secs % 60).toFixed(1).padStart(4, '0');
-        ctx.font = (12 * dpr) + 'px system-ui,sans-serif'; ctx.fillStyle = css('--muted'); ctx.textAlign = 'right';
-        ctx.fillText(clock, out.width - 8 * dpr, out.height - 8 * dpr); ctx.textAlign = 'left';
-        if (track.requestFrame) track.requestFrame();
-        window.apnRecordedFrames = (window.apnRecordedFrames || 0) + 1;  // read by tests
-      };
-      let frameTimer = null; const recordStart = performance.now();
-      recording = {rec}; rec.start(1000); frameTimer = setInterval(copy, 1000 / 30); copy();
-      $('record').hidden = true; $('record-stop').hidden = false; $('record-state').textContent = 'Recording (' + type + ')…';
-      play(true);
-    });
-    function fit_keep() { draw(); }
+  // ---------- video export (WebCodecs H.264 + mp4-muxer, no screen recording) ----------
+  // Each frame is drawn at once and encoded with an exact timestamp, so the export
+  // is as fast as the GPU allows and the timing in the file is exact.
+  let exporting = null;
+  const settings = () => ({per: Math.max(1, Number($('per-step').value) || 1), sec: Math.min(10, Math.max(0.02, Number($('seconds').value) || 0.2)),
+    hold: Math.min(60, Math.max(0, Number($('hold').value) || 0))});
+  function frameCount() { const [a0, b0] = bounds(); return Math.max(1, Math.ceil((b0 - a0) / settings().per)); }
+  function showLength() { const s = settings(); $('video-length').value = (frameCount() * s.sec + s.hold).toFixed(1); }
+  function lengthChanged() {
+    const s = settings(), len = Number($('video-length').value);
+    if (!(len > 0)) return;
+    const sec = Math.min(10, Math.max(0.02, (len - s.hold) / frameCount()));
+    $('seconds').value = +sec.toFixed(3); $('seconds-range').value = Math.min(1, sec);
   }
-  function exportEstimate() {
-    const [a0, b0] = bounds(), sec = Math.max(0.02, Number($('seconds').value) || 0.2), per = Math.max(1, Number($('per-step').value) || 1);
-    const frames = Math.ceil((b0 - a0) / per);
-    return frames + ' frames, about ' + Math.ceil(frames * sec + (Number($('hold').value) || 0)) + ' s of video (recorded in real time)';
-  }
-  function finishRecording() {
-    const r = recording; if (!r) return;
-    setTimeout(() => { recording = null; r.rec.stop(); $('record').hidden = false; $('record-stop').hidden = true; },
-      1000 * Math.max(0, Number($('hold').value) || 0));
+  const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
+  async function exportMP4() {
+    if (exporting) { exporting.cancel = true; return; }
+    if (!('VideoEncoder' in window) || !window.Mp4Muxer) {
+      $('export-state').textContent = 'This browser has no WebCodecs video encoder. Use Chrome, Edge or Firefox 130 or newer.'; return;
+    }
+    stopPlay();
+    const [a0, b0] = bounds(), s = settings(), frames = Math.max(1, Math.ceil((b0 - a0) / s.per)), keep = cut;
+    const recSize = $('rec-size').value, dpr = window.devicePixelRatio || 1;
+    if (recSize !== 'view') { const [w, h] = recSize.split('x').map(Number); $('viewport').style.width = w / dpr + 'px'; $('viewport').style.height = h / dpr + 'px'; }
+    await nextFrame(); size();
+    const W = $('gl').width & ~1, H = $('gl').height & ~1;
+    const out = document.createElement('canvas'); out.width = W; out.height = H; const ctx = out.getContext('2d');
+    let config = null;
+    for (const codec of ['avc1.640034', 'avc1.640033', 'avc1.640028', 'avc1.4d0034', 'avc1.4d0028', 'avc1.42003e', 'avc1.42001f']) {
+      const c = {codec, width: W, height: H, bitrate: Math.min(40e6, Math.round(W * H * 4)), framerate: Math.min(60, Math.max(1, 1 / s.sec))};
+      try { const r = await VideoEncoder.isConfigSupported(c); if (r.supported) { config = r.config; break; } } catch (e) { /* next */ }
+    }
+    const restore = () => { $('viewport').style.width = ''; $('viewport').style.height = ''; exporting = null;
+      $('export-video').textContent = '⬇ Download MP4'; $('export-video').classList.remove('recording'); setCut(keep); };
+    if (!config) { $('export-state').textContent = 'No H.264 encoder for ' + W + ' × ' + H + ' in this browser; try a smaller size.'; restore(); return; }
+    const muxer = new Mp4Muxer.Muxer({target: new Mp4Muxer.ArrayBufferTarget(), video: {codec: 'avc', width: W, height: H},
+      fastStart: 'in-memory', firstTimestampBehavior: 'offset'});
+    let failure = null;
+    const encoder = new VideoEncoder({output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: e => { failure = e; }});
+    encoder.configure(config);
+    exporting = {cancel: false};
+    $('export-video').textContent = '■ Cancel'; $('export-video').classList.add('recording');
+    const started = performance.now();
+    const emit = async (t, d, key) => {
+      ctx.fillStyle = css('--bg'); ctx.fillRect(0, 0, W, H);
+      ctx.drawImage($('gl'), 0, 0); ctx.drawImage($('overlay'), 0, 0);
+      ctx.font = (14 * dpr) + 'px system-ui,sans-serif'; ctx.fillStyle = css('--ink');
+      ctx.fillText(number(cut) + ' classes · ' + (cut ? when(cut) : ''), 8 * dpr, 34 * dpr);
+      const f = new VideoFrame(out, {timestamp: Math.round(t * 1e6), duration: Math.round(d * 1e6)});
+      encoder.encode(f, {keyFrame: key}); f.close();
+      while (encoder.encodeQueueSize > 6 && !failure) await new Promise(r => setTimeout(r, 4));
+    };
+    try {
+      for (let k = 0; k < frames; k++) {
+        if (exporting.cancel || failure) break;
+        cut = Math.min(b0, a0 + (k + 1) * s.per); $('cut').value = cut; driftCache = null;
+        render();
+        await emit(k * s.sec, s.sec, k % 50 === 0);
+        if (k % 5 === 0) {
+          $('export-state').textContent = 'Encoding frame ' + (k + 1) + ' of ' + frames + ' (' + Math.round(100 * (k + 1) / frames) + '%)…';
+          await nextFrame();
+        }
+      }
+      // Hold: the last frame again every half second, so every player shows it.
+      for (let h = 0; !exporting.cancel && !failure && h < Math.ceil(s.hold / 0.5); h++)
+        await emit(frames * s.sec + h * 0.5, Math.min(0.5, s.hold - h * 0.5), h === 0);
+      if (failure) throw failure;
+      if (exporting.cancel) { encoder.close(); $('export-state').textContent = 'Cancelled.'; restore(); return; }
+      await encoder.flush(); muxer.finalize();
+      const blob = new Blob([muxer.target.buffer], {type: 'video/mp4'}), url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url;
+      a.download = 'apn-explorer-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '') + '.mp4'; a.click();
+      $('export-state').textContent = 'Saved ' + a.download + ': ' + (blob.size / 1e6).toFixed(1) + ' MB, ' + (frames * s.sec + s.hold).toFixed(1) +
+        ' s, ' + W + ' × ' + H + ', made in ' + ((performance.now() - started) / 1000).toFixed(0) + ' s. ';
+      const again = document.createElement('a'); again.href = url; again.download = a.download; again.textContent = 'Download again';
+      $('export-state').append(again);
+    } catch (e) {
+      $('export-state').textContent = 'Export failed: ' + (e && e.message || e);
+      try { encoder.close(); } catch (x) { /* closed */ }
+    }
+    restore();
   }
 
   // ---------- view state (link, templates) ----------
   // Keys: x y colour point alpha show expanded trail drift dtrail dcell dmin dscale step sec from to cut id view play
   const FIELDS = {x: 'x-axis', y: 'y-axis', colour: 'colour', point: 'point', alpha: 'alpha', dcell: 'drift-cell',
-    dmin: 'drift-min', dscale: 'drift-scale', step: 'per-step', sec: 'seconds', from: 'from', to: 'to'};
+    dmin: 'drift-min', dscale: 'drift-scale', step: 'per-step', sec: 'seconds', from: 'from', to: 'to', hold: 'hold', bg: 'theme', size: 'rec-size'};
   const CHECKS = {expanded: 'only-expanded', drift: 'drift', dtrail: 'drift-trail'};
   function currentState() {
     const h = new URLSearchParams();
@@ -439,6 +459,8 @@
     cut = h.has('cut') ? Math.max(0, Math.min(n, Number(h.get('cut')))) : n; $('cut').value = cut;
     if (h.has('id')) select(Number(h.get('id'))); else { selected = 0; children = []; }
     draw(); stats();
+    if (h.has('bg')) $('theme').onchange();
+    $('per-step-range').value = $('per-step').value; $('seconds-range').value = Math.min(1, Number($('seconds').value) || 0.2); showLength();
     if (h.get('play') === '1') play(true);
   }
 
@@ -528,13 +550,21 @@
     $('cut').oninput = () => { stopPlay(); setCut(Number($('cut').value)); };
     $('play').onclick = () => play(false); $('step-back').onclick = () => { stopPlay(); step(-1); }; $('step-fwd').onclick = () => { stopPlay(); step(1); };
     $('find').onclick = () => select(Number($('find-id').value));
-    $('record').onclick = startRecording; $('record-stop').onclick = () => { stopPlay(); finishRecording(); };
-    $('export-video').onclick = () => {
-      if (recording) { stopPlay(); finishRecording(); $('export-state').textContent = 'Stopping…'; return; }
-      $('export-video').textContent = '■ Stop recording'; $('export-video').classList.add('recording');
-      startRecording();
+    $('export-video').onclick = exportMP4;
+    for (const [range, box] of [['per-step-range', 'per-step'], ['seconds-range', 'seconds']]) {
+      $(range).oninput = () => { $(box).value = $(range).value; showLength(); };
+      $(box).oninput = () => { if (Number($(box).value) <= Number($(range).max)) $(range).value = $(box).value; showLength(); };
+    }
+    for (const id of ['hold', 'from', 'to']) $(id).addEventListener('input', showLength);
+    $('video-length').oninput = lengthChanged;
+    $('theme').onchange = () => {
+      const v = $('theme').value;
+      if (v === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v;
+      try { localStorage.setItem('apn-explorer-theme', v); } catch (e) { /* private mode */ }
+      legend(); draw();
     };
-    $('export-video').onmouseenter = () => { if (!recording) $('export-video').title = 'Records this view from "From id" to "to": ' + exportEstimate(); };
+    try { const v = localStorage.getItem('apn-explorer-theme'); if (v) { $('theme').value = v; $('theme').onchange(); } } catch (e) { /* none */ }
+    showLength();
     window.onresize = draw;
     const c = $('gl'); let drag = null, moved = false;
     c.onpointerdown = e => { drag = [e.clientX, e.clientY, view.slice()]; moved = false; c.classList.add('dragging'); c.setPointerCapture(e.pointerId); };
