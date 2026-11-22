@@ -338,7 +338,48 @@
   // ---------- Features 5 and 6: communities and the condensed community graph ----------
   let cmSel = null;
   async function communitiesView() {
-    const c0 = await analysis('communities'); canvasSetup(); $('alegend').innerHTML = '';
+    const c0 = await analysis('communities'), cg = c0.condensed_leiden, key = $('cm-colour').value, top = Number($('cm-top').value) || 300;
+    const {c, ctx, dpr} = canvasSetup(), css = X().css;
+    const nodes = cg.nodes.slice(0, top), idx = new Set(nodes.map((_, i) => i));
+    const val = nd => key === 'gen2' ? nd.generations[2] / Math.max(1, nd.size) : nd[key];
+    const vs = nodes.map(val), lo = Math.min(...vs), hi = Math.max(...vs);
+    const xs = nodes.map(nd => nd.x), ys = nodes.map(nd => nd.y);
+    const pad = 40 * dpr, minx = Math.min(...xs), maxx = Math.max(...xs), miny = Math.min(...ys), maxy = Math.max(...ys);
+    const sc = Math.min((c.width - 2 * pad) / ((maxx - minx) || 1), (c.height - 2 * pad) / ((maxy - miny) || 1));
+    const P = nd => [pad + (nd.x - minx) * sc + (c.width - 2 * pad - (maxx - minx) * sc) / 2, pad + (nd.y - miny) * sc + (c.height - 2 * pad - (maxy - miny) * sc) / 2];
+    const maxSize = Math.max(...nodes.map(nd => nd.size)), R = nd => Math.max(2 * dpr, 34 * dpr * Math.sqrt(nd.size / maxSize));
+    // Links: only the strongest share (slider), with opacity by log weight.
+    const links = cg.links.filter(l => idx.has(l[0]) && idx.has(l[1])).sort((a, b) => b[2] - a[2]);
+    const keep = links.slice(0, Math.round(links.length * Number($('cm-links').value) / 100));
+    const wmax = Math.log1p(links.length ? links[0][2] : 1);
+    for (const [a, b, w] of keep) {
+      const [x1, y1] = P(nodes[a]), [x2, y2] = P(nodes[b]);
+      ctx.strokeStyle = css('--muted'); ctx.globalAlpha = 0.08 + 0.5 * Math.log1p(w) / wmax; ctx.lineWidth = dpr * (0.5 + 2 * Math.log1p(w) / wmax);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    const hits = [];
+    nodes.forEach((nd, i) => {
+      const [x, y] = P(nd), r = R(nd);
+      ctx.fillStyle = ramp((val(nd) - lo) / ((hi - lo) || 1)); ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fill();
+      if (cmSel === nd.community) { ctx.strokeStyle = css('--ink'); ctx.lineWidth = 2.5 * dpr; ctx.stroke(); }
+      hits.push({x: x - r, y: y - r, w: 2 * r, h: 2 * r, nd});
+    });
+    const fmt = v => ['novelty', 'c4_positive', 'top_seed_share', 'gen2', 'conductance'].includes(key) ? (100 * v).toFixed(0) + '%' : v.toFixed(1);
+    legendBar(fmt(lo), fmt(hi), $('cm-colour').selectedOptions[0].text + ' · area = classes · ' + nodes.length + ' of ' + num(cg.communities_total) + ' communities (' + num(cg.shown_classes) + ' classes)', false);
+    hover(c, hits, h => { const nd = h.nd; return '<b>community ' + nd.community + '</b>: ' + num(nd.size) + ' classes<br>' + (100 * nd.novelty).toFixed(1) + '% new · ' + num(nd.seeds) + ' seeds · generations ' + nd.generations.map(num).join(' / ') +
+      '<br>mean two ' + nd.mean_two.toFixed(1) + ', three ' + nd.mean_three.toFixed(1) + ' · c4 > 0 ' + (100 * nd.c4_positive).toFixed(1) + '%<br>' + num(nd.seed_lineages) + ' seed lineages, the largest has ' + (100 * nd.top_seed_share).toFixed(1) +
+      '% · conductance ' + nd.conductance.toFixed(3) + ' · mean rediscoveries ' + nd.mean_found.toFixed(1); },
+      async h => {
+        await X().loadCommunities(); cmSel = h.nd.community; const C = X().D.community;
+        X().setFilter(maskOf(i => C[i] === cmSel), 'community ' + cmSel + ' (Leiden)');
+        const D = X().D, ids = []; for (let i = 0; i < X().n; i++) if (C[i] === cmSel) ids.push(i + 1);
+        ids.sort((a, b) => D.found[b - 1] - D.found[a - 1]);
+        const link = id => '<button data-id="' + id + '">#' + num(id) + '</button>';
+        $('ainfo').innerHTML = '<b>Community ' + cmSel + '</b>: ' + num(ids.length) + ' classes. Most rediscovered: ' + ids.slice(0, 8).map(link).join(' ') + ' <span class="small">(a click selects the class on the map)</span>';
+        $('ainfo').querySelectorAll('button[data-id]').forEach(b => { b.onclick = () => { showView('map'); X().select(Number(b.dataset.id)); }; });
+        communitiesView();
+      });
     if (!cmSel) {
       const A = c0.algorithms, row = (l, f) => '<tr><td>' + l + '</td><td>' + f(A.louvain) + '</td><td>' + f(A.leiden) + '</td></tr>';
       const labels = Object.keys(A.leiden.nmi_with);
@@ -371,6 +412,7 @@
     for (const id of ['tr-field', 'tr-set', 'tr-mode']) $(id).oninput = () => transitionsView();
     for (const id of ['ds-metric', 'ds-by', 'ds-norm']) $(id).oninput = () => distributionsView();
     $('gn-show').oninput = () => generationsView();
+    for (const id of ['cm-colour', 'cm-links', 'cm-top']) $(id).oninput = () => communitiesView();
     $('filter-map').onclick = () => showView('map');
     $('filter-clear').onclick = () => { X().setFilter(null, ''); hmSel = trSel = cmSel = null; if (view !== 'map') showView(view); };
     document.addEventListener('apn-show-map', () => showView('map'));

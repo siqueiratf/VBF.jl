@@ -97,6 +97,11 @@
         <div class="aview-controls row" data-view="generations" hidden>
           <label>Chart <select id="gn-show"><option value="curve">share of each generation over the admission order</option><option value="newcurve">% new per generation over the admission order</option><option value="matrix">where the constructions of each generation lead</option></select></label>
         </div>
+        <div class="aview-controls row" data-view="communities" hidden>
+          <label>Colour <select id="cm-colour"><option value="novelty">% new</option><option value="mean_two">mean two</option><option value="mean_three">mean three</option><option value="c4_positive">share with c4 > 0</option><option value="top_seed_share">share of the largest seed lineage</option><option value="gen2">share of generation 2</option><option value="conductance">conductance (low = closed)</option><option value="mean_found">mean rediscoveries</option></select></label>
+          <label>Links <input id="cm-links" type="range" min="0" max="100" value="30" style="width:90px"></label>
+          <label>Communities <input id="cm-top" type="number" min="10" max="300" value="300" style="width:64px"></label>
+        </div>
         <canvas id="acanvas"></canvas>
         <div id="alegend"></div>
         <div id="ainfo" class="small"></div><div id="ainfo-note" class="small"></div>

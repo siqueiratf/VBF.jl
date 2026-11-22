@@ -13,6 +13,7 @@ mod distributions;
 mod generations;
 mod graph;
 mod community;
+mod condensed;
 
 use data::Data;
 use std::path::PathBuf;
@@ -159,8 +160,9 @@ fn main() {
                 "note": "same degree sequence, unweighted, random pairing; Leiden with the same settings"}));
         }
         if let Some(serde_json::Value::Object(o)) = summary.get_mut("leiden") { o.insert("well_separated_communities".into(), serde_json::json!(conductance_low(&g, &leiden_comm))); }
-        let _ = &leiden_comm;
-        let cg = serde_json::Value::Null;
+        let t2 = Instant::now();
+        let cg = condensed::run(&d, &g, &leiden_comm, 300);
+        eprintln!("condensed graph in {:.2}s", t2.elapsed().as_secs_f64());
         let v = serde_json::json!({"classes": d.n, "graph": {"nodes": g.n, "edges": g.edges(), "total_weight": g.m2 / 2.0,
             "weights": "1 per construction direction; 2 if a pair was found both ways"}, "algorithms": summary, "condensed_leiden": cg,
             "notes": "NMI with seed lineage, generation or admission decile measures how far communities follow the search (lineages, time); NMI with c4, two, three or du measures how far they follow the invariants (structure)."});
