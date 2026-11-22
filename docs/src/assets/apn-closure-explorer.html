@@ -15,7 +15,7 @@
     button { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:5px 9px; cursor:pointer; } button:hover { border-color:var(--link); } button:disabled { opacity:.55; cursor:not-allowed; }
     select,input[type=number] { background:var(--panel); border:1px solid var(--border); border-radius:5px; padding:3px 5px; }
     input[type=number] { width:84px; }
-    #layout { display:grid; grid-template-columns:minmax(0,1fr) 320px; height:calc(100dvh - 128px); }
+    #layout { display:grid; grid-template-columns:minmax(0,1fr) 320px; height:calc(100dvh - 156px); }
     #viewport { position:relative; overflow:hidden; } #viewport canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
     #gl { cursor:grab; touch-action:none; } #gl.dragging { cursor:grabbing; } #overlay { pointer-events:none; }
     #message { position:absolute; top:14px; left:14px; right:14px; padding:9px 12px; background:var(--panel); border:1px solid var(--border); border-radius:6px; pointer-events:none; }
@@ -30,6 +30,8 @@
     details { margin-top:10px; } summary { cursor:pointer; font-weight:600; }
     .error { color:#b3261e; } @media(prefers-color-scheme:dark) { .error { color:#ffb4ab; } }
     [hidden] { display:none !important; }
+    button.primary { background:var(--link); color:var(--panel); border-color:var(--link); font-weight:600; } button.primary.recording { background:#b3261e; border-color:#b3261e; }
+    #export-bar { padding:3px 18px; border-bottom:1px solid var(--border); background:var(--panel); min-height:22px; }
     .tpl { border-top:1px solid var(--border); padding:6px 0; } .tpl p { margin:2px 0 0; } .tpl button { font-size:12px; padding:2px 7px; } .tpl-del { float:right; }
     #templates textarea, #templates input[type=text] { font:inherit; color:var(--ink); background:var(--panel); border:1px solid var(--border); border-radius:5px; padding:4px; }
     #templates { margin-top:0; }
@@ -46,7 +48,9 @@
     <button id="play" aria-label="Play">▶</button><button id="step-back" aria-label="One step back">⏮</button><button id="step-fwd" aria-label="One step forward">⏭</button>
     <input id="cut" type="range" min="0" max="1" value="1" aria-label="Classes shown (admission order)">
     <span id="cut-label"></span>
+    <button id="export-video" class="primary">⏺ Export video</button>
   </div>
+  <div id="export-bar"><span id="export-state" class="small">Export video: records the view as you see it, from the start of the range to its end (settings under Playback and "Export a video of this view").</span></div>
   <div id="layout">
     <div id="viewport"><canvas id="gl" aria-label="Classes in admission order. Drag to pan, scroll to zoom, click a class to inspect it."></canvas><canvas id="overlay" aria-hidden="true"></canvas><div id="message" role="status">Loading the data…</div></div>
     <aside>

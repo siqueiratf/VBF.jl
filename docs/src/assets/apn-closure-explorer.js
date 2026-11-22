@@ -349,13 +349,16 @@
 
   // ---------- recording ----------
   function startRecording() {
-    const size = $('rec-size').value;
-    if (size !== 'view') { const [w, h] = size.split('x').map(Number); $('viewport').style.width = w / (window.devicePixelRatio || 1) + 'px'; $('viewport').style.height = h / (window.devicePixelRatio || 1) + 'px'; }
+    const recSize = $('rec-size').value;  // not "size": that name is the canvas resize function
+    if (recSize !== 'view') { const [w, h] = recSize.split('x').map(Number); $('viewport').style.width = w / (window.devicePixelRatio || 1) + 'px'; $('viewport').style.height = h / (window.devicePixelRatio || 1) + 'px'; }
+    // The recording canvas must be in the document (outside the view): Chrome stops
+    // taking frames from a detached canvas once the page stops repainting.
     const out = document.createElement('canvas'); size_now();
+    out.style.cssText = 'position:fixed;left:-100000px;top:0;pointer-events:none'; document.body.append(out);
     function size_now() { out.width = $('gl').width; out.height = $('gl').height; }
     requestAnimationFrame(() => {
       size(); size_now(); fit_keep();
-      const ctx = out.getContext('2d'), stream = out.captureStream(30);
+      const ctx = out.getContext('2d'), stream = out.captureStream(0), track = stream.getVideoTracks()[0];
       const type = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t));
       const rec = new MediaRecorder(stream, {mimeType: type, videoBitsPerSecond: 12e6}), chunks = [];
       rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
@@ -364,20 +367,42 @@
         const a = document.createElement('a'); a.href = url; a.download = 'apn-explorer-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '') + '.' + ext;
         a.textContent = 'Download the video (' + (blob.size / 1e6).toFixed(1) + ' MB, ' + ext.toUpperCase() + ')';
         $('record-link').replaceChildren(a); $('record-state').textContent = 'Done.';
-        $('viewport').style.width = ''; $('viewport').style.height = ''; draw();
+        $('viewport').style.width = ''; $('viewport').style.height = ''; draw(); out.remove();
+        a.click();  // download at once
+        $('export-video').textContent = '⏺ Export video'; $('export-video').classList.remove('recording');
+        $('export-state').textContent = 'Saved ' + a.download + ' (' + (blob.size / 1e6).toFixed(1) + ' MB). ';
+        const again = document.createElement('a'); again.href = url; again.download = a.download; again.textContent = 'Download again';
+        $('export-state').append(again);
       };
+      // A timer, not requestAnimationFrame: frames keep coming in a background tab,
+      // and requestFrame() adds each copy to the stream explicitly.
       const copy = () => {
-        if (!recording) return;
+        if (!recording) { clearInterval(frameTimer); return; }
         ctx.drawImage($('gl'), 0, 0); ctx.drawImage($('overlay'), 0, 0);
         const dpr = window.devicePixelRatio || 1; ctx.font = (14 * dpr) + 'px system-ui,sans-serif'; ctx.fillStyle = css('--ink');
         ctx.fillText(number(cut) + ' classes · ' + (cut ? when(cut) : ''), 8 * dpr, out.height - 24 * dpr);
-        requestAnimationFrame(copy);
+        const [a0, b0] = bounds(), sec = Math.max(0.02, Number($('seconds').value) || 0.2), per = Math.max(1, Number($('per-step').value) || 1);
+        const left = Math.max(0, Math.ceil((b0 - cut) / per)) * sec + (Number($('hold').value) || 0);
+        $('export-state').textContent = 'Recording: ' + Math.round(100 * (cut - a0) / Math.max(1, b0 - a0)) + '%, about ' + Math.ceil(left) + ' s left. The file downloads at the end.';
+        // Chrome adds a frame only when the canvas changes clearly: a small clock of the
+        // video time in the corner keeps the held last frame in the video.
+        const secs = (performance.now() - recordStart) / 1000, clock = Math.floor(secs / 60) + ':' + (secs % 60).toFixed(1).padStart(4, '0');
+        ctx.font = (12 * dpr) + 'px system-ui,sans-serif'; ctx.fillStyle = css('--muted'); ctx.textAlign = 'right';
+        ctx.fillText(clock, out.width - 8 * dpr, out.height - 8 * dpr); ctx.textAlign = 'left';
+        if (track.requestFrame) track.requestFrame();
+        window.apnRecordedFrames = (window.apnRecordedFrames || 0) + 1;  // read by tests
       };
-      recording = {rec}; rec.start(1000); copy();
+      let frameTimer = null; const recordStart = performance.now();
+      recording = {rec}; rec.start(1000); frameTimer = setInterval(copy, 1000 / 30); copy();
       $('record').hidden = true; $('record-stop').hidden = false; $('record-state').textContent = 'Recording (' + type + ')…';
       play(true);
     });
     function fit_keep() { draw(); }
+  }
+  function exportEstimate() {
+    const [a0, b0] = bounds(), sec = Math.max(0.02, Number($('seconds').value) || 0.2), per = Math.max(1, Number($('per-step').value) || 1);
+    const frames = Math.ceil((b0 - a0) / per);
+    return frames + ' frames, about ' + Math.ceil(frames * sec + (Number($('hold').value) || 0)) + ' s of video (recorded in real time)';
   }
   function finishRecording() {
     const r = recording; if (!r) return;
@@ -504,6 +529,12 @@
     $('play').onclick = () => play(false); $('step-back').onclick = () => { stopPlay(); step(-1); }; $('step-fwd').onclick = () => { stopPlay(); step(1); };
     $('find').onclick = () => select(Number($('find-id').value));
     $('record').onclick = startRecording; $('record-stop').onclick = () => { stopPlay(); finishRecording(); };
+    $('export-video').onclick = () => {
+      if (recording) { stopPlay(); finishRecording(); $('export-state').textContent = 'Stopping…'; return; }
+      $('export-video').textContent = '■ Stop recording'; $('export-video').classList.add('recording');
+      startRecording();
+    };
+    $('export-video').onmouseenter = () => { if (!recording) $('export-video').title = 'Records this view from "From id" to "to": ' + exportEstimate(); };
     window.onresize = draw;
     const c = $('gl'); let drag = null, moved = false;
     c.onpointerdown = e => { drag = [e.clientX, e.clientY, view.slice()]; moved = false; c.classList.add('dragging'); c.setPointerCapture(e.pointerId); };
